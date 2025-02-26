@@ -5,20 +5,33 @@ This is a starter project for React that uses Next.js.
 
 ## Running locally in development mode
 
-We recommend using pnpm as your package manager, as it's faster and more efficient than npm or yarn. If you don't have pnpm installed, you can install it globally by running:
+We recommend using yarn as your package manager, as it's faster and more efficient than npm. If you don't have yarn installed, you can install it globally by running:
     
-    npm install -g pnpm
+    ```bash
+    npm install --global yarn
+    ```
 
-To get started, just clone the repository and run `pnpm install && pnpm dev`:
+To get started, just clone the repository:
 
+    ```bash
     git clone https://github.com/verana-labs/verana-frontend.git
-    pnpm install
-    pnpm dev
+    ```
+
+and run `yarn install && yarn dev`:
+
+    ```bash
+    yarn install
+    yarn dev
+    ```
 
 ## Building and deploying in production
 
-If you wanted to run this site in production, you should install modules then build the site with `pnpm run build` and run it with `pnpm start`:
+If you wanted to run this site in production, you should install modules then build the site with `yarn build` and run it with `yarn start`:
 
-    pnpm install
-    pnpm run build
-    pnpm start
+    ```bash
+    yarn install
+    yarn build
+    yarn start
+    ```
+
+    
