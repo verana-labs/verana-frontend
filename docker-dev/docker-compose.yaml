@@ -2,6 +2,7 @@ version: "3"
 
 services:
   verana-front:
+    image: veranalabs/verana-front:main
     ports:
       - 2904:3000
     build: 
