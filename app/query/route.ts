@@ -34,8 +34,8 @@ export async function GET() {
   //     'Uncomment this file and remove this line. You can delete this file when you are finished.',
   // });
   try {
-  	// return Response.json(await listInvoices());
-    // return Response.json(await listRevenue());
+  	await listInvoices();
+    await listRevenue();
     return Response.json(await lisLatestInvoices());
   } catch (error) {
   	return Response.json({ error }, { status: 500 });
