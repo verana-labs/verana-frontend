@@ -1,11 +1,10 @@
 import SideNav from '@/app/ui/dashboard/sidenav';
 import NavBar from '../ui/dashboard/nav-bar';
-import NavBar2 from '../ui/dashboard/nav-bar-2';
  
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="w-full" >
-      <NavBar2 />
+      <NavBar />
       <div className="relative flex h-screen flex-col md:flex-row md:overflow-hidden">
         <div className="w-full flex-none md:w-64">
           <SideNav />
