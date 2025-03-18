@@ -7,7 +7,7 @@ import VeranaLog from '../verana-logo'
 import { links } from '@/app/lib/navlinks';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import {motion} from "framer-motion";
+import { motion } from "framer-motion";
 
 
 function classNames(...classes: string[]) {
