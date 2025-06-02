@@ -2,17 +2,17 @@
 
 import {
   Box,
-  ClipboardCopyText,
-  Stack,
-  useColorModeValue,
+  // ClipboardCopyText,
+  // Stack,
+  // useColorModeValue,
 } from "@interchain-ui/react";
 import { WalletStatus } from "cosmos-kit";
 import { useChain } from "@cosmos-kit/react";
-import { getChainLogo } from "../lib/wallet_util";
+// import { getChainLogo } from "../lib/wallet_util";
 import { CHAIN_NAME } from "../config/defaults";
-import User from "./User";
-import Chain from "./Chain";
-import Warning from "./Warning";
+// import User from "./User";
+// import Chain from "./Chain";
+// import Warning from "./Warning";
 import {
   ButtonConnect,
   ButtonConnected,
@@ -25,12 +25,12 @@ import {
 
 export default function Wallet() {
   const {
-    chain,
+    // chain,
     status,
-    wallet,
-    username,
-    address,
-    message,
+    // wallet,
+    // username,
+    // address,
+    // message,
     connect,
     openView,
   } = useChain(CHAIN_NAME);

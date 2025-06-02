@@ -2,7 +2,7 @@
 
 // import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react'
-import { Bars3Icon, WalletIcon, XMarkIcon, Cog8ToothIcon } from '@heroicons/react/24/outline'
+import { Bars3Icon, XMarkIcon, Cog8ToothIcon } from '@heroicons/react/24/outline'
 import VeranaLog from '../verana-logo'
 import { links } from '@/app/lib/navlinks';
 import { usePathname } from 'next/navigation';
