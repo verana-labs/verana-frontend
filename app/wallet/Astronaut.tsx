@@ -1,4 +1,6 @@
-export const Astronaut = (props: any) => (
+import { JSX, SVGProps } from "react";
+
+export const Astronaut = (props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>) => (
   <svg
     viewBox="0 0 278 255"
     fill="none"

@@ -5,16 +5,16 @@ import "@interchain-ui/react/styles";
 import { SignerOptions, wallets } from "cosmos-kit";
 import { ChainProvider } from "@cosmos-kit/react";
 import { assets, chains } from "chain-registry";
-import {
-  Box,
-  ThemeProvider,
-  useColorModeValue,
-  useTheme,
-} from "@interchain-ui/react";
+// import {
+  // Box,
+  // ThemeProvider,
+  // useColorModeValue,
+  // useTheme,
+// } from "@interchain-ui/react";
 import Wallet from "./Wallet";
 
 export default function CosmosHub() {
-  const { themeClass } = useTheme();
+  // const { themeClass } = useTheme();
 
   const signerOptions: SignerOptions = {
     // signingStargate: () => {
@@ -25,7 +25,6 @@ export default function CosmosHub() {
   return (
     // <ThemeProvider>
       <ChainProvider
-        // @ts-ignore
         chains={chains}
         // @ts-ingore
         assetLists={assets}
@@ -42,7 +41,6 @@ export default function CosmosHub() {
             },
           },
         }}
-        // @ts-ignore
         signerOptions={signerOptions}
       >
         {/* <Box
