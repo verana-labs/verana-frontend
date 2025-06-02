@@ -8,6 +8,7 @@ import { links } from '@/app/lib/navlinks';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { motion } from "framer-motion";
+import CosmosHub from '@/app/wallet/CosmosHub';
 
 
 function classNames(...classes: string[]) {
@@ -77,14 +78,12 @@ export default function NavBar() {
                     transition={{type: 'spring', stiffness: 700, damping: 30}}
                 />
              </div>
+            {/* <button className="rounded-md flex items-center border border-transparent py-2 px-4 text-center text-sm transition-all text-slate-600 hover:bg-slate-100 focus:bg-slate-100 active:bg-slate-100 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none" type="button">
+              <WalletIcon aria-hidden="true" className="size-6" />
+              <span className="hidden sm:block">Connect Wallet</span>
+            </button> */}
             <button className="rounded-md flex items-center border border-transparent py-2 px-4 text-center text-sm transition-all text-slate-600 hover:bg-slate-100 focus:bg-slate-100 active:bg-slate-100 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none" type="button">
-            {/* <img
-                src="https://docs.material-tailwind.com/icons/metamask.svg"
-                alt="metamask"
-                className="h-5 w-5 mr-2"
-            /> */}
-                <WalletIcon aria-hidden="true" className="size-6" />
-                <span className="hidden sm:block">Connect Wallet</span>
+              <CosmosHub/>
             </button>
             {/* Profile dropdown */}
             {/* <Menu as="div" className="relative ml-3">
