@@ -9,8 +9,6 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { motion } from "framer-motion";
 // import CosmosHub from '@/app/wallet/CosmosHub';
-// import KeplrConnection from '@/app/basic/KeplrConnection';
-import { SigningStargateClient } from '@cosmjs/stargate';
 import VeranaChain from '@/app/wallet/VeranaChain';
 
 
@@ -19,15 +17,6 @@ function classNames(...classes: string[]) {
 }
 
 export default function NavBar() {
-
-  const [client, setClient] = useState<SigningStargateClient | null>(null);
-  const [address, setAddress] = useState<string | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
-  const handleClientCreated = (newClient: SigningStargateClient, newAddress: string) => {
-    setClient(newClient);
-    setAddress(newAddress);
-  };
 
     const pathname = usePathname();
     const [toggle, setToggle] = useState<boolean>(false);

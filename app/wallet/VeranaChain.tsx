@@ -3,7 +3,7 @@
 import "@interchain-ui/react/styles";
 
 import { SignerOptions, wallets } from "cosmos-kit";
-import { ChainProvider, useChain } from "@cosmos-kit/react";
+import { ChainProvider } from "@cosmos-kit/react";
 
 import Wallet from "./Wallet";
 import { veranaChain, veranaAssets } from '../config/veranachain';
