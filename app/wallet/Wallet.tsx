@@ -1,18 +1,8 @@
 'use client';
 
-import {
-  Box,
-  // ClipboardCopyText,
-  // Stack,
-  // useColorModeValue,
-} from "@interchain-ui/react";
+import { Box } from "@interchain-ui/react";
 import { WalletStatus } from "cosmos-kit";
 import { useChain } from "@cosmos-kit/react";
-// import { getChainLogo } from "../lib/wallet_util";
-import { CHAIN_NAME } from "../config/defaults";
-// import User from "./User";
-// import Chain from "./Chain";
-// import Warning from "./Warning";
 import {
   ButtonConnect,
   ButtonConnected,
@@ -22,18 +12,17 @@ import {
   ButtonNotExist,
   ButtonRejected,
 } from "./Connect";
+import { veranaChain } from "../config/veranachain";
 
 export default function Wallet() {
   const {
-    // chain,
     status,
-    // wallet,
     // username,
     // address,
     // message,
     connect,
     openView,
-  } = useChain(CHAIN_NAME);
+  } = useChain(veranaChain.chain_name);
 
   const ConnectButton = {
     [WalletStatus.Connected]: <ButtonConnected onClick={openView} />,
@@ -45,17 +34,7 @@ export default function Wallet() {
   }[status] || <ButtonConnect onClick={connect} />;
 
   return (
-    <Box
-    //   my="$8"
-    //   flex="1"
-    //   width="full"
-    //   display="flex"
-    //   height="$16"
-    //   overflow="hidden"
-    //   justifyContent="center"
-    //   px={{ mobile: "$8", tablet: "$10" }}
-      // backgroundColor="transparent"
-    >
+    <Box>
       {ConnectButton}
     </Box>
   );
