@@ -1,6 +1,5 @@
 'use client';
 
-// import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react'
 import { Bars3Icon, XMarkIcon, Cog8ToothIcon } from '@heroicons/react/24/outline'
 import VeranaLog from '../verana-logo'
@@ -8,8 +7,7 @@ import { links } from '@/app/lib/navlinks';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { motion } from "framer-motion";
-// import CosmosHub from '@/app/wallet/CosmosHub';
-import VeranaChain from '@/app/wallet/VeranaChain';
+import Wallet from '@/app/wallet/Wallet';
 
 
 function classNames(...classes: string[]) {
@@ -36,23 +34,6 @@ export default function NavBar() {
           <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
             <div className="flex shrink-0 sm:items-left">
             <VeranaLog/>
-            </div>
-            <div className="hidden sm:ml-6 sm:block">
-              {/* <div className="flex space-x-4">
-                {links.map((item) => (
-                  <a
-                    key={item.name}
-                    href={item.href}
-                    aria-current={item.current ? 'page' : undefined}
-                    className={classNames(
-                      item.current ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white',
-                      'rounded-md px-3 py-2 text-sm font-medium',
-                    )}
-                  >
-                    {item.name}
-                  </a>
-                ))}
-              </div> */}
             </div>
           </div>
           <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
@@ -81,7 +62,7 @@ export default function NavBar() {
                 />
             </div>
             <button className="rounded-md flex items-center border border-transparent py-2 px-4 text-center text-sm transition-all text-slate-600 hover:bg-slate-100 focus:bg-slate-100 active:bg-slate-100 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none" type="button">
-              <VeranaChain/>
+              <Wallet/>
             </button>
           </div>
         </div>
@@ -94,7 +75,6 @@ export default function NavBar() {
               key={item.name}
               as="a"
               href={item.href}
-            //   aria-current={item.current ? 'page' : undefined}
               className={classNames(
                 pathname === item.href ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white',
                 'block rounded-md px-3 py-2 text-base font-medium',
