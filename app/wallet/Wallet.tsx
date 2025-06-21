@@ -13,30 +13,15 @@ import {
   ButtonRejected,
 } from "./Connect";
 import { veranaChain } from "@/app/config/veranachain";
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Wallet() {
   const {
     status,
-    // username,
     address,
-    // message,
     connect,
     openView,
-    getCosmWasmClient,
   } = useChain(veranaChain.chain_name);
-
-  const [balance, setBalance] = useState<string>("");
-
-  useEffect(() => {
-    if (!address || !getCosmWasmClient) return;
-    (async () => {
-      const client = await getCosmWasmClient();
-      const bal = await client.getBalance(address, "uvna");
-      setBalance(bal.amount + " " + bal.denom);
-    })();
-  }, [address]);
 
   const ConnectButton = {
     [WalletStatus.Connected]: <ButtonConnected onClick={openView} />,
@@ -64,7 +49,6 @@ export default function Wallet() {
 
 function shortenMiddle(str: string, maxLength: number): string {
   if (str.length <= maxLength) return str;
-
   const keep = Math.floor((maxLength - 3) / 2);
   const start = str.slice(0, keep);
   const end = str.slice(-keep);
