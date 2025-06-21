@@ -12,17 +12,31 @@ import {
   ButtonNotExist,
   ButtonRejected,
 } from "./Connect";
-import { veranaChain } from "../config/veranachain";
+import { veranaChain } from "@/app/config/veranachain";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Wallet() {
   const {
     status,
     // username,
-    // address,
+    address,
     // message,
     connect,
     openView,
+    getCosmWasmClient,
   } = useChain(veranaChain.chain_name);
+
+  const [balance, setBalance] = useState<string>("");
+
+  useEffect(() => {
+    if (!address || !getCosmWasmClient) return;
+    (async () => {
+      const client = await getCosmWasmClient();
+      const bal = await client.getBalance(address, "uvna");
+      setBalance(bal.amount + " " + bal.denom);
+    })();
+  }, [address]);
 
   const ConnectButton = {
     [WalletStatus.Connected]: <ButtonConnected onClick={openView} />,
@@ -33,9 +47,27 @@ export default function Wallet() {
     [WalletStatus.NotExist]: <ButtonNotExist onClick={openView} />,
   }[status] || <ButtonConnect onClick={connect} />;
 
+  const router = useRouter();
+
   return (
     <Box>
-      {ConnectButton}
+      {
+        address ?
+        <div onClick={() => router.push("/account")}style={{cursor: "pointer"}}>
+          {shortenMiddle(address, 18)}
+        </div>
+        : ConnectButton
+      }
     </Box>
   );
 }
+
+function shortenMiddle(str: string, maxLength: number): string {
+  if (str.length <= maxLength) return str;
+
+  const keep = Math.floor((maxLength - 3) / 2);
+  const start = str.slice(0, keep);
+  const end = str.slice(-keep);
+  return `${start}...${end}`;
+}
+
