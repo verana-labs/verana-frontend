@@ -7,7 +7,7 @@ import {
 const links = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
   { name: 'Account', href: '/account', icon: UserGroupIcon },
-  { name: 'DID Directory', href: '/did_directory', icon: DocumentDuplicateIcon }
+  { name: 'DID Directory', href: '/dids', icon: DocumentDuplicateIcon }
 ];
 
 export {links};
