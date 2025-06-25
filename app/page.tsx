@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react";
-import { Section } from "@/app/types/data-info";
+import { DashboardData, dashboardSections, Section } from "@/app/types/DataViewTypes";
 import DataView from "@/app/ui/dashboard/data-view"
 import { useChain } from "@cosmos-kit/react";
 import { veranaChain } from "@/app/config/veranachain";
@@ -11,6 +11,14 @@ export default function Page() {
 
   const { getStargateClient, status, isWalletConnected, address, wallet } = useChain(veranaChain.chain_name);
   const [blockHeight, setBlockHeight] = useState<string>("");
+  const data : DashboardData = {
+    chainName: isWalletConnected ? veranaChain.chain_name.concat(' (').concat(veranaChain.chain_id).concat( ')') : null,
+    blockHeight: blockHeight,
+    status: status,
+    isWalletConnected: String(isWalletConnected),
+    address: address? String(address) : null,
+    walletPrettyName: wallet ? wallet.prettyName : null
+  };
 
   useEffect(() => {
     const fetchHeight = async () => {
@@ -27,42 +35,10 @@ export default function Page() {
     return () => clearInterval(interval);
   }, [getStargateClient]);
 
-  const info: Section[] = isWalletConnected ? 
-      [
-        {
-          name: '',
-          fields: [
-            {
-              name: "Connected to",
-              value: veranaChain.chain_name.concat(' (').concat(veranaChain.chain_id).concat( ')')
-            },
-            {
-              name: "Block height",
-              value: blockHeight
-            },
-            {
-              name: "State",
-              value: status
-            },
-            {
-              name: "Wallet Connected",
-              value: String(isWalletConnected)
-            },
-            {
-              name: "Address",
-              value: String(address)
-            },
-            {
-              name: "Wallet",
-              value: wallet? wallet.prettyName : ""
-            },
-          ]
-        }
-      ] : [];
   
   return (
     <div>
-      <DataView sections={info} title='Dashboard' />
+      <DataView<DashboardData> title="Dashboard" sections={dashboardSections} data={data} />
       <br/><br/>
       {
         !isWalletConnected ? 
