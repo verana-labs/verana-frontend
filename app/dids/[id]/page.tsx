@@ -23,21 +23,33 @@ export default function DidViewPage() {
       setLoading(false);
       return;
     }
-    if (veranaChain.apis && veranaChain.apis.rest && veranaChain.apis.rest[0].address) {
-      fetch(`${veranaChain.apis.rest[0].address}/dd/v1/get/${decodeURIComponent(id)}`)
-        .then(res => {
-          if (!res.ok) throw new Error(`Error ${res.status}`);
-          return res.json();
-        })
-        .then((json: Partial<DidData> | { did: DidData }) => {
-          const didObj = Array.isArray((json as any).did_entry)
-            ? null
-            : (json as any).did_entry || json;
-          setData(didObj as DidData);
-        })
-        .catch(err => setError(err.message))
-        .finally(() => setLoading(false));
+    const fetchDid = async () => {
+      try {
+        const apiUrl = veranaChain.apis?.rest?.[0]?.address
+        if (!apiUrl) throw new Error('API endpoint not configured')
+
+        const url = `${apiUrl}/dd/v1/get/${decodeURIComponent(id)}`
+        const res = await fetch(url)
+        if (!res.ok) throw new Error(`Error ${res.status}`)
+
+        // Define expected shape: either DidData or { did_entry: DidData }
+        const json: unknown = await res.json()
+        type ResponseShape = Partial<{ did_entry: DidData }> & DidData
+        const resp = json as ResponseShape
+        const entry = resp.did_entry ?? (resp as DidData)
+
+        setData(entry)
+      } catch (err) {
+        // Handle unknown error types
+        const message = err instanceof Error ? err.message : String(err)
+        setError(message)
+      } finally {
+        setLoading(false)
+      }
     }
+
+    fetchDid()
+
   }, [id]);
 
   if (loading) {
