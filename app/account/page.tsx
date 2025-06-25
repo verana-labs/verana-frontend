@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import DataView from '@/app/ui/dashboard/data-view'
 import { useChain } from '@cosmos-kit/react'
 import { veranaChain } from '@/app/config/veranachain'
-import { accountSections, type AccountData, type Section } from '@/app/types/DataViewTypes'
+import { accountSections, type AccountData } from '@/app/types/DataViewTypes'
 
 export default function Page() {
   const { address, isWalletConnected, getStargateClient } = useChain(veranaChain.chain_name)
@@ -41,8 +41,8 @@ export default function Page() {
       try {
         const apiUrl = veranaChain.apis?.rest?.[0]?.address
         if (apiUrl) {
-          // const resp = await fetch(`${apiUrl}/td/v1/get/${address}`)
-          const resp = await fetch(`${apiUrl}/td/v1/get/verana12dyk649yce4dvdppehsyraxe6p6jemzg2qwutf`)
+          const resp = await fetch(`${apiUrl}/td/v1/get/${address}`)
+          // const resp = await fetch(`${apiUrl}/td/v1/get/verana12dyk649yce4dvdppehsyraxe6p6jemzg2qwutf`)
           const json = await resp.json()
           if (json.trust_deposit) {
             totalTrustDeposit = json.trust_deposit.amount
