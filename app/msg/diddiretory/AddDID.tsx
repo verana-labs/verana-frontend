@@ -36,10 +36,12 @@ export default function AddDID() {
         gas: gasLimit.toString(),
       };
       const res = await signAndBroadcast([msgAny], fee, 'Add DID')
-    //   const res = await signAndBroadcast([msgAny])
-      res.code === 0
-        ? (alert(`Tx: ${res.transactionHash}`), setForm({ did: '', years: 0 }))
-        : alert(`Failed: ${res.code}`)
+      if (res.code === 0) {
+        alert(`Tx: ${res.transactionHash}`)
+        setForm({ did: '', years: 0 })
+      } else {
+        alert(`Failed: ${res.code}`)
+      }
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : String(err))
     } finally {

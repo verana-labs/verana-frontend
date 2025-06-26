@@ -48,7 +48,7 @@ export default function RootLayout({
           wallets={wallets}
           signerOptions={{
             // For the Stargate client, return these options:
-            stargate: (_chain): SigningStargateClientOptions => ({
+            stargate: (): SigningStargateClientOptions => ({
               registry: customRegistry,
               aminoTypes: customAmino,
               // you can also set gasPrice here if you want:
