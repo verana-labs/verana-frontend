@@ -35,3 +35,20 @@ jobs:
           file: Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_HUB_LOGIN }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+
+      - name: Trigger deployScanner in verana-deploy
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.PAT_TO_ACCESS_DEPLOY_REPO }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/verana-labs/verana-deploy/actions/workflows/deployScanner.yml/dispatches \
+            -d '{
+              "ref":"main",
+              "inputs":{
+                "EXPLORER_BRANCH":"main",
+                "NAME_SPACE":"vna-testnet-1",
+                "CHAIN_NAME":"Verana Testnet",
+                "RPC_ENDPOINTS":"[{\"provider\":\"testnet-rpc-proxy\",\"address\":\"https://rpc.testnet.verana.network\"},{\"provider\":\"testnet-rpc-primenode\",\"address\":\"http://node1.testnet.verana.network:26657\"},{\"provider\":\"alcani-rpc\",\"address\":\"https://verana.alca.devlpc.ovh\"}]",
+                "API_ENDPOINTS":"[{\"provider\":\"testnet-api-proxy\",\"address\":\"https://api.testnet.verana.network\"},{\"provider\":\"testnet-api1-proxy\",\"address\":\"https://api1.testnet.verana.network\"},{\"provider\":\"testnet-api-primenode\",\"address\":\"https://node1.testnet.verana.network\"},{\"provider\":\"testnet-api-node2\",\"address\":\"https://node2.testnet.verana.network\"},{\"provider\":\"alcani-api\",\"address\":\"https://apiverana.alca.devlpc.ovh\"}]"
+              }
+            }'
