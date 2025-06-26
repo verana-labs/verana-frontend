@@ -1,0 +1,16 @@
+{
+  "name": "verana-codec",
+  "version": "0.1.0",
+  "dependencies": {
+    "@vercel/ncc": "^0.29.1",
+    "protobufjs": "^7.5.0",
+    "ts-proto": "^1.181.2",
+    "react-scripts": "5.0.1"
+  },
+  "scripts": {
+    "start": "react-app-rewired start",
+    "build": "react-app-rewired build",
+    "test": "react-app-rewired test",
+    "eject": "react-scripts eject"
+  }
+}

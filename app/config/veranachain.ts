@@ -1,22 +1,26 @@
 import { Chain, Asset } from '@chain-registry/types';
+import { Registry } from "@cosmjs/proto-signing";
+import { GasPrice, defaultRegistryTypes, AminoTypes } from "@cosmjs/stargate";
+import { 
+  MsgAddDID,
+  MsgRemoveDID,
+  MsgTouchDID,
+  MsgRenewDID 
+} from "@/app/proto-codecs/codec/veranablockchain/diddirectory/tx";
+import { MsgAddDIDAminoConverter } from '../proto-codecs/codec/veranablockchain/diddirectory/aminoConverters';
 
 export const veranaChain: Chain = {
   chain_type: 'bip122',
-  chain_name: process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,// ? process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME : 'VeranaTestnet',
-  pretty_name: process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,// ? process.env.NEXT_PUBLIC_CHAIN_NAME : 'VeranaTestnet',
+  chain_name: process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,
+  pretty_name: process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,
   chain_id: process.env.NEXT_PUBLIC_VERANA_CHAIN_ID!,//
-  //  ? process.env.NEXT_PUBLIC_VERANA_CHAIN_ID : "vna-testnet-1",
-//   chain_id: "vna-testnet-1",
-//   chain_name: 'VeranaTestnet',
-//   pretty_name: 'VeranaTestnet',
   apis: {
     rpc: [{ address: process.env.NEXT_PUBLIC_VERANA_RPC_ENDPOINT!,// ? process.env.NEXT_PUBLIC_VERANA_RPC_ENDPOINT : 'https://rpc.testnet.verana.network',
         provider: 'verana' }],
     rest: [{ address: process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT!,// ? process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT : 'https://api.testnet.verana.network',
         provider: 'verana' }],
-    // rpc: [{ address: 'https://rpc.testnet.verana.network', provider: 'verana' }],
-    // rest: [{ address: 'https://api.testnet.verana.network', provider: 'verana' }],
-  },
+
+    },
   status: 'live',
   network_type: 'testnet',
   bech32_prefix: "verana",
@@ -39,6 +43,7 @@ export const veranaChain: Chain = {
       tx_page: 'https://explorer.mychain.org/tx/${txHash}',
     },  
  ],
+
 };
 
 export const veranaAssets: Asset = {
@@ -49,3 +54,24 @@ export const veranaAssets: Asset = {
     symbol: 'VNA',
     denom_units: []
 };
+
+export const GAS_PRICE = GasPrice.fromString("0.025uvna");
+
+export function getSigningVeranaClientOptions() {
+  const registry = new Registry([...defaultRegistryTypes]);
+  // Register all message types
+  registry.register("/veranablockchain.diddirectory.MsgAddDID", MsgAddDID);
+  registry.register("/veranablockchain.diddirectory.MsgRemoveDID", MsgRemoveDID);
+  registry.register("/veranablockchain.diddirectory.MsgTouchDID", MsgTouchDID);
+  registry.register("/veranablockchain.diddirectory.MsgRenewDID", MsgRenewDID);
+  
+  const aminoTypes = new AminoTypes({
+    '/veranablockchain.diddirectory.MsgAddDID': MsgAddDIDAminoConverter,
+  });
+
+  return {
+    registry,
+    // disableAmino: true  
+    aminoTypes
+  };
+}
