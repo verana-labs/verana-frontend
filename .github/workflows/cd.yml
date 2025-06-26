@@ -35,3 +35,19 @@ jobs:
           file: Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_HUB_LOGIN }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+
+      - name: Trigger deployVeranaFrontend in verana-deploy
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.PAT_TO_ACCESS_DEPLOY_REPO }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/verana-labs/verana-deploy/actions/workflows/deployVeranaFrontend.yml/dispatches \
+            -d '{
+              "ref": "main",
+              "inputs": {
+                "NAME_SPACE": "vna-testnet-1",
+                "RPC_ENDPOINT": "http://node1.testnet.verana.network:26657/",
+                "REST_ENDPOINT": "http://node1.testnet.verana.network:1317/",
+                "CLUSTER_NODE": "cluster-utc-node-07efe5"
+              }
+            }'
