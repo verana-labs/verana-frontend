@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useChain } from '@cosmos-kit/react'
 import type { StdFee } from '@cosmjs/stargate'
 import { MsgAddDID } from '@/app/proto-codecs/codec/veranablockchain/diddirectory/tx'
-import { veranaChain } from '@/app/config/veranachain';
+import { veranaChain, veranaGasLimit, veranaGasPrice } from '@/app/config/veranachain';
 
 interface FormState { did: string; years: number }
 
@@ -26,21 +26,20 @@ export default function AddDID() {
     try {
       const msg = MsgAddDID.fromPartial({ creator: address, did, years })
       const msgAny = { typeUrl: '/veranablockchain.diddirectory.MsgAddDID', value: msg }
-      const gasLimit = 300000; 
-      const gasPrice = "3uvna"; 
       const fee: StdFee = {
         amount: [{
           denom: "uvna",
-          amount: (parseFloat(gasPrice) * gasLimit).toString(),
+          amount: String(Math.ceil(parseFloat(veranaGasPrice.toString()) * veranaGasLimit)),
         }],
-        gas: gasLimit.toString(),
+        gas: veranaGasLimit.toString(),
       };
+      console.info(fee)
       const res = await signAndBroadcast([msgAny], fee, 'Add DID')
       if (res.code === 0) {
         alert(`Tx: ${res.transactionHash}`)
         setForm({ did: '', years: 0 })
       } else {
-        alert(`Failed: ${res.code}`)
+        alert('Transaction failed. Code: ' + res.code + ', Raw log: ' + res.rawLog);
       }
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : String(err))

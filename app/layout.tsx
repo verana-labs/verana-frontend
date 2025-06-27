@@ -4,14 +4,10 @@ import '@/app/ui/global.css';
 import { inter } from '@/app/ui/fonts';
 import { ChainProvider } from '@cosmos-kit/react';
 import { wallets } from "cosmos-kit";
-import { veranaChain, veranaAssets } from '@/app/config/veranachain';
+import { veranaChain, veranaAssets, veranaRegistry, veranaAmino, veranaGasPrice } from '@/app/config/veranachain';
 import NavBar from '@/app/ui/dashboard/nav-bar';
 import SideNav from '@/app/ui/dashboard/sidenav';
 import "@interchain-ui/react/styles";
-import { MsgAddDID, MsgRemoveDID, MsgRenewDID, MsgTouchDID } from './proto-codecs/codec/veranablockchain/diddirectory/tx';
-import { Registry } from '@cosmjs/proto-signing'
-import { defaultRegistryTypes, AminoTypes } from "@cosmjs/stargate";
-import { MsgAddDIDAminoConverter } from './proto-codecs/codec/veranablockchain/diddirectory/aminoConverters';
 import type { SigningStargateClientOptions } from '@cosmjs/stargate'
 
 
@@ -27,16 +23,6 @@ export default function RootLayout({
                         assets: [veranaAssets]
                       }];
                       
-
-  const customRegistry = new Registry([...defaultRegistryTypes]);
-  customRegistry.register("/veranablockchain.diddirectory.MsgAddDID", MsgAddDID);
-  customRegistry.register("/veranablockchain.diddirectory.MsgRemoveDID", MsgRemoveDID);
-  customRegistry.register("/veranablockchain.diddirectory.MsgTouchDID", MsgTouchDID);
-  customRegistry.register("/veranablockchain.diddirectory.MsgRenewDID", MsgRenewDID);
-  
-  const customAmino = new AminoTypes({
-    '/veranablockchain.diddirectory.MsgAddDID': MsgAddDIDAminoConverter,
-  });
                       
   return (
     <html lang="en">
@@ -49,10 +35,9 @@ export default function RootLayout({
           signerOptions={{
             // For the Stargate client, return these options:
             stargate: (): SigningStargateClientOptions => ({
-              registry: customRegistry,
-              aminoTypes: customAmino,
-              // you can also set gasPrice here if you want:
-              // gasPrice: GasPrice.fromString('0.025uvna'),
+              registry: veranaRegistry,
+              aminoTypes: veranaAmino,
+              gasPrice: veranaGasPrice,
             }),
           }}          
           walletConnectOptions={{
