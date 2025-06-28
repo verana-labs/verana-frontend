@@ -49,7 +49,7 @@ export default function ActionDID({ action, didUpdate }: ActionDIDProps) {
     try {
       const basePayload = { creator: address, did: (didUpdate && action != "AddDID") ? didUpdate : did}
       const fullPayload = { ...basePayload, years }
-      let msgAny: { typeUrl: string; value: any }
+      let msgAny: { typeUrl: string; value: MsgAddDID | MsgRenewDID | MsgTouchDID | MsgRemoveDID}
 
       switch (action) {
         case 'AddDID':
