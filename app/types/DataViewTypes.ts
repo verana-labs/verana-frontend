@@ -2,6 +2,7 @@
 export type Field<T> = {
   name: keyof T;
   label: string;
+  type: "data" | "action";
 };
 
 // Section grouping a subset of fields of T under a common title
@@ -15,6 +16,7 @@ export interface DataViewProps<T extends object> {
   title: string;
   sections: Section<T>[];
   data: T;
+  id: string
 }
 
 //Account data
@@ -24,6 +26,9 @@ export interface AccountData {
   claimableInterest: string | null;
   reclaimable: string | null;
   message: string | null;
+  getVNA: string | null;
+  claimInterest: string | null;
+  reclaimDeposit: string | null;
 }
 
 // Sections configuration for AccountData
@@ -31,16 +36,20 @@ export const accountSections: Section<AccountData>[] = [
   {
     name: 'Main Balance',
     fields: [
-      { name: 'balance', label: 'Available' }
+      { name: 'balance', label: 'Available', type: "data" },
+      { name: 'getVNA', label: 'get VNA', type: "action" }
     ]
   },
   {
     name: 'Trust Deposit',
     fields: [
-      { name: 'totalTrustDeposit', label: 'Total' },
-      { name: 'claimableInterest', label: 'Claimable Interest' },
-      { name: 'reclaimable', label: 'Reclaimable' },
-      { name: 'message', label: 'Message' }
+      { name: 'totalTrustDeposit', label: 'Total', type: "data" },
+      { name: 'claimableInterest', label: 'Claimable Interests', type: "data" },
+      { name: 'reclaimable', label: 'Reclaimable', type: "data" },
+      { name: 'message', label: 'Message', type: "data" },
+      { name: 'claimInterest', label: 'claim interests', type: "action" },
+      { name: 'reclaimDeposit', label: 'reclaim deposit', type: "action" }
+
     ]
   }
 ];
@@ -60,12 +69,12 @@ export const dashboardSections: Section<DashboardData>[] = [
   {
     name: '',
     fields: [
-      { name: 'chainName', label: 'Connected to' },
-      { name: 'blockHeight', label: 'Block height' },
-      { name: 'status', label: 'State' },
-      { name: 'isWalletConnected', label: 'Wallet Connected' },
-      { name: 'address', label: 'Address' },
-      { name: 'walletPrettyName', label: 'Wallet' }
+      { name: 'chainName', label: 'Connected to', type: "data" },
+      { name: 'blockHeight', label: 'Block height', type: "data" },
+      { name: 'status', label: 'State', type: "data" },
+      { name: 'isWalletConnected', label: 'Wallet Connected', type: "data" },
+      { name: 'address', label: 'Address', type: "data" },
+      { name: 'walletPrettyName', label: 'Wallet', type: "data" }
     ]
   }
 ];
@@ -78,6 +87,9 @@ export interface DidData {
   modified: string;
   exp: string;
   deposit: string;
+  renowDID: string | null;
+  touchDID: string | null;
+  removeDID: string | null;
 }
 
 // Sections configuration for DidData
@@ -85,12 +97,20 @@ export const didSections: Section<DidData>[] = [
   {
     name: '',
     fields: [
-      { name: 'did', label: 'DID' },
-      { name: 'controller', label: 'Controller' },
-      { name: 'created', label: 'Created' },
-      { name: 'modified', label: 'Modified' },
-      { name: 'exp', label: 'Expire' },
-      { name: 'deposit', label: 'Deposit' }
+      { name: 'did', label: 'DID', type: "data" },
+      { name: 'controller', label: 'Controller', type: "data" },
+      { name: 'created', label: 'Created', type: "data" },
+      { name: 'modified', label: 'Modified', type: "data" },
+      { name: 'exp', label: 'Expire', type: "data" },
+      { name: 'deposit', label: 'Deposit', type: "data" }
+    ]
+  },
+  {
+    name: 'Actions',
+    fields: [
+      { name: 'renowDID', label: 'renow', type: "action" },
+      { name: 'touchDID', label: 'touch', type: "action" },
+      { name: 'removeDID', label: 'remove', type: "action" }
     ]
   }
 ];

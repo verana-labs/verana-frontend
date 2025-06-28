@@ -1,12 +1,12 @@
 'use client'
 
 import '@/app/ui/global.css';
-import { inter } from '@/app/ui/fonts';
+import { inter } from '@/app/ui/common/fonts';
 import { ChainProvider } from '@cosmos-kit/react';
 import { wallets } from "cosmos-kit";
 import { veranaChain, veranaAssets, veranaRegistry, veranaAmino, veranaGasPrice } from '@/app/config/veranachain';
-import NavBar from '@/app/ui/dashboard/nav-bar';
-import SideNav from '@/app/ui/dashboard/sidenav';
+import NavBar from '@/app/ui/common/nav-bar';
+import SideNav from '@/app/ui/common/sidenav';
 import "@interchain-ui/react/styles";
 import type { SigningStargateClientOptions } from '@cosmjs/stargate'
 

@@ -2,7 +2,7 @@ import { Chain, Asset } from '@chain-registry/types';
 import { GasPrice, defaultRegistryTypes, AminoTypes } from "@cosmjs/stargate";
 import { MsgAddDID, MsgRemoveDID, MsgRenewDID, MsgTouchDID } from '@/app/proto-codecs/codec/veranablockchain/diddirectory/tx';
 import { Registry } from '@cosmjs/proto-signing'
-import { MsgAddDIDAminoConverter } from '@/app/proto-codecs/codec/veranablockchain/diddirectory/aminoConverters';
+import { MsgAddDIDAminoConverter, MsgRenewDIDAminoConverter, MsgTouchDIDAminoConverter, MsgRemoveDIDAminoConverter } from '@/app/proto-codecs/codec/veranablockchain/diddirectory/aminoConverters';
 
 export const veranaChain: Chain = {
   chain_type: 'bip122',
@@ -51,13 +51,16 @@ export const veranaAssets: Asset = {
 export const veranaRegistry = new Registry([
   ...defaultRegistryTypes,
   ["/veranablockchain.diddirectory.MsgAddDID", MsgAddDID],
-  ["/veranablockchain.diddirectory.MsgRemoveDID", MsgRemoveDID],
-  ["/veranablockchain.diddirectory.MsgTouchDID", MsgTouchDID],
   ["/veranablockchain.diddirectory.MsgRenewDID", MsgRenewDID],
+  ["/veranablockchain.diddirectory.MsgTouchDID", MsgTouchDID],
+  ["/veranablockchain.diddirectory.MsgRemoveDID", MsgRemoveDID],
 ])
   
 export const veranaAmino = new AminoTypes({
     '/veranablockchain.diddirectory.MsgAddDID': MsgAddDIDAminoConverter,
+    '/veranablockchain.diddirectory.MsgRenewDID': MsgRenewDIDAminoConverter,
+    '/veranablockchain.diddirectory.MsgTouchDID': MsgTouchDIDAminoConverter,
+    '/veranablockchain.diddirectory.MsgRemoveDID': MsgRemoveDIDAminoConverter,
   });
 
 export const veranaGasPrice = GasPrice.fromString("3uvna");

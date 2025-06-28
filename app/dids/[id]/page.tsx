@@ -5,7 +5,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { veranaChain } from '@/app/config/veranachain';
 import { DidData, didSections } from '@/app/types/DataViewTypes';
-import DataView from '@/app/ui/dashboard/data-view'
+import DataView from '@/app/ui/common/data-view'
+import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 
 
 export default function DidViewPage() {
@@ -37,7 +38,9 @@ export default function DidViewPage() {
         type ResponseShape = Partial<{ did_entry: DidData }> & DidData
         const resp = json as ResponseShape
         const entry = resp.did_entry ?? (resp as DidData)
-
+        entry.renowDID = 'RenewDID'
+        entry.touchDID = 'TouchDID'
+        entry.removeDID = 'RemoveDID'
         setData(entry)
       } catch (err) {
         // Handle unknown error types
@@ -61,15 +64,16 @@ export default function DidViewPage() {
 
   return (
     <div>
-       <DataView<DidData> title="DID" sections={didSections} data={data} />
-      <div className="mt-6">
+      <div className="flex justify-end mb-6 p-6">
         <button
-          onClick={() => router.back()}
-          className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+          onClick={() => router.push('/dids')}
+          className="flex items-center text-blue-500 hover:underline"
         >
-          Back
+          <ChevronLeftIcon aria-hidden="true" className="h-6 w-6 mr-1" />
+          <span>Back to Directory</span>
         </button>
       </div>
+      <DataView<DidData> title="DID" sections={didSections} data={data} id={decodeURIComponent(id)} />
     </div>
   );
 }

@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { DashboardData, dashboardSections } from "@/app/types/DataViewTypes";
-import DataView from "@/app/ui/dashboard/data-view"
+import DataView from "@/app/ui/common/data-view"
 import { useChain } from "@cosmos-kit/react";
 import { veranaChain } from "@/app/config/veranachain";
-import Wallet from "./wallet/Wallet";
+import Wallet from "@/app/wallet/Wallet";
 
 export default function Page() {
 
