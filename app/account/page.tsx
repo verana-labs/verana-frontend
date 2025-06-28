@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import DataView from '@/app/ui/dashboard/data-view'
+import DataView from '@/app/ui/common/data-view'
 import { useChain } from '@cosmos-kit/react'
 import { veranaChain } from '@/app/config/veranachain'
 import { accountSections, type AccountData } from '@/app/types/DataViewTypes'
@@ -13,7 +13,10 @@ export default function Page() {
     totalTrustDeposit: null,
     claimableInterest: null,
     reclaimable: null,
-    message: null
+    message: null,
+    getVNA: null,
+    claimInterest: null,
+    reclaimDeposit: null
   })
 
   useEffect(() => {
@@ -27,6 +30,9 @@ export default function Page() {
       let claimableInterest = null
       let reclaimable = null
       let message = null
+      let getVNA = "AddTrustRegistry"
+      let claimInterest = "AddTrustRegistry"
+      let reclaimDeposit = "AddTrustRegistry"
 
       // Fetch balance
       try {
@@ -57,7 +63,7 @@ export default function Page() {
       }
 
       // Single state update
-      setData({ balance, totalTrustDeposit, claimableInterest, reclaimable, message })
+      setData({ balance, totalTrustDeposit, claimableInterest, reclaimable, message, getVNA, claimInterest, reclaimDeposit})
     }
 
     fetchData()
@@ -74,6 +80,6 @@ export default function Page() {
   }
 
   return (
-      <DataView<AccountData> title="Account" sections={accountSections} data={data} />
+      <DataView<AccountData> title="Account" sections={accountSections} data={data} id="" />
   )
 }

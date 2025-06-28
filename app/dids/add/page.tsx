@@ -1,14 +1,26 @@
 'use client'
 
 import React from 'react'
-import AddDID from '@/app/msg/diddiretory/AddDID'
+import ActionDID from '@/app/msg/diddiretory/ActionDID'
+import { useRouter } from 'next/navigation'
+import { ChevronLeftIcon } from '@heroicons/react/24/outline'
 
 export default function AddDidPage() {
+  const router = useRouter()
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+    <div className="min-w-full p-8 rounded-2xl shadow-lg">
+      <div className="flex justify-end mb-6 p-6">
+        <button
+          onClick={() => router.push('/dids')}
+          className="flex items-center text-blue-500 hover:underline"
+        >
+          <ChevronLeftIcon aria-hidden="true" className="h-6 w-6 mr-1" />
+          <span>Back to Directory</span>
+        </button>
+      </div>
       <div className="w-full max-w-lg bg-white p-8 rounded-2xl shadow-lg">
-        <h1 className="text-3xl font-bold mb-6 text-center">Add DID to Directory</h1>
-        <AddDID />
+        <h1 className="text-3xl font-bold mb-6">Add DID to Directory</h1>
+        <ActionDID action={'AddDID'} didUpdate={undefined} />
       </div>
     </div>
   )

@@ -1,5 +1,5 @@
 import { WalletIcon } from '@heroicons/react/24/outline';
-import { lusitana } from '@/app/ui/fonts';
+import { lusitana } from '@/app/ui/common/fonts';
 
 export default function VeranaLogo() {
   return (

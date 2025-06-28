@@ -1,9 +1,10 @@
 'use client'
 
 import React, { useEffect, useState } from 'react';
-import { DataTable, Column } from '@/app/ui/dashboard/data-table';
-import { veranaChain } from '../config/veranachain';
+import { DataTable, Column } from '@/app/ui/common/data-table';
+import { veranaChain } from '@/app/config/veranachain';
 import { useRouter } from 'next/navigation';
+import { ChevronRightIcon } from '@heroicons/react/24/outline';
 
 interface Did {
   controller: string,
@@ -42,15 +43,27 @@ export default function DidsPage() {
   if (loading) return <p>Loading...</p>
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">DID Directory</h1>
-      <DataTable
-        columns={columns}
-        data={dids}
-        initialPageSize={10}
-        pageSizeOptions={[5, 10, 20, 50]}
-        onRowClick={(row) => router.push(`/dids/${encodeURIComponent(row.did)}`)}
-      />
+    <div>
+      <div className="flex justify-end mb-6 p-6">
+        <button
+          onClick={() => router.push('/dids/add')}
+          className="flex items-center text-blue-500 hover:underline"
+        >
+          <ChevronRightIcon aria-hidden="true" className="h-6 w-6 mr-1" />
+          <span>Add DID</span>
+        </button>
+      </div>
+      <div className="p-6">
+        <h1 className="text-3xl font-bold mb-6">DID Directory</h1>
+        <DataTable
+          columns={columns}
+          data={dids}
+          initialPageSize={10}
+          pageSizeOptions={[5, 10, 20, 50]}
+          onRowClick={(row) => router.push(`/dids/${encodeURIComponent(row.did)}`)}
+        />
+      </div>
     </div>
+
   );
 }
