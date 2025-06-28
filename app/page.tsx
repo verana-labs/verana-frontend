@@ -38,7 +38,7 @@ export default function Page() {
   
   return (
     <div>
-      <DataView<DashboardData> title="Dashboard" sections={dashboardSections} data={data} />
+      <DataView<DashboardData> title="Dashboard" sections={dashboardSections} data={data} id={""} />
       <br/><br/>
       {
         !isWalletConnected ? 
