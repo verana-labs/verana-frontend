@@ -30,9 +30,9 @@ export default function Page() {
       let claimableInterest = null
       let reclaimable = null
       let message = null
-      let getVNA = "AddTrustRegistry"
-      let claimInterest = "AddTrustRegistry"
-      let reclaimDeposit = "AddTrustRegistry"
+      const getVNA = "GetVNATrustRegistry"
+      const claimInterest = "ClaimInterestsTrustRegistry"
+      const reclaimDeposit = "ReclaimDepositTrustRegistry"
 
       // Fetch balance
       try {
