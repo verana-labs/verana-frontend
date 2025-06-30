@@ -11,11 +11,11 @@ export default function Page() {
   const [data, setData] = useState<AccountData>({
     balance: null,
     totalTrustDeposit: null,
-    claimableInterest: null,
+    claimableInterests: null,
     reclaimable: null,
     message: null,
     getVNA: null,
-    claimInterest: null,
+    claimInterests: null,
     reclaimDeposit: null
   })
 
@@ -27,12 +27,12 @@ export default function Page() {
       // Initialize fields
       let balance = null
       let totalTrustDeposit = null
-      let claimableInterest = null
+      let claimableInterests = null
       let reclaimable = null
       let message = null
-      const getVNA = "GetVNATrustRegistry"
-      const claimInterest = "ClaimInterestsTrustRegistry"
-      const reclaimDeposit = "ReclaimDepositTrustRegistry"
+      const getVNA = "GetVNATrustDeposit"
+      const claimInterests = "ClaimInterestsTrustDeposit"
+      const reclaimDeposit = "ReclaimDepositTrustDeposit"
 
       // Fetch balance
       try {
@@ -51,9 +51,9 @@ export default function Page() {
           // const resp = await fetch(`${apiUrl}/td/v1/get/verana12dyk649yce4dvdppehsyraxe6p6jemzg2qwutf`)
           const json = await resp.json()
           if (json.trust_deposit) {
-            totalTrustDeposit = json.trust_deposit.amount
-            claimableInterest = '0'
-            reclaimable = json.trust_deposit.claimable
+            totalTrustDeposit = formatVNA(json.trust_deposit.amount, 6)
+            claimableInterests = formatVNA('0', 6)
+            reclaimable = formatVNA(json.trust_deposit.claimable, 6)
           } else if (json.message) {
             message = json.message
           }
@@ -63,7 +63,7 @@ export default function Page() {
       }
 
       // Single state update
-      setData({ balance, totalTrustDeposit, claimableInterest, reclaimable, message, getVNA, claimInterest, reclaimDeposit})
+      setData({ balance, totalTrustDeposit, claimableInterests, reclaimable, message, getVNA, claimInterests, reclaimDeposit})
     }
 
     fetchData()

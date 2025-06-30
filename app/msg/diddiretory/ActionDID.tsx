@@ -14,10 +14,10 @@ interface FormState { did: string; years: number}
 
 interface ActionDIDProps {
   action: string
-  didUpdate: string | undefined
+  id: string | undefined
 }
 
-export default function ActionDID({ action, didUpdate }: ActionDIDProps) {
+export default function ActionDID({ action, id }: ActionDIDProps) {
   const router = useRouter()
   
   const {
@@ -47,7 +47,7 @@ export default function ActionDID({ action, didUpdate }: ActionDIDProps) {
 
     setSubmitting(true)
     try {
-      const basePayload = { creator: address, did: (didUpdate && action != "AddDID") ? didUpdate : did}
+      const basePayload = { creator: address, did: (id && action != "AddDID") ? id : did}
       const fullPayload = { ...basePayload, years }
       let msgAny: { typeUrl: string; value: MsgAddDID | MsgRenewDID | MsgTouchDID | MsgRemoveDID}
 
@@ -104,7 +104,7 @@ export default function ActionDID({ action, didUpdate }: ActionDIDProps) {
     } finally {
       setSubmitting(false)
       // if (['AddDID', 'RenewDID', 'TouchDID'].includes(action))
-      //     router.push(`/dids/${encodeURIComponent((didUpdate && action != "AddDID") ? didUpdate : did)}`)
+      //     router.push(`/dids/${encodeURIComponent((id && action != "AddDID") ? id : did)}`)
       // else
           router.push(`/dids`)
     }

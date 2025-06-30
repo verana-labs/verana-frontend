@@ -23,11 +23,11 @@ export interface DataViewProps<T extends object> {
 export interface AccountData {
   balance: string | null;
   totalTrustDeposit: string | null;
-  claimableInterest: string | null;
+  claimableInterests: string | null;
   reclaimable: string | null;
   message: string | null;
   getVNA: string | null;
-  claimInterest: string | null;
+  claimInterests: string | null;
   reclaimDeposit: string | null;
 }
 
@@ -44,10 +44,10 @@ export const accountSections: Section<AccountData>[] = [
     name: 'Trust Deposit',
     fields: [
       { name: 'totalTrustDeposit', label: 'Total', type: "data" },
-      { name: 'claimableInterest', label: 'Claimable Interests', type: "data" },
+      { name: 'claimableInterests', label: 'Claimable Interests', type: "data" },
       { name: 'reclaimable', label: 'Reclaimable', type: "data" },
       { name: 'message', label: 'Message', type: "data" },
-      { name: 'claimInterest', label: 'claim interests', type: "action" },
+      { name: 'claimInterests', label: 'claim interests', type: "action" },
       { name: 'reclaimDeposit', label: 'reclaim deposit', type: "action" }
 
     ]
@@ -87,7 +87,7 @@ export interface DidData {
   modified: string;
   exp: string;
   deposit: string;
-  renowDID: string | null;
+  renewDID: string | null;
   touchDID: string | null;
   removeDID: string | null;
 }
@@ -108,7 +108,7 @@ export const didSections: Section<DidData>[] = [
   {
     name: 'Actions',
     fields: [
-      { name: 'renowDID', label: 'renow', type: "action" },
+      { name: 'renewDID', label: 'renew', type: "action" },
       { name: 'touchDID', label: 'touch', type: "action" },
       { name: 'removeDID', label: 'remove', type: "action" }
     ]

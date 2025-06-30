@@ -38,7 +38,7 @@ export default function DidViewPage() {
         type ResponseShape = Partial<{ did_entry: DidData }> & DidData
         const resp = json as ResponseShape
         const entry = resp.did_entry ?? (resp as DidData)
-        entry.renowDID = 'RenewDID'
+        entry.renewDID = 'RenewDID'
         entry.touchDID = 'TouchDID'
         entry.removeDID = 'RemoveDID'
         setData(entry)
