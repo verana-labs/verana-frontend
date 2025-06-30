@@ -14,6 +14,7 @@ import {
 } from "./Connect";
 import { veranaChain } from "@/app/config/veranachain";
 import { useRouter } from "next/navigation";
+import { shortenMiddle } from "@/app/util/util";
 
 export default function Wallet() {
   const {
@@ -45,13 +46,5 @@ export default function Wallet() {
       }
     </Box>
   );
-}
-
-function shortenMiddle(str: string, maxLength: number): string {
-  if (str.length <= maxLength) return str;
-  const keep = Math.floor((maxLength - 3) / 2);
-  const start = str.slice(0, keep);
-  const end = str.slice(-keep);
-  return `${start}...${end}`;
 }
 

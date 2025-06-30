@@ -1,3 +1,4 @@
+'use client'
 import React, { useState } from 'react'
 import { useChain } from '@cosmos-kit/react'
 import type { StdFee } from '@cosmjs/stargate'
@@ -103,10 +104,13 @@ export default function ActionDID({ action, id }: ActionDIDProps) {
       alert(err instanceof Error ? err.message : String(err))
     } finally {
       setSubmitting(false)
-      // if (['AddDID', 'RenewDID', 'TouchDID'].includes(action))
-      //     router.push(`/dids/${encodeURIComponent((id && action != "AddDID") ? id : did)}`)
-      // else
-          router.push(`/dids`)
+      if (['RenewDID', 'TouchDID'].includes(action))
+        // router.refresh()
+        window.location.reload()
+      else if (['AddDID'].includes(action))
+        router.push(`/dids/${encodeURIComponent(did)}`)
+      else
+        router.push(`/dids`)
     }
   }
 
