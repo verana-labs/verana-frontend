@@ -1,14 +1,14 @@
-import React, { useState, ReactNode } from 'react'
+import React, { useState, ReactNode, Dispatch, SetStateAction } from 'react'
 import { DataViewProps } from '@/app/types/DataViewTypes'
 import ActionDID from '@/app/msg/diddiretory/ActionDID'
-import ActionTrustRegistry from '@/app/msg/trustregistry/ActionTrustRegistry'
+import ActionTrustDeposit from '@/app/msg/trustdeposit/ActionTrustDeposit'
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline'
 
-function renderActionComponent(action: string, did: string): ReactNode {
+function renderActionComponent(action: string, id: string, setActiveActionId: Dispatch<SetStateAction<string | null>>): ReactNode {
   if ( action.endsWith("DID"))
-    return <ActionDID action={action} didUpdate={did} />
-  if ( action.endsWith("TrustRegistry"))
-    return <ActionTrustRegistry action={action} didUpdate={undefined} />
+    return <ActionDID action={action} id={id} />
+  if ( action.endsWith("TrustDeposit"))
+    return <ActionTrustDeposit action={action} setActiveActionId={setActiveActionId} />
   return null;
 }
 
@@ -61,7 +61,7 @@ export default function DataView<T extends object>({ title, sections, data, id }
                             </button>
                             {isActive && (
                               <div className="mt-4">
-                                {renderActionComponent(String(value), id)}
+                                {renderActionComponent(String(value), id, setActiveActionId)}
                               </div>
                             )}
                           </td>

@@ -1,6 +1,6 @@
 // src/app/proto-codecs/codec/veranablockchain/diddirectory/aminoConverters.ts
 import type { AminoConverter } from '@cosmjs/stargate'
-import { MsgAddDID, MsgRenewDID, MsgTouchDID, MsgRemoveDID } from './tx'
+import { MsgAddDID, MsgRenewDID, MsgTouchDID, MsgRemoveDID } from '@/app/proto-codecs/codec/veranablockchain/diddirectory/tx'
 
 /**
  * Amino converter for MsgAddDID
