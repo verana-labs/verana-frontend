@@ -1,4 +1,5 @@
 
+'use client'
 import React, { useState } from 'react'
 import { useChain } from '@cosmos-kit/react'
 import type { StdFee } from '@cosmjs/stargate'
@@ -90,6 +91,8 @@ export default function ActionTrustDeposit({ action, setActiveActionId }: Action
     } finally {
       setSubmitting(false)
       handleCancel()
+      router.refresh()
+      window.location.reload()
     }
   }
 

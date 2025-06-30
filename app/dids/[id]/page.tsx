@@ -7,6 +7,7 @@ import { veranaChain } from '@/app/config/veranachain';
 import { DidData, didSections } from '@/app/types/DataViewTypes';
 import DataView from '@/app/ui/common/data-view'
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
+import { formatVNA } from '@/app/util/util';
 
 
 export default function DidViewPage() {
@@ -38,6 +39,7 @@ export default function DidViewPage() {
         type ResponseShape = Partial<{ did_entry: DidData }> & DidData
         const resp = json as ResponseShape
         const entry = resp.did_entry ?? (resp as DidData)
+        entry.deposit = formatVNA(entry.deposit, 6)
         entry.renewDID = 'RenewDID'
         entry.touchDID = 'TouchDID'
         entry.removeDID = 'RemoveDID'

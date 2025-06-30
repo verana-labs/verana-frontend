@@ -1,3 +1,4 @@
+import { formatVNA, shortenMiddle } from '@/app/util/util';
 import React, { useState, useEffect, useMemo } from 'react';
 
 // Generic column definition
@@ -112,7 +113,11 @@ export function DataTable<T extends object>({
                     key={String(col.accessor)}
                     className="px-6 py-4 whitespace-nowrap text-sm text-gray-700"
                   >
-                    {String(row[col.accessor])}
+                    {String(col.accessor) == "deposit" ?
+                      String(formatVNA(String(row[col.accessor]), 6))
+                        : ["did", "controller"].includes(String(col.accessor)) ? 
+                          shortenMiddle(String(row[col.accessor]), 18)
+                      : String(row[col.accessor])}
                   </td>
                 ))}
               </tr>

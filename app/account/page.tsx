@@ -5,6 +5,7 @@ import DataView from '@/app/ui/common/data-view'
 import { useChain } from '@cosmos-kit/react'
 import { veranaChain } from '@/app/config/veranachain'
 import { accountSections, type AccountData } from '@/app/types/DataViewTypes'
+import { formatVNA } from '@/app/util/util'
 
 export default function Page() {
   const { address, isWalletConnected, getStargateClient } = useChain(veranaChain.chain_name)
@@ -68,16 +69,6 @@ export default function Page() {
 
     fetchData()
   }, [address, isWalletConnected, getStargateClient])
-
-  const formatVNA = (amount: string | null, decimals: number) => {
-    if (!amount) return ''
-    return (
-      Number(amount) / Math.pow(10, decimals)
-    ).toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 6
-    }) + ' VNA'
-  }
 
   return (
       <DataView<AccountData> title="Account" sections={accountSections} data={data} id="" />
