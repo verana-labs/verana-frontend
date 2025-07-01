@@ -8,6 +8,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { motion } from "framer-motion";
 import Wallet from '@/app/wallet/Wallet';
+import IconLabelButton from '@/app/ui/common/icon-label-button';
 
 
 function classNames(...classes: string[]) {
@@ -36,15 +37,11 @@ export default function NavBar() {
             <VeranaLog/>
             </div>
           </div>
-          <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-            <button
-              type="button"
-              className="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 focus:outline-hidden "
-            >
-              <span className="absolute -inset-1.5" />
-              <span className="sr-only">Settings</span>
-              <Cog8ToothIcon aria-hidden="true" className="size-6" />
-            </button>
+          <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0 space-x-4">
+            <IconLabelButton
+              Icon={Cog8ToothIcon}
+              title='Settings'
+            />
             <div 
                 onClick={()=>setToggle(!toggle)}
                 className={classNames(
@@ -61,9 +58,7 @@ export default function NavBar() {
                     transition={{type: 'spring', stiffness: 700, damping: 30}}
                 />
             </div>
-            <button className="rounded-md flex items-center border border-transparent py-2 px-4 text-center text-sm transition-all text-slate-600 hover:bg-slate-100 focus:bg-slate-100 active:bg-slate-100 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none" type="button">
-              <Wallet/>
-            </button>
+            <Wallet/>
           </div>
         </div>
       </div>

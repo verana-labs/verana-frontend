@@ -40,12 +40,8 @@ export default function Page() {
     <div>
       <DataView<DashboardData> title="Dashboard" sections={dashboardSections} data={data} id={""} />
       <br/><br/>
-      {
-        !isWalletConnected ? 
-          <button className="rounded-md flex items-center border border-transparent py-2 px-4 text-center text-sm transition-all text-slate-600 hover:bg-slate-100 focus:bg-slate-100 active:bg-slate-100 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none" type="button">
-            <Wallet/>
-          </button>
-        : ""
+      { !isWalletConnected ? 
+        <Wallet/> : <span></span>
       }
     </div>
   );

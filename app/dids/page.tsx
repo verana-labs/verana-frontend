@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { DataTable, Column } from '@/app/ui/common/data-table';
 import { veranaChain } from '@/app/config/veranachain';
 import { useRouter } from 'next/navigation';
-import { ChevronRightIcon } from '@heroicons/react/24/outline';
+import { PlusIcon } from '@heroicons/react/24/outline';
 
 interface Did {
   controller: string,
@@ -49,7 +49,7 @@ export default function DidsPage() {
           onClick={() => router.push('/dids/add')}
           className="flex items-center text-blue-500 hover:underline"
         >
-          <ChevronRightIcon aria-hidden="true" className="h-6 w-6 mr-1" />
+          <PlusIcon aria-hidden="true" className="h-6 w-6 mr-1" />
           <span>Add DID</span>
         </button>
       </div>
