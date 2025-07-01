@@ -28,14 +28,6 @@ export default function Button({
       leftIcon={icon}
       disabled={disabled}
       isLoading={loading}
-      // domAttributes={{
-      //   style: {
-      //     flex: 1,
-      //     color: 'white',
-      //     backgroundImage:
-      //       "linear-gradient(109.6deg, rgba(157,75,199,1) 11.2%, rgba(119,81,204,1) 83.1%)",
-      //   },
-      // }}
     >
       <span className="hidden sm:block">{text}</span>
     </UIButton>
