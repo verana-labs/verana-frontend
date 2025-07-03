@@ -7,7 +7,7 @@ import { ChainProvider } from '@cosmos-kit/react';
 // import { wallets as leapWallets }  from "@cosmos-kit/leap-extension";
 import "@interchain-ui/react/styles";
 import type { SigningStargateClientOptions } from '@cosmjs/stargate';
-import { veranaChain, veranaAssets, veranaRegistry, veranaAmino, veranaGasPrice, veranaAssetsListJson } from '@/app/config/veranachain';
+import { veranaChain, veranaAssets, veranaRegistry, veranaAmino, veranaGasPrice } from '@/app/config/veranachain';
 import NavBar from '@/app/ui/common/nav-bar';
 import SideNav from '@/app/ui/common/sidenav';
 import {wallets} from "cosmos-kit"
