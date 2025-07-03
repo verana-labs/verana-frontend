@@ -7,7 +7,7 @@ import { MsgReclaimTrustDeposit, MsgReclaimTrustDepositInterests } from '@/app/p
 import { MsgReclaimTrustDepositInterestsAminoConverter, MsgReclaimTrustDepositAminoConverter } from '@/app//msg/aminoconverter/aminoConvertersTD';
 
 export const veranaChain: Chain = {
-  chain_type: 'bip122',
+  chain_type: 'cosmos',
   chain_name: process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,
   pretty_name: process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,
   chain_id: process.env.NEXT_PUBLIC_VERANA_CHAIN_ID!,//
@@ -20,6 +20,11 @@ export const veranaChain: Chain = {
   network_type: 'testnet',
   bech32_prefix: "verana",
   slip44:  118,
+  staking: {
+    staking_tokens: [
+      { denom: "VNA" }
+    ]
+  },
   fees: {
     fee_tokens: [
       {
@@ -72,6 +77,47 @@ export const veranaAmino = new AminoTypes({
 export const veranaGasPrice = GasPrice.fromString("3uvna");
 export const veranaGasLimit = 300000; 
 
+export const CHAIN_INFO = {
+  chainId: process.env.NEXT_PUBLIC_VERANA_CHAIN_ID!,
+  chainName: process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,
+  rpc: process.env.NEXT_PUBLIC_VERANA_RPC_ENDPOINT!,
+  rest: process.env.NEXT_PUBLIC_VERANA_RPC_ENDPOINT!,
+  bip44: {
+    coinType: 118,
+  },
+  bech32Config: {
+    bech32PrefixAccAddr: "verana",
+    bech32PrefixAccPub: "veranapub",
+    bech32PrefixValAddr: "veranavaloper",
+    bech32PrefixValPub: "veranavaloperpub",
+    bech32PrefixConsAddr: "veranavalcons",
+    bech32PrefixConsPub: "veranavalconspub",
+  },
+  currencies: [
+    {
+      coinDenom: "VNA",
+      coinMinimalDenom: "uvna",
+      coinDecimals: 6,
+    },
+  ],
+  feeCurrencies: [
+    {
+      coinDenom: "VNA",
+      coinMinimalDenom: "uvna",
+      coinDecimals: 6,
+    },
+  ],
+  stakeCurrency: {
+    coinDenom: "VNA",
+    coinMinimalDenom: "uvna",
+    coinDecimals: 6,
+  },
+  gasPriceStep: {
+    low: 1,
+    average: 3,
+    high: 4,
+  },
+};
 
 
 
