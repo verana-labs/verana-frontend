@@ -1,4 +1,5 @@
 import { Chain, Asset } from '@chain-registry/types';
+import type { ChainInfo } from "@keplr-wallet/types";
 import { GasPrice, defaultRegistryTypes, AminoTypes } from "@cosmjs/stargate";
 import { Registry } from '@cosmjs/proto-signing'
 import { MsgAddDID, MsgRemoveDID, MsgRenewDID, MsgTouchDID } from '@/app/proto-codecs/codec/veranablockchain/diddirectory/tx';
@@ -47,13 +48,39 @@ export const veranaChain: Chain = {
 };
 
 export const veranaAssets: Asset = {
+    description: "Verana Token",
     type_asset: 'unknown',
     base: 'uvna',
     name: 'VeranaToken',
     display: 'VNA',
     symbol: 'VNA',
-    denom_units: []
+    denom_units: [
+      { denom: "uvna", exponent: 0 },
+      { denom: "VNA",  exponent: 6 }
+
+    ]
 };
+
+export const veranaAssetsListJson =
+{
+  "chain_name": process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,
+  "assets": [
+    {
+      "description": "Verana Token",
+      "type_asset":  'sdk.coin',
+      "denom_units": [
+        { "denom": "uvna", "exponent": 0 },
+        { "denom": "VNA",  "exponent": 6 }
+      ],
+      "base":    "uvna",
+      "display": "uvna",
+      "name":    "VeranaToken",
+      "symbol":  "VNA"
+    }
+  ]
+}
+
+
 
 export const veranaRegistry = new Registry([
   ...defaultRegistryTypes,
@@ -77,7 +104,7 @@ export const veranaAmino = new AminoTypes({
 export const veranaGasPrice = GasPrice.fromString("3uvna");
 export const veranaGasLimit = 300000; 
 
-export const CHAIN_INFO = {
+export const veranaChainKeplrWalletType: ChainInfo = {
   chainId: process.env.NEXT_PUBLIC_VERANA_CHAIN_ID!,
   chainName: process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,
   rpc: process.env.NEXT_PUBLIC_VERANA_RPC_ENDPOINT!,
@@ -111,11 +138,6 @@ export const CHAIN_INFO = {
     coinDenom: "VNA",
     coinMinimalDenom: "uvna",
     coinDecimals: 6,
-  },
-  gasPriceStep: {
-    low: 1,
-    average: 3,
-    high: 4,
   },
 };
 
