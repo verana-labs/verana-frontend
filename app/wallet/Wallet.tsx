@@ -1,13 +1,12 @@
 'use client';
 
-import { WalletStatus } from "cosmos-kit";
 import { useChain } from "@cosmos-kit/react";
 import {
   ButtonConnect,
   ButtonConnected,
   ButtonConnecting,
   ButtonDisconnected,
-  ButtonError,
+  // ButtonError,
   ButtonNotExist,
   ButtonRejected,
 } from "./Connect";
@@ -16,8 +15,10 @@ import { useRouter } from "next/navigation";
 import { shortenMiddle } from "@/app/util/util";
 import { ArrowRightEndOnRectangleIcon, ArrowTopRightOnSquareIcon, QrCodeIcon, Square2StackIcon } from "@heroicons/react/24/outline";
 import IconLabelButton from "@/app/ui/common/icon-label-button";
+import { JSX } from "react";
 
 export default function Wallet() {
+  
   const {
     status,
     address,
@@ -25,14 +26,27 @@ export default function Wallet() {
     openView,
   } = useChain(veranaChain.chain_name);
 
-  const ConnectButton = {
-    [WalletStatus.Connected]: <ButtonConnected onClick={openView} />,
-    [WalletStatus.Connecting]: <ButtonConnecting />,
-    [WalletStatus.Disconnected]: <ButtonDisconnected onClick={connect} />,
-    [WalletStatus.Error]: <ButtonError onClick={openView} />,
-    [WalletStatus.Rejected]: <ButtonRejected onClick={connect} />,
-    [WalletStatus.NotExist]: <ButtonNotExist onClick={openView} />,
-  }[status] || <ButtonConnect onClick={connect} />;
+  type WalletStatus =
+    | "Disconnected"
+    | "Error"
+    | "Connecting"
+    | "Connected"
+    | "NotExist"
+    | "Rejected";
+
+  const buttonByStatus: Record<WalletStatus, JSX.Element> = {
+    Connected:   <ButtonConnected   onClick={openView} />,
+    Connecting:  <ButtonConnecting  />,
+    Disconnected:<ButtonDisconnected onClick={connect} />,
+    Error:       <ButtonRejected    onClick={connect} />,
+    Rejected:    <ButtonRejected    onClick={connect} />,
+    NotExist:    <ButtonNotExist    onClick={openView} />,
+  };
+
+  const ConnectButton =
+    buttonByStatus[status as WalletStatus] ?? (
+      <ButtonConnect onClick={connect} />
+    );
 
   const router = useRouter();
 
