@@ -5,6 +5,7 @@ import { DataTable, Column } from '@/app/ui/common/data-table';
 import { veranaChain } from '@/app/config/veranachain';
 import { useRouter } from 'next/navigation';
 import { PlusIcon } from '@heroicons/react/24/outline';
+import { formatDate, formatVNA, isExpired, shortenMiddle } from '@/app/util/util';
 
 interface Did {
   controller: string,
@@ -16,12 +17,12 @@ interface Did {
 }
 
 const columns: Column<Did>[] = [
-  { header: 'DID', accessor: 'did' },
-  { header: 'controller', accessor: 'controller' },
-  { header: 'created', accessor: 'created' },
-  { header: 'modified', accessor: 'modified' },
-  { header: 'expire', accessor: 'exp' },
-  { header: 'deposit', accessor: 'deposit' },
+  { header: 'DID', accessor: 'did', filterType: 'text', format: (value) => shortenMiddle(String(value), 30) },
+  { header: 'controller', accessor: 'controller', filterType: 'text', format: (value) => {return shortenMiddle(String(value), 25)} },
+  { header: 'created', accessor: 'created', filterType: 'text', format: (value) => formatDate(value) },
+  { header: 'modified', accessor: 'modified', filterType: 'text', format: (value) => formatDate(value) },
+  { header: 'expire', accessor: 'exp', filterType: 'checkbox', filterLabel: 'Expired', filterFn: (value) => isExpired(value), format: (value) => formatDate(value) },
+  { header: 'deposit', accessor: 'deposit', filterType: 'text', format: (value) => formatVNA(String(value), 6) },
 ];
 
 export default function DidsPage() {

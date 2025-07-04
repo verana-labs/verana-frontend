@@ -25,6 +25,7 @@ export default function ActionDID({ action, id }: ActionDIDProps) {
     address,
     signAndBroadcast,
     isWalletConnected,
+    // getSigningStargateClient,
   } = useChain(veranaChain.chain_name)
 
   const [form, setForm] = useState<FormState>({ did: '', years: 1 })
@@ -38,6 +39,8 @@ export default function ActionDID({ action, id }: ActionDIDProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isWalletConnected || !address) return alert('Connect wallet')
+    
+    // const signingClient = await getSigningStargateClient();
     const { did, years } = form
     if (!did  && ['AddDID'].includes(action)) {
       return alert('Enter valid DID')
@@ -92,8 +95,10 @@ export default function ActionDID({ action, id }: ActionDIDProps) {
         ],
         gas: veranaGasLimit.toString(),
       }
+      console.info(fee)
 
       const res = await signAndBroadcast([msgAny], fee, action)
+      // const res = await signingClient.signAndBroadcast(address, [msgAny], fee, action)
       if (res.code === 0) {
         alert(`${action} successful! Tx hash: ${res.transactionHash}`)
         setForm({ did: '', years: 0 })
