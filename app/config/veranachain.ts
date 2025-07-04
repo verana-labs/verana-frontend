@@ -23,13 +23,13 @@ export const veranaChain: Chain = {
   slip44:  118,
   staking: {
     staking_tokens: [
-      { denom: "VNA" }
+      { denom: "uvna" }
     ]
   },
   fees: {
     fee_tokens: [
       {
-        denom: 'VNA',
+        denom: 'uvna',
         fixed_min_gas_price: 1,
         low_gas_price: 1,
         average_gas_price: 3,
@@ -57,30 +57,8 @@ export const veranaAssets: Asset = {
     denom_units: [
       { denom: "uvna", exponent: 0 },
       { denom: "VNA",  exponent: 6 }
-
     ]
 };
-
-export const veranaAssetsListJson =
-{
-  "chain_name": process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,
-  "assets": [
-    {
-      "description": "Verana Token",
-      "type_asset":  'sdk.coin',
-      "denom_units": [
-        { "denom": "uvna", "exponent": 0 },
-        { "denom": "VNA",  "exponent": 6 }
-      ],
-      "base":    "uvna",
-      "display": "uvna",
-      "name":    "VeranaToken",
-      "symbol":  "VNA"
-    }
-  ]
-}
-
-
 
 export const veranaRegistry = new Registry([
   ...defaultRegistryTypes,
@@ -103,6 +81,8 @@ export const veranaAmino = new AminoTypes({
 
 export const veranaGasPrice = GasPrice.fromString("3uvna");
 export const veranaGasLimit = 300000; 
+
+// *************************
 
 export const veranaChainKeplrWalletType: ChainInfo = {
   chainId: process.env.NEXT_PUBLIC_VERANA_CHAIN_ID!,
@@ -142,5 +122,45 @@ export const veranaChainKeplrWalletType: ChainInfo = {
 };
 
 
-
+export const CHAIN_INFO = {
+  chainId: "CHAIN_ID",
+  chainName: "Verana Testnet",
+  rpc: "RPC_ENDPOINT",
+  rest: "REST_ENDPOINT",
+  bip44: {
+    coinType: 118,
+  },
+  bech32Config: {
+    bech32PrefixAccAddr: "verana",
+    bech32PrefixAccPub: "veranapub",
+    bech32PrefixValAddr: "veranavaloper",
+    bech32PrefixValPub: "veranavaloperpub",
+    bech32PrefixConsAddr: "veranavalcons",
+    bech32PrefixConsPub: "veranavalconspub",
+  },
+  currencies: [
+    {
+      coinDenom: "VNA",
+      coinMinimalDenom: "uvna",
+      coinDecimals: 6,
+    },
+  ],
+  feeCurrencies: [
+    {
+      coinDenom: "VNA",
+      coinMinimalDenom: "uvna",
+      coinDecimals: 6,
+    },
+  ],
+  stakeCurrency: {
+    coinDenom: "VNA",
+    coinMinimalDenom: "uvna",
+    coinDecimals: 6,
+  },
+  gasPriceStep: {
+    low: 1,
+    average: 3,
+    high: 4,
+  },
+};
 
