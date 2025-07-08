@@ -1,13 +1,18 @@
-import { WalletIcon } from '@heroicons/react/24/outline';
-import { lusitana } from '@/app/ui/common/fonts';
+import Image from 'next/image'
 
 export default function VeranaLogo() {
   return (
-    <div
-      className={`${lusitana.className} flex flex-row items-center leading-none text-white`}
-    >
-      <WalletIcon className="h-6 w-6 md:h-12 md:w-12 rotate-[0deg]" />
-      <p className="hidden sm:block text-[30px]">Verana</p>
+    <div className="flex items-center mr-4 min-w-0">
+      <Image
+        src="/verana.io.svg"
+        alt="Logo Verana"
+        width={34}
+        height={34}
+        className="flex-none mr-2"
+      />
+      <span className="flex-auto truncate overflow-hidden font-semibold">
+        VERANA
+      </span>
     </div>
   );
 }

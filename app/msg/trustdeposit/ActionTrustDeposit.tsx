@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { useChain } from '@cosmos-kit/react'
 import type { StdFee } from '@cosmjs/stargate'
 import { veranaChain, veranaGasLimit, veranaGasPrice } from '@/app/config/veranachain'
-import { MsgReclaimTrustDeposit, MsgReclaimTrustDepositInterests } from '@/app/proto-codecs/codec/veranablockchain/trustdeposit/tx'
+import { MsgReclaimTrustDeposit, MsgReclaimTrustDepositInterests } from '@/proto-codecs/codec/veranablockchain/trustdeposit/tx'
 import { useRouter } from 'next/navigation'
 
 interface FormState { claimed: number}

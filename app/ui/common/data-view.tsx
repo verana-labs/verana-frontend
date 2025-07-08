@@ -22,8 +22,8 @@ export default function DataView<T extends object>({ title, sections, data, id }
           <div key={sectionIndex} className="mb-6">
             <h2 className="text-xl font-semibold mb-2">{section.name}</h2>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <tbody className="bg-white divide-y divide-gray-200">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {section.fields.map((field, fieldIndex) => {
                     const value = data[field.name]
                     if (value == null) return null
@@ -34,10 +34,10 @@ export default function DataView<T extends object>({ title, sections, data, id }
                     if (field.type === 'data') {
                       return (
                         <tr key={rowId}>
-                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
+                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200">
                             {field.label}
                           </th>
-                          <td className="px-6 py-3 text-left text-sm text-gray-900">
+                          <td className="px-6 py-3 text-left text-sm text-gray-900 dark:text-gray-100">
                             {String(value)}
                           </td>
                         </tr>

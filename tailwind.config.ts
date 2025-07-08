@@ -1,32 +1,43 @@
-import type { Config } from 'tailwindcss';
+import type { Config } from 'tailwindcss'
+import { join } from 'path';
 
 const config: Config = {
+  darkMode: 'class',
+
   content: [
-    './pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
+    join(__dirname, './app/**/*.{js,ts,jsx,tsx}'),
   ],
+
   theme: {
     extend: {
-      gridTemplateColumns: {
-        '13': 'repeat(13, minmax(0, 1fr))',
-      },
       colors: {
-        blue: {
-          400: '#2589FE',
-          500: '#0070F3',
-          600: '#2F6FEB',
+        primary: {
+          'light-bg': '#FFFFFF',
+          'light-border': '#E0E2E4',
+          'dark-bg': '#2E2C2D', 
+          'dark-border': '#3A3A3C',
         },
+        'connect-light-text': '#9D2A6D',
+        'connect-dark-text': '#FFFFFF',
+        'button-light-border': '#EBEBED',
+        'button-dark-border': '#444446',
+        'sidenav-light-text' :'#070912',
+        'sidenav-dark-text' :'#FFFFFF',
+        'sidenav-light-selected-bg': '#F9F2F6',
+        'sidenav-dark-selected-bg': '#3A3A3C',
+        'sidenav-light-selected-text': '#9D2A6D',
+        'sidenav-dark-selected-text': '#FFFFFF'
       },
-    },
-    keyframes: {
-      shimmer: {
-        '100%': {
-          transform: 'translateX(100%)',
-        },
+      fontFamily: {
+        sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+        serif: ['Lusitana', 'ui-serif', 'Georgia'],
       },
     },
   },
-  plugins: [require('@tailwindcss/forms')],
-};
+
+  plugins: [
+    require('@tailwindcss/forms'),
+  ],
+}
+
 export default config;

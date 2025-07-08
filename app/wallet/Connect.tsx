@@ -25,7 +25,6 @@ export default function Button({
   return (
     <UIButton
       onClick={onClick}
-      leftIcon={icon}
       disabled={disabled}
       isLoading={loading}
     >
@@ -36,7 +35,7 @@ export default function Button({
 
 export const ButtonConnect = (
   { text = "Connect Wallet", onClick = noop }: ConnectProps,
-) => <Button text={text} icon="walletFilled" onClick={onClick} />;
+) => <Button text={text} onClick={onClick} />;
 
 export const ButtonConnected = (
   { text = "My Wallet", onClick = noop }: ConnectProps,

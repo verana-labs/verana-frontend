@@ -51,35 +51,41 @@ export default function Wallet() {
   const router = useRouter();
 
   return (
-    <div className="md:flex">
+    <div className="md:flex space-x-4">
       { address ?
         <>
+        <div className="md:flex border rounded-md">
           <IconLabelButton
             Icon={QrCodeIcon}
             title="Address QR Code"
+            className="border-transparent"
           />
           <IconLabelButton
             Icon={Square2StackIcon}
             onClick={() => navigator.clipboard.writeText(address)}
             title="Copy Address"
+            className="border-transparent"
           />
           <IconLabelButton
             onClick={() => router.push('/account')}
             label={shortenMiddle(address, 18)}
             title="Open Account"
+            className="border-transparent"
           />
           <IconLabelButton
             Icon={ArrowTopRightOnSquareIcon}
             title="Mintscan"
+            className="border-transparent"
           />
-          <IconLabelButton
-            onClick={openView}
-            Icon={ArrowRightEndOnRectangleIcon}
-            title="Disconnect"
-          />
+        </div>
+        <IconLabelButton
+          onClick={openView}
+          Icon={ArrowRightEndOnRectangleIcon}
+          title="Disconnect"
+        />
       </>
       : 
-      <div className="rounded-md flex text-white items-center border border-transparent py-2 px-4 text-center text-sm transition-all hover:text-slate-600 active:text-slate-600 focus:text-slate-600 hover:bg-slate-100 focus:bg-slate-100 active:bg-slate-100 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none">
+      <div className="border border-button-light-border dark:button-dark-border text-sm text-connect-light-text dark:text-connect-dark-text md:flex rounded-md py-2 px-4 transition-all hover:text-sidenav-light-selected-text hover:sidenav-light-selected-bg dark:hover:text-sidenav-dark-selected-text dark:hover:sidenav-dark-selected-bg">
         {ConnectButton}
       </div>
       }

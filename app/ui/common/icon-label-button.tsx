@@ -24,7 +24,7 @@ export default function IconLabelButton({
       onClick={onClick}
       title={title}
       className={clsx(
-        'inline-flex items-center justify-center gap-2 rounded-md border border-transparent py-1 px-2 text-sm text-white transition-all hover:text-slate-600 hover:bg-slate-100 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none',
+        'border-button-light-border dark:border-button-dark-border inline-flex items-center justify-center gap-2 rounded-md border py-1 px-2 transition-all hover:text-sidenav-light-selected-text hover:bg-sidenav-light-selected-bg dark:hover:text-sidenav-dark-selected-text dark:hover:bg-sidenav-dark-selected-bg disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none',
         className
       )}
     >
