@@ -17,7 +17,7 @@ function noop() {}
 
 export default function Button({
   text,
-  icon,
+  // icon,
   loading,
   disabled,
   onClick = noop,
