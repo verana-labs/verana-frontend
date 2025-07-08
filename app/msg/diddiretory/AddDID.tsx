@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useChain } from '@cosmos-kit/react'
 import type { StdFee } from '@cosmjs/stargate'
-import { MsgAddDID } from '@/app/proto-codecs/codec/veranablockchain/diddirectory/tx'
+import { MsgAddDID } from '@/proto-codecs/codec/veranablockchain/diddirectory/tx'
 import { veranaChain, veranaGasLimit, veranaGasPrice } from '@/app/config/veranachain';
 
 interface FormState { did: string; years: number }

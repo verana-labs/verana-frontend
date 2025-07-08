@@ -8,7 +8,7 @@ import {
   MsgRenewDID,
   MsgTouchDID,
   MsgRemoveDID,
-} from '@/app/proto-codecs/codec/veranablockchain/diddirectory/tx'
+} from '@/proto-codecs/codec/veranablockchain/diddirectory/tx'
 import { useRouter } from 'next/navigation'
 
 interface FormState { did: string; years: number}

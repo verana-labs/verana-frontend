@@ -44,8 +44,9 @@ export default function DidsPage() {
   if (loading) return <p>Loading...</p>
 
   return (
-    <div>
-      <div className="flex justify-end mb-6 p-6">
+    // <div>
+    <>
+      <div className="flex justify-end mb-6 p-2">
         <button
           onClick={() => router.push('/dids/add')}
           className="flex items-center text-blue-500 hover:underline"
@@ -54,7 +55,7 @@ export default function DidsPage() {
           <span>Add DID</span>
         </button>
       </div>
-      <div className="p-6">
+      <div className="p-2">
         <h1 className="text-3xl font-bold mb-6">DID Directory</h1>
         <DataTable
           columns={columns}
@@ -64,7 +65,8 @@ export default function DidsPage() {
           onRowClick={(row) => router.push(`/dids/${encodeURIComponent(row.did)}`)}
         />
       </div>
-    </div>
+    </>
+    // </div>
 
   );
 }

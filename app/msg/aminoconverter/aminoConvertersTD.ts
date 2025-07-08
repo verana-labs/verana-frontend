@@ -1,6 +1,5 @@
-// src/app/proto-codecs/codec/veranablockchain/diddirectory/aminoConverters.ts
 import type { AminoConverter } from '@cosmjs/stargate'
-import { MsgReclaimTrustDeposit, MsgReclaimTrustDepositInterests } from '@/app/proto-codecs/codec/veranablockchain/trustdeposit/tx'
+import { MsgReclaimTrustDeposit, MsgReclaimTrustDepositInterests } from '@/proto-codecs/codec/veranablockchain/trustdeposit/tx'
 
 /**
  * Amino converter for MsgReclaimTrustDeposit
