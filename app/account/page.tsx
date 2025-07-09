@@ -71,6 +71,13 @@ export default function Page() {
   }, [address, isWalletConnected, getStargateClient])
 
   return (
+    <div
+      className="
+        min-h-screen
+        max-w-screen-xl mx-auto
+      "
+    >
       <DataView<AccountData> title="Account" sections={accountSections} data={data} id="" />
+    </div>
   )
 }

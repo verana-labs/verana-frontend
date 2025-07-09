@@ -44,29 +44,32 @@ export default function DidsPage() {
   if (loading) return <p>Loading...</p>
 
   return (
-    // <div>
-    <>
-      <div className="flex justify-end mb-6 p-2">
+    <div
+      className="
+        min-h-screen
+        max-w-screen-xl mx-auto
+      "
+    >
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-xl font-medium text-title-light-color dark:text-title-dark-color">
+          DID Directory
+        </h1>
         <button
           onClick={() => router.push('/dids/add')}
-          className="flex items-center text-blue-500 hover:underline"
+          className="inline-flex items-center text-blue-500 hover:underline p-2"
         >
           <PlusIcon aria-hidden="true" className="h-6 w-6 mr-1" />
           <span>Add DID</span>
         </button>
       </div>
-      <div className="p-2">
-        <h1 className="text-3xl font-bold mb-6">DID Directory</h1>
-        <DataTable
-          columns={columns}
-          data={dids}
-          initialPageSize={10}
-          pageSizeOptions={[5, 10, 20, 50]}
-          onRowClick={(row) => router.push(`/dids/${encodeURIComponent(row.did)}`)}
-        />
-      </div>
-    </>
-    // </div>
+      <DataTable
+        columns={columns}
+        data={dids}
+        initialPageSize={10}
+        pageSizeOptions={[5, 10, 20, 50]}
+        onRowClick={(row) => router.push(`/dids/${encodeURIComponent(row.did)}`)}
+      />
+    </div>
 
   );
 }

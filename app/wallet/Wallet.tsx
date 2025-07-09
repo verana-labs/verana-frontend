@@ -54,7 +54,7 @@ export default function Wallet() {
     <div className="md:flex space-x-4">
       { address ?
         <>
-        <div className="md:flex border rounded-md">
+        <div className="md:flex border rounded-md border-light-border dark:border-dark-border">
           <IconLabelButton
             Icon={QrCodeIcon}
             title="Address QR Code"
@@ -85,7 +85,13 @@ export default function Wallet() {
         />
       </>
       : 
-      <div className="border border-button-light-border dark:button-dark-border text-sm text-connect-light-text dark:text-connect-dark-text md:flex rounded-md py-2 px-4 transition-all hover:text-sidenav-light-selected-text hover:sidenav-light-selected-bg dark:hover:text-sidenav-dark-selected-text dark:hover:sidenav-dark-selected-bg">
+      <div className="border border-light-border dark:border-dark-border
+                    text-connect-light-text dark:text-connect-dark-text
+                    md:flex rounded-md py-2 px-4
+                    transition-all 
+                    hover:text-light-selected-text hover:bg-light-selected-bg
+                    dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg"
+      >
         {ConnectButton}
       </div>
       }

@@ -19,7 +19,9 @@ export default function NavBar() {
     return (
     <Disclosure as="nav">
       {/* <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8"> */}
-        <div className="flex h-[68px] justify-between opacity-100 border-b p-4">
+        <div className="flex h-[68px] justify-between border-b-[0.5px] opacity-100 p-4
+            border-light-border dark:border-dark-border
+        ">
         {/* <div className="relative flex h-16 items-center justify-between"> */}
           <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
             {/* Mobile menu button*/}
@@ -31,7 +33,7 @@ export default function NavBar() {
             </DisclosureButton>
           </div>
           <VeranaLog/>
-          <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0 space-x-4">
+          <div className="text-sm absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0 space-x-4">
             <IconLabelButton
               Icon={Cog8ToothIcon}
               title='Settings'
