@@ -51,10 +51,10 @@ export default function Wallet() {
   const router = useRouter();
 
   return (
-    <div className="md:flex space-x-4">
+    <div className="flex items-center space-x-2">
       { address ?
         <>
-        <div className="md:flex border rounded-md border-light-border dark:border-dark-border">
+        <div className="flex items-center space-x-2 border rounded-md border-light-border dark:border-dark-border">
           <IconLabelButton
             Icon={QrCodeIcon}
             title="Address QR Code"
@@ -85,7 +85,8 @@ export default function Wallet() {
         />
       </>
       : 
-      <div className="border border-light-border dark:border-dark-border
+      <div className="inline-flex items-center space-x-2
+                    border border-light-border dark:border-dark-border
                     text-connect-light-text dark:text-connect-dark-text
                     md:flex rounded-md py-2 px-4
                     transition-all 
