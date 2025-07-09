@@ -17,7 +17,7 @@ export default function NavLinks() {
             href={link.href}
             className={clsx(
               'hidden md:flex items-center gap-2 h-12 rounded-md px-3 transition-all ' +
-              'text-sidenav-light-text dark:text-sidenav-dark-text ' + 
+              // 'text-sidenav-light-text dark:text-sidenav-dark-text ' + 
               'hover:text-light-selected-text hover:bg-light-selected-bg ' + 
               'dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg',
               {

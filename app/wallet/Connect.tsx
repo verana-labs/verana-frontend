@@ -28,7 +28,7 @@ export default function Button({
       disabled={disabled}
       isLoading={loading}
     >
-      <span className="hidden sm:block">{text}</span>
+      <span>{text}</span>
     </UIButton>
   );
 }
