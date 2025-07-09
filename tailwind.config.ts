@@ -11,25 +11,27 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        primary: {
-          'light-bg': '#FFFFFF',
-          'light-border': '#E0E2E4',
-          'dark-bg': '#2E2C2D', 
-          'dark-border': '#3A3A3C',
-        },
+        'light-bg': '#FFFFFF',
+        'light-border': '#E0E2E4',
+        'dark-bg': '#2E2C2D', 
+        'dark-border': '#3A3A3C',
         'connect-light-text': '#9D2A6D',
         'connect-dark-text': '#FFFFFF',
         'button-light-border': '#EBEBED',
         'button-dark-border': '#444446',
         'sidenav-light-text' :'#070912',
         'sidenav-dark-text' :'#FFFFFF',
-        'sidenav-light-selected-bg': '#F9F2F6',
-        'sidenav-dark-selected-bg': '#3A3A3C',
-        'sidenav-light-selected-text': '#9D2A6D',
-        'sidenav-dark-selected-text': '#FFFFFF'
+        'light-selected-bg': '#F9F2F6',
+        'dark-selected-bg': '#3A3A3C',
+        'light-selected-text': '#9D2A6D',
+        'dark-selected-text': '#FFFFFF',
+        'content-light-bg': '#EAECEE',
+        'content-dark-bg': '#000000',
+        'title-light-color': '#B6B6B7',
+        'title-dark-color': '#B6B6B7',
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+        sans: ['var(--font-kantumruy)', 'ui-sans-serif', 'system-ui'],
         serif: ['Lusitana', 'ui-serif', 'Georgia'],
       },
     },

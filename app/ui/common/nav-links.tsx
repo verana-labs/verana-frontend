@@ -16,9 +16,13 @@ export default function NavLinks() {
             key={link.name}
             href={link.href}
             className={clsx(
-              'hidden md:flex items-center gap-2 h-12 rounded-md px-3 text-sm font-medium text-sidenav-light-text dark:text-sidenav-dark-text transition-all hover:text-sidenav-light-selected-text hover:bg-sidenav-light-selected-bg dark:hover:text-sidenav-dark-selected-text dark:hover:bg-sidenav-dark-selected-bg',
+              'hidden md:flex items-center gap-2 h-12 rounded-md px-3 transition-all ' +
+              'text-sidenav-light-text dark:text-sidenav-dark-text ' + 
+              'hover:text-light-selected-text hover:bg-light-selected-bg ' + 
+              'dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg',
               {
-                'bg-sidenav-light-selected-bg text-sidenav-light-selected-text dark:bg-sidenav-dark-selected-bg dark:text-sidenav-dark-selected-text': pathname === link.href,
+                'bg-light-selected-bg text-light-selected-text dark:bg-dark-selected-bg dark:text-dark-selected-text' : 
+                pathname === link.href
               },
             )}
           >

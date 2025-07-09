@@ -100,7 +100,7 @@ export default function ActionTrustDeposit({ action, setActiveActionId }: Action
     <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
       {action == "ReclaimDepositTrustDeposit" && (
       <div>
-        <label htmlFor="claimed" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="claimed" className="block text-sm font-medium">
           Claimed
         </label>
         <input
@@ -109,7 +109,7 @@ export default function ActionTrustDeposit({ action, setActiveActionId }: Action
           value={form.claimed}
           onChange={handleChange}
           placeholder="Claimed"
-          className="w-full p-2 border rounded"
+          className="w-full p-2 border rounded bg-white dark:bg-black"
           min={1}
         />
       </div>
@@ -118,7 +118,11 @@ export default function ActionTrustDeposit({ action, setActiveActionId }: Action
       <button
         type="button"
         disabled={submitting}
-        className="bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 disabled:opacity-50"
+        className="border border-button-light-border dark:border-button-dark-border 
+                  inline-flex items-center justify-center gap-2 rounded-md py-1 px-2 transition-all 
+                  hover:text-light-selected-text hover:bg-light-selected-bg
+                  dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg 
+                  disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
         onClick={handleCancel}
       >
         Cancel
@@ -126,7 +130,11 @@ export default function ActionTrustDeposit({ action, setActiveActionId }: Action
       <button
         type="submit"
         disabled={submitting}
-        className="bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 disabled:opacity-50"
+        className="border border-button-light-border dark:border-button-dark-border 
+                  inline-flex items-center justify-center gap-2 rounded-md py-1 px-2 transition-all 
+                  hover:text-light-selected-text hover:bg-light-selected-bg
+                  dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg 
+                  disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
       >
         {submitting ? 'Submitting...' : "Confirm" }
       </button>

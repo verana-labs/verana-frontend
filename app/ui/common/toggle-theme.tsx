@@ -31,7 +31,7 @@ export default function ToggleTheme() {
         />
 
         {/* Track */}
-        <div className="w-12 h-6 bg-gray-500 rounded-full transition-colors" />
+        <div className="w-12 h-6 bg-content-light-bg dark:bg-content-dark-bg rounded-full transition-colors" />
 
         {/* Thumb con icono */}
         <div

@@ -15,12 +15,13 @@ function renderActionComponent(action: string, id: string, setActiveActionId: Di
 export default function DataView<T extends object>({ title, sections, data, id }: DataViewProps<T>) {
   const [activeActionId, setActiveActionId] = useState<string | null>(null)
   return (
-    <div className="min-w-full  p-8 rounded-2xl shadow-lg">
-      <h1 className="text-3xl font-bold mb-6">{title} {id ? id : ''}</h1>
+    <>
+    {title && (<h1 className="text-title-light-color dark:text-title-dark-color text-xl font-medium mb-6">{title} {id ? id : ''}</h1>)}
+    <div className="min-w-full p-8 rounded-2xl shadow-lg bg-light-bg dark:bg-dark-bg">
       {sections.map((section, sectionIndex) => (
         section.fields.length > 0 && (
           <div key={sectionIndex} className="mb-6">
-            <h2 className="text-xl font-semibold mb-2">{section.name}</h2>
+            <h2 className="text-lg font-semibold mb-2">{section.name}</h2>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -33,11 +34,11 @@ export default function DataView<T extends object>({ title, sections, data, id }
 
                     if (field.type === 'data') {
                       return (
-                        <tr key={rowId}>
-                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200">
+                        <tr key={rowId} className='px-6 py-3 text-justify text-base font-medium'>
+                          <th className="font-medium text-gray-700 dark:text-gray-200">
                             {field.label}
                           </th>
-                          <td className="px-6 py-3 text-left text-sm text-gray-900 dark:text-gray-100">
+                          <td className="text-gray-900 dark:text-gray-100">
                             {String(value)}
                           </td>
                         </tr>
@@ -78,5 +79,6 @@ export default function DataView<T extends object>({ title, sections, data, id }
         )
       ))}
     </div>
+    </>
   )
 }

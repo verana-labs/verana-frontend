@@ -65,8 +65,16 @@ export default function DidViewPage() {
   }
 
   return (
-    <div>
-      <div className="flex justify-end mb-6 p-6">
+    <div
+      className="
+        min-h-screen
+        max-w-screen-xl mx-auto
+      "
+    >
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-xl font-medium text-title-light-color dark:text-title-dark-color">
+          DID {decodeURIComponent(id)}
+        </h1>
         <button
           onClick={() => router.push('/dids')}
           className="flex items-center text-blue-500 hover:underline"
@@ -75,7 +83,7 @@ export default function DidViewPage() {
           <span>Back to Directory</span>
         </button>
       </div>
-      <DataView<DidData> title="DID" sections={didSections} data={data} id={decodeURIComponent(id)} />
+      <DataView<DidData> sections={didSections} data={data} id={decodeURIComponent(id)} title={''} />
     </div>
   );
 }

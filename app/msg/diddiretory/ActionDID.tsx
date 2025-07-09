@@ -15,7 +15,7 @@ interface FormState { did: string; years: number}
 
 interface ActionDIDProps {
   action: string
-  id: string | undefined
+  id?: string
 }
 
 export default function ActionDID({ action, id }: ActionDIDProps) {
@@ -123,7 +123,7 @@ export default function ActionDID({ action, id }: ActionDIDProps) {
     <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
       {['AddDID'].includes(action) && (
       <div>
-        <label htmlFor="did" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="did" className="block text-sm font-medium">
           DID
         </label>
         <input
@@ -131,14 +131,14 @@ export default function ActionDID({ action, id }: ActionDIDProps) {
           value={form.did}
           onChange={handleChange}
           placeholder="did:method:identifier"
-          className="w-full p-2 border rounded"
+          className="w-full p-2 border rounded bg-white dark:bg-black"
           type = 'text'
         />
       </div>
       )}
       {['AddDID', 'RenewDID'].includes(action) && (
       <div>
-        <label htmlFor="years" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="years" className="block text-sm font-medium">
           Years
         </label>
         <select
@@ -146,7 +146,7 @@ export default function ActionDID({ action, id }: ActionDIDProps) {
           name="years"
           value={form.years}
           onChange={handleChange}
-          className="mt-1 block w-full p-2 border rounded"
+          className="mt-1 block w-full p-2 border rounded bg-white dark:bg-black"
         >
           {Array.from({ length: 10 }, (_, i) => (
             <option key={i + 1} value={i + 1}>
@@ -159,7 +159,11 @@ export default function ActionDID({ action, id }: ActionDIDProps) {
       <button
         type="submit"
         disabled={submitting}
-        className="bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 disabled:opacity-50"
+        className="border border-button-light-border dark:border-button-dark-border 
+                  inline-flex items-center justify-center gap-2 rounded-md py-1 px-2 transition-all 
+                  hover:text-light-selected-text hover:bg-light-selected-bg
+                  dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg 
+                  disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
       >
         {submitting ? 'Submitting...' :  action.substring(0, action.indexOf("DID")) + " DID" }
       </button>
