@@ -13,7 +13,6 @@ import TitleAndButton from '@/app/ui/common/title-and-button';
 
 export default function DidViewPage() {
   const params = useParams();
-  const router = useRouter();
   const id = params?.id as string;
 
   const [data, setData] = useState<DidData | null>(null);

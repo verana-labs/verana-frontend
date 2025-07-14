@@ -9,6 +9,7 @@ import { veranaChain } from "@/app/config/veranachain";
 import TitleAndButton from "@/app/ui/common/title-and-button";
 import NotConnected from "./ui/common/not-connected";
 import { LinkIcon } from "@heroicons/react/24/outline";
+import Image from 'next/image'
 
 export default function Page() {
   const { getStargateClient, status, isWalletConnected, address, wallet } = useChain(veranaChain.chain_name);
@@ -56,9 +57,11 @@ export default function Page() {
         <div className="self-stretch flex flex-col justify-start text-center items-center gap-3.5">
             <div className="text-2xl sm:text-3xl font-semibold ">Connected</div>
             <div className="w-80 sm:w-[464px] text-base sm:text-xl font-normal leading-norma sm:leading-7">Your crypto wallet is connected to Verana allowing you to proceed with all features.</div>
-            <img
+            <Image
               src={(wallet && wallet.logo) ? wallet.logo.toString() : ''}
-              alt={wallet?.prettyName}
+              alt={wallet? wallet.prettyName : ''}
+              width={80}
+              height={80}
               className="w-20 h-20"
             />
         </div>
