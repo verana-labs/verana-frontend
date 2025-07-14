@@ -2,7 +2,6 @@
 
 import React from 'react'
 import ActionDID from '@/app/msg/diddiretory/ActionDID'
-import { useRouter } from 'next/navigation'
 import { ChevronLeftIcon } from '@heroicons/react/24/outline'
 import TitleAndButton from '@/app/ui/common/title-and-button'
 

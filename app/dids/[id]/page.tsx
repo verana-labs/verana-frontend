@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { veranaChain } from '@/app/config/veranachain';
 import { DidData, didSections } from '@/app/types/DataViewTypes';
 import DataView from '@/app/ui/common/data-view'
