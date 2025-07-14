@@ -3,18 +3,12 @@
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import { Bars3Icon, XMarkIcon, Cog8ToothIcon } from '@heroicons/react/24/outline';
 import VeranaLog from '@/app/ui/common/verana-logo';
-import { usePathname } from 'next/navigation';
 import Wallet from '@/app/wallet/Wallet';
 import IconLabelButton from '@/app/ui/common/icon-label-button';
 import ToggleTheme from '@/app/ui/common/toggle-theme';
 import NavLinks from '@/app/ui/common/nav-links';
 
-function classNames(...classes: string[]) {
-  return classes.filter(Boolean).join(' ');
-}
-
 export default function NavBar() {
-  const pathname = usePathname();
 
   return (
     // <div data-property-1="1" className="w-[1440px] h-16 p-4 bg-White-900 border-b border-White-800 inline-flex justify-between items-center">

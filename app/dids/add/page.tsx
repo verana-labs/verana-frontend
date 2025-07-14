@@ -7,7 +7,6 @@ import { ChevronLeftIcon } from '@heroicons/react/24/outline'
 import TitleAndButton from '@/app/ui/common/title-and-button'
 
 export default function AddDidPage() {
-  const router = useRouter()
   return (
     <>
       <TitleAndButton
