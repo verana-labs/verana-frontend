@@ -3,11 +3,11 @@
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import { Bars3Icon, XMarkIcon, Cog8ToothIcon } from '@heroicons/react/24/outline';
 import VeranaLog from '@/app/ui/common/verana-logo';
-import { links } from '@/app/lib/navlinks';
 import { usePathname } from 'next/navigation';
 import Wallet from '@/app/wallet/Wallet';
 import IconLabelButton from '@/app/ui/common/icon-label-button';
 import ToggleTheme from '@/app/ui/common/toggle-theme';
+import NavLinks from '@/app/ui/common/nav-links';
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
@@ -17,12 +17,11 @@ export default function NavBar() {
   const pathname = usePathname();
 
   return (
-    <Disclosure as="nav" className="w-full bg-light-bg dark:bg-dark-bg border-b-[0.5px] border-light-border dark:border-dark-border">
+    // <div data-property-1="1" className="w-[1440px] h-16 p-4 bg-White-900 border-b border-White-800 inline-flex justify-between items-center">
+    <Disclosure as="nav" className="w-full bg-light-bg dark:bg-dark-bg border-b border-light-border dark:border-dark-border">
       {({ open }) => (
         <>
-          <div className="px-4 sm:px-6 lg:px-8">
-            <div className="flex h-[68px] items-center justify-between">
-              
+          <div className="h-16 p-4 flex justify-between items-center text-xs sm:text-sm">
               <div className="flex items-center">
                 {/* Logo */}
                 <div className="hidden sm:block">
@@ -43,37 +42,29 @@ export default function NavBar() {
                 </div>
               </div>
 
-              {/* Icons */}
-              <div className="flex items-center space-x-2">
-                <IconLabelButton Icon={Cog8ToothIcon} title="Settings" />
+              {/* User actions */}
+              {/* <div class="inline-flex justify-start items-center gap-3"> */}
+              <div className="inline-flex items-center justify-start gap-3">
                 <ToggleTheme />
-                <Wallet />
+                {/* <div class="w-8 h-8 rounded-lg outline outline-1 outline-offset-[-1px] outline-zinc-700 flex justify-center items-center gap-2"> */}
+                <div className="rounded-lg flex justify-center items-center gap-2">
+                  <IconLabelButton Icon={Cog8ToothIcon} title="Settings" />
+                </div>
+                <div className="rounded-lg flex justify-center items-center gap-2">
+                  <Wallet />
+                </div>
               </div>
 
-            </div>
           </div>
 
           {/* Mobile panel */}
-          <DisclosurePanel className="sm:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1">
-              {links.map((item) => (
-                <DisclosureButton
-                  key={item.name}
-                  as="a"
-                  href={item.href}
-                  className={classNames(
-                    pathname === item.href
-                      ? 'bg-light-selected-bg text-light-selected-text dark:bg-dark-selected-bg dark:text-dark-selected-text'
-                      : '',
-                    'block px-3 py-2 rounded-md text-base font-medium',
-                    'hover:text-light-selected-text hover:bg-light-selected-bg',
-                    'dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg'
-                  )}
-                >
-                  {item.name}
-                </DisclosureButton>
-              ))}
+          <DisclosurePanel className="sm:hidden border border-light-border dark:border-dark-border px-6">
+            {/* Logo */}
+            <div className='py-4 border-b border-light-border dark:border-dark-border'>
+              <VeranaLog />
             </div>
+            {/* Links - Sublinks */}
+            <NavLinks/>
           </DisclosurePanel>
         </>
       )}

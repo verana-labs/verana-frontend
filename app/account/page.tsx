@@ -6,6 +6,7 @@ import { useChain } from '@cosmos-kit/react'
 import { veranaChain } from '@/app/config/veranachain'
 import { accountSections, type AccountData } from '@/app/types/DataViewTypes'
 import { formatVNA } from '@/app/util/util'
+import TitleAndButton from '@/app/ui/common/title-and-button'
 
 export default function Page() {
   const { address, isWalletConnected, getStargateClient } = useChain(veranaChain.chain_name)
@@ -71,13 +72,11 @@ export default function Page() {
   }, [address, isWalletConnected, getStargateClient])
 
   return (
-    <div
-      className="
-        min-h-screen
-        max-w-screen-xl mx-auto
-      "
-    >
-      <DataView<AccountData> title="Account" sections={accountSections} data={data} id="" />
-    </div>
+    <>
+      <TitleAndButton
+        title="Account"
+      />
+      <DataView<AccountData> sections={accountSections} data={data} id="" />
+    </>
   )
 }

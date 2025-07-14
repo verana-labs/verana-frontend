@@ -17,7 +17,7 @@ import { ArrowRightEndOnRectangleIcon, ArrowTopRightOnSquareIcon, QrCodeIcon, Sq
 import IconLabelButton from "@/app/ui/common/icon-label-button";
 import { JSX } from "react";
 
-export default function Wallet() {
+export default function Wallet({ isNavBar = true }: { isNavBar?: boolean }) {
   
   const {
     status,
@@ -51,10 +51,10 @@ export default function Wallet() {
   const router = useRouter();
 
   return (
-    <div className="flex items-center space-x-2">
-      { address ?
+    <div className="flex items-center justify-center gap-2">
+      { address && isNavBar ?
         <>
-        <div className="flex items-center space-x-2 border rounded-md border-light-border dark:border-dark-border">
+        <div className="flex items-center border rounded-md border-light-border dark:border-dark-border">
           <IconLabelButton
             Icon={QrCodeIcon}
             title="Address QR Code"
@@ -70,12 +70,13 @@ export default function Wallet() {
             onClick={() => router.push('/account')}
             label={shortenMiddle(address, 18)}
             title="Open Account"
-            className="border-transparent"
+            className="border-transparent underline text-connect-light-text dark:text-connect-dark-text"
           />
           <IconLabelButton
             Icon={ArrowTopRightOnSquareIcon}
             title="Mintscan"
             className="border-transparent"
+            onClick={() => window.open(`https://www.mintscan.io/${veranaChain.chain_name}/account/${address}`, "_blank")}
           />
         </div>
         <IconLabelButton
@@ -85,13 +86,9 @@ export default function Wallet() {
         />
       </>
       : 
-      <div className="inline-flex items-center space-x-2
-                    border border-light-border dark:border-dark-border
-                    text-connect-light-text dark:text-connect-dark-text
-                    md:flex rounded-md py-2 px-4
-                    transition-all 
-                    hover:text-light-selected-text hover:bg-light-selected-bg
-                    dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg"
+      <div className={(isNavBar ? 
+              "h-8 w-36 border-light-border dark:border-dark-border text-connect-light-text dark:text-connect-dark-text hover:text-light-selected-text hover:bg-light-selected-bg dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg border"
+              : "border-0") + " items-center justify-center flex rounded-md transition-all"}  
       >
         {ConnectButton}
       </div>

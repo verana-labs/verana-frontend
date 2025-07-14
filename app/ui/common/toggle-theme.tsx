@@ -45,13 +45,13 @@ export default function ToggleTheme() {
             flex items-center justify-center
             transition-transform
             peer-checked:translate-x-6
-            peer-checked:bg-gray-700
+            peer-checked:bg-dark-bg
             peer-checked:border-transparent
           `}
         >
           {isDark
-            ? <Moon className="h-4 w-4" />
-            : <Sun  className="h-4 w-4" />
+            ? <Moon className="h-3 w-3" />
+            : <Sun  className="h-3 w-3" />
           }
         </div>
       </div>

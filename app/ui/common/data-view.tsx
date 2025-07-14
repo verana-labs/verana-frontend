@@ -12,12 +12,10 @@ function renderActionComponent(action: string, id: string, setActiveActionId: Di
   return null;
 }
 
-export default function DataView<T extends object>({ title, sections, data, id }: DataViewProps<T>) {
+export default function DataView<T extends object>({sections, data, id }: DataViewProps<T>) {
   const [activeActionId, setActiveActionId] = useState<string | null>(null)
   return (
-    <>
-    {title && (<h1 className="text-title-light-color dark:text-title-dark-color text-xl font-medium mb-6">{title} {id ? id : ''}</h1>)}
-    <div className="min-w-full p-8 rounded-2xl shadow-lg bg-light-bg dark:bg-dark-bg">
+    <div className="min-w-full p-8 rounded-2xl bg-light-bg dark:bg-dark-bg">
       {sections.map((section, sectionIndex) => (
         section.fields.length > 0 && (
           <div key={sectionIndex} className="mb-6">
@@ -79,6 +77,5 @@ export default function DataView<T extends object>({ title, sections, data, id }
         )
       ))}
     </div>
-    </>
   )
 }

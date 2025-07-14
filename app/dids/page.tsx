@@ -6,6 +6,7 @@ import { veranaChain } from '@/app/config/veranachain';
 import { useRouter } from 'next/navigation';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { formatDate, formatVNA, isExpired, shortenMiddle } from '@/app/util/util';
+import TitleAndButton from '@/app/ui/common/title-and-button';
 
 interface Did {
   controller: string,
@@ -44,24 +45,13 @@ export default function DidsPage() {
   if (loading) return <p>Loading...</p>
 
   return (
-    <div
-      className="
-        min-h-screen
-        max-w-screen-xl mx-auto
-      "
-    >
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-medium text-title-light-color dark:text-title-dark-color">
-          DID Directory
-        </h1>
-        <button
-          onClick={() => router.push('/dids/add')}
-          className="inline-flex items-center text-blue-500 hover:underline p-2"
-        >
-          <PlusIcon aria-hidden="true" className="h-6 w-6 mr-1" />
-          <span>Add DID</span>
-        </button>
-      </div>
+    <>
+      <TitleAndButton
+        title="DID Directory"
+        buttonLabel="Add DID"
+        to="/dids/add"
+        Icon={PlusIcon}
+      />
       <DataTable
         columns={columns}
         data={dids}
@@ -69,7 +59,6 @@ export default function DidsPage() {
         pageSizeOptions={[5, 10, 20, 50]}
         onRowClick={(row) => router.push(`/dids/${encodeURIComponent(row.did)}`)}
       />
-    </div>
-
+    </>
   );
 }
