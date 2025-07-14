@@ -8,6 +8,7 @@ import { DidData, didSections } from '@/app/types/DataViewTypes';
 import DataView from '@/app/ui/common/data-view'
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { formatVNA } from '@/app/util/util';
+import TitleAndButton from '@/app/ui/common/title-and-button';
 
 
 export default function DidViewPage() {
@@ -65,25 +66,14 @@ export default function DidViewPage() {
   }
 
   return (
-    <div
-      className="
-        min-h-screen
-        max-w-screen-xl mx-auto
-      "
-    >
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-medium text-title-light-color dark:text-title-dark-color">
-          DID {decodeURIComponent(id)}
-        </h1>
-        <button
-          onClick={() => router.push('/dids')}
-          className="flex items-center text-blue-500 hover:underline"
-        >
-          <ChevronLeftIcon aria-hidden="true" className="h-6 w-6 mr-1" />
-          <span>Back to Directory</span>
-        </button>
-      </div>
-      <DataView<DidData> sections={didSections} data={data} id={decodeURIComponent(id)} title={''} />
-    </div>
+    <>
+      <TitleAndButton
+        title={"DID " + decodeURIComponent(id)}
+        buttonLabel="Back to Directory"
+        to="/dids"
+        Icon={ChevronLeftIcon}
+      />
+      <DataView<DidData> sections={didSections} data={data} id={decodeURIComponent(id)} />
+    </>
   );
 }

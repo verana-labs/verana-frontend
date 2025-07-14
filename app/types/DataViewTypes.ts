@@ -13,7 +13,6 @@ export type Section<T> = {
 
 // Props for a DataView component: a title, sections, and the data object
 export interface DataViewProps<T extends object> {
-  title: string;
   sections: Section<T>[];
   data: T;
   id: string

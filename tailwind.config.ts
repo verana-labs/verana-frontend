@@ -10,10 +10,13 @@ const config: Config = {
 
   theme: {
     extend: {
+      
       colors: {
         'light-bg': '#FFFFFF',
-        'light-border': '#E0E2E4',
         'dark-bg': '#2E2C2D', 
+        'light-text': '#070912',
+        'dark-text': '#FFFFFF',
+        'light-border': '#E0E2E4',
         'dark-border': '#3A3A3C',
         'connect-light-text': '#9D2A6D',
         'connect-dark-text': '#FFFFFF',
@@ -29,6 +32,8 @@ const config: Config = {
         'content-dark-bg': '#000000',
         'title-light-color': '#B6B6B7',
         'title-dark-color': '#B6B6B7',
+        'line-light-bg' : '#E0E2E4',
+        'line-dark-bg' : '#5B5B5E'
       },
       fontFamily: {
         sans: ['var(--font-kantumruy)', 'ui-sans-serif', 'system-ui'],

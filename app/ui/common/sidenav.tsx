@@ -2,9 +2,12 @@ import NavLinks from '@/app/ui/common/nav-links';
 
 export default function SideNav() {
   return (
-    <div className="flex grow flex-row justify-between space-x-2 md:flex-col md:space-x-0 md:space-y-1">
-      <NavLinks />
-      <div className="hidden h-auto w-full grow rounded-md md:block"></div>
+    // <div class="w-60 flex flex-col justify-start items-start gap-8">
+    <div className="flex flex-col justify-start items-start gap-8">
+      {/* <div className="self-stretch relative flex flex-col justify-start items-start"> */}
+      <div className="self-stretch relative flex flex-col justify-start items-start">
+        <NavLinks />
+      </div>
     </div>
   );
 }
