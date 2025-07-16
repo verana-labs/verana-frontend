@@ -20,7 +20,7 @@ import { useVeranaChain } from "@/app/config/useVeranaChain";
 export default function Wallet({ isNavBar = true }: { isNavBar?: boolean }) {
   
   const veranaChain = useVeranaChain();
-  
+
   const {
     status,
     address,

@@ -22,6 +22,7 @@ interface ActionDIDProps {
 export default function ActionDID({ action, id }: ActionDIDProps) {
 
   const veranaChain = useVeranaChain();
+  if (!veranaChain) return <span>Loading chain configuration...</span>;
 
   const {
     address,

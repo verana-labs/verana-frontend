@@ -14,6 +14,7 @@ import Image from 'next/image'
 export default function Page() {
 
   const veranaChain = useVeranaChain();
+  if (!veranaChain) return <span>Loading chain configuration...</span>;
 
   const { getStargateClient, status, isWalletConnected, address, wallet } = useChain(veranaChain.chain_name);
   const [blockHeight, setBlockHeight] = useState<string>("");

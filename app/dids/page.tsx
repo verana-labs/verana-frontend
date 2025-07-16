@@ -29,6 +29,7 @@ const columns: Column<Did>[] = [
 export default function DidsPage() {
 
   const veranaChain = useVeranaChain();
+  if (!veranaChain) return <span>Loading chain configuration...</span>;
 
   const [dids, setDids] = useState<Did[]>([])
   const [loading, setLoading] = useState(true)
