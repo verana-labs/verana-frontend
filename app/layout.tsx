@@ -5,12 +5,16 @@ import NavBar from '@/app/ui/common/nav-bar';
 import SideNav from '@/app/ui/common/sidenav';
 import Providers from '@/app/providers';
 import RequireConnectedWallet from '@/app/ui/common/require-connected-wallet';
+import { PublicEnvScript } from 'next-runtime-env';
 
 export const metadata = { title: 'Verana Front', description: 'Verana Front' }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${kantumruy.variable} ${lusitana.variable}`}>
+      <head>
+        <PublicEnvScript />
+      </head>
       <body
         className="
           font-sans antialiased text-light-text text-xs sm:text-base font-medium
