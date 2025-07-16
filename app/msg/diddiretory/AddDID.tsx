@@ -25,7 +25,7 @@ export default function AddDID() {
     setSubmitting(true)
     try {
       const msg = MsgAddDID.fromPartial({ creator: address, did, years })
-      const msgAny = { typeUrl: '/veranablockchain.diddirectory.MsgAddDID', value: msg }
+      const msgAny = { typeUrl: '/verana.dd.v1.MsgAddDID', value: msg }
       const fee: StdFee = {
         amount: [{
           denom: "uvna",

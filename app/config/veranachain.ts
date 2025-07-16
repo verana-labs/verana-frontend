@@ -62,19 +62,19 @@ export const veranaAssets: Asset = {
 
 export const veranaRegistry = new Registry([
   ...defaultRegistryTypes,
-  ["/veranablockchain.diddirectory.MsgAddDID", MsgAddDID],
-  ["/veranablockchain.diddirectory.MsgRenewDID", MsgRenewDID],
-  ["/veranablockchain.diddirectory.MsgTouchDID", MsgTouchDID],
-  ["/veranablockchain.diddirectory.MsgRemoveDID", MsgRemoveDID],
+  ["/verana.dd.v1.MsgAddDID", MsgAddDID],
+  ["/verana.dd.v1.MsgRenewDID", MsgRenewDID],
+  ["/verana.dd.v1.MsgTouchDID", MsgTouchDID],
+  ["/verana.dd.v1.MsgRemoveDID", MsgRemoveDID],
   ["/veranablockchain.trustdeposit.MsgReclaimTrustDeposit", MsgReclaimTrustDeposit],
   ["/veranablockchain.trustdeposit.MsgReclaimTrustDepositInterests", MsgReclaimTrustDepositInterests],
 ])
   
 export const veranaAmino = new AminoTypes({
-    '/veranablockchain.diddirectory.MsgAddDID': MsgAddDIDAminoConverter,
-    '/veranablockchain.diddirectory.MsgRenewDID': MsgRenewDIDAminoConverter,
-    '/veranablockchain.diddirectory.MsgTouchDID': MsgTouchDIDAminoConverter,
-    '/veranablockchain.diddirectory.MsgRemoveDID': MsgRemoveDIDAminoConverter,
+    '/verana.dd.v1.MsgAddDID': MsgAddDIDAminoConverter,
+    '/verana.dd.v1.MsgRenewDID': MsgRenewDIDAminoConverter,
+    '/verana.dd.v1.MsgTouchDID': MsgTouchDIDAminoConverter,
+    '/verana.dd.v1.MsgRemoveDID': MsgRemoveDIDAminoConverter,
     '/veranablockchain.trustdeposit.MsgReclaimTrustDeposit': MsgReclaimTrustDepositAminoConverter,
     '/veranablockchain.trustdeposit.MsgReclaimTrustDepositInterests': MsgReclaimTrustDepositInterestsAminoConverter,
   });

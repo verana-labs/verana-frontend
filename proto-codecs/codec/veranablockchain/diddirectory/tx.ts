@@ -9,7 +9,7 @@ import Long from "long";
 import _m0 from "protobufjs/minimal";
 import { Params } from "./params";
 
-export const protobufPackage = "veranablockchain.diddirectory";
+export const protobufPackage = "verana.dd.v1";
 
 /** MsgUpdateParams is the Msg/UpdateParams request type. */
 export interface MsgUpdateParams {
@@ -702,7 +702,7 @@ export interface Msg {
   TouchDID(request: MsgTouchDID): Promise<MsgTouchDIDResponse>;
 }
 
-export const MsgServiceName = "veranablockchain.diddirectory.Msg";
+export const MsgServiceName = "verana.dd.v1.Msg";
 export class MsgClientImpl implements Msg {
   private readonly rpc: Rpc;
   private readonly service: string;

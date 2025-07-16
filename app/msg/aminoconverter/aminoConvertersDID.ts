@@ -5,7 +5,7 @@ import { MsgAddDID, MsgRenewDID, MsgTouchDID, MsgRemoveDID } from '@/proto-codec
  * Amino converter for MsgAddDID
  */
 export const MsgAddDIDAminoConverter: AminoConverter = {
-  aminoType: '/veranablockchain.diddirectory.MsgAddDID',
+  aminoType: '/verana.dd.v1.MsgAddDID',
   toAmino: ({ creator, did, years }: MsgAddDID) => ({
     creator,
     did,
@@ -23,7 +23,7 @@ export const MsgAddDIDAminoConverter: AminoConverter = {
  * Amino converter for MsgRenewDID
  */
 export const MsgRenewDIDAminoConverter: AminoConverter = {
-  aminoType: '/veranablockchain.diddirectory.MsgRenewDID',
+  aminoType: '/verana.dd.v1.MsgRenewDID',
   toAmino: ({ creator, did, years }: MsgRenewDID) => ({
     creator,
     did,
@@ -41,7 +41,7 @@ export const MsgRenewDIDAminoConverter: AminoConverter = {
  * Amino converter for MsgTouchDID
  */
 export const MsgTouchDIDAminoConverter: AminoConverter = {
-  aminoType: '/veranablockchain.diddirectory.MsgTouchDID',
+  aminoType: '/verana.dd.v1.MsgTouchDID',
   toAmino: ({ creator, did }: MsgTouchDID) => ({
     creator,
     did,
@@ -57,7 +57,7 @@ export const MsgTouchDIDAminoConverter: AminoConverter = {
  * Amino converter for MsgRemoveDID
  */
 export const MsgRemoveDIDAminoConverter: AminoConverter = {
-  aminoType: '/veranablockchain.diddirectory.MsgRemoveDID',
+  aminoType: '/verana.dd.v1.MsgRemoveDID',
   toAmino: ({ creator, did }: MsgRemoveDID) => ({
     creator,
     did,

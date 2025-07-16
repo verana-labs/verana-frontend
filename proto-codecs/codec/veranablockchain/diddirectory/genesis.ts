@@ -10,7 +10,7 @@ import _m0 from "protobufjs/minimal";
 import { Params } from "./params";
 import { DIDDirectory } from "./types";
 
-export const protobufPackage = "veranablockchain.diddirectory";
+export const protobufPackage = "verana.dd.v1";
 
 /** GenesisState defines the diddirectory module's genesis state. */
 export interface GenesisState {
