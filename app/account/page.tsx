@@ -11,6 +11,7 @@ import TitleAndButton from '@/app/ui/common/title-and-button'
 export default function Page() {
 
   const veranaChain = useVeranaChain();
+  if (!veranaChain) return <span>Loading chain configuration...</span>;
   
   const { address, isWalletConnected, getStargateClient } = useChain(veranaChain.chain_name)
   const [data, setData] = useState<AccountData>({
