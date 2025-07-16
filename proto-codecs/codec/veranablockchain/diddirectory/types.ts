@@ -9,7 +9,7 @@ import Long from "long";
 import _m0 from "protobufjs/minimal";
 import { Timestamp } from "../../google/protobuf/timestamp";
 
-export const protobufPackage = "veranablockchain.diddirectory";
+export const protobufPackage = "verana.dd.v1";
 
 /** Core DIDDirectory type */
 export interface DIDDirectory {

@@ -8,7 +8,7 @@
 import Long from "long";
 import _m0 from "protobufjs/minimal";
 
-export const protobufPackage = "veranablockchain.diddirectory.module";
+export const protobufPackage = "verana.dd.v1.module";
 
 /** Module is the config object for the module. */
 export interface Module {

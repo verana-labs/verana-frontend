@@ -58,25 +58,25 @@ export default function ActionDID({ action, id }: ActionDIDProps) {
       switch (action) {
         case 'AddDID':
           msgAny = {
-            typeUrl: '/veranablockchain.diddirectory.MsgAddDID',
+            typeUrl: '/verana.dd.v1.MsgAddDID',
             value: MsgAddDID.fromPartial(fullPayload),
           }
           break
         case 'RenewDID':
           msgAny = {
-            typeUrl: '/veranablockchain.diddirectory.MsgRenewDID',
+            typeUrl: '/verana.dd.v1.MsgRenewDID',
             value: MsgRenewDID.fromPartial(fullPayload),
           }
           break
         case 'TouchDID':
           msgAny = {
-            typeUrl: '/veranablockchain.diddirectory.MsgTouchDID',
+            typeUrl: '/verana.dd.v1.MsgTouchDID',
             value: MsgTouchDID.fromPartial(basePayload),
           }
           break
         case 'RemoveDID':
           msgAny = {
-            typeUrl: '/veranablockchain.diddirectory.MsgRemoveDID',
+            typeUrl: '/verana.dd.v1.MsgRemoveDID',
             value: MsgRemoveDID.fromPartial(basePayload),
           }
           break
