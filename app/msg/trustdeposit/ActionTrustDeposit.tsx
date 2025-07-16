@@ -18,7 +18,6 @@ interface ActionTDProps {
 export default function ActionTrustDeposit({ action, setActiveActionId }: ActionTDProps) {
 
   const veranaChain = useVeranaChain();
-  if (!veranaChain) return <span>Loading chain configuration...</span>;
 
   const {
     address,

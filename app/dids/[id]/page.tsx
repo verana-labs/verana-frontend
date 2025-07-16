@@ -14,7 +14,6 @@ import { useVeranaChain } from '@/app/config/useVeranaChain';
 export default function DidViewPage() {
 
   const veranaChain = useVeranaChain();
-  if (!veranaChain) return <span>Loading chain configuration...</span>;
   
   const params = useParams();
   const id = params?.id as string;
