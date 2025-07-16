@@ -1,3 +1,5 @@
+'use client'
+
 import { Chain, Asset } from '@chain-registry/types';
 import type { ChainInfo } from "@keplr-wallet/types";
 import { GasPrice, defaultRegistryTypes, AminoTypes } from "@cosmjs/stargate";
@@ -14,15 +16,19 @@ import { env } from 'next-runtime-env';
     console.error(`Missing required env var: ${v}`);
   }
 });
+console.info(`process.env var: ${process.env.NEXT_PUBLIC_VERANA_CHAIN_ID!}`);
+console.info(`process.env var: ${process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!}`);
+console.info(`process.env var: ${process.env.NEXT_PUBLIC_VERANA_RPC_ENDPOINT!}`);
+console.info(`process.env var: ${process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT!}`);
 
 export const veranaChain: Chain = {
   chain_type: 'cosmos',
-  chain_name: env('NEXT_PUBLIC_VERANA_CHAIN_NAME')!,
-  pretty_name: env('NEXT_PUBLIC_VERANA_CHAIN_NAME')!,
-  chain_id: env('NEXT_PUBLIC_VERANA_CHAIN_ID')!,//
+  chain_name: env('NEXT_PUBLIC_VERANA_CHAIN_NAME') || process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,
+  pretty_name: env('NEXT_PUBLIC_VERANA_CHAIN_NAME') || process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,
+  chain_id: env('NEXT_PUBLIC_VERANA_CHAIN_ID') || process.env.NEXT_PUBLIC_VERANA_CHAIN_ID!,
   apis: {
-    rpc: [{ address: env('NEXT_PUBLIC_VERANA_RPC_ENDPOINT')!, provider: 'verana' }],
-    rest: [{ address: env('NEXT_PUBLIC_VERANA_REST_ENDPOINT')!, provider: 'verana' }],
+    rpc: [{ address: env('NEXT_PUBLIC_VERANA_RPC_ENDPOINT') || process.env.NEXT_PUBLIC_VERANA_RPC_ENDPOINT!, provider: 'verana' }],
+    rest: [{ address: env('NEXT_PUBLIC_VERANA_REST_ENDPOINT') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT!, provider: 'verana' }],
 
     },
   status: 'live',
