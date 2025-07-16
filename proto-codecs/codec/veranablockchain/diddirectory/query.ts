@@ -11,7 +11,7 @@ import { Timestamp } from "../../google/protobuf/timestamp";
 import { Params } from "./params";
 import { DIDDirectory } from "./types";
 
-export const protobufPackage = "veranablockchain.diddirectory";
+export const protobufPackage = "verana.dd.v1";
 
 /** QueryParamsRequest is request type for the Query/Params RPC method. */
 export interface QueryParamsRequest {
@@ -447,7 +447,7 @@ export interface Query {
   GetDID(request: QueryGetDIDRequest): Promise<QueryGetDIDResponse>;
 }
 
-export const QueryServiceName = "veranablockchain.diddirectory.Query";
+export const QueryServiceName = "verana.dd.v1.Query";
 export class QueryClientImpl implements Query {
   private readonly rpc: Rpc;
   private readonly service: string;
