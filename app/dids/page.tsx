@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { DataTable, Column } from '@/app/ui/common/data-table';
-import { veranaChain } from '@/app/config/veranachain';
+import { useVeranaChain } from "@/app/config/useVeranaChain";
 import { useRouter } from 'next/navigation';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { formatDate, formatVNA, isExpired, shortenMiddle } from '@/app/util/util';
@@ -27,6 +27,8 @@ const columns: Column<Did>[] = [
 ];
 
 export default function DidsPage() {
+
+  const veranaChain = useVeranaChain();
 
   const [dids, setDids] = useState<Did[]>([])
   const [loading, setLoading] = useState(true)

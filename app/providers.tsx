@@ -4,11 +4,14 @@ import '@/app/ui/global.css';
 import { ChainProvider } from '@cosmos-kit/react';
 import "@interchain-ui/react/styles";
 import type { SigningStargateClientOptions } from '@cosmjs/stargate';
-import { veranaChain, veranaAssets, veranaRegistry, veranaAmino, veranaGasPrice } from '@/app/config/veranachain';
+import { veranaAssets, veranaRegistry, veranaAmino, veranaGasPrice } from '@/app/config/veranachain';
 import {wallets} from "cosmos-kit"
 import { ThemeProvider } from 'next-themes';
+import { useVeranaChain } from "@/app/config/useVeranaChain";
 
 export default function RootLayout({ children }: { children: React.ReactNode; }) {
+
+  const veranaChain = useVeranaChain();
 
   const customChains = [veranaChain];
   const assetLists = [{ chain_name: veranaChain.chain_name, assets: [veranaAssets] }];

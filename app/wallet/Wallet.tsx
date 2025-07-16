@@ -10,14 +10,16 @@ import {
   ButtonNotExist,
   ButtonRejected,
 } from "./Connect";
-import { veranaChain } from "@/app/config/veranachain";
 import { useRouter } from "next/navigation";
 import { shortenMiddle } from "@/app/util/util";
 import { ArrowRightEndOnRectangleIcon, ArrowTopRightOnSquareIcon, QrCodeIcon, Square2StackIcon } from "@heroicons/react/24/outline";
 import IconLabelButton from "@/app/ui/common/icon-label-button";
 import { JSX } from "react";
+import { useVeranaChain } from "@/app/config/useVeranaChain";
 
 export default function Wallet({ isNavBar = true }: { isNavBar?: boolean }) {
+  
+  const veranaChain = useVeranaChain();
   
   const {
     status,

@@ -5,13 +5,16 @@ import { useEffect, useState } from "react";
 import { DashboardData, dashboardSections } from "@/app/types/DataViewTypes";
 import DataView from "@/app/ui/common/data-view"
 import { useChain } from "@cosmos-kit/react";
-import { veranaChain } from "@/app/config/veranachain";
+import { useVeranaChain } from "@/app/config/useVeranaChain";
 import TitleAndButton from "@/app/ui/common/title-and-button";
 import NotConnected from "./ui/common/not-connected";
 import { LinkIcon } from "@heroicons/react/24/outline";
 import Image from 'next/image'
 
 export default function Page() {
+
+  const veranaChain = useVeranaChain();
+
   const { getStargateClient, status, isWalletConnected, address, wallet } = useChain(veranaChain.chain_name);
   const [blockHeight, setBlockHeight] = useState<string>("");
 
