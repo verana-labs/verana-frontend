@@ -1,12 +1,10 @@
 import { Asset } from '@chain-registry/types';
-import type { ChainInfo } from "@keplr-wallet/types";
 import { GasPrice, defaultRegistryTypes, AminoTypes } from "@cosmjs/stargate";
 import { Registry } from '@cosmjs/proto-signing'
 import { MsgAddDID, MsgRemoveDID, MsgRenewDID, MsgTouchDID } from '@/proto-codecs/codec/veranablockchain/diddirectory/tx';
 import { MsgAddDIDAminoConverter, MsgRenewDIDAminoConverter, MsgTouchDIDAminoConverter, MsgRemoveDIDAminoConverter } from '@/app/msg/aminoconverter/aminoConvertersDID';
 import { MsgReclaimTrustDeposit, MsgReclaimTrustDepositInterests } from '@/proto-codecs/codec/veranablockchain/trustdeposit/tx';
 import { MsgReclaimTrustDepositInterestsAminoConverter, MsgReclaimTrustDepositAminoConverter } from '@/app//msg/aminoconverter/aminoConvertersTD';
-import { env } from 'next-runtime-env';
 
 // export const veranaChain: Chain = {
 //   chain_type: 'cosmos',
