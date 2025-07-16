@@ -12,7 +12,6 @@ import { useVeranaChain } from "@/app/config/useVeranaChain";
 export default function RootLayout({ children }: { children: React.ReactNode; }) {
 
   const veranaChain = useVeranaChain();
-  if (!veranaChain) return <span>Loading chain configuration...</span>;
 
   const customChains = [veranaChain];
   const assetLists = [{ chain_name: veranaChain.chain_name, assets: [veranaAssets] }];

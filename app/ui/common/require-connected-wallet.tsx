@@ -8,7 +8,6 @@ import { useVeranaChain } from "@/app/config/useVeranaChain";
 export default function RequireConnectedWallet({ children }: { children: React.ReactNode }) {
 
   const veranaChain = useVeranaChain();
-  if (!veranaChain) return <span>Loading chain configuration...</span>;
 
   const { isWalletConnected } = useChain(veranaChain.chain_name);
   const router = useRouter();
