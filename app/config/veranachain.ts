@@ -86,10 +86,10 @@ export const veranaGasLimit = 300000;
 // *************************
 
 export const veranaChainKeplrWalletType: ChainInfo = {
-  chainId: process.env.NEXT_PUBLIC_VERANA_CHAIN_ID!,
-  chainName: process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,
-  rpc: process.env.NEXT_PUBLIC_VERANA_RPC_ENDPOINT!,
-  rest: process.env.NEXT_PUBLIC_VERANA_RPC_ENDPOINT!,
+  chainId: env('NEXT_PUBLIC_VERANA_CHAIN_ID')!,
+  chainName: env('NEXT_PUBLIC_VERANA_CHAIN_NAME')!,
+  rpc: env('NEXT_PUBLIC_VERANA_RPC_ENDPOINT')!,
+  rest: env('NEXT_PUBLIC_VERANA_RPC_ENDPOINT')!,
   bip44: {
     coinType: 118,
   },
