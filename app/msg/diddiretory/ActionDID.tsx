@@ -2,7 +2,7 @@
 import React, { useState } from 'react'
 import { useChain } from '@cosmos-kit/react'
 import type { StdFee } from '@cosmjs/stargate'
-import { veranaChain, veranaGasLimit, veranaGasPrice } from '@/app/config/veranachain'
+import { veranaGasLimit, veranaGasPrice } from '@/app/config/veranachain'
 import {
   MsgAddDID,
   MsgRenewDID,
@@ -10,6 +10,7 @@ import {
   MsgRemoveDID,
 } from '@/proto-codecs/codec/veranablockchain/diddirectory/tx'
 import { useRouter } from 'next/navigation'
+import { useVeranaChain } from '@/app/config/useVeranaChain'
 
 interface FormState { did: string; years: number}
 
@@ -19,8 +20,9 @@ interface ActionDIDProps {
 }
 
 export default function ActionDID({ action, id }: ActionDIDProps) {
-  const router = useRouter()
-  
+
+  const veranaChain = useVeranaChain();
+
   const {
     address,
     signAndBroadcast,
@@ -35,6 +37,8 @@ export default function ActionDID({ action, id }: ActionDIDProps) {
     const { name, value } = e.target
     setForm(prev => ({ ...prev, [name]: name === 'years' ? Number(value) : value }))
   }
+
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

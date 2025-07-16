@@ -3,15 +3,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { veranaChain } from '@/app/config/veranachain';
 import { DidData, didSections } from '@/app/types/DataViewTypes';
 import DataView from '@/app/ui/common/data-view'
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { formatVNA } from '@/app/util/util';
 import TitleAndButton from '@/app/ui/common/title-and-button';
+import { useVeranaChain } from '@/app/config/useVeranaChain';
 
 
 export default function DidViewPage() {
+
+  const veranaChain = useVeranaChain();
+  
   const params = useParams();
   const id = params?.id as string;
 

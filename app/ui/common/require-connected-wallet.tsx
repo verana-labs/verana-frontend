@@ -3,9 +3,12 @@
 import { useChain } from "@cosmos-kit/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { veranaChain } from "@/app/config/veranachain";
+import { useVeranaChain } from "@/app/config/useVeranaChain";
 
 export default function RequireConnectedWallet({ children }: { children: React.ReactNode }) {
+
+  const veranaChain = useVeranaChain();
+
   const { isWalletConnected } = useChain(veranaChain.chain_name);
   const router = useRouter();
   const pathname = usePathname();

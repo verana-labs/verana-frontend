@@ -3,9 +3,10 @@
 import React, { useState } from 'react'
 import { useChain } from '@cosmos-kit/react'
 import type { StdFee } from '@cosmjs/stargate'
-import { veranaChain, veranaGasLimit, veranaGasPrice } from '@/app/config/veranachain'
+import { veranaGasLimit, veranaGasPrice } from '@/app/config/veranachain'
 import { MsgReclaimTrustDeposit, MsgReclaimTrustDepositInterests } from '@/proto-codecs/codec/veranablockchain/trustdeposit/tx'
 import { useRouter } from 'next/navigation'
+import { useVeranaChain } from '@/app/config/useVeranaChain'
 
 interface FormState { claimed: number}
 
@@ -15,8 +16,9 @@ interface ActionTDProps {
 }
 
 export default function ActionTrustDeposit({ action, setActiveActionId }: ActionTDProps) {
-  const router = useRouter()
-  
+
+  const veranaChain = useVeranaChain();
+
   const {
     address,
     signAndBroadcast,
@@ -34,6 +36,8 @@ export default function ActionTrustDeposit({ action, setActiveActionId }: Action
   const handleCancel = () => {
     setActiveActionId(null) 
   }
+
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

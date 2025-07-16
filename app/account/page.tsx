@@ -3,12 +3,15 @@
 import React, { useEffect, useState } from 'react'
 import DataView from '@/app/ui/common/data-view'
 import { useChain } from '@cosmos-kit/react'
-import { veranaChain } from '@/app/config/veranachain'
+import { useVeranaChain } from "@/app/config/useVeranaChain";
 import { accountSections, type AccountData } from '@/app/types/DataViewTypes'
 import { formatVNA } from '@/app/util/util'
 import TitleAndButton from '@/app/ui/common/title-and-button'
 
 export default function Page() {
+
+  const veranaChain = useVeranaChain();
+  
   const { address, isWalletConnected, getStargateClient } = useChain(veranaChain.chain_name)
   const [data, setData] = useState<AccountData>({
     balance: null,
