@@ -8,6 +8,13 @@ import { MsgReclaimTrustDeposit, MsgReclaimTrustDepositInterests } from '@/proto
 import { MsgReclaimTrustDepositInterestsAminoConverter, MsgReclaimTrustDepositAminoConverter } from '@/app//msg/aminoconverter/aminoConvertersTD';
 import { env } from 'next-runtime-env';
 
+["NEXT_PUBLIC_VERANA_CHAIN_ID", "NEXT_PUBLIC_VERANA_CHAIN_NAME", "NEXT_PUBLIC_VERANA_RPC_ENDPOINT", "NEXT_PUBLIC_VERANA_REST_ENDPOINT"].forEach((v) => {
+  console.info(`env var: ${v} : ${env(v)}`);
+  if (!env(v)) {
+    console.error(`Missing required env var: ${v}`);
+  }
+});
+
 export const veranaChain: Chain = {
   chain_type: 'cosmos',
   chain_name: env('NEXT_PUBLIC_VERANA_CHAIN_NAME')!,
