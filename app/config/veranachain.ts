@@ -1,4 +1,4 @@
-import { Asset, Chain } from '@chain-registry/types';
+import { Asset } from '@chain-registry/types';
 import { GasPrice, defaultRegistryTypes, AminoTypes } from "@cosmjs/stargate";
 import { Registry } from '@cosmjs/proto-signing'
 import { MsgAddDID, MsgRemoveDID, MsgRenewDID, MsgTouchDID } from '@/proto-codecs/codec/veranablockchain/diddirectory/tx';
@@ -6,16 +6,16 @@ import { MsgAddDIDAminoConverter, MsgRenewDIDAminoConverter, MsgTouchDIDAminoCon
 import { MsgReclaimTrustDeposit, MsgReclaimTrustDepositInterests } from '@/proto-codecs/codec/veranablockchain/trustdeposit/tx';
 import { MsgReclaimTrustDepositInterestsAminoConverter, MsgReclaimTrustDepositAminoConverter } from '@/app//msg/aminoconverter/aminoConvertersTD';
 
-export const veranaChainEnv: Chain = {
+export const veranaChainEnv = {
   chain_type: 'cosmos',
-  chain_name: process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,
-  pretty_name: process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,
-  chain_id: process.env.NEXT_PUBLIC_VERANA_CHAIN_ID!,
-  apis: {
-    rpc: [{ address: process.env.NEXT_PUBLIC_VERANA_RPC_ENDPOINT!, provider: 'verana' }],
-    rest: [{ address: process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT!, provider: 'verana' }],
+  // chain_name: process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,
+  // pretty_name: process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,
+  // chain_id: process.env.NEXT_PUBLIC_VERANA_CHAIN_ID!,
+  // apis: {
+  //   rpc: [{ address: process.env.NEXT_PUBLIC_VERANA_RPC_ENDPOINT!, provider: 'verana' }],
+  //   rest: [{ address: process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT!, provider: 'verana' }],
 
-    },
+  //   },
   status: 'live',
   network_type: 'testnet',
   bech32_prefix: "verana",
