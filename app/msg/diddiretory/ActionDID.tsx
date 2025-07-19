@@ -64,7 +64,7 @@ export default function ActionDID({ action, id }: ActionDIDProps) {
     }
 
     setSubmitting(true);
-    let didPayLoad = (id && action !== "AddDID") ? id : did;
+    const didPayLoad = (id && action !== "AddDID") ? id : did;
 
     notifyPromise = notify(
       `Your transaction ${action.toLowerCase().substring(0, action.indexOf('DID'))} DID ${didPayLoad} is being processed.`,
