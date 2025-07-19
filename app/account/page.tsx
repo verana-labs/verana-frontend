@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import DataView from '@/app/ui/common/data-view'
+import DataView from '@/app/ui/common/data-view-columns'
 import { useChain } from '@cosmos-kit/react'
 import { useVeranaChain } from "@/app/config/useVeranaChain";
 import { accountSections, type AccountData } from '@/app/types/DataViewTypes'
@@ -79,7 +79,7 @@ export default function Page() {
       <TitleAndButton
         title="Account"
       />
-      <DataView<AccountData> sections={accountSections} data={data} id="" />
+      <DataView<AccountData> sections={accountSections} data={data} id="" columnsCount={3} columnsCountMd={2}/>
     </>
   )
 }

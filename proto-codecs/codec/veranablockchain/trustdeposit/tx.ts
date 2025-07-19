@@ -9,7 +9,7 @@ import Long from "long";
 import _m0 from "protobufjs/minimal";
 import { Params } from "./params";
 
-export const protobufPackage = "veranablockchain.trustdeposit";
+export const protobufPackage = "verana.td.v1";
 
 /** MsgUpdateParams is the Msg/UpdateParams request type. */
 export interface MsgUpdateParams {
@@ -463,7 +463,7 @@ export interface Msg {
   ReclaimTrustDeposit(request: MsgReclaimTrustDeposit): Promise<MsgReclaimTrustDepositResponse>;
 }
 
-export const MsgServiceName = "veranablockchain.trustdeposit.Msg";
+export const MsgServiceName = "verana.td.v1.Msg";
 export class MsgClientImpl implements Msg {
   private readonly rpc: Rpc;
   private readonly service: string;

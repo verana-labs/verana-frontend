@@ -5,7 +5,7 @@ import { MsgReclaimTrustDeposit, MsgReclaimTrustDepositInterests } from '@/proto
  * Amino converter for MsgReclaimTrustDeposit
  */
 export const MsgReclaimTrustDepositAminoConverter: AminoConverter = {
-  aminoType: '/veranablockchain.trustdeposit.MsgReclaimTrustDeposit',
+  aminoType: '/verana.td.v1.MsgReclaimTrustDeposit',
   toAmino: ({ creator, claimed }: MsgReclaimTrustDeposit) => ({
     creator,
     claimed
@@ -21,7 +21,7 @@ export const MsgReclaimTrustDepositAminoConverter: AminoConverter = {
  * Amino converter for MsgReclaimTrustDepositInterests
  */
 export const MsgReclaimTrustDepositInterestsAminoConverter: AminoConverter = {
-  aminoType: '/veranablockchain.trustdeposit.MsgReclaimTrustDepositInterests',
+  aminoType: '/verana.td.v1.MsgReclaimTrustDepositInterests',
   toAmino: ({ creator }: MsgReclaimTrustDepositInterests) => ({
     creator
   }),

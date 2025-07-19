@@ -28,8 +28,9 @@ export function useVeranaChainHook() {
                 rpc: [{ address:  rpc, provider: 'verana' }],
                 rest: [{ address:  rest, provider: 'verana' }],
                 },
-            } as Chain
+            } as Chain;
         }
+        else veranaChain = veranaChainEnv as Chain;
     });
 
     console.log('[veranaChain]', veranaChain);

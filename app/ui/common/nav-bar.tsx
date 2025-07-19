@@ -15,14 +15,14 @@ export default function NavBar() {
     <Disclosure as="nav" className="w-full bg-light-bg dark:bg-dark-bg border-b border-light-border dark:border-dark-border">
       {({ open }) => (
         <>
-          <div className="h-16 p-4 flex justify-between items-center text-xs sm:text-sm">
+          <div className="h-16 p-4 flex justify-between items-center text-xs md:text-sm">
               <div className="flex items-center">
                 {/* Logo */}
-                <div className="hidden sm:block">
+                <div className="hidden md:block">
                   <VeranaLog />
                 </div>
                 {/* Mobile menu button */}
-                <div className="sm:hidden ml-2">
+                <div className="md:hidden ml-2">
                   <DisclosureButton className="inline-flex items-center justify-center p-2 rounded-md 
                                       hover:text-light-selected-text hover:bg-light-selected-bg
                                       dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg
@@ -52,7 +52,7 @@ export default function NavBar() {
           </div>
 
           {/* Mobile panel */}
-          <DisclosurePanel className="sm:hidden border border-light-border dark:border-dark-border px-6">
+          <DisclosurePanel className="md:hidden border border-light-border dark:border-dark-border px-6">
             {/* Logo */}
             <div className='py-4 border-b border-light-border dark:border-dark-border'>
               <VeranaLog />

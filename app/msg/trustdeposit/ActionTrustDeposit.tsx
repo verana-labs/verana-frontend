@@ -7,9 +7,9 @@ import { veranaGasLimit, veranaGasPrice } from '@/app/config/veranachain'
 import { MsgReclaimTrustDeposit, MsgReclaimTrustDepositInterests } from '@/proto-codecs/codec/veranablockchain/trustdeposit/tx'
 import { useRouter } from 'next/navigation'
 import { useVeranaChain } from '@/app/config/useVeranaChain'
+import { useNotification } from '@/app/ui/common/notification-provider';
 
 interface FormState { claimed: number}
-
 interface ActionTDProps {
   action: string
   setActiveActionId: React.Dispatch<React.SetStateAction<string | null>>
@@ -39,16 +39,25 @@ export default function ActionTrustDeposit({ action, setActiveActionId }: Action
 
   const router = useRouter()
 
+  const { notify } = useNotification();
+  let notifyPromise: Promise<void> | undefined;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isWalletConnected || !address) return alert('Connect wallet')
     const { claimed } = form
 
     if ( action == "ReclaimDepositTrustDeposit" && claimed < 1) {
-      return alert('Enter valid claimed')
+      notify('Enter valid claimed', 'error');
     }
 
     setSubmitting(true)
+    notifyPromise = notify(
+      `Your transaction ${action} is being processed.`,
+      'inProgress',
+      'Transaction successful'
+    );
+
     try {
       const basePayload = { creator: address }
       const fullPayload = { ...basePayload, claimed }
@@ -57,13 +66,13 @@ export default function ActionTrustDeposit({ action, setActiveActionId }: Action
       switch (action) {
         case 'ReclaimDepositTrustDeposit':
           msgAny = {
-            typeUrl: '/veranablockchain.trustdeposit.MsgReclaimTrustDeposit',
+            typeUrl: '/verana.td.v1.MsgReclaimTrustDeposit',
             value: MsgReclaimTrustDeposit.fromPartial(fullPayload),
           }
           break
         case 'ClaimInterestsTrustDeposit':
           msgAny = {
-            typeUrl: '/veranablockchain.trustdeposit.MsgReclaimTrustDepositInterests',
+            typeUrl: '/verana.td.v1.MsgReclaimTrustDepositInterests',
             value: MsgReclaimTrustDepositInterests.fromPartial(basePayload),
           }
           break
@@ -85,18 +94,30 @@ export default function ActionTrustDeposit({ action, setActiveActionId }: Action
 
       const res = await signAndBroadcast([msgAny], fee, action)
       if (res.code === 0) {
-        alert(`${action} successful! Tx hash: ${res.transactionHash}`)
-        setForm({ claimed: 0 })
+        notifyPromise = notify(
+          `Your transaction ${action} has been executed.`,
+          'success',
+          'Transaction successful'
+        );
       } else {
-        alert(`Transaction failed (${res.code}): ${res.rawLog}`)
+        notifyPromise = notify(
+          `(${res.code}): ${res.rawLog}`,
+          'error',
+          `Transaction failed`
+        );
       }
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : String(err))
+      notifyPromise = notify(
+        err instanceof Error ? err.message : String(err),
+        'error',
+        `Transaction failed`
+      );
     } finally {
+      if (notifyPromise) await notifyPromise; // Wait for notification to close
       setSubmitting(false)
       handleCancel()
-      router.refresh()
-      window.location.reload()
+      router.push('/');
+      setTimeout(() => router.push('/account'), 100);
     }
   }
 

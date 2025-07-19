@@ -10,8 +10,8 @@ export function useVeranaChain() {
     const chainId = env('NEXT_PUBLIC_VERANA_CHAIN_ID');
     const rpc = env('NEXT_PUBLIC_VERANA_RPC_ENDPOINT');
     const rest = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT');
-    console.log('[veranaChainEnv]', veranaChainEnv);
-    console.info(`chainName: ${chainName} chainId: ${chainId} rpc: ${rpc} rest: ${rest}`);
+    // console.log('[veranaChainEnv]', veranaChainEnv);
+    // console.info(`chainName: ${chainName} chainId: ${chainId} rpc: ${rpc} rest: ${rest}`);
 
     if (chainName && chainId && rpc && rest) {
         return {

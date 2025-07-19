@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { DidData, didSections } from '@/app/types/DataViewTypes';
-import DataView from '@/app/ui/common/data-view'
+import DataView from '@/app/ui/common/data-view-columns'
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { formatVNA } from '@/app/util/util';
 import TitleAndButton from '@/app/ui/common/title-and-button';
@@ -75,7 +75,7 @@ export default function DidViewPage() {
         to="/dids"
         Icon={ChevronLeftIcon}
       />
-      <DataView<DidData> sections={didSections} data={data} id={decodeURIComponent(id)} />
+      <DataView<DidData> sections={didSections} data={data} id={decodeURIComponent(id)} columnsCount={2} />
     </>
   );
 }

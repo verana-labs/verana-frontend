@@ -65,8 +65,8 @@ export const veranaRegistry = new Registry([
   ["/verana.dd.v1.MsgRenewDID", MsgRenewDID],
   ["/verana.dd.v1.MsgTouchDID", MsgTouchDID],
   ["/verana.dd.v1.MsgRemoveDID", MsgRemoveDID],
-  ["/veranablockchain.trustdeposit.MsgReclaimTrustDeposit", MsgReclaimTrustDeposit],
-  ["/veranablockchain.trustdeposit.MsgReclaimTrustDepositInterests", MsgReclaimTrustDepositInterests],
+  ["/verana.td.v1.MsgReclaimTrustDeposit", MsgReclaimTrustDeposit],
+  ["/verana.td.v1.MsgReclaimTrustDepositInterests", MsgReclaimTrustDepositInterests],
 ])
   
 export const veranaAmino = new AminoTypes({
@@ -74,8 +74,8 @@ export const veranaAmino = new AminoTypes({
     '/verana.dd.v1.MsgRenewDID': MsgRenewDIDAminoConverter,
     '/verana.dd.v1.MsgTouchDID': MsgTouchDIDAminoConverter,
     '/verana.dd.v1.MsgRemoveDID': MsgRemoveDIDAminoConverter,
-    '/veranablockchain.trustdeposit.MsgReclaimTrustDeposit': MsgReclaimTrustDepositAminoConverter,
-    '/veranablockchain.trustdeposit.MsgReclaimTrustDepositInterests': MsgReclaimTrustDepositInterestsAminoConverter,
+    '/verana.td.v1.MsgReclaimTrustDeposit': MsgReclaimTrustDepositAminoConverter,
+    '/verana.td.v1.MsgReclaimTrustDepositInterests': MsgReclaimTrustDepositInterestsAminoConverter,
   });
 
 export const veranaGasPrice = GasPrice.fromString("3uvna");

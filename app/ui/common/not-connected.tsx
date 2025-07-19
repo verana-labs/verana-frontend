@@ -13,8 +13,8 @@ export default function NotConnected () {
             </div>
         </div>
         <div className="self-stretch flex flex-col justify-start text-center items-center gap-3.5">
-            <div className="text-2xl sm:text-3xl font-semibold ">Not Connected</div>
-            <div className="w-80 sm:w-[464px] text-base sm:text-xl font-normal leading-norma sm:leading-7">Please connect your preferred crypto wallet to verana before you proceed</div>
+            <div className="text-2xl md:text-3xl font-semibold ">Not Connected</div>
+            <div className="w-80 md:w-[464px] text-base md:text-xl font-normal leading-norma md:leading-7">Please connect your preferred crypto wallet to verana before you proceed</div>
         </div>
         <div className="w-72 px-6 py-5 rounded-lg gap-2 justify-center items-center text-xl font-semibold leading-snug
                         text-light-selected-bg bg-light-selected-text
