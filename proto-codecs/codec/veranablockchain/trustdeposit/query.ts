@@ -10,7 +10,7 @@ import _m0 from "protobufjs/minimal";
 import { Params } from "./params";
 import { TrustDeposit } from "./types";
 
-export const protobufPackage = "veranablockchain.trustdeposit";
+export const protobufPackage = "verana.td.v1";
 
 /** QueryParamsRequest is request type for the Query/Params RPC method. */
 export interface QueryParamsRequest {
@@ -257,7 +257,7 @@ export interface Query {
   GetTrustDeposit(request: QueryGetTrustDepositRequest): Promise<QueryGetTrustDepositResponse>;
 }
 
-export const QueryServiceName = "veranablockchain.trustdeposit.Query";
+export const QueryServiceName = "verana.td.v1.Query";
 export class QueryClientImpl implements Query {
   private readonly rpc: Rpc;
   private readonly service: string;

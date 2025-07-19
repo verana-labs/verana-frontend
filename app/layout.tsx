@@ -6,6 +6,7 @@ import SideNav from '@/app/ui/common/sidenav';
 import Providers from '@/app/providers';
 import RequireConnectedWallet from '@/app/ui/common/require-connected-wallet';
 import { PublicEnvScript } from 'next-runtime-env';
+import { NotificationProvider } from './ui/common/notification-provider';
 
 export const metadata = { title: 'Verana Front', description: 'Verana Front' }
 
@@ -17,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body
         className="
-          font-sans antialiased text-light-text text-xs sm:text-base font-medium
+          font-sans antialiased text-light-text text-xs md:text-base font-medium
           dark:text-dark-text bg-light-bg dark:bg-dark-bg
           border-light-border dark:border-dark-border
           items-center justify-center"
@@ -30,12 +31,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <NavBar />
             </header>
             {/* Main Container */}
-            <div className="flex flex-1 flex-col sm:flex-row">
+            <div className="flex flex-1 flex-col md:flex-row">
               {/* Side Navigation */}
               {/* <div class="w-72 h-[956px] p-4 bg-White-900 border-r border-White-800 inline-flex flex-col justify-start items-start"> */}
               <aside
                 className="
-                  hidden sm:block
+                  hidden md:block
                   w-72 h-[956px] p-4 border-r justify-start items-start
                   bg-light-bg dark:bg-dark-bg border-light-border dark:border-dark-border
                 "
@@ -47,9 +48,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 bg-content-light-bg dark:bg-content-dark-bg"
               >
                 {/* <div className="w-[1112px] left-[304px] top-[92px] absolute inline-flex flex-col justify-start items-start gap-4"> */}
-                <div className="max-w-screen-xl mx-auto sm:min-h-screen p-6 ">
+                <div className="max-w-screen-xl mx-auto md:min-h-screen p-6 ">
                   <RequireConnectedWallet>
-                    {children}
+                    <NotificationProvider>
+                      {children}
+                    </NotificationProvider>
                   </RequireConnectedWallet>
                 </div>
               </main>

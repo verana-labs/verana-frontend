@@ -1,3 +1,5 @@
+import { BanknotesIcon, CurrencyDollarIcon, IdentificationIcon, InformationCircleIcon, LinkIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
+
 // Field descriptor for a generic data type T
 export type Field<T> = {
   name: keyof T;
@@ -7,15 +9,20 @@ export type Field<T> = {
 
 // Section grouping a subset of fields of T under a common title
 export type Section<T> = {
+  icon?: React.ComponentType<{ className?: string }>;
   name: string;
-  fields: Field<T>[];
+  fields?: Field<T>[];
+  type?: "data" | "help";
+  help?: string[];
 };
 
 // Props for a DataView component: a title, sections, and the data object
 export interface DataViewProps<T extends object> {
   sections: Section<T>[];
   data: T;
-  id: string
+  id: string;
+  columnsCount?: number;
+  columnsCountMd?: number;
 }
 
 //Account data
@@ -34,23 +41,38 @@ export interface AccountData {
 export const accountSections: Section<AccountData>[] = [
   {
     name: 'Main Balance',
+    icon: CurrencyDollarIcon,
     fields: [
       { name: 'balance', label: 'Available', type: "data" },
-      { name: 'getVNA', label: 'get VNA', type: "action" }
+      { name: 'getVNA', label: 'Get VNA', type: "action" }
     ]
   },
   {
     name: 'Trust Deposit',
+    icon: BanknotesIcon,
     fields: [
       { name: 'totalTrustDeposit', label: 'Total', type: "data" },
       { name: 'claimableInterests', label: 'Claimable Interests', type: "data" },
       { name: 'reclaimable', label: 'Reclaimable', type: "data" },
       { name: 'message', label: 'Message', type: "data" },
-      { name: 'claimInterests', label: 'claim interests', type: "action" },
-      { name: 'reclaimDeposit', label: 'reclaim deposit', type: "action" }
+      { name: 'claimInterests', label: 'Claim interests', type: "action" },
+      { name: 'reclaimDeposit', label: 'Reclaim deposit', type: "action" }
 
     ]
-  }
+  },
+  {
+    type: "help",
+    help: [
+      "Available is your main balance, the VNA you can spend for executing transactions. When you purchase VNA tokens, they are delivered in the available balance.",
+      "Trust deposit is the VNA that has been deposited as trust guarantee.",
+      "Claimable interests: Your trust deposit is producing yield. You can claim earned yield and transfer it to your available balance.",
+      "Reclaimable is the VNA that still is in your trust deposit, but has been freed and can be reclaimed. The reclaimable balance is automatically reused for newly needed trust deposit amounts, unless you reclaim it."
+    ],
+    name: 'About your Balances',
+    icon: InformationCircleIcon,
+    fields: []
+  },
+
 ];
 
 //Dashboard data
@@ -66,7 +88,8 @@ export interface DashboardData {
 // Sections configuration for DashboardData
 export const dashboardSections: Section<DashboardData>[] = [
   {
-    name: '',
+    name: "Connection Details",
+    icon: LinkIcon,
     fields: [
       { name: 'chainName', label: 'Connected to', type: "data" },
       { name: 'blockHeight', label: 'Block height', type: "data" },
@@ -94,7 +117,8 @@ export interface DidData {
 // Sections configuration for DidData
 export const didSections: Section<DidData>[] = [
   {
-    name: '',
+    name: "DID Details",
+    icon: IdentificationIcon,
     fields: [
       { name: 'did', label: 'DID', type: "data" },
       { name: 'controller', label: 'Controller', type: "data" },
@@ -105,11 +129,12 @@ export const didSections: Section<DidData>[] = [
     ]
   },
   {
+    icon: WrenchScrewdriverIcon,
     name: 'Actions',
     fields: [
-      { name: 'renewDID', label: 'renew', type: "action" },
-      { name: 'touchDID', label: 'touch', type: "action" },
-      { name: 'removeDID', label: 'remove', type: "action" }
+      { name: 'renewDID', label: 'Renew', type: "action" },
+      { name: 'touchDID', label: 'Touch', type: "action" },
+      { name: 'removeDID', label: 'Remove', type: "action" }
     ]
   }
 ];

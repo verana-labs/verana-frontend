@@ -37,7 +37,7 @@ export default function TitleAndButton({
           className="inline-flex items-center text-blue-500 hover:underline p-2"
         >
           {Icon && <Icon className="h-6 w-6 mr-1" aria-hidden="true" />}
-          {buttonLabel && <span className="hidden sm:inline">{buttonLabel}</span>}
+          {buttonLabel && <span className="hidden md:inline">{buttonLabel}</span>}
         </button>
       )}
     </div>

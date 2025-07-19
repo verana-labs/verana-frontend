@@ -8,7 +8,7 @@
 import Long from "long";
 import _m0 from "protobufjs/minimal";
 
-export const protobufPackage = "veranablockchain.trustdeposit";
+export const protobufPackage = "verana.td.v1";
 
 /** TrustDeposit represents an account's trust deposit */
 export interface TrustDeposit {
