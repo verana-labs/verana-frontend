@@ -13,7 +13,7 @@ import { useNotification } from '@/app/ui/common/notification-provider';
 export default function DidViewPage() {
   const params = useParams();
   const id = params?.id as string;
-  const getDIDURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_DID');
+  const getDIDURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_DID') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_DID;
 
   const [data, setData] = useState<DidData | null>(null);
   const [loading, setLoading] = useState(true);

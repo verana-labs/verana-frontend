@@ -24,7 +24,7 @@ export default function Page() {
     reclaimDeposit: null,
   });
 
-  const getAccountURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_ACCOUNT');
+  const getAccountURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_ACCOUNT') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_ACCOUNT;
   const { notify } = useNotification();
   
   useEffect(() => {
