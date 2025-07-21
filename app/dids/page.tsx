@@ -32,7 +32,7 @@ export default function DidsPage() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { notify } = useNotification();
-  const listDIDURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_LIST_DID');
+  const listDIDURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_LIST_DID') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_LIST_DID;
 
   useEffect(() => {
     const fetchDIDs = async () => {
