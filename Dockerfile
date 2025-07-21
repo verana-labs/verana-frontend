@@ -1,5 +1,6 @@
 FROM node:22-alpine as deps
 WORKDIR /app
+RUN apk add --no-cache python3 make g++
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
 
@@ -33,5 +34,4 @@ RUN chown -R nextjs:nodejs /app/.next
 USER nextjs
 
 ENTRYPOINT ["/app/entrypoint.sh"]
-
 CMD ["yarn", "start"]
