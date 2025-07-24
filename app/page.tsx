@@ -2,7 +2,7 @@
 'use client'
 
 import { useEffect, useState } from "react";
-import { DashboardData, dashboardSections } from "@/app/types/DataViewTypes";
+import { DashboardData, dashboardSections } from "@/app/types/dataViewTypes";
 import DataView from "@/app/ui/common/data-view-columns";
 import { useChain } from "@cosmos-kit/react";
 import { useVeranaChain } from "@/app/config/useVeranaChain";

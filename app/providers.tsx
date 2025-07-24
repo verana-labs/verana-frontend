@@ -4,7 +4,7 @@ import '@/app/ui/global.css';
 import { ChainProvider } from '@cosmos-kit/react';
 import "@interchain-ui/react/styles";
 import type { SigningStargateClientOptions } from '@cosmjs/stargate';
-import { veranaAssets, veranaRegistry, veranaAmino, veranaGasPrice } from '@/app/config/veranachain';
+import { veranaAssets, veranaRegistry, veranaAmino, veranaGasPrice } from '@/app/config/veranaChain';
 import {wallets} from "cosmos-kit"
 import { ThemeProvider } from 'next-themes';
 import { useVeranaChain } from "@/app/config/useVeranaChain";

@@ -1,21 +1,15 @@
-import React, { useState, useEffect, useMemo, ReactNode } from 'react';
+import React, { useState, useMemo } from 'react';
+import { DataTableProps } from '@/app/types/dataTableTypes';
 
-// Generic column definition
-export type Column<T> = {
-  header: string;
-  accessor: keyof T;
-  filterType?: 'text' | 'checkbox';
-  filterLabel?: string;
-  filterFn?: (value: T[keyof T]) => boolean;
-  format?: (value: T[keyof T]) => ReactNode;
-};
-
-export interface DataTableProps<T extends object> {
-  columns: Column<T>[];
-  data: T[];
-  initialPageSize?: number;
-  pageSizeOptions?: number[];
-  onRowClick?: (row: T) => void;
+// Returns Tailwind classes for hiding by breakpoint
+function getColumnClasses(priority?: number) {
+  if (priority === undefined) return ''; // Always visible
+  if (priority === 1) return 'hidden sm:table-cell';
+  if (priority === 2) return 'hidden md:table-cell';
+  if (priority === 3) return 'hidden lg:table-cell';
+  if (priority === 4) return 'hidden xl:table-cell';
+  if (priority === 5) return 'hidden 2xl:table-cell';
+  return '';
 }
 
 export function DataTable<T extends object>({
@@ -27,15 +21,11 @@ export function DataTable<T extends object>({
 }: DataTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(initialPageSize);
+  const [filters, setFilters] = useState<Record<string, string | boolean>>({});
   const [sortColumn, setSortColumn] = useState<keyof T | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [filters, setFilters] = useState<Record<string, string | boolean>>({});
 
-  useEffect(() => {
-    setCurrentPage(0);
-  }, [pageSize, data, sortColumn, sortDirection, filters]);
-
-  // apply filters
+  // Filtering
   const filteredData = useMemo(() => {
     let list = Array.isArray(data) ? data : [];
     columns.forEach(col => {
@@ -60,7 +50,7 @@ export function DataTable<T extends object>({
     return list;
   }, [data, filters, columns]);
 
-  // apply sorting
+  // Sorting
   const sortedData = useMemo(() => {
     if (!sortColumn) return filteredData;
     return [...filteredData].sort((a, b) => {
@@ -74,12 +64,22 @@ export function DataTable<T extends object>({
     });
   }, [filteredData, sortColumn, sortDirection]);
 
-  // pagination
-  const totalPages = Math.ceil(sortedData.length / pageSize);
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(sortedData.length / pageSize));
   const startIndex = currentPage * pageSize;
   const currentData = sortedData.slice(startIndex, startIndex + pageSize);
 
-  const goToPage = (page: number) => setCurrentPage(Math.max(0, Math.min(page, totalPages - 1)));
+  // Pagination controls
+  const maxButtons = 5;
+  let startBtn = Math.max(0, currentPage - Math.floor(maxButtons / 2));
+  let endBtn = Math.min(startBtn + maxButtons - 1, totalPages - 1);
+  if (endBtn - startBtn + 1 < maxButtons) startBtn = Math.max(0, endBtn - (maxButtons - 1));
+  const pageButtons = Array.from({ length: endBtn - startBtn + 1 }, (_, i) => startBtn + i);
+  const showEllipsis = endBtn < totalPages - 1;
+
+  const goToPage = (page: number) =>
+    setCurrentPage(Math.max(0, Math.min(page, totalPages - 1)));
+
   const handleSort = (col: keyof T) => {
     if (sortColumn === col) setSortDirection(dir => (dir === 'asc' ? 'desc' : 'asc'));
     else {
@@ -87,73 +87,105 @@ export function DataTable<T extends object>({
       setSortDirection('asc');
     }
   };
+
   const handleFilterChange = (accessor: keyof T, value: string | boolean) => {
     setFilters(prev => ({ ...prev, [accessor as string]: value }));
+    setCurrentPage(0);
   };
 
-  // page buttons
-  const maxButtons = 5;
-  let startBtn = Math.max(0, currentPage - Math.floor(maxButtons / 2));
-  const endBtn = Math.min(startBtn + maxButtons - 1, totalPages - 1);
-  if (endBtn - startBtn + 1 < maxButtons) startBtn = Math.max(0, endBtn - (maxButtons - 1));
-  const pageButtons = Array.from({ length: endBtn - startBtn + 1 }, (_, i) => startBtn + i);
-  const showEllipsis = endBtn < totalPages - 1;
-
   return (
-    <div className="flex flex-col">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-200 dark:bg-gray-700">
+    <div className="
+      w-full
+      mx-auto p-4 rounded-2xl shadow bg-light-bg dark:bg-dark-bg
+    ">
+      <div className="overflow-x-auto w-full">
+        <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead>
             <tr>
-              {columns.map(col => (
+              {columns.map((col) => (
                 <th
                   key={String(col.accessor)}
                   onClick={() => handleSort(col.accessor)}
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider cursor-pointer select-none"
+                  className={
+                    getColumnClasses(col.priority) +
+                    " text-left text-base font-semibold leading-none text-gray-700 dark:text-gray-200 bg-white dark:bg-black px-4 py-3 cursor-pointer select-none"
+                  }
                 >
-                  <div className="flex items-center">
+                  <div className="flex items-center gap-1">
                     {col.header}
-                    {sortColumn === col.accessor && <span className="ml-1 text-sm">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                    {sortColumn === col.accessor && (
+                      <span className="ml-1 text-base">
+                        {sortDirection === 'asc' ? '▲' : '▼'}
+                      </span>
+                    )}
                   </div>
                 </th>
               ))}
             </tr>
-            <tr className="bg-gray-100 dark:bg-gray-800 ">
-              {columns.map(col => (
-                <th key={String(col.accessor)} className="px-6 py-2">
+            <tr>
+              {columns.map((col) => (
+                <th key={String(col.accessor)} className={getColumnClasses(col.priority) + " px-4 py-2 bg-light-bg dark:bg-dark-bg"}>
                   {col.filterType === 'checkbox' ? (
-                    <label className="inline-flex items-center">
+                    <label className="w-full flex items-center">
                       <input
                         type="checkbox"
                         checked={Boolean(filters[col.accessor as string])}
                         onChange={e => handleFilterChange(col.accessor, e.target.checked)}
-                        className="form-checkbox h-4 w-4 text-blue-200"
+                        className="form-checkbox h-4 w-4 text-blue-500 accent-blue-500"
                       />
-                      <span className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-200">{col.filterLabel ?? col.header}</span>
+                      <span className="ml-2 text-xs font-medium text-gray-700 dark:text-gray-200">
+                        {col.filterLabel ?? col.header}
+                      </span>
                     </label>
                   ) : (
-                    <input
-                      type="text"
-                      value={(filters[col.accessor as string] as string) || ''}
-                      onChange={e => handleFilterChange(col.accessor, e.target.value)}
-                      placeholder="Filter..."
-                      className="w-full py-1 px-2 border dark:bg-gray-900 dark:bg-gray-900 border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-700 dark:text-gray-200 font-medium"
-                    />
+                    <div className="relative w-full">
+                      <input
+                        type="text"
+                        value={(filters[col.accessor as string] as string) || ''}
+                        onChange={e => handleFilterChange(col.accessor, e.target.value)}
+                        placeholder="Filter..."
+                        className="w-full py-1 px-2 pr-6 border border-gray-200 dark:border-gray-600 rounded-md text-xs text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 font-medium"
+                        style={{ minWidth: 0 }}
+                      />
+                      {filters[col.accessor as string] && (
+                        <button
+                          type="button"
+                          onClick={() => handleFilterChange(col.accessor, '')}
+                          className="absolute right-1 text-gray-400 hover:text-red-500 focus:outline-none"
+                          aria-label="Clear filter"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
                   )}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className=" divide-y divide-gray-200 dark:divide-gray-700">
-            {currentData.map((row, idx) => (
+          <tbody>
+            {currentData.length === 0 && (
+              <tr>
+                <td colSpan={columns.length} className="text-center text-gray-500 py-10">
+                  No results found
+                </td>
+              </tr>
+            )}
+            {currentData.map((row, rowIdx) => (
               <tr
-                key={idx}
+                key={rowIdx}
                 onClick={() => onRowClick?.(row)}
-                className={`odd:bg-white dark:odd:bg-black even:bg-gray-100 dark:even:bg-gray-800 ${onRowClick ? 'cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600' : ''}`}
+                className={`transition-all duration-150 
+                  ${onRowClick ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-950' : ''}
+                  ${rowIdx % 2 === 0 ? 'bg-white dark:bg-black' : 'bg-gray-50 dark:bg-gray-900'}
+                `}
               >
-                {columns.map(col => (
-                  <td key={String(col.accessor)} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200">
-                    {col.format ? col.format(row[col.accessor]) : String(row[col.accessor])}
+                {columns.map((col) => (
+                  <td
+                    key={String(col.accessor)}
+                    className={getColumnClasses(col.priority) + " text-sm font-normal leading-none text-gray-700 dark:text-gray-200 px-4 py-4 whitespace-nowrap"}
+                  >
+                    {col.format ? col.format(row[col.accessor]) : String(row[col.accessor] ?? '')}
                   </td>
                 ))}
               </tr>
@@ -162,25 +194,30 @@ export function DataTable<T extends object>({
         </table>
       </div>
       {/* Pagination controls */}
-      <div className="flex items-center justify-end space-x-6 py-3">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 font-medium leading-none">
         <div className="flex items-center">
-          <label htmlFor="pageSizeSelect" className="mr-2 text-sm text-gray-700 dark:text-gray-200" >Rows per page:</label>
+          <label htmlFor="pageSizeSelect" className="mr-2 text-gray-700 dark:text-gray-200">
+            Rows per page:
+          </label>
           <select
             id="pageSizeSelect"
             value={pageSize}
-            onChange={e => setPageSize(Number(e.target.value))}
-            className="block w-20 py-1 px-2 border border-gray-300 bg-white dark:bg-black rounded-md shadow-sm focus:outline-none focus:ring focus:border-blue-300 text-sm"
+            onChange={e => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(0); // Go to first page when changing page size
+            }}
+            className="block w-20 py-1 px-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 rounded-md shadow-sm focus:outline-none"
           >
             {pageSizeOptions.map(size => (
               <option key={size} value={size}>{size}</option>
             ))}
           </select>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex items-center space-x-1">
           <button
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 0}
-            className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md disabled:opacity-50"
+            className="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900 disabled:opacity-40"
           >
             Previous
           </button>
@@ -188,9 +225,11 @@ export function DataTable<T extends object>({
             <button
               key={pageIndex}
               onClick={() => goToPage(pageIndex)}
-              className={`px-3 py-1 rounded-md text-sm ${
-                pageIndex === currentPage ? 'bg-blue-400 text-white drk:text-black' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'
-              }`}
+              className={`px-3 py-1 rounded-md transition-colors 
+                ${pageIndex === currentPage
+                  ? 'bg-blue-500 text-white font-bold shadow'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900'}
+              `}
             >{pageIndex + 1}</button>
           ))}
           {showEllipsis && (
@@ -198,14 +237,14 @@ export function DataTable<T extends object>({
               <span className="px-2 text-gray-500 dark:text-gray-300">…</span>
               <button
                 onClick={() => goToPage(totalPages - 1)}
-                className="px-3 py-1 bg-gray-100 text-gray-700 dark:text-gray-200 rounded-md text-sm hover:bg-gray-200"
+                className="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900"
               >{totalPages}</button>
             </>
           )}
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage + 1 >= totalPages}
-            className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md disabled:opacity-50"
+            className="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900 disabled:opacity-40"
           >
             Next
           </button>

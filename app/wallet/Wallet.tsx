@@ -9,7 +9,7 @@ import {
   // ButtonError,
   ButtonNotExist,
   ButtonRejected,
-} from "./Connect";
+} from "@/app/wallet/connect";
 import { useRouter } from "next/navigation";
 import { shortenMiddle } from "@/app/util/util";
 import { ArrowRightEndOnRectangleIcon, ArrowTopRightOnSquareIcon, QrCodeIcon, Square2StackIcon } from "@heroicons/react/24/outline";

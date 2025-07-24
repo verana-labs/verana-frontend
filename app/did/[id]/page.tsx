@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { DidData, didSections } from '@/app/types/DataViewTypes';
+import { DidData, didSections } from '@/app/types/dataViewTypes';
 import DataView from '@/app/ui/common/data-view-columns';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { formatVNA } from '@/app/util/util';
@@ -13,7 +13,7 @@ import { useNotification } from '@/app/ui/common/notification-provider';
 export default function DidViewPage() {
   const params = useParams();
   const id = params?.id as string;
-  const getDIDURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_DID') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_DID;
+  const getURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID;
 
   const [data, setData] = useState<DidData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,9 +29,9 @@ export default function DidViewPage() {
     }
     const fetchDid = async () => {
       try {
-        if (!getDIDURL) throw new Error('API endpoint not configured');
+        if (!getURL) throw new Error('API endpoint not configured');
 
-        const url = `${getDIDURL}/${decodeURIComponent(id)}`;
+        const url = `${getURL}/get/${decodeURIComponent(id)}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error(`Error ${res.status}`);
 
@@ -59,7 +59,7 @@ export default function DidViewPage() {
     };
 
     fetchDid();
-  }, [id, getDIDURL, notify]);
+  }, [id, getURL, notify]);
 
   if (loading) {
     return <div className="p-6 text-center">Loading DID details…</div>;
@@ -71,9 +71,9 @@ export default function DidViewPage() {
   return (
     <>
       <TitleAndButton
-        title={"DID " + decodeURIComponent(id)}
+        title={"DID " + data.did}
         buttonLabel="Back to Directory"
-        to="/dids"
+        to="/did"
         Icon={ChevronLeftIcon}
       />
       <DataView<DidData> sections={didSections} data={data} id={decodeURIComponent(id)} columnsCount={2} />

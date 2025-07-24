@@ -3,7 +3,7 @@
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import { Bars3Icon, XMarkIcon, Cog8ToothIcon } from '@heroicons/react/24/outline';
 import VeranaLog from '@/app/ui/common/verana-logo';
-import Wallet from '@/app/wallet/Wallet';
+import Wallet from '@/app/wallet/wallet';
 import IconLabelButton from '@/app/ui/common/icon-label-button';
 import ToggleTheme from '@/app/ui/common/toggle-theme';
 import NavLinks from '@/app/ui/common/nav-links';

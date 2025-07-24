@@ -1,4 +1,4 @@
-import { BanknotesIcon, CurrencyDollarIcon, IdentificationIcon, InformationCircleIcon, LinkIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
+import { BanknotesIcon, CurrencyDollarIcon, IdentificationIcon, InformationCircleIcon, LinkIcon, ShieldCheckIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
 
 // Field descriptor for a generic data type T
 export type Field<T> = {
@@ -139,3 +139,38 @@ export const didSections: Section<DidData>[] = [
   }
 ];
 
+//Trust Registry data
+export interface TrData {
+  id: string;
+  did: string;
+  aka: string;
+  controller: string;
+  language: string;
+  deposit: string;
+  role?: string;
+  created?: string;
+  modified?: string;
+  active_version?: string;
+  schemas?: string;
+}
+
+// Sections configuration for TrData
+export const trSections: Section<TrData>[] = [
+  {
+    name: "Basic Information",
+    icon: ShieldCheckIcon,
+    fields: [
+      { name: 'id', label: 'Trust Registry Id', type: "data" },
+      { name: 'did', label: 'DID', type: "data" },
+      { name: 'aka', label: 'Aka', type: "data" },
+      { name: 'controller', label: 'Controller', type: "data" },
+      { name: 'language', label: 'Primary Governance Framework Language', type: "data" },
+      { name: 'deposit', label: 'Deposit', type: "data" },
+      { name: 'role', label: 'Role', type: "data" },
+      { name: 'created', label: 'Created', type: "data" },
+      { name: 'modified', label: 'Modified', type: "data" },
+      { name: 'active_version', label: 'Active GF Version', type: "data" },
+      { name: 'schemas', label: 'Schemas', type: "data" },
+    ]
+  }
+];
