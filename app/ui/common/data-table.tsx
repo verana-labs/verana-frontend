@@ -72,7 +72,7 @@ export function DataTable<T extends object>({
   // Pagination controls
   const maxButtons = 5;
   let startBtn = Math.max(0, currentPage - Math.floor(maxButtons / 2));
-  let endBtn = Math.min(startBtn + maxButtons - 1, totalPages - 1);
+  const endBtn = Math.min(startBtn + maxButtons - 1, totalPages - 1);
   if (endBtn - startBtn + 1 < maxButtons) startBtn = Math.max(0, endBtn - (maxButtons - 1));
   const pageButtons = Array.from({ length: endBtn - startBtn + 1 }, (_, i) => startBtn + i);
   const showEllipsis = endBtn < totalPages - 1;
