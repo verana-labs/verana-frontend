@@ -1,5 +1,5 @@
 import { LinkSlashIcon } from '@heroicons/react/24/outline';
-import Wallet from "@/app/wallet/Wallet";
+import Wallet from "@/app/wallet/wallet";
 
 export default function NotConnected () {
     return (

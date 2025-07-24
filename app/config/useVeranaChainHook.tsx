@@ -2,7 +2,7 @@
 
 import { env } from 'next-runtime-env';
 import { useEffect } from 'react';
-import { veranaChainEnv } from '@/app/config/veranachain';
+import { veranaChainEnv } from '@/app/config/veranaChain';
 import { Chain } from '@chain-registry/types';
 
 export function useVeranaChainHook() {

@@ -15,9 +15,9 @@ services:
       - NEXT_PUBLIC_VERANA_CHAIN_NAME=VeranaDevnet1
       - NEXT_PUBLIC_VERANA_RPC_ENDPOINT=http://node1.devnet.verana.network:26657
       - NEXT_PUBLIC_VERANA_REST_ENDPOINT=http://node1.devnet.verana.network:1317
-      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_ACCOUNT=http://node1.devnet.verana.network:1317/verana/td/v1/get
-      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_LIST_DID=http://node1.devnet.verana.network:1317/verana/dd/v1/list
-      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_DID=http://node1.devnet.verana.network:1317/verana/dd/v1/get
+      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT=http://node1.devnet.verana.network:1317/verana/td/v1
+      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID=http://node1.devnet.verana.network:1317/verana/dd/v1
+      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY=http://node1.devnet.verana.network:1317/verana/tr/v1
     networks:
       - verana
 

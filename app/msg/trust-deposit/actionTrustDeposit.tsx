@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { useChain } from '@cosmos-kit/react'
 import type { StdFee } from '@cosmjs/stargate'
-import { veranaGasLimit, veranaGasPrice } from '@/app/config/veranachain'
+import { veranaGasLimit, veranaGasPrice } from '@/app/config/veranaChain'
 import { MsgReclaimTrustDeposit, MsgReclaimTrustDepositInterests } from '@/proto-codecs/codec/veranablockchain/trustdeposit/tx'
 import { useRouter } from 'next/navigation'
 import { useVeranaChain } from '@/app/config/useVeranaChain'

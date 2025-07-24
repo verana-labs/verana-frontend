@@ -1,7 +1,7 @@
 import React, { useState, ReactNode, Dispatch, SetStateAction } from 'react';
-import { DataViewProps } from '@/app/types/DataViewTypes';
-import ActionDID from '@/app/msg/diddiretory/ActionDID';
-import ActionTrustDeposit from '@/app/msg/trustdeposit/ActionTrustDeposit';
+import { DataViewProps } from '@/app/types/dataViewTypes';
+import ActionDID from '@/app/msg/did-diretory/actionDID';
+import ActionTrustDeposit from '@/app/msg/trust-deposit/actionTrustDeposit';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import useIsSmallScreen from '@/app/util/small-screen';
 

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useChain } from '@cosmos-kit/react';
 import type { StdFee } from '@cosmjs/stargate';
-import { veranaGasLimit, veranaGasPrice } from '@/app/config/veranachain';
+import { veranaGasLimit, veranaGasPrice } from '@/app/config/veranaChain';
 import {
   MsgAddDID,
   MsgRenewDID,
@@ -145,16 +145,16 @@ export default function ActionDID({ action, id }: ActionDIDProps) {
     } finally {
       if (notifyPromise) await notifyPromise; // Wait for notification to close
       setSubmitting(false);
-      const didUrl = `/dids/${encodeURIComponent(didPayLoad)}`;
+      const didUrl = `/did/${encodeURIComponent(didPayLoad)}`;
       if (['RenewDID', 'TouchDID', 'AddDID'].includes(action) && success) {
         if (pathname === didUrl) {
-          router.push('/dids');
+          router.push('/did');
           setTimeout(() => router.push(didUrl), 100);
         } else {
           router.push(didUrl);
         }
       } else {
-        router.push('/dids');
+        router.push('/did');
       }    
     }
   };

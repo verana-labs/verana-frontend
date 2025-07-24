@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import DataView from '@/app/ui/common/data-view-columns';
 import { useChain } from '@cosmos-kit/react';
 import { useVeranaChain } from "@/app/config/useVeranaChain";
-import { accountSections, type AccountData } from '@/app/types/DataViewTypes';
+import { accountSections, type AccountData } from '@/app/types/dataViewTypes';
 import { formatVNA } from '@/app/util/util';
 import TitleAndButton from '@/app/ui/common/title-and-button';
 import { env } from 'next-runtime-env';
@@ -24,7 +24,7 @@ export default function Page() {
     reclaimDeposit: null,
   });
 
-  const getAccountURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_ACCOUNT') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_ACCOUNT;
+  const getAccountURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT;
   const { notify } = useNotification();
   
   useEffect(() => {
@@ -53,22 +53,16 @@ export default function Page() {
       }
 
       try {
-        if (getAccountURL) {
-          const resp = await fetch(`${getAccountURL}/${address}`);
-          const json = await resp.json();
-          if (json.trust_deposit) {
-            totalTrustDeposit = formatVNA(json.trust_deposit.amount, 6);
-            claimableInterests = formatVNA('0', 6);
-            reclaimable = formatVNA(json.trust_deposit.claimable, 6);
-          } else if (json.message) {
-            message = json.message;
-          }
-        } else {
-          notify(
-            'URL getAccount error.',
-            'error',
-            'Error fetching trust deposit'
-          );
+        if (!getAccountURL) throw new Error('API endpoint not configured');
+
+        const resp = await fetch(`${getAccountURL}/get/${address}`);
+        const json = await resp.json();
+        if (json.trust_deposit) {
+          totalTrustDeposit = formatVNA(json.trust_deposit.amount, 6);
+          claimableInterests = formatVNA('0', 6);
+          reclaimable = formatVNA(json.trust_deposit.claimable, 6);
+        } else if (json.message) {
+          message = json.message;
         }
       } catch (err) {
         notify(
