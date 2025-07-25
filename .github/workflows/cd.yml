@@ -46,8 +46,7 @@ jobs:
               "ref": "main",
               "inputs": {
                 "NAME_SPACE": "vna-testnet-1",
-                "RPC_ENDPOINT": "http://node1.testnet.verana.network:26657/",
-                "REST_ENDPOINT": "http://node1.testnet.verana.network:1317/",
+                "VERANA_ENV": "testnet",
                 "CLUSTER_NODE": "cluster-utc-node-07efe5"
               }
             }'
