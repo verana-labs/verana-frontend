@@ -26,3 +26,42 @@ If you wanted to run this site in production, you should install modules then bu
     yarn build
     yarn start
     
+
+
+## how to build and run the docker image locally
+
+```
+docker build -t verana-front .
+```
+
+
+```
+docker run -it \
+  -e NEXT_PUBLIC_PORT=3000 \
+  -e NEXT_PUBLIC_BASE_URL=http://localhost:2904 \
+  -e NEXT_PUBLIC_VERANA_CHAIN_ID=vna-devnet-1 \
+  -e NEXT_PUBLIC_VERANA_CHAIN_NAME=VeranaDevnet1 \
+  -e NEXT_PUBLIC_VERANA_RPC_ENDPOINT=http://node1.devnet.verana.network:26657 \
+  -e NEXT_PUBLIC_VERANA_REST_ENDPOINT=http://node1.devnet.verana.network:1317 \
+  -e NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_ACCOUNT=http://node1.devnet.verana.network:1317/verana/td/v1/get \
+  -e NEXT_PUBLIC_VERANA_REST_ENDPOINT_LIST_DID=http://node1.devnet.verana.network:1317/verana/dd/v1/list \
+  -e NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_DID=http://node1.devnet.verana.network:1317/verana/dd/v1/get \
+  -p 3000:3000 \
+  verana-frontend
+```
+
+
+```
+docker run -it \
+  -e NEXT_PUBLIC_PORT=3000 \
+  -e NEXT_PUBLIC_BASE_URL=http://localhost:2904 \
+  -e NEXT_PUBLIC_VERANA_CHAIN_ID=vna-testnet-1 \
+  -e NEXT_PUBLIC_VERANA_CHAIN_NAME=VeranaTestnet1 \
+  -e NEXT_PUBLIC_VERANA_RPC_ENDPOINT=http://node1.testnet.verana.network:26657 \
+  -e NEXT_PUBLIC_VERANA_REST_ENDPOINT=http://node1.testnet.verana.network:1317 \
+  -e NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_ACCOUNT=http://node1.testnet.verana.network:1317/verana/td/v1/get \
+  -e NEXT_PUBLIC_VERANA_REST_ENDPOINT_LIST_DID=http://node1.testnet.verana.network:1317/verana/dd/v1/list \
+  -e NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_DID=http://node1.testnet.verana.network:1317/verana/dd/v1/get \
+  -p 3000:3000 \
+  verana-frontend
+```
