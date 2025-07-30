@@ -15,6 +15,8 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
 
   const customChains = [veranaChain];
   const assetLists = [{ chain_name: veranaChain.chain_name, assets: [veranaAssets] }];
+  console.info(veranaRegistry);
+  console.info(veranaAmino);
                       
   return (
     <ThemeProvider attribute="class" enableSystem={true} defaultTheme="system">

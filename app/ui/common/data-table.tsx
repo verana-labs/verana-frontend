@@ -131,7 +131,7 @@ export function DataTable<T extends object>({
                         type="checkbox"
                         checked={Boolean(filters[col.accessor as string])}
                         onChange={e => handleFilterChange(col.accessor, e.target.checked)}
-                        className="form-checkbox h-4 w-4 text-blue-500 accent-blue-500"
+                        className="form-checkbox h-4 w-4 text-pink-500 accent-pink-500"
                       />
                       <span className="ml-2 text-xs font-medium text-gray-700 dark:text-gray-200">
                         {col.filterLabel ?? col.header}
@@ -176,7 +176,7 @@ export function DataTable<T extends object>({
                 key={rowIdx}
                 onClick={() => onRowClick?.(row)}
                 className={`transition-all duration-150 
-                  ${onRowClick ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-950' : ''}
+                  ${onRowClick ? 'cursor-pointer hover:bg-pink-50 dark:hover:bg-pink-950' : ''}
                   ${rowIdx % 2 === 0 ? 'bg-white dark:bg-black' : 'bg-gray-50 dark:bg-gray-900'}
                 `}
               >
@@ -217,7 +217,7 @@ export function DataTable<T extends object>({
           <button
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 0}
-            className="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900 disabled:opacity-40"
+            className="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-pink-100 dark:hover:bg-pink-900 disabled:opacity-40"
           >
             Previous
           </button>
@@ -227,8 +227,8 @@ export function DataTable<T extends object>({
               onClick={() => goToPage(pageIndex)}
               className={`px-3 py-1 rounded-md transition-colors 
                 ${pageIndex === currentPage
-                  ? 'bg-blue-500 text-white font-bold shadow'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900'}
+                  ? 'bg-pink-500 text-white font-bold shadow'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-pink-100 dark:hover:bg-pink-900'}
               `}
             >{pageIndex + 1}</button>
           ))}
@@ -237,14 +237,14 @@ export function DataTable<T extends object>({
               <span className="px-2 text-gray-500 dark:text-gray-300">…</span>
               <button
                 onClick={() => goToPage(totalPages - 1)}
-                className="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900"
+                className="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-pink-100 dark:hover:bg-pink-900"
               >{totalPages}</button>
             </>
           )}
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage + 1 >= totalPages}
-            className="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900 disabled:opacity-40"
+            className="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-pink-100 dark:hover:bg-pink-900 disabled:opacity-40"
           >
             Next
           </button>

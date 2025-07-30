@@ -2,7 +2,7 @@
 // versions:
 //   protoc-gen-ts_proto  v1.181.2
 //   protoc               v5.29.3
-// source: veranablockchain/trustdeposit/tx.proto
+// source: verana/td/v1/tx.proto
 
 /* eslint-disable */
 import Long from "long";
@@ -30,13 +30,13 @@ export interface MsgUpdateParams {
 export interface MsgUpdateParamsResponse {
 }
 
-/** MsgReclaimTrustDepositInterests defines the request type */
-export interface MsgReclaimTrustDepositInterests {
+/** MsgReclaimTrustDepositYield defines the request type */
+export interface MsgReclaimTrustDepositYield {
   creator: string;
 }
 
-/** MsgReclaimTrustDepositInterestsResponse defines the response type */
-export interface MsgReclaimTrustDepositInterestsResponse {
+/** MsgReclaimTrustDepositYieldResponse defines the response type */
+export interface MsgReclaimTrustDepositYieldResponse {
   claimedAmount: Long;
 }
 
@@ -51,6 +51,15 @@ export interface MsgReclaimTrustDepositResponse {
   burnedAmount: Long;
   /** Amount transferred to account */
   claimedAmount: Long;
+}
+
+export interface MsgRepaySlashedTrustDeposit {
+  creator: string;
+  account: string;
+  amount: Long;
+}
+
+export interface MsgRepaySlashedTrustDepositResponse {
 }
 
 function createBaseMsgUpdateParams(): MsgUpdateParams {
@@ -172,22 +181,22 @@ export const MsgUpdateParamsResponse = {
   },
 };
 
-function createBaseMsgReclaimTrustDepositInterests(): MsgReclaimTrustDepositInterests {
+function createBaseMsgReclaimTrustDepositYield(): MsgReclaimTrustDepositYield {
   return { creator: "" };
 }
 
-export const MsgReclaimTrustDepositInterests = {
-  encode(message: MsgReclaimTrustDepositInterests, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+export const MsgReclaimTrustDepositYield = {
+  encode(message: MsgReclaimTrustDepositYield, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.creator !== "") {
       writer.uint32(10).string(message.creator);
     }
     return writer;
   },
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): MsgReclaimTrustDepositInterests {
+  decode(input: _m0.Reader | Uint8Array, length?: number): MsgReclaimTrustDepositYield {
     const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseMsgReclaimTrustDepositInterests();
+    const message = createBaseMsgReclaimTrustDepositYield();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -207,11 +216,11 @@ export const MsgReclaimTrustDepositInterests = {
     return message;
   },
 
-  fromJSON(object: any): MsgReclaimTrustDepositInterests {
+  fromJSON(object: any): MsgReclaimTrustDepositYield {
     return { creator: isSet(object.creator) ? globalThis.String(object.creator) : "" };
   },
 
-  toJSON(message: MsgReclaimTrustDepositInterests): unknown {
+  toJSON(message: MsgReclaimTrustDepositYield): unknown {
     const obj: any = {};
     if (message.creator !== "") {
       obj.creator = message.creator;
@@ -219,34 +228,32 @@ export const MsgReclaimTrustDepositInterests = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<MsgReclaimTrustDepositInterests>, I>>(base?: I): MsgReclaimTrustDepositInterests {
-    return MsgReclaimTrustDepositInterests.fromPartial(base ?? ({} as any));
+  create<I extends Exact<DeepPartial<MsgReclaimTrustDepositYield>, I>>(base?: I): MsgReclaimTrustDepositYield {
+    return MsgReclaimTrustDepositYield.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<MsgReclaimTrustDepositInterests>, I>>(
-    object: I,
-  ): MsgReclaimTrustDepositInterests {
-    const message = createBaseMsgReclaimTrustDepositInterests();
+  fromPartial<I extends Exact<DeepPartial<MsgReclaimTrustDepositYield>, I>>(object: I): MsgReclaimTrustDepositYield {
+    const message = createBaseMsgReclaimTrustDepositYield();
     message.creator = object.creator ?? "";
     return message;
   },
 };
 
-function createBaseMsgReclaimTrustDepositInterestsResponse(): MsgReclaimTrustDepositInterestsResponse {
+function createBaseMsgReclaimTrustDepositYieldResponse(): MsgReclaimTrustDepositYieldResponse {
   return { claimedAmount: Long.UZERO };
 }
 
-export const MsgReclaimTrustDepositInterestsResponse = {
-  encode(message: MsgReclaimTrustDepositInterestsResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+export const MsgReclaimTrustDepositYieldResponse = {
+  encode(message: MsgReclaimTrustDepositYieldResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (!message.claimedAmount.equals(Long.UZERO)) {
       writer.uint32(8).uint64(message.claimedAmount);
     }
     return writer;
   },
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): MsgReclaimTrustDepositInterestsResponse {
+  decode(input: _m0.Reader | Uint8Array, length?: number): MsgReclaimTrustDepositYieldResponse {
     const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseMsgReclaimTrustDepositInterestsResponse();
+    const message = createBaseMsgReclaimTrustDepositYieldResponse();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -266,11 +273,11 @@ export const MsgReclaimTrustDepositInterestsResponse = {
     return message;
   },
 
-  fromJSON(object: any): MsgReclaimTrustDepositInterestsResponse {
+  fromJSON(object: any): MsgReclaimTrustDepositYieldResponse {
     return { claimedAmount: isSet(object.claimedAmount) ? Long.fromValue(object.claimedAmount) : Long.UZERO };
   },
 
-  toJSON(message: MsgReclaimTrustDepositInterestsResponse): unknown {
+  toJSON(message: MsgReclaimTrustDepositYieldResponse): unknown {
     const obj: any = {};
     if (!message.claimedAmount.equals(Long.UZERO)) {
       obj.claimedAmount = (message.claimedAmount || Long.UZERO).toString();
@@ -278,15 +285,15 @@ export const MsgReclaimTrustDepositInterestsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<MsgReclaimTrustDepositInterestsResponse>, I>>(
+  create<I extends Exact<DeepPartial<MsgReclaimTrustDepositYieldResponse>, I>>(
     base?: I,
-  ): MsgReclaimTrustDepositInterestsResponse {
-    return MsgReclaimTrustDepositInterestsResponse.fromPartial(base ?? ({} as any));
+  ): MsgReclaimTrustDepositYieldResponse {
+    return MsgReclaimTrustDepositYieldResponse.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<MsgReclaimTrustDepositInterestsResponse>, I>>(
+  fromPartial<I extends Exact<DeepPartial<MsgReclaimTrustDepositYieldResponse>, I>>(
     object: I,
-  ): MsgReclaimTrustDepositInterestsResponse {
-    const message = createBaseMsgReclaimTrustDepositInterestsResponse();
+  ): MsgReclaimTrustDepositYieldResponse {
+    const message = createBaseMsgReclaimTrustDepositYieldResponse();
     message.claimedAmount = (object.claimedAmount !== undefined && object.claimedAmount !== null)
       ? Long.fromValue(object.claimedAmount)
       : Long.UZERO;
@@ -450,6 +457,144 @@ export const MsgReclaimTrustDepositResponse = {
   },
 };
 
+function createBaseMsgRepaySlashedTrustDeposit(): MsgRepaySlashedTrustDeposit {
+  return { creator: "", account: "", amount: Long.UZERO };
+}
+
+export const MsgRepaySlashedTrustDeposit = {
+  encode(message: MsgRepaySlashedTrustDeposit, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.account !== "") {
+      writer.uint32(18).string(message.account);
+    }
+    if (!message.amount.equals(Long.UZERO)) {
+      writer.uint32(24).uint64(message.amount);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): MsgRepaySlashedTrustDeposit {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgRepaySlashedTrustDeposit();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.account = reader.string();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.amount = reader.uint64() as Long;
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgRepaySlashedTrustDeposit {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      account: isSet(object.account) ? globalThis.String(object.account) : "",
+      amount: isSet(object.amount) ? Long.fromValue(object.amount) : Long.UZERO,
+    };
+  },
+
+  toJSON(message: MsgRepaySlashedTrustDeposit): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.account !== "") {
+      obj.account = message.account;
+    }
+    if (!message.amount.equals(Long.UZERO)) {
+      obj.amount = (message.amount || Long.UZERO).toString();
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgRepaySlashedTrustDeposit>, I>>(base?: I): MsgRepaySlashedTrustDeposit {
+    return MsgRepaySlashedTrustDeposit.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgRepaySlashedTrustDeposit>, I>>(object: I): MsgRepaySlashedTrustDeposit {
+    const message = createBaseMsgRepaySlashedTrustDeposit();
+    message.creator = object.creator ?? "";
+    message.account = object.account ?? "";
+    message.amount = (object.amount !== undefined && object.amount !== null)
+      ? Long.fromValue(object.amount)
+      : Long.UZERO;
+    return message;
+  },
+};
+
+function createBaseMsgRepaySlashedTrustDepositResponse(): MsgRepaySlashedTrustDepositResponse {
+  return {};
+}
+
+export const MsgRepaySlashedTrustDepositResponse = {
+  encode(_: MsgRepaySlashedTrustDepositResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): MsgRepaySlashedTrustDepositResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgRepaySlashedTrustDepositResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): MsgRepaySlashedTrustDepositResponse {
+    return {};
+  },
+
+  toJSON(_: MsgRepaySlashedTrustDepositResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgRepaySlashedTrustDepositResponse>, I>>(
+    base?: I,
+  ): MsgRepaySlashedTrustDepositResponse {
+    return MsgRepaySlashedTrustDepositResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgRepaySlashedTrustDepositResponse>, I>>(
+    _: I,
+  ): MsgRepaySlashedTrustDepositResponse {
+    const message = createBaseMsgRepaySlashedTrustDepositResponse();
+    return message;
+  },
+};
+
 /** Msg defines the Msg service. */
 export interface Msg {
   /**
@@ -457,10 +602,10 @@ export interface Msg {
    * parameters. The authority defaults to the x/gov module account.
    */
   UpdateParams(request: MsgUpdateParams): Promise<MsgUpdateParamsResponse>;
-  ReclaimTrustDepositInterests(
-    request: MsgReclaimTrustDepositInterests,
-  ): Promise<MsgReclaimTrustDepositInterestsResponse>;
+  ReclaimTrustDepositYield(request: MsgReclaimTrustDepositYield): Promise<MsgReclaimTrustDepositYieldResponse>;
   ReclaimTrustDeposit(request: MsgReclaimTrustDeposit): Promise<MsgReclaimTrustDepositResponse>;
+  /** rpc SlashTrustDeposit(MsgSlashTrustDeposit) returns (MsgSlashTrustDepositResponse); */
+  RepaySlashedTrustDeposit(request: MsgRepaySlashedTrustDeposit): Promise<MsgRepaySlashedTrustDepositResponse>;
 }
 
 export const MsgServiceName = "verana.td.v1.Msg";
@@ -471,8 +616,9 @@ export class MsgClientImpl implements Msg {
     this.service = opts?.service || MsgServiceName;
     this.rpc = rpc;
     this.UpdateParams = this.UpdateParams.bind(this);
-    this.ReclaimTrustDepositInterests = this.ReclaimTrustDepositInterests.bind(this);
+    this.ReclaimTrustDepositYield = this.ReclaimTrustDepositYield.bind(this);
     this.ReclaimTrustDeposit = this.ReclaimTrustDeposit.bind(this);
+    this.RepaySlashedTrustDeposit = this.RepaySlashedTrustDeposit.bind(this);
   }
   UpdateParams(request: MsgUpdateParams): Promise<MsgUpdateParamsResponse> {
     const data = MsgUpdateParams.encode(request).finish();
@@ -480,18 +626,22 @@ export class MsgClientImpl implements Msg {
     return promise.then((data) => MsgUpdateParamsResponse.decode(_m0.Reader.create(data)));
   }
 
-  ReclaimTrustDepositInterests(
-    request: MsgReclaimTrustDepositInterests,
-  ): Promise<MsgReclaimTrustDepositInterestsResponse> {
-    const data = MsgReclaimTrustDepositInterests.encode(request).finish();
-    const promise = this.rpc.request(this.service, "ReclaimTrustDepositInterests", data);
-    return promise.then((data) => MsgReclaimTrustDepositInterestsResponse.decode(_m0.Reader.create(data)));
+  ReclaimTrustDepositYield(request: MsgReclaimTrustDepositYield): Promise<MsgReclaimTrustDepositYieldResponse> {
+    const data = MsgReclaimTrustDepositYield.encode(request).finish();
+    const promise = this.rpc.request(this.service, "ReclaimTrustDepositYield", data);
+    return promise.then((data) => MsgReclaimTrustDepositYieldResponse.decode(_m0.Reader.create(data)));
   }
 
   ReclaimTrustDeposit(request: MsgReclaimTrustDeposit): Promise<MsgReclaimTrustDepositResponse> {
     const data = MsgReclaimTrustDeposit.encode(request).finish();
     const promise = this.rpc.request(this.service, "ReclaimTrustDeposit", data);
     return promise.then((data) => MsgReclaimTrustDepositResponse.decode(_m0.Reader.create(data)));
+  }
+
+  RepaySlashedTrustDeposit(request: MsgRepaySlashedTrustDeposit): Promise<MsgRepaySlashedTrustDepositResponse> {
+    const data = MsgRepaySlashedTrustDeposit.encode(request).finish();
+    const promise = this.rpc.request(this.service, "RepaySlashedTrustDeposit", data);
+    return promise.then((data) => MsgRepaySlashedTrustDepositResponse.decode(_m0.Reader.create(data)));
   }
 }
 

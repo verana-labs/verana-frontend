@@ -2,7 +2,7 @@
 // versions:
 //   protoc-gen-ts_proto  v1.181.2
 //   protoc               v5.29.3
-// source: veranablockchain/trustdeposit/params.proto
+// source: verana/td/v1/params.proto
 
 /* eslint-disable */
 import Long from "long";

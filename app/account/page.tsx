@@ -85,7 +85,7 @@ export default function Page() {
     };
 
     fetchData();
-  }, [address, isWalletConnected, getStargateClient]);
+  }, [getAccountURL, notify, address, isWalletConnected, getStargateClient]);
 
   return (
     <>

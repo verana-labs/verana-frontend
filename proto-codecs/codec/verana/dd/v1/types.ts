@@ -2,12 +2,12 @@
 // versions:
 //   protoc-gen-ts_proto  v1.181.2
 //   protoc               v5.29.3
-// source: veranablockchain/diddirectory/types.proto
+// source: verana/dd/v1/types.proto
 
 /* eslint-disable */
 import Long from "long";
 import _m0 from "protobufjs/minimal";
-import { Timestamp } from "../../google/protobuf/timestamp";
+import { Timestamp } from "../../../google/protobuf/timestamp";
 
 export const protobufPackage = "verana.dd.v1";
 

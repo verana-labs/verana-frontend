@@ -2,7 +2,7 @@
 // versions:
 //   protoc-gen-ts_proto  v1.181.2
 //   protoc               v5.29.3
-// source: veranablockchain/diddirectory/genesis.proto
+// source: verana/dd/v1/genesis.proto
 
 /* eslint-disable */
 import Long from "long";
