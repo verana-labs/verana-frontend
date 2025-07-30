@@ -1,6 +1,6 @@
 #!/bin/bash
 VERANA_PROTO_DIR="/Users/antonio/Mobiera/Verana/verana-blockchain/proto"
-INPUT_DIR="$VERANA_PROTO_DIR/verana/td/v1"
+INPUT_DIR="$VERANA_PROTO_DIR/verana/tr/v1"
 OUTPUT_DIR="codec"
 PROTO_DIR="$(pwd)" 
 

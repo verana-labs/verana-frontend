@@ -1,9 +1,17 @@
 import React, { useState, ReactNode, Dispatch, SetStateAction } from 'react';
 import { DataViewProps } from '@/app/types/dataViewTypes';
-import ActionDID from '@/app/msg/did-diretory/actionDID';
-import ActionTrustDeposit from '@/app/msg/trust-deposit/actionTrustDeposit';
+import ActionDID, { MsgTypeDID } from '@/app/msg/did-diretory/actionDID';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import useIsSmallScreen from '@/app/util/small-screen';
+import ActionTD, { MsgTypeTD } from '@/app/msg/trust-deposit/actionTD';
+
+// Define the valid actions for DID
+const validDIDAction = (action: string): action is MsgTypeDID => 
+  action === 'AddDID' || action === 'RenewDID' || action === 'TouchDID' || action === 'RemoveDID';
+
+// Define the valid actions for TD
+const validTDAction = (action: string): action is MsgTypeTD => 
+  action === 'ReclaimDepositTrustDeposit' || action === 'ClaimInterestsTrustDeposit';
 
 // Helper to render the correct action component
 function renderActionComponent(
@@ -11,11 +19,11 @@ function renderActionComponent(
   id: string,
   setActiveActionId: Dispatch<SetStateAction<string | null>>
 ): ReactNode {
-  if (action.endsWith("DID")) {
+  if (validDIDAction(action)) {
     return <ActionDID action={action} id={id} />;
   }
-  if (action.endsWith("TrustDeposit")) {
-    return <ActionTrustDeposit action={action} setActiveActionId={setActiveActionId} />;
+  if (validTDAction(action)) {
+    return <ActionTD action={action} setActiveActionId={setActiveActionId} />;
   }
   return null;
 }
@@ -83,6 +91,9 @@ export default function DataView<T extends object>({
                   {/* Group data fields into rows of 3 columns */}
                   {chunk(
                     section.fields
+                      .filter(
+                        field =>
+                          (field.show === 'view' || field.show === 'all' || field.show === undefined))
                       .map((field, fieldIndex) => ({
                         field,
                         value: data[field.name],
@@ -134,7 +145,7 @@ export default function DataView<T extends object>({
                           </button>
                           {isActive && (
                             <div className="mt-4">
-                              {renderActionComponent(String(value), id, setActiveActionId)}
+                              {renderActionComponent(String(value), id ?? '', setActiveActionId)}
                             </div>
                           )}
                         </td>

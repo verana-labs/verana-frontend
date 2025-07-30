@@ -1,5 +1,5 @@
-import type { AminoConverter } from '@cosmjs/stargate'
-import { MsgAddDID, MsgRenewDID, MsgTouchDID, MsgRemoveDID } from '@/proto-codecs/codec/veranablockchain/diddirectory/tx'
+import { AminoConverter, AminoTypes } from '@cosmjs/stargate'
+import { MsgAddDID, MsgRenewDID, MsgTouchDID, MsgRemoveDID } from '@/proto-codecs/codec/verana/dd/v1/tx'
 
 /**
  * Amino converter for MsgAddDID
@@ -68,3 +68,10 @@ export const MsgRemoveDIDAminoConverter: AminoConverter = {
       did: value.did,
     }),
 }
+
+export const veranaDIDAminoConverters = new AminoTypes ({
+  '/verana.dd.v1.MsgAddDID': MsgAddDIDAminoConverter,
+  '/verana.dd.v1.MsgRenewDID': MsgRenewDIDAminoConverter,
+  '/verana.dd.v1.MsgTouchDID': MsgTouchDIDAminoConverter,
+  '/verana.dd.v1.MsgRemoveDID': MsgRemoveDIDAminoConverter
+});

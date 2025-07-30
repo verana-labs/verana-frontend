@@ -5,6 +5,12 @@ export type Field<T> = {
   name: keyof T;
   label: string;
   type: "data" | "action";
+  inputType?: 'text' | 'number' | 'textarea' | 'select';
+  options?: { value: string | number; label: string }[]; // Only for select
+  show?: 'view' | 'edit' | 'all' | 'none' | 'create' ;
+  required?: true | false;
+  update?: true | false;
+  id?: true | false;
 };
 
 // Section grouping a subset of fields of T under a common title
@@ -20,7 +26,7 @@ export type Section<T> = {
 export interface DataViewProps<T extends object> {
   sections: Section<T>[];
   data: T;
-  id: string;
+  id: string | undefined;
   columnsCount?: number;
   columnsCountMd?: number;
 }
@@ -139,6 +145,12 @@ export const didSections: Section<DidData>[] = [
   }
 ];
 
+export const languageOptions = [
+  { value: 'en', label: 'English' },
+  { value: 'es', label: 'Spanish' },
+  { value: 'fr', label: 'French' },
+];
+
 //Trust Registry data
 export interface TrData {
   id: string;
@@ -146,6 +158,7 @@ export interface TrData {
   aka: string;
   controller: string;
   language: string;
+  docUrl?: string
   deposit: string;
   role?: string;
   created?: string;
@@ -155,22 +168,25 @@ export interface TrData {
 }
 
 // Sections configuration for TrData
+
 export const trSections: Section<TrData>[] = [
   {
     name: "Basic Information",
     icon: ShieldCheckIcon,
     fields: [
-      { name: 'id', label: 'Trust Registry Id', type: "data" },
-      { name: 'did', label: 'DID', type: "data" },
-      { name: 'aka', label: 'Aka', type: "data" },
-      { name: 'controller', label: 'Controller', type: "data" },
-      { name: 'language', label: 'Primary Governance Framework Language', type: "data" },
-      { name: 'deposit', label: 'Deposit', type: "data" },
-      { name: 'role', label: 'Role', type: "data" },
-      { name: 'created', label: 'Created', type: "data" },
-      { name: 'modified', label: 'Modified', type: "data" },
-      { name: 'active_version', label: 'Active GF Version', type: "data" },
-      { name: 'schemas', label: 'Schemas', type: "data" },
+      { name: 'id', label: 'Id', type: "data", show: 'all', update: false, id: true },
+      { name: 'did', label: 'DID', type: "data", show: 'all', required: true, update: true },
+      { name: 'aka', label: 'Aka', type: "data", show: 'all', required: true, update: true },
+      { name: 'controller', label: 'Controller', type: "data", show: 'all', update: false },
+      { name: 'language', label: 'Primary Governance Framework Language', type: "data", inputType: 'select',
+          options: languageOptions, show: 'all', required: true, update: true },
+      { name: 'docUrl', label: 'Governance Framework Primary Document URL', type: "data", show: 'create', required: true, update: false },
+      { name: 'deposit', label: 'Deposit', type: "data", show: 'view' },
+      { name: 'role', label: 'Role', type: "data", show: 'none' },
+      { name: 'created', label: 'Created', type: "data", show: 'none'  },
+      { name: 'modified', label: 'Modified', type: "data", show: 'none' },
+      { name: 'active_version', label: 'Active GF Version', type: "data", show: 'none' },
+      { name: 'schemas', label: 'Schemas', type: "data", show: 'none' },
     ]
   }
 ];

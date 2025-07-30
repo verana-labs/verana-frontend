@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { DataTable } from '@/app/ui/common/data-table';
 import { useRouter } from 'next/navigation';
-// import { PlusIcon } from '@heroicons/react/24/outline';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import TitleAndButton from '@/app/ui/common/title-and-button';
 import { env } from 'next-runtime-env';
 import { useNotification } from '@/app/ui/common/notification-provider';
@@ -48,9 +48,9 @@ export default function TrPage() {
     <>
       <TitleAndButton
         title="Trust Registries"
-        // buttonLabel="Add Trust Registry"
-        // to="/tr/add"
-        // Icon={PlusIcon}
+        buttonLabel="Add Trust Registry"
+        to="/tr/add"
+        Icon={PlusIcon}
       />
       <DataTable
         columns={columnsTrList}
