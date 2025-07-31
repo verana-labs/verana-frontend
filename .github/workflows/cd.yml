@@ -50,12 +50,6 @@ jobs:
             ${{ secrets.DOCKER_HUB_LOGIN }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
             ${{ github.ref_name == 'main' && format('{0}/{1}:latest', secrets.DOCKER_HUB_LOGIN, env.IMAGE_NAME) || '' }}
 
-      - name: Checkout deployment manifests
-        uses: actions/checkout@v4
-        with:
-          repository: verana-labs/verana-deploy
-          ref: main
-          path: ${{ env.VERANA_DEPLOY_PATH }}
 
       - name: Set up Kubernetes
         uses: azure/setup-kubectl@v4
@@ -81,7 +75,6 @@ jobs:
           export IMAGE_NAME=$IMAGE_NAME
           export IMAGE_TAG=$IMAGE_TAG
 
-          cd ${{ env.VERANA_DEPLOY_PATH }}
           kubectl delete -n ${{ env.VERANA_CHAIN_ID }} deployment $DEPLOYMENT_NAME || true
           envsubst < kubernetes/verana-frontend-deployment.yaml > substituted-deployment.yaml
           kubectl apply -f substituted-deployment.yaml --namespace=${{ env.VERANA_CHAIN_ID }}

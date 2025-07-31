@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  ${DEPLOYMENT_NAME}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app:  verana-frontend-app
+  template:
+    metadata:
+      labels:
+        app:  verana-frontend-app
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${CLUSTER_NODE}
+      containers:
+      - name:  verana-frontend-app
+        image: veranalabs/verana-front:main
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: NEXT_PUBLIC_PORT
+          value: "${NEXT_PUBLIC_PORT}"
+        - name: NEXT_PUBLIC_BASE_URL
+          value: "${NEXT_PUBLIC_BASE_URL}"
+        - name: NEXT_PUBLIC_VERANA_CHAIN_ID
+          value: "${NEXT_PUBLIC_VERANA_CHAIN_ID}"
+        - name: NEXT_PUBLIC_VERANA_CHAIN_NAME
+          value: "${NEXT_PUBLIC_VERANA_CHAIN_NAME}"
+        - name: NEXT_PUBLIC_VERANA_RPC_ENDPOINT
+          value: "${NEXT_PUBLIC_VERANA_RPC_ENDPOINT}"
+        - name: NEXT_PUBLIC_VERANA_REST_ENDPOINT
+          value: "${NEXT_PUBLIC_VERANA_REST_ENDPOINT}"
+        - name: NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_ACCOUNT
+          value: "${NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_ACCOUNT}"
+        - name: NEXT_PUBLIC_VERANA_REST_ENDPOINT_LIST_DID
+          value: "${NEXT_PUBLIC_VERANA_REST_ENDPOINT_LIST_DID}"
+        - name: NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_DID
+          value: "${NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_DID}"
+        ports:
+        - containerPort: 3000
