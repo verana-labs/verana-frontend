@@ -7,8 +7,6 @@ env:
   KUBECONFIG: ${{ secrets.OVH_KUBECONFIG }}
   VERANA_DEPLOY_PATH: verana-deploy
   CLUSTER_NODE: cluster-utc-node-07efe5
-  VERANA_ENV: testnet
-  VERANA_CHAIN_ID: vna-testnet-1
 
 on:
   push:
