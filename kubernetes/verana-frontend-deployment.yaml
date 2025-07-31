@@ -16,7 +16,7 @@ spec:
         kubernetes.io/hostname: ${CLUSTER_NODE}
       containers:
       - name:  verana-frontend-app
-        image: veranalabs/verana-front:main
+        image: veranalabs/${IMAGE_NAME}:${IMAGE_TAG}
         imagePullPolicy: IfNotPresent
         env:
         - name: NEXT_PUBLIC_PORT
