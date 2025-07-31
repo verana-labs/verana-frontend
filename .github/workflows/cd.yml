@@ -56,17 +56,16 @@ jobs:
 
       - name: Deploy to OVH
         run: |
+          set -euo pipefail
           echo "$KUBECONFIG" > k8s_config
           export KUBECONFIG=k8s_config
 
+          declare -A CHAIN_IDS=( ["testnet"]="vna-testnet-1" ["devnet"]="vna-devnet-1" )
+          declare -A CHAIN_NAMES=( ["testnet"]="VeranaTestnet1" ["devnet"]="VeranaDevnet1" )
+
           for ENV in testnet devnet; do
-            if [ "$ENV" = "testnet" ]; then
-              VERANA_CHAIN_ID="vna-testnet-1"
-              VERANA_CHAIN_NAME="VeranaTestnet1"
-            else
-              VERANA_CHAIN_ID="vna-devnet-1"
-              VERANA_CHAIN_NAME="VeranaDevnet1"
-            fi
+            VERANA_CHAIN_ID="${CHAIN_IDS[$ENV]}"
+            VERANA_CHAIN_NAME="${CHAIN_NAMES[$ENV]}"
 
             export DEPLOYMENT_NAME="verana-${ENV}-frontend-app-deployment"
             export NEXT_PUBLIC_PORT=3000
@@ -78,12 +77,10 @@ jobs:
             export NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_ACCOUNT="https://api.${ENV}.verana.network/verana/td/v1/get"
             export NEXT_PUBLIC_VERANA_REST_ENDPOINT_LIST_DID="https://api.${ENV}.verana.network/verana/dd/v1/list"
             export NEXT_PUBLIC_VERANA_REST_ENDPOINT_GET_DID="https://api.${ENV}.verana.network/verana/dd/v1/get"
-            export DH_USERNAME=$DH_USERNAME
-            export IMAGE_NAME=$IMAGE_NAME
-            export IMAGE_TAG=$IMAGE_TAG
 
             echo "Deploying to $ENV ($VERANA_CHAIN_ID)..."
+            echo "Using image: veranalabs/$IMAGE_NAME:$IMAGE_TAG"
+            kubectl create namespace $VERANA_CHAIN_ID --dry-run=client -o yaml | kubectl apply -f -
             kubectl delete -n $VERANA_CHAIN_ID deployment $DEPLOYMENT_NAME || true
-            envsubst < kubernetes/verana-frontend-deployment.yaml > substituted-deployment.yaml
-            kubectl apply -f substituted-deployment.yaml --namespace=$VERANA_CHAIN_ID
+            envsubst < kubernetes/verana-frontend-deployment.yaml | tee substituted-deployment.yaml | kubectl apply -f -
           done
