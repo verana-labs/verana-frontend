@@ -82,5 +82,5 @@ jobs:
             echo "Using image: veranalabs/$IMAGE_NAME:$IMAGE_TAG"
             kubectl create namespace $VERANA_CHAIN_ID --dry-run=client -o yaml | kubectl apply -f -
             kubectl delete -n $VERANA_CHAIN_ID deployment $DEPLOYMENT_NAME || true
-            envsubst < kubernetes/verana-frontend-deployment.yaml | tee substituted-deployment.yaml | kubectl apply -f -
+            envsubst < kubernetes/verana-frontend-deployment.yaml | tee substituted-deployment.yaml | kubectl apply -f - --namespace=$VERANA_CHAIN_ID
           done
