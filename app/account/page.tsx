@@ -2,17 +2,17 @@
 
 import React, { useEffect, useState } from 'react';
 import DataView from '@/app/ui/common/data-view-columns';
-import { useChain } from '@cosmos-kit/react';
-import { useVeranaChain } from "@/app/config/useVeranaChain";
 import { accountSections, type AccountData } from '@/app/types/dataViewTypes';
 import { formatVNA } from '@/app/util/util';
 import TitleAndButton from '@/app/ui/common/title-and-button';
-import { env } from 'next-runtime-env';
 import { useNotification } from '@/app/ui/common/notification-provider';
+import { useTrustDepositAccountData } from '@/app/hooks/useTrustDepositAccountData';
 
 export default function Page() {
-  const veranaChain = useVeranaChain();
-  const { address, isWalletConnected, getStargateClient } = useChain(veranaChain.chain_name);
+  // Custom hook to fetch account/trust deposit data
+  const { accountData, errorAccountData } = useTrustDepositAccountData();
+
+  // State for processed account data to display in DataView
   const [data, setData] = useState<AccountData>({
     balance: null,
     totalTrustDeposit: null,
@@ -24,68 +24,39 @@ export default function Page() {
     reclaimDeposit: null,
   });
 
-  const getAccountURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT;
+  // Notification context for showing error messages
   const { notify } = useNotification();
-  
+
   useEffect(() => {
-    if (!isWalletConnected || !address || !getStargateClient) return;
-
-    const fetchData = async () => {
-      let balance = null;
-      let totalTrustDeposit = null;
-      let claimableInterests = null;
-      let reclaimable = null;
-      let message = null;
+    if (accountData) {
+      // Prepare constants and process fields for the UI
       const getVNA = "GetVNATrustDeposit";
-      const claimInterests = "ClaimInterestsTrustDeposit";
-      const reclaimDeposit = "ReclaimDepositTrustDeposit";
-
-      try {
-        const client = await getStargateClient();
-        const balInfo = await client.getBalance(address, 'uvna');
-        balance = formatVNA(balInfo.amount, 6);
-      } catch (err) {
-        notify(
-          err instanceof Error ? err.message : String(err),
-          'error',
-          'Error fetching balance'
-        );
-      }
-
-      try {
-        if (!getAccountURL) throw new Error('API endpoint not configured');
-
-        const resp = await fetch(`${getAccountURL}/get/${address}`);
-        const json = await resp.json();
-        if (json.trust_deposit) {
-          totalTrustDeposit = formatVNA(json.trust_deposit.amount, 6);
-          claimableInterests = formatVNA('0', 6);
-          reclaimable = formatVNA(json.trust_deposit.claimable, 6);
-        } else if (json.message) {
-          message = json.message;
-        }
-      } catch (err) {
-        notify(
-          err instanceof Error ? err.message : String(err),
-          'error',
-          'Error fetching trust deposit'
-        );
-      }
+      // Only enable claim actions if value > 0
+      const claimInterests =
+        Number(accountData.claimableInterests) >= 0 ? "MsgReclaimTrustDepositYield" : null;
+      const reclaimDeposit =
+        Number(accountData.reclaimable) >= 0 ? "MsgReclaimTrustDeposit" : null;
 
       setData({
-        balance,
-        totalTrustDeposit,
-        claimableInterests,
-        reclaimable,
-        message,
+        balance: formatVNA(accountData.balance, 6),
+        totalTrustDeposit: formatVNA(accountData.totalTrustDeposit, 6),
+        claimableInterests: formatVNA(accountData.claimableInterests, 6),
+        reclaimable: formatVNA(accountData.reclaimable, 6),
+        message: accountData.message,
         getVNA,
         claimInterests,
         reclaimDeposit,
       });
-    };
-
-    fetchData();
-  }, [getAccountURL, notify, address, isWalletConnected, getStargateClient]);
+    }
+    // Show a notification if an error occurred
+    if (errorAccountData) {
+      notify(errorAccountData, 'error', 'Error fetching trust deposit');
+    }
+    // Show a notification if message
+    if (accountData.message) {
+      notify(accountData.message, 'info', 'Message trust deposit');
+    }
+  }, [accountData, errorAccountData, notify]);
 
   return (
     <>
@@ -93,7 +64,6 @@ export default function Page() {
       <DataView<AccountData>
         sections={accountSections}
         data={data}
-        id=""
         columnsCount={3}
         columnsCountMd={2}
       />

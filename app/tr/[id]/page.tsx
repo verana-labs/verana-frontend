@@ -106,6 +106,7 @@ export default function TrViewPage() {
         <EditableDataView<TrData>
           sections={trSections}
           data={data}
+          messageType={'MsgUpdateTrustRegistry'}
           id={data.id}
           onSave={ onSave }
           onCancel={() => setEditing(false)}  />

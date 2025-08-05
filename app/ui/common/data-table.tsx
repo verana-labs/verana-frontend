@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useMemo } from 'react';
 import { DataTableProps } from '@/app/types/dataTableTypes';
 
@@ -18,6 +20,7 @@ export function DataTable<T extends object>({
   initialPageSize = 10,
   pageSizeOptions = [5, 10, 20, 50],
   onRowClick,
+  description
 }: DataTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(initialPageSize);
@@ -98,6 +101,19 @@ export function DataTable<T extends object>({
       w-full
       mx-auto p-4 rounded-2xl shadow bg-light-bg dark:bg-dark-bg
     ">
+      {/* Help Section (if present) */}
+      {description && Array.isArray(description) && (
+        <div className="px-4 text-justify">
+          {description.map((d, idx) => (
+            <p
+              key={idx}
+              className="text-sm font-normal leading-normal mb-2"
+            >
+              {d}
+            </p>
+          ))}
+        </div>
+      )}
       <div className="overflow-x-auto w-full">
         <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead>

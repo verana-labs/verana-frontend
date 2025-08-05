@@ -1,82 +1,88 @@
-'use client';
+'use client'
 
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { DidData, didSections } from '@/app/types/dataViewTypes';
 import DataView from '@/app/ui/common/data-view-columns';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
-import { formatVNA } from '@/app/util/util';
 import TitleAndButton from '@/app/ui/common/title-and-button';
-import { env } from 'next-runtime-env';
 import { useNotification } from '@/app/ui/common/notification-provider';
+import { useTrustDepositAccountData } from '@/app/hooks/useTrustDepositAccountData';
+import { useDIDData } from '@/app/hooks/useDIDData';
+import { useEffect, useState, useMemo } from 'react';
+import { formatVNA } from '@/app/util/util';
 
 export default function DidViewPage() {
   const params = useParams();
   const id = params?.id as string;
-  const getURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID;
 
-  const [data, setData] = useState<DidData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
+  // Hook to get connected account data (includes address)
+  const { accountData, errorAccountData } = useTrustDepositAccountData();
   const { notify } = useNotification();
+  const router = useRouter();
+  const [errorNotified, setErrorNotified] = useState(false);
 
+  // Hook to fetch the DID data (optionally actions if controller matches)
+  const { dataDID, loading, errorDIDData } = useDIDData(id);
+
+  // Notify and redirect if there is an error fetching account data
   useEffect(() => {
-    if (!id) {
-      setError('Missing DID');
-      setLoading(false);
-      return;
+    if (errorAccountData && !errorNotified) {
+      (async () => {
+        await notify(errorAccountData, 'error', 'Error fetching account balance');
+        setErrorNotified(true);
+        router.push('/did');
+      })();
     }
-    const fetchDid = async () => {
-      try {
-        if (!getURL) throw new Error('API endpoint not configured');
+  }, [errorAccountData, notify, router, errorNotified]);
 
-        const url = `${getURL}/get/${decodeURIComponent(id)}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Error ${res.status}`);
+  // DidData, formatting deposit and setting actions if controller matches
+  const data: DidData | null = useMemo(() => {
+    if (!dataDID) return null;
 
-        // Define expected shape: either DidData or { did_entry: DidData }
-        const json: unknown = await res.json();
-        type ResponseShape = Partial<{ did_entry: DidData }> & DidData;
-        const resp = json as ResponseShape;
-        const entry = resp.did_entry ?? (resp as DidData);
-        entry.deposit = formatVNA(entry.deposit, 6);
-        entry.renewDID = 'RenewDID';
-        entry.touchDID = 'TouchDID';
-        entry.removeDID = 'RemoveDID';
-        setData(entry);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        setError(message);
-        notify(
-          message,
-          'error',
-          'Error fetching DID'
-        );
-      } finally {
-        setLoading(false);
-      }
+    // Create a copy of dataDID to avoid mutating the original
+    const data = { ...dataDID };
+
+    if (accountData.address &&  accountData.address === data.controller) {
+      data.renewDID = 'MsgRenewDID';
+      data.touchDID = 'MsgTouchDID';
+      data.removeDID = 'MsgRemoveDID';
+    }
+
+    // Return the object with formatted deposit
+    return {
+      ...data,
+      deposit: formatVNA(data.deposit, 6),
     };
-
-    fetchDid();
-  }, [id, getURL, notify]);
-
+  }, [dataDID, accountData.address]);
+  
+  // Wait until accountData.address exists before loading the DID info
+  if (!accountData?.address) {
+    return <div className="p-6 text-center">Loading wallet address…</div>;
+  }
+  // Show loading spinner/message while fetching DID details
   if (loading) {
     return <div className="p-6 text-center">Loading DID details…</div>;
   }
-  if (error || !data) {
-    return <div className="p-6 text-red-600">Error: {error || 'DID not found'}</div>;
+  // Show error message if fetch failed or DID not found
+  if (errorDIDData || !data) {
+    return <div className="p-6 text-red-600">Error: {errorDIDData || 'DID not found'}</div>;
   }
 
+  // Render the page: Title, button, and DataView for DID info
   return (
     <>
       <TitleAndButton
-        title={"DID " + data.did}
+        title={`DID ${data.did}`}
         buttonLabel="Back to Directory"
         to="/did"
         Icon={ChevronLeftIcon}
       />
-      <DataView<DidData> sections={didSections} data={data} id={decodeURIComponent(id)} columnsCount={2} />
+      <DataView<DidData>
+        sections={didSections}
+        data={data}
+        id={decodeURIComponent(id)}
+        columnsCount={2}
+      />
     </>
   );
 }

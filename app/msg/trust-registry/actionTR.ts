@@ -1,22 +1,20 @@
+'use client';
+
 import { StdFee,  DeliverTxResponse} from '@cosmjs/stargate';
 import {
   MsgCreateTrustRegistry,
   MsgUpdateTrustRegistry,
   MsgArchiveTrustRegistry,
 } from '@/proto-codecs/codec/verana/tr/v1/tx';
-import { veranaGasLimit, veranaGasPrice } from '@/app/config/veranaChain';
-import { useVeranaChain } from '@/app/config/useVeranaChain';
+import { veranaGasLimit, veranaGasPrice } from '@/app/config/veranaChain.client';
+import { useVeranaChain } from '@/app/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useNotification } from '@/app/ui/common/notification-provider';
+import { MSG_ERROR_ACTION_TR, MSG_INPROGRESS_ACTION_TR, MSG_SUCCESS_ACTION_TR } from '@/app/constants/notificationMsgForMsgType';
+import { isValidUrl } from '@/app/util/validations'
 
-// Supported Trust Registry actions
-export type MsgType =
-  | 'CreateTrustRegistry'
-  | 'UpdateTrustRegistry'
-  | 'ArchiveTrustRegistry';
-
-export const MSG_TYPE_CONFIG = {
+export const MSG_TYPE_CONFIG_TR = {
   CreateTrustRegistry: {
     typeUrl: '/verana.tr.v1.MsgCreateTrustRegistry',
     txLabel: 'CreateTrustRegistry',
@@ -30,26 +28,6 @@ export const MSG_TYPE_CONFIG = {
     txLabel: 'ArchiveTrustRegistry',
   },
 } as const;
-
-// Constants for success, error, and in-progress messages for each action
-const MSG_SUCCESS_ACTION: Record<MsgType, string> = {
-  CreateTrustRegistry: 'Trust Registry created successfully!',
-  UpdateTrustRegistry: 'Trust Registry updated successfully!',
-  ArchiveTrustRegistry: 'Trust Registry archived successfully!',
-};
-const MSG_INPROGRESS_ACTION: Record<MsgType, string> = {
-  CreateTrustRegistry: 'Creating Trust Registry...',
-  UpdateTrustRegistry: 'Updating Trust Registry...',
-  ArchiveTrustRegistry: 'Archiving Trust Registry...',
-};
-const MSG_ERROR_ACTION: Record<
-  MsgType,
-  (id: string | number | undefined, code?: number, msg?: string) => string
-> = {
-  CreateTrustRegistry: (id, code, msg) => `Failed to create Trust Registry${id ? ` ${id}` : ''}. ${code ? `(${code}) ` : ''}${msg ?? ''}`,
-  UpdateTrustRegistry: (id, code, msg) => `Failed to update Trust Registry${id ? ` ${id}` : ''}. ${code ? `(${code}) ` : ''}${msg ?? ''}`,
-  ArchiveTrustRegistry: (id, code, msg) => `Failed to archive Trust Registry${id ? ` ${id}` : ''}. ${code ? `(${code}) ` : ''}${msg ?? ''}`,
-};
 
 // Union type for action parameters
 type ActionTRParams =
@@ -102,16 +80,24 @@ export function useActionTR() {
         // Calculate SRI hash for docUrl using your API
         let sri: string | undefined;
         if (params.docUrl) {
+          if (!isValidUrl(params.docUrl)){
+            await notify('Invalid document Document URL', 'error');
+            return;
+          }
           try {
             const res = await fetch(`/api/sri?url=${encodeURIComponent(params.docUrl)}`);
+            if (!res.ok) {
+              await notify(`Could not calculate SRI for Document URL.`, 'error', 'Transaction failed');
+              return;
+            }
             const data = await res.json();
-            sri = data.sri; 
+            sri = data.sri;
           } catch (err) {
-            await notify('Could not calculate SRI for docUrl: ' + err, 'error', 'Transaction failed');
+            await notify('Could not calculate SRI for Document URL: ' + err, 'error', 'Transaction failed');
           }
         }
 
-        typeUrl = MSG_TYPE_CONFIG.CreateTrustRegistry.typeUrl;
+        typeUrl = MSG_TYPE_CONFIG_TR.CreateTrustRegistry.typeUrl;
         value = MsgCreateTrustRegistry.fromPartial({
           creator: address,
           did: params.did,
@@ -123,7 +109,7 @@ export function useActionTR() {
         // id undefined for create
         break;
       case 'UpdateTrustRegistry':
-        typeUrl = MSG_TYPE_CONFIG.UpdateTrustRegistry.typeUrl;
+        typeUrl = MSG_TYPE_CONFIG_TR.UpdateTrustRegistry.typeUrl;
         value = MsgUpdateTrustRegistry.fromPartial({
           creator: params.creator,
           id: params.id,
@@ -133,7 +119,7 @@ export function useActionTR() {
         id = params.id?.toString();
         break;
       case 'ArchiveTrustRegistry':
-        typeUrl = MSG_TYPE_CONFIG.ArchiveTrustRegistry.typeUrl;
+        typeUrl = MSG_TYPE_CONFIG_TR.ArchiveTrustRegistry.typeUrl;
         value = MsgArchiveTrustRegistry.fromPartial({
           creator: params.creator,
           id: params.id,
@@ -155,7 +141,7 @@ export function useActionTR() {
 
     // Show progress notification
     let notifyPromise: Promise<void> = notify(
-      MSG_INPROGRESS_ACTION[params.msgType],
+      MSG_INPROGRESS_ACTION_TR[params.msgType],
       'inProgress',
       'Transaction in progress'
     );
@@ -164,25 +150,25 @@ export function useActionTR() {
     let success = false;
 
     try {
-      res = await signAndBroadcast([{ typeUrl, value }], fee, MSG_TYPE_CONFIG[params.msgType].txLabel);
+      res = await signAndBroadcast([{ typeUrl, value }], fee, MSG_TYPE_CONFIG_TR[params.msgType].txLabel);
 
       if (res.code === 0) {
         success = true;
         notifyPromise = notify(
-          MSG_SUCCESS_ACTION[params.msgType],
+          MSG_SUCCESS_ACTION_TR[params.msgType],
           'success',
           'Transaction successful'
         );
       } else {
         notifyPromise = notify(
-          MSG_ERROR_ACTION[params.msgType](id, res.code, res.rawLog) || `(${res.code}): ${res.rawLog}`,
+          MSG_ERROR_ACTION_TR[params.msgType](id, res.code, res.rawLog) || `(${res.code}): ${res.rawLog}`,
           'error',
           'Transaction failed'
         );
       }
     } catch (err) {
       notifyPromise = notify(
-        MSG_ERROR_ACTION[params.msgType](id, undefined, err instanceof Error ? err.message : String(err)),
+        MSG_ERROR_ACTION_TR[params.msgType](id, undefined, err instanceof Error ? err.message : String(err)),
         'error',
         'Transaction failed'
       );

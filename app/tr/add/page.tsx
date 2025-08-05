@@ -6,7 +6,7 @@ import EditableDataView from '@/app/ui/common/data-edit';
 import TitleAndButton from '@/app/ui/common/title-and-button';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
-import { useVeranaChain } from '@/app/config/useVeranaChain';
+import { useVeranaChain } from '@/app/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
 import { useActionTR } from '@/app/msg/trust-registry/actionTR';
 
@@ -56,10 +56,10 @@ export default function TrNewPage() {
       <EditableDataView<TrData>
         sections={trSections}
         id={undefined}
+        messageType={'MsgCreateTrustRegistry'}     
         data={data}
         onSave={onSave}
-        onCancel={() => router.push('/tr')}
-      />
+        onCancel={() => router.push('/tr')} />
     </>
   );
 }
