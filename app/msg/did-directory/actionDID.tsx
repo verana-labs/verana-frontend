@@ -71,7 +71,6 @@ export default function ActionDID({ action, id, data }: { action: MsgTypeDID, id
   const [totalValue, setTotalValue] = useState<string>("0.00");
 
   useEffect(() => {
-
     // Calculate deposit and total required value
     let deposit = Number(value || 0);
     if (messageType === "MsgAddDID" || messageType === "MsgRenewDID") {
@@ -79,13 +78,14 @@ export default function ActionDID({ action, id, data }: { action: MsgTypeDID, id
     }
     const feeAmount = Number(amountVNA || 0);
     setTotalValue((deposit + feeAmount).toFixed(6));
-
-    // Enable only if: balance >= total, and if MsgAddDID the did is not empty
-    const hasEnoughBalance = !!accountData.balance && Number(accountData.balance) >= (deposit + feeAmount);
+    const availableBalance = accountData.balance ? Number(accountData.balance)/ 1_000_000 : 0;
+    const availableReclaimable = (accountData.reclaimable) ? Number(accountData.reclaimable)/ 1_000_000 : 0;
+    const hasEnoughBalance = 
+      (availableBalance >= feeAmount) &&
+      ( ( availableReclaimable + availableBalance - feeAmount) >= deposit );
     const didRequired = messageType === 'MsgAddDID' ? !!form.did.trim() : true;
-
     setEnabledAction(hasEnoughBalance && didRequired);
-  }, [value, form.years, form.did, amountVNA, messageType, accountData.balance]);
+  }, [value, form.years, form.did, amountVNA, messageType, accountData.balance, accountData.reclaimable]);
 
   // Handle input changes
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
@@ -240,7 +240,7 @@ export default function ActionDID({ action, id, data }: { action: MsgTypeDID, id
                   inline-flex items-center justify-center rounded-md  transition-all 
                   hover:text-light-selected-text hover:bg-light-selected-bg
                   dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg 
-                  disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
+                  disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none px-2 py-1"
       >
         {label}
       </button>
