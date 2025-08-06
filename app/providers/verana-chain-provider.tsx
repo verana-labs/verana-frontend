@@ -3,11 +3,11 @@
 import '@/app/ui/global.css';
 import { ChainProvider } from '@cosmos-kit/react';
 import "@interchain-ui/react/styles";
-import type { SigningStargateClientOptions } from '@cosmjs/stargate';
-import { veranaAssets, veranaRegistry, veranaAmino, veranaGasPrice } from '@/app/config/veranaChain';
+import { GasPrice, type SigningStargateClientOptions } from '@cosmjs/stargate';
+import { veranaAssets, veranaRegistry, veranaAmino, veranaGasPrice } from '@/app/config/veranaChain.client';
 import {wallets} from "cosmos-kit"
 import { ThemeProvider } from 'next-themes';
-import { useVeranaChain } from "@/app/config/useVeranaChain";
+import { useVeranaChain } from "@/app/hooks/useVeranaChain";
 
 export default function RootLayout({ children }: { children: React.ReactNode; }) {
 
@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
             stargate: (): SigningStargateClientOptions => ({
               registry: veranaRegistry,
               aminoTypes: veranaAmino,
-              gasPrice: veranaGasPrice,
+              gasPrice: GasPrice.fromString(veranaGasPrice.toString())
             }),
           }}          
           walletConnectOptions={{

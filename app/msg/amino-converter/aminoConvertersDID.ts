@@ -1,3 +1,5 @@
+'use client';
+
 import { AminoConverter, AminoTypes } from '@cosmjs/stargate'
 import { MsgAddDID, MsgRenewDID, MsgTouchDID, MsgRemoveDID } from '@/proto-codecs/codec/verana/dd/v1/tx'
 
@@ -75,3 +77,10 @@ export const veranaDIDAminoConverters = new AminoTypes ({
   '/verana.dd.v1.MsgTouchDID': MsgTouchDIDAminoConverter,
   '/verana.dd.v1.MsgRemoveDID': MsgRemoveDIDAminoConverter
 });
+
+// Supported Cosmos Amino message types for DID actions
+export type MsgAny =
+  | { typeUrl: '/verana.dd.v1.MsgAddDID'; value: MsgAddDID }
+  | { typeUrl: '/verana.dd.v1.MsgRenewDID'; value: MsgRenewDID }
+  | { typeUrl: '/verana.dd.v1.MsgTouchDID'; value: MsgTouchDID }
+  | { typeUrl: '/verana.dd.v1.MsgRemoveDID'; value: MsgRemoveDID };

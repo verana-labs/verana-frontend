@@ -18,6 +18,7 @@ export interface DataTableProps<T extends object> {
   initialPageSize?: number;
   pageSizeOptions?: number[];
   onRowClick?: (row: T) => void;
+  description?: string[];
 };
 
 export interface DidList {

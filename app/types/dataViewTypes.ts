@@ -26,7 +26,7 @@ export type Section<T> = {
 export interface DataViewProps<T extends object> {
   sections: Section<T>[];
   data: T;
-  id: string | undefined;
+  id?: string;
   columnsCount?: number;
   columnsCountMd?: number;
 }
@@ -180,7 +180,7 @@ export const trSections: Section<TrData>[] = [
       { name: 'controller', label: 'Controller', type: "data", show: 'all', update: false },
       { name: 'language', label: 'Primary Governance Framework Language', type: "data", inputType: 'select',
           options: languageOptions, show: 'all', required: true, update: true },
-      { name: 'docUrl', label: 'Governance Framework Primary Document URL', type: "data", show: 'create', required: true, update: false },
+      { name: 'docUrl', label: 'Governance Framework Primary Document URL', type: "data", show: 'create', required: true, update: true },
       { name: 'deposit', label: 'Deposit', type: "data", show: 'view' },
       { name: 'role', label: 'Role', type: "data", show: 'none' },
       { name: 'created', label: 'Created', type: "data", show: 'none'  },

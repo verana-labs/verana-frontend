@@ -1,3 +1,5 @@
+'use client';
+
 import { LinkSlashIcon } from '@heroicons/react/24/outline';
 import Wallet from "@/app/wallet/wallet";
 

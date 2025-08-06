@@ -15,7 +15,7 @@ import { shortenMiddle } from "@/app/util/util";
 import { ArrowRightEndOnRectangleIcon, ArrowTopRightOnSquareIcon, QrCodeIcon, Square2StackIcon } from "@heroicons/react/24/outline";
 import IconLabelButton from "@/app/ui/common/icon-label-button";
 import { JSX } from "react";
-import { useVeranaChain } from "@/app/config/useVeranaChain";
+import { useVeranaChain } from "@/app/hooks/useVeranaChain";
 
 export default function Wallet({ isNavBar = true }: { isNavBar?: boolean }) {
   

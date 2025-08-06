@@ -1,5 +1,5 @@
 import { Asset } from '@chain-registry/types';
-import { GasPrice, AminoTypes } from "@cosmjs/stargate";
+import { AminoTypes } from "@cosmjs/stargate";
 import { Registry } from '@cosmjs/proto-signing'
 import { MsgAddDIDAminoConverter, MsgRemoveDIDAminoConverter, MsgRenewDIDAminoConverter, MsgTouchDIDAminoConverter } 
         from '@/app/msg/amino-converter/aminoConvertersDID';
@@ -99,8 +99,9 @@ export const veranaAmino = new AminoTypes({
     // '/verana.tr.v1.MsgIncreaseActiveGovernanceFrameworkVersion': MsgIncreaseActiveGovernanceFrameworkVersionAminoConverter,
 });
 
-export const veranaGasPrice = GasPrice.fromString("3uvna");
+export const veranaGasPrice = 3;
 export const veranaGasLimit = 300000; 
+export const veranaDenom = 'uvna';
 
 // *************************
 

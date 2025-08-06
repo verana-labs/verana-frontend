@@ -1,3 +1,5 @@
+'use client';
+
 import { Inter, Lusitana, Kantumruy_Pro } from 'next/font/google';
  
 export const inter = Inter({

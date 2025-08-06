@@ -1,3 +1,5 @@
+'use client';
+
 import NavLinks from '@/app/ui/common/nav-links';
 
 export default function SideNav() {

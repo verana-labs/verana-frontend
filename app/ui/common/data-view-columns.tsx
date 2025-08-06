@@ -1,29 +1,33 @@
+'use client';
+
 import React, { useState, ReactNode, Dispatch, SetStateAction } from 'react';
 import { DataViewProps } from '@/app/types/dataViewTypes';
-import ActionDID, { MsgTypeDID } from '@/app/msg/did-diretory/actionDID';
+import ActionDID from '@/app/msg/did-directory/actionDID';
+import { MsgTypeDID, MsgTypeTD } from '@/app/constants/notificationMsgForMsgType';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import useIsSmallScreen from '@/app/util/small-screen';
-import ActionTD, { MsgTypeTD } from '@/app/msg/trust-deposit/actionTD';
+import ActionTD from '@/app/msg/trust-deposit/actionTD';
 
 // Define the valid actions for DID
 const validDIDAction = (action: string): action is MsgTypeDID => 
-  action === 'AddDID' || action === 'RenewDID' || action === 'TouchDID' || action === 'RemoveDID';
+  action === 'MsgAddDID' || action === 'MsgRenewDID' || action === 'MsgTouchDID' || action === 'MsgRemoveDID';
 
 // Define the valid actions for TD
 const validTDAction = (action: string): action is MsgTypeTD => 
-  action === 'ReclaimDepositTrustDeposit' || action === 'ClaimInterestsTrustDeposit';
+  action === 'MsgReclaimTrustDeposit' || action === 'MsgReclaimTrustDepositYield';
 
 // Helper to render the correct action component
 function renderActionComponent(
   action: string,
   id: string,
-  setActiveActionId: Dispatch<SetStateAction<string | null>>
+  setActiveActionId: Dispatch<SetStateAction<string | null>>,
+  data: object
 ): ReactNode {
   if (validDIDAction(action)) {
-    return <ActionDID action={action} id={id} />;
+    return <ActionDID action={action} id={id} data={data? data : undefined} />;
   }
   if (validTDAction(action)) {
-    return <ActionTD action={action} setActiveActionId={setActiveActionId} />;
+    return <ActionTD action={action} setActiveActionId={setActiveActionId} data={data}/>;
   }
   return null;
 }
@@ -145,7 +149,7 @@ export default function DataView<T extends object>({
                           </button>
                           {isActive && (
                             <div className="mt-4">
-                              {renderActionComponent(String(value), id ?? '', setActiveActionId)}
+                              {renderActionComponent(String(value), id ?? '', setActiveActionId, data)}
                             </div>
                           )}
                         </td>
