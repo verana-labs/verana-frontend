@@ -46,7 +46,7 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfo> = {
   },
   MsgReclaimTrustDeposit: {
     label: 'Confirm',
-    description: 'Destructive action! I understand that reclaiming freed trust deposit will transfer 40% of my reclaimable balance to my main balance and burn the remaining 60%.',
+    description: 'Destructive action! I understand that reclaiming freed trust deposit will transfer {addBalance}% of my reclaimable balance to my main balance and burn the remaining {burnRate}%.',
     cost: 'You’ll need approx. {value} VNA to complete this transaction.',
   },
   MsgRepaySlashedTrustDeposit: {
@@ -74,4 +74,9 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfo> = {
 // Utility function to fill {value} in the cost message
 export function getCostMessage(template: string, value: string | number, td?: string | number) {
   return template.replace('{value}', String(value)).replace('{td}', String(td));
+}
+
+// Utility function to fill {addBalance} {burnRate} in the description message
+export function getDescriptionMessage(template: string, addBalance: string | number, burnRate: string | number) {
+  return template.replace('{addBalance}', String(addBalance)).replace('{burnRate}', String(burnRate));
 }

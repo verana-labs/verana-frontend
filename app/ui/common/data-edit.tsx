@@ -87,14 +87,12 @@ export default function EditableDataView<T extends object>({
     // Calculate deposit and total required value
     const deposit = Number(value || 0);
     const feeAmount = Number(amountVNA || 0);
-
-    // Set the total value needed (deposit + fee)
     setTotalValue((deposit + feeAmount).toFixed(6));
-
-    // Enable only if: balance >= total, required fields valid, and not submitting
-    const hasEnoughBalance =
-      !!accountData.balance && Number(accountData.balance) >= (deposit + feeAmount);
-
+    const availableBalance = accountData.balance ? Number(accountData.balance)/ 1_000_000 : 0;
+    const availableReclaimable = (accountData.reclaimable) ? Number(accountData.reclaimable)/ 1_000_000 : 0;
+    const hasEnoughBalance = 
+      (availableBalance >= feeAmount) &&
+      ( ( availableReclaimable + availableBalance - feeAmount) >= deposit );
     setEnabledAction(hasEnoughBalance);
   }, [value, amountVNA, messageType, accountData.balance]);
   

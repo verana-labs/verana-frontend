@@ -12,6 +12,8 @@ import { useNotification } from '@/app/ui/common/notification-provider';
 import langs from 'langs';
 import EditableDataView from '@/app/ui/common/data-edit';
 import { useActionTR } from '@/app/msg/trust-registry/actionTR';
+import { useChain } from '@cosmos-kit/react';
+import { useVeranaChain } from '@/app/hooks/useVeranaChain';
 
 export default function TrViewPage() {
   const params = useParams();
@@ -25,6 +27,9 @@ export default function TrViewPage() {
 
   const { notify } = useNotification();
   const actionTR = useActionTR(); 
+
+  const veranaChain = useVeranaChain();
+  const { address } = useChain(veranaChain.chain_name);
 
   useEffect(() => {
     if (!id) {
@@ -113,14 +118,16 @@ export default function TrViewPage() {
       ) : (
         <>
           <DataView<TrData> sections={trSections} data={data} id={data.id} columnsCount={2} />
-          <div className="flex justify-end mt-4">
-            <button
-              className="px-3 py-1 rounded-md disabled:opacity-40 bg-light-bg dark:bg-dark-bg hover:text-light-selected-text hover:bg-light-selected-bg dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg"
-              onClick={() => setEditing(true)}
-            >
-              Edit
-            </button>
-          </div>
+          { data.controller === address && (
+            <div className="flex justify-end mt-4">
+              <button
+                className="px-3 py-1 rounded-md disabled:opacity-40 bg-light-bg dark:bg-dark-bg hover:text-light-selected-text hover:bg-light-selected-bg dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg"
+                onClick={() => setEditing(true)}
+              >
+                Edit
+              </button>
+            </div>
+          )}
         </>
       )}
     </>

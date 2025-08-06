@@ -12,6 +12,10 @@ function getEndpoint(messageType: MessageType) {
     const base = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY') ||
                  process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY;
     return base ? `${base}/params` : undefined;
+  } else if (messageType === 'MsgReclaimTrustDeposit') {
+    const base = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT') ||
+                 process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT;
+    return base ? `${base}/params` : undefined;
   } else {
     const base = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID') ||
                 process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID;
@@ -32,7 +36,7 @@ export function useTrustDepositValue(messageType: MessageType) {
   useEffect(() => {
     if (
       !messageType ||
-      !['MsgAddDID', 'MsgRenewDID', 'MsgCreateTrustRegistry'].includes(messageType)
+      !['MsgAddDID', 'MsgRenewDID', 'MsgCreateTrustRegistry', 'MsgReclaimTrustDeposit'].includes(messageType)
     ) return;
 
     const endpoint = getEndpoint(messageType);
@@ -71,6 +75,13 @@ export function useTrustDepositValue(messageType: MessageType) {
             setValue(deposit);
           } else {
             setError('Parameter trust_registry_trust_deposit not found');
+          }
+        } else if (messageType === 'MsgReclaimTrustDeposit') {
+          const reclaimBurnRate = json?.params?.trust_deposit_reclaim_burn_rate;
+          if (reclaimBurnRate !== undefined) {
+            setValue(Number(reclaimBurnRate));
+          } else {
+            setError('Parameter trust_deposit_reclaim_burn_rate not found');
           }
         }
       })

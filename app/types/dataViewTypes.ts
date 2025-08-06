@@ -174,7 +174,7 @@ export const trSections: Section<TrData>[] = [
     name: "Basic Information",
     icon: ShieldCheckIcon,
     fields: [
-      { name: 'id', label: 'Id', type: "data", show: 'all', update: false, id: true },
+      { name: 'id', label: 'Id', type: "data", show: 'none', update: false, id: true },
       { name: 'did', label: 'DID', type: "data", show: 'all', required: true, update: true },
       { name: 'aka', label: 'Aka', type: "data", show: 'all', required: true, update: true },
       { name: 'controller', label: 'Controller', type: "data", show: 'all', update: false },

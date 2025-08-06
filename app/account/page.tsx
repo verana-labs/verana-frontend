@@ -33,9 +33,9 @@ export default function Page() {
       const getVNA = "GetVNATrustDeposit";
       // Only enable claim actions if value > 0
       const claimInterests =
-        Number(accountData.claimableInterests) >= 0 ? "MsgReclaimTrustDepositYield" : null;
+        Number(accountData.claimableInterests) > 0 ? "MsgReclaimTrustDepositYield" : null;
       const reclaimDeposit =
-        Number(accountData.reclaimable) >= 0 ? "MsgReclaimTrustDeposit" : null;
+        Number(accountData.reclaimable) > 0 ? "MsgReclaimTrustDeposit" : null;
 
       setData({
         balance: formatVNA(accountData.balance, 6),

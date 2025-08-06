@@ -9,11 +9,12 @@ import {
 import { useRouter } from 'next/navigation';
 import { useVeranaChain } from '@/app/hooks/useVeranaChain';
 import { useNotification } from '@/app/ui/common/notification-provider';
-import { getCostMessage, MessageType, msgTypeConfig } from '@/app/constants/msgTypeConfig';
+import { getCostMessage, getDescriptionMessage, MessageType, msgTypeConfig } from '@/app/constants/msgTypeConfig';
 import { MSG_ERROR_ACTION_TD, MSG_INPROGRESS_ACTION_TD, MSG_SUCCESS_ACTION_TD, MsgTypeTD } from '@/app/constants/notificationMsgForMsgType';
 import { useCalculateFee } from '@/app/hooks/useCalculateFee';
 import { AccountData } from '@/app/types/dataViewTypes';
 import { parseVNA } from '@/app/util/util';
+import { useTrustDepositValue } from '@/app/hooks/useTrustDepositValue';
 
 // Define form state interface
 interface FormState { claimed: number }
@@ -25,6 +26,16 @@ interface ActionTDProps {
 }
 
 export default function ActionTD({ action, setActiveActionId, data }: ActionTDProps) {
+  // Read description and label for the current message type (for UI display)
+  const messageType: MessageType = action;
+  const accountData: AccountData = data as AccountData;
+  const { description, label } = msgTypeConfig[messageType];  
+
+  // Get the trust deposit value for the message type
+  const { value, errorTrustDepositValue } = useTrustDepositValue(messageType);
+  // Calculate the transaction fee for this message type
+  const { fee, amountVNA } = useCalculateFee(messageType);
+
   // Cosmos wallet and chain context
   const veranaChain = useVeranaChain();
   const { address, signAndBroadcast, isWalletConnected } = useChain(veranaChain.chain_name);
@@ -34,7 +45,52 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
   // State for submission process (submitting), and enabling/disabling action button
   const [submitting, setSubmitting] = useState(false);
   const [enabledAction, setEnabledAction] = useState(false);
+  const [errorNotified, setErrorNotified] = useState(false);
 
+  // Navigation and notification context
+  const router = useRouter();
+  const { notify } = useNotification();
+  let notifyPromise: Promise<void> | undefined;
+
+  // Reclaimable balance burn rate
+  const [burnRate, setBurnRate] = useState<number>(0.00);
+
+  // Local state to store the total required value for action (deposit + fee)
+  const [totalValue, setTotalValue] = useState<string>("0.00");
+  const [hasEnoughBalance, setHasEnoughBalance] = useState<boolean>(false);
+
+  // Show notification if there is an error fetching trust deposit value or account data
+  useEffect(() => {
+    if (errorTrustDepositValue && !errorNotified) {
+      (async () => {
+        await notify(errorTrustDepositValue, 'error', 'Error fetching trust deposit cost');
+        setErrorNotified(true);
+        router.push('/did');
+      })();
+    }
+  }, [ errorTrustDepositValue, notify, router, errorNotified]);
+
+  // Update burnRate percentage as soon as 'value' from the trust deposit hook changes.
+  useEffect(() => {
+    if (value) {
+      setBurnRate(Number(value) * 100);
+    }
+  }, [value]); 
+
+  // Calculate total required value
+  useEffect(() => {
+    const feeAmount = Number(amountVNA || 0);
+    setTotalValue((feeAmount).toFixed(6));
+    const availableBalance = accountData.balance ? Number(parseVNA(accountData.balance))/ 1_000_000 : 0;
+    setHasEnoughBalance(availableBalance >= feeAmount);
+  }, [amountVNA, messageType, accountData.balance]);
+
+  useEffect(() => {
+    const reclaimable = accountData.reclaimable ? Number(parseVNA(accountData.reclaimable))/ 1_000_000 : 0;
+    const claimedRequired = messageType === 'MsgReclaimTrustDeposit' ? (Number(form.claimed) > 0 && (Number(form.claimed) <= reclaimable)) : true;
+    setEnabledAction(hasEnoughBalance && claimedRequired);
+  }, [form.claimed, hasEnoughBalance, accountData.reclaimable, messageType]);
+  
   // Handler for input changes (numeric)
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -46,35 +102,6 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
     setActiveActionId(null);
   };
 
-  // Navigation and notification context
-  const router = useRouter();
-  const { notify } = useNotification();
-  let notifyPromise: Promise<void> | undefined;
-
-  // Read description and label for the current message type (for UI display)
-  const messageType: MessageType = action;
-  const accountData: AccountData = data as AccountData;
-  const { description, label } = msgTypeConfig[messageType];  
-  
-  // Calculate the transaction fee for this message type
-  const { fee, amountVNA } = useCalculateFee(messageType);
-
-  // Local state to store the total required value for action (deposit + fee)
-  const [totalValue, setTotalValue] = useState<string>("0.00");
-
-  useEffect(() => {
-    // Calculate the total fee required for the action (currently just the fee, but could add other costs)
-    const feeAmount = Number(amountVNA || 0);
-    setTotalValue(feeAmount.toFixed(6));
-
-    // Enable the action only if:
-    // 1. The account balance is greater than or equal to the fee.
-    // 2. For MsgReclaimTrustDeposit, require that claimed > 1 (customize as needed).
-    const hasEnoughBalance = !!accountData.balance && Number(parseVNA(accountData.balance)) >= feeAmount;
-    const claimedRequired = messageType === 'MsgReclaimTrustDeposit' ? Number(form.claimed) > 0 : true;
-    setEnabledAction(hasEnoughBalance && claimedRequired);
-  }, [form.claimed, amountVNA, messageType, accountData.balance]);
-  
   // Handle form submission (trigger Cosmos transaction)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,7 +121,6 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
     }
 
     setSubmitting(true);
-    setEnabledAction(false);
 
     // Notify that transaction is in progress
     notifyPromise = notify(
@@ -166,7 +192,12 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
     <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
       {/* Show description of the action */}
       <div className="text-justify">
-        <p className="text-sm font-normal leading-normal">{description}</p>
+        <p className="text-sm font-normal leading-normal">
+          { (messageType === 'MsgReclaimTrustDeposit' )? 
+              getDescriptionMessage( msgTypeConfig[messageType].description, (100 - burnRate), burnRate )
+              : description
+            }
+        </p>
       </div>
       {/* Only show claimed input for MsgReclaimTrustDeposit */}
       {action === 'MsgReclaimTrustDeposit' && (
@@ -209,7 +240,7 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
         </button>
         <button
           type="submit"
-          disabled={!enabledAction}
+          disabled={!enabledAction || submitting}
           className="border border-button-light-border dark:border-button-dark-border 
                     inline-flex items-center justify-center rounded-md py-1 px-2 transition-all 
                     hover:text-light-selected-text hover:bg-light-selected-bg
