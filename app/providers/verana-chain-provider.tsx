@@ -3,8 +3,8 @@
 import '@/app/ui/global.css';
 import { ChainProvider } from '@cosmos-kit/react';
 import "@interchain-ui/react/styles";
-import { GasPrice, type SigningStargateClientOptions } from '@cosmjs/stargate';
-import { veranaAssets, veranaRegistry, veranaAmino, veranaGasPrice } from '@/app/config/veranaChain.client';
+import { type SigningStargateClientOptions } from '@cosmjs/stargate';
+import { veranaAssets, veranaRegistry, veranaAmino } from '@/app/config/veranaChain.client';
 import {wallets} from "cosmos-kit"
 import { ThemeProvider } from 'next-themes';
 import { useVeranaChain } from "@/app/hooks/useVeranaChain";
@@ -15,8 +15,6 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
 
   const customChains = [veranaChain];
   const assetLists = [{ chain_name: veranaChain.chain_name, assets: [veranaAssets] }];
-  console.info(veranaRegistry);
-  console.info(veranaAmino);
                       
   return (
     <ThemeProvider attribute="class" enableSystem={true} defaultTheme="system">
@@ -29,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
             stargate: (): SigningStargateClientOptions => ({
               registry: veranaRegistry,
               aminoTypes: veranaAmino,
-              gasPrice: GasPrice.fromString(veranaGasPrice.toString())
+              // gasPrice: GasPrice.fromString(veranaGasPrice.toString())
             }),
           }}          
           walletConnectOptions={{

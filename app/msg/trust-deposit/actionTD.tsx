@@ -72,9 +72,6 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
     // 2. For MsgReclaimTrustDeposit, require that claimed > 1 (customize as needed).
     const hasEnoughBalance = !!accountData.balance && Number(parseVNA(accountData.balance)) >= feeAmount;
     const claimedRequired = messageType === 'MsgReclaimTrustDeposit' ? Number(form.claimed) > 0 : true;
-console.info(feeAmount);
-console.info(accountData.balance);
-console.info(hasEnoughBalance);
     setEnabledAction(hasEnoughBalance && claimedRequired);
   }, [form.claimed, amountVNA, messageType, accountData.balance]);
   
