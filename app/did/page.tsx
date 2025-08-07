@@ -53,6 +53,8 @@ export default function DidPage() {
         initialPageSize={10}
         pageSizeOptions={[5, 10, 20, 50]}
         onRowClick={(row) => router.push(`/did/${encodeURIComponent(row.did)}`)}
+        description={["The DID directory is a public database of Decentralized Identifiers (DIDs) that is used by crawlers to index the metadata of the services provided by these DIDs, if they comply with the Verifiable Trust specification. Indexed DIDs are then searchable in search.verana.io and in others Verifiable Trust search engines.",
+          "Any participant can register a DID in the DID directory by executing a transaction in the Verana Network."]}
       />
     </>
   );

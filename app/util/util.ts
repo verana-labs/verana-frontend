@@ -8,6 +8,18 @@ export function formatVNA (amount: string | null, decimals?: number) : string {
     }) + ' VNA'
   }
 
+export function parseVNA(formatted: string, decimals: number = 6): string {
+  if (!formatted) return '0';
+  // Remove "VNA" and spaces, and thousands separator
+  const clean = formatted.replace(/[^\d.,-]/g, '').replace(/,/g, '');
+  // Parse as float
+  const floatValue = parseFloat(clean);
+  if (isNaN(floatValue)) return '0';
+  // Convert to microVNA (as integer string)
+  const micro = Math.round(floatValue * Math.pow(10, decimals));
+  return micro.toString();
+}
+
 export function shortenMiddle(str: string, maxLength: number): string {
   if (str.length <= maxLength) return str;
   const keep = Math.floor((maxLength - 3) / 2);

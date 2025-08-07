@@ -1,3 +1,5 @@
+'use client';
+
 import { AminoTypes, type AminoConverter } from '@cosmjs/stargate'
 import {
   MsgUpdateParams,

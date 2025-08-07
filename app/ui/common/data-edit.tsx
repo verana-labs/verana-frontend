@@ -1,8 +1,17 @@
-import React, { useState, useMemo, useCallback } from 'react';
+'use client';
+
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { DataViewProps, Field } from '@/app/types/dataViewTypes';
+import { getCostMessage, MessageType, msgTypeConfig } from '@/app/constants/msgTypeConfig';
+import { useCalculateFee } from '@/app/hooks/useCalculateFee';
+import { useTrustDepositValue } from '@/app/hooks/useTrustDepositValue';
+import { useTrustDepositAccountData } from '@/app/hooks/useTrustDepositAccountData';
+import { useNotification } from '@/app/ui/common/notification-provider';
+import { useRouter } from 'next/navigation';
 
 type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & {
   data: T;
+  messageType: MessageType;
   onSave: (newData: T) => void | Promise<void>;
   onCancel?: () => void;
 };
@@ -10,13 +19,15 @@ type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & 
 export default function EditableDataView<T extends object>({
   sections,
   data,
+  messageType,
   id,
   onSave,
-  onCancel,
+  onCancel
 }: EditableDataViewProps<T>) {
   const [formData, setFormData] = useState<T>(data);
   const [errorFields, setErrorFields] = useState<Array<string>>([]);
   const [submitting, setSubmitting] = useState(false);
+  const { description, label } = msgTypeConfig[messageType];
 
   // Decides if a field should be visible in the current context (create/edit/view)
   const shouldShowField = useCallback((field: Field<T>) => {
@@ -34,6 +45,57 @@ export default function EditableDataView<T extends object>({
     return true;
   }, []);
 
+  // Enabled Action
+  const [enabledAction, setEnabledAction] = useState(false);
+
+  // Router, notification, and errorNotified
+  const router = useRouter();
+  const { notify } = useNotification();
+  const [errorNotified, setErrorNotified] = useState(false);
+  
+  // Get fee and amount in VNA
+  const { amountVNA } = useCalculateFee(messageType);
+
+  // Get the trust deposit value for the message type
+  const { value, errorTrustDepositValue } = useTrustDepositValue(messageType);
+
+  // Custom hook to fetch user's account/trust deposit data
+  const { accountData, errorAccountData } = useTrustDepositAccountData();
+
+  // Show notification if there is an error fetching trust deposit value or account data
+  useEffect(() => {
+    if (errorTrustDepositValue && !errorNotified) {
+      (async () => {
+        await notify(errorTrustDepositValue, 'error', 'Error fetching trust deposit cost');
+        setErrorNotified(true);
+        router.push('/tr');
+      })();
+    }
+    if (errorAccountData && !errorNotified) {
+      (async () => {
+        await notify(errorAccountData, 'error', 'Error fetching account balance');
+        setErrorNotified(true);
+        router.push('/tr');
+      })();
+    }
+  }, [errorAccountData, errorTrustDepositValue, notify, router, errorNotified]);
+  
+  // Local state to store the total required value for action (deposit + fee)
+  const [totalValue, setTotalValue] = useState<string>("0.00");
+
+  useEffect(() => {
+    // Calculate deposit and total required value
+    const deposit = Number(value || 0);
+    const feeAmount = Number(amountVNA || 0);
+    setTotalValue((deposit + feeAmount).toFixed(6));
+    const availableBalance = accountData.balance ? Number(accountData.balance)/ 1_000_000 : 0;
+    const availableReclaimable = (accountData.reclaimable) ? Number(accountData.reclaimable)/ 1_000_000 : 0;
+    const hasEnoughBalance = 
+      (availableBalance >= feeAmount) &&
+      ( ( availableReclaimable + availableBalance - feeAmount) >= deposit );
+    setEnabledAction(hasEnoughBalance);
+  }, [value, amountVNA, messageType, accountData.balance]);
+  
   // Updates form state and manages error tracking on change
   function handleChange(fieldName: keyof T, value: unknown, field: Field<T>) {
     setFormData(prev => ({ ...prev, [fieldName]: value }));
@@ -94,6 +156,11 @@ export default function EditableDataView<T extends object>({
       {sections.map((section, sectionIndex) => (
         <div key={sectionIndex} className="mb-2 p-4 rounded-2xl bg-light-bg dark:bg-dark-bg">
           <h2 className="text-lg font-medium mb-2">{section.name}</h2>
+          {description && (
+            <div className="text-justify">
+              <p className="text-sm font-normal leading-normal">{description}</p>
+            </div>
+          )}
           {(section.fields ?? []).filter(
             field => shouldShowField(field) && field.type === 'data'
           ).length > 0 && (
@@ -190,27 +257,36 @@ export default function EditableDataView<T extends object>({
               </table>
             </div>
           )}
+          {/* Action buttons: disabled if submitting or validation fails */}
+          <div className="flex flex-col items-center mt-4 space-y-2">
+            {totalValue && (
+              <div>
+                <p className="text-sm font-normal leading-normal">
+                  {getCostMessage(msgTypeConfig[messageType].cost, totalValue)}
+                </p>
+              </div>
+            )}
+            <div className="flex justify-center gap-2">
+              {onCancel && (
+                <button
+                  className="px-3 py-1 rounded-md disabled:opacity-40 bg-light-bg dark:bg-dark-bg hover:text-light-selected-text hover:bg-light-selected-bg dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg"
+                  onClick={handleCancel}
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+              )}
+              <button
+                className="px-3 py-1 rounded-md disabled:opacity-40 bg-light-bg dark:bg-dark-bg hover:text-light-selected-text hover:bg-light-selected-bg dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg"
+                onClick={handleSave}
+                disabled={!enabledAction || hasInvalidRequired || submitting}
+              >
+                {label}
+              </button>
+            </div>
+          </div>
         </div>
       ))}
-      {/* Action buttons: disabled if submitting or validation fails */}
-      <div className="flex gap-2 mt-4">
-        <button
-          className="px-3 py-1 rounded-md disabled:opacity-40 bg-light-bg dark:bg-dark-bg hover:text-light-selected-text hover:bg-light-selected-bg dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg"
-          onClick={handleSave}
-          disabled={hasInvalidRequired || submitting}
-        >
-          {submitting ? "Saving..." : "Confirm"}
-        </button>
-        {onCancel && (
-          <button
-            className="px-3 py-1 rounded-md disabled:opacity-40 bg-light-bg dark:bg-dark-bg hover:text-light-selected-text hover:bg-light-selected-bg dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg"
-            onClick={handleCancel}
-            disabled={submitting}
-          >
-            Cancel
-          </button>
-        )}
-      </div>
     </div>
   );
 }

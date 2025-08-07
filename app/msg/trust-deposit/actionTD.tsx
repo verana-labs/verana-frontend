@@ -1,99 +1,151 @@
 'use client';
-import React, { useState } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { useChain } from '@cosmos-kit/react';
-import type { StdFee } from '@cosmjs/stargate';
-import { veranaGasLimit, veranaGasPrice } from '@/app/config/veranaChain';
 import {
   MsgReclaimTrustDeposit,
   MsgReclaimTrustDepositYield,
 } from '@/proto-codecs/codec/verana/td/v1/tx';
 import { useRouter } from 'next/navigation';
-import { useVeranaChain } from '@/app/config/useVeranaChain';
+import { useVeranaChain } from '@/app/hooks/useVeranaChain';
 import { useNotification } from '@/app/ui/common/notification-provider';
+import { getCostMessage, getDescriptionMessage, MessageType, msgTypeConfig } from '@/app/constants/msgTypeConfig';
+import { MSG_ERROR_ACTION_TD, MSG_INPROGRESS_ACTION_TD, MSG_SUCCESS_ACTION_TD, MsgTypeTD } from '@/app/constants/notificationMsgForMsgType';
+import { useCalculateFee } from '@/app/hooks/useCalculateFee';
+import { AccountData } from '@/app/types/dataViewTypes';
+import { parseVNA } from '@/app/util/util';
+import { useTrustDepositValue } from '@/app/hooks/useTrustDepositValue';
 
-// Explicit type for supported Trust Deposit actions
-export type MsgTypeTD = 'ReclaimDepositTrustDeposit' | 'ClaimInterestsTrustDeposit';
-
+// Define form state interface
 interface FormState { claimed: number }
+// Define ActionTD props interface
 interface ActionTDProps {
-  action: MsgTypeTD;
-  setActiveActionId: React.Dispatch<React.SetStateAction<string | null>>;
+  action: MsgTypeTD;  // Action type to perform (e.g. MsgReclaimTrustDeposit)
+  setActiveActionId: React.Dispatch<React.SetStateAction<string | null>>; // Collapse/hide action on cancel
+  data: object;       // Data for the account, e.g. balances
 }
 
-// Success, error and in-progress messages per action
-const MSG_SUCCESS_ACTION: Record<MsgTypeTD, (claimed?: number) => string> = {
-  ReclaimDepositTrustDeposit: (claimed) =>
-    `Deposit reclaimed successfully!${claimed ? ` Amount: ${claimed}` : ''}`,
-  ClaimInterestsTrustDeposit: () => 'Interests claimed successfully!',
-};
+export default function ActionTD({ action, setActiveActionId, data }: ActionTDProps) {
+  // Read description and label for the current message type (for UI display)
+  const messageType: MessageType = action;
+  const accountData: AccountData = data as AccountData;
+  const { description, label } = msgTypeConfig[messageType];  
 
-const MSG_INPROGRESS_ACTION: Record<MsgTypeTD, () => string> = {
-  ReclaimDepositTrustDeposit: () => 'Reclaiming deposit...',
-  ClaimInterestsTrustDeposit: () => 'Claiming interests...',
-};
+  // Get the trust deposit value for the message type
+  const { value, errorTrustDepositValue } = useTrustDepositValue(messageType);
+  // Calculate the transaction fee for this message type
+  const { fee, amountVNA } = useCalculateFee(messageType);
 
-const MSG_ERROR_ACTION: Record<MsgTypeTD, (code?: number, msg?: string) => string> = {
-  ReclaimDepositTrustDeposit: (code, msg) =>
-    `Failed to reclaim deposit. ${code ? `(${code}) ` : ''}${msg ?? ''}`,
-  ClaimInterestsTrustDeposit: (code, msg) =>
-    `Failed to claim interests. ${code ? `(${code}) ` : ''}${msg ?? ''}`,
-};
-
-export default function ActionTD({ action, setActiveActionId }: ActionTDProps) {
+  // Cosmos wallet and chain context
   const veranaChain = useVeranaChain();
   const { address, signAndBroadcast, isWalletConnected } = useChain(veranaChain.chain_name);
 
+  // Local state for the form (amount claimed)
   const [form, setForm] = useState<FormState>({ claimed: 0 });
+  // State for submission process (submitting), and enabling/disabling action button
   const [submitting, setSubmitting] = useState(false);
+  const [enabledAction, setEnabledAction] = useState(false);
+  const [errorNotified, setErrorNotified] = useState(false);
 
+  // Navigation and notification context
+  const router = useRouter();
+  const { notify } = useNotification();
+  let notifyPromise: Promise<void> | undefined;
+
+  // Reclaimable balance burn rate
+  const [burnRate, setBurnRate] = useState<number>(0.00);
+
+  // Local state to store the total required value for action (deposit + fee)
+  const [totalValue, setTotalValue] = useState<string>("0.00");
+  const [hasEnoughBalance, setHasEnoughBalance] = useState<boolean>(false);
+
+  // Show notification if there is an error fetching trust deposit value or account data
+  useEffect(() => {
+    if (errorTrustDepositValue && !errorNotified) {
+      (async () => {
+        await notify(errorTrustDepositValue, 'error', 'Error fetching trust deposit cost');
+        setErrorNotified(true);
+        router.push('/did');
+      })();
+    }
+  }, [ errorTrustDepositValue, notify, router, errorNotified]);
+
+  // Update burnRate percentage as soon as 'value' from the trust deposit hook changes.
+  useEffect(() => {
+    if (value) {
+      setBurnRate(Number(value) * 100);
+    }
+  }, [value]); 
+
+  // Calculate total required value
+  useEffect(() => {
+    const feeAmount = Number(amountVNA || 0);
+    setTotalValue((feeAmount).toFixed(6));
+    const availableBalance = accountData.balance ? Number(parseVNA(accountData.balance))/ 1_000_000 : 0;
+    setHasEnoughBalance(availableBalance >= feeAmount);
+  }, [amountVNA, messageType, accountData.balance]);
+
+  useEffect(() => {
+    const reclaimable = accountData.reclaimable ? Number(parseVNA(accountData.reclaimable))/ 1_000_000 : 0;
+    const claimedRequired = messageType === 'MsgReclaimTrustDeposit' ? (Number(form.claimed) > 0 && (Number(form.claimed) <= reclaimable)) : true;
+    setEnabledAction(hasEnoughBalance && claimedRequired);
+  }, [form.claimed, hasEnoughBalance, accountData.reclaimable, messageType]);
+  
+  // Handler for input changes (numeric)
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: name === 'claimed' ? Number(value) : value }));
   };
 
+  // Handler for Cancel button - collapses/hides the action UI
   const handleCancel = () => {
     setActiveActionId(null);
   };
 
-  const router = useRouter();
-  const { notify } = useNotification();
-  let notifyPromise: Promise<void> | undefined;
-
+  // Handle form submission (trigger Cosmos transaction)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Prevent if wallet not connected
     if (!isWalletConnected || !address) {
       notify('Connect wallet', 'error');
       return;
     }
+
     const { claimed } = form;
 
-    if (action === 'ReclaimDepositTrustDeposit' && claimed < 1) {
+    // For MsgReclaimTrustDeposit, check that claimed > 1 (can adjust as needed)
+    if (action === 'MsgReclaimTrustDeposit' && claimed <= 0) {
       notify('Enter valid claimed', 'error');
       return;
     }
 
     setSubmitting(true);
+
+    // Notify that transaction is in progress
     notifyPromise = notify(
-      MSG_INPROGRESS_ACTION[action](),
+      MSG_INPROGRESS_ACTION_TD[action](),
       'inProgress',
       'Transaction in progress'
     );
 
     try {
+      // Build transaction payload
       const basePayload = { creator: address };
       const fullPayload = { ...basePayload, claimed };
       let msgAny:
         | { typeUrl: '/verana.td.v1.MsgReclaimTrustDeposit'; value: MsgReclaimTrustDeposit }
         | { typeUrl: '/verana.td.v1.MsgReclaimTrustDepositYield'; value: MsgReclaimTrustDepositYield };
 
+      // Select the message type and build its payload
       switch (action) {
-        case 'ReclaimDepositTrustDeposit':
+        case 'MsgReclaimTrustDeposit':
           msgAny = {
             typeUrl: '/verana.td.v1.MsgReclaimTrustDeposit',
             value: MsgReclaimTrustDeposit.fromPartial(fullPayload),
           };
           break;
-        case 'ClaimInterestsTrustDeposit':
+        case 'MsgReclaimTrustDepositYield':
           msgAny = {
             typeUrl: '/verana.td.v1.MsgReclaimTrustDepositYield',
             value: MsgReclaimTrustDepositYield.fromPartial(basePayload),
@@ -103,40 +155,31 @@ export default function ActionTD({ action, setActiveActionId }: ActionTDProps) {
           throw new Error(`Unsupported action: ${action}`);
       }
 
-      const fee: StdFee = {
-        amount: [
-          {
-            denom: 'uvna',
-            amount: String(
-              Math.ceil(parseFloat(veranaGasPrice.toString()) * veranaGasLimit)
-            ),
-          },
-        ],
-        gas: veranaGasLimit.toString(),
-      };
-
+      // Sign and broadcast the transaction
       const res = await signAndBroadcast([msgAny], fee, action);
 
+      // Notify on success or error (waits for notification to close)
       if (res.code === 0) {
         notifyPromise = notify(
-          MSG_SUCCESS_ACTION[action](claimed),
+          MSG_SUCCESS_ACTION_TD[action](claimed),
           'success',
           'Transaction successful'
         );
       } else {
         notifyPromise = notify(
-          MSG_ERROR_ACTION[action](res.code, res.rawLog),
+          MSG_ERROR_ACTION_TD[action](res.code, res.rawLog),
           'error',
           'Transaction failed'
         );
       }
     } catch (err: unknown) {
       notifyPromise = notify(
-        MSG_ERROR_ACTION[action](undefined, err instanceof Error ? err.message : String(err)),
+        MSG_ERROR_ACTION_TD[action](undefined, err instanceof Error ? err.message : String(err)),
         'error',
         'Transaction failed'
       );
     } finally {
+      // Wait for notification close, reset submitting state, collapse UI, and redirect
       if (notifyPromise) await notifyPromise;
       setSubmitting(false);
       handleCancel();
@@ -147,7 +190,17 @@ export default function ActionTD({ action, setActiveActionId }: ActionTDProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
-      {action === 'ReclaimDepositTrustDeposit' && (
+      {/* Show description of the action */}
+      <div className="text-justify">
+        <p className="text-sm font-normal leading-normal">
+          { (messageType === 'MsgReclaimTrustDeposit' )? 
+              getDescriptionMessage( msgTypeConfig[messageType].description, (100 - burnRate), burnRate )
+              : description
+            }
+        </p>
+      </div>
+      {/* Only show claimed input for MsgReclaimTrustDeposit */}
+      {action === 'MsgReclaimTrustDeposit' && (
         <div>
           <label htmlFor="claimed" className="block text-sm font-medium">
             Claimed
@@ -163,12 +216,21 @@ export default function ActionTD({ action, setActiveActionId }: ActionTDProps) {
           />
         </div>
       )}
-      <div className="text-center space-x-4">
+      {/* Show transaction cost (fee) */}
+      {totalValue && (
+        <div className="text-justify">
+          <p className="text-sm font-normal leading-normal">
+            {getCostMessage( msgTypeConfig[messageType].cost, totalValue )}
+          </p>
+        </div>
+      )}
+      {/* Action buttons (Cancel and Confirm/label) */}
+      <div className="text-center space-x-2">
         <button
           type="button"
           disabled={submitting}
           className="border border-button-light-border dark:border-button-dark-border 
-                    inline-flex items-center justify-center gap-2 rounded-md py-1 px-2 transition-all 
+                    inline-flex items-center justify-center rounded-md py-1 px-2 transition-all 
                     hover:text-light-selected-text hover:bg-light-selected-bg
                     dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg 
                     disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
@@ -178,14 +240,14 @@ export default function ActionTD({ action, setActiveActionId }: ActionTDProps) {
         </button>
         <button
           type="submit"
-          disabled={submitting}
+          disabled={!enabledAction || submitting}
           className="border border-button-light-border dark:border-button-dark-border 
-                    inline-flex items-center justify-center gap-2 rounded-md py-1 px-2 transition-all 
+                    inline-flex items-center justify-center rounded-md py-1 px-2 transition-all 
                     hover:text-light-selected-text hover:bg-light-selected-bg
                     dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg 
                     disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
         >
-          {submitting ? 'Submitting...' : 'Confirm'}
+          {label}
         </button>
       </div>
     </form>
