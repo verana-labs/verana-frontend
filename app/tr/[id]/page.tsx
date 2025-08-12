@@ -70,10 +70,10 @@ export default function TrViewPage() {
   }, [id, getURL, notify]);
 
   if (loading) {
-    return <div className="p-6 text-center">Loading Trust Registry details…</div>;
+    return <div className="loading-paner">Loading Trust Registry details…</div>;
   }
   if (error || !data) {
-    return <div className="p-6 text-red-600">Error: {error || 'Trust Registry not found'}</div>;
+    return <div className="error-pane">Error: {error || 'Trust Registry not found'}</div>;
   }
 
   async function onSave(newData: TrData) {
@@ -119,9 +119,9 @@ export default function TrViewPage() {
         <>
           <DataView<TrData> sections={trSections} data={data} id={data.id} columnsCount={2} />
           { data.controller === address && (
-            <div className="flex justify-end mt-4">
+            <div className="actions-right">
               <button
-                className="px-3 py-1 rounded-md disabled:opacity-40 bg-light-bg dark:bg-dark-bg hover:text-light-selected-text hover:bg-light-selected-bg dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg"
+                className="btn-action theme-surface"
                 onClick={() => setEditing(true)}
               >
                 Edit

@@ -23,17 +23,11 @@ export default function IconLabelButton({
       type="button"
       onClick={onClick}
       title={title}
-      className={clsx(
-        'border border-button-light-border dark:border-button-dark-border ' +
-        'inline-flex items-center justify-center gap-2 rounded-md py-1 px-2 transition-all ' +
-        'hover:text-light-selected-text hover:bg-light-selected-bg ' +
-        'dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg ' +
-        'disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none '+
-        'h-8 ',
+      className={clsx('btn-action h-8',
         className
       )}
     >
-      {Icon && <Icon className="h-4 w-4 flex-shrink-0" />}
+      {Icon && <Icon className="data-view-section-icon" />}
       {label}
     </button>
   );

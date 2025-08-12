@@ -112,7 +112,7 @@ export function useActionTR() {
         typeUrl = MSG_TYPE_CONFIG_TR.UpdateTrustRegistry.typeUrl;
         value = MsgUpdateTrustRegistry.fromPartial({
           creator: params.creator,
-          id: params.id,
+          id: Number(params.id),
           did: params.did,
           aka: params.aka,
         });

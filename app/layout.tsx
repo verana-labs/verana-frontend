@@ -1,4 +1,4 @@
-import '@/app/ui/global.css';
+import '@/app/styles/global.css';
 import { lusitana, kantumruy } from '@/app/ui/common/fonts'
 import "@interchain-ui/react/styles";
 import { PublicEnvScript } from 'next-runtime-env';
@@ -12,13 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <PublicEnvScript />
       </head>
-      <body
-        className="
-          font-sans antialiased text-light-text text-xs md:text-base font-medium
-          dark:text-dark-text bg-light-bg dark:bg-dark-bg
-          border-light-border dark:border-dark-border
-          items-center justify-center"
-      >
+      <body className="app-body">
         <ClientLayout> {children} </ClientLayout>
       </body>
     </html>

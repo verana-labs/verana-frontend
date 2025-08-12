@@ -14,7 +14,7 @@ export default function AddDidPage() {
         to="/did"
         Icon={ChevronLeftIcon}
       />
-      <div className="min-w-full p-8 rounded-2xl shadow-lg bg-light-bg dark:bg-dark-bg">
+      <div className="form-card">
         <ActionDID action={'MsgAddDID'} id={undefined} />
       </div>
     </>

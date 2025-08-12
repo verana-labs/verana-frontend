@@ -27,18 +27,17 @@ export default function TitleAndButton({
   };
 
   return (
-    // <div className="self-stretch justify-start text-Black-600 text-xl font-medium font-['Kantumruy_Pro']">Dashboard </div>
-    <div className={`flex items-center justify-between pb-4 ${className}`}>      
-      <h1 className="text-xl font-medium text-title-light-color dark:text-title-dark-color">
+    <div className={`titlebar ${className}`}>      
+      <h1 className="page-title">
         {title}
       </h1>
       {/* Render button only if buttonLabel or Icon is provided */}
       {(buttonLabel || Icon) && (
         <button
           onClick={handleClick}
-          className="inline-flex items-center text-blue-500 hover:underline p-2"
+          className="btn-link"
         >
-          {Icon && <Icon className="h-6 w-6 mr-1" aria-hidden="true" />}
+          {Icon && <Icon className="icon-sm" aria-hidden="true" />}
           {buttonLabel && <span className="hidden md:inline">{buttonLabel}</span>}
         </button>
       )}
