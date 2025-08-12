@@ -27,25 +27,19 @@ const [openIndex, setOpenIndex] = useState<number | null>(null);
 
               <Link
                 href={link.href}
-                className={clsx(
-                  'flex items-center gap-2 h-12 rounded-md  transition-all text-base font-medium ' +
-                  'hover:text-light-selected-text hover:bg-light-selected-bg ' + 
-                  'dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg',
-                  {
-                    'bg-light-selected-bg text-light-selected-text dark:bg-dark-selected-bg dark:text-dark-selected-text' : 
-                    pathname === link.href
-                  },
+                className={clsx( 'nav-links-link',
+                  { 'nav-links-selected' : pathname === link.href }
                 )}
                 onClick={hasSubLinks ? (e) => {
                   e.preventDefault();
                   toggleDropdown(idx);
                 } : undefined}
               >
-                <Icon className="w-6 h-6 flex-shrink-0"/>
-                {link.name && (<span className="flex-1 leading-tight">{link.name}</span>)}
+                <Icon className="nav-links-icon"/>
+                {link.name && (<span className="nav-links-label">{link.name}</span>)}
                 {hasSubLinks && (
                   <ChevronDownIcon className={clsx(
-                    "w-6 h-6 transition-transform duration-200 relative text-zinc-400",
+                    "nav-links-down-icon",
                     openIndex === idx ? "rotate-180" : ""
                   )} />
                 )}
@@ -53,29 +47,18 @@ const [openIndex, setOpenIndex] = useState<number | null>(null);
 
               {/* SubLinks */}
               {hasSubLinks && openIndex === idx && (
-                <div className="relative flex flex-col ml-8 mt-1 space-y-1 text-base font-medium ">
-                  <div
-                    className="
-                      absolute left-0 top-0 w-px h-full
-                      bg-line-light-bg dark:line-dark-bg
-                      pointer-events-none
-                    "
-                  />
-                  <div className="flex flex-col">
+                <div className="nav-links-sublinks-container">
+                  <div className='nav-links-sublinks-line'/>
+                  <div className='nav-links-sublinks'>
                     {link.links?.map((sublink) => (
                       <Link
                         key={sublink.name}
                         href={sublink.href}
-                        className={clsx(
-                          "flex items-center gap-2 h-10 rounded-md px-3 transition-all",
-                          "hover:text-light-selected-text hover:bg-light-selected-bg",
-                          "dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg",
-                          {
-                            "bg-light-selected-bg text-light-selected-text dark:bg-dark-selected-bg dark:text-dark-selected-text": pathname === sublink.href,
-                          }
+                        className={clsx('nav-links-sublinks-link',
+                          { 'nav-links-selected' : pathname === sublink.href }
                         )}
                       >
-                        <span className="flex-1 leading-tight opacity-60">{sublink.name}</span>
+                        <span className="nav-links-sublinks-label">{sublink.name}</span>
                       </Link>
                     ))}
                   </div>

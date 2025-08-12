@@ -94,7 +94,7 @@ export default function EditableDataView<T extends object>({
       (availableBalance >= feeAmount) &&
       ( ( availableReclaimable + availableBalance - feeAmount) >= deposit );
     setEnabledAction(hasEnoughBalance);
-  }, [value, amountVNA, messageType, accountData.balance]);
+  }, [value, amountVNA, messageType, accountData.balance, accountData.reclaimable]);
   
   // Updates form state and manages error tracking on change
   function handleChange(fieldName: keyof T, value: unknown, field: Field<T>) {
@@ -152,20 +152,20 @@ export default function EditableDataView<T extends object>({
   }
 
   return (
-    <div className="min-w-full">
+    <div className="data-edit-container">
       {sections.map((section, sectionIndex) => (
-        <div key={sectionIndex} className="mb-2 p-4 rounded-2xl bg-light-bg dark:bg-dark-bg">
-          <h2 className="text-lg font-medium mb-2">{section.name}</h2>
+        <div key={sectionIndex} className="data-edit-section">
+          <h2 className="data-edit-section-title">{section.name}</h2>
           {description && (
-            <div className="text-justify">
-              <p className="text-sm font-normal leading-normal">{description}</p>
+            <div className="form-copy">
+              <p>{description}</p>
             </div>
           )}
           {(section.fields ?? []).filter(
             field => shouldShowField(field) && field.type === 'data'
           ).length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
+            <div className="data-edit-scroll">
+              <table className="data-edit-table">
                 <tbody>
                   {(section.fields ?? [])
                     .filter(field => shouldShowField(field) && field.type === 'data')
@@ -177,7 +177,7 @@ export default function EditableDataView<T extends object>({
 
                       // Build base input class for all fields
                       const baseInputClass =
-                        "border rounded px-2 py-1 w-full bg-white dark:bg-black text-sm font-normal leading-none" +
+                        "input" +
                         (showError ? " border-red-500" : "") +
                         (isDisabled ? " opacity-70" : "");
 
@@ -235,19 +235,19 @@ export default function EditableDataView<T extends object>({
                       return (
                         <tr key={fieldIndex}>
                           {/* Label with asterisk if required */}
-                          <td className="py-2 pr-4 text-right align-middle w-1/3">
-                            <span className="text-base font-semibold leading-none">
+                          <td className="data-edit-label-cell">
+                            <span className="data-edit-label">
                               {field.label}
                               {field.required && (
-                                <span className="text-red-500 ml-1">*</span>
+                                <span className="data-edit-required">*</span>
                               )}
                             </span>
                           </td>
                           {/* Input and error message */}
-                          <td className="py-2 pl-2 align-middle w-2/3">
+                          <td className="data-edit-input-cell">
                             {inputEl}
                             {showError && (
-                              <div className="text-xs text-red-500 mt-1">Required</div>
+                              <div className="data-edit-error">Required</div>
                             )}
                           </td>
                         </tr>
@@ -258,32 +258,30 @@ export default function EditableDataView<T extends object>({
             </div>
           )}
           {/* Action buttons: disabled if submitting or validation fails */}
-          <div className="flex flex-col items-center mt-4 space-y-2">
-            {totalValue && (
-              <div>
-                <p className="text-sm font-normal leading-normal">
-                  {getCostMessage(msgTypeConfig[messageType].cost, totalValue)}
-                </p>
-              </div>
-            )}
-            <div className="flex justify-center gap-2">
-              {onCancel && (
-                <button
-                  className="px-3 py-1 rounded-md disabled:opacity-40 bg-light-bg dark:bg-dark-bg hover:text-light-selected-text hover:bg-light-selected-bg dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg"
-                  onClick={handleCancel}
-                  disabled={submitting}
-                >
-                  Cancel
-                </button>
-              )}
-              <button
-                className="px-3 py-1 rounded-md disabled:opacity-40 bg-light-bg dark:bg-dark-bg hover:text-light-selected-text hover:bg-light-selected-bg dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg"
-                onClick={handleSave}
-                disabled={!enabledAction || hasInvalidRequired || submitting}
-              >
-                {label}
-              </button>
+          {totalValue && (
+            <div className="form-copy text-center py-2">
+              <p>
+                {getCostMessage(msgTypeConfig[messageType].cost, totalValue)}
+              </p>
             </div>
+          )}
+          <div className="actions-center">
+            {onCancel && (
+              <button
+                className="btn-action"
+                onClick={handleCancel}
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+            )}
+            <button
+              className="btn-action"
+              onClick={handleSave}
+              disabled={!enabledAction || hasInvalidRequired || submitting}
+            >
+              {label}
+            </button>
           </div>
         </div>
       ))}

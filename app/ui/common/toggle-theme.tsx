@@ -8,7 +8,6 @@ export default function ToggleTheme() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
-  // Evitamos mismatch SSR/cliente
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -18,9 +17,9 @@ export default function ToggleTheme() {
   const isDark = theme === 'dark'
 
   return (
-    <label htmlFor="theme-switch" className="inline-flex items-center cursor-pointer">
+    <label htmlFor="theme-switch" className='toggle-container'>
       <div className="relative">
-        {/* Input oculto */}
+        {/* Input hidden */}
         <input
           id="theme-switch"
           type="checkbox"
@@ -31,27 +30,13 @@ export default function ToggleTheme() {
         />
 
         {/* Track */}
-        <div className="w-12 h-6 bg-content-light-bg dark:bg-content-dark-bg rounded-full transition-colors" />
+        <div className='toggle-track' />
 
-        {/* Thumb con icono */}
-        <div
-          className={`
-            absolute top-0.5 left-0.5
-            w-5 h-5
-            bg-white
-            border
-            border-transparent
-            rounded-full
-            flex items-center justify-center
-            transition-transform
-            peer-checked:translate-x-6
-            peer-checked:bg-dark-bg
-            peer-checked:border-transparent
-          `}
-        >
+        {/* Thumb icon */}
+        <div className={`toggle-thumb-icon`} >
           {isDark
-            ? <Moon className="h-3 w-3" />
-            : <Sun  className="h-3 w-3" />
+            ? <Moon className="icon-xs" />
+            : <Sun  className="icon-xs" />
           }
         </div>
       </div>

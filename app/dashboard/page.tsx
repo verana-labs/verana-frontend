@@ -6,9 +6,7 @@ import DataView from "@/app/ui/common/data-view-columns";
 import { useChain } from "@cosmos-kit/react";
 import { useVeranaChain } from "@/app/hooks/useVeranaChain";
 import TitleAndButton from "@/app/ui/common/title-and-button";
-import NotConnected from "@/app/ui/common/not-connected";
-import { LinkIcon } from "@heroicons/react/24/outline";
-import Image from 'next/image';
+import Connected from "@/app/ui/common/connected-not-connected";
 
 export default function Page() {
 
@@ -46,29 +44,11 @@ export default function Page() {
       <TitleAndButton
         title="Dashboard"
       />
-      {isWalletConnected ? (
+      <div className="center">
+        <Connected isConnected={isWalletConnected} wallet={wallet}/>
+      </div>
+      {isWalletConnected && (
         <>
-        <div className="min-w-full py-16 rounded-2xl shadow-lg bg-light-bg dark:bg-dark-bg flex flex-col items-center gap-10">
-          <div className="w-20 h-20 
-              bg-gradient-to-b from-pink-100 to-pink-200
-              dark:from-pink-500 dark:via-pink-900 dark:to-pink-950
-              rounded-2xl flex justify-center items-center">
-              <div className="w-14 h-14 rounded-full bg-white flex justify-center items-center">
-                  <LinkIcon className="w-8 h-8 text-pink-500" />
-              </div>
-          </div>
-          <div className="self-stretch flex flex-col justify-start text-center items-center gap-3.5">
-              <div className="text-2xl md:text-3xl font-semibold ">Connected</div>
-              <div className="w-80 md:w-[464px] text-base md:text-xl font-normal leading-norma md:leading-7">Your crypto wallet is connected to Verana allowing you to proceed with all features.</div>
-              <Image
-                src={(wallet && wallet.logo) ? wallet.logo.toString() : ''}
-                alt={wallet? wallet.prettyName : ''}
-                width={80}
-                height={80}
-                className="w-20 h-20"
-              />
-          </div>
-        </div>
         <br/>
         <DataView<DashboardData>
             sections={dashboardSections}
@@ -76,11 +56,8 @@ export default function Page() {
             id=""
             columnsCount={2}
         />
-        </>) : (
-        <div className="flex justify-center">
-          <NotConnected />
-        </div>)
-      }
+        </>
+      )}
     </>
   );
 }

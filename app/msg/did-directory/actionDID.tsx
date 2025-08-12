@@ -193,32 +193,32 @@ export default function ActionDID({ action, id, data }: { action: MsgTypeDID, id
 
   // UI: MsgAddDID includes DID input, MsgAddDID/MsgRenewDID include years select
   return (
-    <form onSubmit={handleSubmit} className="space-y-2 max-w-md">
-      <div className="text-justify">
-        <p className="text-sm font-normal leading-normal">{description}</p>
+    <form onSubmit={handleSubmit} className="form">
+      <div className="form-copy">
+        <p>{description}</p>
       </div>
       {action === 'MsgAddDID' && (
-        <div>
-          <label htmlFor="did" className="block text-sm font-medium">DID</label>
+        <div className="form-field">
+          <label htmlFor="did" className="label">DID</label>
           <input
             name="did"
             value={form.did}
             onChange={handleChange}
             placeholder="did:method:identifier"
-            className="w-full p-2 border rounded bg-white dark:bg-black"
+            className="input"
             type='text'
           />
         </div>
       )}
       {(action === 'MsgAddDID' || action === 'MsgRenewDID') && (
         <div>
-          <label htmlFor="years" className="block text-sm font-medium">Years</label>
+          <label htmlFor="years" className="form-field">Years</label>
           <select
             id="years"
             name="years"
             value={form.years}
             onChange={handleChange}
-            className="mt-1 block w-full p-2 border rounded bg-white dark:bg-black"
+            className="input"
           >
             {Array.from({ length: 10 }, (_, i) => (
               <option key={i + 1} value={i + 1}>{i + 1}</option>
@@ -227,8 +227,8 @@ export default function ActionDID({ action, id, data }: { action: MsgTypeDID, id
         </div>
       )}
       {totalValue && (
-        <div className="text-justify">
-          <p className="text-sm font-normal leading-normal">
+        <div className="form-copy">
+          <p>
             {getCostMessage( msgTypeConfig[messageType].cost, totalValue, (data as DidData)?.deposit )}
           </p>
         </div>
@@ -236,11 +236,7 @@ export default function ActionDID({ action, id, data }: { action: MsgTypeDID, id
       <button
         type="submit"
         disabled={!enabledAction}
-        className="border border-button-light-border dark:border-button-dark-border 
-                  inline-flex items-center justify-center rounded-md  transition-all 
-                  hover:text-light-selected-text hover:bg-light-selected-bg
-                  dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg 
-                  disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none px-2 py-1"
+        className="btn-action"
       >
         {label}
       </button>

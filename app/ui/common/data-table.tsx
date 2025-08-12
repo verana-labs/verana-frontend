@@ -97,40 +97,31 @@ export function DataTable<T extends object>({
   };
 
   return (
-    <div className="
-      w-full
-      mx-auto p-4 rounded-2xl shadow bg-light-bg dark:bg-dark-bg
-    ">
+    <div className="data-table-container">
       {/* Help Section (if present) */}
       {description && Array.isArray(description) && (
-        <div className="px-4 text-justify">
+        <div className="form-copy">
           {description.map((d, idx) => (
-            <p
-              key={idx}
-              className="text-sm font-normal leading-normal mb-2"
-            >
+            <p key={idx} className="pb-2">
               {d}
             </p>
           ))}
         </div>
       )}
-      <div className="overflow-x-auto w-full">
-        <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
+      <div className="data-table-scroll">
+        <table className="data-table-table">
           <thead>
             <tr>
               {columns.map((col) => (
                 <th
                   key={String(col.accessor)}
                   onClick={() => handleSort(col.accessor)}
-                  className={
-                    getColumnClasses(col.priority) +
-                    " text-left text-base font-semibold leading-none text-gray-700 dark:text-gray-200 bg-white dark:bg-black px-4 py-3 cursor-pointer select-none"
-                  }
+                  className={`data-table-th ${getColumnClasses(col.priority)}`}
                 >
-                  <div className="flex items-center gap-1">
+                  <div className="data-table-sort-header">
                     {col.header}
                     {sortColumn === col.accessor && (
-                      <span className="ml-1 text-base">
+                      <span className="data-table-sort-icon">
                         {sortDirection === 'asc' ? '▲' : '▼'}
                       </span>
                     )}
@@ -140,16 +131,16 @@ export function DataTable<T extends object>({
             </tr>
             <tr>
               {columns.map((col) => (
-                <th key={String(col.accessor)} className={getColumnClasses(col.priority) + " px-4 py-2 bg-light-bg dark:bg-dark-bg"}>
+                <th key={String(col.accessor)} className={`data-table-filter-th ${getColumnClasses(col.priority)}`}>
                   {col.filterType === 'checkbox' ? (
-                    <label className="w-full flex items-center">
+                    <label className="data-table-filter-label">
                       <input
                         type="checkbox"
                         checked={Boolean(filters[col.accessor as string])}
                         onChange={e => handleFilterChange(col.accessor, e.target.checked)}
-                        className="form-checkbox h-4 w-4 text-pink-500 accent-pink-500"
+                        className="data-table-filter-checkbox"
                       />
-                      <span className="ml-2 text-xs font-medium text-gray-700 dark:text-gray-200">
+                      <span className='ml-2'>
                         {col.filterLabel ?? col.header}
                       </span>
                     </label>
@@ -160,14 +151,14 @@ export function DataTable<T extends object>({
                         value={(filters[col.accessor as string] as string) || ''}
                         onChange={e => handleFilterChange(col.accessor, e.target.value)}
                         placeholder="Filter..."
-                        className="w-full py-1 px-2 pr-6 border border-gray-200 dark:border-gray-600 rounded-md text-xs text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 font-medium"
+                        className="input"
                         style={{ minWidth: 0 }}
                       />
                       {filters[col.accessor as string] && (
                         <button
                           type="button"
                           onClick={() => handleFilterChange(col.accessor, '')}
-                          className="absolute right-1 text-gray-400 hover:text-red-500 focus:outline-none"
+                          className="data-table-filter-x"
                           aria-label="Clear filter"
                         >
                           ×
@@ -182,7 +173,7 @@ export function DataTable<T extends object>({
           <tbody>
             {currentData.length === 0 && (
               <tr>
-                <td colSpan={columns.length} className="text-center text-gray-500 py-10">
+                <td colSpan={columns.length} className="text-center py-10">
                   No results found
                 </td>
               </tr>
@@ -191,15 +182,15 @@ export function DataTable<T extends object>({
               <tr
                 key={rowIdx}
                 onClick={() => onRowClick?.(row)}
-                className={`transition-all duration-150 
-                  ${onRowClick ? 'cursor-pointer hover:bg-pink-50 dark:hover:bg-pink-950' : ''}
-                  ${rowIdx % 2 === 0 ? 'bg-white dark:bg-black' : 'bg-gray-50 dark:bg-gray-900'}
+                className={` 
+                  ${onRowClick ? 'data-table-row-click' : ''}
+                  ${rowIdx % 2 === 0 ? 'data-table-row-even' : 'data-table-row-uneven'}
                 `}
               >
                 {columns.map((col) => (
                   <td
                     key={String(col.accessor)}
-                    className={getColumnClasses(col.priority) + " text-sm font-normal leading-none text-gray-700 dark:text-gray-200 px-4 py-4 whitespace-nowrap"}
+                    className={`data-table-body-text ${getColumnClasses(col.priority)}`}
                   >
                     {col.format ? col.format(row[col.accessor]) : String(row[col.accessor] ?? '')}
                   </td>
@@ -212,7 +203,7 @@ export function DataTable<T extends object>({
       {/* Pagination controls */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 font-medium leading-none">
         <div className="flex items-center">
-          <label htmlFor="pageSizeSelect" className="mr-2 text-gray-700 dark:text-gray-200">
+          <label htmlFor="pageSizeSelect" className='pr-2'>
             Rows per page:
           </label>
           <select
@@ -222,18 +213,18 @@ export function DataTable<T extends object>({
               setPageSize(Number(e.target.value));
               setCurrentPage(0); // Go to first page when changing page size
             }}
-            className="block w-20 py-1 px-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 rounded-md shadow-sm focus:outline-none"
+            className="select block w-20"
           >
             {pageSizeOptions.map(size => (
               <option key={size} value={size}>{size}</option>
             ))}
           </select>
         </div>
-        <div className="flex items-center space-x-1">
+        <div className="actions-center">
           <button
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 0}
-            className="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-pink-100 dark:hover:bg-pink-900 disabled:opacity-40"
+            className="btn-action"
           >
             Previous
           </button>
@@ -241,26 +232,26 @@ export function DataTable<T extends object>({
             <button
               key={pageIndex}
               onClick={() => goToPage(pageIndex)}
-              className={`px-3 py-1 rounded-md transition-colors 
+              className={`px-3 py-1 
                 ${pageIndex === currentPage
-                  ? 'bg-pink-500 text-white font-bold shadow'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-pink-100 dark:hover:bg-pink-900'}
+                  ? 'data-table-current-page'
+                  : 'btn-action'}
               `}
             >{pageIndex + 1}</button>
           ))}
           {showEllipsis && (
             <>
-              <span className="px-2 text-gray-500 dark:text-gray-300">…</span>
+              <span>…</span>
               <button
                 onClick={() => goToPage(totalPages - 1)}
-                className="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-pink-100 dark:hover:bg-pink-900"
+                className="btn-action"
               >{totalPages}</button>
             </>
           )}
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage + 1 >= totalPages}
-            className="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-pink-100 dark:hover:bg-pink-900 disabled:opacity-40"
+            className="btn-action"
           >
             Next
           </button>

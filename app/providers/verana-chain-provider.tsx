@@ -1,12 +1,11 @@
 'use client'
 
-import '@/app/ui/global.css';
+import '@/app/styles/global.css';
 import { ChainProvider } from '@cosmos-kit/react';
 import "@interchain-ui/react/styles";
 import { type SigningStargateClientOptions } from '@cosmjs/stargate';
 import { veranaAssets, veranaRegistry, veranaAmino } from '@/app/config/veranaChain.client';
 import {wallets} from "cosmos-kit"
-import { ThemeProvider } from 'next-themes';
 import { useVeranaChain } from "@/app/hooks/useVeranaChain";
 
 export default function RootLayout({ children }: { children: React.ReactNode; }) {
@@ -17,7 +16,6 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
   const assetLists = [{ chain_name: veranaChain.chain_name, assets: [veranaAssets] }];
                       
   return (
-    <ThemeProvider attribute="class" enableSystem={true} defaultTheme="system">
       <ChainProvider
           throwErrors= {true}
           chains={customChains}
@@ -45,6 +43,5 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
         >
         {children}
       </ChainProvider>
-    </ThemeProvider>
   );
 }

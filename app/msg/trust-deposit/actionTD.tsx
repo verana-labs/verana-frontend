@@ -189,10 +189,10 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
+    <form onSubmit={handleSubmit} className="form">
       {/* Show description of the action */}
-      <div className="text-justify">
-        <p className="text-sm font-normal leading-normal">
+      <div className="form-copy">
+        <p>
           { (messageType === 'MsgReclaimTrustDeposit' )? 
               getDescriptionMessage( msgTypeConfig[messageType].description, (100 - burnRate), burnRate )
               : description
@@ -202,7 +202,7 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
       {/* Only show claimed input for MsgReclaimTrustDeposit */}
       {action === 'MsgReclaimTrustDeposit' && (
         <div>
-          <label htmlFor="claimed" className="block text-sm font-medium">
+          <label htmlFor="claimed" className="label">
             Claimed
           </label>
           <input
@@ -211,15 +211,15 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
             value={form.claimed}
             onChange={handleChange}
             placeholder="Claimed"
-            className="w-full p-2 border rounded bg-white dark:bg-black"
+            className="input"
             min={1}
           />
         </div>
       )}
       {/* Show transaction cost (fee) */}
       {totalValue && (
-        <div className="text-justify">
-          <p className="text-sm font-normal leading-normal">
+        <div className="form-copy">
+          <p>
             {getCostMessage( msgTypeConfig[messageType].cost, totalValue )}
           </p>
         </div>
@@ -229,11 +229,7 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
         <button
           type="button"
           disabled={submitting}
-          className="border border-button-light-border dark:border-button-dark-border 
-                    inline-flex items-center justify-center rounded-md py-1 px-2 transition-all 
-                    hover:text-light-selected-text hover:bg-light-selected-bg
-                    dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg 
-                    disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
+          className="btn-action"
           onClick={handleCancel}
         >
           Cancel
@@ -241,11 +237,7 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
         <button
           type="submit"
           disabled={!enabledAction || submitting}
-          className="border border-button-light-border dark:border-button-dark-border 
-                    inline-flex items-center justify-center rounded-md py-1 px-2 transition-all 
-                    hover:text-light-selected-text hover:bg-light-selected-bg
-                    dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg 
-                    disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
+          className="btn-action"
         >
           {label}
         </button>

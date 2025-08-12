@@ -92,39 +92,35 @@ function NotificationContainer({
   if (!notification) return null;
   return (
     <div
-      className={`
-        absolute inset-5 z-50 flex items-start justify-end pointer-events-none
-      `}
+      className={`notify-container`}
       style={{ minWidth: 0, minHeight: 0 }}
     >
       <div
-        className={`
-          rounded-2xl shadow-2xl flex items-center gap-4
-          transition-all duration-300 bg-white border
-          ${visible ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-4 pointer-events-none'}
+        className={`notify-notification 
+          ${visible ? 'notify-visible' : 'notify-invisible'}
           ${
             notification.type === 'success'
-              ? 'border-green-600 text-green-700'
+              ? 'notify-success'
               : notification.type === 'error'
-                ? 'border-red-600 text-red-700'
+                ? 'notify-error'
                 : notification.type === 'inProgress'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-blue-600 text-blue-700'
+                  ? 'notify-in-progress'
+                  : 'notify-info'
           }
-          px-8 py-6 max-w-[90vw] w-auto`}
+        `}
         role={notification.type === 'error' ? 'alert' : undefined}
         aria-live="polite"
       >
         {getIcon(notification.type)}
-        <div className="flex-1">
+        <div className="notify-msg-container">
           {notification.title && (
-            <div className="font-bold mb-1 break-all ">{notification.title}</div>
+            <div className="notify-msg-title">{notification.title}</div>
           )}
-          <span className="text-sm md:text-lg break-all">{notification.message}</span>
+          <span className="notify-msg-message">{notification.message}</span>
         </div>
         <button
           onClick={onClose}
-          className="absolute top-2 right-2 text-2xl font-bold px-2 focus:outline-none hover:text-black/60"
+          className="notify-btn-close"
           aria-label="Close"
           title="Close"
           tabIndex={0}
@@ -139,7 +135,7 @@ function NotificationContainer({
 function getIcon(type: 'success' | 'error' | 'info' | 'inProgress') {
   if (type === 'success') {
     return (
-      <svg className="w-7 h-7 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <svg className="notify-icon-success" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 12l2.5 2.5L16 9" />
       </svg>
@@ -147,7 +143,7 @@ function getIcon(type: 'success' | 'error' | 'info' | 'inProgress') {
   }
   if (type === 'error') {
     return (
-      <svg className="w-7 h-7 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <svg className="notify-icon-error" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 9l6 6m0-6l-6 6" />
       </svg>
@@ -156,7 +152,7 @@ function getIcon(type: 'success' | 'error' | 'info' | 'inProgress') {
   if (type === 'inProgress') {
     // Spinner
     return (
-      <svg className="w-7 h-7 text-blue-500 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
+      <svg className="notify-icon-in-progress" fill="none" viewBox="0 0 24 24">
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
       </svg>
@@ -164,7 +160,7 @@ function getIcon(type: 'success' | 'error' | 'info' | 'inProgress') {
   }
   // info
   return (
-    <svg className="w-7 h-7 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+    <svg className="notify-icon-info" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white" />
       <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" strokeWidth="2" />
       <circle cx="12" cy="16" r="1" fill="currentColor" />
