@@ -64,9 +64,9 @@ export default function DataView<T extends object>({
                 ? " data-view-section-icon-info"
                 : " data-view-section-icon-default")
             }>
-              <section.icon className={
-                "data-view-section-icon" + " text-" +
-                (section.type === "help" ? "blue" : "pink") + "-500"
+              <section.icon className={ 
+                "data-view-section-icon " + 
+                (section.type === "help" ? "text-blue-500" : "text-pink-500")
               } />
             </span>
             )}
