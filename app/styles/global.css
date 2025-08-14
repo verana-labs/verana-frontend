@@ -114,6 +114,10 @@
     @apply text-justify text-sm font-normal leading-normal;
   }
 
+  .form-copy strong {
+    @apply text-light-selected-text dark:text-dark-selected-text;
+  }
+
   .btn-action {
     @apply inline-flex items-center justify-center rounded-md transition-all px-2 py-1
            border border-button-light-border dark:border-button-dark-border
@@ -184,6 +188,10 @@
     @apply bg-light-bg text-light-text dark:bg-dark-bg dark:text-dark-text;
   }
 
+  .theme-surface-content {
+    @apply bg-content-light-bg dark:bg-content-dark-bg;
+  }
+
   .titlebar {
     @apply flex items-center justify-between pb-4;
   }
@@ -204,24 +212,28 @@
     @apply h-6 w-6 mr-1;
   }
   
-  .data-edit-container {
+  .data-edit-container,
+  .data-view-container{
     @apply min-w-full;
   }
 
-  .data-edit-section {
+  .data-edit-section,
+  .data-view-section {
     @apply mb-2 p-4 rounded-2xl bg-light-bg dark:bg-dark-bg;
   }
 
-  .data-edit-section-title {
+  .data-edit-section-title,
+  .data-view-section-title{
     @apply text-lg font-medium mb-2 flex items-center gap-2;
-
   }
 
-  .data-edit-scroll {
+  .data-edit-scroll,
+  .data-view-scroll {
     @apply overflow-x-auto;
   }
 
-  .data-edit-table {
+  .data-edit-table,
+  .data-view-table {
     @apply min-w-full;
   }
 
@@ -229,9 +241,9 @@
     @apply py-2 pr-4 text-right align-middle w-1/3;
   }
 
-  .data-edit-label {
+  .data-edit-label,
+  .data-view-value {
     @apply text-base font-semibold leading-none mb-1 break-all;
-    /* text-base font-semibold leading-none mb-1 break-all */
   }
 
   .data-edit-required {

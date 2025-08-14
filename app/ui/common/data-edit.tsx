@@ -153,7 +153,8 @@ export default function EditableDataView<T extends object>({
 
   return (
     <div className="data-edit-container">
-      {sections.map((section, sectionIndex) => (
+      {sections.map((section, sectionIndex) => 
+        section.type && section.type !== "basic" ? null : (
         <div key={sectionIndex} className="data-edit-section">
           <h2 className="data-edit-section-title">{section.name}</h2>
           {description && (
