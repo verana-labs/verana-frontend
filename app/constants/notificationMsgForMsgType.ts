@@ -7,7 +7,7 @@ export type MsgTypeDID = 'MsgAddDID' | 'MsgRenewDID' | 'MsgTouchDID' | 'MsgRemov
 export type MsgTypeTD = 'MsgReclaimTrustDeposit' | 'MsgReclaimTrustDepositYield';
 
 // Supported Trust Registry actions
-export type MsgTypeTR = 'CreateTrustRegistry' | 'UpdateTrustRegistry' | 'ArchiveTrustRegistry';
+export type MsgTypeTR = 'MsgCreateTrustRegistry' | 'MsgUpdateTrustRegistry' | 'MsgArchiveTrustRegistry' | 'MsgAddGovernanceFrameworkDocument' | 'MsgIncreaseActiveGovernanceFrameworkVersion';
 
 // Constants for user notifications per DID action
 export const MSG_SUCCESS_ACTION_DID: Record<MsgTypeDID, (did: string) => string> = {
@@ -50,22 +50,28 @@ export const MSG_ERROR_ACTION_TD: Record<MsgTypeTD, (code?: number, msg?: string
 
 // Constants for success, error, and in-progress messages for each action
 export const MSG_SUCCESS_ACTION_TR: Record<MsgTypeTR, string> = {
-  CreateTrustRegistry: 'Trust Registry created successfully!',
-  UpdateTrustRegistry: 'Trust Registry updated successfully!',
-  ArchiveTrustRegistry: 'Trust Registry archived successfully!',
+  MsgCreateTrustRegistry: 'Trust Registry created successfully!',
+  MsgUpdateTrustRegistry: 'Trust Registry updated successfully!',
+  MsgArchiveTrustRegistry: 'Trust Registry archived successfully!',
+  MsgAddGovernanceFrameworkDocument: 'Governance Framework Document added successfully!',
+  MsgIncreaseActiveGovernanceFrameworkVersion: 'Active Governance Framework Version increased successfully!',
 };
 
 export const MSG_INPROGRESS_ACTION_TR: Record<MsgTypeTR, string> = {
-  CreateTrustRegistry: 'Creating Trust Registry...',
-  UpdateTrustRegistry: 'Updating Trust Registry...',
-  ArchiveTrustRegistry: 'Archiving Trust Registry...',
+  MsgCreateTrustRegistry: 'Creating Trust Registry...',
+  MsgUpdateTrustRegistry: 'Updating Trust Registry...',
+  MsgArchiveTrustRegistry: 'Archiving Trust Registry...',
+  MsgAddGovernanceFrameworkDocument: 'Adding Governance Framework Document...',
+  MsgIncreaseActiveGovernanceFrameworkVersion: 'Increasing Active Governance Framework Version...',
 };
 
 export const MSG_ERROR_ACTION_TR: Record<
   MsgTypeTR,
   (id: string | number | undefined, code?: number, msg?: string) => string
 > = {
-  CreateTrustRegistry: (id, code, msg) => `Failed to create Trust Registry${id ? ` ${id}` : ''}. ${code ? `(${code}) ` : ''}${msg ?? ''}`,
-  UpdateTrustRegistry: (id, code, msg) => `Failed to update Trust Registry${id ? ` ${id}` : ''}. ${code ? `(${code}) ` : ''}${msg ?? ''}`,
-  ArchiveTrustRegistry: (id, code, msg) => `Failed to archive Trust Registry${id ? ` ${id}` : ''}. ${code ? `(${code}) ` : ''}${msg ?? ''}`,
+  MsgCreateTrustRegistry: (id, code, msg) => `Failed to create Trust Registry${id ? ` ${id}` : ''}. ${code ? `(${code}) ` : ''}${msg ?? ''}`,
+  MsgUpdateTrustRegistry: (id, code, msg) => `Failed to update Trust Registry${id ? ` ${id}` : ''}. ${code ? `(${code}) ` : ''}${msg ?? ''}`,
+  MsgArchiveTrustRegistry: (id, code, msg) => `Failed to archive Trust Registry${id ? ` ${id}` : ''}. ${code ? `(${code}) ` : ''}${msg ?? ''}`,
+  MsgAddGovernanceFrameworkDocument: (id, code, msg) => `Failed to add Governance Framework Document, Trust Registry${id ? ` ${id}` : ''}. ${code ? `(${code}) ` : ''}${msg ?? ''}`,
+  MsgIncreaseActiveGovernanceFrameworkVersion: (id, code, msg) => `Failed to increase Active Governance Framework Version, Trust Registry${id ? ` ${id}` : ''}. ${code ? `(${code}) ` : ''}${msg ?? ''}`,
 };

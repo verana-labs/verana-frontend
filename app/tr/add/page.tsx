@@ -32,9 +32,9 @@ export default function TrNewPage() {
   // Save handler: called when the form is submitted
   async function onSave(newData: TrData) {
       setData(newData);
-      // Broadcast CreateTrustRegistry transaction with user input
+      // Broadcast MsgCreateTrustRegistry transaction with user input
       await actionTR({
-        msgType: 'CreateTrustRegistry',
+        msgType: 'MsgCreateTrustRegistry',
         creator: address ?? '',
         did: newData.did || '',
         aka: newData.aka || '',

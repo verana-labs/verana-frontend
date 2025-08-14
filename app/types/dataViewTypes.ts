@@ -1,16 +1,17 @@
-import { BanknotesIcon, CurrencyDollarIcon, IdentificationIcon, InformationCircleIcon, LinkIcon, ShieldCheckIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
+import { BanknotesIcon, CurrencyDollarIcon, IdentificationIcon, InformationCircleIcon, LinkIcon, ListBulletIcon, ShieldCheckIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
 
 // Field descriptor for a generic data type T
 export type Field<T> = {
   name: keyof T;
   label: string;
-  type: "data" | "action";
+  type: "data" | "action" | "list";
   inputType?: 'text' | 'number' | 'textarea' | 'select';
   options?: { value: string | number; label: string }[]; // Only for select
   show?: 'view' | 'edit' | 'all' | 'none' | 'create' ;
   required?: true | false;
   update?: true | false;
   id?: true | false;
+  list ?: string[]; // Only for list
 };
 
 // Section grouping a subset of fields of T under a common title
@@ -18,8 +19,9 @@ export type Section<T> = {
   icon?: React.ComponentType<{ className?: string }>;
   name: string;
   fields?: Field<T>[];
-  type?: "data" | "help";
+  type?: "basic" | "help" | "advanced";
   help?: string[];
+  
 };
 
 // Props for a DataView component: a title, sections, and the data object
@@ -29,6 +31,7 @@ export interface DataViewProps<T extends object> {
   id?: string;
   columnsCount?: number;
   columnsCountMd?: number;
+  onEdit?: () => void;
 }
 
 //Account data
@@ -163,16 +166,30 @@ export interface TrData {
   role?: string;
   created?: string;
   modified?: string;
-  active_version?: string;
+  active_version?: number;
   schemas?: string;
+  docs?: string[];
+  addGovernanceFrameworkDocument?: string | null;
+  increaseActiveGovernanceFrameworkVersion?: string | null;
+  versions?: {
+    id: string; 
+    version: number; 
+    active_since: string; 
+    documents?: {
+      id: string; 
+      url: string;
+      language: string;
+    }[] 
+  }[];
+  last_version?: number;
 }
 
 // Sections configuration for TrData
-
 export const trSections: Section<TrData>[] = [
   {
     name: "Basic Information",
     icon: ShieldCheckIcon,
+    type: "basic",
     fields: [
       { name: 'id', label: 'Id', type: "data", show: 'none', update: false, id: true },
       { name: 'did', label: 'DID', type: "data", show: 'all', required: true, update: true },
@@ -185,8 +202,42 @@ export const trSections: Section<TrData>[] = [
       { name: 'role', label: 'Role', type: "data", show: 'none' },
       { name: 'created', label: 'Created', type: "data", show: 'none'  },
       { name: 'modified', label: 'Modified', type: "data", show: 'none' },
-      { name: 'active_version', label: 'Active GF Version', type: "data", show: 'none' },
+      { name: 'active_version', label: 'Active GF Version', type: "data", show: 'view' },
       { name: 'schemas', label: 'Schemas', type: "data", show: 'none' },
+    ]
+  },
+  {
+    name: "Governance Framework Documents",
+    icon: ListBulletIcon,
+    type: "advanced",
+    fields: [
+      { name: 'docs', label: '', type: "list"},
+      { name: 'addGovernanceFrameworkDocument', label: 'Add Governance Framework Document', type: "action" },
+      { name: 'increaseActiveGovernanceFrameworkVersion', label: 'Increase Active Governance Framework Version', type: "action" }
+    ]
+  }
+];
+
+//Governance Framework Document
+export interface GfdData {
+  creator: string;
+  id: string;
+  docLanguage: string;
+  docUrl: string;
+  version?: number;
+}
+
+// Sections configuration for GfdData
+export const gfdSections: Section<GfdData>[] = [
+  {
+    name: "",
+    icon: ShieldCheckIcon,
+    type: "basic",
+    fields: [
+      { name: 'creator', label: 'Controller', type: "data", show: 'create', update: false },
+      { name: 'docLanguage', label: 'Governance Framework Language', type: "data", inputType: 'select',
+          options: languageOptions, show: 'create', required: true, update: true },
+      { name: 'docUrl', label: 'Governance Framework Document URL', type: "data", show: 'create', required: true, update: true }
     ]
   }
 ];

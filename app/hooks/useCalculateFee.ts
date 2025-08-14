@@ -15,6 +15,8 @@ const gasConfig: Record<MessageType, { gasLimit: number; gasPrice: number; denom
   MsgCreateTrustRegistry: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
   MsgUpdateTrustRegistry: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
   MsgArchiveTrustRegistry: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
+  MsgAddGovernanceFrameworkDocument: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
+  MsgIncreaseActiveGovernanceFrameworkVersion: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
 };
 
 /**

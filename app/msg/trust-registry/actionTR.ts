@@ -5,6 +5,8 @@ import {
   MsgCreateTrustRegistry,
   MsgUpdateTrustRegistry,
   MsgArchiveTrustRegistry,
+  MsgAddGovernanceFrameworkDocument,
+  MsgIncreaseActiveGovernanceFrameworkVersion
 } from '@/proto-codecs/codec/verana/tr/v1/tx';
 import { veranaGasLimit, veranaGasPrice } from '@/app/config/veranaChain.client';
 import { useVeranaChain } from '@/app/hooks/useVeranaChain';
@@ -15,24 +17,32 @@ import { MSG_ERROR_ACTION_TR, MSG_INPROGRESS_ACTION_TR, MSG_SUCCESS_ACTION_TR } 
 import { isValidUrl } from '@/app/util/validations'
 
 export const MSG_TYPE_CONFIG_TR = {
-  CreateTrustRegistry: {
+  MsgCreateTrustRegistry: {
     typeUrl: '/verana.tr.v1.MsgCreateTrustRegistry',
-    txLabel: 'CreateTrustRegistry',
+    txLabel: 'MsgCreateTrustRegistry',
   },
-  UpdateTrustRegistry: {
+  MsgUpdateTrustRegistry: {
     typeUrl: '/verana.tr.v1.MsgUpdateTrustRegistry',
-    txLabel: 'UpdateTrustRegistry',
+    txLabel: 'MsgUpdateTrustRegistry',
   },
-  ArchiveTrustRegistry: {
+  MsgArchiveTrustRegistry: {
     typeUrl: '/verana.tr.v1.MsgArchiveTrustRegistry',
-    txLabel: 'ArchiveTrustRegistry',
+    txLabel: 'MsgArchiveTrustRegistry',
   },
+  MsgAddGovernanceFrameworkDocument: {
+    typeUrl: '/verana.tr.v1.MsgAddGovernanceFrameworkDocument',
+    txLabel: 'MsgAddGovernanceFrameworkDocument',
+  },
+  MsgIncreaseActiveGovernanceFrameworkVersion: {
+    typeUrl: '/verana.tr.v1.MsgIncreaseActiveGovernanceFrameworkVersion',
+    txLabel: 'MsgIncreaseActiveGovernanceFrameworkVersion',
+  }
 } as const;
 
 // Union type for action parameters
 type ActionTRParams =
   | {
-      msgType: 'CreateTrustRegistry';
+      msgType: 'MsgCreateTrustRegistry';
       creator: string;
       did: string;
       aka: string;
@@ -40,14 +50,27 @@ type ActionTRParams =
       docUrl: string;
     }
   | {
-      msgType: 'UpdateTrustRegistry';
+      msgType: 'MsgUpdateTrustRegistry';
       creator: string;
       id: string | number;
       did: string;
       aka: string;
     }
   | {
-      msgType: 'ArchiveTrustRegistry';
+      msgType: 'MsgArchiveTrustRegistry';
+      creator: string;
+      id: string | number;
+    }
+  | {
+      msgType: 'MsgAddGovernanceFrameworkDocument';
+      creator: string;
+      id: string | number;
+      version: number;
+      docLanguage: string;
+      docUrl: string;
+    }
+  | {
+      msgType: 'MsgIncreaseActiveGovernanceFrameworkVersion';
       creator: string;
       id: string | number;
     };
@@ -72,11 +95,11 @@ export function useActionTR() {
     }
 
     let typeUrl = '';
-    let value: MsgCreateTrustRegistry | MsgUpdateTrustRegistry | MsgArchiveTrustRegistry;
+    let value: MsgCreateTrustRegistry | MsgUpdateTrustRegistry | MsgArchiveTrustRegistry | MsgAddGovernanceFrameworkDocument | MsgIncreaseActiveGovernanceFrameworkVersion;
     let id: string | undefined;
 
     switch (params.msgType) {
-      case 'CreateTrustRegistry':
+      case 'MsgCreateTrustRegistry':
         // Calculate SRI hash for docUrl using your API
         let sri: string | undefined;
         if (params.docUrl) {
@@ -96,8 +119,7 @@ export function useActionTR() {
             await notify('Could not calculate SRI for Document URL: ' + err, 'error', 'Transaction failed');
           }
         }
-
-        typeUrl = MSG_TYPE_CONFIG_TR.CreateTrustRegistry.typeUrl;
+        typeUrl = MSG_TYPE_CONFIG_TR.MsgCreateTrustRegistry.typeUrl;
         value = MsgCreateTrustRegistry.fromPartial({
           creator: address,
           did: params.did,
@@ -108,8 +130,8 @@ export function useActionTR() {
         });
         // id undefined for create
         break;
-      case 'UpdateTrustRegistry':
-        typeUrl = MSG_TYPE_CONFIG_TR.UpdateTrustRegistry.typeUrl;
+      case 'MsgUpdateTrustRegistry':
+        typeUrl = MSG_TYPE_CONFIG_TR.MsgUpdateTrustRegistry.typeUrl;
         value = MsgUpdateTrustRegistry.fromPartial({
           creator: params.creator,
           id: Number(params.id),
@@ -118,12 +140,51 @@ export function useActionTR() {
         });
         id = params.id?.toString();
         break;
-      case 'ArchiveTrustRegistry':
-        typeUrl = MSG_TYPE_CONFIG_TR.ArchiveTrustRegistry.typeUrl;
+      case 'MsgArchiveTrustRegistry':
+        typeUrl = MSG_TYPE_CONFIG_TR.MsgArchiveTrustRegistry.typeUrl;
         value = MsgArchiveTrustRegistry.fromPartial({
           creator: params.creator,
           id: params.id,
           archive: true,
+        });
+        id = params.id?.toString();
+        break;
+      case 'MsgAddGovernanceFrameworkDocument':
+        // Calculate SRI hash for docUrl using your API
+        let sriAdd: string | undefined;
+        if (params.docUrl) {
+          if (!isValidUrl(params.docUrl)){
+            await notify('Invalid document Document URL', 'error');
+            return;
+          }
+          try {
+            const res = await fetch(`/api/sri?url=${encodeURIComponent(params.docUrl)}`);
+            if (!res.ok) {
+              await notify(`Could not calculate SRI for Document URL.`, 'error', 'Transaction failed');
+              return;
+            }
+            const data = await res.json();
+            sriAdd = data.sri;
+          } catch (err) {
+            await notify('Could not calculate SRI for Document URL: ' + err, 'error', 'Transaction failed');
+          }
+        }
+        typeUrl = MSG_TYPE_CONFIG_TR.MsgAddGovernanceFrameworkDocument.typeUrl;
+        value = MsgAddGovernanceFrameworkDocument.fromPartial({
+          creator: address,
+          id: Number(params.id),
+          docLanguage: params.docLanguage,
+          docUrl: params.docUrl,
+          docDigestSri: sriAdd,
+          version: params.version + 1
+        });
+        // version undefined for create
+        break;
+      case 'MsgIncreaseActiveGovernanceFrameworkVersion':
+        typeUrl = MSG_TYPE_CONFIG_TR.MsgIncreaseActiveGovernanceFrameworkVersion.typeUrl;
+        value = MsgIncreaseActiveGovernanceFrameworkVersion.fromPartial({
+          creator: params.creator,
+          id: Number(params.id),
         });
         id = params.id?.toString();
         break;
@@ -176,7 +237,7 @@ export function useActionTR() {
     } finally {
       if (notifyPromise) await notifyPromise;
       if (success) {
-        if (params.msgType === 'CreateTrustRegistry') {
+        if (params.msgType === 'MsgCreateTrustRegistry') {
           router.push('/tr');
         } else if (id) {
           const trUrl = `/tr/${encodeURIComponent(id)}`;

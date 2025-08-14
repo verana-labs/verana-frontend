@@ -10,7 +10,9 @@ export type MessageType =
   | 'MsgRepaySlashedTrustDeposit'
   | 'MsgCreateTrustRegistry'
   | 'MsgUpdateTrustRegistry'
-  | 'MsgArchiveTrustRegistry';
+  | 'MsgArchiveTrustRegistry'
+  | 'MsgAddGovernanceFrameworkDocument'
+  | 'MsgIncreaseActiveGovernanceFrameworkVersion';
 
 export interface MsgTypeInfo {
   label: string;
@@ -69,6 +71,16 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfo> = {
     description: 'Archive a Trust Registry.',
     cost: 'There is no fee for archiving a trust registry.',
   },
+  MsgAddGovernanceFrameworkDocument: {
+    label: 'Confirm',
+    description: 'Add Governance Framework Document.',
+    cost: "Click confirm when you are ready. You'll need approx. {value} VNA to complete the transaction.",
+  },
+  MsgIncreaseActiveGovernanceFrameworkVersion: {
+    label: 'Confirm',
+    description: '',
+    cost: "Click confirm when you are ready. You'll need approx. {value} VNA to complete the transaction.",
+  }
 };
 
 // Utility function to fill {value} in the cost message

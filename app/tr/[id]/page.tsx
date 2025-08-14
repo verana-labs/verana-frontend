@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { TrData, trSections } from '@/app/types/dataViewTypes';
 import DataView from '@/app/ui/common/data-view-columns';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
-import { formatVNA } from '@/app/util/util';
+import { formatVNA, formatDate } from '@/app/util/util';
 import TitleAndButton from '@/app/ui/common/title-and-button';
 import { env } from 'next-runtime-env';
 import { useNotification } from '@/app/ui/common/notification-provider';
@@ -51,7 +51,29 @@ export default function TrViewPage() {
         const entry = resp.trust_registry ?? (resp as TrData);
         entry.deposit = formatVNA(entry.deposit, 6);
         entry.language = langs.where('1', entry.language).name;
-
+        let lastVersion = entry.active_version?? 1;
+        entry.docs = (entry.versions ?? [])
+          .flatMap(version =>
+            (version.documents ?? []).map(doc => {
+              const text = `Version ${version.version}: ${doc.url} (${doc.language}) active since ${formatDate(version.active_since)}`;
+              lastVersion = version.version > lastVersion ? version.version : lastVersion;
+              return version.version === entry.active_version
+                ? `<strong>${text}</strong>`
+                : text ;
+            })
+          );
+        entry.last_version = lastVersion;
+        if (entry.controller === address){
+          entry.addGovernanceFrameworkDocument = "MsgAddGovernanceFrameworkDocument";
+          entry.increaseActiveGovernanceFrameworkVersion =
+            entry.last_version > (entry.active_version ?? 0)
+              ? "MsgIncreaseActiveGovernanceFrameworkVersion"
+              : null;
+        }
+        else {
+          entry.addGovernanceFrameworkDocument = null;
+          entry.increaseActiveGovernanceFrameworkVersion = null;
+        }
         setData(entry);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -67,7 +89,7 @@ export default function TrViewPage() {
     };
 
     fetchTr();
-  }, [id, getURL, notify]);
+  }, [id, getURL, notify, address]);
 
   if (loading) {
     return <div className="loading-paner">Loading Trust Registry details…</div>;
@@ -87,7 +109,7 @@ export default function TrViewPage() {
     };
 
     await actionTR({
-      msgType: 'UpdateTrustRegistry',
+      msgType: 'MsgUpdateTrustRegistry',
       creator: cleaned.controller,
       id: cleaned.id,
       did: cleaned.did,
@@ -116,19 +138,8 @@ export default function TrViewPage() {
           onSave={ onSave }
           onCancel={() => setEditing(false)}  />
       ) : (
-        <>
-          <DataView<TrData> sections={trSections} data={data} id={data.id} columnsCount={2} />
-          { data.controller === address && (
-            <div className="actions-right">
-              <button
-                className="btn-action theme-surface"
-                onClick={() => setEditing(true)}
-              >
-                Edit
-              </button>
-            </div>
-          )}
-        </>
+        <DataView<TrData> sections={trSections} data={data} id={data.id} columnsCount={2} 
+            onEdit={ data.controller === address ? () => setEditing(true) : undefined } />
       )}
     </>
   );
