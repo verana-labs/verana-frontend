@@ -2,6 +2,11 @@ name: Continuous Deployment
 
 env:
   IMAGE_NAME: verana-front
+  DH_USERNAME: ${{ secrets.DOCKER_HUB_LOGIN }}
+  DH_TOKEN: ${{ secrets.DOCKER_HUB_PWD }}
+  KUBECONFIG: ${{ secrets.OVH_KUBECONFIG }}
+  VERANA_DEPLOY_PATH: verana-deploy
+  CLUSTER_NODE: cluster-utc-node-07efe5
 
 on:
   push:
@@ -22,11 +27,16 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKER_HUB_LOGIN }}
-          password: ${{ secrets.DOCKER_HUB_PWD }}
+          username: ${{ env.DH_USERNAME }}
+          password: ${{ env.DH_TOKEN }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Prepare Docker tag
+        run: |
+          SANITIZED_REF=${GITHUB_REF_NAME//\//-}
+          echo "IMAGE_TAG=$SANITIZED_REF" >> $GITHUB_ENV
 
       - name: Build and push
         uses: docker/build-push-action@v5
@@ -34,20 +44,43 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_HUB_LOGIN }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+          tags: |
+            ${{ secrets.DOCKER_HUB_LOGIN }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ${{ github.ref_name == 'main' && format('{0}/{1}:latest', secrets.DOCKER_HUB_LOGIN, env.IMAGE_NAME) || '' }}
 
-      - name: Trigger deployVeranaFrontend in verana-deploy
+
+      - name: Set up Kubernetes
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.29.9'
+
+      - name: Deploy to OVH
         run: |
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.PAT_TO_ACCESS_DEPLOY_REPO }}" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/verana-labs/verana-deploy/actions/workflows/deployVeranaFrontend.yml/dispatches \
-            -d '{
-              "ref": "main",
-              "inputs": {
-                "NAME_SPACE": "vna-testnet-1",
-                "RPC_ENDPOINT": "http://node1.testnet.verana.network:26657/",
-                "REST_ENDPOINT": "http://node1.testnet.verana.network:1317/",
-                "CLUSTER_NODE": "cluster-utc-node-07efe5"
-              }
-            }'
+          set -euo pipefail
+          echo "$KUBECONFIG" > k8s_config
+          export KUBECONFIG=k8s_config
+
+          declare -A CHAIN_IDS=( ["testnet"]="vna-testnet-1" ["devnet"]="vna-devnet-1" )
+          declare -A CHAIN_NAMES=( ["testnet"]="VeranaTestnet1" ["devnet"]="VeranaDevnet1" )
+
+          for ENV in testnet devnet; do
+            VERANA_CHAIN_ID="${CHAIN_IDS[$ENV]}"
+            VERANA_CHAIN_NAME="${CHAIN_NAMES[$ENV]}"
+
+            export DEPLOYMENT_NAME="verana-${ENV}-frontend-app-deployment"
+            export NEXT_PUBLIC_PORT=3000
+            export NEXT_PUBLIC_BASE_URL=http://localhost:2904
+            export NEXT_PUBLIC_VERANA_CHAIN_ID=$VERANA_CHAIN_ID
+            export NEXT_PUBLIC_VERANA_CHAIN_NAME=$VERANA_CHAIN_NAME
+            export NEXT_PUBLIC_VERANA_RPC_ENDPOINT="https://rpc.${ENV}.verana.network"
+            export NEXT_PUBLIC_VERANA_REST_ENDPOINT="https://api.${ENV}.verana.network"
+            export NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT="https://api.${ENV}.verana.network/verana/td/v1"
+            export NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID="https://api.${ENV}.verana.network/verana/dd/v1"
+            export NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY="https://api.${ENV}.verana.network/verana/tr/v1"
+
+            echo "Deploying to $ENV ($VERANA_CHAIN_ID)..."
+            echo "Using image: veranalabs/$IMAGE_NAME:$IMAGE_TAG"
+            kubectl create namespace $VERANA_CHAIN_ID --dry-run=client -o yaml | kubectl apply -f -
+            kubectl delete -n $VERANA_CHAIN_ID deployment $DEPLOYMENT_NAME || true
+            envsubst < kubernetes/verana-frontend-deployment.yaml | tee substituted-deployment.yaml | kubectl apply -f - --namespace=$VERANA_CHAIN_ID
+          done
