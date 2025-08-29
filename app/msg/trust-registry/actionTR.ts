@@ -15,6 +15,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useNotification } from '@/app/ui/common/notification-provider';
 import { MSG_ERROR_ACTION_TR, MSG_INPROGRESS_ACTION_TR, MSG_SUCCESS_ACTION_TR } from '@/app/constants/notificationMsgForMsgType';
 import { isValidUrl } from '@/app/util/validations'
+import { useRef } from 'react';
 
 export const MSG_TYPE_CONFIG_TR = {
   MsgCreateTrustRegistry: {
@@ -87,12 +88,19 @@ export function useActionTR() {
   const router = useRouter();
   const { notify } = useNotification();
   const pathname = usePathname();
+  const inFlight = useRef(false);
 
   async function actionTR(params: ActionTRParams): Promise<DeliverTxResponse | void> {
     if (!isWalletConnected || !address) {
       await notify('Connect wallet', 'error');
       return;
     }
+
+    if (inFlight.current) {
+      await notify('There is a pending transaction. Please wait…', 'inProgress');
+      return;
+    }
+    inFlight.current = true;
 
     let typeUrl = '';
     let value: MsgCreateTrustRegistry | MsgUpdateTrustRegistry | MsgArchiveTrustRegistry | MsgAddGovernanceFrameworkDocument | MsgIncreaseActiveGovernanceFrameworkVersion;
@@ -133,8 +141,8 @@ export function useActionTR() {
       case 'MsgUpdateTrustRegistry':
         typeUrl = MSG_TYPE_CONFIG_TR.MsgUpdateTrustRegistry.typeUrl;
         value = MsgUpdateTrustRegistry.fromPartial({
-          creator: params.creator,
-          id: Number(params.id),
+          creator: address,
+          id: String(params.id),
           did: params.did,
           aka: params.aka,
         });
@@ -143,7 +151,7 @@ export function useActionTR() {
       case 'MsgArchiveTrustRegistry':
         typeUrl = MSG_TYPE_CONFIG_TR.MsgArchiveTrustRegistry.typeUrl;
         value = MsgArchiveTrustRegistry.fromPartial({
-          creator: params.creator,
+          creator: address,
           id: params.id,
           archive: true,
         });
@@ -172,7 +180,9 @@ export function useActionTR() {
         typeUrl = MSG_TYPE_CONFIG_TR.MsgAddGovernanceFrameworkDocument.typeUrl;
         value = MsgAddGovernanceFrameworkDocument.fromPartial({
           creator: address,
-          id: Number(params.id),
+          id: String(params.id),
+          // id: Long.fromString(String(params.id), true), // true = unsigned para uint64
+          // id: Long.fromString(String(params.id)),
           docLanguage: params.docLanguage,
           docUrl: params.docUrl,
           docDigestSri: sriAdd,
@@ -183,8 +193,8 @@ export function useActionTR() {
       case 'MsgIncreaseActiveGovernanceFrameworkVersion':
         typeUrl = MSG_TYPE_CONFIG_TR.MsgIncreaseActiveGovernanceFrameworkVersion.typeUrl;
         value = MsgIncreaseActiveGovernanceFrameworkVersion.fromPartial({
-          creator: params.creator,
-          id: Number(params.id),
+          creator: address,
+          id: String(params.id),
         });
         id = params.id?.toString();
         break;
@@ -235,6 +245,7 @@ export function useActionTR() {
       );
       throw err;
     } finally {
+      inFlight.current = false;
       if (notifyPromise) await notifyPromise;
       if (success) {
         if (params.msgType === 'MsgCreateTrustRegistry') {

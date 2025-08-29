@@ -9,6 +9,9 @@ export type MsgTypeTD = 'MsgReclaimTrustDeposit' | 'MsgReclaimTrustDepositYield'
 // Supported Trust Registry actions
 export type MsgTypeTR = 'MsgCreateTrustRegistry' | 'MsgUpdateTrustRegistry' | 'MsgArchiveTrustRegistry' | 'MsgAddGovernanceFrameworkDocument' | 'MsgIncreaseActiveGovernanceFrameworkVersion';
 
+// Supported Credential Schema actions
+export type MsgTypeCS = 'MsgCreateCredentialSchema' | 'MsgUpdateCredentialSchema' | 'MsgArchiveCredentialSchema';
+
 // Constants for user notifications per DID action
 export const MSG_SUCCESS_ACTION_DID: Record<MsgTypeDID, (did: string) => string> = {
   MsgAddDID:    (did) => `Your DID ${did} was created successfully!`,
@@ -74,4 +77,31 @@ export const MSG_ERROR_ACTION_TR: Record<
   MsgArchiveTrustRegistry: (id, code, msg) => `Failed to archive Trust Registry${id ? ` ${id}` : ''}. ${code ? `(${code}) ` : ''}${msg ?? ''}`,
   MsgAddGovernanceFrameworkDocument: (id, code, msg) => `Failed to add Governance Framework Document, Trust Registry${id ? ` ${id}` : ''}. ${code ? `(${code}) ` : ''}${msg ?? ''}`,
   MsgIncreaseActiveGovernanceFrameworkVersion: (id, code, msg) => `Failed to increase Active Governance Framework Version, Trust Registry${id ? ` ${id}` : ''}. ${code ? `(${code}) ` : ''}${msg ?? ''}`,
+};
+
+// Success messages for CS actions
+export const MSG_SUCCESS_ACTION_CS: Record<MsgTypeCS, string> = {
+  MsgCreateCredentialSchema: 'Credential Schema created successfully!',
+  MsgUpdateCredentialSchema: 'Credential Schema updated successfully!',
+  MsgArchiveCredentialSchema: 'Credential Schema archived successfully!',
+};
+
+// In-progress messages for CS actions
+export const MSG_INPROGRESS_ACTION_CS: Record<MsgTypeCS, string> = {
+  MsgCreateCredentialSchema: 'Creating Credential Schema...',
+  MsgUpdateCredentialSchema: 'Updating Credential Schema...',
+  MsgArchiveCredentialSchema: 'Archiving Credential Schema...',
+};
+
+// Error messages for CS actions (with id + optional error code/log)
+export const MSG_ERROR_ACTION_CS: Record<
+  MsgTypeCS,
+  (id: string | number | undefined, code?: number, msg?: string) => string
+> = {
+  MsgCreateCredentialSchema: (id, code, msg) =>
+    `Failed to create Credential Schema${id ? ` ${id}` : ''}. ${code ? `(${code}) ` : ''}${msg ?? ''}`,
+  MsgUpdateCredentialSchema: (id, code, msg) =>
+    `Failed to update Credential Schema${id ? ` ${id}` : ''}. ${code ? `(${code}) ` : ''}${msg ?? ''}`,
+  MsgArchiveCredentialSchema: (id, code, msg) =>
+    `Failed to archive Credential Schema${id ? ` ${id}` : ''}. ${code ? `(${code}) ` : ''}${msg ?? ''}`,
 };

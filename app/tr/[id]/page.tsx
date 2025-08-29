@@ -14,6 +14,7 @@ import EditableDataView from '@/app/ui/common/data-edit';
 import { useActionTR } from '@/app/msg/trust-registry/actionTR';
 import { useChain } from '@cosmos-kit/react';
 import { useVeranaChain } from '@/app/hooks/useVeranaChain';
+import { useCSList } from '@/app/hooks/useCredentialSchemas';
 
 export default function TrViewPage() {
   const params = useParams();
@@ -30,6 +31,7 @@ export default function TrViewPage() {
 
   const veranaChain = useVeranaChain();
   const { address } = useChain(veranaChain.chain_name);
+  const { csList } = useCSList (id);
 
   useEffect(() => {
     if (!id) {
@@ -41,7 +43,7 @@ export default function TrViewPage() {
       try {
         if (!getURL) throw new Error('API endpoint not configured');
 
-        const url = `${getURL}/get/${decodeURIComponent(id)}`;
+        const url = `${getURL}/get/${id}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error(`Error ${res.status}`);
 
@@ -74,6 +76,29 @@ export default function TrViewPage() {
           entry.addGovernanceFrameworkDocument = null;
           entry.increaseActiveGovernanceFrameworkVersion = null;
         }
+        // const csWithTitle = (csList ?? []).map((cs) => {
+        //   let schema: any = {};
+        //   try {
+        //     schema = JSON.parse(cs.jsonSchema); // parse the whole JSON string
+        //   } catch {
+        //     schema = {};
+        //   }
+        //   return {
+        //     ...cs,
+        //     title: (schema.description ?? schema.title ?? "Schema") + " (id: " + cs.id + ")",
+        //   };
+        // });
+        if (entry.controller === address && csList ){
+           csList.unshift({
+            trId: id, creator: '',
+            issuerGrantorValidationValidityPeriod: 0, verifierGrantorValidationValidityPeriod: 0,
+            issuerValidationValidityPeriod: 0, verifierValidationValidityPeriod: 0, holderValidationValidityPeriod: 0,
+            issuerPermManagementMode: 1, verifierPermManagementMode: 1, jsonSchema: "",
+            title: "New Credential Schema", id: '',
+            updateCredentialSchema: null, archiveCredentialSchema: null
+          });
+        }
+        entry.csList = csList;
         setData(entry);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -89,7 +114,7 @@ export default function TrViewPage() {
     };
 
     fetchTr();
-  }, [id, getURL, notify, address]);
+  }, [id, getURL, notify, address, csList]);
 
   if (loading) {
     return <div className="loading-paner">Loading Trust Registry details…</div>;

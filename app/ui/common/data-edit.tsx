@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { DataViewProps, Field } from '@/app/types/dataViewTypes';
+import { DataViewProps, Field, isDataField, visibleFieldsForMode } from '@/app/types/dataViewTypes';
 import { getCostMessage, MessageType, msgTypeConfig } from '@/app/constants/msgTypeConfig';
 import { useCalculateFee } from '@/app/hooks/useCalculateFee';
 import { useTrustDepositValue } from '@/app/hooks/useTrustDepositValue';
@@ -16,6 +16,8 @@ type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & 
   onCancel?: () => void;
 };
 
+type DataField<T> = Extract<Field<T>, { type: "data" }>;
+
 export default function EditableDataView<T extends object>({
   sections,
   data,
@@ -28,17 +30,10 @@ export default function EditableDataView<T extends object>({
   const [errorFields, setErrorFields] = useState<Array<string>>([]);
   const [submitting, setSubmitting] = useState(false);
   const { description, label } = msgTypeConfig[messageType];
-
-  // Decides if a field should be visible in the current context (create/edit/view)
-  const shouldShowField = useCallback((field: Field<T>) => {
-    const showByShowField =
-      field.show === 'edit' || field.show === 'all' || field.show === undefined ||
-      (field.show === 'create' && id===undefined);
-    return ( showByShowField  && field.type === 'data');
-  }, [id]);
-
+  const action = id? 'edit' : 'create';
+  
   // Checks if the current field value is valid
-  const validateField = useCallback(<T,>(field: Field<T>, value: unknown): boolean => {
+  const validateField = useCallback((field: DataField<any>, value: unknown): boolean => { // eslint-disable-line @typescript-eslint/no-explicit-any
     if (!field.required) return true;
     if (value === undefined || value === null) return false;
     if (typeof value === "string" && value.trim() === "") return false;
@@ -97,7 +92,7 @@ export default function EditableDataView<T extends object>({
   }, [value, amountVNA, messageType, accountData.balance, accountData.reclaimable]);
   
   // Updates form state and manages error tracking on change
-  function handleChange(fieldName: keyof T, value: unknown, field: Field<T>) {
+  function handleChange(fieldName: keyof T, value: unknown, field: DataField<T>) {
     setFormData(prev => ({ ...prev, [fieldName]: value }));
     setErrorFields(prev => {
       const filtered = prev.filter(name => name !== fieldName);
@@ -112,22 +107,18 @@ export default function EditableDataView<T extends object>({
   const hasInvalidRequired = useMemo(() => {
     const missing = new Set(errorFields);
     sections.forEach(section => {
-      (section.fields ?? [])
-        .filter(field =>
-          shouldShowField(field) &&
-          field.type === 'data' &&
-          field.required &&
-          field.update !== false
-        )
+      visibleFieldsForMode(section.fields, action)
+        .filter(isDataField)
         .forEach(field => {
+          if (field.update === false) return;
           const value = formData[field.name as keyof T];
-          if (!validateField(field, value)) {
+          if (field.required && !validateField(field, value)) {
             missing.add(String(field.name));
           }
         });
     });
     return missing.size > 0;
-  }, [shouldShowField, sections, formData, errorFields, validateField]);
+  }, [sections, formData, errorFields, validateField, action]);
 
   // Handles save action; disables buttons while saving and prevents double submission
   async function handleSave() {
@@ -162,14 +153,13 @@ export default function EditableDataView<T extends object>({
               <p>{description}</p>
             </div>
           )}
-          {(section.fields ?? []).filter(
-            field => shouldShowField(field) && field.type === 'data'
-          ).length > 0 && (
+          {visibleFieldsForMode(section.fields, action)
+            .length > 0 && (
             <div className="data-edit-scroll">
               <table className="data-edit-table">
                 <tbody>
-                  {(section.fields ?? [])
-                    .filter(field => shouldShowField(field) && field.type === 'data')
+                  {visibleFieldsForMode(section.fields, action)
+                    .filter(isDataField)
                     .map((field, fieldIndex) => {
                       const value = formData[field.name as keyof T];
                       const isDisabled = field.update === false;
@@ -177,11 +167,53 @@ export default function EditableDataView<T extends object>({
                         || (field.required && !validateField(field, value));
 
                       // Build base input class for all fields
-                      const baseInputClass =
+                      const baseInputClass = 
                         "input" +
                         (showError ? " border-red-500" : "") +
                         (isDisabled ? " opacity-70" : "");
 
+                      const rows: React.ReactNode[] = [];
+
+                      // --- Special case: textarea -> label and input in separate rows ---
+                      if (field.inputType === 'textarea') {
+                        rows.push(
+                          // Row with label only
+                          <tr key={`label-${fieldIndex}`}>
+                            <td className="data-edit-label-cell">
+                              <span className="data-edit-label">
+                                {field.label}
+                                {field.required && (
+                                  <span className="data-edit-required">*</span>
+                                )}
+                              </span>
+                            </td>
+                            <td></td>
+                          </tr>
+                        );
+                        rows.push(
+                          // Row with textarea input spanning across 2 columns
+                          <tr key={`input-${fieldIndex}`}>
+                            <td colSpan={2} className="data-edit-input-cell">
+                              <textarea
+                                className={baseInputClass + " w-full"}
+                                value={String(value ?? '')}
+                                disabled={isDisabled}
+                                onChange={e =>
+                                  handleChange(field.name as keyof T, e.target.value, field)
+                                }
+                                rows={20}
+                              />
+                              {/* Error message under textarea */}
+                              {showError && (
+                                <div className="data-edit-error">Required</div>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                        // return <React.Fragment key={fieldIndex}>{rows}</React.Fragment>;
+                      }
+
+                      else{
                       // Render different input types
                       let inputEl: React.ReactNode;
                       if (field.inputType === 'select') {
@@ -195,7 +227,7 @@ export default function EditableDataView<T extends object>({
                             <option value="" disabled>
                               Select…
                             </option>
-                            {(field.options ?? []).map(opt => (
+                            { (field.options ?? []).map(opt => (
                               <option key={opt.value} value={opt.value}>
                                 {opt.label}
                               </option>
@@ -209,16 +241,11 @@ export default function EditableDataView<T extends object>({
                             className={baseInputClass}
                             value={String(value ?? '')}
                             disabled={isDisabled}
-                            onChange={e => handleChange(field.name as keyof T, Number(e.target.value), field)}
-                          />
-                        );
-                      } else if (field.inputType === 'textarea') {
-                        inputEl = (
-                          <textarea
-                            className={baseInputClass}
-                            value={String(value ?? '')}
-                            disabled={isDisabled}
-                            onChange={e => handleChange(field.name as keyof T, e.target.value, field)}
+                            onChange={e => {
+                              const raw = e.target.value;
+                              const parsed = raw === '' ? '' : Number(raw);
+                              handleChange(field.name as keyof T, parsed, field);
+                            }}
                           />
                         );
                       } else {
@@ -233,8 +260,8 @@ export default function EditableDataView<T extends object>({
                         );
                       }
 
-                      return (
-                        <tr key={fieldIndex}>
+                      rows.push(
+                          <tr key={`row-${fieldIndex}`}>
                           {/* Label with asterisk if required */}
                           <td className="data-edit-label-cell">
                             <span className="data-edit-label">
@@ -253,17 +280,38 @@ export default function EditableDataView<T extends object>({
                           </td>
                         </tr>
                       );
-                    })}
+                      }
+
+                      // Description row inputType
+                      if (field.description) {
+                        rows.push(
+                          <tr key={`desc-${fieldIndex}`}>
+                            <td colSpan={2} className="data-edit-input-cell">
+                              <span
+                                className="data-edit-input-description"
+                                dangerouslySetInnerHTML={{ __html: field.description }}
+                              /> 
+                            </td>
+                          </tr>
+                        );
+                      }
+
+                      return <React.Fragment key={fieldIndex}>{rows}</React.Fragment>;
+
+                    })
+                                        
+                  }
                 </tbody>
               </table>
             </div>
           )}
           {/* Action buttons: disabled if submitting or validation fails */}
           {totalValue && (
-            <div className="form-copy text-center py-2">
-              <p>
-                {getCostMessage(msgTypeConfig[messageType].cost, totalValue)}
-              </p>
+            <div className="text-center py-2">
+              <span
+                className="data-edit-input-description"
+                dangerouslySetInnerHTML={{ __html: getCostMessage(msgTypeConfig[messageType].cost, totalValue) }}
+              /> 
             </div>
           )}
           <div className="actions-center">

@@ -1,13 +1,122 @@
 'use client';
 
-import React, { useState, ReactNode, Dispatch, SetStateAction } from 'react';
-import { DataViewProps, Field } from '@/app/types/dataViewTypes';
+import React, { useState, ReactNode, Dispatch, SetStateAction, useId } from 'react';
+import { DataViewProps, Field, isActionField, isDataField, isListField, isObjectListField, isStringListField, Section, TypeToken, visibleFieldsForMode } from '@/app/types/dataViewTypes';
 import ActionDID from '@/app/msg/did-directory/actionDID';
 import { MsgTypeDID, MsgTypeTD, MsgTypeTR } from '@/app/constants/notificationMsgForMsgType';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import useIsSmallScreen from '@/app/util/small-screen';
 import ActionTD from '@/app/msg/trust-deposit/actionTD';
 import GfdPage from '@/app/tr/[id]/gfd';
+import { isJson } from '@/app/util/util';
+import EditableDataView from '@/app/ui/common/data-edit';
+import { DataType, getMsgTypeFor } from '@/app/constants/msgTypeForDataType';
+import { useSubmitTxMsgTypeFromObject } from '@/app/hooks/useSubmitTxMsgTypeFromObject';
+
+// Wrapper for DataView that lets you pass the generic parameter explicitly
+function DataViewTyped<I extends object>(props: {
+  objectData: TypeToken<I>;
+  sections: Section<I> | ReadonlyArray<Section<I>>;
+  data: I;
+  id?: string;
+  columnsCount?: number;
+  columnsCountMd?: number;
+  edit?: boolean;
+  oneColumn?: boolean;
+  getTitle?: (item: I) => React.ReactNode;
+}) {
+  const { objectData, sections, data, id, columnsCount, columnsCountMd, edit, oneColumn, getTitle } = props;
+  const normalized = Array.isArray(sections) ? sections : [sections];
+  const title = getTitle?.(data);
+  // Local expand/collapse state per instance (default: collapsed)
+  const [expanded, setExpanded] = useState<boolean>(false);
+  // Build a stable content id for aria-controls
+  const reactId = useId();
+  const contentId = id ? `${id}-dv-content` : `dv-content-${reactId}`;
+  const [editing, setEditing] = useState(id? false: true);
+  const msgType = getMsgTypeFor(objectData.typeName as DataType, id? "update" : "create");
+  const { submitTx } = useSubmitTxMsgTypeFromObject();
+
+  /**
+   * Generic save handler:
+   * - Receives msgType and a generic data object
+   * - Directly forwards both to submitTx
+   */
+  async function onSave(data: object) {
+    await submitTx(msgType, data);
+  }
+
+  return (
+    <div>
+      {title ? (
+        // Title rendered as a link-like button that toggles the content
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="btn-link mb-2 gap-2"
+      >
+        {expanded ? (
+          <ChevronUpIcon aria-hidden="true" className="data-view-section-icon" />
+        ) : (
+          <ChevronDownIcon aria-hidden="true" className="data-view-section-icon" />
+        )}
+        <span >{title}</span>
+      </button>
+      ) : null}
+
+      {/* Only render DataView when expanded; if you prefer to keep it mounted, wrap in a div and use hidden={!expanded} */}
+      {expanded && (
+      <div id={contentId}>
+      {editing ? (
+        <EditableDataView<I>
+          sections={normalized}
+          data={data}
+          messageType={msgType}
+          id={id? id : undefined}
+          onSave={ onSave }
+          onCancel={id? () => setEditing(false) : () => setExpanded(false)}  />
+      ) : (
+        <DataView<I>
+          sections={normalized}
+          data={data}
+          id={id}
+          columnsCount={columnsCount}
+          columnsCountMd={columnsCountMd}
+          // onEdit={ () => setEditing(true)}
+          onEdit={ edit? () => setEditing(true) : undefined }
+          oneColumn={oneColumn}
+        />
+      )}
+
+      </div>
+      )}
+    </div>
+  );
+}
+
+// Helper that binds the generic type I from the token
+function renderObjectList<I extends object>(args: {
+  objectData: TypeToken<I>;
+  sections: Section<I> | ReadonlyArray<Section<I>>;
+  items: readonly I[];
+  columnsCount?: number;
+  edit?: boolean;
+  getId?: (item: I, idx: number) => string | number | undefined;
+}) {
+  const { objectData, sections, items, columnsCount, edit, getId } = args;
+  return items.map((item, idx) => (
+    <DataViewTyped<I>
+      key={getId?.(item, idx) ?? idx}
+      objectData={objectData}
+      sections={sections}
+      data={item}
+      id={String(getId?.(item, idx) ?? idx)}
+      columnsCount={columnsCount ?? 2}
+      edit={edit}
+      oneColumn={true}
+      getTitle={(d) => (d as any).title ?? ""}  // eslint-disable-line @typescript-eslint/no-explicit-any
+    />
+  ));
+}
 
 // Define the valid actions for DID
 const validDIDAction = (action: string): action is MsgTypeDID => 
@@ -55,12 +164,13 @@ export default function DataView<T extends object>({
   id,
   columnsCount = 3,
   columnsCountMd = 1,
-  onEdit
+  onEdit,
+  oneColumn = false
 }: DataViewProps<T>) {
 
   const isSmallScreen = useIsSmallScreen(); // default: 640px
   const [activeActionId, setActiveActionId] = useState<string | null>(null);
-  
+
   // Helper to render the type data field
   function renderDataField(
     groupIdx: number,
@@ -91,6 +201,60 @@ export default function DataView<T extends object>({
     );
   }
 
+   // Helper to render the type data field
+  function renderDataFieldOneColumn(
+    groupIdx: number,
+    group: { field: Field<T>;
+             value: T[keyof T];
+             fieldIndex: number;
+            }[],
+  ): ReactNode {
+    return (
+      <>
+        {group.map(({ field, value }, idx) => {
+          const jsonValue = isJson(value); // helper: returns object if valid JSON, otherwise null
+
+          return (
+            <React.Fragment key={`data-row-${groupIdx}-${idx}`}>
+              {/* Main row: label + value (or empty cell if JSON will be shown below) */}
+              <tr>
+                <td className="data-view-label-cell">
+                  <span className="data-view-value">{field.label}</span>
+                </td>
+
+                {jsonValue ? (
+                  // If it's JSON, we leave this cell empty (or you could show a hint like "see below")
+                  <td className="data-view-input-cell" />
+                ) : (
+                  // Otherwise, show the value with line breaks preserved
+                  <td className="data-view-input-cell">
+                    <span
+                      className="data-view-label"
+                      style={{ whiteSpace: "pre-line" }}
+                    >
+                      {String(value ?? "")}
+                    </span>
+                  </td>
+                )}
+              </tr>
+
+              {/* Extra row: full width JSON pretty-printed */}
+              {jsonValue && (
+                <tr>
+                  {/* span across both columns */}
+                  <td className="data-view-input-cell" colSpan={2}>
+                    <pre className="data-view-label">
+                      {JSON.stringify(jsonValue, null, 2)}
+                    </pre>
+                  </td>
+                </tr>
+              )}
+            </React.Fragment>
+          );
+        })}
+      </>
+    );
+  } 
 
   // Helper to render the type action field
   function renderActionField(
@@ -130,6 +294,7 @@ export default function DataView<T extends object>({
       {sections.map((section, sectionIndex) => (
         <div key={sectionIndex} className="data-view-section">
           {/* Header is always the same for any section type */}
+          { section.name?.trim() && (
           <h2 className="data-view-section-title">
             {section.icon && (
             <span className={
@@ -146,7 +311,7 @@ export default function DataView<T extends object>({
             )}
             {section.name}
           </h2>
-
+          )}
           {/* Help Section */}
           {section.type === "help" && Array.isArray(section.help) && (
             <ul className="data-view-list-help">
@@ -169,24 +334,23 @@ export default function DataView<T extends object>({
                 <tbody>
                   {/* Group data fields into rows of 3 columns */}
                   {chunk(
-                    section.fields
-                      .filter(
-                        field =>
-                          (field.show === 'view' || field.show === 'all' || field.show === undefined))
+                    visibleFieldsForMode(section.fields, 'view')
                       .map((field, fieldIndex) => ({
                         field,
                         value: data[field.name],
                         fieldIndex,
                       }))
-                      .filter(f => f.field.type === 'data' && f.value != null),
+                      .filter(f => isDataField(f.field) && f.value != null),
                     isSmallScreen ? columnsCountMd : columnsCount // Each row will have up to X columns
                   ).map((group, groupIdx) => (
-                    renderDataField(groupIdx, group)
+                      (oneColumn) ? renderDataFieldOneColumn(groupIdx, group)
+                      : renderDataField(groupIdx, group)
                   ))}
                   {/* Render action fields as a full-width row */}
-                  {section.fields.map((field, fieldIndex) => {
+                  {visibleFieldsForMode(section.fields, 'view')
+                  .map((field, fieldIndex) => {
                     const value = data[field.name];
-                    if (field.type !== 'action' || value == null) return null;
+                    if (!isActionField(field) || value == null) return null;
                     const rowId = `${sectionIndex}-${fieldIndex}`;
                     const isActive = activeActionId === rowId;
                     return renderActionField(rowId, isActive,field.label, String(value), data, id);
@@ -214,40 +378,52 @@ export default function DataView<T extends object>({
                 <tbody>
                   {/* Group data fields into rows of X columns */}
                   {chunk(
-                    section.fields
-                      .filter(
-                        field =>
-                          (field.show === 'view' || field.show === 'all' || field.show === undefined))
+                    visibleFieldsForMode(section.fields, 'view')
                       .map((field, fieldIndex) => ({
                         field,
                         value: data[field.name],
                         fieldIndex,
                       }))
-                      .filter(f => f.field.type === 'data' && f.value != null),
+                      .filter(f => isDataField(f.field) && f.value != null),
                     isSmallScreen ? columnsCountMd : columnsCount // Each row will have up to X columns
                   ).map((group, groupIdx) => (
                     renderDataField(groupIdx, group)
                   ))}
                   {/* Render action fields as a full-width row */}
-                  {section.fields.map((field, fieldIndex) => {
+                  {visibleFieldsForMode(section.fields, 'view')
+                  .map((field, fieldIndex) => {
                     const value = data[field.name];
-                    if (field.type === 'action' && value !== null){
+                    if (isActionField(field) && value !== null){
                       return renderActionField(`${sectionIndex}-${fieldIndex}`, (activeActionId === `${sectionIndex}-${fieldIndex}`), field.label, String(value), data, id);
                     }
-                    if (field.type === 'list' && value !== null && Array.isArray(value)){
+                    if (isListField(field) && value !== null && Array.isArray(value)){
                       const rowKey = `${sectionIndex}-${fieldIndex}-list`;
                       return (
                         <tr key={rowKey}>
                           <td colSpan={isSmallScreen ? columnsCountMd : columnsCount} className="py-1">
-                            <ul className="data-view-list-help pb-4">
-                              {value.map((h, idx) => (
-                                <li
-                                  key={idx}
-                                  className="form-copy"
-                                  dangerouslySetInnerHTML={{ __html: h.replace('<strong>', '<strong class="font-semibold">') }}
-                                />
-                              ))}
-                            </ul>
+                            {isStringListField(field) && (
+                              <ul className="data-view-list-help pb-4">
+                                {(value as string[]).map((h, idx) => (
+                                  <li
+                                    key={idx}
+                                    className="form-copy"
+                                    dangerouslySetInnerHTML={{ __html: h.toString().replace('<strong>', '<strong class="font-semibold">') }}
+                                  />
+                                ))}
+                              </ul>
+                            )}
+                            {isObjectListField(field) && (
+                              <>
+                                {renderObjectList({
+                                  objectData: field.objectData, // binds the type I
+                                  sections: field.objectSections!, // Section<I> | Section<I>[]
+                                  items: value as any[], // eslint-disable-line @typescript-eslint/no-explicit-any
+                                  columnsCount: 1,
+                                  edit: onEdit? true : false,
+                                  getId: (item: any, i) => item?.id ?? i // eslint-disable-line @typescript-eslint/no-explicit-any
+                                })}
+                              </>
+                            )}                            
                           </td>
                         </tr>
                       )

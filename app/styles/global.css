@@ -237,8 +237,9 @@
     @apply min-w-full;
   }
 
-  .data-edit-label-cell {
-    @apply py-2 pr-4 text-right align-middle w-1/3;
+  .data-edit-label-cell,
+  .data-view-label-cell {
+    @apply py-2 pr-4 text-right align-top w-1/3;
   }
 
   .data-edit-label,
@@ -250,8 +251,14 @@
     @apply text-red-500 ml-1;
   }
 
-  .data-edit-input-cell {
+  .data-edit-input-cell,
+  .data-view-input-cell {
     @apply py-2 pl-2 align-middle w-2/3;
+  }
+
+  .data-edit-input-description{
+    @apply 
+           text-sm font-normal leading-none;
   }
 
   .data-edit-error {
@@ -291,7 +298,7 @@
   }
 
   .data-view-label {
-    @apply text-sm font-normal leading-none;
+    @apply text-sm font-normal leading-none  break-all;
   }
 
   .data-table-container {
