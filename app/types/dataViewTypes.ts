@@ -1,28 +1,83 @@
 import { BanknotesIcon, CurrencyDollarIcon, IdentificationIcon, InformationCircleIcon, LinkIcon, ListBulletIcon, ShieldCheckIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
+import { ComponentType } from "react";
 
-// Field descriptor for a generic data type T
-export type Field<T> = {
-  name: keyof T;
-  label: string;
-  type: "data" | "action" | "list";
-  inputType?: 'text' | 'number' | 'textarea' | 'select';
-  options?: { value: string | number; label: string }[]; // Only for select
-  show?: 'view' | 'edit' | 'all' | 'none' | 'create' ;
-  required?: true | false;
-  update?: true | false;
-  id?: true | false;
-  list ?: string[]; // Only for list
-};
+/* Utility type: returns keys of T whose value type is assignable to V */
+type KeysWithType<T, V> = {
+  [K in keyof T]-?: Exclude<T[K], undefined | null> extends V ? K : never
+}[keyof T];
 
-// Section grouping a subset of fields of T under a common title
-export type Section<T> = {
-  icon?: React.ComponentType<{ className?: string }>;
+// Define a TypeToken with a string identifier
+export type TypeToken<I> = { readonly __type?: I; readonly typeName: string };
+
+// Factory helper
+export const typeOf = <I>(typeName: string): TypeToken<I> =>
+  ({ typeName } as TypeToken<I>);
+
+// Example tokens
+export const CsDataToken = typeOf<CsData>("CsData");
+
+/* Section: groups a set of fields for a given type */
+export type Section<I> = {
   name: string;
-  fields?: Field<T>[];
+  icon?: ComponentType<{ className?: string }>;
   type?: "basic" | "help" | "advanced";
   help?: string[];
-  
+  fields?: Field<I>[];
 };
+
+/* Base field shared by all field types */
+type BaseField = {
+  label: string;
+  show?: 'view' | 'edit' | 'all' | 'none' | 'create';
+  required?: boolean;
+  update?: boolean;
+  id?: boolean;
+};
+
+/* Field for simple data or actions */
+/* Action */
+type ActionField<T> = BaseField & {
+  type: "action";
+  name: keyof T;
+};
+
+/* Data */
+type DataField<T> = BaseField & {
+  type: "data";
+  name: keyof T;
+  inputType?: 'text' | 'number' | 'textarea' | 'select';
+  options?: { value: string | number; label: string }[]; // (solo aplica si inputType === 'select');
+  description?: string;
+};
+
+/* Data & Action */
+type DataOrActionField<T> = DataField<T> | ActionField<T>;
+
+/* Field for lists of strings */
+type StringListField<T> = BaseField & {
+  type: "list";
+  // Must reference a property of T that is string[]
+  name: KeysWithType<T, string[] | ReadonlyArray<string>>;
+  objectData: "string";      // marker for simple string lists
+  list?: string[];
+};
+
+/* Field for lists of objects */
+type ObjectListField<T, I> = BaseField & {
+  type: "list";
+  // Must reference a property of T that is I[]
+  name: KeysWithType<T, I[] | ReadonlyArray<I>>;
+  objectSections: Section<I> | ReadonlyArray<Section<I>>;  // describes how to render each item
+  objectData: TypeToken<I>;                               // type witness for item
+  list?: I[];
+};
+
+/* Final Field type */
+export type Field<T> =
+  | DataOrActionField<T>
+  | StringListField<T>
+  | ObjectListField<T, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
 
 // Props for a DataView component: a title, sections, and the data object
 export interface DataViewProps<T extends object> {
@@ -32,6 +87,7 @@ export interface DataViewProps<T extends object> {
   columnsCount?: number;
   columnsCountMd?: number;
   onEdit?: () => void;
+  oneColumn?: boolean;
 }
 
 //Account data
@@ -161,7 +217,7 @@ export interface TrData {
   aka: string;
   controller: string;
   language: string;
-  docUrl?: string
+  docUrl?: string;
   deposit: string;
   role?: string;
   created?: string;
@@ -182,7 +238,121 @@ export interface TrData {
     }[] 
   }[];
   last_version?: number;
+  csList?: CsData[];
 }
+
+//Governance Framework Document
+export interface GfdData {
+  creator: string;
+  id: string;
+  docLanguage: string;
+  docUrl: string;
+  version?: number;
+}
+
+// Minimal JSON Schema typing for your use case
+export interface JsonSchema {
+  $schema: string;
+  $id: string;
+  title?: string;
+  description?: string;
+  type: string;
+  $defs?: Record<string, unknown>;
+  properties?: Record<string, unknown>;
+  required?: string[];
+  additionalProperties?: boolean;
+}
+
+export const managementModeOptions = [
+  { value: 1, label: 'OPEN' },
+  { value: 2, label: 'GRANTOR_VALIDATION' },
+  { value: 3, label: 'TRUST_REGISTRY_VALIDATION' },
+];
+
+//CredentialSchema data
+export interface CsData {
+  creator: string;
+  id: string | number;
+  trId: string | number;
+  issuerGrantorValidationValidityPeriod: number;
+  verifierGrantorValidationValidityPeriod: number;
+  issuerValidationValidityPeriod: number;
+  verifierValidationValidityPeriod: number;
+  holderValidationValidityPeriod: number;
+  issuerPermManagementMode: string | number;
+  verifierPermManagementMode: string | number;
+  jsonSchema: string; 
+  updateCredentialSchema: string | null;
+  archiveCredentialSchema: string | null;
+  title?: string;
+}
+
+// Sections configuration for GfdData
+export const gfdSections: Section<GfdData>[] = [
+  {
+    name: "",
+    icon: ShieldCheckIcon,
+    type: "basic",
+    fields: [
+      { name: 'creator', label: 'Controller', type: "data", show: 'create', update: false },
+      { name: 'docLanguage', label: 'Governance Framework Language', type: "data", inputType: 'select',
+          options: languageOptions, show: 'create', required: true, update: true },
+      { name: 'docUrl', label: 'Governance Framework Document URL', type: "data", show: 'create', required: true, update: true }
+    ]
+  }
+];
+
+// Sections configuration for CsData
+export const CsSections: Section<CsData>[] = [
+  {
+    name: "",
+    type: "basic",
+    fields: [
+      { name: 'issuerPermManagementMode', label: 'Issuer Permission Management Mode', type: "data", required: true, update: true, show: 'create',
+        inputType: 'select', options: managementModeOptions,
+        description: `defines how permission are managed for issuers of this Credential Schema:
+        <ul class="list-disc pl-6">
+        <li>OPEN means anyone can create its own ISSUER permission;</li>
+        <li>GRANTOR_VALIDATION means a validation process MUST be run between a candidate ISSUER and an ISSUER_GRANTOR in order to create an ISSUER permission;</li>
+        <li>TRUST_REGISTRY_VALIDATION means a validation process MUST be run between a candidate ISSUER and the trust registry owner in order to create an ISSUER permission.</li>
+        </ul>
+        Choose wisely, as a Credential Schemas is immutable and thus cannot be modified.`
+       },
+      { name: 'verifierPermManagementMode', label: 'Verifier Permission Management Mode', type: "data", required:true, update: true, show: 'create',
+        inputType: 'select', options: managementModeOptions,
+        description: `defines how permission are managed for verifiers of this Credential Schema:
+        <ul class="list-disc pl-6">
+        <li>OPEN means anyone can create its own VERIFIER permission;</li>
+        <li>GRANTOR_VALIDATION means a validation process MUST be run between a candidate VERIFIER and a VERIFIER_GRANTOR in order to create a VERIFIER permission;</li>
+        <li>TRUST_REGISTRY_VALIDATION means a validation process MUST be run between a candidate VERIFIER and the trust registry owner in order to create a VERIFIER permission.</li>
+        </ul>
+        Choose wisely, as a Credential Schema is immutable and thus cannot be modified.`
+      },
+      { name: 'issuerGrantorValidationValidityPeriod', label: 'Issuer Grantor Validation Validity Period', type: "data", required: true, update: true,
+        description: `maximum number of days an issuer grantor validation can be valid for, in days. Use 0 so that validation never expires, or set a number of days lower than 3650. Example, if you want a validation process to be valid for one year so that applicant will have to renew the validation process each year, set this parameter to 365.`
+       },
+      { name: 'verifierGrantorValidationValidityPeriod', label: 'Verifier Grantor Validation Validity Period', type: "data", required: true, update: true,
+        description: `maximum number of days a verifier grantor validation can be valid for, in days. Use 0 so that validation never expires, or set a number of days lower than 3650. Example, if you want a validation process to be valid for one year so that applicant will have to renew the validation process each year, set this parameter to 365.`
+      },
+      { name: 'issuerValidationValidityPeriod', label: 'Issuer Validation Validity Period', type: "data", required: true, update: true,
+        description: `maximum number of days an issuer validation can be valid for, in days. Use 0 so that validation never expires, or set a number of days lower than 3650. Example, if you want a validation process to be valid for one year so that applicant will have to renew the validation process each year, set this parameter to 365.`
+      },
+      { name: 'verifierValidationValidityPeriod', label: 'Verifier Validation Validity Period', type: "data", required: true, update: true,
+        description: `maximum number of days a verifier validation can be valid for, in days. Use 0 so that validation never expires, or set a number of days lower than 3650. Example, if you want a validation process to be valid for one year so that applicant will have to renew the validation process each year, set this parameter to 365.`
+      },
+      { name: 'holderValidationValidityPeriod', label: 'Holder Validation Validity Period', type: "data", required: true, update: true,
+        description: `maximum number of days holder validation can be valid for, in days. Use 0 so that validation never expires, or set a number of days lower than 3650. Example, if you want a validation process to be valid for one year so that applicant will have to renew the validation process each year, set this parameter to 365.`
+      },
+      { name: 'jsonSchema', label: 'Json Schema', type: "data", inputType: "textarea", required: true, update: true, show: 'create',
+        description: `A basic validation of your Json Schema will be done. Make sure to set the “$id” section to “verana-mainnet:/vpr/v1/cs/js/VPR_CREDENTIAL_SCHEMA_ID”.`
+      },
+      { name: 'creator', label: 'Controller', type: "data", show: "none" },
+      { name: 'trId', label: 'TR Id', type: "data", show: "none" },
+      { name: 'updateCredentialSchema', label: 'Controller', type: "action" },
+      { name: 'archiveCredentialSchema', label: 'Controller', type: "action" }
+    ]
+  }
+];
 
 // Sections configuration for TrData
 export const trSections: Section<TrData>[] = [
@@ -211,33 +381,60 @@ export const trSections: Section<TrData>[] = [
     icon: ListBulletIcon,
     type: "advanced",
     fields: [
-      { name: 'docs', label: '', type: "list"},
+      { name: 'docs', label: '', type: "list", objectData: "string"}, // docs is string[]
       { name: 'addGovernanceFrameworkDocument', label: 'Add Governance Framework Document', type: "action" },
       { name: 'increaseActiveGovernanceFrameworkVersion', label: 'Increase Active Governance Framework Version', type: "action" }
     ]
-  }
-];
-
-//Governance Framework Document
-export interface GfdData {
-  creator: string;
-  id: string;
-  docLanguage: string;
-  docUrl: string;
-  version?: number;
-}
-
-// Sections configuration for GfdData
-export const gfdSections: Section<GfdData>[] = [
+  },
   {
-    name: "",
-    icon: ShieldCheckIcon,
-    type: "basic",
+    name: "Credential Schemas",
+    icon: IdentificationIcon,
+    type: "advanced",
     fields: [
-      { name: 'creator', label: 'Controller', type: "data", show: 'create', update: false },
-      { name: 'docLanguage', label: 'Governance Framework Language', type: "data", inputType: 'select',
-          options: languageOptions, show: 'create', required: true, update: true },
-      { name: 'docUrl', label: 'Governance Framework Document URL', type: "data", show: 'create', required: true, update: true }
+      { name: 'csList', label: '', type: "list", objectData: CsDataToken, objectSections: CsSections} // csList is csData[]
     ]
   }
 ];
+
+// ---- Type guards para Field<T> ----
+export function isDataField<T>(f: Field<T>): f is Extract<Field<T>, { type: "data" }> {
+  return f.type === "data";
+}
+export function isActionField<T>(f: Field<T>): f is Extract<Field<T>, { type: "action" }> {
+  return f.type === "action";
+}
+export function isListField<T>(f: Field<T>): f is Extract<Field<T>, { type: "list" }> {
+  return f.type === "list";
+}
+export function isStringListField<T>(f: Field<T>): f is StringListField<T> {
+  return (f as any).objectData === "string"; // eslint-disable-line @typescript-eslint/no-explicit-any
+}
+export function isObjectListField<T>(f: Field<T>): f is ObjectListField<T, any> { // eslint-disable-line @typescript-eslint/no-explicit-any
+  return (f as any).objectData !== "string"; // eslint-disable-line @typescript-eslint/no-explicit-any
+}
+
+// --- Filter Show: "view" | "edit" | "create" ---
+export type DataViewMode = "view" | "edit" | "create" ;
+
+export function isFieldVisibleInMode<T>(field: Field<T>, mode: DataViewMode): boolean {
+  const show = field.show ?? "all";
+  if (show === "none") return false;
+  if (show === "all") return true;
+  if (show === "create" && mode === "view") return true;
+  return show === mode;
+}
+
+export function visibleFieldsForMode<T>(fields: Field<T>[] | undefined, mode: DataViewMode): Field<T>[] {
+  return (fields ?? []).filter(f => isFieldVisibleInMode(f, mode));
+}
+
+export function visibleFieldsForModeAndDataField<T>(fields: Field<T>[] | undefined, mode: DataViewMode): Field<T>[] {
+  return (fields ?? []).filter(f => isFieldVisibleInMode(f, mode) && isDataField(f));
+}
+
+// ./app/types/dataViewTypes.ts
+// 29:16  Error: 'T' is defined but never used.  @typescript-eslint/no-unused-vars
+// 79:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+// 410:16  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+// 412:76  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+// 413:16  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any

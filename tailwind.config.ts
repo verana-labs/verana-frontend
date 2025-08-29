@@ -40,6 +40,9 @@ const config: Config = {
         sans: ['var(--font-kantumruy)', 'ui-sans-serif', 'system-ui'],
         serif: ['Lusitana', 'ui-serif', 'Georgia'],
       },
+      lineHeight: {
+        'extra-tight': '0.9',  // << leading-none
+      },
     },
   },
 

@@ -7,9 +7,12 @@ import { MsgReclaimTrustDepositAminoConverter, MsgReclaimTrustDepositYieldAminoC
         from '@/app/msg/amino-converter/aminoConvertersTD';
 import { MsgCreateTrustRegistryAminoConverter, MsgUpdateTrustRegistryAminoConverter, MsgArchiveTrustRegistryAminoConverter, MsgIncreaseActiveGovernanceFrameworkVersionAminoConverter, MsgAddGovernanceFrameworkDocumentAminoConverter } 
         from '@/app/msg/amino-converter/aminoConvertersTR';
+import { MsgArchiveCredentialSchemaAminoConverter, MsgCreateCredentialSchemaAminoConverter, MsgUpdateCredentialSchemaAminoConverter } 
+        from '@/app/msg/amino-converter/aminoConvertersCS';
 import { MsgAddDID, MsgRemoveDID, MsgRenewDID, MsgTouchDID } from '@/proto-codecs/codec/verana/dd/v1/tx';
 import { MsgReclaimTrustDeposit, MsgReclaimTrustDepositYield, MsgRepaySlashedTrustDeposit } from '@/proto-codecs/codec/verana/td/v1/tx';
 import { MsgAddGovernanceFrameworkDocument, MsgArchiveTrustRegistry, MsgCreateTrustRegistry, MsgIncreaseActiveGovernanceFrameworkVersion, MsgUpdateTrustRegistry } from '@/proto-codecs/codec/verana/tr/v1/tx';
+import { MsgCreateCredentialSchema, MsgUpdateCredentialSchema, MsgArchiveCredentialSchema } from "@/proto-codecs/codec/verana/cs/v1/tx";
 
 export const veranaChainEnv = {
   chain_type: 'cosmos',
@@ -80,7 +83,11 @@ export const veranaRegistry = new Registry([
     ["/verana.tr.v1.MsgUpdateTrustRegistry", MsgUpdateTrustRegistry],
     ["/verana.tr.v1.MsgArchiveTrustRegistry", MsgArchiveTrustRegistry],
     ["/verana.tr.v1.MsgAddGovernanceFrameworkDocument", MsgAddGovernanceFrameworkDocument],
-    ["/verana.tr.v1.MsgIncreaseActiveGovernanceFrameworkVersion", MsgIncreaseActiveGovernanceFrameworkVersion]
+    ["/verana.tr.v1.MsgIncreaseActiveGovernanceFrameworkVersion", MsgIncreaseActiveGovernanceFrameworkVersion],
+    // verana.cs.v1
+    ["/verana.cs.v1.MsgCreateCredentialSchema", MsgCreateCredentialSchema],
+    ["/verana.cs.v1.MsgUpdateCredentialSchema", MsgUpdateCredentialSchema],
+    ["/verana.cs.v1.MsgArchiveCredentialSchema", MsgArchiveCredentialSchema]
 ]);
   
 export const veranaAmino = new AminoTypes({
@@ -98,7 +105,11 @@ export const veranaAmino = new AminoTypes({
     '/verana.tr.v1.MsgUpdateTrustRegistry': MsgUpdateTrustRegistryAminoConverter,
     '/verana.tr.v1.MsgArchiveTrustRegistry': MsgArchiveTrustRegistryAminoConverter,
     '/verana.tr.v1.MsgAddGovernanceFrameworkDocument': MsgAddGovernanceFrameworkDocumentAminoConverter,
-    '/verana.tr.v1.MsgIncreaseActiveGovernanceFrameworkVersion': MsgIncreaseActiveGovernanceFrameworkVersionAminoConverter
+    '/verana.tr.v1.MsgIncreaseActiveGovernanceFrameworkVersion': MsgIncreaseActiveGovernanceFrameworkVersionAminoConverter,
+    // verana.cs.v1
+    '/verana.cs.v1.MsgCreateCredentialSchema': MsgCreateCredentialSchemaAminoConverter,
+    '/verana.cs.v1.MsgUpdateCredentialSchema': MsgUpdateCredentialSchemaAminoConverter,
+    '/verana.cs.v1.MsgArchiveCredentialSchema': MsgArchiveCredentialSchemaAminoConverter
 });
 
 export const veranaGasPrice = 3;

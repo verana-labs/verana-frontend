@@ -48,3 +48,24 @@ export function isExpired (input: Date | string | number ): boolean {
   today.setHours(0,0,0,0);
   return cellDate < today;
 }
+
+export function isJson(value: unknown): object | null {
+  if (value && typeof value === "object") {
+    if (Array.isArray(value) || Object.prototype.toString.call(value) === "[object Object]") {
+      return value as object;
+    }
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+      try {
+        return JSON.parse(trimmed);
+      } catch {
+        return null;
+      }
+    }
+  }
+
+  return null;
+}

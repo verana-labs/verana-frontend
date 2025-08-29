@@ -1,19 +1,10 @@
 'use client';
 
 export type MessageType =
-  | 'MsgAddDID'
-  | 'MsgRenewDID'
-  | 'MsgTouchDID'
-  | 'MsgRemoveDID'
-  | 'MsgReclaimTrustDepositYield'
-  | 'MsgReclaimTrustDeposit'
-  | 'MsgRepaySlashedTrustDeposit'
-  | 'MsgCreateTrustRegistry'
-  | 'MsgUpdateTrustRegistry'
-  | 'MsgArchiveTrustRegistry'
-  | 'MsgAddGovernanceFrameworkDocument'
-  | 'MsgIncreaseActiveGovernanceFrameworkVersion';
-
+  | 'MsgAddDID' | 'MsgRenewDID' | 'MsgTouchDID' | 'MsgRemoveDID' // DID
+  | 'MsgReclaimTrustDepositYield' | 'MsgReclaimTrustDeposit' | 'MsgRepaySlashedTrustDeposit' // TD
+  | 'MsgCreateTrustRegistry' | 'MsgUpdateTrustRegistry' | 'MsgArchiveTrustRegistry' | 'MsgAddGovernanceFrameworkDocument' | 'MsgIncreaseActiveGovernanceFrameworkVersion' // TR
+  | 'MsgCreateCredentialSchema' | 'MsgUpdateCredentialSchema' | 'MsgArchiveCredentialSchema'; // CS
 export interface MsgTypeInfo {
   label: string;
   description: string;
@@ -80,7 +71,29 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfo> = {
     label: 'Confirm',
     description: '',
     cost: "Click confirm when you are ready. You'll need approx. {value} VNA to complete the transaction.",
-  }
+  },
+  MsgCreateCredentialSchema: {
+    label: 'Confirm',
+    description: '',
+    cost: `<span class="data-edit-label">Confirmation</span>
+    <br>
+    Make sure to check carefully the information as Credential Schemas are immutables. If you made a mistake, you will need to create a new Credential Schema.
+    <br>
+    Approx. {value} VNA are required to execute this transaction, including trust deposit.`,
+  },
+  MsgUpdateCredentialSchema: {
+    label: 'Confirm',
+    description: '',
+    cost: `<span class="data-edit-label">Confirmation</span>
+    <br>
+    Approx. {value} VNA are required to execute this transaction.`,
+  },
+  MsgArchiveCredentialSchema: {
+    label: 'Archive Credential Schema',
+    description: 'Archive a Credential Schema.',
+    cost: 'There is no fee for archiving a Credential Schema.',
+  },
+  
 };
 
 // Utility function to fill {value} in the cost message
