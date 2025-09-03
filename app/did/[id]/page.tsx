@@ -33,7 +33,7 @@ export default function DidViewPage() {
         router.push('/did');
       })();
     }
-  }, [errorAccountData, notify, router, errorNotified]);
+  }, [errorAccountData, router, errorNotified]);
 
   // DidData, formatting deposit and setting actions if controller matches
   const data: DidData | null = useMemo(() => {

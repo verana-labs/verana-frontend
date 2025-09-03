@@ -15,6 +15,9 @@ import { useCalculateFee } from '@/app/hooks/useCalculateFee';
 import { AccountData } from '@/app/types/dataViewTypes';
 import { parseVNA } from '@/app/util/util';
 import { useTrustDepositValue } from '@/app/hooks/useTrustDepositValue';
+import { makeRegistry, signAndBroadcastManual } from '@/app/util/tx';
+import { EncodeObject, OfflineDirectSigner } from '@cosmjs/proto-signing';
+import { veranaGasAdjustment, veranaGasPrice } from '@/app/config/veranaChain.client';
 
 // Define form state interface
 interface FormState { claimed: number }
@@ -34,11 +37,11 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
   // Get the trust deposit value for the message type
   const { value, errorTrustDepositValue } = useTrustDepositValue(messageType);
   // Calculate the transaction fee for this message type
-  const { fee, amountVNA } = useCalculateFee(messageType);
+  const { amountVNA } = useCalculateFee(messageType);
 
   // Cosmos wallet and chain context
   const veranaChain = useVeranaChain();
-  const { address, signAndBroadcast, isWalletConnected } = useChain(veranaChain.chain_name);
+  const { address, isWalletConnected } = useChain(veranaChain.chain_name);
 
   // Local state for the form (amount claimed)
   const [form, setForm] = useState<FormState>({ claimed: 0 });
@@ -68,7 +71,7 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
         router.push('/did');
       })();
     }
-  }, [ errorTrustDepositValue, notify, router, errorNotified]);
+  }, [ errorTrustDepositValue, router, errorNotified]);
 
   // Update burnRate percentage as soon as 'value' from the trust deposit hook changes.
   useEffect(() => {
@@ -86,7 +89,7 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
   }, [amountVNA, messageType, accountData.balance]);
 
   useEffect(() => {
-    const reclaimable = accountData.reclaimable ? Number(parseVNA(accountData.reclaimable))/ 1_000_000 : 0;
+    const reclaimable = accountData.reclaimable ? Number(parseVNA(accountData.reclaimable)) : 0;
     const claimedRequired = messageType === 'MsgReclaimTrustDeposit' ? (Number(form.claimed) > 0 && (Number(form.claimed) <= reclaimable)) : true;
     setEnabledAction(hasEnoughBalance && claimedRequired);
   }, [form.claimed, hasEnoughBalance, accountData.reclaimable, messageType]);
@@ -132,7 +135,7 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
     try {
       // Build transaction payload
       const basePayload = { creator: address };
-      const fullPayload = { ...basePayload, claimed };
+      const fullPayload = { ...basePayload, claimed};
       let msgAny:
         | { typeUrl: '/verana.td.v1.MsgReclaimTrustDeposit'; value: MsgReclaimTrustDeposit }
         | { typeUrl: '/verana.td.v1.MsgReclaimTrustDepositYield'; value: MsgReclaimTrustDepositYield };
@@ -156,12 +159,34 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
       }
 
       // Sign and broadcast the transaction
-      const res = await signAndBroadcast([msgAny], fee, action);
+      // const res = await signAndBroadcast([msgAny], fee, action);
+      const registry = makeRegistry();
+      const msg: EncodeObject = msgAny;
+
+      // Get RPC endpoint and signer from cosmos-kit
+      // Get the first rpc endpoint (string or undefined)
+      const rpcEndpoint = veranaChain.apis?.rpc?.[0]?.address!; // eslint-disable-line @typescript-eslint/no-non-null-asserted-optional-chain
+      const offlineSigner = (await (window as any).keplr.getOfflineSignerAuto(veranaChain.chain_id)) as OfflineDirectSigner; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+      const res = await signAndBroadcastManual({
+        rpcEndpoint,
+        chainId: veranaChain.chain_id,
+        signer: offlineSigner,
+        address,
+        registry,
+        messages: [msg],
+        gasPrice: String(veranaGasPrice),   // "0.3uvna"
+        gasAdjustment: veranaGasAdjustment, // add some margin
+        memo: action,                       // free text
+        timeoutHeight: undefined,           // or block + N
+        // feeGranter: undefined,
+        // feePayer: undefined,
+      });      
 
       // Notify on success or error (waits for notification to close)
       if (res.code === 0) {
         notifyPromise = notify(
-          MSG_SUCCESS_ACTION_TD[action](claimed),
+          MSG_SUCCESS_ACTION_TD[action](claimed.toString() + 'uvna'),
           'success',
           'Transaction successful'
         );
@@ -182,9 +207,9 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
       // Wait for notification close, reset submitting state, collapse UI, and redirect
       if (notifyPromise) await notifyPromise;
       setSubmitting(false);
-      handleCancel();
       router.push('/');
       setTimeout(() => router.push('/account'), 100);
+      handleCancel();
     }
   };
 
@@ -203,7 +228,7 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
       {action === 'MsgReclaimTrustDeposit' && (
         <div>
           <label htmlFor="claimed" className="label">
-            Claimed
+            Claimed (uvna)
           </label>
           <input
             name="claimed"

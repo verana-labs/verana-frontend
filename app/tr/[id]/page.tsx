@@ -114,7 +114,7 @@ export default function TrViewPage() {
     };
 
     fetchTr();
-  }, [id, getURL, notify, address, csList]);
+  }, [id, getURL, address, csList]);
 
   if (loading) {
     return <div className="loading-paner">Loading Trust Registry details…</div>;

@@ -1,10 +1,10 @@
 'use client';
 
 import { veranaGasLimit, veranaGasPrice, veranaDenom } from '@/app/config/veranaChain.client';
-import type { StdFee } from '@cosmjs/stargate';
+import { calculateFee, GasPrice, type StdFee } from '@cosmjs/stargate';
 import type { MessageType } from '@/app/constants/msgTypeConfig';
 
-const gasConfig: Record<MessageType, { gasLimit: number; gasPrice: number; denom: string }> = {
+const gasConfig: Record<MessageType, { gasLimit: number; gasPrice: string; denom: string }> = {
   MsgAddDID: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
   MsgRenewDID: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
   MsgTouchDID: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
@@ -27,18 +27,8 @@ const gasConfig: Record<MessageType, { gasLimit: number; gasPrice: number; denom
  */
 export function useCalculateFee(type: MessageType): { fee: StdFee; amountVNA: number } {
   const { gasLimit, gasPrice, denom } = gasConfig[type];
-  const amount = Math.ceil(Number(gasPrice) * Number(gasLimit));
+  const amount = Math.ceil(Number(gasPrice.substring(0, gasPrice.indexOf(denom))) * Number(gasLimit));
   const amountVNA = (amount / 1_000_000);
-
-  const fee: StdFee = {
-    amount: [
-      {
-        denom,
-        amount: String(amount),
-      },
-    ],
-    gas: gasLimit.toString(),
-  };
-
+  const fee = calculateFee(veranaGasLimit, GasPrice.fromString(`${gasPrice}`)); 
   return { fee, amountVNA };
 }

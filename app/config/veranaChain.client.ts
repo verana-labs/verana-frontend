@@ -112,9 +112,10 @@ export const veranaAmino = new AminoTypes({
     '/verana.cs.v1.MsgArchiveCredentialSchema': MsgArchiveCredentialSchemaAminoConverter
 });
 
-export const veranaGasPrice = 3;
+export const veranaGasPrice = '3uvna';
 export const veranaGasLimit = 300000; 
 export const veranaDenom = 'uvna';
+export const veranaGasAdjustment = 2;
 
 // *************************
 

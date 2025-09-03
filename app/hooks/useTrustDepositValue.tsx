@@ -8,19 +8,27 @@ import { MessageType } from '@/app/constants/msgTypeConfig';
  * Returns the correct REST endpoint with /params appended, based on the message type.
  */
 function getEndpoint(messageType: MessageType) {
+  if ( messageType === 'MsgAddDID' || messageType === 'MsgRenewDID') {
+    const base = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID') ||
+                process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID;
+    return base ? `${base}/params` : undefined;
+  } 
   if (messageType === 'MsgCreateTrustRegistry') {
     const base = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY') ||
                  process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY;
     return base ? `${base}/params` : undefined;
-  } else if (messageType === 'MsgReclaimTrustDeposit') {
+  }
+  if (messageType === 'MsgReclaimTrustDeposit') {
     const base = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT') ||
                  process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT;
     return base ? `${base}/params` : undefined;
-  } else {
-    const base = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID') ||
-                process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID;
+  } 
+  if (messageType === 'MsgCreateCredentialSchema') {
+    const base = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA') ||
+                 process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA;
     return base ? `${base}/params` : undefined;
   }
+  return undefined;
 }
 
 /**
@@ -36,7 +44,7 @@ export function useTrustDepositValue(messageType: MessageType) {
   useEffect(() => {
     if (
       !messageType ||
-      !['MsgAddDID', 'MsgRenewDID', 'MsgCreateTrustRegistry', 'MsgReclaimTrustDeposit'].includes(messageType)
+      !['MsgAddDID', 'MsgRenewDID', 'MsgCreateTrustRegistry', 'MsgReclaimTrustDeposit', 'MsgCreateCredentialSchema'].includes(messageType)
     ) return;
 
     const endpoint = getEndpoint(messageType);
@@ -59,10 +67,7 @@ export function useTrustDepositValue(messageType: MessageType) {
       })
       .then(json => {
         if (cancelled) return;
-        if (
-          messageType === 'MsgAddDID' ||
-          messageType === 'MsgRenewDID'
-        ) {
+        if ( messageType === 'MsgAddDID' || messageType === 'MsgRenewDID') {
           const deposit = json?.params?.did_directory_trust_deposit;
           if (deposit !== undefined) {
             setValue(deposit);
@@ -82,6 +87,13 @@ export function useTrustDepositValue(messageType: MessageType) {
             setValue(Number(reclaimBurnRate));
           } else {
             setError('Parameter trust_deposit_reclaim_burn_rate not found');
+          }
+        } else if (messageType === 'MsgCreateCredentialSchema') {
+          const deposit = json?.params?.credential_schema_trust_deposit;
+          if (deposit !== undefined) {
+            setValue(Number(deposit));
+          } else {
+            setError('Parameter credential_schema_trust_deposit not found');
           }
         }
       })
