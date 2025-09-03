@@ -1,6 +1,7 @@
 'use client';
 
-import { StdFee,  DeliverTxResponse} from '@cosmjs/stargate';
+import { useRef } from 'react';
+import { DeliverTxResponse} from '@cosmjs/stargate';
 import {
   MsgCreateTrustRegistry,
   MsgUpdateTrustRegistry,
@@ -8,14 +9,15 @@ import {
   MsgAddGovernanceFrameworkDocument,
   MsgIncreaseActiveGovernanceFrameworkVersion
 } from '@/proto-codecs/codec/verana/tr/v1/tx';
-import { veranaGasLimit, veranaGasPrice } from '@/app/config/veranaChain.client';
+import { veranaGasAdjustment, veranaGasPrice } from '@/app/config/veranaChain.client';
 import { useVeranaChain } from '@/app/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useNotification } from '@/app/ui/common/notification-provider';
 import { MSG_ERROR_ACTION_TR, MSG_INPROGRESS_ACTION_TR, MSG_SUCCESS_ACTION_TR } from '@/app/constants/notificationMsgForMsgType';
 import { isValidUrl } from '@/app/util/validations'
-import { useRef } from 'react';
+import { makeRegistry, signAndBroadcastManual } from '@/app/util/tx';
+import { EncodeObject, OfflineDirectSigner } from '@cosmjs/proto-signing';
 
 export const MSG_TYPE_CONFIG_TR = {
   MsgCreateTrustRegistry: {
@@ -81,7 +83,6 @@ export function useActionTR() {
   const veranaChain = useVeranaChain();
   const {
     address,
-    signAndBroadcast,
     isWalletConnected,
   } = useChain(veranaChain.chain_name);
 
@@ -95,7 +96,6 @@ export function useActionTR() {
       await notify('Connect wallet', 'error');
       return;
     }
-
     if (inFlight.current) {
       await notify('There is a pending transaction. Please wait…', 'inProgress');
       return;
@@ -104,7 +104,7 @@ export function useActionTR() {
 
     let typeUrl = '';
     let value: MsgCreateTrustRegistry | MsgUpdateTrustRegistry | MsgArchiveTrustRegistry | MsgAddGovernanceFrameworkDocument | MsgIncreaseActiveGovernanceFrameworkVersion;
-    let id: string | undefined;
+    const id = (params.msgType !== 'MsgCreateTrustRegistry') ? params.id.toString() : undefined;
 
     switch (params.msgType) {
       case 'MsgCreateTrustRegistry':
@@ -146,7 +146,6 @@ export function useActionTR() {
           did: params.did,
           aka: params.aka,
         });
-        id = params.id?.toString();
         break;
       case 'MsgArchiveTrustRegistry':
         typeUrl = MSG_TYPE_CONFIG_TR.MsgArchiveTrustRegistry.typeUrl;
@@ -155,7 +154,6 @@ export function useActionTR() {
           id: params.id,
           archive: true,
         });
-        id = params.id?.toString();
         break;
       case 'MsgAddGovernanceFrameworkDocument':
         // Calculate SRI hash for docUrl using your API
@@ -181,8 +179,6 @@ export function useActionTR() {
         value = MsgAddGovernanceFrameworkDocument.fromPartial({
           creator: address,
           id: String(params.id),
-          // id: Long.fromString(String(params.id), true), // true = unsigned para uint64
-          // id: Long.fromString(String(params.id)),
           docLanguage: params.docLanguage,
           docUrl: params.docUrl,
           docDigestSri: sriAdd,
@@ -196,19 +192,12 @@ export function useActionTR() {
           creator: address,
           id: String(params.id),
         });
-        id = params.id?.toString();
         break;
       default:
         throw new Error('Invalid msgType');
     }
 
-    const fee: StdFee = {
-      amount: [{
-        denom: 'uvna',
-        amount: String(Math.ceil(parseFloat(veranaGasPrice.toString()) * veranaGasLimit)),
-      }],
-      gas: veranaGasLimit.toString(),
-    };
+    // const fee = calculateFee(veranaGasLimit, GasPrice.fromString(`${veranaGasPrice}`)); 
 
     // Show progress notification
     let notifyPromise: Promise<void> = notify(
@@ -221,7 +210,30 @@ export function useActionTR() {
     let success = false;
 
     try {
-      res = await signAndBroadcast([{ typeUrl, value }], fee, MSG_TYPE_CONFIG_TR[params.msgType].txLabel);
+      // res = await signAndBroadcast([{ typeUrl, value }], fee, MSG_TYPE_CONFIG_TR[params.msgType].txLabel);
+
+      const registry = makeRegistry();
+      const msg: EncodeObject = { typeUrl, value };
+
+      // Get RPC endpoint and signer from cosmos-kit
+      // Get the first rpc endpoint (string or undefined)
+      const rpcEndpoint = veranaChain.apis?.rpc?.[0]?.address!; // eslint-disable-line @typescript-eslint/no-non-null-asserted-optional-chain
+      const offlineSigner = (await (window as any).keplr.getOfflineSignerAuto(veranaChain.chain_id)) as OfflineDirectSigner; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+      res = await signAndBroadcastManual({
+        rpcEndpoint,
+        chainId: veranaChain.chain_id,
+        signer: offlineSigner,
+        address,
+        registry,
+        messages: [msg],
+        gasPrice: String(veranaGasPrice),                     // "0.3uvna"
+        gasAdjustment: veranaGasAdjustment,                   // add some margin
+        memo: MSG_TYPE_CONFIG_TR[params.msgType].txLabel,     // free text
+        timeoutHeight: undefined,                             // or block + N
+        // feeGranter: undefined,
+        // feePayer: undefined,
+      });      
 
       if (res.code === 0) {
         success = true;
@@ -243,10 +255,10 @@ export function useActionTR() {
         'error',
         'Transaction failed'
       );
-      throw err;
     } finally {
       inFlight.current = false;
       if (notifyPromise) await notifyPromise;
+      // Redirect
       if (success) {
         if (params.msgType === 'MsgCreateTrustRegistry') {
           router.push('/tr');
@@ -265,7 +277,6 @@ export function useActionTR() {
         router.push('/tr');
       }
     }
-    return res;
   }
 
   return actionTR;

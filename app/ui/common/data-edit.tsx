@@ -73,7 +73,7 @@ export default function EditableDataView<T extends object>({
         router.push('/tr');
       })();
     }
-  }, [errorAccountData, errorTrustDepositValue, notify, router, errorNotified]);
+  }, [errorAccountData, errorTrustDepositValue, router, errorNotified]);
   
   // Local state to store the total required value for action (deposit + fee)
   const [totalValue, setTotalValue] = useState<string>("0.00");

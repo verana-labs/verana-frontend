@@ -3,6 +3,7 @@ import { lusitana, kantumruy } from '@/app/ui/common/fonts'
 import "@interchain-ui/react/styles";
 import { PublicEnvScript } from 'next-runtime-env';
 import ClientLayout from './providers/client-layout';
+import "@/app/init-long";
 
 export const metadata = { title: 'Verana Front', description: 'Verana Front' }
 

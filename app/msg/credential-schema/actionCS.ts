@@ -1,13 +1,13 @@
 'use client';
 
 import { useRef } from 'react';
-import { StdFee, DeliverTxResponse } from '@cosmjs/stargate';
+import { DeliverTxResponse } from '@cosmjs/stargate';
 import {
   MsgCreateCredentialSchema,
   MsgUpdateCredentialSchema,
   MsgArchiveCredentialSchema,
 } from '@/proto-codecs/codec/verana/cs/v1/tx';
-import { veranaGasLimit, veranaGasPrice } from '@/app/config/veranaChain.client';
+import { veranaGasAdjustment, veranaGasPrice } from '@/app/config/veranaChain.client';
 import { useVeranaChain } from '@/app/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -17,6 +17,9 @@ import {
   MSG_INPROGRESS_ACTION_CS,
   MSG_SUCCESS_ACTION_CS,
 } from '@/app/constants/notificationMsgForMsgType';
+import Long from 'long';
+import { makeRegistry, signAndBroadcastManual } from '@/app/util/tx';
+import { EncodeObject, OfflineDirectSigner } from '@cosmjs/proto-signing';
 
 // Message type configuration (typeUrl + label for memo/notification)
 export const MSG_TYPE_CONFIG_CS = {
@@ -70,7 +73,7 @@ type ActionCSParams =
 // Hook to execute Credential Schema transactions + notifications
 export function useActionCS() {
   const veranaChain = useVeranaChain();
-  const { address, signAndBroadcast, isWalletConnected } = useChain(veranaChain.chain_name);
+  const { address, isWalletConnected } = useChain(veranaChain.chain_name);
 
   const router = useRouter();
   const { notify } = useNotification();
@@ -92,106 +95,118 @@ export function useActionCS() {
 
     let typeUrl = '';
     let value: MsgCreateCredentialSchema | MsgUpdateCredentialSchema | MsgArchiveCredentialSchema;
-    let id: string | undefined;
-    let trId: string | undefined;
+    const trId = params.trId?.toString();
+    const id = (params.msgType !== 'MsgCreateCredentialSchema') ? params.id?.toString() : undefined;
 
-    try {
-      switch (params.msgType) {
-        case 'MsgCreateCredentialSchema': {
-          typeUrl = MSG_TYPE_CONFIG_CS.MsgCreateCredentialSchema.typeUrl;
-          value = MsgCreateCredentialSchema.fromPartial({
-            creator: address, // always use the connected wallet address
-            trId: String(params.trId), // uint64: handled internally with Long.fromValue
-            jsonSchema: params.jsonSchema,
-            issuerGrantorValidationValidityPeriod: params.issuerGrantorValidationValidityPeriod,
-            verifierGrantorValidationValidityPeriod: params.verifierGrantorValidationValidityPeriod,
-            issuerValidationValidityPeriod: params.issuerValidationValidityPeriod,
-            verifierValidationValidityPeriod: params.verifierValidationValidityPeriod,
-            holderValidationValidityPeriod: params.holderValidationValidityPeriod,
-            issuerPermManagementMode: params.issuerPermManagementMode,
-            verifierPermManagementMode: params.verifierPermManagementMode,
-          });
-          // ID will be returned in MsgCreateCredentialSchemaResponse
-          break;
-        }
-
-        case 'MsgUpdateCredentialSchema': {
-          typeUrl = MSG_TYPE_CONFIG_CS.MsgUpdateCredentialSchema.typeUrl;
-          value = MsgUpdateCredentialSchema.fromPartial({
-            creator: address,
-            id: String(params.id), // uint64: handled as string
-            issuerGrantorValidationValidityPeriod: params.issuerGrantorValidationValidityPeriod,
-            verifierGrantorValidationValidityPeriod: params.verifierGrantorValidationValidityPeriod,
-            issuerValidationValidityPeriod: params.issuerValidationValidityPeriod,
-            verifierValidationValidityPeriod: params.verifierValidationValidityPeriod,
-            holderValidationValidityPeriod: params.holderValidationValidityPeriod,
-          });
-          id = String(params.id);
-          break;
-        }
-
-        case 'MsgArchiveCredentialSchema': {
-          typeUrl = MSG_TYPE_CONFIG_CS.MsgArchiveCredentialSchema.typeUrl;
-          value = MsgArchiveCredentialSchema.fromPartial({
-            creator: address,
-            id: String(params.id), // uint64: handled as string
-            archive: true,
-          });
-          id = String(params.id);
-          break;
-        }
-
-        default:
-          throw new Error('Invalid msgType');
+    switch (params.msgType) {
+      case 'MsgCreateCredentialSchema': {
+        typeUrl = MSG_TYPE_CONFIG_CS.MsgCreateCredentialSchema.typeUrl;
+        value = MsgCreateCredentialSchema.fromPartial({
+          creator: address, // always use the connected wallet address
+          trId: Long.fromString(String(params.trId)), // uint64: handled internally with Long.fromValue
+          jsonSchema: params.jsonSchema,
+          issuerGrantorValidationValidityPeriod: params.issuerGrantorValidationValidityPeriod,
+          verifierGrantorValidationValidityPeriod: params.verifierGrantorValidationValidityPeriod,
+          issuerValidationValidityPeriod: params.issuerValidationValidityPeriod,
+          verifierValidationValidityPeriod: params.verifierValidationValidityPeriod,
+          holderValidationValidityPeriod: params.holderValidationValidityPeriod,
+          issuerPermManagementMode: params.issuerPermManagementMode,
+          verifierPermManagementMode: params.verifierPermManagementMode,
+        });
+        break;
       }
 
-      // Build transaction fee
-      const fee: StdFee = {
-        amount: [
-          {
-            denom: 'uvna',
-            amount: String(Math.ceil(parseFloat(veranaGasPrice.toString()) * veranaGasLimit)),
-          },
-        ],
-        gas: veranaGasLimit.toString(),
-      };
+      case 'MsgUpdateCredentialSchema': {
+        typeUrl = MSG_TYPE_CONFIG_CS.MsgUpdateCredentialSchema.typeUrl;
+        value = MsgUpdateCredentialSchema.fromPartial({
+          creator: address,
+          id: Long.fromString(String(params.id)),
+          issuerGrantorValidationValidityPeriod: params.issuerGrantorValidationValidityPeriod,
+          verifierGrantorValidationValidityPeriod: params.verifierGrantorValidationValidityPeriod,
+          issuerValidationValidityPeriod: params.issuerValidationValidityPeriod,
+          verifierValidationValidityPeriod: params.verifierValidationValidityPeriod,
+          holderValidationValidityPeriod: params.holderValidationValidityPeriod,
+        });
+        break;
+      }
 
-      // Show "in progress" notification
-      let notifyPromise: Promise<void> = notify(
-        MSG_INPROGRESS_ACTION_CS[params.msgType],
-        'inProgress',
-        'Transaction in progress'
-      );
+      case 'MsgArchiveCredentialSchema': {
+        typeUrl = MSG_TYPE_CONFIG_CS.MsgArchiveCredentialSchema.typeUrl;
+        value = MsgArchiveCredentialSchema.fromPartial({
+          creator: address,
+          id: Long.fromString(String(params.id)), // uint64
+          archive: true,
+        });
+        break;
+      }
 
-      trId = String(params.trId);
+      default:
+        throw new Error('Invalid msgType');
+    }
+
+    // const fee = calculateFee(veranaGasLimit, GasPrice.fromString(`${veranaGasPrice}`)); 
+
+    // Show "in progress" notification
+    let notifyPromise: Promise<void> = notify(
+      MSG_INPROGRESS_ACTION_CS[params.msgType],
+      'inProgress',
+      'Transaction in progress'
+    );
+
+    let res: DeliverTxResponse;
+
+    try {
 
       // Sign and broadcast the transaction
-      const res = await signAndBroadcast([{ typeUrl, value }], fee, MSG_TYPE_CONFIG_CS[params.msgType].txLabel);
+      // res = await signAndBroadcast([{ typeUrl, value }], fee, MSG_TYPE_CONFIG_CS[params.msgType].txLabel);
+
+      const registry = makeRegistry();
+      const msg: EncodeObject = { typeUrl, value };
+
+      // Get RPC endpoint and signer from cosmos-kit
+      // Get the first rpc endpoint (string or undefined)
+      const rpcEndpoint = veranaChain.apis?.rpc?.[0]?.address!; // eslint-disable-line @typescript-eslint/no-non-null-asserted-optional-chain
+      const offlineSigner = (await (window as any).keplr.getOfflineSignerAuto(veranaChain.chain_id)) as OfflineDirectSigner; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+      res = await signAndBroadcastManual({
+        rpcEndpoint,
+        chainId: veranaChain.chain_id,
+        signer: offlineSigner,
+        address,
+        registry,
+        messages: [msg],
+        gasPrice: String(veranaGasPrice),                     // "0.3uvna"
+        gasAdjustment: veranaGasAdjustment,                   // add some margin
+        memo: MSG_TYPE_CONFIG_CS[params.msgType].txLabel,     // free text
+        timeoutHeight: undefined,                             // or block + N
+        // feeGranter: undefined,
+        // feePayer: undefined,
+      });      
 
       if (res.code === 0) {
-        notifyPromise = notify(MSG_SUCCESS_ACTION_CS[params.msgType], 'success', 'Transaction successful');
-        await notifyPromise;
-        return res;
+        notifyPromise = notify(
+          MSG_SUCCESS_ACTION_CS[params.msgType],
+          'success',
+          'Transaction successful'
+        );
       } else {
-        await notify(
+        notifyPromise =  notify(
           MSG_ERROR_ACTION_CS[params.msgType](id, res.code, res.rawLog) || `(${res.code}): ${res.rawLog}`,
           'error',
           'Transaction failed'
         );
-        return res;
       }
+
     } catch (err) {
-      await notify(
-        MSG_ERROR_ACTION_CS[params.msgType](
-          id,
-          undefined,
-          err instanceof Error ? err.message : String(err)
-        ),
+      notifyPromise =  notify(
+        MSG_ERROR_ACTION_CS[params.msgType](id, undefined, err instanceof Error ? err.message : String(err)),
         'error',
         'Transaction failed'
       );
     } finally {
-        // Redirect after success
+      inFlight.current = false;
+      if (notifyPromise) await notifyPromise;
+      // Redirect
         if (trId) {
           const trUrl = `/tr/${trId}`;
           if (pathname === trUrl) {
@@ -203,7 +218,6 @@ export function useActionCS() {
         } else {
           router.push('/tr');
         }
-      inFlight.current = false;
     }
   }
 

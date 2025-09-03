@@ -62,7 +62,7 @@ export default function ActionDID({ action, id, data }: { action: MsgTypeDID, id
         router.push('/did');
       })();
     }
-  }, [errorAccountData, errorTrustDepositValue, notify, router, errorNotified]);
+  }, [errorAccountData, errorTrustDepositValue, router, errorNotified]);
 
   // Get fee and amount in VNA
   const { fee, amountVNA } = useCalculateFee(messageType);

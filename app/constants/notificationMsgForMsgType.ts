@@ -33,7 +33,7 @@ export const MSG_INPROGRESS_ACTION_DID: Record<MsgTypeDID, (did: string) => stri
 };
 
 // Success, error and in-progress messages per TD action
-export const MSG_SUCCESS_ACTION_TD: Record<MsgTypeTD, (claimed?: number) => string> = {
+export const MSG_SUCCESS_ACTION_TD: Record<MsgTypeTD, (claimed?: string) => string> = {
   MsgReclaimTrustDeposit: (claimed) =>
     `Deposit reclaimed successfully!${claimed ? ` Amount: ${claimed}` : ''}`,
   MsgReclaimTrustDepositYield: () => 'Interests claimed successfully!',
