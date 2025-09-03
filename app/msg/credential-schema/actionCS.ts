@@ -211,7 +211,7 @@ export function useActionCS() {
           const trUrl = `/tr/${trId}`;
           if (pathname === trUrl) {
             router.push('/tr');
-            setTimeout(() => router.push(trUrl), 100);
+            setTimeout(() => router.push(trUrl), 200);
           } else {
             router.push(trUrl);
           }
