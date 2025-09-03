@@ -208,7 +208,7 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
       if (notifyPromise) await notifyPromise;
       setSubmitting(false);
       router.push('/');
-      setTimeout(() => router.push('/account'), 100);
+      setTimeout(() => router.push('/account'), 200);
       handleCancel();
     }
   };

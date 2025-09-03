@@ -266,7 +266,7 @@ export function useActionTR() {
           const trUrl = `/tr/${encodeURIComponent(id)}`;
           if (pathname === trUrl) {
             router.push('/tr');
-            setTimeout(() => router.push(trUrl), 100);
+            setTimeout(() => router.push(trUrl), 200);
           } else {
             router.push(trUrl);
           }

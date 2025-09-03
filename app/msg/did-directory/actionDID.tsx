@@ -181,7 +181,7 @@ export default function ActionDID({ action, id, data }: { action: MsgTypeDID, id
       if ((action === 'MsgRenewDID' || action === 'MsgTouchDID' || action === 'MsgAddDID') && success) {
         if (pathname === didUrl) {
           router.push('/did');
-          setTimeout(() => router.push(didUrl), 100);
+          setTimeout(() => router.push(didUrl), 200);
         } else {
           router.push(didUrl);
         }
