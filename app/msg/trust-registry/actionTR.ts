@@ -9,15 +9,14 @@ import {
   MsgAddGovernanceFrameworkDocument,
   MsgIncreaseActiveGovernanceFrameworkVersion
 } from '@/proto-codecs/codec/verana/tr/v1/tx';
-import { veranaGasAdjustment, veranaGasPrice } from '@/app/config/veranaChain.client';
 import { useVeranaChain } from '@/app/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useNotification } from '@/app/ui/common/notification-provider';
 import { MSG_ERROR_ACTION_TR, MSG_INPROGRESS_ACTION_TR, MSG_SUCCESS_ACTION_TR } from '@/app/constants/notificationMsgForMsgType';
 import { isValidUrl } from '@/app/util/validations'
-import { makeRegistry, signAndBroadcastManual } from '@/app/util/tx';
-import { EncodeObject, OfflineDirectSigner } from '@cosmjs/proto-signing';
+import { EncodeObject } from '@cosmjs/proto-signing';
+import { useSendTxDetectingMode } from '@/app/msg/util/sendTxDetectingMode';
 
 export const MSG_TYPE_CONFIG_TR = {
   MsgCreateTrustRegistry: {
@@ -89,6 +88,7 @@ export function useActionTR() {
   const router = useRouter();
   const { notify } = useNotification();
   const pathname = usePathname();
+  const sendTx = useSendTxDetectingMode(veranaChain);
   const inFlight = useRef(false);
 
   async function actionTR(params: ActionTRParams): Promise<DeliverTxResponse | void> {
@@ -210,29 +210,10 @@ export function useActionTR() {
     let success = false;
 
     try {
-      // res = await signAndBroadcast([{ typeUrl, value }], fee, MSG_TYPE_CONFIG_TR[params.msgType].txLabel);
-
-      const registry = makeRegistry();
       const msg: EncodeObject = { typeUrl, value };
-
-      // Get RPC endpoint and signer from cosmos-kit
-      // Get the first rpc endpoint (string or undefined)
-      const rpcEndpoint = veranaChain.apis?.rpc?.[0]?.address!; // eslint-disable-line @typescript-eslint/no-non-null-asserted-optional-chain
-      const offlineSigner = (await (window as any).keplr.getOfflineSignerAuto(veranaChain.chain_id)) as OfflineDirectSigner; // eslint-disable-line @typescript-eslint/no-explicit-any
-
-      res = await signAndBroadcastManual({
-        rpcEndpoint,
-        chainId: veranaChain.chain_id,
-        signer: offlineSigner,
-        address,
-        registry,
-        messages: [msg],
-        gasPrice: String(veranaGasPrice),                     // "0.3uvna"
-        gasAdjustment: veranaGasAdjustment,                   // add some margin
-        memo: MSG_TYPE_CONFIG_TR[params.msgType].txLabel,     // free text
-        timeoutHeight: undefined,                             // or block + N
-        // feeGranter: undefined,
-        // feePayer: undefined,
+      res = await sendTx({
+        msgs: [msg],
+        memo: MSG_TYPE_CONFIG_TR[params.msgType].txLabel
       });      
 
       if (res.code === 0) {
