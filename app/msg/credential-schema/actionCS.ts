@@ -105,13 +105,13 @@ export function useActionCS() {
           creator: address, // always use the connected wallet address
           trId: Long.fromString(String(params.trId)), // uint64: handled internally with Long.fromValue
           jsonSchema: params.jsonSchema,
-          issuerGrantorValidationValidityPeriod: params.issuerGrantorValidationValidityPeriod,
-          verifierGrantorValidationValidityPeriod: params.verifierGrantorValidationValidityPeriod,
-          issuerValidationValidityPeriod: params.issuerValidationValidityPeriod,
-          verifierValidationValidityPeriod: params.verifierValidationValidityPeriod,
-          holderValidationValidityPeriod: params.holderValidationValidityPeriod,
-          issuerPermManagementMode: params.issuerPermManagementMode,
-          verifierPermManagementMode: params.verifierPermManagementMode,
+          issuerGrantorValidationValidityPeriod: Number(params.issuerGrantorValidationValidityPeriod),
+          verifierGrantorValidationValidityPeriod: Number(params.verifierGrantorValidationValidityPeriod),
+          issuerValidationValidityPeriod: Number(params.issuerValidationValidityPeriod),
+          verifierValidationValidityPeriod: Number(params.verifierValidationValidityPeriod),
+          holderValidationValidityPeriod: Number(params.holderValidationValidityPeriod),
+          issuerPermManagementMode: Number(params.issuerPermManagementMode),
+          verifierPermManagementMode: Number(params.verifierPermManagementMode),
         });
         break;
       }
@@ -121,11 +121,11 @@ export function useActionCS() {
         value = MsgUpdateCredentialSchema.fromPartial({
           creator: address,
           id: Long.fromString(String(params.id)),
-          issuerGrantorValidationValidityPeriod: params.issuerGrantorValidationValidityPeriod,
-          verifierGrantorValidationValidityPeriod: params.verifierGrantorValidationValidityPeriod,
-          issuerValidationValidityPeriod: params.issuerValidationValidityPeriod,
-          verifierValidationValidityPeriod: params.verifierValidationValidityPeriod,
-          holderValidationValidityPeriod: params.holderValidationValidityPeriod,
+          issuerGrantorValidationValidityPeriod: Number(params.issuerGrantorValidationValidityPeriod),
+          verifierGrantorValidationValidityPeriod: Number(params.verifierGrantorValidationValidityPeriod),
+          issuerValidationValidityPeriod: Number(params.issuerValidationValidityPeriod),
+          verifierValidationValidityPeriod: Number(params.verifierValidationValidityPeriod),
+          holderValidationValidityPeriod: Number(params.holderValidationValidityPeriod),
         });
         break;
       }

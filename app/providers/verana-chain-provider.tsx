@@ -3,8 +3,7 @@
 import '@/app/styles/global.css';
 import { ChainProvider } from '@cosmos-kit/react';
 import "@interchain-ui/react/styles";
-import { type SigningStargateClientOptions } from '@cosmjs/stargate';
-import { veranaAssets, veranaRegistry, veranaAmino } from '@/app/config/veranaChain.client';
+import { veranaAssets } from '@/app/config/veranaChain.client';
 import {wallets} from "cosmos-kit"
 import { useVeranaChain } from "@/app/hooks/useVeranaChain";
 
@@ -21,13 +20,13 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
           chains={customChains}
           assetLists={assetLists}
           wallets={wallets}
-          signerOptions={{
-            stargate: (): SigningStargateClientOptions => ({
-              registry: veranaRegistry,
-              aminoTypes: veranaAmino,
-              // gasPrice: GasPrice.fromString(veranaGasPrice.toString())
-            }),
-          }}          
+          // signerOptions={{
+          //   stargate: (): SigningStargateClientOptions => ({
+          //     registry: veranaRegistry,
+          //     aminoTypes: veranaAmino,
+          //     // gasPrice: GasPrice.fromString(veranaGasPrice.toString())
+          //   }),
+          // }}          
           walletConnectOptions={{
             signClient: {
               projectId: "a8510432ebb71e6948cfd6cde54b70f7",

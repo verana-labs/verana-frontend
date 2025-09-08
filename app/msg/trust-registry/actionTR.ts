@@ -17,6 +17,7 @@ import { MSG_ERROR_ACTION_TR, MSG_INPROGRESS_ACTION_TR, MSG_SUCCESS_ACTION_TR } 
 import { isValidUrl } from '@/app/util/validations'
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { useSendTxDetectingMode } from '@/app/msg/util/sendTxDetectingMode';
+import Long from 'long';
 
 export const MSG_TYPE_CONFIG_TR = {
   MsgCreateTrustRegistry: {
@@ -142,7 +143,7 @@ export function useActionTR() {
         typeUrl = MSG_TYPE_CONFIG_TR.MsgUpdateTrustRegistry.typeUrl;
         value = MsgUpdateTrustRegistry.fromPartial({
           creator: address,
-          id: String(params.id),
+          id: Long.fromString(String(params.id)),
           did: params.did,
           aka: params.aka,
         });
@@ -151,7 +152,7 @@ export function useActionTR() {
         typeUrl = MSG_TYPE_CONFIG_TR.MsgArchiveTrustRegistry.typeUrl;
         value = MsgArchiveTrustRegistry.fromPartial({
           creator: address,
-          id: params.id,
+          id: Long.fromString(String(params.id)),
           archive: true,
         });
         break;
@@ -178,7 +179,7 @@ export function useActionTR() {
         typeUrl = MSG_TYPE_CONFIG_TR.MsgAddGovernanceFrameworkDocument.typeUrl;
         value = MsgAddGovernanceFrameworkDocument.fromPartial({
           creator: address,
-          id: String(params.id),
+          id: Long.fromString(String(params.id)),
           docLanguage: params.docLanguage,
           docUrl: params.docUrl,
           docDigestSri: sriAdd,
@@ -190,7 +191,7 @@ export function useActionTR() {
         typeUrl = MSG_TYPE_CONFIG_TR.MsgIncreaseActiveGovernanceFrameworkVersion.typeUrl;
         value = MsgIncreaseActiveGovernanceFrameworkVersion.fromPartial({
           creator: address,
-          id: String(params.id),
+          id: Long.fromString(String(params.id)),
         });
         break;
       default:

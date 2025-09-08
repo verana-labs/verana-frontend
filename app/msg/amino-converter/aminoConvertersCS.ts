@@ -1,147 +1,107 @@
 'use client';
 
-import { AminoTypes, type AminoConverter } from '@cosmjs/stargate';
 import {
-  MsgUpdateParams,
   MsgCreateCredentialSchema,
   MsgUpdateCredentialSchema,
   MsgArchiveCredentialSchema,
 } from '@/proto-codecs/codec/verana/cs/v1/tx';
-import { Params } from '@/proto-codecs/codec/verana/cs/v1/params';
-
-/**
- * Amino converter for MsgUpdateParams
- */
-export const MsgUpdateParamsCSAminoConverter: AminoConverter = {
-  aminoType: '/verana.cs.v1.MsgUpdateParams',
-  toAmino: ({ authority, params }: MsgUpdateParams) => ({
-    authority,
-    params, // ajusta aquí si 'params' requiere transformación especial
-  }),
-  fromAmino: (value: { authority: string; params: Params }) =>
-    MsgUpdateParams.fromPartial({
-      authority: value.authority,
-      params: value.params,
-    }),
-};
+import Long from 'long';
 
 /**
  * Amino converter for MsgCreateCredentialSchema
  */
-export const MsgCreateCredentialSchemaAminoConverter: AminoConverter = {
+export const MsgCreateCredentialSchemaAminoConverter = {
   aminoType: '/verana.cs.v1.MsgCreateCredentialSchema',
-  toAmino: ({
-    creator,
-    trId,
-    jsonSchema,
-    issuerGrantorValidationValidityPeriod,
-    verifierGrantorValidationValidityPeriod,
-    issuerValidationValidityPeriod,
-    verifierValidationValidityPeriod,
-    holderValidationValidityPeriod,
-    issuerPermManagementMode,
-    verifierPermManagementMode,
-  }: MsgCreateCredentialSchema) => ({
-    creator,
-    tr_id: trId, // uint64 como string en Amino
-    json_schema: jsonSchema,
-    issuer_grantor_validation_validity_period: issuerGrantorValidationValidityPeriod,
-    verifier_grantor_validation_validity_period: verifierGrantorValidationValidityPeriod,
-    issuer_validation_validity_period: issuerValidationValidityPeriod,
-    verifier_validation_validity_period: verifierValidationValidityPeriod,
-    holder_validation_validity_period: holderValidationValidityPeriod,
-    issuer_perm_management_mode: issuerPermManagementMode,
-    verifier_perm_management_mode: verifierPermManagementMode,
+  // Proto → Amino JSON
+  toAmino: (m: MsgCreateCredentialSchema) => ({
+    creator: m.creator ?? '',
+    tr_id: m.trId != null ? m.trId.toString() : undefined, // uint64 -> string
+    json_schema: m.jsonSchema ?? '',
+    issuer_grantor_validation_validity_period: m.issuerGrantorValidationValidityPeriod ?? undefined, // uint32 -> number
+    verifier_grantor_validation_validity_period: m.verifierGrantorValidationValidityPeriod ?? undefined, // uint32 -> number
+    issuer_validation_validity_period: m.issuerValidationValidityPeriod ?? undefined, // uint32 -> number
+    verifier_validation_validity_period: m.verifierValidationValidityPeriod ?? undefined, // uint32 -> number
+    holder_validation_validity_period: m.holderValidationValidityPeriod ?? undefined, // uint32 -> number
+    issuer_perm_management_mode: m.issuerPermManagementMode ?? undefined,
+    verifier_perm_management_mode: m.verifierPermManagementMode ?? undefined,
   }),
-  fromAmino: (value: {
+  // Amino JSON → Proto
+  fromAmino: (a: {
     creator: string;
-    tr_id: string;
+    tr_id?: string; // stringified uint64
     json_schema: string;
-    issuer_grantor_validation_validity_period: number;
-    verifier_grantor_validation_validity_period: number;
-    issuer_validation_validity_period: number;
-    verifier_validation_validity_period: number;
-    holder_validation_validity_period: number;
-    issuer_perm_management_mode: number;
-    verifier_perm_management_mode: number;
-  }) =>
+    issuer_grantor_validation_validity_period: number; // uint32
+    verifier_grantor_validation_validity_period: number; // uint32
+    issuer_validation_validity_period: number; // uint32
+    verifier_validation_validity_period: number; // uint32
+    holder_validation_validity_period: number; // uint32
+    issuer_perm_management_mode: number; // enum/int32
+    verifier_perm_management_mode: number; // enum/int32
+  }): MsgCreateCredentialSchema =>
     MsgCreateCredentialSchema.fromPartial({
-      creator: value.creator,
-      trId: value.tr_id, // el generated hará Long.fromValue(...)
-      jsonSchema: value.json_schema,
-      issuerGrantorValidationValidityPeriod: value.issuer_grantor_validation_validity_period,
-      verifierGrantorValidationValidityPeriod: value.verifier_grantor_validation_validity_period,
-      issuerValidationValidityPeriod: value.issuer_validation_validity_period,
-      verifierValidationValidityPeriod: value.verifier_validation_validity_period,
-      holderValidationValidityPeriod: value.holder_validation_validity_period,
-      issuerPermManagementMode: value.issuer_perm_management_mode,
-      verifierPermManagementMode: value.verifier_perm_management_mode,
+      creator: a.creator,
+      trId: a.tr_id != null ? Long.fromString(a.tr_id) : undefined,       // Be explicit: string → Long
+      jsonSchema: a.json_schema,
+      issuerGrantorValidationValidityPeriod: a.issuer_grantor_validation_validity_period, // number (uint32)
+      verifierGrantorValidationValidityPeriod: a.verifier_grantor_validation_validity_period,
+      issuerValidationValidityPeriod: a.issuer_validation_validity_period,
+      verifierValidationValidityPeriod: a.verifier_validation_validity_period,
+      holderValidationValidityPeriod: a.holder_validation_validity_period,
+      issuerPermManagementMode: a.issuer_perm_management_mode,
+      verifierPermManagementMode: a.verifier_perm_management_mode,
     }),
 };
 
 /**
  * Amino converter for MsgUpdateCredentialSchema
  */
-export const MsgUpdateCredentialSchemaAminoConverter: AminoConverter = {
+export const MsgUpdateCredentialSchemaAminoConverter = {
   aminoType: '/verana.cs.v1.MsgUpdateCredentialSchema',
-  toAmino: ({
-    creator,
-    id,
-    issuerGrantorValidationValidityPeriod,
-    verifierGrantorValidationValidityPeriod,
-    issuerValidationValidityPeriod,
-    verifierValidationValidityPeriod,
-    holderValidationValidityPeriod,
-  }: MsgUpdateCredentialSchema) => ({
-    creator,
-    id: id, // uint64 como string en Amino
-    issuer_grantor_validation_validity_period: issuerGrantorValidationValidityPeriod,
-    verifier_grantor_validation_validity_period: verifierGrantorValidationValidityPeriod,
-    issuer_validation_validity_period: issuerValidationValidityPeriod,
-    verifier_validation_validity_period: verifierValidationValidityPeriod,
-    holder_validation_validity_period: holderValidationValidityPeriod,
+  toAmino: (m: MsgUpdateCredentialSchema) => ({
+    creator: m.creator,
+    id: m.id != null ? m.id.toString() : undefined, // uint64 -> string
+    issuer_grantor_validation_validity_period: m.issuerGrantorValidationValidityPeriod ?? undefined, // uint32 -> number
+    verifier_grantor_validation_validity_period: m.verifierGrantorValidationValidityPeriod ?? undefined, // uint32 -> number
+    issuer_validation_validity_period: m.issuerValidationValidityPeriod ?? undefined, // uint32 -> number
+    verifier_validation_validity_period: m.verifierValidationValidityPeriod ?? undefined, // uint32 -> number
+    holder_validation_validity_period: m.holderValidationValidityPeriod ?? undefined, // uint32 -> number
   }),
-  fromAmino: (value: {
+  fromAmino: (a: {
     creator: string;
-    id: string;
-    issuer_grantor_validation_validity_period: number;
-    verifier_grantor_validation_validity_period: number;
-    issuer_validation_validity_period: number;
-    verifier_validation_validity_period: number;
-    holder_validation_validity_period: number;
-  }) =>
+    id?: string;
+    issuer_grantor_validation_validity_period?: number;
+    verifier_grantor_validation_validity_period?: number;
+    issuer_validation_validity_period?: number;
+    verifier_validation_validity_period?: number;
+    holder_validation_validity_period?: number;
+  }): MsgUpdateCredentialSchema =>
     MsgUpdateCredentialSchema.fromPartial({
-      creator: value.creator,
-      id: value.id, // Long.fromValue interno
-      issuerGrantorValidationValidityPeriod: value.issuer_grantor_validation_validity_period,
-      verifierGrantorValidationValidityPeriod: value.verifier_grantor_validation_validity_period,
-      issuerValidationValidityPeriod: value.issuer_validation_validity_period,
-      verifierValidationValidityPeriod: value.verifier_validation_validity_period,
-      holderValidationValidityPeriod: value.holder_validation_validity_period,
+      creator: a.creator,
+      id: a.id != null ? Long.fromString(a.id) : undefined, // string -> Long (uint64)
+      issuerGrantorValidationValidityPeriod: a.issuer_grantor_validation_validity_period, // number (uint32)
+      verifierGrantorValidationValidityPeriod: a.verifier_grantor_validation_validity_period,
+      issuerValidationValidityPeriod: a.issuer_validation_validity_period,
+      verifierValidationValidityPeriod: a.verifier_validation_validity_period,
+      holderValidationValidityPeriod: a.holder_validation_validity_period,
     }),
 };
 
 /**
  * Amino converter for MsgArchiveCredentialSchema
  */
-export const MsgArchiveCredentialSchemaAminoConverter: AminoConverter = {
+export const MsgArchiveCredentialSchemaAminoConverter = {
   aminoType: '/verana.cs.v1.MsgArchiveCredentialSchema',
-  toAmino: ({ creator, id, archive }: MsgArchiveCredentialSchema) => ({
-    creator,
-    id: id, // uint64 como string en Amino
-    archive,
+  // Proto → Amino JSON
+  toAmino: (m: MsgArchiveCredentialSchema) => ({
+    creator: m.creator ?? '',
+    id: m.id != null ? m.id.toString() : undefined, // uint64 MUST be string in Amino JSON
+    archive: m.archive ?? false,
   }),
-  fromAmino: (value: { creator: string; id: string; archive: boolean }) =>
+  // Amino JSON → Proto
+  fromAmino: (a: { creator: string; id: string; archive: boolean }): MsgArchiveCredentialSchema =>
     MsgArchiveCredentialSchema.fromPartial({
-      creator: value.creator,
-      id: value.id, // Long.fromValue interno
-      archive: value.archive,
+      creator: a.creator,
+      id: a.id != null ? Long.fromString(a.id) : undefined, // Be explicit: string → Long
+      archive: a.archive,
     }),
 };
-
-export const veranaCsAminoConverters = new AminoTypes({
-  '/verana.cs.v1.MsgUpdateParams': MsgUpdateParamsCSAminoConverter,
-  '/verana.cs.v1.MsgCreateCredentialSchema': MsgCreateCredentialSchemaAminoConverter,
-  '/verana.cs.v1.MsgUpdateCredentialSchema': MsgUpdateCredentialSchemaAminoConverter,
-  '/verana.cs.v1.MsgArchiveCredentialSchema': MsgArchiveCredentialSchemaAminoConverter,
-});

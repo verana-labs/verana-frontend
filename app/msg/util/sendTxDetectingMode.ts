@@ -9,6 +9,7 @@ import { veranaAmino, veranaGasAdjustment, veranaGasPrice, veranaRegistry } from
 import { useChain } from '@cosmos-kit/react';
 import { Chain } from '@chain-registry/types';
 import { env } from 'next-runtime-env';
+import { debugAminoRoundTrip } from '@/app/msg/util/debugAminoRoundTrip';
 
 export function useSendTxDetectingMode(chain: Chain) {
   const { address, getOfflineSignerDirect, getOfflineSignerAmino, getRpcEndpoint, isWalletConnected } = useChain(chain.chain_name);
@@ -72,6 +73,7 @@ export function useSendTxDetectingMode(chain: Chain) {
     // --- AMINO PATH (fallback) ---
     if (isAminoOnlySigner(signer)) {
       console.info('*** Using AMINO signer → fallback ***');
+      debugAminoRoundTrip(msgs[0]);
       try {
         const client = await SigningStargateClient.connectWithSigner(
           rpcEndpoint,

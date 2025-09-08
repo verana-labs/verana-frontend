@@ -17,6 +17,7 @@ import { parseVNA } from '@/app/util/util';
 import { useTrustDepositValue } from '@/app/hooks/useTrustDepositValue';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { useSendTxDetectingMode } from '@/app/msg/util/sendTxDetectingMode';
+import Long from 'long';
 
 // Define form state interface
 interface FormState { claimed: number }
@@ -136,7 +137,7 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
     try {
       // Build transaction payload
       const basePayload = { creator: address };
-      const fullPayload = { ...basePayload, claimed};
+      const fullPayload = { ...basePayload, claimed: Long.fromString(String(claimed.toString()))};
       let msgAny:
         | { typeUrl: '/verana.td.v1.MsgReclaimTrustDeposit'; value: MsgReclaimTrustDeposit }
         | { typeUrl: '/verana.td.v1.MsgReclaimTrustDepositYield'; value: MsgReclaimTrustDepositYield };
