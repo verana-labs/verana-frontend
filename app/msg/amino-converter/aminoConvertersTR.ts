@@ -1,36 +1,18 @@
 'use client';
 
-import { AminoTypes, type AminoConverter } from '@cosmjs/stargate'
 import {
-  MsgUpdateParams,
   MsgCreateTrustRegistry,
   MsgAddGovernanceFrameworkDocument,
   MsgIncreaseActiveGovernanceFrameworkVersion,
   MsgUpdateTrustRegistry,
   MsgArchiveTrustRegistry,
 } from '@/proto-codecs/codec/verana/tr/v1/tx'
-import { Params } from '@/proto-codecs/codec/verana/tr/v1/params';
-
-/**
- * Amino converter for MsgUpdateParams
- */
-export const MsgUpdateParamsAminoConverter: AminoConverter = {
-  aminoType: '/verana.tr.v1.MsgUpdateParams',
-  toAmino: ({ authority, params }: MsgUpdateParams) => ({
-    authority,
-    params, // Ajusta si 'params' requiere transformación especial
-  }),
-  fromAmino: (value: { authority: string; params: Params }) =>
-    MsgUpdateParams.fromPartial({
-      authority: value.authority,
-      params: value.params,
-    }),
-}
+import Long from 'long';
 
 /**
  * Amino converter for MsgCreateTrustRegistry
  */
-export const MsgCreateTrustRegistryAminoConverter: AminoConverter = {
+export const MsgCreateTrustRegistryAminoConverter = {
   aminoType: '/verana.tr.v1.MsgCreateTrustRegistry',
   toAmino: ({
     creator,
@@ -63,12 +45,12 @@ export const MsgCreateTrustRegistryAminoConverter: AminoConverter = {
       docUrl: value.doc_url,
       docDigestSri: value.doc_digest_sri,
     }),
-}
+};
 
 /**
  * Amino converter for MsgAddGovernanceFrameworkDocument
  */
-export const MsgAddGovernanceFrameworkDocumentAminoConverter: AminoConverter = {
+export const MsgAddGovernanceFrameworkDocumentAminoConverter = {
   aminoType: '/verana.tr.v1.MsgAddGovernanceFrameworkDocument',
   toAmino: ({
     creator,
@@ -79,7 +61,7 @@ export const MsgAddGovernanceFrameworkDocumentAminoConverter: AminoConverter = {
     version,
   }: MsgAddGovernanceFrameworkDocument) => ({
     creator,
-    id: id,
+    id: id != null ? id.toString() : undefined, // uint64 -> string
     doc_language: docLanguage,
     doc_url: docUrl,
     doc_digest_sri: docDigestSri,
@@ -95,73 +77,64 @@ export const MsgAddGovernanceFrameworkDocumentAminoConverter: AminoConverter = {
   }) =>
     MsgAddGovernanceFrameworkDocument.fromPartial({
       creator: value.creator,
-      id: value.id,
+      id: value.id != null ? Long.fromString(value.id) : undefined, // string -> Long (uint64)
       docLanguage: value.doc_language,
       docUrl: value.doc_url,
       docDigestSri: value.doc_digest_sri,
       version: value.version,
     }),
-}
+};
 
 /**
  * Amino converter for MsgIncreaseActiveGovernanceFrameworkVersion
  */
-export const MsgIncreaseActiveGovernanceFrameworkVersionAminoConverter: AminoConverter = {
+export const MsgIncreaseActiveGovernanceFrameworkVersionAminoConverter = {
   aminoType: '/verana.tr.v1.MsgIncreaseActiveGovernanceFrameworkVersion',
   toAmino: ({ creator, id }: MsgIncreaseActiveGovernanceFrameworkVersion) => ({
     creator,
-    id: id,
+    id: id != null ? id.toString() : undefined, // uint64 -> string
   }),
   fromAmino: (value: { creator: string; id: string }) =>
     MsgIncreaseActiveGovernanceFrameworkVersion.fromPartial({
       creator: value.creator,
-      id: value.id,
+      id: value.id != null ? Long.fromString(value.id) : undefined, // string -> Long (uint64)
     }),
-}
+};
 
 /**
  * Amino converter for MsgUpdateTrustRegistry
  */
-export const MsgUpdateTrustRegistryAminoConverter: AminoConverter = {
+export const MsgUpdateTrustRegistryAminoConverter = {
   aminoType: '/verana.tr.v1.MsgUpdateTrustRegistry',
   toAmino: ({ creator, id, did, aka }: MsgUpdateTrustRegistry) => ({
     creator,
-    id: id,
+    id: id != null ? id.toString() : undefined, // uint64 -> string
     did,
     aka,
   }),
   fromAmino: (value: { creator: string; id: string; did: string; aka: string }) =>
     MsgUpdateTrustRegistry.fromPartial({
       creator: value.creator,
-      id: value.id,
+      id: value.id != null ? Long.fromString(value.id) : undefined, // string -> Long (uint64)
       did: value.did,
       aka: value.aka,
     }),
-}
+};
 
 /**
  * Amino converter for MsgArchiveTrustRegistry
  */
-export const MsgArchiveTrustRegistryAminoConverter: AminoConverter = {
+export const MsgArchiveTrustRegistryAminoConverter = {
   aminoType: '/verana.tr.v1.MsgArchiveTrustRegistry',
   toAmino: ({ creator, id, archive }: MsgArchiveTrustRegistry) => ({
     creator,
-    id: id,
+    id: id != null ? id.toString() : undefined, // uint64 -> string
     archive,
   }),
   fromAmino: (value: { creator: string; id: string; archive: boolean }) =>
     MsgArchiveTrustRegistry.fromPartial({
       creator: value.creator,
-      id: value.id,
+      id: value.id != null ? Long.fromString(value.id) : undefined, // string -> Long (uint64)
       archive: value.archive,
     }),
-}
-
-export const veranaTrAminoConverters = new AminoTypes ({
-  '/verana.tr.v1.MsgUpdateParams': MsgUpdateParamsAminoConverter,
-  '/verana.tr.v1.MsgCreateTrustRegistry': MsgCreateTrustRegistryAminoConverter,
-  '/verana.tr.v1.MsgAddGovernanceFrameworkDocument': MsgAddGovernanceFrameworkDocumentAminoConverter,
-  '/verana.tr.v1.MsgIncreaseActiveGovernanceFrameworkVersion': MsgIncreaseActiveGovernanceFrameworkVersionAminoConverter,
-  '/verana.tr.v1.MsgUpdateTrustRegistry': MsgUpdateTrustRegistryAminoConverter,
-  '/verana.tr.v1.MsgArchiveTrustRegistry': MsgArchiveTrustRegistryAminoConverter,
-});
+};

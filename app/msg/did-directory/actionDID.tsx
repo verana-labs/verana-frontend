@@ -18,13 +18,17 @@ import { MsgAny } from '@/app/msg/amino-converter/aminoConvertersDID';
 import { useCalculateFee } from '@/app/hooks/useCalculateFee';
 import { useTrustDepositAccountData } from '@/app/hooks/useTrustDepositAccountData';
 import { DidData } from '@/app/types/dataViewTypes';
+import { EncodeObject } from '@cosmjs/proto-signing';
+import { useSendTxDetectingMode } from '@/app/msg/util/sendTxDetectingMode';
 
 interface FormState { did: string; years: number; }
 
 export default function ActionDID({ action, id, data }: { action: MsgTypeDID, id?: string, data?: object }) {
   // Load chain and wallet context
   const veranaChain = useVeranaChain();
-  const { address, signAndBroadcast, isWalletConnected } = useChain(veranaChain.chain_name);
+  const { address, isWalletConnected } = useChain(veranaChain.chain_name);
+  const sendTx = useSendTxDetectingMode(veranaChain);
+  
   const [errorNotified, setErrorNotified] = useState(false);
 
   // Form state
@@ -65,7 +69,7 @@ export default function ActionDID({ action, id, data }: { action: MsgTypeDID, id
   }, [errorAccountData, errorTrustDepositValue, router, errorNotified]);
 
   // Get fee and amount in VNA
-  const { fee, amountVNA } = useCalculateFee(messageType);
+  const { amountVNA } = useCalculateFee(messageType);
 
   // Local state to store the total required value for action (deposit + fee)
   const [totalValue, setTotalValue] = useState<string>("0.00");
@@ -149,7 +153,11 @@ export default function ActionDID({ action, id, data }: { action: MsgTypeDID, id
       }
 
       // Broadcast the transaction
-      const res = await signAndBroadcast([msgAny], fee, action);
+      const msg: EncodeObject = msgAny;
+      const res = await sendTx({
+        msgs: [msg],
+        memo: action
+      });      
 
       // Handle broadcast result and notifications
       if (res.code === 0) {

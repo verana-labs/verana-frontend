@@ -15,9 +15,9 @@ import { useCalculateFee } from '@/app/hooks/useCalculateFee';
 import { AccountData } from '@/app/types/dataViewTypes';
 import { parseVNA } from '@/app/util/util';
 import { useTrustDepositValue } from '@/app/hooks/useTrustDepositValue';
-import { makeRegistry, signAndBroadcastManual } from '@/app/util/tx';
-import { EncodeObject, OfflineDirectSigner } from '@cosmjs/proto-signing';
-import { veranaGasAdjustment, veranaGasPrice } from '@/app/config/veranaChain.client';
+import { EncodeObject } from '@cosmjs/proto-signing';
+import { useSendTxDetectingMode } from '@/app/msg/util/sendTxDetectingMode';
+import Long from 'long';
 
 // Define form state interface
 interface FormState { claimed: number }
@@ -42,6 +42,8 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
   // Cosmos wallet and chain context
   const veranaChain = useVeranaChain();
   const { address, isWalletConnected } = useChain(veranaChain.chain_name);
+
+  const sendTx = useSendTxDetectingMode(veranaChain);
 
   // Local state for the form (amount claimed)
   const [form, setForm] = useState<FormState>({ claimed: 0 });
@@ -135,7 +137,7 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
     try {
       // Build transaction payload
       const basePayload = { creator: address };
-      const fullPayload = { ...basePayload, claimed};
+      const fullPayload = { ...basePayload, claimed: Long.fromString(String(claimed.toString()))};
       let msgAny:
         | { typeUrl: '/verana.td.v1.MsgReclaimTrustDeposit'; value: MsgReclaimTrustDeposit }
         | { typeUrl: '/verana.td.v1.MsgReclaimTrustDepositYield'; value: MsgReclaimTrustDepositYield };
@@ -158,29 +160,10 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
           throw new Error(`Unsupported action: ${action}`);
       }
 
-      // Sign and broadcast the transaction
-      // const res = await signAndBroadcast([msgAny], fee, action);
-      const registry = makeRegistry();
       const msg: EncodeObject = msgAny;
-
-      // Get RPC endpoint and signer from cosmos-kit
-      // Get the first rpc endpoint (string or undefined)
-      const rpcEndpoint = veranaChain.apis?.rpc?.[0]?.address!; // eslint-disable-line @typescript-eslint/no-non-null-asserted-optional-chain
-      const offlineSigner = (await (window as any).keplr.getOfflineSignerAuto(veranaChain.chain_id)) as OfflineDirectSigner; // eslint-disable-line @typescript-eslint/no-explicit-any
-
-      const res = await signAndBroadcastManual({
-        rpcEndpoint,
-        chainId: veranaChain.chain_id,
-        signer: offlineSigner,
-        address,
-        registry,
-        messages: [msg],
-        gasPrice: String(veranaGasPrice),   // "0.3uvna"
-        gasAdjustment: veranaGasAdjustment, // add some margin
-        memo: action,                       // free text
-        timeoutHeight: undefined,           // or block + N
-        // feeGranter: undefined,
-        // feePayer: undefined,
+      const res = await sendTx({
+        msgs: [msg],
+        memo: action
       });      
 
       // Notify on success or error (waits for notification to close)

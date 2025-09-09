@@ -7,7 +7,6 @@ import {
   MsgUpdateCredentialSchema,
   MsgArchiveCredentialSchema,
 } from '@/proto-codecs/codec/verana/cs/v1/tx';
-import { veranaGasAdjustment, veranaGasPrice } from '@/app/config/veranaChain.client';
 import { useVeranaChain } from '@/app/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -18,8 +17,8 @@ import {
   MSG_SUCCESS_ACTION_CS,
 } from '@/app/constants/notificationMsgForMsgType';
 import Long from 'long';
-import { makeRegistry, signAndBroadcastManual } from '@/app/util/tx';
-import { EncodeObject, OfflineDirectSigner } from '@cosmjs/proto-signing';
+import { EncodeObject } from '@cosmjs/proto-signing';
+import { useSendTxDetectingMode } from '@/app/msg/util/sendTxDetectingMode';
 
 // Message type configuration (typeUrl + label for memo/notification)
 export const MSG_TYPE_CONFIG_CS = {
@@ -78,6 +77,7 @@ export function useActionCS() {
   const router = useRouter();
   const { notify } = useNotification();
   const pathname = usePathname();
+  const sendTx = useSendTxDetectingMode(veranaChain);
 
   // Prevents parallel broadcasts with the same account (avoids sequence mismatch errors)
   const inFlight = useRef(false);
@@ -105,13 +105,13 @@ export function useActionCS() {
           creator: address, // always use the connected wallet address
           trId: Long.fromString(String(params.trId)), // uint64: handled internally with Long.fromValue
           jsonSchema: params.jsonSchema,
-          issuerGrantorValidationValidityPeriod: params.issuerGrantorValidationValidityPeriod,
-          verifierGrantorValidationValidityPeriod: params.verifierGrantorValidationValidityPeriod,
-          issuerValidationValidityPeriod: params.issuerValidationValidityPeriod,
-          verifierValidationValidityPeriod: params.verifierValidationValidityPeriod,
-          holderValidationValidityPeriod: params.holderValidationValidityPeriod,
-          issuerPermManagementMode: params.issuerPermManagementMode,
-          verifierPermManagementMode: params.verifierPermManagementMode,
+          issuerGrantorValidationValidityPeriod: Number(params.issuerGrantorValidationValidityPeriod),
+          verifierGrantorValidationValidityPeriod: Number(params.verifierGrantorValidationValidityPeriod),
+          issuerValidationValidityPeriod: Number(params.issuerValidationValidityPeriod),
+          verifierValidationValidityPeriod: Number(params.verifierValidationValidityPeriod),
+          holderValidationValidityPeriod: Number(params.holderValidationValidityPeriod),
+          issuerPermManagementMode: Number(params.issuerPermManagementMode),
+          verifierPermManagementMode: Number(params.verifierPermManagementMode),
         });
         break;
       }
@@ -121,11 +121,11 @@ export function useActionCS() {
         value = MsgUpdateCredentialSchema.fromPartial({
           creator: address,
           id: Long.fromString(String(params.id)),
-          issuerGrantorValidationValidityPeriod: params.issuerGrantorValidationValidityPeriod,
-          verifierGrantorValidationValidityPeriod: params.verifierGrantorValidationValidityPeriod,
-          issuerValidationValidityPeriod: params.issuerValidationValidityPeriod,
-          verifierValidationValidityPeriod: params.verifierValidationValidityPeriod,
-          holderValidationValidityPeriod: params.holderValidationValidityPeriod,
+          issuerGrantorValidationValidityPeriod: Number(params.issuerGrantorValidationValidityPeriod),
+          verifierGrantorValidationValidityPeriod: Number(params.verifierGrantorValidationValidityPeriod),
+          issuerValidationValidityPeriod: Number(params.issuerValidationValidityPeriod),
+          verifierValidationValidityPeriod: Number(params.verifierValidationValidityPeriod),
+          holderValidationValidityPeriod: Number(params.holderValidationValidityPeriod),
         });
         break;
       }
@@ -144,8 +144,6 @@ export function useActionCS() {
         throw new Error('Invalid msgType');
     }
 
-    // const fee = calculateFee(veranaGasLimit, GasPrice.fromString(`${veranaGasPrice}`)); 
-
     // Show "in progress" notification
     let notifyPromise: Promise<void> = notify(
       MSG_INPROGRESS_ACTION_CS[params.msgType],
@@ -157,30 +155,11 @@ export function useActionCS() {
 
     try {
 
-      // Sign and broadcast the transaction
-      // res = await signAndBroadcast([{ typeUrl, value }], fee, MSG_TYPE_CONFIG_CS[params.msgType].txLabel);
-
-      const registry = makeRegistry();
       const msg: EncodeObject = { typeUrl, value };
 
-      // Get RPC endpoint and signer from cosmos-kit
-      // Get the first rpc endpoint (string or undefined)
-      const rpcEndpoint = veranaChain.apis?.rpc?.[0]?.address!; // eslint-disable-line @typescript-eslint/no-non-null-asserted-optional-chain
-      const offlineSigner = (await (window as any).keplr.getOfflineSignerAuto(veranaChain.chain_id)) as OfflineDirectSigner; // eslint-disable-line @typescript-eslint/no-explicit-any
-
-      res = await signAndBroadcastManual({
-        rpcEndpoint,
-        chainId: veranaChain.chain_id,
-        signer: offlineSigner,
-        address,
-        registry,
-        messages: [msg],
-        gasPrice: String(veranaGasPrice),                     // "0.3uvna"
-        gasAdjustment: veranaGasAdjustment,                   // add some margin
-        memo: MSG_TYPE_CONFIG_CS[params.msgType].txLabel,     // free text
-        timeoutHeight: undefined,                             // or block + N
-        // feeGranter: undefined,
-        // feePayer: undefined,
+      res = await sendTx({
+        msgs: [msg],
+        memo: MSG_TYPE_CONFIG_CS[params.msgType].txLabel
       });      
 
       if (res.code === 0) {

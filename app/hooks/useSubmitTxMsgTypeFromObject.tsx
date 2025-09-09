@@ -101,7 +101,6 @@ export function useSubmitTxMsgTypeFromObject() {
       const src = raw as Record<string, unknown>;
       const payload: Record<string, unknown> = { msgType, creator: "", tr_id: src['trId'] };
 
-      console.info(src);
       for (const k of keys) payload[k] = src[k];
 
       return action(payload);
