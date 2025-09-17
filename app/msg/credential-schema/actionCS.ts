@@ -9,7 +9,6 @@ import {
 } from '@/proto-codecs/codec/verana/cs/v1/tx';
 import { useVeranaChain } from '@/app/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
-import { usePathname, useRouter } from 'next/navigation';
 import { useNotification } from '@/app/ui/common/notification-provider';
 import {
   MSG_ERROR_ACTION_CS,
@@ -70,17 +69,55 @@ type ActionCSParams =
     };
 
 // Hook to execute Credential Schema transactions + notifications
-export function useActionCS() {
+export function useActionCS( setActiveActionId?: React.Dispatch<React.SetStateAction<string | null>>,
+                             setRefresh?: React.Dispatch<React.SetStateAction<string | null>>) {
   const veranaChain = useVeranaChain();
   const { address, isWalletConnected } = useChain(veranaChain.chain_name);
 
-  const router = useRouter();
   const { notify } = useNotification();
-  const pathname = usePathname();
   const sendTx = useSendTxDetectingMode(veranaChain);
 
   // Prevents parallel broadcasts with the same account (avoids sequence mismatch errors)
   const inFlight = useRef(false);
+
+  // Handler for Succes: refresh and collapses/hides the action UI
+  const handleSuccess = () => {
+    setRefresh?.('actionCS');
+    setActiveActionId?.(null);
+  };
+
+  /**
+   * Helper to extract the created credential schema ID from DeliverTxResponse.
+   * It first tries `res.events` (if available in the response),
+   * and falls back to parsing `rawLog` if necessary.
+   */
+  function extractCreatedCSId(res: DeliverTxResponse): string | undefined {
+    // Prefer structured events (Cosmos SDK 0.50+). rawLog is deprecated.
+    const ev = (res as any)?.events?.find( (e: any) => e?.type === 'create_credential_schema'); // eslint-disable-line @typescript-eslint/no-explicit-any
+    const idAttr = ev?.attributes?.find( (a: any) => a?.key === 'credential_schema_id'); // eslint-disable-line @typescript-eslint/no-explicit-any
+    if (idAttr?.value) return String(idAttr.value);
+
+    // Fallback: try parsing rawLog only if it's a string (older chains/SDKs)
+    const raw = res.rawLog;
+    if (typeof raw === 'string') {
+      try {
+        const logs = JSON.parse(raw); // usually an array of log objects
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const allEvents = Array.isArray(logs)
+          ? logs.flatMap((l: any) => l?.events ?? []) // eslint-disable-line @typescript-eslint/no-explicit-any
+          : [];
+        const ev2 = allEvents.find((e: any) => e?.type === 'create_credential_schema'); // eslint-disable-line @typescript-eslint/no-explicit-any
+        const idAttr2 = ev2?.attributes?.find(
+          (a: any) => a?.key === 'credential_schema_id' // eslint-disable-line @typescript-eslint/no-explicit-any
+        );
+        if (idAttr2?.value) return String(idAttr2.value);
+      } catch {
+        // Ignore malformed/non-JSON rawLog
+      }
+    }
+
+    return undefined;
+  }
 
   async function actionCS(params: ActionCSParams): Promise<DeliverTxResponse | void> {
     if (!isWalletConnected || !address) {
@@ -95,8 +132,7 @@ export function useActionCS() {
 
     let typeUrl = '';
     let value: MsgCreateCredentialSchema | MsgUpdateCredentialSchema | MsgArchiveCredentialSchema;
-    const trId = params.trId?.toString();
-    const id = (params.msgType !== 'MsgCreateCredentialSchema') ? params.id?.toString() : undefined;
+    let id = (params.msgType !== 'MsgCreateCredentialSchema') ? params.id?.toString() : undefined;
 
     switch (params.msgType) {
       case 'MsgCreateCredentialSchema': {
@@ -152,6 +188,7 @@ export function useActionCS() {
     );
 
     let res: DeliverTxResponse;
+    let success = false;
 
     try {
 
@@ -163,6 +200,9 @@ export function useActionCS() {
       });      
 
       if (res.code === 0) {
+        if (params.msgType === 'MsgCreateCredentialSchema') id = extractCreatedCSId(res);        
+        if (id) sessionStorage.setItem('id_updated', id);
+        success = true;
         notifyPromise = notify(
           MSG_SUCCESS_ACTION_CS[params.msgType],
           'success',
@@ -185,18 +225,10 @@ export function useActionCS() {
     } finally {
       inFlight.current = false;
       if (notifyPromise) await notifyPromise;
-      // Redirect
-        if (trId) {
-          const trUrl = `/tr/${trId}`;
-          if (pathname === trUrl) {
-            router.push('/tr');
-            setTimeout(() => router.push(trUrl), 200);
-          } else {
-            router.push(trUrl);
-          }
-        } else {
-          router.push('/tr');
-        }
+      // Refresh on success or fallback
+      if (success) {
+        handleSuccess();
+      }
     }
   }
 

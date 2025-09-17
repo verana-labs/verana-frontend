@@ -28,10 +28,7 @@ export function useCSList(trId: string) {
   const [loading, setLoading] = useState(false);
   const [errorCSList, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Reset state when inputs change
-    setError(null);
-    setCsList([]);
+  const fetchCS = async () => {
 
     if (!trId || !getURL) {
       setError('Missing TR ID or endpoint URL');
@@ -39,64 +36,59 @@ export function useCSList(trId: string) {
       return;
     }
 
+    // Reset state when inputs change
+    setError(null);
+    setCsList([]);
     const url = `${getURL}/list?tr_id=${trId}`;
+    try {
+      setLoading(true);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const json = await res.json();
+      const schemas: RawSchema[] = Array.isArray(json) ? json : (json.schemas ?? []);
+      const list: CsData[] = schemas.map((src) => {
+        // Parse JSON schema safely
+        let parsed: Record<string, unknown> = {};
+        const rawJsonSchema = typeof src.json_schema === 'string' ? src.json_schema : '';
+        try {
+          parsed = rawJsonSchema ? JSON.parse(rawJsonSchema) : {};
+        } catch {
+          parsed = {};
+        }
+        const titleCandidate =
+          (parsed.description as string | undefined) ??
+          (parsed.title as string | undefined) ??
+          'Schema';
+        const id = src.id ?? '';
+        return {
+          id,
+          trId: src.tr_id ?? '',
+          creator: src.creator ?? '',
+          issuerGrantorValidationValidityPeriod: src.issuer_grantor_validation_validity_period ?? 0,
+          verifierGrantorValidationValidityPeriod: src.verifier_grantor_validation_validity_period ?? 0,
+          issuerValidationValidityPeriod: src.issuer_validation_validity_period ?? 0,
+          verifierValidationValidityPeriod: src.verifier_validation_validity_period ?? 0,
+          holderValidationValidityPeriod: src.holder_validation_validity_period ?? 0,
+          issuerPermManagementMode: src.issuer_perm_management_mode ?? 0,
+          verifierPermManagementMode: src.verifier_perm_management_mode ?? 0,
+          jsonSchema: src.json_schema ?? '',
+          title: `${titleCandidate} (id: ${id})`,
+          updateCredentialSchema: null,
+          archiveCredentialSchema: null
+        };
+      });
+      setCsList(list);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const fetchCS = async () => {
-      try {
-        setLoading(true);
-
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Error ${res.status}`);
-
-        const json = await res.json();
-        const schemas: RawSchema[] = Array.isArray(json) ? json : (json.schemas ?? []);
-
-        const list: CsData[] = schemas.map((src) => {
-          // Parse JSON schema safely
-          let parsed: Record<string, unknown> = {};
-          const rawJsonSchema = typeof src.json_schema === 'string' ? src.json_schema : '';
-
-          try {
-            parsed = rawJsonSchema ? JSON.parse(rawJsonSchema) : {};
-          } catch {
-            parsed = {};
-          }
-
-          const titleCandidate =
-            (parsed.description as string | undefined) ??
-            (parsed.title as string | undefined) ??
-            'Schema';
-
-          const id = src.id ?? '';
-          return {
-            id,
-            trId: src.tr_id ?? '',
-            creator: src.creator ?? '',
-            issuerGrantorValidationValidityPeriod: src.issuer_grantor_validation_validity_period ?? 0,
-            verifierGrantorValidationValidityPeriod: src.verifier_grantor_validation_validity_period ?? 0,
-            issuerValidationValidityPeriod: src.issuer_validation_validity_period ?? 0,
-            verifierValidationValidityPeriod: src.verifier_validation_validity_period ?? 0,
-            holderValidationValidityPeriod: src.holder_validation_validity_period ?? 0,
-            issuerPermManagementMode: src.issuer_perm_management_mode ?? 0,
-            verifierPermManagementMode: src.verifier_perm_management_mode ?? 0,
-            jsonSchema: src.json_schema ?? '',
-            title: `${titleCandidate} (id: ${id})`,
-            updateCredentialSchema: null,
-            archiveCredentialSchema: null
-          };
-        });
-
-        setCsList(list);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        setError(msg);
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  useEffect(() => {
     fetchCS();
-  }, [trId, getURL]);
+  }, [trId, getURL, fetchCS]);
 
-  return { csList, loading, errorCSList };
+  return { csList, loading, errorCSList, refetch: fetchCS };
 }

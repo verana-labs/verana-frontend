@@ -10,10 +10,11 @@ import { MsgTypeTR } from '@/app/constants/notificationMsgForMsgType';
 interface GfdPageProps {
   action: MsgTypeTR;  // Action type to perform
   setActiveActionId: React.Dispatch<React.SetStateAction<string | null>>; // Collapse/hide action on cancel
-  data: object
+  data: object;
+  setRefresh?: React.Dispatch<React.SetStateAction<string | null>>; // Refresh TR data
 }
 
-export default function GfdPage({ action, setActiveActionId, data }: GfdPageProps) {
+export default function GfdPage({ action, setActiveActionId, data, setRefresh }: GfdPageProps) {
     
   const trData: TrData = data as TrData;
   // Compose initial data, including controller and docUrl if needed
@@ -25,7 +26,7 @@ export default function GfdPage({ action, setActiveActionId, data }: GfdPageProp
     docUrl: '',
   });
 
-  const actionTR = useActionTR();
+  const actionTR = useActionTR(setActiveActionId, setRefresh);
 
   // Save handler: called when the form is submitted
   async function onSave(newData: GfdData) {

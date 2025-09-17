@@ -17,13 +17,13 @@ export const MsgCreateCredentialSchemaAminoConverter = {
     creator: m.creator ?? '',
     tr_id: m.trId != null ? m.trId.toString() : undefined, // uint64 -> string
     json_schema: m.jsonSchema ?? '',
-    issuer_grantor_validation_validity_period: m.issuerGrantorValidationValidityPeriod ?? undefined, // uint32 -> number
-    verifier_grantor_validation_validity_period: m.verifierGrantorValidationValidityPeriod ?? undefined, // uint32 -> number
-    issuer_validation_validity_period: m.issuerValidationValidityPeriod ?? undefined, // uint32 -> number
-    verifier_validation_validity_period: m.verifierValidationValidityPeriod ?? undefined, // uint32 -> number
-    holder_validation_validity_period: m.holderValidationValidityPeriod ?? undefined, // uint32 -> number
-    issuer_perm_management_mode: m.issuerPermManagementMode ?? undefined,
-    verifier_perm_management_mode: m.verifierPermManagementMode ?? undefined,
+    issuer_grantor_validation_validity_period: m.issuerGrantorValidationValidityPeriod ?? 0, // uint32 -> number
+    verifier_grantor_validation_validity_period: m.verifierGrantorValidationValidityPeriod ?? 0, // uint32 -> number
+    issuer_validation_validity_period: m.issuerValidationValidityPeriod ?? 0, // uint32 -> number
+    verifier_validation_validity_period: m.verifierValidationValidityPeriod ?? 0, // uint32 -> number
+    holder_validation_validity_period: m.holderValidationValidityPeriod ?? 0, // uint32 -> number
+    issuer_perm_management_mode: m.issuerPermManagementMode ?? 0,
+    verifier_perm_management_mode: m.verifierPermManagementMode ?? 0,
   }),
   // Amino JSON → Proto
   fromAmino: (a: {
@@ -60,11 +60,11 @@ export const MsgUpdateCredentialSchemaAminoConverter = {
   toAmino: (m: MsgUpdateCredentialSchema) => ({
     creator: m.creator,
     id: m.id != null ? m.id.toString() : undefined, // uint64 -> string
-    issuer_grantor_validation_validity_period: m.issuerGrantorValidationValidityPeriod ?? undefined, // uint32 -> number
-    verifier_grantor_validation_validity_period: m.verifierGrantorValidationValidityPeriod ?? undefined, // uint32 -> number
-    issuer_validation_validity_period: m.issuerValidationValidityPeriod ?? undefined, // uint32 -> number
-    verifier_validation_validity_period: m.verifierValidationValidityPeriod ?? undefined, // uint32 -> number
-    holder_validation_validity_period: m.holderValidationValidityPeriod ?? undefined, // uint32 -> number
+    issuer_grantor_validation_validity_period: m.issuerGrantorValidationValidityPeriod != null ? Number(m.issuerGrantorValidationValidityPeriod) : 0, // uint32 -> number
+    verifier_grantor_validation_validity_period: m.verifierGrantorValidationValidityPeriod ?? 0, // uint32 -> number
+    issuer_validation_validity_period: m.issuerValidationValidityPeriod ?? 0, // uint32 -> number
+    verifier_validation_validity_period: m.verifierValidationValidityPeriod ?? 0, // uint32 -> number
+    holder_validation_validity_period: m.holderValidationValidityPeriod ?? 0, // uint32 -> number
   }),
   fromAmino: (a: {
     creator: string;
@@ -78,11 +78,11 @@ export const MsgUpdateCredentialSchemaAminoConverter = {
     MsgUpdateCredentialSchema.fromPartial({
       creator: a.creator,
       id: a.id != null ? Long.fromString(a.id) : undefined, // string -> Long (uint64)
-      issuerGrantorValidationValidityPeriod: a.issuer_grantor_validation_validity_period, // number (uint32)
-      verifierGrantorValidationValidityPeriod: a.verifier_grantor_validation_validity_period,
-      issuerValidationValidityPeriod: a.issuer_validation_validity_period,
-      verifierValidationValidityPeriod: a.verifier_validation_validity_period,
-      holderValidationValidityPeriod: a.holder_validation_validity_period,
+      issuerGrantorValidationValidityPeriod: Number(a.issuer_grantor_validation_validity_period), // number (uint32)
+      verifierGrantorValidationValidityPeriod: Number(a.verifier_grantor_validation_validity_period),
+      issuerValidationValidityPeriod: Number(a.issuer_validation_validity_period),
+      verifierValidationValidityPeriod: Number(a.verifier_validation_validity_period),
+      holderValidationValidityPeriod: Number(a.holder_validation_validity_period),
     }),
 };
 

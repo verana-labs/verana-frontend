@@ -20,13 +20,17 @@ export function DataTable<T extends object>({
   initialPageSize = 10,
   pageSizeOptions = [5, 10, 20, 50],
   onRowClick,
-  description
+  description,
+  defaultSortColumn,
+  defaultSortDirection = 'desc'
+
 }: DataTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(initialPageSize);
   const [filters, setFilters] = useState<Record<string, string | boolean>>({});
-  const [sortColumn, setSortColumn] = useState<keyof T | null>(null);
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  const [sortColumn, setSortColumn] = useState<keyof T | null>(defaultSortColumn ?? null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(defaultSortDirection);
 
   // Filtering
   const filteredData = useMemo(() => {

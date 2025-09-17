@@ -7,28 +7,23 @@ import { PlusIcon } from '@heroicons/react/24/outline';
 import TitleAndButton from '@/app/ui/common/title-and-button';
 import { env } from 'next-runtime-env';
 import { useNotification } from '@/app/ui/common/notification-provider';
-import { columnsTrList, TrList } from '@/app/types/dataTableTypes';
+import { columnsTRList, TRList } from '@/app/types/dataTableTypes';
 
-export default function TrPage() {
-  const [trs, setTrs] = useState<TrList[]>([]);
+export default function TRPage() {
+  const [trs, setTRs] = useState<TRList[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { notify } = useNotification();
   const listURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY;
 
   useEffect(() => {
-    const fetchTrs = async () => {
+    const fetchTRs = async () => {
       try {
           if (!listURL) throw new Error('API endpoint not configured');
-          
           const res = await fetch(listURL + '/list?response_max_size=100');
           const json = await res.json();
           const trustRegistries = Array.isArray(json) ? json : json.trust_registries || [];
-          // const updatedRegistries = trustRegistries.map((item: any) => ({
-          //   ...item,
-          //     schemas: item.versions.lenght,
-          // }));
-          setTrs(trustRegistries);
+          setTRs(trustRegistries);
       } catch (err) {
         notify(
           err instanceof Error ? err.message : String(err),
@@ -39,7 +34,7 @@ export default function TrPage() {
         setLoading(false);
       }
     };
-    fetchTrs();
+    fetchTRs();
   }, [listURL, notify]);
 
   if (loading) return <p>Loading...</p>;
@@ -53,11 +48,12 @@ export default function TrPage() {
         Icon={PlusIcon}
       />
       <DataTable
-        columns={columnsTrList}
+        columns={columnsTRList}
         data={trs}
         initialPageSize={10}
         pageSizeOptions={[5, 10, 20, 50]}
         onRowClick={(row) => router.push(`/tr/${encodeURIComponent(row.id)}`)}
+        defaultSortColumn={'modified'}
       />
     </>
   );

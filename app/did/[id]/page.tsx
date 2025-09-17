@@ -11,19 +11,30 @@ import { useDIDData } from '@/app/hooks/useDIDData';
 import { useEffect, useState, useMemo } from 'react';
 import { formatVNA } from '@/app/util/util';
 
-export default function DidViewPage() {
+export default function DIDViewPage() {
   const params = useParams();
   const id = params?.id as string;
 
   // Hook to get connected account data (includes address)
-  const { accountData, errorAccountData } = useTrustDepositAccountData();
+  const { accountData, errorAccountData, refetch: refetchAD } = useTrustDepositAccountData();
   const { notify } = useNotification();
   const router = useRouter();
   const [errorNotified, setErrorNotified] = useState(false);
 
   // Hook to fetch the DID data (optionally actions if controller matches)
-  const { dataDID, loading, errorDIDData } = useDIDData(id);
+  const { dataDID, loading, errorDIDData, refetch: refetchDID } = useDIDData(id);
 
+  // Refresh data DID
+  const [refresh, setRefresh] = useState<string | null>(null);
+  useEffect(() => {
+    if (!refresh) return;
+    (async () => {
+      await refetchDID();
+      await refetchAD();
+      setRefresh(null);
+    })();
+  }, [refresh]);
+  
   // Notify and redirect if there is an error fetching account data
   useEffect(() => {
     if (errorAccountData && !errorNotified) {
@@ -55,14 +66,17 @@ export default function DidViewPage() {
     };
   }, [dataDID, accountData.address]);
   
-  // Wait until accountData.address exists before loading the DID info
-  if (!accountData?.address) {
-    return <div className="p-6 text-center">Loading wallet address…</div>;
+  if (!refresh) {
+    // Wait until accountData.address exists before loading the DID info
+    if (!accountData?.address) {
+      return <div className="p-6 text-center">Loading wallet address…</div>;
+    }
+    // Show loading spinner/message while fetching DID details
+    if (loading) {
+      return <div className="p-6 text-center">Loading DID details…</div>;
+    }
   }
-  // Show loading spinner/message while fetching DID details
-  if (loading) {
-    return <div className="p-6 text-center">Loading DID details…</div>;
-  }
+
   // Show error message if fetch failed or DID not found
   if (errorDIDData || !data) {
     return <div className="p-6 text-red-600">Error: {errorDIDData || 'DID not found'}</div>;
@@ -82,6 +96,7 @@ export default function DidViewPage() {
         data={data}
         id={decodeURIComponent(id)}
         columnsCount={2}
+        setRefresh={setRefresh}
       />
     </>
   );

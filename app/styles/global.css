@@ -13,31 +13,36 @@
   }
 
   /* ---------- App shell containers ---------- */
-  .app-container {
-    @apply max-w-[1440px] max-h-[1024px] flex flex-col min-h-screen mx-auto;
-  }
+.app-container {
+  @apply max-w-[1440px] flex flex-col mx-auto
+         h-screen overflow-hidden;
+}
 
-  .app-header {
-    @apply w-full bg-light-bg dark:bg-dark-bg;
-  }
+.app-header {
+  @apply w-full bg-light-bg dark:bg-dark-bg;
+}
 
-  .app-main {
-    @apply flex flex-1 flex-col md:flex-row;
-  }
+.app-main {
+  @apply flex flex-1 flex-col md:flex-row 
+         min-h-0 overflow-hidden;
+}
 
-  .app-sidenav {
-    @apply w-72 h-[956px] p-4 border-r justify-start items-start
-           bg-light-bg dark:bg-dark-bg
-           border-light-border dark:border-dark-border;
-  }
+.app-sidenav {
+  @apply w-72 p-4 border-r justify-start items-start
+         bg-light-bg dark:bg-dark-bg
+         border-light-border dark:border-dark-border
+         h-full overflow-hidden;
+}
 
-  .app-content {
-    @apply flex-1 bg-content-light-bg dark:bg-content-dark-bg;
-  }
+.app-content {
+  @apply flex-1 bg-content-light-bg dark:bg-content-dark-bg 
+         min-h-0 overflow-hidden;
+}
 
-  .app-content-inner {
-    @apply max-w-screen-xl mx-auto md:min-h-screen p-6;
-  }
+.app-content-inner {
+  @apply max-w-screen-xl mx-auto p-6
+         h-full overflow-y-auto;
+}
 
   .app-skeleton {
     @apply min-h-screen bg-light-bg dark:bg-dark-bg;

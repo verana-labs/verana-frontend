@@ -1,5 +1,8 @@
 import { BanknotesIcon, CurrencyDollarIcon, IdentificationIcon, InformationCircleIcon, LinkIcon, ListBulletIcon, ShieldCheckIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
+import { env } from "next-runtime-env";
 import { ComponentType } from "react";
+
+const CHAIN_ID = env('NEXT_PUBLIC_VERANA_CHAIN_ID') || process.env.NEXT_PUBLIC_VERANA_CHAIN_ID;
 
 /* Utility type: returns keys of T whose value type is assignable to V */
 type KeysWithType<T, V> = {
@@ -87,6 +90,7 @@ export interface DataViewProps<T extends object> {
   columnsCount?: number;
   columnsCountMd?: number;
   onEdit?: () => void;
+  setRefresh?: React.Dispatch<React.SetStateAction<string | null>>;
   oneColumn?: boolean;
 }
 
@@ -344,7 +348,7 @@ export const CsSections: Section<CsData>[] = [
         description: `maximum number of days holder validation can be valid for, in days. Use 0 so that validation never expires, or set a number of days lower than 3650. Example, if you want a validation process to be valid for one year so that applicant will have to renew the validation process each year, set this parameter to 365.`
       },
       { name: 'jsonSchema', label: 'Json Schema', type: "data", inputType: "textarea", required: true, update: true, show: 'create',
-        description: `A basic validation of your Json Schema will be done. Make sure to set the “$id” section to “verana-mainnet:/vpr/v1/cs/js/VPR_CREDENTIAL_SCHEMA_ID”.`
+        description: `A basic validation of your Json Schema will be done. Make sure to set the “$id” section to “${CHAIN_ID}:/vpr/v1/cs/js/VPR_CREDENTIAL_SCHEMA_ID”.`
       },
       { name: 'creator', label: 'Controller', type: "data", show: "none" },
       { name: 'trId', label: 'TR Id', type: "data", show: "none" },
@@ -431,10 +435,3 @@ export function visibleFieldsForMode<T>(fields: Field<T>[] | undefined, mode: Da
 export function visibleFieldsForModeAndDataField<T>(fields: Field<T>[] | undefined, mode: DataViewMode): Field<T>[] {
   return (fields ?? []).filter(f => isFieldVisibleInMode(f, mode) && isDataField(f));
 }
-
-// ./app/types/dataViewTypes.ts
-// 29:16  Error: 'T' is defined but never used.  @typescript-eslint/no-unused-vars
-// 79:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
-// 410:16  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
-// 412:76  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
-// 413:16  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any

@@ -8,9 +8,19 @@ import TitleAndButton from '@/app/ui/common/title-and-button';
 import { useNotification } from '@/app/ui/common/notification-provider';
 import { useTrustDepositAccountData } from '@/app/hooks/useTrustDepositAccountData';
 
-export default function Page() {
+export default function AccountPage() {
   // Custom hook to fetch account/trust deposit data
-  const { accountData, errorAccountData } = useTrustDepositAccountData();
+  const { accountData, errorAccountData, refetch: refetchAD } = useTrustDepositAccountData();
+
+  // Refresh account/trust deposit data
+  const [refresh, setRefresh] = useState<string | null>(null);
+  useEffect(() => {
+    if (!refresh) return;
+    (async () => {
+      await refetchAD();
+      setRefresh(null);
+    })();
+  }, [refresh]);
 
   // State for processed account data to display in DataView
   const [data, setData] = useState<AccountData>({
@@ -66,6 +76,7 @@ export default function Page() {
         data={data}
         columnsCount={3}
         columnsCountMd={2}
+        setRefresh={setRefresh}
       />
     </>
   );
