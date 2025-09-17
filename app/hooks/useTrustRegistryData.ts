@@ -41,7 +41,7 @@ export function useTrustRegistryData(id: string,  ) {
 
   useEffect(() => {
     fetchTR();
-  }, [id, getURL, fetchTR]);
+  }, []);
 
   return { dataTR, loading, errorTRData, refetch: fetchTR };
 }
