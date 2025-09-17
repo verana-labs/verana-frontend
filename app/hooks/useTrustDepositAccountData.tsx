@@ -38,54 +38,53 @@ export function useTrustDepositAccountData(
   const [loading, setLoading] = useState(false);
   const [errorAccountData, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchData = async () => {
     if (!address || !isWalletConnected || !getStargateClient || !getAccountURL) return;
+    setLoading(true);
+    setError(null);
 
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
+    let balance = null;
+    let totalTrustDeposit = null;
+    let claimableInterests = null;
+    let reclaimable = null;
+    let message = null;
 
-      let balance = null;
-      let totalTrustDeposit = null;
-      let claimableInterests = null;
-      let reclaimable = null;
-      let message = null;
+    try {
+      const client = await getStargateClient();
+      const balInfo = await client.getBalance(address, "uvna");
+      balance = balInfo.amount;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
 
-      try {
-        const client = await getStargateClient();
-        const balInfo = await client.getBalance(address, "uvna");
-        balance = balInfo.amount;
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
+    try {
+      const resp = await fetch(`${getAccountURL}/get/${address}`);
+      const json = await resp.json();
+      if (json.trust_deposit) {
+        totalTrustDeposit = json.trust_deposit.amount;
+        claimableInterests = "0";
+        reclaimable = json.trust_deposit.claimable;
+      } else if (json.message) {
+        message = json.message;
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
 
-      try {
-        const resp = await fetch(`${getAccountURL}/get/${address}`);
-        const json = await resp.json();
-        if (json.trust_deposit) {
-          totalTrustDeposit = json.trust_deposit.amount;
-          claimableInterests = "0";
-          reclaimable = json.trust_deposit.claimable;
-        } else if (json.message) {
-          message = json.message;
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-      }
+    setData({
+      address,
+      balance,
+      totalTrustDeposit,
+      claimableInterests,
+      reclaimable,
+      message,
+    });
+    setLoading(false);
+  };
 
-      setData({
-        address,
-        balance,
-        totalTrustDeposit,
-        claimableInterests,
-        reclaimable,
-        message,
-      });
-      setLoading(false);
-    };
-
+  useEffect(() => {
     fetchData();
-  }, [address, isWalletConnected, getStargateClient, getAccountURL]);
+  }, [address, isWalletConnected, getStargateClient, getAccountURL, fetchData]);
 
   return {
     accountData,
@@ -93,5 +92,6 @@ export function useTrustDepositAccountData(
     errorAccountData,
     address,
     isWalletConnected,
+    refetch: fetchData
   };
 }

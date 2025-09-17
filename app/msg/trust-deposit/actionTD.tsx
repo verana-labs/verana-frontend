@@ -17,18 +17,18 @@ import { parseVNA } from '@/app/util/util';
 import { useTrustDepositValue } from '@/app/hooks/useTrustDepositValue';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { useSendTxDetectingMode } from '@/app/msg/util/sendTxDetectingMode';
-import Long from 'long';
 
 // Define form state interface
-interface FormState { claimed: number }
+interface FormState { claimed: string | number }
 // Define ActionTD props interface
 interface ActionTDProps {
   action: MsgTypeTD;  // Action type to perform (e.g. MsgReclaimTrustDeposit)
   setActiveActionId: React.Dispatch<React.SetStateAction<string | null>>; // Collapse/hide action on cancel
   data: object;       // Data for the account, e.g. balances
+  setRefresh?: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
-export default function ActionTD({ action, setActiveActionId, data }: ActionTDProps) {
+export default function ActionTD({ action, setActiveActionId, data, setRefresh }: ActionTDProps) {
   // Read description and label for the current message type (for UI display)
   const messageType: MessageType = action;
   const accountData: AccountData = data as AccountData;
@@ -46,7 +46,7 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
   const sendTx = useSendTxDetectingMode(veranaChain);
 
   // Local state for the form (amount claimed)
-  const [form, setForm] = useState<FormState>({ claimed: 0 });
+  const [form, setForm] = useState<FormState>({ claimed: accountData.reclaimable ? parseFloat(parseVNA(accountData.reclaimable))/ 1_000_000 : 0 });
   // State for submission process (submitting), and enabling/disabling action button
   const [submitting, setSubmitting] = useState(false);
   const [enabledAction, setEnabledAction] = useState(false);
@@ -91,20 +91,26 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
   }, [amountVNA, messageType, accountData.balance]);
 
   useEffect(() => {
-    const reclaimable = accountData.reclaimable ? Number(parseVNA(accountData.reclaimable)) : 0;
+    const reclaimable = accountData.reclaimable ? Number(parseVNA(accountData.reclaimable))/ 1_000_000 : 0;
     const claimedRequired = messageType === 'MsgReclaimTrustDeposit' ? (Number(form.claimed) > 0 && (Number(form.claimed) <= reclaimable)) : true;
     setEnabledAction(hasEnoughBalance && claimedRequired);
   }, [form.claimed, hasEnoughBalance, accountData.reclaimable, messageType]);
   
   // Handler for input changes (numeric)
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: name === 'claimed' ? Number(value) : value }));
+    const { value } = e.target;
+    setForm({claimed: parseFloat(value)});
   };
 
   // Handler for Cancel button - collapses/hides the action UI
   const handleCancel = () => {
     setActiveActionId(null);
+  };
+
+  // Handler for Succes: refresh and collapses/hides the action UI
+  const handleSuccess = () => {
+    setActiveActionId(null);
+    setRefresh?.('actionTD');
   };
 
   // Handle form submission (trigger Cosmos transaction)
@@ -118,9 +124,10 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
     }
 
     const { claimed } = form;
+    const claimedUvna = parseFloat(String(claimed)) * 1_000_000;
 
     // For MsgReclaimTrustDeposit, check that claimed > 1 (can adjust as needed)
-    if (action === 'MsgReclaimTrustDeposit' && claimed <= 0) {
+    if (action === 'MsgReclaimTrustDeposit' && claimedUvna <= 0) {
       notify('Enter valid claimed', 'error');
       return;
     }
@@ -134,10 +141,11 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
       'Transaction in progress'
     );
 
+    let success = false;
     try {
       // Build transaction payload
       const basePayload = { creator: address };
-      const fullPayload = { ...basePayload, claimed: Long.fromString(String(claimed.toString()))};
+      const fullPayload = { ...basePayload, claimed: claimedUvna};
       let msgAny:
         | { typeUrl: '/verana.td.v1.MsgReclaimTrustDeposit'; value: MsgReclaimTrustDeposit }
         | { typeUrl: '/verana.td.v1.MsgReclaimTrustDepositYield'; value: MsgReclaimTrustDepositYield };
@@ -168,8 +176,9 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
 
       // Notify on success or error (waits for notification to close)
       if (res.code === 0) {
+        success = true;
         notifyPromise = notify(
-          MSG_SUCCESS_ACTION_TD[action](claimed.toString() + 'uvna'),
+          MSG_SUCCESS_ACTION_TD[action](claimed.toString() + ' VNA'),
           'success',
           'Transaction successful'
         );
@@ -187,12 +196,11 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
         'Transaction failed'
       );
     } finally {
-      // Wait for notification close, reset submitting state, collapse UI, and redirect
+      // Wait for notification close, reset submitting state, collapse UI, and refresh
       if (notifyPromise) await notifyPromise;
       setSubmitting(false);
-      router.push('/');
-      setTimeout(() => router.push('/account'), 200);
-      handleCancel();
+      if (success) handleSuccess();
+      else handleCancel();
     }
   };
 
@@ -211,7 +219,7 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
       {action === 'MsgReclaimTrustDeposit' && (
         <div>
           <label htmlFor="claimed" className="label">
-            Claimed (uvna)
+            Claimed (VNA)
           </label>
           <input
             name="claimed"
@@ -220,7 +228,9 @@ export default function ActionTD({ action, setActiveActionId, data }: ActionTDPr
             onChange={handleChange}
             placeholder="Claimed"
             className="input"
-            min={1}
+            min={0.000001}
+            step={0.000001}
+            max={accountData.reclaimable ? Number(parseVNA(accountData.reclaimable))/1_000_000 : undefined}
           />
         </div>
       )}

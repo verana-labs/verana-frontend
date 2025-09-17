@@ -8,7 +8,7 @@ import {
   MsgTouchDID,
   MsgRemoveDID,
 } from '@/proto-codecs/codec/verana/dd/v1/tx';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useVeranaChain } from '@/app/hooks/useVeranaChain';
 import { useNotification } from '@/app/ui/common/notification-provider';
 import { msgTypeConfig, getCostMessage, MessageType } from '@/app/constants/msgTypeConfig';
@@ -23,7 +23,15 @@ import { useSendTxDetectingMode } from '@/app/msg/util/sendTxDetectingMode';
 
 interface FormState { did: string; years: number; }
 
-export default function ActionDID({ action, id, data }: { action: MsgTypeDID, id?: string, data?: object }) {
+interface ActionDIDProps {
+  action: MsgTypeDID;  // Action type to perform 
+  setActiveActionId?: React.Dispatch<React.SetStateAction<string | null>>; // Collapse/hide action on cancel
+  id?: string;
+  data?: object;       // DID Data
+  setRefresh?: React.Dispatch<React.SetStateAction<string | null>>; // Refresh DID data
+}
+
+export default function ActionDID({ action, setActiveActionId, id, data, setRefresh }: ActionDIDProps) {
   // Load chain and wallet context
   const veranaChain = useVeranaChain();
   const { address, isWalletConnected } = useChain(veranaChain.chain_name);
@@ -40,7 +48,6 @@ export default function ActionDID({ action, id, data }: { action: MsgTypeDID, id
   // Router, notification, and path
   const router = useRouter();
   const { notify } = useNotification();
-  const pathname = usePathname();
 
   const messageType: MessageType = action;
   const { description, label } = msgTypeConfig[messageType];
@@ -95,6 +102,17 @@ export default function ActionDID({ action, id, data }: { action: MsgTypeDID, id
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: name === 'years' ? Number(value) : value }));
+  };
+
+  // Handler for Cancel button - collapses/hides the action UI
+  const handleCancel = () => {
+    setActiveActionId?.(null);
+  };
+
+  // Handler for Succes: refresh and collapses/hides the action UI
+  const handleSuccess = () => {
+    setActiveActionId?.(null);
+    setRefresh?.('actionDID');
   };
 
   // Handle form submit
@@ -184,17 +202,19 @@ export default function ActionDID({ action, id, data }: { action: MsgTypeDID, id
       // Wait for notification to close before continuing
       if (notifyPromise) await notifyPromise;
 
-      // Redirect on success or fallback
+      // Refresh on success or fallback
       const didUrl = `/did/${encodeURIComponent(didPayLoad)}`;
-      if ((action === 'MsgRenewDID' || action === 'MsgTouchDID' || action === 'MsgAddDID') && success) {
-        if (pathname === didUrl) {
-          router.push('/did');
-          setTimeout(() => router.push(didUrl), 200);
-        } else {
+      if (success) {
+        if (action === 'MsgAddDID'){
           router.push(didUrl);
+        } 
+        else if (action === 'MsgRenewDID' || action === 'MsgTouchDID') {
+          handleSuccess();
+        } else {
+          router.push('/did');
         }
       } else {
-        router.push('/did');
+        handleCancel();
       }
     }
   };

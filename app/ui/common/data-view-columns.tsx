@@ -24,18 +24,28 @@ function DataViewTyped<I extends object>(props: {
   edit?: boolean;
   oneColumn?: boolean;
   getTitle?: (item: I) => React.ReactNode;
+  setActiveActionId?: React.Dispatch<React.SetStateAction<string | null>>;
+  setRefresh?: React.Dispatch<React.SetStateAction<string | null>>;
 }) {
-  const { objectData, sections, data, id, columnsCount, columnsCountMd, edit, oneColumn, getTitle } = props;
+  const { objectData, sections, data, id, columnsCount, columnsCountMd, edit, oneColumn, getTitle, setRefresh } = props;
   const normalized = Array.isArray(sections) ? sections : [sections];
   const title = getTitle?.(data);
   // Local expand/collapse state per instance (default: collapsed)
-  const [expanded, setExpanded] = useState<boolean>(false);
+  const [expanded, setExpanded] = useState(() => {
+    const idUpdated = sessionStorage.getItem('id_updated');
+    if (id && idUpdated === id ){
+      // Remove id_updated from session
+      if (idUpdated) sessionStorage.removeItem('id_updated');
+      return true;
+    }
+    return false;
+  });
   // Build a stable content id for aria-controls
   const reactId = useId();
   const contentId = id ? `${id}-dv-content` : `dv-content-${reactId}`;
   const [editing, setEditing] = useState(id? false: true);
   const msgType = getMsgTypeFor(objectData.typeName as DataType, id? "update" : "create");
-  const { submitTx } = useSubmitTxMsgTypeFromObject();
+  const { submitTx } = useSubmitTxMsgTypeFromObject( id ? () => setEditing(false) : () => setExpanded(false), setRefresh );
 
   /**
    * Generic save handler:
@@ -101,11 +111,12 @@ function renderObjectList<I extends object>(args: {
   columnsCount?: number;
   edit?: boolean;
   getId?: (item: I, idx: number) => string | number | undefined;
+  setRefresh?: React.Dispatch<React.SetStateAction<string | null>>;
 }) {
-  const { objectData, sections, items, columnsCount, edit, getId } = args;
+  const { objectData, sections, items, columnsCount, edit, getId, setRefresh } = args;
   return items.map((item, idx) => (
     <DataViewTyped<I>
-      key={getId?.(item, idx) ?? idx}
+      key={(getId?.(item, idx) || idx) as React.Key}
       objectData={objectData}
       sections={sections}
       data={item}
@@ -114,6 +125,7 @@ function renderObjectList<I extends object>(args: {
       edit={edit}
       oneColumn={true}
       getTitle={(d) => (d as any).title ?? ""}  // eslint-disable-line @typescript-eslint/no-explicit-any
+      setRefresh={setRefresh}
     />
   ));
 }
@@ -135,16 +147,17 @@ function renderActionComponent(
   action: string,
   id: string,
   setActiveActionId: Dispatch<SetStateAction<string | null>>,
-  data: object
+  data: object,
+  setRefresh?: Dispatch<SetStateAction<string | null>>
 ): ReactNode {
   if (validDIDAction(action)) {
-    return <ActionDID action={action} id={id} data={data? data : undefined} />;
+    return <ActionDID action={action} id={id} data={data? data : undefined} setActiveActionId={setActiveActionId} setRefresh={setRefresh}/>;
   }
   if (validTDAction(action)) {
-    return <ActionTD action={action} setActiveActionId={setActiveActionId} data={data}/>;
+    return <ActionTD action={action} data={data} setActiveActionId={setActiveActionId} setRefresh={setRefresh}/>;
   }
   if (validTRAction(action)) {
-    return <GfdPage action={action} setActiveActionId={setActiveActionId} data={data}/>;
+    return <GfdPage action={action} data={data} setActiveActionId={setActiveActionId} setRefresh={setRefresh}/>;
   }
   return null;
 }
@@ -165,6 +178,7 @@ export default function DataView<T extends object>({
   columnsCount = 3,
   columnsCountMd = 1,
   onEdit,
+  setRefresh,
   oneColumn = false
 }: DataViewProps<T>) {
 
@@ -281,7 +295,7 @@ export default function DataView<T extends object>({
           </button>
           {isActive && (
             <div className="mt-4">
-              {renderActionComponent(String(value), id ?? '', setActiveActionId, data)}
+              {renderActionComponent(String(value), id ?? '', setActiveActionId, data, setRefresh? setRefresh : undefined )}
             </div>
           )}
         </td>
@@ -420,7 +434,8 @@ export default function DataView<T extends object>({
                                   items: value as any[], // eslint-disable-line @typescript-eslint/no-explicit-any
                                   columnsCount: 1,
                                   edit: onEdit? true : false,
-                                  getId: (item: any, i) => item?.id ?? i // eslint-disable-line @typescript-eslint/no-explicit-any
+                                  getId: (item: any, i) => item?.id ?? i, // eslint-disable-line @typescript-eslint/no-explicit-any
+                                  setRefresh
                                 })}
                               </>
                             )}                            

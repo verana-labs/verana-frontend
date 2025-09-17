@@ -11,7 +11,7 @@ import {
 } from '@/proto-codecs/codec/verana/tr/v1/tx';
 import { useVeranaChain } from '@/app/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useNotification } from '@/app/ui/common/notification-provider';
 import { MSG_ERROR_ACTION_TR, MSG_INPROGRESS_ACTION_TR, MSG_SUCCESS_ACTION_TR } from '@/app/constants/notificationMsgForMsgType';
 import { isValidUrl } from '@/app/util/validations'
@@ -79,7 +79,8 @@ type ActionTRParams =
     };
 
 // Hook to execute Trust Registry transactions and show notifications
-export function useActionTR() {
+export function useActionTR(  setActiveActionId?: React.Dispatch<React.SetStateAction<string | null>>,
+                              setRefresh?: React.Dispatch<React.SetStateAction<string | null>>) {
   const veranaChain = useVeranaChain();
   const {
     address,
@@ -88,9 +89,53 @@ export function useActionTR() {
 
   const router = useRouter();
   const { notify } = useNotification();
-  const pathname = usePathname();
   const sendTx = useSendTxDetectingMode(veranaChain);
   const inFlight = useRef(false);
+
+  // Handler for Succes: refresh and collapses/hides the action UI
+  const handleSuccess = () => {
+    setRefresh?.('actionTR');
+    setActiveActionId?.(null);
+  };
+
+  /**
+   * Extracts the created Trust Registry ID from a DeliverTxResponse.
+   * Prefers the structured `events` field (Cosmos SDK 0.50+).
+   * Falls back to parsing `rawLog` as JSON for older SDK versions.
+   */
+  function extractCreatedTRId(res: DeliverTxResponse): string | undefined {
+    // Try reading from the structured events field
+    const events = (res as any)?.events as // eslint-disable-line @typescript-eslint/no-explicit-any
+      | Array<{ type: string; attributes?: Array<{ key: string; value: string }> }>
+      | undefined;
+
+    const idAttr = events
+      ?.find((e) => e?.type === 'create_trust_registry')
+      ?.attributes?.find((a) => a?.key === 'trust_registry_id');
+
+    if (idAttr?.value) return String(idAttr.value);
+
+    // Fallback: parse rawLog if available and is a string
+    const raw = res.rawLog;
+    if (typeof raw === 'string') {
+      try {
+        const logs = JSON.parse(raw); // rawLog is usually an array of log objects
+        const allEvents = Array.isArray(logs)
+          ? logs.flatMap((l: any) => l?.events ?? []) // eslint-disable-line @typescript-eslint/no-explicit-any
+          : [];
+
+        const idAttrRaw = allEvents
+          .find((e: any) => e?.type === 'create_trust_registry') // eslint-disable-line @typescript-eslint/no-explicit-any
+          ?.attributes?.find((a: any) => a?.key === 'trust_registry_id'); // eslint-disable-line @typescript-eslint/no-explicit-any
+
+        if (idAttrRaw?.value) return String(idAttrRaw.value);
+      } catch {
+        // Ignore malformed or non-JSON rawLog
+      }
+    }
+
+    return undefined;
+  }
 
   async function actionTR(params: ActionTRParams): Promise<DeliverTxResponse | void> {
     if (!isWalletConnected || !address) {
@@ -105,7 +150,7 @@ export function useActionTR() {
 
     let typeUrl = '';
     let value: MsgCreateTrustRegistry | MsgUpdateTrustRegistry | MsgArchiveTrustRegistry | MsgAddGovernanceFrameworkDocument | MsgIncreaseActiveGovernanceFrameworkVersion;
-    const id = (params.msgType !== 'MsgCreateTrustRegistry') ? params.id.toString() : undefined;
+    let id = (params.msgType !== 'MsgCreateTrustRegistry') ? params.id.toString() : undefined;
 
     switch (params.msgType) {
       case 'MsgCreateTrustRegistry':
@@ -218,6 +263,7 @@ export function useActionTR() {
       });      
 
       if (res.code === 0) {
+        if (params.msgType === 'MsgCreateTrustRegistry') id = extractCreatedTRId(res);
         success = true;
         notifyPromise = notify(
           MSG_SUCCESS_ACTION_TR[params.msgType],
@@ -240,23 +286,13 @@ export function useActionTR() {
     } finally {
       inFlight.current = false;
       if (notifyPromise) await notifyPromise;
-      // Redirect
+      // Refresh on success or fallback
       if (success) {
-        if (params.msgType === 'MsgCreateTrustRegistry') {
-          router.push('/tr');
-        } else if (id) {
-          const trUrl = `/tr/${encodeURIComponent(id)}`;
-          if (pathname === trUrl) {
-            router.push('/tr');
-            setTimeout(() => router.push(trUrl), 200);
-          } else {
-            router.push(trUrl);
-          }
-        } else {
-          router.push('/tr');
+        if (params.msgType === 'MsgCreateTrustRegistry'){
+          const trUrl = `/tr/${id?? ''}`;
+          router.push(trUrl);
         }
-      } else {
-        router.push('/tr');
+        else handleSuccess();
       }
     }
   }

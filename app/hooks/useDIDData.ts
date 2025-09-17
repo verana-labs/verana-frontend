@@ -13,38 +13,35 @@ export function useDIDData(id: string ) {
     env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID') ||
     process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID;
 
-  useEffect(() => {
+  const fetchDID = async () => {
     if (!id || !getURL) {
       setError('Missing DID or endpoint URL');
       setLoading(false);
       return;
     }
+    setLoading(true);
+    setError(null);
+    try {
+      const url = `${getURL}/get/${decodeURIComponent(id)}`;
+      const res = await fetch(url);
+      if (!res.ok) setError(`Error ${res.status}`);
+      // Parse response: DidData or { did_entry: DidData }
+      const json = await res.json();
+      type ResponseShape = Partial<{ did_entry: DidData }> & DidData;
+      const resp = json as ResponseShape;
+      const entry = resp.did_entry ?? (resp as DidData);
+      setData(entry);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const fetchDid = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const url = `${getURL}/get/${decodeURIComponent(id)}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Error ${res.status}`);
+  useEffect(() => {
+    fetchDID();
+  }, [id, getURL, fetchDID]);
 
-        // Parse response: DidData or { did_entry: DidData }
-        const json = await res.json();
-        type ResponseShape = Partial<{ did_entry: DidData }> & DidData;
-        const resp = json as ResponseShape;
-        const entry = resp.did_entry ?? (resp as DidData);
-
-        setData(entry);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-        setData(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDid();
-  }, [id, getURL]);
-
-  return { dataDID, loading, errorDIDData };
+  return { dataDID, loading, errorDIDData, refetch: fetchDID };
 }

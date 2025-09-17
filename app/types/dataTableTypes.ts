@@ -19,9 +19,11 @@ export interface DataTableProps<T extends object> {
   pageSizeOptions?: number[];
   onRowClick?: (row: T) => void;
   description?: string[];
+  defaultSortColumn?: keyof T;
+  defaultSortDirection?: 'asc' | 'desc';
 };
 
-export interface DidList {
+export interface DIDList {
   controller: string;
   created: string;
   deposit: string;
@@ -30,7 +32,7 @@ export interface DidList {
   modified: string;
 };
 
-export const columnsDidList: Column<DidList>[] = [
+export const columnsDIDList: Column<DIDList>[] = [
   { header: 'DID', accessor: 'did', filterType: 'text', format: (value) => shortenMiddle(String(value), 30) },
   { header: 'Controller', accessor: 'controller', filterType: 'text', format: (value) => { return shortenMiddle(String(value), 25); }, priority:2 },
   { header: 'Created', accessor: 'created', filterType: 'text', format: (value) => formatDate(value), priority:4 },
@@ -39,7 +41,7 @@ export const columnsDidList: Column<DidList>[] = [
   { header: 'Deposit', accessor: 'deposit', filterType: 'text', format: (value) => formatVNA(String(value), 6), priority:3 },
 ];
 
-export interface TrList {
+export interface TRList {
   id: string;
   did: string;
   controller: string;
@@ -51,7 +53,7 @@ export interface TrList {
   deposit: string;
 };
 
-export const columnsTrList: Column<TrList>[] = [
+export const columnsTRList: Column<TRList>[] = [
   { header: 'Id', accessor: 'id', filterType: 'text'},
   { header: 'DID', accessor: 'did', filterType: 'text', format: (value) => shortenMiddle(String(value), 30) },
   { header: 'Controller', accessor: 'controller', filterType: 'text', format: (value) => { return shortenMiddle(String(value), 25); }, priority:2 },
