@@ -41,7 +41,7 @@ export function useDIDData(id: string ) {
 
   useEffect(() => {
     fetchDID();
-  }, [id, getURL, fetchDID]);
+  }, []);
 
   return { dataDID, loading, errorDIDData, refetch: fetchDID };
 }

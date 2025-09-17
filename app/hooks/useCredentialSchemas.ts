@@ -88,7 +88,7 @@ export function useCSList(trId: string) {
 
   useEffect(() => {
     fetchCS();
-  }, [trId, getURL, fetchCS]);
+  }, []);
 
   return { csList, loading, errorCSList, refetch: fetchCS };
 }

@@ -84,7 +84,7 @@ export function useTrustDepositAccountData(
 
   useEffect(() => {
     fetchData();
-  }, [address, isWalletConnected, getStargateClient, getAccountURL, fetchData]);
+  }, []);
 
   return {
     accountData,
