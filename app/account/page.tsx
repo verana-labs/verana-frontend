@@ -7,10 +7,15 @@ import { formatVNA } from '@/app/util/util';
 import TitleAndButton from '@/app/ui/common/title-and-button';
 import { useNotification } from '@/app/ui/common/notification-provider';
 import { useTrustDepositAccountData } from '@/app/hooks/useTrustDepositAccountData';
+import { useRouter } from 'next/navigation';
 
 export default function AccountPage() {
   // Custom hook to fetch account/trust deposit data
   const { accountData, errorAccountData, refetch: refetchAD } = useTrustDepositAccountData();
+  const router = useRouter();
+  const [errorNotified, setErrorNotified] = useState(false);
+  // Notification context for showing error messages
+  const { notify } = useNotification();
 
   // Refresh account/trust deposit data
   const [refresh, setRefresh] = useState<string | null>(null);
@@ -34,8 +39,18 @@ export default function AccountPage() {
     reclaimDeposit: null,
   });
 
-  // Notification context for showing error messages
-  const { notify } = useNotification();
+
+  // Notify and redirect if there is an error fetching account data
+  useEffect(() => {
+    // Show a notification if an error occurred
+    if (errorAccountData && !errorNotified) {
+      (async () => {
+        await notify(errorAccountData, 'error', 'Error fetching trust deposit');
+        setErrorNotified(true);
+        router.push('/');
+      })();
+    }
+  }, [errorAccountData, router, errorNotified]);
 
   useEffect(() => {
     if (accountData) {
@@ -46,27 +61,33 @@ export default function AccountPage() {
         Number(accountData.claimableInterests) > 0 ? "MsgReclaimTrustDepositYield" : null;
       const reclaimDeposit =
         Number(accountData.reclaimable) > 0 ? "MsgReclaimTrustDeposit" : null;
-
-      setData({
-        balance: formatVNA(accountData.balance, 6),
-        totalTrustDeposit: formatVNA(accountData.totalTrustDeposit, 6),
-        claimableInterests: formatVNA(accountData.claimableInterests, 6),
-        reclaimable: formatVNA(accountData.reclaimable, 6),
-        message: accountData.message,
-        getVNA,
-        claimInterests,
-        reclaimDeposit,
-      });
+      
+      if (accountData.message){
+        setData({
+          balance: formatVNA(accountData.balance, 6),
+          totalTrustDeposit: null,
+          claimableInterests: null,
+          reclaimable: null,
+          message: accountData.message,
+          getVNA,
+          claimInterests,
+          reclaimDeposit,
+        });
+      }
+      else{
+        setData({
+          balance: formatVNA(accountData.balance, 6),
+          totalTrustDeposit: formatVNA(accountData.totalTrustDeposit, 6),
+          claimableInterests: formatVNA(accountData.claimableInterests, 6),
+          reclaimable: formatVNA(accountData.reclaimable, 6),
+          message: null,
+          getVNA,
+          claimInterests,
+          reclaimDeposit,
+        });
+      }
     }
-    // Show a notification if an error occurred
-    if (errorAccountData) {
-      notify(errorAccountData, 'error', 'Error fetching trust deposit');
-    }
-    // Show a notification if message
-    if (accountData.message) {
-      notify(accountData.message, 'info', 'Message trust deposit');
-    }
-  }, [accountData, errorAccountData, notify]);
+  }, [accountData]);
 
   return (
     <>
