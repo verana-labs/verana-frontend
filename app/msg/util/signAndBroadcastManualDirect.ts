@@ -57,7 +57,7 @@ type ManualSignOptions = {
   // feePayer?: string;             // Fee payer (optional)
 };
 
-export async function signAndBroadcastManual({
+export async function signAndBroadcastManualDirect({
   rpcEndpoint,
   chainId,
   signer,

@@ -12,9 +12,9 @@ import {
 } from "@/app/wallet/connect";
 import { useRouter } from "next/navigation";
 import { shortenMiddle } from "@/app/util/util";
-import { ArrowRightEndOnRectangleIcon, ArrowTopRightOnSquareIcon, QrCodeIcon, Square2StackIcon } from "@heroicons/react/24/outline";
+import { ArrowRightEndOnRectangleIcon, ArrowTopRightOnSquareIcon, QrCodeIcon, Square2StackIcon, CheckIcon } from "@heroicons/react/24/outline";
 import IconLabelButton from "@/app/ui/common/icon-label-button";
-import { JSX } from "react";
+import { JSX, useEffect, useState } from "react";
 import { useVeranaChain } from "@/app/hooks/useVeranaChain";
 
 export default function Wallet({ isNavBar = true }: { isNavBar?: boolean }) {
@@ -52,6 +52,28 @@ export default function Wallet({ isNavBar = true }: { isNavBar?: boolean }) {
 
   const router = useRouter();
 
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timeout = window.setTimeout(() => setCopied(false), 2000);
+    return () => window.clearTimeout(timeout);
+  }, [copied]);
+
+  async function handleCopy() {
+    if (!address) return;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(address);
+        setCopied(true);
+        return;
+      }
+    } catch {
+      // Swallow copy errors to avoid breaking the UI when clipboard is unavailable
+    }
+    setCopied(false);
+  }
+
   return (
     <div className="flex items-center justify-center gap-2">
       { address && isNavBar ?
@@ -63,8 +85,8 @@ export default function Wallet({ isNavBar = true }: { isNavBar?: boolean }) {
             className="border-transparent"
           />
           <IconLabelButton
-            Icon={Square2StackIcon}
-            onClick={() => navigator.clipboard.writeText(address)}
+            Icon={copied? CheckIcon: Square2StackIcon}
+            onClick={() => handleCopy()}
             title="Copy Address"
             className="border-transparent"
           />

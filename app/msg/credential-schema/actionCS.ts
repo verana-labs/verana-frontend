@@ -18,6 +18,7 @@ import {
 import Long from 'long';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { useSendTxDetectingMode } from '@/app/msg/util/sendTxDetectingMode';
+import { hasValidCredentialSchemaId, MSG_SCHEMA_ID, normalizeJsonSchema } from '@/app/util/json_schema_util';
 
 // Message type configuration (typeUrl + label for memo/notification)
 export const MSG_TYPE_CONFIG_CS = {
@@ -39,8 +40,7 @@ export const MSG_TYPE_CONFIG_CS = {
 type ActionCSParams =
   | {
       msgType: 'MsgCreateCredentialSchema';
-      creator: string;
-      trId: string | number;
+      trId: string | number | Long;
       jsonSchema: string;
       issuerGrantorValidationValidityPeriod: number;
       verifierGrantorValidationValidityPeriod: number;
@@ -52,9 +52,7 @@ type ActionCSParams =
     }
   | {
       msgType: 'MsgUpdateCredentialSchema';
-      id: string | number;
-      creator: string;
-      trId: string | number;
+      id: string | number | Long;
       issuerGrantorValidationValidityPeriod: number;
       verifierGrantorValidationValidityPeriod: number;
       issuerValidationValidityPeriod: number;
@@ -63,9 +61,7 @@ type ActionCSParams =
     }
   | {
       msgType: 'MsgArchiveCredentialSchema';
-      id: string | number;
-      creator: string;
-      trId: string | number;
+      id: string | number | Long;
     };
 
 // Hook to execute Credential Schema transactions + notifications
@@ -124,6 +120,19 @@ export function useActionCS( setActiveActionId?: React.Dispatch<React.SetStateAc
       await notify('Connect wallet', 'error');
       return;
     }
+
+    if (params.msgType === 'MsgCreateCredentialSchema') {
+      try {
+        const parsedSchema = JSON.parse(params.jsonSchema);
+        if (!hasValidCredentialSchemaId(parsedSchema)) {
+          await notify(`Invalid credential schema id. Make sure to set the “$id” section to “${MSG_SCHEMA_ID}”`, 'error');
+          return;
+        }
+      } catch {
+        await notify('Invalid credential schema JSON.', 'error');
+        return;
+      }
+    }
     if (inFlight.current) {
       await notify('There is a pending transaction. Please wait…', 'inProgress');
       return;
@@ -139,15 +148,15 @@ export function useActionCS( setActiveActionId?: React.Dispatch<React.SetStateAc
         typeUrl = MSG_TYPE_CONFIG_CS.MsgCreateCredentialSchema.typeUrl;
         value = MsgCreateCredentialSchema.fromPartial({
           creator: address, // always use the connected wallet address
-          trId: Long.fromString(String(params.trId)), // uint64: handled internally with Long.fromValue
-          jsonSchema: params.jsonSchema,
-          issuerGrantorValidationValidityPeriod: Number(params.issuerGrantorValidationValidityPeriod),
-          verifierGrantorValidationValidityPeriod: Number(params.verifierGrantorValidationValidityPeriod),
-          issuerValidationValidityPeriod: Number(params.issuerValidationValidityPeriod),
-          verifierValidationValidityPeriod: Number(params.verifierValidationValidityPeriod),
-          holderValidationValidityPeriod: Number(params.holderValidationValidityPeriod),
-          issuerPermManagementMode: Number(params.issuerPermManagementMode),
-          verifierPermManagementMode: Number(params.verifierPermManagementMode),
+          trId: Long.fromValue(params.trId), // uint64
+          jsonSchema: normalizeJsonSchema(params.jsonSchema),
+          issuerGrantorValidationValidityPeriod: params.issuerGrantorValidationValidityPeriod,
+          verifierGrantorValidationValidityPeriod: params.verifierGrantorValidationValidityPeriod,
+          issuerValidationValidityPeriod: params.issuerValidationValidityPeriod,
+          verifierValidationValidityPeriod: params.verifierValidationValidityPeriod,
+          holderValidationValidityPeriod: params.holderValidationValidityPeriod,
+          issuerPermManagementMode: params.issuerPermManagementMode,
+          verifierPermManagementMode: params.verifierPermManagementMode,
         });
         break;
       }
@@ -155,13 +164,13 @@ export function useActionCS( setActiveActionId?: React.Dispatch<React.SetStateAc
       case 'MsgUpdateCredentialSchema': {
         typeUrl = MSG_TYPE_CONFIG_CS.MsgUpdateCredentialSchema.typeUrl;
         value = MsgUpdateCredentialSchema.fromPartial({
-          creator: address,
-          id: Long.fromString(String(params.id)),
-          issuerGrantorValidationValidityPeriod: Number(params.issuerGrantorValidationValidityPeriod),
-          verifierGrantorValidationValidityPeriod: Number(params.verifierGrantorValidationValidityPeriod),
-          issuerValidationValidityPeriod: Number(params.issuerValidationValidityPeriod),
-          verifierValidationValidityPeriod: Number(params.verifierValidationValidityPeriod),
-          holderValidationValidityPeriod: Number(params.holderValidationValidityPeriod),
+          creator: address, // always use the connected wallet address
+          id: Long.fromValue(params.id), // uint64
+          issuerGrantorValidationValidityPeriod: params.issuerGrantorValidationValidityPeriod,
+          verifierGrantorValidationValidityPeriod: params.verifierGrantorValidationValidityPeriod,
+          issuerValidationValidityPeriod: params.issuerValidationValidityPeriod,
+          verifierValidationValidityPeriod: params.verifierValidationValidityPeriod,
+          holderValidationValidityPeriod: params.holderValidationValidityPeriod,// > 0 ? params.holderValidationValidityPeriod : Number(0),
         });
         break;
       }
@@ -170,7 +179,7 @@ export function useActionCS( setActiveActionId?: React.Dispatch<React.SetStateAc
         typeUrl = MSG_TYPE_CONFIG_CS.MsgArchiveCredentialSchema.typeUrl;
         value = MsgArchiveCredentialSchema.fromPartial({
           creator: address,
-          id: Long.fromString(String(params.id)), // uint64
+          id: Long.fromValue(params.id), // uint64
           archive: true,
         });
         break;

@@ -12,6 +12,7 @@ import { isJson } from '@/app/util/util';
 import EditableDataView from '@/app/ui/common/data-edit';
 import { DataType, getMsgTypeFor } from '@/app/constants/msgTypeForDataType';
 import { useSubmitTxMsgTypeFromObject } from '@/app/hooks/useSubmitTxMsgTypeFromObject';
+import JsonCodeBlock from '@/app/ui/common/json-code-block';
 
 // Wrapper for DataView that lets you pass the generic parameter explicitly
 function DataViewTyped<I extends object>(props: {
@@ -257,9 +258,7 @@ export default function DataView<T extends object>({
                 <tr>
                   {/* span across both columns */}
                   <td className="data-view-input-cell" colSpan={2}>
-                    <pre className="data-view-label">
-                      {JSON.stringify(jsonValue, null, 2)}
-                    </pre>
+                    <JsonCodeBlock value={jsonValue} className="data-view-label" />
                   </td>
                 </tr>
               )}

@@ -1,15 +1,15 @@
 'use client';
 
 import { useCallback } from 'react';
-import { SigningStargateClient, GasPrice, calculateFee, DeliverTxResponse } from '@cosmjs/stargate';
+import { DeliverTxResponse } from '@cosmjs/stargate';
 import type { EncodeObject } from '@cosmjs/proto-signing';
 import { isDirectSigner, isAminoOnlySigner } from '@/app/msg/util/signerUtil';
-import { signAndBroadcastManual } from '@/app/msg/util/signAndBroadcastManual';
-import { veranaAmino, veranaGasAdjustment, veranaGasPrice, veranaRegistry } from '@/app/config/veranaChain.client';
+import { signAndBroadcastManualDirect } from '@/app/msg/util/signAndBroadcastManualDirect';
+import { signAndBroadcastManualAmino } from '@/app/msg/util//signAndBroadcastManualAmino';
+import { veranaGasAdjustment, veranaGasPrice, veranaRegistry } from '@/app/config/veranaChain.client';
 import { useChain } from '@cosmos-kit/react';
 import { Chain } from '@chain-registry/types';
 import { env } from 'next-runtime-env';
-import { debugAminoRoundTrip } from '@/app/msg/util/debugAminoRoundTrip';
 
 export function useSendTxDetectingMode(chain: Chain) {
   const { address, getOfflineSignerDirect, getOfflineSignerAmino, getRpcEndpoint, isWalletConnected } = useChain(chain.chain_name);
@@ -40,7 +40,7 @@ export function useSendTxDetectingMode(chain: Chain) {
         process.env.NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE;
     
     // Get signer from cosmos-kit (multi-wallet safe)
-    const signer = veranaDirectMode && veranaDirectMode==='true'
+    const signer = (veranaDirectMode && veranaDirectMode==='true')
         ? (await getOfflineSignerDirect?.()) ?? (await getOfflineSignerAmino?.())
         : await getOfflineSignerAmino?.();
 
@@ -48,13 +48,11 @@ export function useSendTxDetectingMode(chain: Chain) {
         throw new Error('No signer from wallet');
     }
 
-    console.info('Has signDirect?', typeof (signer as any).signDirect === 'function'); // eslint-disable-line @typescript-eslint/no-explicit-any
-
     // --- DIRECT PATH (manual flow) ---
     if (isDirectSigner(signer)) {
       console.info('*** Using DIRECT signer → manual flow ***');
       try {
-        return await signAndBroadcastManual({
+        return await signAndBroadcastManualDirect({
           rpcEndpoint,
           chainId: chain.chain_id,
           signer,
@@ -73,21 +71,16 @@ export function useSendTxDetectingMode(chain: Chain) {
     // --- AMINO PATH (fallback) ---
     if (isAminoOnlySigner(signer)) {
       console.info('*** Using AMINO signer → fallback ***');
-      debugAminoRoundTrip(msgs[0]);
       try {
-        const client = await SigningStargateClient.connectWithSigner(
+        return await signAndBroadcastManualAmino({
           rpcEndpoint,
           signer,
-          { registry: veranaRegistry, aminoTypes: veranaAmino }
-        );
-
-        // Simulate gas to estimate fee (works with Amino signer too)
-        const simulated = await client.simulate(address, msgs, safeMemo);
-        const gas = Math.ceil(simulated * veranaGasAdjustment);
-        const fee = calculateFee(gas, GasPrice.fromString(veranaGasPrice));
-
-        // Sign and broadcast using Amino mode internally
-        return await client.signAndBroadcast(address, msgs, fee, safeMemo);
+          address,
+          messages: msgs,
+          gasPrice: veranaGasPrice,
+          gasAdjustment: veranaGasAdjustment,
+          memo: safeMemo,
+        });
       } catch (e) {
         throw new Error(`Amino signing failed: ${e instanceof Error ? e.message : String(e)}`);
       }
