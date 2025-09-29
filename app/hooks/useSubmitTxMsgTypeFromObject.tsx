@@ -24,14 +24,13 @@ const requiredFieldsByMsgType: Record<MessageType, readonly string[]> = {
     ],
     MsgUpdateCredentialSchema: [
         "id",
-        "trId",
         "issuerGrantorValidationValidityPeriod",
         "verifierGrantorValidationValidityPeriod",
         "issuerValidationValidityPeriod",
         "verifierValidationValidityPeriod",
         "holderValidationValidityPeriod"
     ],
-    MsgArchiveCredentialSchema: ["id","trId"],
+    MsgArchiveCredentialSchema: ["id"],
 
     // TR
     MsgCreateTrustRegistry: ["did", "aka", "language", "docUrl"],
@@ -100,7 +99,7 @@ export function useSubmitTxMsgTypeFromObject( setActiveActionId?: React.Dispatch
       const keys = requiredFieldsByMsgType[msgType] ?? [];
 
       const src = raw as Record<string, unknown>;
-      const payload: Record<string, unknown> = { msgType, creator: "", tr_id: src['trId'] };
+      const payload: Record<string, unknown> = { msgType };
 
       for (const k of keys) payload[k] = src[k];
 

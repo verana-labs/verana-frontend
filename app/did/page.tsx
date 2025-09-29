@@ -8,6 +8,8 @@ import TitleAndButton from '@/app/ui/common/title-and-button';
 import { env } from 'next-runtime-env';
 import { useNotification } from '@/app/ui/common/notification-provider';
 import { columnsDIDList, DIDList } from '@/app/types/dataTableTypes';
+import { useChain } from '@cosmos-kit/react';
+import { useVeranaChain } from '@/app/hooks/useVeranaChain';
 
 export default function DIDPage() {
   const [dids, setDIDs] = useState<DIDList[]>([]);
@@ -15,13 +17,15 @@ export default function DIDPage() {
   const router = useRouter();
   const { notify } = useNotification();
   const listURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID;
+  const veranaChain = useVeranaChain();
+  const { address } = useChain(veranaChain.chain_name);
 
   useEffect(() => {
     const fetchDIDs = async () => {
       try {
           if (!listURL) throw new Error('API endpoint not configured');
           
-          const res = await fetch(listURL + '/list');
+          const res = await fetch(listURL + `/list?account=${address}`);
           const json = await res.json();
           setDIDs(Array.isArray(json) ? json : json.dids || []);
       } catch (err) {
@@ -35,7 +39,7 @@ export default function DIDPage() {
       }
     };
     fetchDIDs();
-  }, [listURL, notify]);
+  }, [listURL, address]);
 
   if (loading) return <p>Loading...</p>;
 

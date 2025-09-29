@@ -8,6 +8,8 @@ import TitleAndButton from '@/app/ui/common/title-and-button';
 import { env } from 'next-runtime-env';
 import { useNotification } from '@/app/ui/common/notification-provider';
 import { columnsTRList, TRList } from '@/app/types/dataTableTypes';
+import { useVeranaChain } from '@/app/hooks/useVeranaChain';
+import { useChain } from '@cosmos-kit/react';
 
 export default function TRPage() {
   const [trs, setTRs] = useState<TRList[]>([]);
@@ -15,12 +17,14 @@ export default function TRPage() {
   const router = useRouter();
   const { notify } = useNotification();
   const listURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY;
+  const veranaChain = useVeranaChain();
+  const { address } = useChain(veranaChain.chain_name);
 
   useEffect(() => {
     const fetchTRs = async () => {
       try {
           if (!listURL) throw new Error('API endpoint not configured');
-          const res = await fetch(listURL + '/list?response_max_size=100');
+          const res = await fetch(listURL + `/list?controller=${address}&response_max_size=100`);
           const json = await res.json();
           const trustRegistries = Array.isArray(json) ? json : json.trust_registries || [];
           setTRs(trustRegistries);
