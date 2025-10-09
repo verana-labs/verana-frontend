@@ -11,9 +11,7 @@ export default function ClientLayout({ trustDepositParams, children }: { trustDe
 
     const [mounted, setMounted] = useState(false);
     useEffect(() => { setMounted(true);}, []);
-    if (!mounted) {
-        return <div className="app-skeleton" />;
-    }
+    if (!mounted) return null;
 
     return (
       <Providers>
