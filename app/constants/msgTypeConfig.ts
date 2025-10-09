@@ -105,3 +105,4 @@ export function getCostMessage(template: string, value: string | number, td?: st
 export function getDescriptionMessage(template: string, addBalance: string | number, burnRate: string | number) {
   return template.replace('{addBalance}', String(addBalance)).replace('{burnRate}', String(burnRate));
 }
+

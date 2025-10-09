@@ -1,10 +1,9 @@
 import { env } from 'next-runtime-env';
 
 const CHAIN_ID = env('NEXT_PUBLIC_VERANA_CHAIN_ID') || process.env.NEXT_PUBLIC_VERANA_CHAIN_ID;
-// const CHAIN_ID = 'mainnet';
 export const SCHEMA_ID_PREFIX = CHAIN_ID
-  ? `vpr:verana:${CHAIN_ID}/verana/cs/v1/js/`
-  // ? `vpr:verana:${CHAIN_ID}/cs/v1/js/`
+  // ? `vpr:verana:${CHAIN_ID}/verana/cs/v1/js/`
+  ? `vpr:verana:${CHAIN_ID}/cs/v1/js/`
   : '';
 export const MSG_SCHEMA_ID = `${SCHEMA_ID_PREFIX}VPR_CREDENTIAL_SCHEMA_ID`;
 
@@ -32,10 +31,10 @@ export function isValidSchemaIdPattern(schemaId: string): boolean {
 
 export function normalizeJsonSchema(jsonSchema: string): string {
   try {
-    console.info('[json-schema] Original length', jsonSchema.length);
+    // console.info('[json-schema] Original length', jsonSchema.length);
     const parsed = JSON.parse(jsonSchema);
     const normalized = JSON.stringify(parsed);
-    console.info('[json-schema] Normalized length', normalized.length);
+    // console.info('[json-schema] Normalized length', normalized.length);
     return normalized;
   } catch {
     return jsonSchema;

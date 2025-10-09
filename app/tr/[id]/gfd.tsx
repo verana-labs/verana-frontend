@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { GfdData, gfdSections, TrData } from '@/app/types/dataViewTypes';
 import EditableDataView from '@/app/ui/common/data-edit';
-import { useActionTR } from '@/app/msg/trust-registry/actionTR';
+import { useActionTR } from '@/app/msg/actions_hooks/actionTR';
 import { MsgTypeTR } from '@/app/constants/notificationMsgForMsgType';
 
 // Define GfdPage props interface

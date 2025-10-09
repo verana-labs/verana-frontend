@@ -73,8 +73,6 @@ export function useCSList(trId: string) {
           verifierPermManagementMode: src.verifier_perm_management_mode ?? 0,
           jsonSchema: src.json_schema ?? '',
           title: `${titleCandidate} (id: ${id})`,
-          updateCredentialSchema: null,
-          archiveCredentialSchema: null
         };
       });
       setCsList(list);

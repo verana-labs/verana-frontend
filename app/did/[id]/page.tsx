@@ -62,7 +62,7 @@ export default function DIDViewPage() {
     // Return the object with formatted deposit
     return {
       ...data,
-      deposit: formatVNA(data.deposit, 6),
+      deposit: formatVNA(data.deposit ?? '0', 6),
     };
   }, [dataDID, accountData.address]);
   

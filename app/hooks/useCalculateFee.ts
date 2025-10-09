@@ -1,6 +1,6 @@
 'use client';
 
-import { veranaGasLimit, veranaGasPrice, veranaDenom } from '@/app/config/veranaChain.client';
+import { veranaGasLimit, veranaGasPrice, veranaDenom } from '@/app/config/veranaChain.sign.client';
 import { calculateFee, GasPrice, type StdFee } from '@cosmjs/stargate';
 import type { MessageType } from '@/app/constants/msgTypeConfig';
 

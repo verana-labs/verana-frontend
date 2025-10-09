@@ -6,7 +6,7 @@ import type { EncodeObject } from '@cosmjs/proto-signing';
 import { isDirectSigner, isAminoOnlySigner } from '@/app/msg/util/signerUtil';
 import { signAndBroadcastManualDirect } from '@/app/msg/util/signAndBroadcastManualDirect';
 import { signAndBroadcastManualAmino } from '@/app/msg/util//signAndBroadcastManualAmino';
-import { veranaGasAdjustment, veranaGasPrice, veranaRegistry } from '@/app/config/veranaChain.client';
+import { veranaGasAdjustment, veranaGasPrice, veranaRegistry } from '@/app/config/veranaChain.sign.client';
 import { useChain } from '@cosmos-kit/react';
 import { Chain } from '@chain-registry/types';
 import { env } from 'next-runtime-env';
