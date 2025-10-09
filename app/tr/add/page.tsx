@@ -8,7 +8,7 @@ import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 import { useVeranaChain } from '@/app/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
-import { useActionTR } from '@/app/msg/trust-registry/actionTR';
+import { useActionTR } from '@/app/msg/actions_hooks/actionTR';
 
 export default function TrNewPage() {
   // Load chain info

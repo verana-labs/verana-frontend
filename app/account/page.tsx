@@ -34,9 +34,9 @@ export default function AccountPage() {
     claimableInterests: null,
     reclaimable: null,
     message: null,
-    getVNA: null,
-    claimInterests: null,
-    reclaimDeposit: null,
+    getVNA: undefined,
+    claimInterests: undefined,
+    reclaimDeposit: undefined,
   });
 
 
@@ -58,9 +58,9 @@ export default function AccountPage() {
       const getVNA = "GetVNATrustDeposit";
       // Only enable claim actions if value > 0
       const claimInterests =
-        Number(accountData.claimableInterests) > 0 ? "MsgReclaimTrustDepositYield" : null;
+        Number(accountData.claimableInterests) > 0 ? "MsgReclaimTrustDepositYield" : undefined;
       const reclaimDeposit =
-        Number(accountData.reclaimable) > 0 ? "MsgReclaimTrustDeposit" : null;
+        Number(accountData.reclaimable) > 0 ? "MsgReclaimTrustDeposit" : undefined;
       
       if (accountData.message){
         setData({

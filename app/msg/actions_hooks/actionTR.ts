@@ -14,10 +14,24 @@ import { useChain } from '@cosmos-kit/react';
 import { useRouter } from 'next/navigation';
 import { useNotification } from '@/app/ui/common/notification-provider';
 import { MSG_ERROR_ACTION_TR, MSG_INPROGRESS_ACTION_TR, MSG_SUCCESS_ACTION_TR } from '@/app/constants/notificationMsgForMsgType';
-import { isValidUrl } from '@/app/util/validations'
+import { isValidUrl } from '@/app/util/validations';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { useSendTxDetectingMode } from '@/app/msg/util/sendTxDetectingMode';
 import Long from 'long';
+
+async function calculateSRIHash (docUrl: string | undefined): Promise<{ sri: string | undefined; error: string | undefined }> {
+  if (!docUrl || !isValidUrl(docUrl)) return { sri: undefined, error: 'Invalid Document URL' };
+  try {
+    const res = await fetch(`/api/sri?url=${encodeURIComponent(docUrl)}`);
+    if (!res.ok) {
+      return { sri: undefined, error: 'Could not calculate SRI for Document URL.' };
+    }
+    const data = await res.json();
+    return { sri: data.sri as string | undefined, error: undefined };
+  } catch (err) {
+    return { sri: undefined, error: `Could not calculate SRI for Document URL. ${err}` };
+  }
+}
 
 export const MSG_TYPE_CONFIG_TR = {
   MsgCreateTrustRegistry: {
@@ -146,7 +160,6 @@ export function useActionTR(  setActiveActionId?: React.Dispatch<React.SetStateA
       await notify('There is a pending transaction. Please wait…', 'inProgress');
       return;
     }
-    inFlight.current = true;
 
     let typeUrl = '';
     let value: MsgCreateTrustRegistry | MsgUpdateTrustRegistry | MsgArchiveTrustRegistry | MsgAddGovernanceFrameworkDocument | MsgIncreaseActiveGovernanceFrameworkVersion;
@@ -155,24 +168,11 @@ export function useActionTR(  setActiveActionId?: React.Dispatch<React.SetStateA
     switch (params.msgType) {
       case 'MsgCreateTrustRegistry':
         // Calculate SRI hash for docUrl using your API
-        let sri: string | undefined;
-        if (params.docUrl) {
-          if (!isValidUrl(params.docUrl)){
-            await notify('Invalid document Document URL', 'error');
-            return;
-          }
-          try {
-            const res = await fetch(`/api/sri?url=${encodeURIComponent(params.docUrl)}`);
-            if (!res.ok) {
-              await notify(`Could not calculate SRI for Document URL.`, 'error', 'Transaction failed');
-              return;
-            }
-            const data = await res.json();
-            sri = data.sri;
-          } catch (err) {
-            await notify('Could not calculate SRI for Document URL: ' + err, 'error', 'Transaction failed');
-          }
-        }
+        const { sri, error } = await calculateSRIHash(params.docUrl);
+        if (error) {
+          await notify(error,'error', 'Transaction failed');
+          return;
+        } 
         typeUrl = MSG_TYPE_CONFIG_TR.MsgCreateTrustRegistry.typeUrl;
         value = MsgCreateTrustRegistry.fromPartial({
           creator: address,
@@ -203,24 +203,11 @@ export function useActionTR(  setActiveActionId?: React.Dispatch<React.SetStateA
         break;
       case 'MsgAddGovernanceFrameworkDocument':
         // Calculate SRI hash for docUrl using your API
-        let sriAdd: string | undefined;
-        if (params.docUrl) {
-          if (!isValidUrl(params.docUrl)){
-            await notify('Invalid document Document URL', 'error');
-            return;
-          }
-          try {
-            const res = await fetch(`/api/sri?url=${encodeURIComponent(params.docUrl)}`);
-            if (!res.ok) {
-              await notify(`Could not calculate SRI for Document URL.`, 'error', 'Transaction failed');
-              return;
-            }
-            const data = await res.json();
-            sriAdd = data.sri;
-          } catch (err) {
-            await notify('Could not calculate SRI for Document URL: ' + err, 'error', 'Transaction failed');
-          }
-        }
+        const { sri: sriAdd, error: errorAdd } = await calculateSRIHash(params.docUrl);
+        if (errorAdd) {
+          await notify(errorAdd,'error', 'Transaction failed');
+          return;
+        } 
         typeUrl = MSG_TYPE_CONFIG_TR.MsgAddGovernanceFrameworkDocument.typeUrl;
         value = MsgAddGovernanceFrameworkDocument.fromPartial({
           creator: address,
@@ -240,11 +227,11 @@ export function useActionTR(  setActiveActionId?: React.Dispatch<React.SetStateA
         });
         break;
       default:
-        throw new Error('Invalid msgType');
+        notify('Invalid msgType','error', 'Transaction failed');
+        return;
     }
 
-    // const fee = calculateFee(veranaGasLimit, GasPrice.fromString(`${veranaGasPrice}`)); 
-
+    inFlight.current = true;
     // Show progress notification
     let notifyPromise: Promise<void> = notify(
       MSG_INPROGRESS_ACTION_TR[params.msgType],

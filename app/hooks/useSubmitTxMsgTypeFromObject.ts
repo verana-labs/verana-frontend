@@ -1,7 +1,7 @@
 'use client';
 
-import { useActionCS } from "@/app/msg/credential-schema/actionCS";
-import { useActionTR } from "@/app/msg/trust-registry/actionTR";
+import { useActionCS } from "@/app/msg/actions_hooks/actionCS";
+import { useActionTR } from "@/app/msg/actions_hooks/actionTR";
 import { MessageType } from "@/app/constants/msgTypeConfig";
 
 /**

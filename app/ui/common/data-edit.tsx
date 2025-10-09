@@ -1,22 +1,28 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { DataViewProps, Field, isDataField, visibleFieldsForMode } from '@/app/types/dataViewTypes';
-import { getCostMessage, MessageType, msgTypeConfig } from '@/app/constants/msgTypeConfig';
+import { DataField, DataViewProps, isDataField, visibleFieldsForMode } from '@/app/types/dataViewTypes';
+import { getCostMessage, getDescriptionMessage, MessageType, msgTypeConfig } from '@/app/constants/msgTypeConfig';
 import { useCalculateFee } from '@/app/hooks/useCalculateFee';
 import { useTrustDepositValue } from '@/app/hooks/useTrustDepositValue';
 import { useTrustDepositAccountData } from '@/app/hooks/useTrustDepositAccountData';
 import { useNotification } from '@/app/ui/common/notification-provider';
 import { useRouter } from 'next/navigation';
+import { getErrorMessage, isValidField } from '@/app/util/validations';
+import { useTrustDepositParams } from '@/app/providers/trust-deposit-params-context';
 
 type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & {
   data: T;
   messageType: MessageType;
   onSave: (newData: T) => void | Promise<void>;
   onCancel?: () => void;
+  noForm?: boolean;
 };
 
-type DataField<T> = Extract<Field<T>, { type: "data" }>;
+type FieldValidationError = {
+  key: string;
+  errorMessage?: string;
+};
 
 export default function EditableDataView<T extends object>({
   sections,
@@ -24,16 +30,19 @@ export default function EditableDataView<T extends object>({
   messageType,
   id,
   onSave,
-  onCancel
+  onCancel,
+  noForm = false
 }: EditableDataViewProps<T>) {
   const [formData, setFormData] = useState<T>(data);
-  const [errorFields, setErrorFields] = useState<Array<string>>([]);
+  const [errorFields, setErrorFields] = useState<FieldValidationError[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const { description, label } = msgTypeConfig[messageType];
+  const trustDepositReclaimBurnRate = useTrustDepositParams().trustDepositReclaimBurnRate;
+  const burnRate = (messageType == 'MsgReclaimTrustDeposit' ? Number(trustDepositReclaimBurnRate) : 0);
   const action = id? 'edit' : 'create';
   
   // Checks if the current field value is valid
-  const validateField = useCallback((field: DataField<any>, value: unknown): boolean => { // eslint-disable-line @typescript-eslint/no-explicit-any
+  const validatedRequiredField = useCallback((field: DataField<any>, value: unknown): boolean => { // eslint-disable-line @typescript-eslint/no-explicit-any
     if (!field.required) return true;
     if (value === undefined || value === null) return false;
     if (typeof value === "string" && value.trim() === "") return false;
@@ -80,24 +89,35 @@ export default function EditableDataView<T extends object>({
 
   useEffect(() => {
     // Calculate deposit and total required value
-    const deposit = Number(value || 0);
+    const deposit = (messageType == 'MsgReclaimTrustDeposit') ? 0 : Number(value || 0);
     const feeAmount = Number(amountVNA || 0);
     setTotalValue((deposit + feeAmount).toFixed(6));
     const availableBalance = accountData.balance ? Number(accountData.balance)/ 1_000_000 : 0;
     const availableReclaimable = (accountData.reclaimable) ? Number(accountData.reclaimable)/ 1_000_000 : 0;
+    sections.forEach(section => {
+      (section.fields ?? []).forEach(field => {
+        if (!isDataField(field)) return;
+        if (field.name !== 'claimedVNA') return;
+        field.validation = {
+          ...(field.validation ?? { type: 'Number' }),
+          lessThanOrEqual: availableReclaimable,
+        };
+      });
+    });
     const hasEnoughBalance = 
       (availableBalance >= feeAmount) &&
       ( ( availableReclaimable + availableBalance - feeAmount) >= deposit );
     setEnabledAction(hasEnoughBalance);
-  }, [value, amountVNA, messageType, accountData.balance, accountData.reclaimable]);
+  }, [value, amountVNA, messageType, accountData.balance, accountData.reclaimable, sections]);
   
   // Updates form state and manages error tracking on change
   function handleChange(fieldName: keyof T, value: unknown, field: DataField<T>) {
     setFormData(prev => ({ ...prev, [fieldName]: value }));
     setErrorFields(prev => {
-      const filtered = prev.filter(name => name !== fieldName);
-      if (!validateField(field, value)) {
-        return [...filtered, String(fieldName)];
+      const key = String(fieldName);
+      const filtered = prev.filter(err => err.key !== key);
+      if (!validatedRequiredField(field, value)) {
+        return [...filtered, { key }];
       }
       return filtered;
     });
@@ -112,23 +132,44 @@ export default function EditableDataView<T extends object>({
         .forEach(field => {
           if (field.update === false) return;
           const value = formData[field.name as keyof T];
-          if (field.required && !validateField(field, value)) {
-            missing.add(String(field.name));
+          if (!validatedRequiredField(field, value)) {
+            missing.add({key: String(field.name)});
           }
         });
     });
     return missing.size > 0;
-  }, [sections, formData, errorFields, validateField, action]);
+  }, [formData, errorFields]);
 
   // Handles save action; disables buttons while saving and prevents double submission
   async function handleSave() {
     if (hasInvalidRequired || submitting) return;
+    if (hasInvalidData()) return;
     setSubmitting(true);
     try {
       await Promise.resolve(onSave(formData));
     } finally {
       setSubmitting(false);
     }
+  }
+
+  // Future helper: checks full form validity using extended field rules
+  function hasInvalidData(): boolean {
+    const invalid = new Map<string, string>();
+    for (const section of sections) {
+      const fields = visibleFieldsForMode(section.fields, action).filter(isDataField);
+      for (const field of fields) {
+        if (field.update === false) continue;
+        const typedField = field as DataField<T>;
+        const value = formData[field.name as keyof T];
+        if (!isValidField(typedField, value)) {
+          const key = String(field.name);
+          const errorMessage = getErrorMessage(field);
+          invalid.set(key, errorMessage);
+        }
+      }
+    }
+    setErrorFields(Array.from(invalid.entries()).map(([key, errorMessage]) => ({ key, errorMessage })));
+    return invalid.size > 0;
   }
 
   // Handles cancel action; disables button while submitting
@@ -147,13 +188,18 @@ export default function EditableDataView<T extends object>({
       {sections.map((section, sectionIndex) => 
         section.type && section.type !== "basic" ? null : (
         <div key={sectionIndex} className="data-edit-section">
-          <h2 className="data-edit-section-title">{section.name}</h2>
+          {section.name && action == 'create' && (
+            <h2 className="data-edit-section-title">{section.name}</h2>
+          )}
           {description && (
             <div className="form-copy">
-              <p>{description}</p>
+            { (messageType === 'MsgReclaimTrustDeposit' )? 
+                getDescriptionMessage( msgTypeConfig[messageType].description, (100 - burnRate), burnRate )
+                : description
+              }
             </div>
           )}
-          {visibleFieldsForMode(section.fields, action)
+          {!noForm && visibleFieldsForMode(section.fields, action)
             .length > 0 && (
             <div className="data-edit-scroll">
               <table className="data-edit-table">
@@ -161,10 +207,14 @@ export default function EditableDataView<T extends object>({
                   {visibleFieldsForMode(section.fields, action)
                     .filter(isDataField)
                     .map((field, fieldIndex) => {
+                      const typedField = field as DataField<T>;
                       const value = formData[field.name as keyof T];
                       const isDisabled = field.update === false;
-                      const showError = errorFields.includes(String(field.name))
-                        || (field.required && !validateField(field, value));
+                      const key = String(field.name);
+                      const fieldError = errorFields.find(err => err.key === key);
+                      const showError = Boolean(fieldError)
+                        || (!validatedRequiredField(typedField, value));
+                      const errorMessage = fieldError?.errorMessage ?? 'Required';
 
                       // Build base input class for all fields
                       const baseInputClass = 
@@ -205,7 +255,7 @@ export default function EditableDataView<T extends object>({
                               />
                               {/* Error message under textarea */}
                               {showError && (
-                                <div className="data-edit-error">Required</div>
+                                <div className="data-edit-error">{errorMessage}</div>
                               )}
                             </td>
                           </tr>
@@ -255,6 +305,7 @@ export default function EditableDataView<T extends object>({
                             className={baseInputClass}
                             value={String(value ?? '')}
                             disabled={isDisabled}
+                            placeholder={field.placeholder}
                             onChange={e => handleChange(field.name as keyof T, e.target.value, field)}
                           />
                         );
@@ -275,7 +326,7 @@ export default function EditableDataView<T extends object>({
                           <td className="data-edit-input-cell">
                             {inputEl}
                             {showError && (
-                              <div className="data-edit-error">Required</div>
+                              <div className="data-edit-error">{errorMessage}</div>
                             )}
                           </td>
                         </tr>

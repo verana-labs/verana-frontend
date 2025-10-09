@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { BanknotesIcon, CurrencyDollarIcon, IdentificationIcon, InformationCircleIcon, LinkIcon, ListBulletIcon, ShieldCheckIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
 import { ComponentType } from "react";
 import { MSG_SCHEMA_ID } from "@/app/util/json_schema_util";
@@ -21,7 +22,7 @@ export const CsDataToken = typeOf<CsData>("CsData");
 export type Section<I> = {
   name: string;
   icon?: ComponentType<{ className?: string }>;
-  type?: "basic" | "help" | "advanced";
+  type?: "basic" | "help" | "advanced" | "actions";
   help?: string[];
   fields?: Field<I>[];
 };
@@ -35,6 +36,17 @@ type BaseField = {
   id?: boolean;
 };
 
+/* Field validation params by all field types */
+export type FieldValidation = {
+  type: 'DID' | 'URL' | 'JSON_SCHEMA' | 'String' | 'Number' | 'Long';
+  lessThan?: number;
+  lessThanOrEqual?: number;
+  greaterThan?: number;
+  greaterThanOrEqual?: number;
+  minLength?: number;
+  maxLength?: number;
+};
+
 /* Field for simple data or actions */
 /* Action */
 type ActionField<T> = BaseField & {
@@ -43,12 +55,14 @@ type ActionField<T> = BaseField & {
 };
 
 /* Data */
-type DataField<T> = BaseField & {
+export type DataField<T> = BaseField & {
   type: "data";
   name: keyof T;
   inputType?: 'text' | 'number' | 'textarea' | 'select';
   options?: { value: string | number; label: string }[]; // (solo aplica si inputType === 'select');
   description?: string;
+  placeholder?: string;
+  validation?: FieldValidation;
 };
 
 /* Data & Action */
@@ -77,7 +91,7 @@ type ObjectListField<T, I> = BaseField & {
 export type Field<T> =
   | DataOrActionField<T>
   | StringListField<T>
-  | ObjectListField<T, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  | ObjectListField<T, any>;
 
 
 // Props for a DataView component: a title, sections, and the data object
@@ -99,9 +113,9 @@ export interface AccountData {
   claimableInterests: string | null;
   reclaimable: string | null;
   message: string | null;
-  getVNA: string | null;
-  claimInterests: string | null;
-  reclaimDeposit: string | null;
+  getVNA?: string; // action type
+  claimInterests?: string; // action type
+  reclaimDeposit?: string; // action type
 }
 
 // Sections configuration for AccountData
@@ -123,8 +137,7 @@ export const accountSections: Section<AccountData>[] = [
       { name: 'reclaimable', label: 'Reclaimable', type: "data" },
       { name: 'message', label: 'Message', type: "data" },
       { name: 'claimInterests', label: 'Claim interests', type: "action" },
-      { name: 'reclaimDeposit', label: 'Reclaim deposit', type: "action" }
-
+      { name: 'reclaimDeposit', label: 'Reclaim deposit', type: "action" },
     ]
   },
   {
@@ -140,6 +153,26 @@ export const accountSections: Section<AccountData>[] = [
     fields: []
   },
 
+];
+
+//TD data
+export interface TdData {
+  claimedVNA?: number;
+}
+
+// Sections configuration for AccountData
+export const tdSections: Section<TdData>[] = [
+  {
+    name: "",
+    type: "basic",
+    icon: CurrencyDollarIcon,
+    fields: [
+      {
+        name: 'claimedVNA', label: 'Claimed (VNA)', type: "data", inputType: 'number',
+        show: 'edit', required: true, update: true, validation: {type: 'Long', greaterThan: 0}
+      },
+    ]
+  }
 ];
 
 //Dashboard data
@@ -171,33 +204,51 @@ export const dashboardSections: Section<DashboardData>[] = [
 //DID data
 export interface DidData {
   did: string;
-  controller: string;
-  created: string;
-  modified: string;
-  exp: string;
-  deposit: string;
-  renewDID: string | null;
-  touchDID: string | null;
-  removeDID: string | null;
+  controller?: string;
+  created?: string;
+  modified?: string;
+  exp?: string;
+  deposit?: string;
+  renewDID?: string; // action type
+  touchDID?: string; // action type
+  removeDID?: string; // action type
+  years?: number;
 }
+
+export const yearsOptions = [
+  { value: 1, label: '1' },
+  { value: 2, label: '2' },
+  { value: 3, label: '3' },
+  { value: 4, label: '4' },
+  { value: 5, label: '5' },
+  { value: 6, label: '6' },
+  { value: 7, label: '7' },
+  { value: 8, label: '8' },
+  { value: 9, label: '9' },
+  { value: 10, label: '10' },
+];
 
 // Sections configuration for DidData
 export const didSections: Section<DidData>[] = [
   {
     name: "DID Details",
     icon: IdentificationIcon,
+    type: "basic",
     fields: [
-      { name: 'did', label: 'DID', type: "data" },
-      { name: 'controller', label: 'Controller', type: "data" },
-      { name: 'created', label: 'Created', type: "data" },
-      { name: 'modified', label: 'Modified', type: "data" },
-      { name: 'exp', label: 'Expire', type: "data" },
-      { name: 'deposit', label: 'Deposit', type: "data" }
+      { name: 'did', label: 'DID', type: "data", show: 'create', update: true, required: true, placeholder: 'did:method:identifier', validation: {type: 'DID'} },
+      { name: 'years', label: 'Years', type: "data", inputType: 'select',
+          options: yearsOptions, show: 'all', required: true, update: true },
+      { name: 'controller', label: 'Controller', type: "data", show: 'view' },
+      { name: 'created', label: 'Created', type: "data", show: 'view' },
+      { name: 'modified', label: 'Modified', type: "data", show: 'view' },
+      { name: 'exp', label: 'Expire', type: "data", show: 'view' },
+      { name: 'deposit', label: 'Deposit', type: "data", show: 'view' }
     ]
   },
   {
     icon: WrenchScrewdriverIcon,
     name: 'Actions',
+    type: "actions",
     fields: [
       { name: 'renewDID', label: 'Renew', type: "action" },
       { name: 'touchDID', label: 'Touch', type: "action" },
@@ -227,8 +278,8 @@ export interface TrData {
   active_version?: number;
   schemas?: string;
   docs?: string[];
-  addGovernanceFrameworkDocument?: string | null;
-  increaseActiveGovernanceFrameworkVersion?: string | null;
+  addGovernanceFrameworkDocument?: string; // action type
+  increaseActiveGovernanceFrameworkVersion?: string; // action type
   versions?: {
     id: string; 
     version: number; 
@@ -284,8 +335,8 @@ export interface CsData {
   issuerPermManagementMode: string | number;
   verifierPermManagementMode: string | number;
   jsonSchema: string; 
-  updateCredentialSchema: string | null;
-  archiveCredentialSchema: string | null;
+  updateCredentialSchema?: string; // action type
+  archiveCredentialSchema?: string; //action type
   title?: string;
 }
 
@@ -299,7 +350,7 @@ export const gfdSections: Section<GfdData>[] = [
       { name: 'creator', label: 'Controller', type: "data", show: 'create', update: false },
       { name: 'docLanguage', label: 'Governance Framework Language', type: "data", inputType: 'select',
           options: languageOptions, show: 'create', required: true, update: true },
-      { name: 'docUrl', label: 'Governance Framework Document URL', type: "data", show: 'create', required: true, update: true }
+      { name: 'docUrl', label: 'Governance Framework Document URL', type: "data", show: 'create', required: true, update: true, validation: { type: 'URL' } }
     ]
   }
 ];
@@ -346,7 +397,8 @@ export const CsSections: Section<CsData>[] = [
         description: `maximum number of days holder validation can be valid for, in days. Use 0 so that validation never expires, or set a number of days lower than 3650. Example, if you want a validation process to be valid for one year so that applicant will have to renew the validation process each year, set this parameter to 365.`
       },
       { name: 'jsonSchema', label: 'Json Schema', type: "data", inputType: "textarea", required: true, update: true, show: 'create',
-        description: `A basic validation of your Json Schema will be done. Make sure to set the “$id” section to “${MSG_SCHEMA_ID}”.`
+        description: `A basic validation of your Json Schema will be done. Make sure to set the “$id” section to “${MSG_SCHEMA_ID}”.`,
+        validation: { type: 'JSON_SCHEMA' }
       },
       { name: 'creator', label: 'Controller', type: "data", show: "none" },
       { name: 'trId', label: 'TR Id', type: "data", show: "none" },
@@ -364,12 +416,12 @@ export const trSections: Section<TrData>[] = [
     type: "basic",
     fields: [
       { name: 'id', label: 'Id', type: "data", show: 'none', update: false, id: true },
-      { name: 'did', label: 'DID', type: "data", show: 'all', required: true, update: true },
-      { name: 'aka', label: 'Aka', type: "data", show: 'all', required: true, update: true },
+      { name: 'did', label: 'DID', type: "data", show: 'all', required: true, update: true, placeholder: 'did:method:identifier', validation: {type: 'DID'} },
+      { name: 'aka', label: 'Aka', type: "data", show: 'all', required: true, update: true, validation: {type: 'URL'} },
       { name: 'controller', label: 'Controller', type: "data", show: 'all', update: false },
       { name: 'language', label: 'Primary Governance Framework Language', type: "data", inputType: 'select',
           options: languageOptions, show: 'all', required: true, update: true },
-      { name: 'docUrl', label: 'Governance Framework Primary Document URL', type: "data", show: 'create', required: true, update: true },
+      { name: 'docUrl', label: 'Governance Framework Primary Document URL', type: "data", show: 'create', required: true, update: true, validation: {type: 'URL'} },
       { name: 'deposit', label: 'Deposit', type: "data", show: 'view' },
       { name: 'role', label: 'Role', type: "data", show: 'none' },
       { name: 'created', label: 'Created', type: "data", show: 'none'  },
@@ -409,10 +461,10 @@ export function isListField<T>(f: Field<T>): f is Extract<Field<T>, { type: "lis
   return f.type === "list";
 }
 export function isStringListField<T>(f: Field<T>): f is StringListField<T> {
-  return (f as any).objectData === "string"; // eslint-disable-line @typescript-eslint/no-explicit-any
+  return (f as any).objectData === "string";
 }
-export function isObjectListField<T>(f: Field<T>): f is ObjectListField<T, any> { // eslint-disable-line @typescript-eslint/no-explicit-any
-  return (f as any).objectData !== "string"; // eslint-disable-line @typescript-eslint/no-explicit-any
+export function isObjectListField<T>(f: Field<T>): f is ObjectListField<T, any> {
+  return (f as any).objectData !== "string"; 
 }
 
 // --- Filter Show: "view" | "edit" | "create" ---

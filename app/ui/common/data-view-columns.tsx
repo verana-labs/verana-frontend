@@ -2,17 +2,17 @@
 
 import React, { useState, ReactNode, Dispatch, SetStateAction, useId } from 'react';
 import { DataViewProps, Field, isActionField, isDataField, isListField, isObjectListField, isStringListField, Section, TypeToken, visibleFieldsForMode } from '@/app/types/dataViewTypes';
-import ActionDID from '@/app/msg/did-directory/actionDID';
 import { MsgTypeDID, MsgTypeTD, MsgTypeTR } from '@/app/constants/notificationMsgForMsgType';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import useIsSmallScreen from '@/app/util/small-screen';
-import ActionTD from '@/app/msg/trust-deposit/actionTD';
-import GfdPage from '@/app/tr/[id]/gfd';
 import { isJson } from '@/app/util/util';
 import EditableDataView from '@/app/ui/common/data-edit';
 import { DataType, getMsgTypeFor } from '@/app/constants/msgTypeForDataType';
 import { useSubmitTxMsgTypeFromObject } from '@/app/hooks/useSubmitTxMsgTypeFromObject';
 import JsonCodeBlock from '@/app/ui/common/json-code-block';
+import GfdPage from '@/app/tr/[id]/gfd';
+import DidActionPage from '@/app/did/[id]/action';
+import TdActionPage from '@/app/account/action';
 
 // Wrapper for DataView that lets you pass the generic parameter explicitly
 function DataViewTyped<I extends object>(props: {
@@ -152,10 +152,10 @@ function renderActionComponent(
   setRefresh?: Dispatch<SetStateAction<string | null>>
 ): ReactNode {
   if (validDIDAction(action)) {
-    return <ActionDID action={action} id={id} data={data? data : undefined} setActiveActionId={setActiveActionId} setRefresh={setRefresh}/>;
+    return <DidActionPage action={action} data={data} setActiveActionId={setActiveActionId} setRefresh={setRefresh}/>;
   }
   if (validTDAction(action)) {
-    return <ActionTD action={action} data={data} setActiveActionId={setActiveActionId} setRefresh={setRefresh}/>;
+    return <TdActionPage action={action} data={data} setActiveActionId={setActiveActionId} setRefresh={setRefresh}/>;
   }
   if (validTRAction(action)) {
     return <GfdPage action={action} data={data} setActiveActionId={setActiveActionId} setRefresh={setRefresh}/>;
@@ -340,7 +340,7 @@ export default function DataView<T extends object>({
           )}
 
           {/* Basic Section */}
-          {(!section.type || section.type === "basic") && section.fields && section.fields.length > 0 && (
+          {(!section.type || section.type === "basic" || section.type === "actions") && section.fields && section.fields.length > 0 && (
             <>
             <div className="data-view-scroll">
               <table className="data-view-table">
@@ -363,7 +363,7 @@ export default function DataView<T extends object>({
                   {visibleFieldsForMode(section.fields, 'view')
                   .map((field, fieldIndex) => {
                     const value = data[field.name];
-                    if (!isActionField(field) || value == null) return null;
+                    if (!isActionField(field) || value == undefined ) return null;
                     const rowId = `${sectionIndex}-${fieldIndex}`;
                     const isActive = activeActionId === rowId;
                     return renderActionField(rowId, isActive,field.label, String(value), data, id);
@@ -406,7 +406,7 @@ export default function DataView<T extends object>({
                   {visibleFieldsForMode(section.fields, 'view')
                   .map((field, fieldIndex) => {
                     const value = data[field.name];
-                    if (isActionField(field) && value !== null){
+                    if (isActionField(field) && value !== undefined){
                       return renderActionField(`${sectionIndex}-${fieldIndex}`, (activeActionId === `${sectionIndex}-${fieldIndex}`), field.label, String(value), data, id);
                     }
                     if (isListField(field) && value !== null && Array.isArray(value)){

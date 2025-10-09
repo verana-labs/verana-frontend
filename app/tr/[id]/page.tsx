@@ -8,7 +8,7 @@ import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import TitleAndButton from '@/app/ui/common/title-and-button';
 import { useNotification } from '@/app/ui/common/notification-provider';
 import EditableDataView from '@/app/ui/common/data-edit';
-import { useActionTR } from '@/app/msg/trust-registry/actionTR';
+import { useActionTR } from '@/app/msg/actions_hooks/actionTR';
 import { useChain } from '@cosmos-kit/react';
 import { useVeranaChain } from '@/app/hooks/useVeranaChain';
 import { useTrustRegistryData } from '@/app/hooks/useTrustRegistryData';
@@ -77,11 +77,7 @@ export default function TRViewPage() {
       computed.increaseActiveGovernanceFrameworkVersion =
         computed.last_version > (computed.active_version ?? 0)
           ? "MsgIncreaseActiveGovernanceFrameworkVersion"
-          : null;
-    }
-    else {
-      computed.addGovernanceFrameworkDocument = null;
-      computed.increaseActiveGovernanceFrameworkVersion = null;
+          : undefined;
     }
 
     const newCS = {
@@ -89,8 +85,7 @@ export default function TRViewPage() {
       issuerGrantorValidationValidityPeriod: 0, verifierGrantorValidationValidityPeriod: 0,
       issuerValidationValidityPeriod: 0, verifierValidationValidityPeriod: 0, holderValidationValidityPeriod: 0,
       issuerPermManagementMode: 1, verifierPermManagementMode: 1, jsonSchema: "",
-      title: "New Credential Schema", id: '',
-      updateCredentialSchema: null, archiveCredentialSchema: null
+      title: "New Credential Schema", id: ''
       };
     computed.csList =
       computed.controller === address
