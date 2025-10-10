@@ -1,9 +1,15 @@
-'use client'
+// 'use client'
+import dynamic from "next/dynamic";
 
-import VeranaChainProvider from '@/app/providers/verana-chain-provider';
+// import VeranaChainProvider from '@/app/providers/verana-chain-provider';
 import RequireConnectedWallet from '@/app/providers/require-connected-wallet';
 import { NotificationProvider } from '@/app/ui/common/notification-provider';
 import { ThemeProvider } from 'next-themes';
+
+const VeranaChainProvider = dynamic(
+  () => import("@/app/providers/verana-chain-provider"),
+  { ssr: false }
+);
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
