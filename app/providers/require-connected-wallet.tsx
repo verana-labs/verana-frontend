@@ -29,6 +29,7 @@ export default function RequireConnectedWallet({ children }: { children: React.R
 
   // Redirect logic: runs only after hydration and after initialization finishes
   useEffect(() => {
+    console.info({hydrated, onDashboard, initializing, status})
     // Don’t run until the component has hydrated
     if (!hydrated) return;
 
