@@ -81,6 +81,7 @@ jobs:
             export NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY="https://api.${ENV}.verana.network/verana/tr/v1"
             export NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA="https://api.${ENV}.verana.network/verana/cs/v1"
             export NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE=$VERANA_SIGN_DIRECT_MODE
+            export NEXT_PUBLIC_SESSION_LIFETIME_SECONDS=86400
 
             echo "Deploying to $ENV ($VERANA_CHAIN_ID)..."
             echo "Using image: veranalabs/$IMAGE_NAME:$IMAGE_TAG"

@@ -501,9 +501,9 @@ export const MsgUpdateCredentialSchema = {
     if (message.verifierValidationValidityPeriod !== 0) {
       writer.uint32(48).uint32(message.verifierValidationValidityPeriod);
     }
-    // if (message.holderValidationValidityPeriod !== 0) {
+    if (message.holderValidationValidityPeriod !== 0) {
       writer.uint32(56).uint32(message.holderValidationValidityPeriod);
-    // }
+    }
     return writer;
   },
 
@@ -614,9 +614,9 @@ export const MsgUpdateCredentialSchema = {
     if (message.verifierValidationValidityPeriod !== 0) {
       obj.verifierValidationValidityPeriod = Math.round(message.verifierValidationValidityPeriod);
     }
-    // if (message.holderValidationValidityPeriod !== 0) {
+    if (message.holderValidationValidityPeriod !== 0) {
       obj.holderValidationValidityPeriod = Math.round(message.holderValidationValidityPeriod);
-    // }
+    }
     return obj;
   },
 

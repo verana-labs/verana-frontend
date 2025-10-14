@@ -1,59 +1,81 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChain } from "@cosmos-kit/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useVeranaChain } from "@/app/hooks/useVeranaChain";
 
 export default function RequireConnectedWallet({ children }: { children: React.ReactNode }) {
-  // Get the Verana chain name from custom hook
   const { chain_name } = useVeranaChain();
-
-  // Get the wallet connection status from Cosmos-Kit
   const { status } = useChain(chain_name);
-  // Possible values: "Disconnected" | "Connecting" | "Connected" | "Rejected" | "Error" | "NotExist"
-
-  // Router and pathname from Next.js
   const router = useRouter();
   const pathname = usePathname();
   const onDashboard = pathname === "/dashboard";
 
-  // Track client hydration to avoid running client-only logic on the server
   const [hydrated, setHydrated] = useState(false);
+  const [hasStoredWallet, setHasStoredWallet] = useState(false);
+  const [bootWindowOpen, setBootWindowOpen] = useState(true);
+  const redirected = useRef(false);
+
+  // ---- STEP 1: Wait for hydration (avoid SSR mismatch) ----
+  useEffect(() => setHydrated(true), []);
+
+  // ---- STEP 2: Detect if there is any previously connected wallet ----
+  // Cosmos-Kit stores connection data in localStorage under keys like "cosmos-kit@..."
   useEffect(() => {
-    setHydrated(true);
+    if (typeof window === "undefined") return;
+    const hasSession = Object.entries(localStorage).some(([key, value]) => {
+      if (!key.startsWith("cosmos-kit@")) return false;
+      if (!value) return false;
+      // Clean string
+      const val = value.trim();
+      // Ignore empty, default, or empty-array cases
+      return val !== "" && val !== "{}" && val !== "[]" && val !== "null";
+    });
+    setHasStoredWallet(hasSession);
   }, []);
 
-  // Detect when the wallet is still initializing or reconnecting
-  const initializing = status === "Connecting";
-
-  // Redirect logic: runs only after hydration and after initialization finishes
+  // ---- STEP 3: Open a short boot window after hydration ----
+  // This prevents treating the first brief "Disconnected" state as final.
   useEffect(() => {
-    console.info({hydrated, onDashboard, initializing, status})
-    // Don’t run until the component has hydrated
     if (!hydrated) return;
+    const t = setTimeout(() => setBootWindowOpen(false), 1000); // 300–800 ms usually works well
+    return () => clearTimeout(t);
+  }, [hydrated]);
 
-    // Allow access to dashboard even when disconnected
-    if (onDashboard) return;
+  // ---- STEP 4: Detect initialization phase ----
+  // We consider it "initializing" if:
+  // - status is "Connecting"
+  // - OR status is "Disconnected" but we still have a stored wallet and are within the boot window
+  const initializing =
+    status === "Connecting" ||
+    (status === "Disconnected" && hasStoredWallet && bootWindowOpen);
 
-    // Wait until wallet initialization is complete
-    if (initializing) return;
+  // ---- STEP 5: Redirect if wallet is not connected (after initialization) ----
+  useEffect(() => {
+    console.info({hydrated , onDashboard , initializing , redirected, status, hasStoredWallet , bootWindowOpen});
+    if (!hydrated || onDashboard || initializing ) return; 
 
-    // Redirect to /dashboard only when wallet is confirmed disconnected
-    if (status !== "Connected") {
+    // Only redirect if not connected and not already on dashboard
+    if (status !== "Connected" && pathname !== "/dashboard") {
+      redirected.current = true;
       router.replace("/dashboard");
     }
-  }, [hydrated, initializing, onDashboard, status, router]);
+  }, [hydrated, initializing, onDashboard, status, pathname, router]);
 
-  // ---- RENDER PHASE ----
+  // ---- STEP 6: Render phase ----
   // Wait for hydration before rendering anything
   if (!hydrated) return null;
 
-  // While initializing or disconnected (and not on dashboard), render nothing
+  // If not on dashboard and still initializing or disconnected, show loading UI
   if (!onDashboard && (initializing || status !== "Connected")) {
-    return null;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        Connecting wallet...
+      </div>
+    );
   }
 
-  // Otherwise, render the protected content
+  // Otherwise, render protected content
   return <>{children}</>;
 }
