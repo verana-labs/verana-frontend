@@ -42,6 +42,6 @@ spec:
         - name: NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE
           value: "${NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE}"
         - name: NEXT_PUBLIC_SESSION_LIFETIME_SECONDS
-          value: 86400
+          value: "${NEXT_PUBLIC_SESSION_LIFETIME_SECONDS}"
         ports:
         - containerPort: 3000
