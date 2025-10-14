@@ -41,5 +41,7 @@ spec:
           value: "${NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA}"
         - name: NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE
           value: "${NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE}"
+        - name: NEXT_PUBLIC_SESSION_LIFETIME_SECONDS
+          value: 86400
         ports:
         - containerPort: 3000

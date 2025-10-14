@@ -8,8 +8,11 @@ export const u64ToStr = (v?: Long | string | number | null) =>
 export const strToU64 = (s?: string | null) =>
   s != null ? Long.fromString(s) : undefined;
 
-export const toUInt32 = (n?: number | null) =>
+export const u32ToAmino_ = (n?: number | null) =>
   n == null ? undefined : (n >>> 0);
+
+export const pickU32 = (v?: number | string | null) =>
+  v == null ? undefined : (Number(v) >>> 0);
 
 // 0 -> "0" (string), >0 -> number
 export const u32ToAmino = (n?: number | null) =>
