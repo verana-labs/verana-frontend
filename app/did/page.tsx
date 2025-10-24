@@ -1,64 +1,73 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { DataTable } from '@/app/ui/common/data-table';
+import { DataTable } from '@/ui/common/data-table';
 import { useRouter } from 'next/navigation';
 import { PlusIcon } from '@heroicons/react/24/outline';
-import TitleAndButton from '@/app/ui/common/title-and-button';
+import TitleAndButton from '@/ui/common/title-and-button';
 import { env } from 'next-runtime-env';
-import { useNotification } from '@/app/ui/common/notification-provider';
-import { columnsDIDList, DIDList } from '@/app/types/dataTableTypes';
+import { useNotification } from '@/ui/common/notification-provider';
+import { columnsDidList, description, DidList } from '@/ui/datatable/columnslist/did';
 import { useChain } from '@cosmos-kit/react';
-import { useVeranaChain } from '@/app/hooks/useVeranaChain';
+import { useVeranaChain } from '@/hooks/useVeranaChain';
+import { resolveTranslatable } from '@/ui/dataview/types';
+import { translate } from '@/i18n/dataview';
 
-export default function DIDPage() {
-  const [dids, setDIDs] = useState<DIDList[]>([]);
+export default function DidPage() {
+  const [dids, setDids] = useState<DidList[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { notify } = useNotification();
-  const listURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID;
+  const listUrl = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID;
   const veranaChain = useVeranaChain();
   const { address } = useChain(veranaChain.chain_name);
 
   useEffect(() => {
     const fetchDIDs = async () => {
       try {
-          if (!listURL) throw new Error('API endpoint not configured');
-          
-          const res = await fetch(listURL + `/list?account=${address}`);
+          if (!listUrl){
+            notify(
+              resolveTranslatable({key: "error.endpoint"}, translate)?? 'API endpoint not configured',
+              'error',
+              resolveTranslatable({key: "error.fetch.did.title"}, translate)?? 'Error fetching DID'
+            );
+          }
+          const res = await fetch(listUrl + `/list?account=${address}`);
           const json = await res.json();
-          setDIDs(Array.isArray(json) ? json : json.dids || []);
+          setDids(Array.isArray(json) ? json : json.dids || []);
       } catch (err) {
         notify(
           err instanceof Error ? err.message : String(err),
           'error',
-          'Error fetching DIDs'
+          resolveTranslatable({key: "error.fetch.did.title"}, translate)?? 'Error fetching DID'
         );
       } finally {
         setLoading(false);
       }
     };
     fetchDIDs();
-  }, [listURL, address]);
+  }, [listUrl, address]);
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return (
+      <p>
+        {resolveTranslatable({ key: "loading.directory" }, translate) ?? "Loading DID Directory..."}
+      </p>);
 
   return (
     <>
       <TitleAndButton
-        title="DID Directory"
-        buttonLabel="Add DID"
+        title={resolveTranslatable({key: "directory.title"}, translate)?? "DID Directory"}
+        buttonLabel={resolveTranslatable({key: "button.did.add"}, translate)?? "Add DID"}
         to="/did/add"
         Icon={PlusIcon}
       />
       <DataTable
-        columns={columnsDIDList}
+        columnsI18n={columnsDidList}
         data={dids}
         initialPageSize={10}
         pageSizeOptions={[5, 10, 20, 50]}
         onRowClick={(row) => router.push(`/did/${encodeURIComponent(row.did)}`)}
-        description={["The DID directory is a public database of Decentralized Identifiers (DIDs) that is used by crawlers to index the metadata of the services provided by these DIDs, if they comply with the Verifiable Trust specification. Indexed DIDs are then searchable in search.verana.io and in others Verifiable Trust search engines.",
-          "Any participant can register a DID in the DID directory by executing a transaction in the Verana Network."]}
+        descriptionI18n={description}
         defaultSortColumn={'modified'}
       />
     </>

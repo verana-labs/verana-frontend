@@ -1,4 +1,4 @@
-import { formatDate, formatVNA, isExpired, shortenMiddle } from '@/app/util/util';
+import { formatDate, formatVNA, isExpired, shortenMiddle } from '@/util/util';
 import { ReactNode } from 'react';
 
 // Generic column definition

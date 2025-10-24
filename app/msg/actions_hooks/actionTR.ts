@@ -8,28 +8,30 @@ import {
   MsgArchiveTrustRegistry,
   MsgAddGovernanceFrameworkDocument,
   MsgIncreaseActiveGovernanceFrameworkVersion
-} from '@/proto-codecs/codec/verana/tr/v1/tx';
-import { useVeranaChain } from '@/app/hooks/useVeranaChain';
+} from 'proto-codecs/codec/verana/tr/v1/tx';
+import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
 import { useRouter } from 'next/navigation';
-import { useNotification } from '@/app/ui/common/notification-provider';
-import { MSG_ERROR_ACTION_TR, MSG_INPROGRESS_ACTION_TR, MSG_SUCCESS_ACTION_TR } from '@/app/constants/notificationMsgForMsgType';
-import { isValidUrl } from '@/app/util/validations';
+import { useNotification } from '@/ui/common/notification-provider';
+import { MSG_ERROR_ACTION_TR, MSG_INPROGRESS_ACTION_TR, MSG_SUCCESS_ACTION_TR } from '@/msg/constants/notificationMsgForMsgType';
+import { isValidUrl } from '@/util/validations';
 import { EncodeObject } from '@cosmjs/proto-signing';
-import { useSendTxDetectingMode } from '@/app/msg/util/sendTxDetectingMode';
+import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import Long from 'long';
+import { translate } from '@/i18n/dataview';
+import { resolveTranslatable } from '@/ui/dataview/types';
 
 async function calculateSRIHash (docUrl: string | undefined): Promise<{ sri: string | undefined; error: string | undefined }> {
   if (!docUrl || !isValidUrl(docUrl)) return { sri: undefined, error: 'Invalid Document URL' };
   try {
     const res = await fetch(`/api/sri?url=${encodeURIComponent(docUrl)}`);
     if (!res.ok) {
-      return { sri: undefined, error: 'Could not calculate SRI for Document URL.' };
+      return { sri: undefined, error: resolveTranslatable({key: 'error.msg.tr.sri'}, translate) };
     }
     const data = await res.json();
     return { sri: data.sri as string | undefined, error: undefined };
   } catch (err) {
-    return { sri: undefined, error: `Could not calculate SRI for Document URL. ${err}` };
+    return { sri: undefined, error: `${resolveTranslatable({key: 'error.msg.tr.sri'}, translate)}. ${err}` };
   }
 }
 
@@ -153,11 +155,11 @@ export function useActionTR(  setActiveActionId?: React.Dispatch<React.SetStateA
 
   async function actionTR(params: ActionTRParams): Promise<DeliverTxResponse | void> {
     if (!isWalletConnected || !address) {
-      await notify('Connect wallet', 'error');
+      await notify(resolveTranslatable({key: "notification.msg.connectwallet"}, translate)??'', 'error');
       return;
     }
     if (inFlight.current) {
-      await notify('There is a pending transaction. Please wait…', 'inProgress');
+      await notify(resolveTranslatable({key: "error.msg.pending.transaction"}, translate)??'', 'error');
       return;
     }
 
@@ -170,7 +172,7 @@ export function useActionTR(  setActiveActionId?: React.Dispatch<React.SetStateA
         // Calculate SRI hash for docUrl using your API
         const { sri, error } = await calculateSRIHash(params.docUrl);
         if (error) {
-          await notify(error,'error', 'Transaction failed');
+          await notify(error,'error');
           return;
         } 
         typeUrl = MSG_TYPE_CONFIG_TR.MsgCreateTrustRegistry.typeUrl;
@@ -205,7 +207,7 @@ export function useActionTR(  setActiveActionId?: React.Dispatch<React.SetStateA
         // Calculate SRI hash for docUrl using your API
         const { sri: sriAdd, error: errorAdd } = await calculateSRIHash(params.docUrl);
         if (errorAdd) {
-          await notify(errorAdd,'error', 'Transaction failed');
+          await notify(errorAdd,'error');
           return;
         } 
         typeUrl = MSG_TYPE_CONFIG_TR.MsgAddGovernanceFrameworkDocument.typeUrl;
@@ -227,16 +229,16 @@ export function useActionTR(  setActiveActionId?: React.Dispatch<React.SetStateA
         });
         break;
       default:
-        notify('Invalid msgType','error', 'Transaction failed');
+        await notify(resolveTranslatable({key: "error.msg.invalid.msgtype"}, translate)??'', 'error');
         return;
     }
 
     inFlight.current = true;
     // Show progress notification
     let notifyPromise: Promise<void> = notify(
-      MSG_INPROGRESS_ACTION_TR[params.msgType],
+      MSG_INPROGRESS_ACTION_TR[params.msgType](),
       'inProgress',
-      'Transaction in progress'
+      resolveTranslatable({key: 'notification.msg.inprogress.title'}, translate)
     );
 
     let res: DeliverTxResponse;
@@ -253,22 +255,22 @@ export function useActionTR(  setActiveActionId?: React.Dispatch<React.SetStateA
         if (params.msgType === 'MsgCreateTrustRegistry') id = extractCreatedTRId(res);
         success = true;
         notifyPromise = notify(
-          MSG_SUCCESS_ACTION_TR[params.msgType],
+          MSG_SUCCESS_ACTION_TR[params.msgType](),
           'success',
-          'Transaction successful'
+          resolveTranslatable({key: 'notification.msg.successful.title'}, translate)
         );
       } else {
         notifyPromise = notify(
           MSG_ERROR_ACTION_TR[params.msgType](id, res.code, res.rawLog) || `(${res.code}): ${res.rawLog}`,
           'error',
-          'Transaction failed'
+          resolveTranslatable({key: 'notification.msg.failed.title'}, translate)
         );
       }
     } catch (err) {
       notifyPromise = notify(
         MSG_ERROR_ACTION_TR[params.msgType](id, undefined, err instanceof Error ? err.message : String(err)),
         'error',
-        'Transaction failed'
+        resolveTranslatable({key: 'notification.msg.failed.title'}, translate)
       );
     } finally {
       inFlight.current = false;

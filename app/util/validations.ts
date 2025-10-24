@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { DataField } from '@/app/types/dataViewTypes';
+import type { DataField } from '@/ui/dataview/types';
 
 const DID_PATTERN = /^did:[a-zA-Z0-9]+:[a-zA-Z0-9._-]+$/;
 const LANGUAGE_TAG_PATTERN = /^[a-z]{2}$/;

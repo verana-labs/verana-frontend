@@ -5,9 +5,9 @@ import {
   OfflineSigner as OfflineSignerAmino
 } from '@cosmjs/proto-signing';
 import { calculateFee, DeliverTxResponse, GasPrice, SigningStargateClient } from '@cosmjs/stargate';
-import { veranaAmino, veranaRegistry} from '@/app/config/veranaChain.sign.client';
-import { debugAminoRoundTrip } from '@/app/msg/util/debugAminoRoundTrip';
-import { sanitizeProtoMsg } from '@/app/msg/util//sanitizeProtoMsg';
+import { veranaAmino, veranaRegistry} from '@/config/veranaChain.sign.client';
+import { debugAminoRoundTrip } from '@/msg/util/debugAminoRoundTrip';
+import { sanitizeProtoMsg } from '@/msg/util//sanitizeProtoMsg';
 
 type AminoSignOptions = {
   rpcEndpoint: string;

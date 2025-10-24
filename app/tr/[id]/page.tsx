@@ -2,19 +2,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { TrData, trSections } from '@/app/types/dataViewTypes';
-import DataView from '@/app/ui/common/data-view-columns';
+import { TrData, trSections } from '@/ui/dataview/datasections/tr';
+import DataView from '@/ui/common/data-view-columns';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
-import TitleAndButton from '@/app/ui/common/title-and-button';
-import { useNotification } from '@/app/ui/common/notification-provider';
-import EditableDataView from '@/app/ui/common/data-edit';
-import { useActionTR } from '@/app/msg/actions_hooks/actionTR';
+import TitleAndButton from '@/ui/common/title-and-button';
+import EditableDataView from '@/ui/common/data-edit';
+import { useActionTR } from '@/msg/actions_hooks/actionTR';
 import { useChain } from '@cosmos-kit/react';
-import { useVeranaChain } from '@/app/hooks/useVeranaChain';
-import { useTrustRegistryData } from '@/app/hooks/useTrustRegistryData';
-import { useCSList } from '@/app/hooks/useCredentialSchemas';
-import { formatDate, formatVNA } from '@/app/util/util';
+import { useVeranaChain } from '@/hooks/useVeranaChain';
+import { useTrustRegistryData } from '@/hooks/useTrustRegistryData';
+import { useCSList } from '@/hooks/useCredentialSchemas';
+import { formatDate, formatVNA } from '@/util/util';
 import langs from 'langs';
+import { resolveTranslatable } from '@/ui/dataview/types';
+import { translate } from '@/i18n/dataview';
 
 export default function TRViewPage() {
   const params = useParams();
@@ -22,7 +23,6 @@ export default function TRViewPage() {
   const [data, setData] = useState<TrData | null>(null);
   const [editing, setEditing] = useState(false);
 
-  const { notify } = useNotification();
   const actionTR = useActionTR(); 
 
   const veranaChain = useVeranaChain();
@@ -96,10 +96,10 @@ export default function TRViewPage() {
   }, [dataTR, address, csList, id]);
 
   if (loading &&   !refresh) {
-    return <div className="loading-paner">Loading Trust Registry details…</div>;
+    return <div className="loading-paner">{resolveTranslatable({key: "loading.tr"}, translate)?? "Loading Trust Registry details..."}</div>;
   }
   if (errorTRData || !data) {
-    return <div className="error-pane">Error: {errorTRData || 'Trust Registry not found'}</div>;
+    return <div className="error-pane">{errorTRData || (resolveTranslatable({key: "error.tr.notfound"}, translate)?? 'Trust Registry not found')}</div>;
   }
 
   async function onSave(newData: TrData) {
@@ -122,27 +122,26 @@ export default function TRViewPage() {
 
     setData(cleaned);
     setEditing(false);
-    notify('Trust Registry updated!', 'success');
   }
 
   return (
     <>
       <TitleAndButton
-        title={"Trust Registry " + data.did}
-        buttonLabel="Back to List"
+        title=  {`${resolveTranslatable({key: "tr.title"}, translate)?? "Trust Registry"}  ${data.did}`}
+        buttonLabel={resolveTranslatable({key: "button.tr.back"}, translate)?? "Back to List"}
         to="/tr"
         Icon={ChevronLeftIcon}
       />
       {editing ? (
         <EditableDataView<TrData>
-          sections={trSections}
+          sectionsI18n={trSections}
           data={data}
           messageType={'MsgUpdateTrustRegistry'}
           id={data.id}
           onSave={ onSave }
           onCancel={() => setEditing(false)}  />
       ) : (
-        <DataView<TrData> sections={trSections} data={data} id={data.id} columnsCount={2} 
+        <DataView<TrData> sectionsI18n={trSections} data={data} id={data.id} columnsCount={2} 
             onEdit={ data.controller === address ? () => setEditing(true) : undefined } 
             setRefresh={setRefresh}/>
       )}

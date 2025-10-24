@@ -1,14 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { TrData, trSections } from '@/app/types/dataViewTypes';
-import EditableDataView from '@/app/ui/common/data-edit';
-import TitleAndButton from '@/app/ui/common/title-and-button';
+import { TrData, trSections } from '@/ui/dataview/datasections/tr';
+import EditableDataView from '@/ui/common/data-edit';
+import TitleAndButton from '@/ui/common/title-and-button';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
-import { useVeranaChain } from '@/app/hooks/useVeranaChain';
+import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
-import { useActionTR } from '@/app/msg/actions_hooks/actionTR';
+import { useActionTR } from '@/msg/actions_hooks/actionTR';
+import { resolveTranslatable } from '@/ui/dataview/types';
+import { translate } from '@/i18n/dataview';
 
 export default function TrNewPage() {
   // Load chain info
@@ -47,14 +49,14 @@ export default function TrNewPage() {
     <>
       {/* Page title and back button */}
       <TitleAndButton
-        title="New Trust Registry"
-        buttonLabel="Back to List"
+        title=  {`${resolveTranslatable({key: "tr.add.title"}, translate)?? "New Trust Registry"}  ${data.did}`}
+        buttonLabel={resolveTranslatable({key: "button.tr.back"}, translate)?? "Back to List"}
         to="/tr"
         Icon={ChevronLeftIcon}
       />
       {/* Editable form */}
       <EditableDataView<TrData>
-        sections={trSections}
+        sectionsI18n={trSections}
         id={undefined}
         messageType={'MsgCreateTrustRegistry'}     
         data={data}

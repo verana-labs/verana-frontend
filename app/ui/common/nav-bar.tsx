@@ -2,11 +2,13 @@
 
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import { Bars3Icon, XMarkIcon, Cog8ToothIcon } from '@heroicons/react/24/outline';
-import VeranaLog from '@/app/ui/common/verana-logo';
-import Wallet from '@/app/wallet/wallet';
-import IconLabelButton from '@/app/ui/common/icon-label-button';
-import ToggleTheme from '@/app/ui/common/toggle-theme';
-import NavLinks from '@/app/ui/common/nav-links';
+import VeranaLog from '@/ui/common/verana-logo';
+import Wallet from '@/wallet/wallet';
+import IconLabelButton from '@/ui/common/icon-label-button';
+import ToggleTheme from '@/ui/common/toggle-theme';
+import NavLinks from '@/ui/common/nav-links';
+import { resolveTranslatable } from '../dataview/types';
+import { translate } from '@/i18n/dataview';
 
 export default function NavBar() {
 
@@ -36,7 +38,7 @@ export default function NavBar() {
               <div className="navbar-user-actions">
                 <ToggleTheme />
                 <div className="navbar-user-actions-btn-container">
-                  <IconLabelButton Icon={Cog8ToothIcon} title="Settings" />
+                  <IconLabelButton Icon={Cog8ToothIcon} title={resolveTranslatable({key: 'navbar.settings.title'}, translate)} />
                 </div>
                 <div className="navbar-user-actions-btn-container">
                   <Wallet />

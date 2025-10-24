@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { useState } from 'react';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
-import { links } from '@/app/lib/navlinks';
+import { links } from '@/lib/navlinks';
 
 export default function NavLinks() {
   const pathname = usePathname();

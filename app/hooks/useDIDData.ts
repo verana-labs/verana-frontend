@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { env } from 'next-runtime-env';
-import { DidData } from '@/app/types/dataViewTypes';
+import { DidData } from '@/ui/dataview/datasections/did';
+import { resolveTranslatable } from '@/ui/dataview/types';
+import { translate } from '@/i18n/dataview';
 
 export function useDIDData(id: string ) {
   const [dataDID, setData] = useState<DidData | null>(null);
@@ -15,7 +17,7 @@ export function useDIDData(id: string ) {
 
   const fetchDID = async () => {
     if (!id || !getURL) {
-      setError('Missing DID or endpoint URL');
+      setError(resolveTranslatable({key: "error.fetch.did"}, translate)??'Missing DID or endpoint URL');
       setLoading(false);
       return;
     }

@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useChain } from "@cosmos-kit/react";
 import { useRouter, usePathname } from "next/navigation";
-import { useVeranaChain } from "@/app/hooks/useVeranaChain";
+import { useVeranaChain } from "@/hooks/useVeranaChain";
+import { resolveTranslatable } from "@/ui/dataview/types";
+import { translate } from "@/i18n/dataview";
 
 export default function RequireConnectedWallet({ children }: { children: React.ReactNode }) {
   const { chain_name } = useVeranaChain();
@@ -71,7 +73,7 @@ export default function RequireConnectedWallet({ children }: { children: React.R
   if (!onDashboard && (initializing || status !== "Connected")) {
     return (
       <div className="flex justify-center items-center h-screen">
-        Connecting wallet...
+        {resolveTranslatable({key: 'wallet.connecting'}, translate)}
       </div>
     );
   }

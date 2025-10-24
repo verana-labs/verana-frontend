@@ -5,7 +5,7 @@ import {
   MsgReclaimTrustDepositYield,
   MsgReclaimTrustDeposit,
   MsgRepaySlashedTrustDeposit,
-} from '@/proto-codecs/codec/verana/td/v1/tx'
+} from 'proto-codecs/codec/verana/td/v1/tx'
 import Long from 'long';
     
 /**

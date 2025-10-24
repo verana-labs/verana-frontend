@@ -1,12 +1,14 @@
 'use client'
 
 import React, { useState } from 'react';
-import { DidData, didSections } from '@/app/types/dataViewTypes';
-import { useActionDID } from '@/app/msg/actions_hooks/actionDID';
+import { DidData, didSections } from '@/ui/dataview/datasections/did';
+import { useActionDID } from '@/msg/actions_hooks/actionDID';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
-import TitleAndButton from '@/app/ui/common/title-and-button';
+import TitleAndButton from '@/ui/common/title-and-button';
 import { useRouter } from 'next/navigation';
-import EditableDataView from '@/app/ui/common/data-edit';
+import EditableDataView from '@/ui/common/data-edit';
+import { resolveTranslatable } from '@/ui/dataview/types';
+import { translate } from '@/i18n/dataview';
 
 export default function AddDidPage() {
 
@@ -34,14 +36,14 @@ export default function AddDidPage() {
     <>
       {/* Page title and back button */}
       <TitleAndButton
-        title="Add DID to Directory"
-        buttonLabel="Back to Directory"
+        title=  {`${resolveTranslatable({key: "did.add.title"}, translate)?? "Add DID to Directory"}  ${data.did}`}
+        buttonLabel={resolveTranslatable({key: "button.did.back"}, translate)?? "Back to Directory"}
         to="/did"
         Icon={ChevronLeftIcon}
       />
       {/* Editable form */}
       <EditableDataView<DidData>
-        sections={didSections}
+        sectionsI18n={didSections}
         id={undefined}
         messageType={'MsgAddDID'}     
         data={data}

@@ -2,6 +2,8 @@
 
 import { MouseEventHandler } from "react";
 import { Button as UIButton, IconName } from "@interchain-ui/react";
+import { resolveTranslatable } from "@/ui/dataview/types";
+import { translate } from "@/i18n/dataview";
 
 export type ButtonProps = {
   text?: string;
@@ -34,29 +36,29 @@ export default function Button({
 }
 
 export const ButtonConnect = (
-  { text = "Connect Wallet", onClick = noop }: ConnectProps,
+  { text = resolveTranslatable({key: 'wallet.connect'}, translate), onClick = noop }: ConnectProps,
 ) => <Button text={text} onClick={onClick} />;
 
 export const ButtonConnected = (
-  { text = "My Wallet", onClick = noop }: ConnectProps,
+  { text = resolveTranslatable({key: 'wallet.wallet'}, translate), onClick = noop }: ConnectProps,
 ) => <Button text={text} icon="walletFilled" onClick={onClick} />;
 
 export const ButtonDisconnected = (
-  { text = "Connect Wallet", onClick = noop }: ConnectProps,
+  { text = resolveTranslatable({key: 'wallet.connect'}, translate), onClick = noop }: ConnectProps,
 ) => <Button text={text} icon="walletFilled" onClick={onClick} />;
 
 export const ButtonConnecting = (
-  { text = "Connecting ...", loading = true }: ConnectProps,
+  { text = resolveTranslatable({key: 'wallet.connecting'}, translate), loading = true }: ConnectProps,
 ) => <Button text={text} loading={loading} />;
 
 export const ButtonRejected = (
-  { text = "Reconnect", onClick = noop }: ConnectProps,
+  { text = resolveTranslatable({key: 'wallet.reconnect'}, translate), onClick = noop }: ConnectProps,
 ) => <Button text={text} icon="walletFilled" onClick={onClick} />;
 
 export const ButtonError = (
-  { text = "Change Wallet", onClick = noop }: ConnectProps,
+  { text = resolveTranslatable({key: 'wallet.change'}, translate), onClick = noop }: ConnectProps,
 ) => <Button text={text} icon="walletFilled" onClick={onClick} />;
 
 export const ButtonNotExist = (
-  { text = "Install Wallet", onClick = noop }: ConnectProps,
+  { text = resolveTranslatable({key: 'wallet.install'}, translate), onClick = noop }: ConnectProps,
 ) => <Button text={text} icon="walletFilled" onClick={onClick} />;

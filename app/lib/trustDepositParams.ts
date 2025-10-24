@@ -1,3 +1,5 @@
+import { translate } from '@/i18n/dataview';
+import { resolveTranslatable } from '@/ui/dataview/types';
 import { env } from 'next-runtime-env';
 
 export type TrustDepositParams = {
@@ -82,28 +84,28 @@ export async function getTrustDepositParams(): Promise<TrustDepositParamsResult>
     configs.map(async ({ key, responseKey, envKey, transform }) => {
       const base = getEndpointBase(envKey);
       if (!base) {
-        errors.push(`Missing environment variable ${envKey}`);
+        errors.push(`${resolveTranslatable({key: "error.fetch.td.param.missing"}, translate)} ${envKey}`);
         return;
       }
 
       try {
         const response = await fetch(`${base}/params`);
         if (!response.ok) {
-          errors.push(`Failed to fetch parameters for ${responseKey}`);
+          errors.push(`${resolveTranslatable({key: "error.fetch.td.param.failed"}, translate)} ${responseKey}`);
           return;
         }
 
         const json = await response.json();
         const value = extractParam(json, responseKey);
         if (value === undefined) {
-          errors.push(`Parameter ${responseKey} not found in response`);
+          errors.push(`${responseKey} ${resolveTranslatable({key: "error.fetch.td.param.notfound"}, translate)}`);
           return;
         }
 
         params[key] = transform ? transform(value) : (value as string | number | null);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        errors.push(`Error fetching ${responseKey}: ${message}`);
+        errors.push(`${resolveTranslatable({key: "error.fetch.td.param.failed"}, translate)} ${responseKey}: ${message}`);
       }
     }),
   );

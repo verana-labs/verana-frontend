@@ -1,10 +1,10 @@
-import '@/app/styles/global.css';
-import { lusitana, kantumruy } from '@/app/ui/common/fonts'
+import '@/styles/global.css';
+import { lusitana, kantumruy } from '@/ui/common/fonts'
 import "@interchain-ui/react/styles";
 import { PublicEnvScript } from 'next-runtime-env';
-import ClientLayout from '@/app/providers/client-layout';
-import "@/app/init-long";
-import { getTrustDepositParams } from '@/app/lib/trustDepositParams';
+import ClientLayout from '@/providers/client-layout';
+import "@/init-long";
+import { getTrustDepositParams } from '@/lib/trustDepositParams';
 
 export const metadata = { title: 'Verana Front', description: 'Verana Front' }
 

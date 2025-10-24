@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { env } from "next-runtime-env";
-import { useVeranaChain } from "@/app/hooks/useVeranaChain";
+import { useVeranaChain } from "@/hooks/useVeranaChain";
 import { useChain } from "@cosmos-kit/react";
+import { resolveTranslatable } from "@/ui/dataview/types";
+import { translate } from "@/i18n/dataview";
 
 type TrustDepositAccountData = {
   address: string | null;
@@ -39,7 +41,11 @@ export function useTrustDepositAccountData(
   const [errorAccountData, setError] = useState<string | null>(null);
 
   const fetchData = async () => {
-    if (!address || !isWalletConnected || !getStargateClient || !getAccountURL) return;
+    if (!address || !isWalletConnected || !getStargateClient || !getAccountURL){
+      setError(resolveTranslatable({key: "error.fetch.td.account"}, translate)??'Wallet error or endpoint URL');
+      setLoading(false);
+      return;
+    } 
     setLoading(true);
     setError(null);
 

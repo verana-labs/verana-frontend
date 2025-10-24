@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import EditableDataView from '@/app/ui/common/data-edit';
-import { DidData, didSections } from '@/app/types/dataViewTypes';
-import { useActionDID } from '@/app/msg/actions_hooks/actionDID';
-import { MsgTypeDID } from '@/app/constants/notificationMsgForMsgType';
+import EditableDataView from '@/ui/common/data-edit';
+import { DidData, didSections } from '@/ui/dataview/datasections/did';
+import { useActionDID } from '@/msg/actions_hooks/actionDID';
+import { MsgTypeDID } from '@/msg/constants/notificationMsgForMsgType';
 
 // Define DidActionPage props interface
 interface DidActionProps {
@@ -49,7 +49,7 @@ export default function DidActionPage({ action, setActiveActionId, data, setRefr
     <>
       {/* Editable form */}
       <EditableDataView<DidData>
-        sections={didSections}
+        sectionsI18n={didSections}
         id={dataDID.did}
         messageType={action}     
         data={dataDID}

@@ -2,7 +2,7 @@
 'use client';
 
 import { createContext, useContext } from 'react';
-import type { TrustDepositParams } from "@/app/lib/trustDepositParams";
+import type { TrustDepositParams } from "@/lib/trustDepositParams";
 
 const TrustDepositParamsContext = createContext<TrustDepositParams | undefined>(undefined);
 

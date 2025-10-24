@@ -3,17 +3,17 @@
 import { AminoTypes } from "@cosmjs/stargate";
 import { Registry } from '@cosmjs/proto-signing'
 import { MsgAddDIDAminoConverter, MsgRemoveDIDAminoConverter, MsgRenewDIDAminoConverter, MsgTouchDIDAminoConverter } 
-        from '@/app/msg/amino-converter/aminoConvertersDID';
+        from '@/msg/amino-converter/aminoConvertersDID';
 import { MsgReclaimTrustDepositAminoConverter, MsgReclaimTrustDepositYieldAminoConverter, MsgRepaySlashedTrustDepositAminoConverter } 
-        from '@/app/msg/amino-converter/aminoConvertersTD';
+        from '@/msg/amino-converter/aminoConvertersTD';
 import { MsgCreateTrustRegistryAminoConverter, MsgUpdateTrustRegistryAminoConverter, MsgArchiveTrustRegistryAminoConverter, MsgIncreaseActiveGovernanceFrameworkVersionAminoConverter, MsgAddGovernanceFrameworkDocumentAminoConverter } 
-        from '@/app/msg/amino-converter/aminoConvertersTR';
+        from '@/msg/amino-converter/aminoConvertersTR';
 import { MsgArchiveCredentialSchemaAminoConverter, MsgCreateCredentialSchemaAminoConverter, MsgUpdateCredentialSchemaAminoConverter } 
-        from '@/app/msg/amino-converter/aminoConvertersCS';
-import { MsgAddDID, MsgRemoveDID, MsgRenewDID, MsgTouchDID } from '@/proto-codecs/codec/verana/dd/v1/tx';
-import { MsgReclaimTrustDeposit, MsgReclaimTrustDepositYield, MsgRepaySlashedTrustDeposit } from '@/proto-codecs/codec/verana/td/v1/tx';
-import { MsgAddGovernanceFrameworkDocument, MsgArchiveTrustRegistry, MsgCreateTrustRegistry, MsgIncreaseActiveGovernanceFrameworkVersion, MsgUpdateTrustRegistry } from '@/proto-codecs/codec/verana/tr/v1/tx';
-import { MsgCreateCredentialSchema, MsgUpdateCredentialSchema, MsgArchiveCredentialSchema } from "@/proto-codecs/codec/verana/cs/v1/tx";
+        from '@/msg/amino-converter/aminoConvertersCS';
+import { MsgAddDID, MsgRemoveDID, MsgRenewDID, MsgTouchDID } from 'proto-codecs/codec/verana/dd/v1/tx';
+import { MsgReclaimTrustDeposit, MsgReclaimTrustDepositYield, MsgRepaySlashedTrustDeposit } from 'proto-codecs/codec/verana/td/v1/tx';
+import { MsgAddGovernanceFrameworkDocument, MsgArchiveTrustRegistry, MsgCreateTrustRegistry, MsgIncreaseActiveGovernanceFrameworkVersion, MsgUpdateTrustRegistry } from 'proto-codecs/codec/verana/tr/v1/tx';
+import { MsgCreateCredentialSchema, MsgUpdateCredentialSchema, MsgArchiveCredentialSchema } from "proto-codecs/codec/verana/cs/v1/tx";
 
 export const veranaRegistry = new Registry([
     // ...defaultRegistryTypes,

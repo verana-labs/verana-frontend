@@ -11,15 +11,17 @@ import {
   MsgRenewDID,
   MsgTouchDID,
   MsgRemoveDID,
-} from '@/proto-codecs/codec/verana/dd/v1/tx';
-import { useVeranaChain } from '@/app/hooks/useVeranaChain';
-import { useNotification } from '@/app/ui/common/notification-provider';
-import { useSendTxDetectingMode } from '@/app/msg/util/sendTxDetectingMode';
+} from 'proto-codecs/codec/verana/dd/v1/tx';
+import { useVeranaChain } from '@/hooks/useVeranaChain';
+import { useNotification } from '@/ui/common/notification-provider';
+import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import {
   MSG_ERROR_ACTION_DID,
   MSG_INPROGRESS_ACTION_DID,
   MSG_SUCCESS_ACTION_DID,
-} from '@/app/constants/notificationMsgForMsgType';
+} from '@/msg/constants/notificationMsgForMsgType';
+import { resolveTranslatable } from '@/ui/dataview/types';
+import { translate } from '@/i18n/dataview';
 
 // Map each DID message type to its typeUrl and a memo label for logging/telemetry.
 export const MSG_TYPE_CONFIG_DID = {
@@ -98,23 +100,23 @@ export function useActionDID(
 
   async function actionDID(params: ActionDIDParams): Promise<DeliverTxResponse | void> {
     if (!isWalletConnected || !address) { 
-      await notify('Connect wallet', 'error');
+      await notify(resolveTranslatable({key: "notification.msg.connectwallet"}, translate)??'', 'error');
       return;
     }
 
     if (inFlight.current) {
-      await notify('There is a pending transaction. Please wait…', 'inProgress');
+      await notify(resolveTranslatable({key: "error.msg.pending.transaction"}, translate)??'', 'error');
       return;
     }
 
     const did = params.did.trim();
     if (!did) {
-      await notify('Enter valid DID', 'error');
+      await notify(resolveTranslatable({key: "error.msg.did.did"}, translate)??'', 'error');
       return;
     }
 
     if ((params.msgType === 'MsgAddDID' || params.msgType === 'MsgRenewDID') && params.years < 1) {
-      await notify('Enter valid years', 'error');
+      await notify(resolveTranslatable({key: "error.msg.did.years"}, translate)??'', 'error');
       return;
     }
 
@@ -162,13 +164,14 @@ export function useActionDID(
       }
       default:
         inFlight.current = false;
-        throw new Error(`Unsupported msgType: ${(params as { msgType: string }).msgType}`);
+        await notify(resolveTranslatable({key: "error.msg.invalid.msgtype"}, translate)??'', 'error');
+        return;
     }
 
     let notifyPromise: Promise<void> = notify(
       MSG_INPROGRESS_ACTION_DID[params.msgType](did),
       'inProgress',
-      'Transaction in progress'
+      resolveTranslatable({key: 'notification.msg.inprogress.title'}, translate)
     );
 
     let res: DeliverTxResponse | undefined;
@@ -186,20 +189,20 @@ export function useActionDID(
         notifyPromise = notify(
           MSG_SUCCESS_ACTION_DID[params.msgType](did),
           'success',
-          'Transaction successful'
+          resolveTranslatable({key: 'notification.msg.successful.title'}, translate)
         );
       } else {
         notifyPromise = notify(
           MSG_ERROR_ACTION_DID[params.msgType](did, res.code, res.rawLog),
           'error',
-          'Transaction failed'
+          resolveTranslatable({key: 'notification.msg.failed.title'}, translate)
         );
       }
     } catch (err) {
       notifyPromise = notify(
         MSG_ERROR_ACTION_DID[params.msgType](did, undefined, err instanceof Error ? err.message : String(err)),
         'error',
-        'Transaction failed'
+        resolveTranslatable({key: 'notification.msg.failed.title'}, translate)
       );
     } finally {
       inFlight.current = false;

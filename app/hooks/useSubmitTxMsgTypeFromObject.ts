@@ -1,8 +1,8 @@
 'use client';
 
-import { useActionCS } from "@/app/msg/actions_hooks/actionCS";
-import { useActionTR } from "@/app/msg/actions_hooks/actionTR";
-import { MessageType } from "@/app/constants/msgTypeConfig";
+import { useActionCS } from "@/msg/actions_hooks/actionCS";
+import { useActionTR } from "@/msg/actions_hooks/actionTR";
+import { MessageType } from "@/msg/constants/types";
 
 /**
  * Define, for each MessageType, which raw keys should be included

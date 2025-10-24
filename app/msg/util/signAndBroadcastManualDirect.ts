@@ -1,7 +1,7 @@
 'use client'
 
 import { fromBase64 } from '@cosmjs/encoding';
-import { MsgArchiveCredentialSchema, MsgCreateCredentialSchema, MsgUpdateCredentialSchema } from '@/proto-codecs/codec/verana/cs/v1/tx';
+import { MsgArchiveCredentialSchema, MsgCreateCredentialSchema, MsgUpdateCredentialSchema } from 'proto-codecs/codec/verana/cs/v1/tx';
 import {
   EncodeObject,
   Registry,
@@ -14,9 +14,9 @@ import { encodeSecp256k1Pubkey } from '@cosmjs/amino';
 import { calculateFee, DeliverTxResponse, GasPrice, SigningStargateClient } from '@cosmjs/stargate';
 import { TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 import Long from 'long';
-import { MsgAddDID, MsgRemoveDID, MsgRenewDID, MsgTouchDID } from '@/proto-codecs/codec/verana/dd/v1/tx';
-import { MsgReclaimTrustDeposit, MsgRepaySlashedTrustDeposit } from '@/proto-codecs/codec/verana/td/v1/tx';
-import { MsgAddGovernanceFrameworkDocument, MsgArchiveTrustRegistry, MsgCreateTrustRegistry, MsgIncreaseActiveGovernanceFrameworkVersion, MsgUpdateTrustRegistry } from '@/proto-codecs/codec/verana/tr/v1/tx';
+import { MsgAddDID, MsgRemoveDID, MsgRenewDID, MsgTouchDID } from 'proto-codecs/codec/verana/dd/v1/tx';
+import { MsgReclaimTrustDeposit, MsgRepaySlashedTrustDeposit } from 'proto-codecs/codec/verana/td/v1/tx';
+import { MsgAddGovernanceFrameworkDocument, MsgArchiveTrustRegistry, MsgCreateTrustRegistry, MsgIncreaseActiveGovernanceFrameworkVersion, MsgUpdateTrustRegistry } from 'proto-codecs/codec/verana/tr/v1/tx';
 
 // Register your custom protobuf message types in a Registry
 export function makeRegistry(): Registry {

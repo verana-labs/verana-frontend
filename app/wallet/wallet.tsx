@@ -9,13 +9,15 @@ import {
   // ButtonError,
   ButtonNotExist,
   ButtonRejected,
-} from "@/app/wallet/connect";
+} from "@/wallet/connect";
 import { useRouter } from "next/navigation";
-import { shortenMiddle } from "@/app/util/util";
+import { shortenMiddle } from "@/util/util";
 import { ArrowRightEndOnRectangleIcon, ArrowTopRightOnSquareIcon, QrCodeIcon, Square2StackIcon, CheckIcon } from "@heroicons/react/24/outline";
-import IconLabelButton from "@/app/ui/common/icon-label-button";
+import IconLabelButton from "@/ui/common/icon-label-button";
 import { JSX, useEffect, useState } from "react";
-import { useVeranaChain } from "@/app/hooks/useVeranaChain";
+import { useVeranaChain } from "@/hooks/useVeranaChain";
+import { translate } from "@/i18n/dataview";
+import { resolveTranslatable } from "@/ui/dataview/types";
 
 export default function Wallet({ isNavBar = true }: { isNavBar?: boolean }) {
   
@@ -81,24 +83,24 @@ export default function Wallet({ isNavBar = true }: { isNavBar?: boolean }) {
         <div className="flex items-center border rounded-md border-light-border dark:border-dark-border">
           <IconLabelButton
             Icon={QrCodeIcon}
-            title="Address QR Code"
+            title={resolveTranslatable({key: 'navbar.qr.title'}, translate)}
             className="border-transparent"
           />
           <IconLabelButton
             Icon={copied? CheckIcon: Square2StackIcon}
             onClick={() => handleCopy()}
-            title="Copy Address"
+            title={resolveTranslatable({key: 'navbar.addresscopy.title'}, translate)}
             className="border-transparent"
           />
           <IconLabelButton
             onClick={() => router.push('/account')}
             label={shortenMiddle(address, 18)}
-            title="Open Account"
+            title={resolveTranslatable({key: 'navbar.account.title'}, translate)}
             className="border-transparent underline text-connect-light-text dark:text-connect-dark-text"
           />
           <IconLabelButton
             Icon={ArrowTopRightOnSquareIcon}
-            title="Mintscan"
+            title={resolveTranslatable({key: 'navbar.mintscan.title'}, translate)}
             className="border-transparent"
             onClick={() => window.open(`https://www.mintscan.io/${veranaChain.chain_name}/account/${address}`, "_blank")}
           />
@@ -106,7 +108,7 @@ export default function Wallet({ isNavBar = true }: { isNavBar?: boolean }) {
         <IconLabelButton
           onClick={openView}
           Icon={ArrowRightEndOnRectangleIcon}
-          title="Disconnect"
+          title={resolveTranslatable({key: 'navbar.disconnect.title'}, translate)}
         />
       </>
       : 

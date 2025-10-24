@@ -1,13 +1,13 @@
 // 'use client'
 import dynamic from "next/dynamic";
 
-// import VeranaChainProvider from '@/app/providers/verana-chain-provider';
-import RequireConnectedWallet from '@/app/providers/require-connected-wallet';
-import { NotificationProvider } from '@/app/ui/common/notification-provider';
+// import VeranaChainProvider from '@/providers/verana-chain-provider';
+import RequireConnectedWallet from '@/providers/require-connected-wallet';
+import { NotificationProvider } from '@/ui/common/notification-provider';
 import { ThemeProvider } from 'next-themes';
 
 const VeranaChainProvider = dynamic(
-  () => import("@/app/providers/verana-chain-provider"),
+  () => import("@/providers/verana-chain-provider"),
   { ssr: false }
 );
 
