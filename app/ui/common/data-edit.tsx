@@ -1,15 +1,17 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { DataField, DataViewProps, isDataField, visibleFieldsForMode } from '@/app/types/dataViewTypes';
-import { getCostMessage, getDescriptionMessage, MessageType, msgTypeConfig } from '@/app/constants/msgTypeConfig';
-import { useCalculateFee } from '@/app/hooks/useCalculateFee';
-import { useTrustDepositValue } from '@/app/hooks/useTrustDepositValue';
-import { useTrustDepositAccountData } from '@/app/hooks/useTrustDepositAccountData';
-import { useNotification } from '@/app/ui/common/notification-provider';
+import { ResolvedDataField, DataViewProps, isResolvedDataField, ResolvedField, visibleFieldsForMode, translateSections } from '@/ui/dataview/types';
+import { getCostMessage, getDescriptionMessage } from '@/msg/constants/msgTypeConfig';
+import { useCalculateFee } from '@/hooks/useCalculateFee';
+import { useTrustDepositValue } from '@/hooks/useTrustDepositValue';
+import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData';
+import { useNotification } from '@/ui/common/notification-provider';
 import { useRouter } from 'next/navigation';
-import { getErrorMessage, isValidField } from '@/app/util/validations';
-import { useTrustDepositParams } from '@/app/providers/trust-deposit-params-context';
+import { getErrorMessage, isValidField } from '@/util/validations';
+import { useTrustDepositParams } from '@/providers/trust-deposit-params-context';
+import { MessageType } from '@/msg/constants/types';
+import { resolveMsgCopy } from '@/msg/constants/resolveMsgTypeConfig';
 
 type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & {
   data: T;
@@ -25,7 +27,7 @@ type FieldValidationError = {
 };
 
 export default function EditableDataView<T extends object>({
-  sections,
+  sectionsI18n,
   data,
   messageType,
   id,
@@ -33,16 +35,17 @@ export default function EditableDataView<T extends object>({
   onCancel,
   noForm = false
 }: EditableDataViewProps<T>) {
+  const sections = translateSections(sectionsI18n);
   const [formData, setFormData] = useState<T>(data);
   const [errorFields, setErrorFields] = useState<FieldValidationError[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const { description, label } = msgTypeConfig[messageType];
+  const uiMsgType = resolveMsgCopy(messageType);
   const trustDepositReclaimBurnRate = useTrustDepositParams().trustDepositReclaimBurnRate;
   const burnRate = (messageType == 'MsgReclaimTrustDeposit' ? Number(trustDepositReclaimBurnRate) : 0);
   const action = id? 'edit' : 'create';
   
   // Checks if the current field value is valid
-  const validatedRequiredField = useCallback((field: DataField<any>, value: unknown): boolean => { // eslint-disable-line @typescript-eslint/no-explicit-any
+  const validatedRequiredField = useCallback((field: ResolvedField<any>, value: unknown): boolean => { // eslint-disable-line @typescript-eslint/no-explicit-any
     if (!field.required) return true;
     if (value === undefined || value === null) return false;
     if (typeof value === "string" && value.trim() === "") return false;
@@ -96,7 +99,7 @@ export default function EditableDataView<T extends object>({
     const availableReclaimable = (accountData.reclaimable) ? Number(accountData.reclaimable)/ 1_000_000 : 0;
     sections.forEach(section => {
       (section.fields ?? []).forEach(field => {
-        if (!isDataField(field)) return;
+        if (!isResolvedDataField(field)) return;
         if (field.name !== 'claimedVNA') return;
         field.validation = {
           ...(field.validation ?? { type: 'Number' }),
@@ -111,7 +114,7 @@ export default function EditableDataView<T extends object>({
   }, [value, amountVNA, messageType, accountData.balance, accountData.reclaimable, sections]);
   
   // Updates form state and manages error tracking on change
-  function handleChange(fieldName: keyof T, value: unknown, field: DataField<T>) {
+  function handleChange(fieldName: keyof T, value: unknown, field: ResolvedDataField<T>) {
     setFormData(prev => ({ ...prev, [fieldName]: value }));
     setErrorFields(prev => {
       const key = String(fieldName);
@@ -128,7 +131,7 @@ export default function EditableDataView<T extends object>({
     const missing = new Set(errorFields);
     sections.forEach(section => {
       visibleFieldsForMode(section.fields, action)
-        .filter(isDataField)
+        .filter(isResolvedDataField)
         .forEach(field => {
           if (field.update === false) return;
           const value = formData[field.name as keyof T];
@@ -156,10 +159,10 @@ export default function EditableDataView<T extends object>({
   function hasInvalidData(): boolean {
     const invalid = new Map<string, string>();
     for (const section of sections) {
-      const fields = visibleFieldsForMode(section.fields, action).filter(isDataField);
+      const fields = visibleFieldsForMode(section.fields, action).filter(isResolvedDataField);
       for (const field of fields) {
         if (field.update === false) continue;
-        const typedField = field as DataField<T>;
+        const typedField = field as ResolvedDataField<T>;
         const value = formData[field.name as keyof T];
         if (!isValidField(typedField, value)) {
           const key = String(field.name);
@@ -191,11 +194,11 @@ export default function EditableDataView<T extends object>({
           {section.name && action == 'create' && (
             <h2 className="data-edit-section-title">{section.name}</h2>
           )}
-          {description && (
+          {uiMsgType.description && (
             <div className="form-copy">
             { (messageType === 'MsgReclaimTrustDeposit' )? 
-                getDescriptionMessage( msgTypeConfig[messageType].description, (100 - burnRate), burnRate )
-                : description
+                getDescriptionMessage(uiMsgType.description, (100 - burnRate), burnRate )
+                : uiMsgType.description
               }
             </div>
           )}
@@ -205,9 +208,9 @@ export default function EditableDataView<T extends object>({
               <table className="data-edit-table">
                 <tbody>
                   {visibleFieldsForMode(section.fields, action)
-                    .filter(isDataField)
+                    .filter(isResolvedDataField)
                     .map((field, fieldIndex) => {
-                      const typedField = field as DataField<T>;
+                      const typedField = field as ResolvedDataField<T>;
                       const value = formData[field.name as keyof T];
                       const isDisabled = field.update === false;
                       const key = String(field.name);
@@ -361,7 +364,7 @@ export default function EditableDataView<T extends object>({
             <div className="text-center py-2">
               <span
                 className="data-edit-input-description"
-                dangerouslySetInnerHTML={{ __html: getCostMessage(msgTypeConfig[messageType].cost, totalValue) }}
+                dangerouslySetInnerHTML={{ __html: getCostMessage(uiMsgType.cost, totalValue) }}
               /> 
             </div>
           )}
@@ -380,7 +383,7 @@ export default function EditableDataView<T extends object>({
               onClick={handleSave}
               disabled={!enabledAction || hasInvalidRequired || submitting}
             >
-              {label}
+              {uiMsgType.label}
             </button>
           </div>
         </div>

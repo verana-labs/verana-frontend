@@ -1,9 +1,11 @@
 'use client';
 
 import { useMemo } from 'react';
-import { MessageType } from '@/app/constants/msgTypeConfig';
+import { MessageType } from '@/msg/constants/types';
 import { useTrustDepositParams } from '../providers/trust-deposit-params-context';
-import type { TrustDepositParams } from '@/app/lib/trustDepositParams';
+import type { TrustDepositParams } from '@/lib/trustDepositParams';
+import { resolveTranslatable } from '@/ui/dataview/types';
+import { translate } from '@/i18n/dataview';
 
 /** Narrow the union to only the supported message types for this hook. */
 type SupportedMsgType =
@@ -54,12 +56,12 @@ export function useTrustDepositValue(messageType: MessageType) {
 
     const raw = params[key];              // key is a valid, literal key
     if (raw == null) {
-      return { value: null, errorTrustDepositValue: `Parameter ${key} not found` };
+      return { value: null, errorTrustDepositValue: `${key} ${resolveTranslatable({key: "error.fetch.td.value.notfound"}, translate)??'not found'}` };
     }
 
     const n = toNumberOrNull(raw);
     if (n == null) {
-      return { value: null, errorTrustDepositValue: `Parameter ${key} is not a valid number` };
+      return { value: null, errorTrustDepositValue: `${key} ${resolveTranslatable({key: "error.fetch.td.value.notnumber"}, translate)??'is not a valid number'}` };
     }
 
     return { value: n, errorTrustDepositValue: null };

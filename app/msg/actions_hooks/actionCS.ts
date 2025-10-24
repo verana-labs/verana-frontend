@@ -6,19 +6,21 @@ import {
   MsgCreateCredentialSchema,
   MsgUpdateCredentialSchema,
   MsgArchiveCredentialSchema,
-} from '@/proto-codecs/codec/verana/cs/v1/tx';
-import { useVeranaChain } from '@/app/hooks/useVeranaChain';
+} from 'proto-codecs/codec/verana/cs/v1/tx';
+import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
-import { useNotification } from '@/app/ui/common/notification-provider';
+import { useNotification } from '@/ui/common/notification-provider';
 import {
   MSG_ERROR_ACTION_CS,
   MSG_INPROGRESS_ACTION_CS,
   MSG_SUCCESS_ACTION_CS,
-} from '@/app/constants/notificationMsgForMsgType';
+} from '@/msg/constants/notificationMsgForMsgType';
 import Long from 'long';
 import { EncodeObject } from '@cosmjs/proto-signing';
-import { useSendTxDetectingMode } from '@/app/msg/util/sendTxDetectingMode';
-import { hasValidCredentialSchemaId, MSG_SCHEMA_ID, normalizeJsonSchema } from '@/app/util/json_schema_util';
+import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
+import { hasValidCredentialSchemaId, MSG_SCHEMA_ID, normalizeJsonSchema } from '@/util/json_schema_util';
+import { resolveTranslatable } from '@/ui/dataview/types';
+import { translate } from '@/i18n/dataview';
 
 // Message type configuration (typeUrl + label for memo/notification)
 export const MSG_TYPE_CONFIG_CS = {
@@ -117,7 +119,7 @@ export function useActionCS( setActiveActionId?: React.Dispatch<React.SetStateAc
 
   async function actionCS(params: ActionCSParams): Promise<DeliverTxResponse | void> {
     if (!isWalletConnected || !address) {
-      await notify('Connect wallet', 'error');
+      await notify(resolveTranslatable({key: "notification.msg.connectwallet"}, translate)??'', 'error');
       return;
     }
 
@@ -125,16 +127,16 @@ export function useActionCS( setActiveActionId?: React.Dispatch<React.SetStateAc
       try {
         const parsedSchema = JSON.parse(params.jsonSchema);
         if (!hasValidCredentialSchemaId(parsedSchema)) {
-          await notify(`Invalid credential schema id. Make sure to set the “$id” section to “${MSG_SCHEMA_ID}”`, 'error');
+          await notify(`${resolveTranslatable({key: "error.msg.cs.create.schema.id"}, translate)} ${MSG_SCHEMA_ID}`, 'error');
           return;
         }
       } catch {
-        await notify('Invalid credential schema JSON.', 'error');
+        await notify(resolveTranslatable({key: "error.msg.cs.create.schema.id"}, translate)??'', 'error');
         return;
       }
     }
     if (inFlight.current) {
-      await notify('There is a pending transaction. Please wait…', 'inProgress');
+      await notify(resolveTranslatable({key: "error.msg.pending.transaction"}, translate)??'', 'error');
       return;
     }
     inFlight.current = true;
@@ -186,14 +188,16 @@ export function useActionCS( setActiveActionId?: React.Dispatch<React.SetStateAc
       }
 
       default:
-        throw new Error('Invalid msgType');
+        await notify(resolveTranslatable({key: "error.msg.invalid.msgtype"}, translate)??'', 'error');
+        return;
     }
 
     // Show "in progress" notification
     let notifyPromise: Promise<void> = notify(
-      MSG_INPROGRESS_ACTION_CS[params.msgType],
+      // MSG_INPROGRESS_ACTION_CS[params.msgType],
+      MSG_INPROGRESS_ACTION_CS[params.msgType](),
       'inProgress',
-      'Transaction in progress'
+      resolveTranslatable({key: 'notification.msg.inprogress.title'}, translate)
     );
 
     let res: DeliverTxResponse;
@@ -213,15 +217,16 @@ export function useActionCS( setActiveActionId?: React.Dispatch<React.SetStateAc
         if (id) sessionStorage.setItem('id_updated', id);
         success = true;
         notifyPromise = notify(
-          MSG_SUCCESS_ACTION_CS[params.msgType],
+          MSG_SUCCESS_ACTION_CS[params.msgType](),
           'success',
-          'Transaction successful'
+          resolveTranslatable({key: 'notification.msg.successful.title'}, translate)
         );
       } else {
         notifyPromise =  notify(
           MSG_ERROR_ACTION_CS[params.msgType](id, res.code, res.rawLog) || `(${res.code}): ${res.rawLog}`,
+
           'error',
-          'Transaction failed'
+          resolveTranslatable({key: 'notification.msg.failed.title'}, translate)
         );
       }
 
@@ -229,7 +234,7 @@ export function useActionCS( setActiveActionId?: React.Dispatch<React.SetStateAc
       notifyPromise =  notify(
         MSG_ERROR_ACTION_CS[params.msgType](id, undefined, err instanceof Error ? err.message : String(err)),
         'error',
-        'Transaction failed'
+        resolveTranslatable({key: 'notification.msg.failed.title'}, translate)
       );
     } finally {
       inFlight.current = false;

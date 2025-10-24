@@ -5,7 +5,7 @@ import {
   getTrustDepositParams,
   trustDepositParamsInitialState,
   TrustDepositParams,
-} from '@/app/lib/trustDepositParams';
+} from '@/lib/trustDepositParams';
 
 export function useTrustDepositParams() {
   const [params, setParams] = useState<TrustDepositParams>(trustDepositParamsInitialState);

@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { calculateSRI } from '@/app/lib/calculateSRI';
+import { calculateSRI } from '@/lib/calculateSRI';
 
 export async function GET(req: NextRequest) {
   const url = req.nextUrl.searchParams.get('url');

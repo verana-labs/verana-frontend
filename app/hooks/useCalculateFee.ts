@@ -1,8 +1,8 @@
 'use client';
 
-import { veranaGasLimit, veranaGasPrice, veranaDenom } from '@/app/config/veranaChain.sign.client';
+import { veranaGasLimit, veranaGasPrice, veranaDenom } from '@/config/veranaChain.sign.client';
 import { calculateFee, GasPrice, type StdFee } from '@cosmjs/stargate';
-import type { MessageType } from '@/app/constants/msgTypeConfig';
+import type { MessageType } from '@/msg/constants/types';
 
 const gasConfig: Record<MessageType, { gasLimit: number; gasPrice: string; denom: string }> = {
   MsgAddDID: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },

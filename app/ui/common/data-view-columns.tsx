@@ -1,18 +1,19 @@
 'use client';
 
 import React, { useState, ReactNode, Dispatch, SetStateAction, useId } from 'react';
-import { DataViewProps, Field, isActionField, isDataField, isListField, isObjectListField, isStringListField, Section, TypeToken, visibleFieldsForMode } from '@/app/types/dataViewTypes';
-import { MsgTypeDID, MsgTypeTD, MsgTypeTR } from '@/app/constants/notificationMsgForMsgType';
+import { DataViewProps, isResolvedActionField, isResolvedDataField, isResolvedListField, isResolvedObjectListField, isResolvedStringListField, ResolvedField, Section, TypeToken, visibleFieldsForMode } from '@/ui/dataview/types';
+import { MsgTypeDID, MsgTypeTD, MsgTypeTR } from '@/msg/constants/notificationMsgForMsgType';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
-import useIsSmallScreen from '@/app/util/small-screen';
-import { isJson } from '@/app/util/util';
-import EditableDataView from '@/app/ui/common/data-edit';
-import { DataType, getMsgTypeFor } from '@/app/constants/msgTypeForDataType';
-import { useSubmitTxMsgTypeFromObject } from '@/app/hooks/useSubmitTxMsgTypeFromObject';
-import JsonCodeBlock from '@/app/ui/common/json-code-block';
-import GfdPage from '@/app/tr/[id]/gfd';
-import DidActionPage from '@/app/did/[id]/action';
-import TdActionPage from '@/app/account/action';
+import useIsSmallScreen from '@/util/small-screen';
+import { isJson } from '@/util/util';
+import EditableDataView from '@/ui/common/data-edit';
+import { DataType, getMsgTypeFor } from '@/msg/constants/msgTypeForDataType';
+import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject';
+import JsonCodeBlock from '@/ui/common/json-code-block';
+import GfdPage from '@/tr/[id]/gfd';
+import DidActionPage from '@/did/[id]/action';
+import TdActionPage from '@/account/action';
+import { translateSections } from '@/ui/dataview/types';
 
 // Wrapper for DataView that lets you pass the generic parameter explicitly
 function DataViewTyped<I extends object>(props: {
@@ -79,7 +80,7 @@ function DataViewTyped<I extends object>(props: {
       <div id={contentId}>
       {editing ? (
         <EditableDataView<I>
-          sections={normalized}
+          sectionsI18n={normalized}
           data={data}
           messageType={msgType}
           id={id? id : undefined}
@@ -87,7 +88,7 @@ function DataViewTyped<I extends object>(props: {
           onCancel={id? () => setEditing(false) : () => setExpanded(false)}  />
       ) : (
         <DataView<I>
-          sections={normalized}
+          sectionsI18n={normalized}
           data={data}
           id={id}
           columnsCount={columnsCount}
@@ -173,7 +174,7 @@ function chunk<T>(arr: T[], size: number): T[][] {
 }
 
 export default function DataView<T extends object>({
-  sections,
+  sectionsI18n,
   data,
   id,
   columnsCount = 3,
@@ -183,13 +184,14 @@ export default function DataView<T extends object>({
   oneColumn = false
 }: DataViewProps<T>) {
 
+  const sections = translateSections(sectionsI18n);
   const isSmallScreen = useIsSmallScreen(); // default: 640px
   const [activeActionId, setActiveActionId] = useState<string | null>(null);
 
   // Helper to render the type data field
   function renderDataField(
     groupIdx: number,
-    group: { field: Field<T>;
+    group: { field: ResolvedField<T>;
              value: T[keyof T];
              fieldIndex: number;
             }[],
@@ -219,7 +221,7 @@ export default function DataView<T extends object>({
    // Helper to render the type data field
   function renderDataFieldOneColumn(
     groupIdx: number,
-    group: { field: Field<T>;
+    group: { field: ResolvedField<T>;
              value: T[keyof T];
              fieldIndex: number;
             }[],
@@ -353,7 +355,7 @@ export default function DataView<T extends object>({
                         value: data[field.name],
                         fieldIndex,
                       }))
-                      .filter(f => isDataField(f.field) && f.value != null),
+                      .filter(f => isResolvedDataField(f.field) && f.value != null),
                     isSmallScreen ? columnsCountMd : columnsCount // Each row will have up to X columns
                   ).map((group, groupIdx) => (
                       (oneColumn) ? renderDataFieldOneColumn(groupIdx, group)
@@ -363,7 +365,7 @@ export default function DataView<T extends object>({
                   {visibleFieldsForMode(section.fields, 'view')
                   .map((field, fieldIndex) => {
                     const value = data[field.name];
-                    if (!isActionField(field) || value == undefined ) return null;
+                    if (!isResolvedActionField(field) || value == undefined ) return null;
                     const rowId = `${sectionIndex}-${fieldIndex}`;
                     const isActive = activeActionId === rowId;
                     return renderActionField(rowId, isActive,field.label, String(value), data, id);
@@ -397,7 +399,7 @@ export default function DataView<T extends object>({
                         value: data[field.name],
                         fieldIndex,
                       }))
-                      .filter(f => isDataField(f.field) && f.value != null),
+                      .filter(f => isResolvedDataField(f.field) && f.value != null),
                     isSmallScreen ? columnsCountMd : columnsCount // Each row will have up to X columns
                   ).map((group, groupIdx) => (
                     renderDataField(groupIdx, group)
@@ -406,15 +408,15 @@ export default function DataView<T extends object>({
                   {visibleFieldsForMode(section.fields, 'view')
                   .map((field, fieldIndex) => {
                     const value = data[field.name];
-                    if (isActionField(field) && value !== undefined){
+                    if (isResolvedActionField(field) && value !== undefined){
                       return renderActionField(`${sectionIndex}-${fieldIndex}`, (activeActionId === `${sectionIndex}-${fieldIndex}`), field.label, String(value), data, id);
                     }
-                    if (isListField(field) && value !== null && Array.isArray(value)){
+                    if (isResolvedListField(field) && value !== null && Array.isArray(value)){
                       const rowKey = `${sectionIndex}-${fieldIndex}-list`;
                       return (
                         <tr key={rowKey}>
                           <td colSpan={isSmallScreen ? columnsCountMd : columnsCount} className="py-1">
-                            {isStringListField(field) && (
+                            {isResolvedStringListField(field) && (
                               <ul className="data-view-list-help pb-4">
                                 {(value as string[]).map((h, idx) => (
                                   <li
@@ -425,7 +427,7 @@ export default function DataView<T extends object>({
                                 ))}
                               </ul>
                             )}
-                            {isObjectListField(field) && (
+                            {isResolvedObjectListField(field) && (
                               <>
                                 {renderObjectList({
                                   objectData: field.objectData, // binds the type I

@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { env } from 'next-runtime-env';
-import { CsData } from '@/app/types/dataViewTypes';
+import { CsData } from '@/ui/dataview/datasections/cs';
+import { resolveTranslatable } from '@/ui/dataview/types';
+import { translate } from '@/i18n/dataview';
 
 type RawSchema = Record<string, unknown> & {
   id?: string | number;
@@ -31,7 +33,7 @@ export function useCSList(trId: string) {
   const fetchCS = async () => {
 
     if (!trId || !getURL) {
-      setError('Missing TR ID or endpoint URL');
+      setError(resolveTranslatable({key: "error.fetch.cs"}, translate)?? 'Missing TR id or endpoint URL');
       setLoading(false);
       return;
     }
@@ -43,7 +45,7 @@ export function useCSList(trId: string) {
     try {
       setLoading(true);
       const res = await fetch(url);
-      if (!res.ok) throw new Error(`Error ${res.status}`);
+      if (!res.ok) setError(`Error ${res.status}`);
       const json = await res.json();
       const schemas: RawSchema[] = Array.isArray(json) ? json : (json.schemas ?? []);
       const list: CsData[] = schemas.map((src) => {

@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { DataTableProps } from '@/app/types/dataTableTypes';
+import { DataTableProps, translateColumns, translateDataTableDescriptions } from '@/ui/datatable/types';
+import { translate } from '@/i18n/dataview';
+import { resolveTranslatable } from '../dataview/types';
 
 // Returns Tailwind classes for hiding by breakpoint
 function getColumnClasses(priority?: number) {
@@ -15,16 +17,18 @@ function getColumnClasses(priority?: number) {
 }
 
 export function DataTable<T extends object>({
-  columns,
+  columnsI18n,
   data,
   initialPageSize = 10,
   pageSizeOptions = [5, 10, 20, 50],
   onRowClick,
-  description,
+  descriptionI18n,
   defaultSortColumn,
   defaultSortDirection = 'desc'
 
 }: DataTableProps<T>) {
+  const columns = translateColumns(columnsI18n);
+  const description = translateDataTableDescriptions(descriptionI18n);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(initialPageSize);
   const [filters, setFilters] = useState<Record<string, string | boolean>>({});
@@ -208,7 +212,7 @@ export function DataTable<T extends object>({
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 font-medium leading-none">
         <div className="flex items-center">
           <label htmlFor="pageSizeSelect" className='pr-2'>
-            Rows per page:
+            {resolveTranslatable({key: 'datatable.rowspage'}, translate)}:
           </label>
           <select
             id="pageSizeSelect"
@@ -230,7 +234,7 @@ export function DataTable<T extends object>({
             disabled={currentPage === 0}
             className="btn-action"
           >
-            Previous
+            {resolveTranslatable({key: 'datatable.previous'}, translate)}
           </button>
           {pageButtons.map(pageIndex => (
             <button
@@ -257,7 +261,7 @@ export function DataTable<T extends object>({
             disabled={currentPage + 1 >= totalPages}
             className="btn-action"
           >
-            Next
+            {resolveTranslatable({key: 'datatable.next'}, translate)}
           </button>
         </div>
       </div>

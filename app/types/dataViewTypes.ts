@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BanknotesIcon, CurrencyDollarIcon, IdentificationIcon, InformationCircleIcon, LinkIcon, ListBulletIcon, ShieldCheckIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
 import { ComponentType } from "react";
-import { MSG_SCHEMA_ID } from "@/app/util/json_schema_util";
+import { MSG_SCHEMA_ID } from "@/util/json_schema_util";
 
 /* Utility type: returns keys of T whose value type is assignable to V */
 type KeysWithType<T, V> = {

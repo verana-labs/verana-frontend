@@ -1,6 +1,6 @@
 'use client';
 
-import { MessageType } from "@/app/constants/msgTypeConfig";
+import { MessageType } from "@/msg/constants/types";
 
 // Allowed data types
 export type DataType = 'CsData';

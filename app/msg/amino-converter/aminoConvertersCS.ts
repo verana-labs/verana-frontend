@@ -4,8 +4,8 @@ import {
   MsgCreateCredentialSchema,
   MsgUpdateCredentialSchema,
   MsgArchiveCredentialSchema,
-} from '@/proto-codecs/codec/verana/cs/v1/tx';
-import { u64ToStr, strToU64, u32ToAmino, fromAminoU32, pickU32 } from '@/app/util/aminoHelpers';
+} from 'proto-codecs/codec/verana/cs/v1/tx';
+import { u64ToStr, strToU64, u32ToAmino, fromAminoU32, pickU32 } from '@/util/aminoHelpers';
 
 /**
  * Amino converter for MsgCreateCredentialSchema

@@ -1,11 +1,11 @@
 'use client'
 
-import '@/app/styles/global.css';
+import '@/styles/global.css';
 import { ChainProvider } from '@cosmos-kit/react';
 import "@interchain-ui/react/styles";
-import { veranaAssets } from '@/app/config/veranaChain.client';
+import { veranaAssets } from '@/config/veranaChain.client';
 import { wallets } from "cosmos-kit"
-import { useVeranaChain } from "@/app/hooks/useVeranaChain";
+import { useVeranaChain } from "@/hooks/useVeranaChain";
 import { env } from 'next-runtime-env';
 
 export default function RootLayout({ children }: { children: React.ReactNode; }) {

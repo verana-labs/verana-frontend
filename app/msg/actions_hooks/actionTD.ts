@@ -8,15 +8,17 @@ import { EncodeObject } from '@cosmjs/proto-signing';
 import {
   MsgReclaimTrustDeposit,
   MsgReclaimTrustDepositYield,
-} from '@/proto-codecs/codec/verana/td/v1/tx';
-import { useVeranaChain } from '@/app/hooks/useVeranaChain';
-import { useNotification } from '@/app/ui/common/notification-provider';
-import { useSendTxDetectingMode } from '@/app/msg/util/sendTxDetectingMode';
+} from 'proto-codecs/codec/verana/td/v1/tx';
+import { useVeranaChain } from '@/hooks/useVeranaChain';
+import { useNotification } from '@/ui/common/notification-provider';
+import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import {
   MSG_ERROR_ACTION_TD,
   MSG_INPROGRESS_ACTION_TD,
   MSG_SUCCESS_ACTION_TD,
-} from '@/app/constants/notificationMsgForMsgType';
+} from '@/msg/constants/notificationMsgForMsgType';
+import { resolveTranslatable } from '@/ui/dataview/types';
+import { translate } from '@/i18n/dataview';
 
 // Encapsulate typeUrl and memo label per trust-deposit message type.
 export const MSG_TYPE_CONFIG_TD = {
@@ -64,18 +66,18 @@ export function useActionTD(
 
   async function actionTD(params: ActionTDParams): Promise<DeliverTxResponse | void> {
     if (!isWalletConnected || !address) {
-      await notify('Connect wallet', 'error');
+      await notify(resolveTranslatable({key: "notification.msg.connectwallet"}, translate)??'', 'error');
       return;
     }
 
     if (inFlight.current) {
-      await notify('There is a pending transaction. Please wait…', 'inProgress');
+      await notify(resolveTranslatable({key: "error.msg.pending.transaction"}, translate)??'', 'error');
       return;
     }
 
     if (params.msgType === 'MsgReclaimTrustDeposit') {
       if (!Number.isFinite(params.claimedVNA) || params.claimedVNA <= 0) {
-        await notify('Enter valid claimed amount', 'error');
+        await notify(resolveTranslatable({key: "error.msg.td.claimed"}, translate)??'', 'error');
         return;
       }
     }
@@ -106,13 +108,14 @@ export function useActionTD(
       }
       default:
         inFlight.current = false;
-        throw new Error(`Unsupported msgType: ${(params as { msgType: string }).msgType}`);
+        await notify(resolveTranslatable({key: "error.msg.invalid.msgtype"}, translate)??'', 'error');
+        return;
     }
 
     let notifyPromise: Promise<void> = notify(
       MSG_INPROGRESS_ACTION_TD[params.msgType](),
       'inProgress',
-      'Transaction in progress'
+      resolveTranslatable({key: 'notification.msg.inprogress.title'}, translate)
     );
 
     let res: DeliverTxResponse | undefined;
@@ -130,20 +133,20 @@ export function useActionTD(
         notifyPromise = notify(
           MSG_SUCCESS_ACTION_TD[params.msgType](claimedLabel),
           'success',
-          'Transaction successful'
+          resolveTranslatable({key: 'notification.msg.successful.title'}, translate)
         );
       } else {
         notifyPromise = notify(
           MSG_ERROR_ACTION_TD[params.msgType](res.code, res.rawLog),
           'error',
-          'Transaction failed'
+          resolveTranslatable({key: 'notification.msg.failed.title'}, translate)
         );
       }
     } catch (err) {
       notifyPromise = notify(
         MSG_ERROR_ACTION_TD[params.msgType](undefined, err instanceof Error ? err.message : String(err)),
         'error',
-        'Transaction failed'
+        resolveTranslatable({key: 'notification.msg.failed.title'}, translate)
       );
     } finally {
       inFlight.current = false;

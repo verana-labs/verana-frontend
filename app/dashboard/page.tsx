@@ -1,12 +1,14 @@
 'use client'
 
 import { useEffect, useState } from "react";
-import { DashboardData, dashboardSections } from "@/app/types/dataViewTypes";
-import DataView from "@/app/ui/common/data-view-columns";
+import { DashboardData, dashboardSections } from "@/ui/dataview/datasections/dashboard";
+import DataView from "@/ui/common/data-view-columns";
 import { useChain } from "@cosmos-kit/react";
-import { useVeranaChain } from "@/app/hooks/useVeranaChain";
-import TitleAndButton from "@/app/ui/common/title-and-button";
-import Connected from "@/app/ui/common/connected-not-connected";
+import { useVeranaChain } from "@/hooks/useVeranaChain";
+import TitleAndButton from "@/ui/common/title-and-button";
+import Connected from "@/ui/common/connected-not-connected";
+import { resolveTranslatable } from "@/ui/dataview/types";
+import { translate } from "@/i18n/dataview";
 
 export default function Page() {
 
@@ -41,9 +43,7 @@ export default function Page() {
 
   return (
     <>
-      <TitleAndButton
-        title="Dashboard"
-      />
+      <TitleAndButton title={resolveTranslatable({key: "dashboard.title"}, translate)?? "Dashboard"} />
       <div className="center">
         <Connected isConnected={isWalletConnected} wallet={wallet}/>
       </div>
@@ -51,7 +51,7 @@ export default function Page() {
         <>
         <br/>
         <DataView<DashboardData>
-            sections={dashboardSections}
+            sectionsI18n={dashboardSections}
             data={data}
             id=""
             columnsCount={2}

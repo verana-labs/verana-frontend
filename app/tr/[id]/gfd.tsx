@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { GfdData, gfdSections, TrData } from '@/app/types/dataViewTypes';
-import EditableDataView from '@/app/ui/common/data-edit';
-import { useActionTR } from '@/app/msg/actions_hooks/actionTR';
-import { MsgTypeTR } from '@/app/constants/notificationMsgForMsgType';
+import { GfdData, gfdSections } from '@/ui/dataview/datasections/gfd';
+import { TrData } from '@/ui/dataview/datasections/tr';
+import EditableDataView from '@/ui/common/data-edit';
+import { useActionTR } from '@/msg/actions_hooks/actionTR';
+import { MsgTypeTR } from '@/msg/constants/notificationMsgForMsgType';
 
 // Define GfdPage props interface
 interface GfdPageProps {
@@ -56,7 +57,7 @@ export default function GfdPage({ action, setActiveActionId, data, setRefresh }:
     <>
       {/* Editable form */}
       <EditableDataView<GfdData>
-        sections={gfdSections}
+        sectionsI18n={gfdSections}
         id={(action === 'MsgAddGovernanceFrameworkDocument')? undefined : dataGFD.id}
         messageType={action}     
         data={dataGFD}

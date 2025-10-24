@@ -1,11 +1,11 @@
 'use client'
 
-import NavBar from "@/app/ui/common/nav-bar";
-import SideNav from "@/app/ui/common/sidenav";
+import NavBar from "@/ui/common/nav-bar";
+import SideNav from "@/ui/common/sidenav";
 import { useEffect, useState } from "react";
-import Providers from "@/app/providers/providers";
-import { TrustDepositParamsProvider } from "@/app/providers/trust-deposit-params-context";
-import { TrustDepositParams } from "@/app/lib/trustDepositParams";
+import Providers from "@/providers/providers";
+import { TrustDepositParamsProvider } from "@/providers/trust-deposit-params-context";
+import { TrustDepositParams } from "@/lib/trustDepositParams";
 
 export default function ClientLayout({ trustDepositParams, children }: { trustDepositParams: TrustDepositParams, children: React.ReactNode }) {
 

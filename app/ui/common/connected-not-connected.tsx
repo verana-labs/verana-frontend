@@ -1,8 +1,10 @@
 'use client';
 
 import { LinkSlashIcon, LinkIcon } from '@heroicons/react/24/outline';
-import Wallet from "@/app/wallet/wallet";
+import Wallet from "@/wallet/wallet";
 import Image from 'next/image';
+import { resolveTranslatable } from '../dataview/types';
+import { translate } from '@/i18n/dataview';
 
 interface WalletInfo {
     logo?: string | {
@@ -28,12 +30,10 @@ export default function Connected({ isConnected, wallet }: ConnectedProps) {
       </div>
       <div className="dash-copy">
         <div className="dash-title">
-          {isConnected ? "Connected" : "Not Connected"}
+          {isConnected ? resolveTranslatable({key: 'connected.title'}, translate) : resolveTranslatable({key: 'notconnected.title'}, translate)}
         </div>
         <div className="dash-desc">
-          {isConnected
-            ? "Your crypto wallet is connected to Verana allowing you to proceed with all features."
-            : "Please connect your preferred crypto wallet to Verana before you proceed"}
+          {isConnected ? resolveTranslatable({key: 'connected.msg'}, translate) : resolveTranslatable({key: 'notconnected.msg'}, translate)}
         </div>
       {isConnected ? (
         <Image

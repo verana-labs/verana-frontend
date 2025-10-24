@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import DataView from '@/app/ui/common/data-view-columns';
-import { accountSections, type AccountData } from '@/app/types/dataViewTypes';
-import { formatVNA } from '@/app/util/util';
-import TitleAndButton from '@/app/ui/common/title-and-button';
-import { useNotification } from '@/app/ui/common/notification-provider';
-import { useTrustDepositAccountData } from '@/app/hooks/useTrustDepositAccountData';
+import DataView from '@/ui/common/data-view-columns';
+import { formatVNA } from '@/util/util';
+import TitleAndButton from '@/ui/common/title-and-button';
+import { useNotification } from '@/ui/common/notification-provider';
+import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData';
 import { useRouter } from 'next/navigation';
+import { AccountData, accountSections } from '@/ui/dataview/datasections/account';
+import { resolveTranslatable } from '@/ui/dataview/types';
+import { translate } from '@/i18n/dataview';
 
 export default function AccountPage() {
   // Custom hook to fetch account/trust deposit data
@@ -45,7 +47,7 @@ export default function AccountPage() {
     // Show a notification if an error occurred
     if (errorAccountData && !errorNotified) {
       (async () => {
-        await notify(errorAccountData, 'error', 'Error fetching trust deposit');
+        await notify(errorAccountData, 'error', resolveTranslatable({key: "error.fetch.td.title"}, translate)?? 'Error fetching trust deposit');
         setErrorNotified(true);
         router.push('/');
       })();
@@ -91,9 +93,9 @@ export default function AccountPage() {
 
   return (
     <>
-      <TitleAndButton title="Account" />
+      <TitleAndButton title={resolveTranslatable({key: "account.title"}, translate)?? "Account"}/>
       <DataView<AccountData>
-        sections={accountSections}
+        sectionsI18n={accountSections}
         data={data}
         columnsCount={3}
         columnsCountMd={2}

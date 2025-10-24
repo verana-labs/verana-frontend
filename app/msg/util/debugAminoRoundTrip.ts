@@ -1,5 +1,5 @@
 import deepEqual from 'fast-deep-equal';
-import { veranaAmino, veranaRegistry } from '@/app/config/veranaChain.sign.client';
+import { veranaAmino, veranaRegistry } from '@/config/veranaChain.sign.client';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { toHex } from '@cosmjs/encoding';
 

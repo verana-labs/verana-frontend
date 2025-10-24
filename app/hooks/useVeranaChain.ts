@@ -2,7 +2,7 @@
 
 import { Chain } from '@chain-registry/types';
 import { env } from 'next-runtime-env';
-import { veranaChainEnv } from '@/app/config/veranaChain.client';
+import { veranaChainEnv } from '@/config/veranaChain.client';
 
 export function useVeranaChain() {
 

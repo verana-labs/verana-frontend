@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import EditableDataView from '@/app/ui/common/data-edit';
-import { TdData, tdSections } from '@/app/types/dataViewTypes';
-import { useActionTD } from '@/app/msg/actions_hooks/actionTD';
-import { MsgTypeTD } from '@/app/constants/notificationMsgForMsgType';
+import EditableDataView from '@/ui/common/data-edit';
+import { TdData, tdSections } from '@/ui/dataview/datasections/td';
+import { useActionTD } from '@/msg/actions_hooks/actionTD';
+import { MsgTypeTD } from '@/msg/constants/notificationMsgForMsgType';
 
 // Define TdActionPage props interface
 interface TdActionProps {
@@ -43,7 +43,7 @@ export default function TdActionPage({ action, setActiveActionId, setRefresh }: 
     <>
       {/* Editable form */}
       <EditableDataView<TdData>
-        sections={tdSections}
+        sectionsI18n={tdSections}
         id={"id"}
         messageType={action}     
         data={dataTD}
