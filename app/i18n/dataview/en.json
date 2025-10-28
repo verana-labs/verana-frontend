@@ -8,6 +8,7 @@
   "did.add.title": "Add DID to Directory",
   "trlist.title": "Trust Registries",
   "tr.title": "Trust Registry",
+  "tr.cs.add.title": "New Credential Schema",
   "tr.add.title": "New Trust Registry",
 
   "navbar.settings.title": "Settings",

@@ -34,11 +34,11 @@ export interface MsgCreateCredentialSchema {
   creator: string;
   trId: Long;
   jsonSchema: string;
-  issuerGrantorValidationValidityPeriod: number;
-  verifierGrantorValidationValidityPeriod: number;
-  issuerValidationValidityPeriod: number;
-  verifierValidationValidityPeriod: number;
-  holderValidationValidityPeriod: number;
+  issuerGrantorValidationValidityPeriod?: number | undefined;
+  verifierGrantorValidationValidityPeriod?: number | undefined;
+  issuerValidationValidityPeriod?: number | undefined;
+  verifierValidationValidityPeriod?: number | undefined;
+  holderValidationValidityPeriod?: number | undefined;
   issuerPermManagementMode: number;
   verifierPermManagementMode: number;
 }
@@ -51,11 +51,11 @@ export interface MsgCreateCredentialSchemaResponse {
 export interface MsgUpdateCredentialSchema {
   creator: string;
   id: Long;
-  issuerGrantorValidationValidityPeriod: number;
-  verifierGrantorValidationValidityPeriod: number;
-  issuerValidationValidityPeriod: number;
-  verifierValidationValidityPeriod: number;
-  holderValidationValidityPeriod: number;
+  issuerGrantorValidationValidityPeriod?: number | undefined;
+  verifierGrantorValidationValidityPeriod?: number | undefined;
+  issuerValidationValidityPeriod?: number | undefined;
+  verifierValidationValidityPeriod?: number | undefined;
+  holderValidationValidityPeriod?: number | undefined;
 }
 
 export interface MsgUpdateCredentialSchemaResponse {
@@ -194,11 +194,11 @@ function createBaseMsgCreateCredentialSchema(): MsgCreateCredentialSchema {
     creator: "",
     trId: Long.UZERO,
     jsonSchema: "",
-    issuerGrantorValidationValidityPeriod: 0,
-    verifierGrantorValidationValidityPeriod: 0,
-    issuerValidationValidityPeriod: 0,
-    verifierValidationValidityPeriod: 0,
-    holderValidationValidityPeriod: 0,
+    issuerGrantorValidationValidityPeriod: undefined,
+    verifierGrantorValidationValidityPeriod: undefined,
+    issuerValidationValidityPeriod: undefined,
+    verifierValidationValidityPeriod: undefined,
+    holderValidationValidityPeriod: undefined,
     issuerPermManagementMode: 0,
     verifierPermManagementMode: 0,
   };
@@ -215,19 +215,19 @@ export const MsgCreateCredentialSchema = {
     if (message.jsonSchema !== "") {
       writer.uint32(26).string(message.jsonSchema);
     }
-    if (message.issuerGrantorValidationValidityPeriod !== 0) {
+    if (message.issuerGrantorValidationValidityPeriod !== undefined) {
       writer.uint32(32).uint32(message.issuerGrantorValidationValidityPeriod);
     }
-    if (message.verifierGrantorValidationValidityPeriod !== 0) {
+    if (message.verifierGrantorValidationValidityPeriod !== undefined) {
       writer.uint32(40).uint32(message.verifierGrantorValidationValidityPeriod);
     }
-    if (message.issuerValidationValidityPeriod !== 0) {
+    if (message.issuerValidationValidityPeriod !== undefined) {
       writer.uint32(48).uint32(message.issuerValidationValidityPeriod);
     }
-    if (message.verifierValidationValidityPeriod !== 0) {
+    if (message.verifierValidationValidityPeriod !== undefined) {
       writer.uint32(56).uint32(message.verifierValidationValidityPeriod);
     }
-    if (message.holderValidationValidityPeriod !== 0) {
+    if (message.holderValidationValidityPeriod !== undefined) {
       writer.uint32(64).uint32(message.holderValidationValidityPeriod);
     }
     if (message.issuerPermManagementMode !== 0) {
@@ -332,19 +332,19 @@ export const MsgCreateCredentialSchema = {
       jsonSchema: isSet(object.jsonSchema) ? globalThis.String(object.jsonSchema) : "",
       issuerGrantorValidationValidityPeriod: isSet(object.issuerGrantorValidationValidityPeriod)
         ? globalThis.Number(object.issuerGrantorValidationValidityPeriod)
-        : 0,
+        : undefined,
       verifierGrantorValidationValidityPeriod: isSet(object.verifierGrantorValidationValidityPeriod)
         ? globalThis.Number(object.verifierGrantorValidationValidityPeriod)
-        : 0,
+        : undefined,
       issuerValidationValidityPeriod: isSet(object.issuerValidationValidityPeriod)
         ? globalThis.Number(object.issuerValidationValidityPeriod)
-        : 0,
+        : undefined,
       verifierValidationValidityPeriod: isSet(object.verifierValidationValidityPeriod)
         ? globalThis.Number(object.verifierValidationValidityPeriod)
-        : 0,
+        : undefined,
       holderValidationValidityPeriod: isSet(object.holderValidationValidityPeriod)
         ? globalThis.Number(object.holderValidationValidityPeriod)
-        : 0,
+        : undefined,
       issuerPermManagementMode: isSet(object.issuerPermManagementMode)
         ? globalThis.Number(object.issuerPermManagementMode)
         : 0,
@@ -365,19 +365,19 @@ export const MsgCreateCredentialSchema = {
     if (message.jsonSchema !== "") {
       obj.jsonSchema = message.jsonSchema;
     }
-    if (message.issuerGrantorValidationValidityPeriod !== 0) {
+    if (message.issuerGrantorValidationValidityPeriod !== undefined) {
       obj.issuerGrantorValidationValidityPeriod = Math.round(message.issuerGrantorValidationValidityPeriod);
     }
-    if (message.verifierGrantorValidationValidityPeriod !== 0) {
+    if (message.verifierGrantorValidationValidityPeriod !== undefined) {
       obj.verifierGrantorValidationValidityPeriod = Math.round(message.verifierGrantorValidationValidityPeriod);
     }
-    if (message.issuerValidationValidityPeriod !== 0) {
+    if (message.issuerValidationValidityPeriod !== undefined) {
       obj.issuerValidationValidityPeriod = Math.round(message.issuerValidationValidityPeriod);
     }
-    if (message.verifierValidationValidityPeriod !== 0) {
+    if (message.verifierValidationValidityPeriod !== undefined) {
       obj.verifierValidationValidityPeriod = Math.round(message.verifierValidationValidityPeriod);
     }
-    if (message.holderValidationValidityPeriod !== 0) {
+    if (message.holderValidationValidityPeriod !== undefined) {
       obj.holderValidationValidityPeriod = Math.round(message.holderValidationValidityPeriod);
     }
     if (message.issuerPermManagementMode !== 0) {
@@ -397,11 +397,11 @@ export const MsgCreateCredentialSchema = {
     message.creator = object.creator ?? "";
     message.trId = (object.trId !== undefined && object.trId !== null) ? Long.fromValue(object.trId) : Long.UZERO;
     message.jsonSchema = object.jsonSchema ?? "";
-    message.issuerGrantorValidationValidityPeriod = object.issuerGrantorValidationValidityPeriod ?? 0;
-    message.verifierGrantorValidationValidityPeriod = object.verifierGrantorValidationValidityPeriod ?? 0;
-    message.issuerValidationValidityPeriod = object.issuerValidationValidityPeriod ?? 0;
-    message.verifierValidationValidityPeriod = object.verifierValidationValidityPeriod ?? 0;
-    message.holderValidationValidityPeriod = object.holderValidationValidityPeriod ?? 0;
+    message.issuerGrantorValidationValidityPeriod = object.issuerGrantorValidationValidityPeriod ?? undefined;
+    message.verifierGrantorValidationValidityPeriod = object.verifierGrantorValidationValidityPeriod ?? undefined;
+    message.issuerValidationValidityPeriod = object.issuerValidationValidityPeriod ?? undefined;
+    message.verifierValidationValidityPeriod = object.verifierValidationValidityPeriod ?? undefined;
+    message.holderValidationValidityPeriod = object.holderValidationValidityPeriod ?? undefined;
     message.issuerPermManagementMode = object.issuerPermManagementMode ?? 0;
     message.verifierPermManagementMode = object.verifierPermManagementMode ?? 0;
     return message;
@@ -473,11 +473,11 @@ function createBaseMsgUpdateCredentialSchema(): MsgUpdateCredentialSchema {
   return {
     creator: "",
     id: Long.UZERO,
-    issuerGrantorValidationValidityPeriod: 0,
-    verifierGrantorValidationValidityPeriod: 0,
-    issuerValidationValidityPeriod: 0,
-    verifierValidationValidityPeriod: 0,
-    holderValidationValidityPeriod: 0,
+    issuerGrantorValidationValidityPeriod: undefined,
+    verifierGrantorValidationValidityPeriod: undefined,
+    issuerValidationValidityPeriod: undefined,
+    verifierValidationValidityPeriod: undefined,
+    holderValidationValidityPeriod: undefined,
   };
 }
 
@@ -489,19 +489,19 @@ export const MsgUpdateCredentialSchema = {
     if (!message.id.equals(Long.UZERO)) {
       writer.uint32(16).uint64(message.id);
     }
-    if (message.issuerGrantorValidationValidityPeriod !== 0) {
+    if (message.issuerGrantorValidationValidityPeriod !== undefined) {
       writer.uint32(24).uint32(message.issuerGrantorValidationValidityPeriod);
     }
-    if (message.verifierGrantorValidationValidityPeriod !== 0) {
+    if (message.verifierGrantorValidationValidityPeriod !== undefined) {
       writer.uint32(32).uint32(message.verifierGrantorValidationValidityPeriod);
     }
-    if (message.issuerValidationValidityPeriod !== 0) {
+    if (message.issuerValidationValidityPeriod !== undefined) {
       writer.uint32(40).uint32(message.issuerValidationValidityPeriod);
     }
-    if (message.verifierValidationValidityPeriod !== 0) {
+    if (message.verifierValidationValidityPeriod !== undefined) {
       writer.uint32(48).uint32(message.verifierValidationValidityPeriod);
     }
-    if (message.holderValidationValidityPeriod !== 0) {
+    if (message.holderValidationValidityPeriod !== undefined) {
       writer.uint32(56).uint32(message.holderValidationValidityPeriod);
     }
     return writer;
@@ -578,19 +578,19 @@ export const MsgUpdateCredentialSchema = {
       id: isSet(object.id) ? Long.fromValue(object.id) : Long.UZERO,
       issuerGrantorValidationValidityPeriod: isSet(object.issuerGrantorValidationValidityPeriod)
         ? globalThis.Number(object.issuerGrantorValidationValidityPeriod)
-        : 0,
+        : undefined,
       verifierGrantorValidationValidityPeriod: isSet(object.verifierGrantorValidationValidityPeriod)
         ? globalThis.Number(object.verifierGrantorValidationValidityPeriod)
-        : 0,
+        : undefined,
       issuerValidationValidityPeriod: isSet(object.issuerValidationValidityPeriod)
         ? globalThis.Number(object.issuerValidationValidityPeriod)
-        : 0,
+        : undefined,
       verifierValidationValidityPeriod: isSet(object.verifierValidationValidityPeriod)
         ? globalThis.Number(object.verifierValidationValidityPeriod)
-        : 0,
+        : undefined,
       holderValidationValidityPeriod: isSet(object.holderValidationValidityPeriod)
         ? globalThis.Number(object.holderValidationValidityPeriod)
-        : 0,
+        : undefined,
     };
   },
 
@@ -602,19 +602,19 @@ export const MsgUpdateCredentialSchema = {
     if (!message.id.equals(Long.UZERO)) {
       obj.id = (message.id || Long.UZERO).toString();
     }
-    if (message.issuerGrantorValidationValidityPeriod !== 0) {
+    if (message.issuerGrantorValidationValidityPeriod !== undefined) {
       obj.issuerGrantorValidationValidityPeriod = Math.round(message.issuerGrantorValidationValidityPeriod);
     }
-    if (message.verifierGrantorValidationValidityPeriod !== 0) {
+    if (message.verifierGrantorValidationValidityPeriod !== undefined) {
       obj.verifierGrantorValidationValidityPeriod = Math.round(message.verifierGrantorValidationValidityPeriod);
     }
-    if (message.issuerValidationValidityPeriod !== 0) {
+    if (message.issuerValidationValidityPeriod !== undefined) {
       obj.issuerValidationValidityPeriod = Math.round(message.issuerValidationValidityPeriod);
     }
-    if (message.verifierValidationValidityPeriod !== 0) {
+    if (message.verifierValidationValidityPeriod !== undefined) {
       obj.verifierValidationValidityPeriod = Math.round(message.verifierValidationValidityPeriod);
     }
-    if (message.holderValidationValidityPeriod !== 0) {
+    if (message.holderValidationValidityPeriod !== undefined) {
       obj.holderValidationValidityPeriod = Math.round(message.holderValidationValidityPeriod);
     }
     return obj;
@@ -627,11 +627,11 @@ export const MsgUpdateCredentialSchema = {
     const message = createBaseMsgUpdateCredentialSchema();
     message.creator = object.creator ?? "";
     message.id = (object.id !== undefined && object.id !== null) ? Long.fromValue(object.id) : Long.UZERO;
-    message.issuerGrantorValidationValidityPeriod = object.issuerGrantorValidationValidityPeriod ?? 0;
-    message.verifierGrantorValidationValidityPeriod = object.verifierGrantorValidationValidityPeriod ?? 0;
-    message.issuerValidationValidityPeriod = object.issuerValidationValidityPeriod ?? 0;
-    message.verifierValidationValidityPeriod = object.verifierValidationValidityPeriod ?? 0;
-    message.holderValidationValidityPeriod = object.holderValidationValidityPeriod ?? 0;
+    message.issuerGrantorValidationValidityPeriod = object.issuerGrantorValidationValidityPeriod ?? undefined;
+    message.verifierGrantorValidationValidityPeriod = object.verifierGrantorValidationValidityPeriod ?? undefined;
+    message.issuerValidationValidityPeriod = object.issuerValidationValidityPeriod ?? undefined;
+    message.verifierValidationValidityPeriod = object.verifierValidationValidityPeriod ?? undefined;
+    message.holderValidationValidityPeriod = object.holderValidationValidityPeriod ?? undefined;
     return message;
   },
 };

@@ -7,7 +7,6 @@ import {
 import { calculateFee, DeliverTxResponse, GasPrice, SigningStargateClient } from '@cosmjs/stargate';
 import { veranaAmino, veranaRegistry} from '@/config/veranaChain.sign.client';
 import { debugAminoRoundTrip } from '@/msg/util/debugAminoRoundTrip';
-import { sanitizeProtoMsg } from '@/msg/util//sanitizeProtoMsg';
 
 type AminoSignOptions = {
   rpcEndpoint: string;
@@ -29,7 +28,6 @@ export async function signAndBroadcastManualAmino({
   memo = '',
 }: AminoSignOptions): Promise<DeliverTxResponse> {
 
-  messages = messages.map(sanitizeProtoMsg);
   debugAminoRoundTrip(messages[0]);
 
   // Connect a client — only used for simulate and broadcast

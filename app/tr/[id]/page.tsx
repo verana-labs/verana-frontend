@@ -85,7 +85,7 @@ export default function TRViewPage() {
       issuerGrantorValidationValidityPeriod: 0, verifierGrantorValidationValidityPeriod: 0,
       issuerValidationValidityPeriod: 0, verifierValidationValidityPeriod: 0, holderValidationValidityPeriod: 0,
       issuerPermManagementMode: 1, verifierPermManagementMode: 1, jsonSchema: "",
-      title: "New Credential Schema", id: ''
+      title: resolveTranslatable({key: "tr.cs.add.title"}, translate), id: ''
       };
     computed.csList =
       computed.controller === address
