@@ -1,5 +1,6 @@
 'use client';
 
+/* eslint-disable */
 import {
   MsgCreateCredentialSchema,
   MsgUpdateCredentialSchema,

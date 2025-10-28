@@ -206,8 +206,8 @@ export function useActionCS( setActiveActionId?: React.Dispatch<React.SetStateAc
 
     try {
 
-      // const msg: EncodeObject = { typeUrl, value };
-      const msgSanitized = sanitizeProtoMsg({ typeUrl, value });
+      const msg: EncodeObject = { typeUrl, value };
+      const msgSanitized = sanitizeProtoMsg(msg);
 
       res = await sendTx({
         msgs: [msgSanitized],
