@@ -21,6 +21,7 @@ import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import { hasValidCredentialSchemaId, MSG_SCHEMA_ID, normalizeJsonSchema } from '@/util/json_schema_util';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
+import { sanitizeProtoMsg } from '../util/sanitizeProtoMsg';
 
 // Message type configuration (typeUrl + label for memo/notification)
 export const MSG_TYPE_CONFIG_CS = {
@@ -44,22 +45,22 @@ type ActionCSParams =
       msgType: 'MsgCreateCredentialSchema';
       trId: string | number | Long;
       jsonSchema: string;
-      issuerGrantorValidationValidityPeriod: number;
-      verifierGrantorValidationValidityPeriod: number;
-      issuerValidationValidityPeriod: number;
-      verifierValidationValidityPeriod: number;
-      holderValidationValidityPeriod: number;
+      issuerGrantorValidationValidityPeriod?: number;
+      verifierGrantorValidationValidityPeriod?: number;
+      issuerValidationValidityPeriod?: number;
+      verifierValidationValidityPeriod?: number;
+      holderValidationValidityPeriod?: number;
       issuerPermManagementMode: number;
       verifierPermManagementMode: number;
     }
   | {
       msgType: 'MsgUpdateCredentialSchema';
       id: string | number | Long;
-      issuerGrantorValidationValidityPeriod: number;
-      verifierGrantorValidationValidityPeriod: number;
-      issuerValidationValidityPeriod: number;
-      verifierValidationValidityPeriod: number;
-      holderValidationValidityPeriod: number;
+      issuerGrantorValidationValidityPeriod?: number;
+      verifierGrantorValidationValidityPeriod?: number;
+      issuerValidationValidityPeriod?: number;
+      verifierValidationValidityPeriod?: number;
+      holderValidationValidityPeriod?: number;
     }
   | {
       msgType: 'MsgArchiveCredentialSchema';
@@ -172,7 +173,7 @@ export function useActionCS( setActiveActionId?: React.Dispatch<React.SetStateAc
           verifierGrantorValidationValidityPeriod: params.verifierGrantorValidationValidityPeriod,
           issuerValidationValidityPeriod: params.issuerValidationValidityPeriod,
           verifierValidationValidityPeriod: params.verifierValidationValidityPeriod,
-          holderValidationValidityPeriod: params.holderValidationValidityPeriod,// > 0 ? params.holderValidationValidityPeriod : Number(0),
+          holderValidationValidityPeriod: params.holderValidationValidityPeriod
         });
         break;
       }
@@ -205,10 +206,11 @@ export function useActionCS( setActiveActionId?: React.Dispatch<React.SetStateAc
 
     try {
 
-      const msg: EncodeObject = { typeUrl, value };
+      // const msg: EncodeObject = { typeUrl, value };
+      const msgSanitized = sanitizeProtoMsg({ typeUrl, value });
 
       res = await sendTx({
-        msgs: [msg],
+        msgs: [msgSanitized],
         memo: MSG_TYPE_CONFIG_CS[params.msgType].txLabel
       });      
 
