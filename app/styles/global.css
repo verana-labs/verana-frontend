@@ -2,24 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
+
+/* Animations */
+.pulse-dot::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  background: inherit;
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+
+/* Component utilities */
+@layer utilities {
+  /* Scrollbar */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  /* Glass Efect  */
+  .glass-effect { @apply backdrop-blur-md bg-white/10; }
+  /* Sortable Header */
+  .sortable-header { @apply cursor-pointer select-none; }
+  .sortable-header:hover { @apply bg-black/5; }
+  .dark .sortable-header:hover { @apply bg-white/5; }
+}
+
 @layer components {
   /* ---------- App-level body styling ---------- */
   .app-body {
-    @apply font-sans antialiased font-medium;
+    @apply font-inter; /* antialiased font-medium;*/
     @apply text-xs md:text-base;
-    @apply text-light-text dark:text-dark-text bg-light-bg dark:bg-dark-bg;
+    /* @apply text-light-text dark:text-dark-text bg-light-bg dark:bg-dark-bg;
     @apply border-light-border dark:border-dark-border;
-    @apply items-center justify-center;
+    @apply items-center justify-center; */
+    @apply bg-gray-50 dark:bg-gray-900 transition-colors duration-300;
   }
 
   /* ---------- App shell containers ---------- */
 .app-container {
-  @apply max-w-[1440px] flex flex-col mx-auto
-         h-screen overflow-hidden;
+  /* @apply max-w-[1440px] flex flex-col mx-auto
+         h-screen overflow-hidden; */
+  @apply flex;
+
 }
 
 .app-header {
-  @apply w-full bg-light-bg dark:bg-dark-bg;
+  /* @apply w-full bg-light-bg dark:bg-dark-bg; */
+  @apply bg-white dark:bg-surface border-b border-neutral-20 dark:border-neutral-70 sticky top-0 z-50 transition-colors duration-300;
 }
 
 .app-main {
@@ -124,11 +156,12 @@
   }
 
   .btn-action {
-    @apply inline-flex items-center justify-center rounded-md transition-all px-2 py-1
+    /* @apply inline-flex items-center justify-center rounded-md transition-all px-2 py-1
            border border-button-light-border dark:border-button-dark-border
            hover:text-light-selected-text hover:bg-light-selected-bg
            dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg
-           disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none;
+           disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none; */
+    @apply p-2 text-neutral-70 hover:text-gray-500 hover:bg-surface-muted dark:hover:bg-surface-muted rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500;
   }
 
   .label {
@@ -214,7 +247,7 @@
   }
 
   .icon-sm {
-    @apply h-6 w-6 mr-1;
+    @apply h-5 w-5;
   }
   
   .data-edit-container,
@@ -271,7 +304,7 @@
   }
 
   .data-view-section-icon-bg{
-    @apply w-6 h-6 rounded-full flex justify-center items-center;
+    @apply w-5 h-5 rounded-full flex justify-center items-center;
   }
 
   .data-view-section-icon {
@@ -376,7 +409,8 @@
   }
 
   .navbar-container-general {
-    @apply h-16 p-4 flex justify-between items-center text-xs md:text-sm;
+    /* @apply h-16 p-4 flex justify-between items-center text-xs md:text-sm; */
+    @apply flex items-center justify-between h-16;
   }
 
   .navbar-container-left {
@@ -392,13 +426,19 @@
   }
 
   .navbar-mobile-menu-container {
-    @apply  inline-flex items-center justify-center p-2 rounded-md
+    /* @apply  inline-flex items-center justify-center p-2 rounded-md
             hover:text-light-selected-text hover:bg-light-selected-bg
-            dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg;
+            dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg; */
+    @apply  lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-surface-muted dark:hover:bg-surface-muted transition-colors;
   }
 
   .navbar-user-actions {
-    @apply inline-flex items-center justify-start gap-3;
+    /* @apply inline-flex items-center justify-start gap-3; */
+    @apply hidden lg:flex items-center space-x-4 rtl:space-x-reverse;
+  }
+
+  .navbar-icon {
+    @apply p-2 text-neutral-70 hover:text-gray-500 hover:bg-surface-muted dark:hover:bg-surface-muted rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500;
   }
 
   .navbar-user-actions-btn-container {
@@ -413,17 +453,24 @@
   }
 
   .nav-links-link {
-    @apply flex items-center gap-2 h-12 rounded-md  transition-all text-base font-medium
+    /* @apply flex items-center gap-2 h-12 rounded-md  transition-all text-base font-medium
            hover:text-light-selected-text hover:bg-light-selected-bg
-           dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg;
+           dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg; */
+    @apply text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-700 dark:hover:text-primary-300 flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer;
   }
 
   .nav-links-selected{
-    @apply bg-light-selected-bg text-light-selected-text dark:bg-dark-selected-bg dark:text-dark-selected-text;
+    /* @apply bg-light-selected-bg text-light-selected-text dark:bg-dark-selected-bg dark:text-dark-selected-text; */
+    @apply bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer;
   }
 
   .nav-links-icon{
-    @apply w-6 h-6 flex-shrink-0;
+    /* @apply w-6 h-6 flex-shrink-0; */
+    @apply text-gray-400 mr-3 text-sm;
+  }
+
+  .nav-links-icon-selected {
+    @apply text-primary-500 mr-3 text-sm
   }
 
   .nav-links-label {
@@ -457,11 +504,13 @@
   }
 
   .sidenav-container {
-    @apply flex flex-col justify-start items-start gap-8;
+    /* @apply flex flex-col justify-start items-start gap-8; */
+    @apply flex flex-col w-64 bg-white dark:bg-surface border-r border-neutral-20 dark:border-neutral-70 transition-colors duration-300;
   }
 
   .sidenav-links {
-    @apply self-stretch relative flex flex-col justify-start items-start;
+    /* @apply self-stretch relative flex flex-col justify-start items-start; */
+    @apply flex-1 flex flex-col pt-5 pb-4 overflow-y-auto;
   }
 
   .toggle-container {
@@ -486,7 +535,8 @@
   }
 
   .logo-container {
-    @apply flex items-center mr-4 min-w-0;
+    /* @apply flex items-center mr-4 min-w-0; */
+    @apply flex items-center space-x-3 rtl:space-x-reverse;
   }
 
   .logo-image {
@@ -494,7 +544,8 @@
   }
 
   .logo-label {
-    @apply font-semibold text-base md:text-xl flex-shrink min-w-0;
+    /* @apply font-semibold text-base md:text-xl flex-shrink min-w-0; */
+    @apply text-xl font-bold text-gray-900 dark:text-white hidden sm:block;
   }
 
   .notify-container {

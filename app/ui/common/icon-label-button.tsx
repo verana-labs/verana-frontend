@@ -1,12 +1,12 @@
 'use client';
 
 import React, { ReactNode } from 'react';
-import clsx from 'clsx';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 export interface IconLabelButtonProps {
   onClick?: () => void;
   label?: ReactNode;
-  Icon?: React.ComponentType<{ className?: string }>;
+  Icon?: React.ComponentType<{ className?: string }> | any;
   className?: string;
   title?: string;
 }
@@ -23,11 +23,15 @@ export default function IconLabelButton({
       type="button"
       onClick={onClick}
       title={title}
-      className={clsx('btn-action h-8',
-        className
-      )}
+      className={className}
     >
-      {Icon && <Icon className="data-view-section-icon" />}
+      {Icon && (
+        typeof Icon === 'object' && Icon.iconName ? (
+          <FontAwesomeIcon icon={Icon} />
+        ) : (
+          <Icon className="icon-sm" />
+        )
+      )}      
       {label}
     </button>
   );

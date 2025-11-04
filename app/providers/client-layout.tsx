@@ -15,17 +15,18 @@ export default function ClientLayout({ trustDepositParams, children }: { trustDe
 
     return (
       <Providers>
+          {/* Header */}
+          <header className="app-header">
+            <NavBar />
+          </header>
+
+          {/* Main Container */}
           <div className="app-container">
-            {/* Header */}
-            <header className="app-header">
-              <NavBar />
-            </header>
-            {/* Main Container */}
-            <div className="app-main">
               {/* Side Navigation */}
-              <aside className="hidden md:block app-sidenav">
+              <aside className="hidden lg:flex lg:flex-shrink-0">
                 <SideNav />
               </aside>
+
               {/* Content */}
               <TrustDepositParamsProvider value={trustDepositParams}>
                 <main className="app-content">
@@ -34,7 +35,6 @@ export default function ClientLayout({ trustDepositParams, children }: { trustDe
                   </div>
                 </main>
               </TrustDepositParamsProvider>
-            </div>
           </div>
       </Providers>
     );         

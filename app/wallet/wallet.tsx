@@ -77,7 +77,7 @@ export default function Wallet({ isNavBar = true }: { isNavBar?: boolean }) {
   }
 
   return (
-    <div className="flex items-center justify-center gap-2">
+    <div className="hidden lg:flex items-center space-x-4 rtl:space-x-reverse">
       { address && isNavBar ?
         <>
         <div className="flex items-center border rounded-md border-light-border dark:border-dark-border">

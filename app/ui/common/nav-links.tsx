@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import clsx from 'clsx';
 import { useState } from 'react';
-import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { links } from '@/lib/navlinks';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
 
 export default function NavLinks() {
   const pathname = usePathname();
@@ -16,9 +16,8 @@ const [openIndex, setOpenIndex] = useState<number | null>(null);
   };
 
   return (
-    <>
+    <nav className="mt-5 flex-1 px-2 space-y-1">
       {links.map((link, idx: number) => {
-        const Icon = link.icon;
         const hasSubLinks = Array.isArray(link.links) && link.links.length > 0;
 
         return (
@@ -26,22 +25,23 @@ const [openIndex, setOpenIndex] = useState<number | null>(null);
 
               <Link
                 href={link.href}
-                className={clsx( 'nav-links-link',
-                  { 'nav-links-selected' : pathname === link.href }
-                )}
+                className={(pathname === link.href) ? 'nav-links-selected' : 'nav-links-link'}
               >
-                <Icon className="nav-links-icon"/>
+                <FontAwesomeIcon 
+                  icon={link.icon} 
+                  className={(pathname === link.href) ? 'nav-links-icon-selected' : 'nav-links-icon'}
+                />
                 {link.name && (<span className="nav-links-label">{link.name}</span>)}
                 {hasSubLinks && (
-                  <ChevronDownIcon
+                  <FontAwesomeIcon
+                    icon={faChevronDown}
                     onClick={(e) => {
                       e.preventDefault(); 
                       e.stopPropagation(); 
                       toggleDropdown(idx);
                     }}
-                    className={clsx("nav-links-down-icon",
-                    openIndex === idx ? "rotate-180" : ""
-                  )} />
+                    className={openIndex === idx ? "rotate-180" : ""}
+                  />
                 )}
               </Link>
 
@@ -54,9 +54,6 @@ const [openIndex, setOpenIndex] = useState<number | null>(null);
                       <Link
                         key={sublink.name}
                         href={sublink.href}
-                        className={clsx('nav-links-sublinks-link',
-                          { 'nav-links-selected' : pathname === sublink.href }
-                        )}
                       >
                         <span className="nav-links-sublinks-label">{sublink.name}</span>
                       </Link>
@@ -68,7 +65,7 @@ const [openIndex, setOpenIndex] = useState<number | null>(null);
           </div>
         );
       })}
-    </>
+    </nav>
   );
 }
 
