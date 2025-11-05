@@ -29,17 +29,8 @@ export function shortenMiddle(str: string, maxLength: number): string {
 }
 
 export function formatDate( input: Date | string | number ): string {
-  const date = input instanceof Date
-    ? input
-    : new Date(
-        typeof input === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(input)
-          ? input + 'T00:00:00Z'
-          : input
-      );
-  const year  = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day   = String(date.getUTCDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const date = new Date(input).toLocaleDateString();
+  return date;
 }
 
 export function isExpired (input: Date | string | number ): boolean {
@@ -69,3 +60,25 @@ export function isJson(value: unknown): object | null {
 
   return null;
 }
+
+export function getStatus(input: Date | string | number): 'expired' | 'expiring' | 'active' {
+  const target = new Date(String(input));
+  if (Number.isNaN(target.getTime())) return 'expired'; // fallback
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const monthAfter = new Date(today);
+  monthAfter.setMonth(monthAfter.getMonth() + 1);
+
+  if (target < today) {
+    return 'expired';
+  }
+
+  if (target >= today && target < monthAfter) {
+    return 'expiring';
+  }
+
+  return 'active';
+}
+

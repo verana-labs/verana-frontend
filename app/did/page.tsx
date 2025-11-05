@@ -3,15 +3,17 @@
 import React, { useEffect, useState } from 'react';
 import { DataTable } from '@/ui/common/data-table';
 import { useRouter } from 'next/navigation';
-import { PlusIcon } from '@heroicons/react/24/outline';
 import TitleAndButton from '@/ui/common/title-and-button';
 import { env } from 'next-runtime-env';
 import { useNotification } from '@/ui/common/notification-provider';
-import { columnsDidList, description, DidList } from '@/ui/datatable/columnslist/did';
+import { columnsDidList, description, didFilter, DidList } from '@/ui/datatable/columnslist/did';
 import { useChain } from '@cosmos-kit/react';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
+import { translateDataTableDescriptions } from '@/ui/datatable/types';
+import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import { getStatus } from '@/util/util';
 
 export default function DidPage() {
   const [dids, setDids] = useState<DidList[]>([]);
@@ -34,7 +36,12 @@ export default function DidPage() {
           }
           const res = await fetch(listUrl + `/list?account=${address}`);
           const json = await res.json();
-          setDids(Array.isArray(json) ? json : json.dids || []);
+          let listDids = Array.isArray(json) ? json : json.dids || [];
+          listDids = listDids.map((did: any) => ({
+            ...did,
+            status: getStatus(did.exp)
+          }));
+          setDids(listDids);
       } catch (err) {
         notify(
           err instanceof Error ? err.message : String(err),
@@ -57,18 +64,21 @@ export default function DidPage() {
     <>
       <TitleAndButton
         title={resolveTranslatable({key: "directory.title"}, translate)?? "DID Directory"}
+        description={translateDataTableDescriptions(description)}
         buttonLabel={resolveTranslatable({key: "button.did.add"}, translate)?? "Add DID"}
         to="/did/add"
-        Icon={PlusIcon}
+        Icon={faPlus}
       />
       <DataTable
+        entities={resolveTranslatable({key: "datatable.did.entities"}, translate)??''}
         columnsI18n={columnsDidList}
         data={dids}
         initialPageSize={10}
         pageSizeOptions={[5, 10, 20, 50]}
         onRowClick={(row) => router.push(`/did/${encodeURIComponent(row.did)}`)}
-        descriptionI18n={description}
         defaultSortColumn={'modified'}
+        filterI18n={didFilter}
+        showDetailModal={true}
       />
     </>
   );

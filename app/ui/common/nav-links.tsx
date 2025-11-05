@@ -9,7 +9,7 @@ import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
 
 export default function NavLinks() {
   const pathname = usePathname();
-const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const toggleDropdown = (idx: number) => {
     setOpenIndex(openIndex === idx ? null : idx);
