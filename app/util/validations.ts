@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { DataField } from '@/ui/dataview/types';
 
-const DID_PATTERN = /^did:[a-zA-Z0-9]+:[a-zA-Z0-9._-:%]+$/;
+const DID_PATTERN = /^did:[a-zA-Z0-9]+:[a-zA-Z0-9._:%-]+$/;
 const LANGUAGE_TAG_PATTERN = /^[a-z]{2}$/;
 
 export function isValidDID(did: string): boolean {
