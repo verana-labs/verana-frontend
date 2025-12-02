@@ -1,10 +1,9 @@
 /* Hook orchestrating the lifecycle of DID transactions (add, renew, touch, remove). */
 'use client';
 
-import { useRef, Dispatch, SetStateAction } from 'react';
+import { useRef } from 'react';
 import { DeliverTxResponse } from '@cosmjs/stargate';
 import { useChain } from '@cosmos-kit/react';
-import { useRouter } from 'next/navigation';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import {
   MsgAddDID,
@@ -66,36 +65,29 @@ type ActionDIDParams =
 
 // Returns an action executor tailored for DID transactions, wiring wallet state, notifications, and navigation.
 export function useActionDID(
-  setActiveActionId?: Dispatch<SetStateAction<string | null>>,
-  setRefresh?: Dispatch<SetStateAction<string | null>>
+  onClose?: () => void,
+  onRefresh?: () => void,
+  onBack?: () => void
 ) {
   const veranaChain = useVeranaChain();
   const { address, isWalletConnected } = useChain(veranaChain.chain_name);
   const { notify } = useNotification();
   const sendTx = useSendTxDetectingMode(veranaChain);
-  const router = useRouter();
   const inFlight = useRef(false);
 
   // After a successful broadcast, push or refresh the relevant route depending on the action performed.
   const handleSuccess = (msgType: ActionDIDParams['msgType'], did: string) => {
-    if (msgType === 'MsgAddDID') {
-      router.push(`/did/${encodeURIComponent(did)}`);
-      return;
-    }
-
-    if (msgType === 'MsgRemoveDID') {
-      setActiveActionId?.(null);
-      router.push('/did');
-      return;
-    }
-
-    setRefresh?.('actionDID');
-    setActiveActionId?.(null);
+    console.info("handleSuccess");
+    onRefresh?.();
+    setTimeout(()=>{ 
+      if (msgType === "MsgRemoveDID") onBack?.();
+      else onClose?.();
+    }, 500);
   };
 
   // Collapse the action UI when the broadcast fails or is rejected.
   const handleFailure = () => {
-    setActiveActionId?.(null);
+    onClose?.();
   };
 
   async function actionDID(params: ActionDIDParams): Promise<DeliverTxResponse | void> {

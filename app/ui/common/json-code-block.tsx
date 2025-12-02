@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Highlight, themes } from 'prism-react-renderer';
-import { CheckIcon, Square2StackIcon } from '@heroicons/react/24/outline';
 import IconLabelButton from './icon-label-button';
+import { faCheck, faCopy } from '@fortawesome/free-solid-svg-icons';
 
 type JsonCodeBlockProps = {
   value: unknown;
@@ -91,7 +91,7 @@ export default function JsonCodeBlock({ value, className }: JsonCodeBlockProps) 
         )}
       </Highlight>
       <IconLabelButton
-        Icon={copied? CheckIcon: Square2StackIcon}
+        icon={copied? faCheck: faCopy}
         onClick={() => handleCopy()}
         title="Copy Address"
         className="absolute right-3 top-3"

@@ -4,8 +4,11 @@ import React, { useState, useMemo } from 'react';
 import { DataTableProps, translateColumns, translateFilter } from '@/ui/datatable/types';
 import { translate } from '@/i18n/dataview';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMagnifyingGlass, faSort } from '@fortawesome/free-solid-svg-icons';
+import { faMagnifyingGlass, faPlus, faSort, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { resolveTranslatable } from '@/ui/dataview/types';
+import DIDView from '@/did/[id]/view';
+import { DidData } from '@/ui//dataview/datasections/did';
+import TitleAndButton from '@/ui/common/title-and-button';
 
 // Returns Tailwind classes for hiding by breakpoint
 function getColumnClasses(priority?: number) {
@@ -23,17 +26,21 @@ export function DataTable<T extends object>({
   columnsI18n,
   data,
   initialPageSize = 10,
-  pageSizeOptions = [5, 10, 20, 50],
   onRowClick,
   defaultSortColumn,
   defaultSortDirection = 'desc',
   filterI18n,
-  showDetailModal = false
+  showDetailModal = false,
+  tableTitle,
+  addTitle,
+  onAdd,
+  detailTitle,
+  onRefresh
 }: DataTableProps<T>) {
   const columns = translateColumns(columnsI18n);
   const filter = translateFilter(filterI18n);
   const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(initialPageSize);
+  const pageSize = initialPageSize;
   const [filters, setFilters] = useState<Record<string, string | boolean>>({});
 
   const [sortColumn, setSortColumn] = useState<keyof T | null>(defaultSortColumn ?? null);
@@ -74,6 +81,9 @@ export function DataTable<T extends object>({
   // Pagination
   const totalPages = Math.max(1, Math.ceil(sortedData.length / pageSize));
   const startIndex = currentPage * pageSize;
+  const displayStartIndex = startIndex + 1;
+  const totalItems = sortedData.length;
+  const endIndex = Math.min((currentPage + 1) * pageSize, totalItems);
   const currentData = sortedData.slice(startIndex, startIndex + pageSize);
 
   // Pagination controls
@@ -166,12 +176,24 @@ export function DataTable<T extends object>({
         <section id="data-table-section" className="mb-8">
           <div className="data-table-section-div overflow-hidden">
             <div className="px-6 py-4 border-b border-neutral-20 dark:border-neutral-70">
+              { entities && (
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{resolveTranslatable({key: 'datatable.did.your'}, translate)} {entities}</h3>
+                <h3 className="data-table-title">{resolveTranslatable({key: 'datatable.your'}, translate)} {entities}</h3>
                 <div className="text-sm text-neutral-70 dark:text-neutral-70">
                   <span id="results-count" className="">{currentData.length} {entities}</span>
                 </div>
               </div>
+              )}
+              { tableTitle && addTitle && (
+              <TitleAndButton
+                title=  {tableTitle}
+                buttonLabel={addTitle}
+                // to="/tr/add"
+                icon={faPlus}
+                isTable={true}
+                onClick={onAdd}
+              />
+              )}
             </div>
             {/* Desktop Table */}
             <div className="hidden md:block overflow-x-auto">
@@ -202,20 +224,32 @@ export function DataTable<T extends object>({
                     <tr
                       key={rowIdx}
                       onClick={() => {
-                        if (showDetailModal) setSelectedRow(row);   // ← NEW
+                        if (showDetailModal) setSelectedRow(row);
                         else onRowClick?.(row);
                       }}
                       className={'data-table-row'}
                     >
-                      {columns.map((col) => (
-                        <td
-                          key={String(col.accessor)}
-                          className={`data-table-td ${getColumnClasses(col.priority)} ${
-                            col.className ? col.className(row[col.accessor]) : ''}` }
-                          >                          
-                          {col.format ? col.format(row[col.accessor]) : String(row[col.accessor] ?? '')}
-                        </td>
-                      ))}
+                      {columns.map((col) => {
+                        const formatted = col.format
+                          ? col.format(row[col.accessor])
+                          : row[col.accessor];
+
+                        const valueStr = String(formatted ?? "");
+
+                        return (
+                          <td
+                            key={String(col.accessor)}
+                            className={`data-table-td ${getColumnClasses(col.priority)} ${
+                              col.className ? col.className(row[col.accessor]) : ""
+                            }`}
+                          >
+                            {col.isHtml ? 
+                            (<p dangerouslySetInnerHTML={{ __html: valueStr }}/>) : 
+                            (valueStr)
+                            }
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
                 </tbody>
@@ -240,7 +274,7 @@ export function DataTable<T extends object>({
                   {/* <div className="flex flex-col space-y-2"> */}
                     <div className="flex justify-between">
                       <div className="flex flex-col space-y-2">
-                      {columns.filter((col) => col.priority === undefined)
+                      {columns.filter((col) => col.priority === undefined &&  !col.viewMobileRight)
                       .map((col) => (
                         <div key={String(col.accessor)} >
                           <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">{col.header}</label>
@@ -255,116 +289,110 @@ export function DataTable<T extends object>({
                       ))}
                       </div>
                       <div className="text-right">
-                      {columns.filter((col) => col.priority === 9999)
-                      .map((col) => (
-                        <div key={String(col.accessor)} >
-                          <label 
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                col.className ? col.className(row[col.accessor]) : ''
-                              }`}
-                          >
-                            {col.format ? col.format(row[col.accessor]) : String(row[col.accessor] ?? '')}
-                          </label>
-                        </div>
-                      ))}
+                      {columns.filter((col) => col.viewMobileRight)
+                      .map((col) => {
+                        const formatted = col.format
+                        ? col.format(row[col.accessor])
+                        : row[col.accessor];
+                        const valueStr = String(formatted ?? "");
+                        return (
+                          <div key={String(col.accessor)}>
+                            {col.isHtml ? 
+                            (<p dangerouslySetInnerHTML={{ __html: valueStr }} />) : 
+                            (<label  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${col.className ? col.className(row[col.accessor]) : ''}`}>{ valueStr }</label>)
+                            }
+                          </div>)
+                      })}
                       </div>
                     </div>
                   {/* </div> */}
                 </div>
               ))}
             </div>
+            {/* Pagination controls */}
+            <div className="px-6 py-4 border-t border-neutral-20 dark:border-neutral-70">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-neutral-70 dark:text-neutral-70">
+                  Showing <span>{displayStartIndex}</span> to <span>{endIndex}</span> of <span>{totalItems}</span> results
+                </div>
 
-          </div>
-          {/* Pagination controls */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 font-medium leading-none">
-            <div className="flex items-center">
-              <label htmlFor="pageSizeSelect" className='pr-2'>
-                {resolveTranslatable({key: 'datatable.rowspage'}, translate)}:
-              </label>
-              <select
-                id="pageSizeSelect"
-                value={pageSize}
-                onChange={e => {
-                  setPageSize(Number(e.target.value));
-                  setCurrentPage(0); // Go to first page when changing page size
-                }}
-                className="select block w-20"
-              >
-                {pageSizeOptions.map(size => (
-                  <option key={size} value={size}>{size}</option>
-                ))}
-              </select>
-            </div>
-            <div className="actions-center">
-              <button
-                onClick={() => goToPage(currentPage - 1)}
-                disabled={currentPage === 0}
-                className="btn-action"
-              >
-                {resolveTranslatable({key: 'datatable.previous'}, translate)}
-              </button>
-              {pageButtons.map(pageIndex => (
-                <button
-                  key={pageIndex}
-                  onClick={() => goToPage(pageIndex)}
-                  className={`px-3 py-1 
-                    ${pageIndex === currentPage
-                      ? 'data-table-current-page'
-                      : 'btn-action'}
-                  `}
-                >{pageIndex + 1}</button>
-              ))}
-              {showEllipsis && (
-                <>
-                  <span>…</span>
+                <div className="flex items-center space-x-2">
+
+                  {/* prev */}
                   <button
-                    onClick={() => goToPage(totalPages - 1)}
-                    className="btn-action"
-                  >{totalPages}</button>
-                </>
-              )}
-              <button
-                onClick={() => goToPage(currentPage + 1)}
-                disabled={currentPage + 1 >= totalPages}
-                className="btn-action"
-              >
-                {resolveTranslatable({key: 'datatable.next'}, translate)}
-              </button>
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 0}
+                    className="px-3 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {resolveTranslatable({ key: 'datatable.previous' }, translate)}
+                  </button>
+
+                  {/* pages */}
+                  <div className="flex space-x-1">
+                    {pageButtons.map(pageIndex => (
+                      <button
+                        key={pageIndex}
+                        onClick={() => goToPage(pageIndex)}
+                        className={
+                          pageIndex === currentPage
+                            ? 'px-3 py-1 text-sm rounded-lg bg-primary-600 text-white'
+                            : 'px-3 py-1 text-sm rounded-lg border border-neutral-20 dark:border-neutral-70 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }
+                      >
+                        {pageIndex + 1}
+                      </button>
+                    ))}
+
+                    {showEllipsis && (
+                      <>
+                        <span className="px-1 text-sm text-gray-500">…</span>
+                        <button
+                          onClick={() => goToPage(totalPages - 1)}
+                          className="px-3 py-1 text-sm rounded-lg border border-neutral-20 dark:border-neutral-70 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          {totalPages}
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* next */}
+                  <button
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage + 1 >= totalPages}
+                    className="px-3 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {resolveTranslatable({ key: 'datatable.next' }, translate)}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
         {/* render modal */}
         {showDetailModal && selectedRow && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="bg-white dark:bg-surface rounded-lg p-6 max-w-lg w-full shadow-lg">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {entities}
-                </h3>
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-xl bg-gray-50 dark:bg-gray-900">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{detailTitle}</h3>
                 <button
                   onClick={() => setSelectedRow(null)}
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-300"
+                  className="absolute top-4 right-4 text-neutral-70 hover:text-gray-500 dark:hover:text-gray-300"
+                  aria-label="Close"
                 >
-                  ×
+                  <FontAwesomeIcon icon={faXmark} />
                 </button>
               </div>
-              <div className="space-y-2 max-h-[70vh] overflow-y-auto">
-                {columns.map((col) => (
-                  <div key={String(col.accessor)}>
-                    <p className="text-xs text-neutral-70 dark:text-neutral-70">{col.header}</p>
-                    <p className="text-sm text-gray-900 dark:text-white break-all">
-                      {col.format
-                        ? col.format(selectedRow[col.accessor])
-                        : String(selectedRow[col.accessor] ?? '')}
-                    </p>
-                  </div>
-                ))}
-              </div>
+              <DIDView
+                selectDidData={selectedRow as DidData }
+                onBack={() => setSelectedRow(null)}
+                showHeader={false}
+                onRefreshTable={onRefresh}
+              />
             </div>
           </div>
         )}
-
-    </>
+    </> 
   );
 }

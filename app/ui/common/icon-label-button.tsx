@@ -2,11 +2,12 @@
 
 import React, { ReactNode } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 
 export interface IconLabelButtonProps {
   onClick?: () => void;
   label?: ReactNode;
-  Icon?: React.ComponentType<{ className?: string }> | any;
+  icon?: IconDefinition;
   className?: string;
   title?: string;
 }
@@ -14,7 +15,7 @@ export interface IconLabelButtonProps {
 export default function IconLabelButton({
   onClick,
   label,
-  Icon,
+  icon,
   title,
   className,
 }: IconLabelButtonProps) {
@@ -25,13 +26,7 @@ export default function IconLabelButton({
       title={title}
       className={className}
     >
-      {Icon && (
-        typeof Icon === 'object' && Icon.iconName ? (
-          <FontAwesomeIcon icon={Icon} />
-        ) : (
-          <Icon className="icon-sm" />
-        )
-      )}      
+      {icon && ( <FontAwesomeIcon icon={icon} /> )}      
       {label}
     </button>
   );

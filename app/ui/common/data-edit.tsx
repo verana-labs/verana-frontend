@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { ResolvedDataField, DataViewProps, isResolvedDataField, ResolvedField, visibleFieldsForMode, translateSections } from '@/ui/dataview/types';
-import { getCostMessage, getDescriptionMessage } from '@/msg/constants/msgTypeConfig';
+import { ResolvedDataField, DataViewProps, isResolvedDataField, ResolvedField, visibleFieldsForMode, translateSections, resolveTranslatable } from '@/ui/dataview/types';
+import { getCostMessage, msgTypeStyle } from '@/msg/constants/msgTypeConfig';
 import { useCalculateFee } from '@/hooks/useCalculateFee';
 import { useTrustDepositValue } from '@/hooks/useTrustDepositValue';
 import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData';
@@ -12,6 +12,10 @@ import { getErrorMessage, isValidField } from '@/util/validations';
 import { useTrustDepositParams } from '@/providers/trust-deposit-params-context';
 import { MessageType } from '@/msg/constants/types';
 import { resolveMsgCopy } from '@/msg/constants/resolveMsgTypeConfig';
+import clsx from "clsx"
+import { translate } from '@/i18n/dataview';
+import { isJson } from '@/util/util';
+import JsonCodeBlock from './json-code-block';
 
 type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & {
   data: T;
@@ -19,6 +23,7 @@ type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & 
   onSave: (newData: T) => void | Promise<void>;
   onCancel?: () => void;
   noForm?: boolean;
+  isModal?: boolean;
 };
 
 type FieldValidationError = {
@@ -33,7 +38,8 @@ export default function EditableDataView<T extends object>({
   id,
   onSave,
   onCancel,
-  noForm = false
+  noForm = false,
+  isModal
 }: EditableDataViewProps<T>) {
   const sections = translateSections(sectionsI18n);
   const [formData, setFormData] = useState<T>(data);
@@ -44,6 +50,12 @@ export default function EditableDataView<T extends object>({
   const burnRate = (messageType == 'MsgReclaimTrustDeposit' ? Number(trustDepositReclaimBurnRate) : 0);
   const action = id? 'edit' : 'create';
   
+  const basicSection = sections.find( (section) => !section.type || section.type === 'basic');
+  if (!basicSection) {
+    return null;
+  }
+  const visibleFields = visibleFieldsForMode(basicSection.fields, action).filter(isResolvedDataField);
+
   // Checks if the current field value is valid
   const validatedRequiredField = useCallback((field: ResolvedField<any>, value: unknown): boolean => { // eslint-disable-line @typescript-eslint/no-explicit-any
     if (!field.required) return true;
@@ -97,15 +109,13 @@ export default function EditableDataView<T extends object>({
     setTotalValue((deposit + feeAmount).toFixed(6));
     const availableBalance = accountData.balance ? Number(accountData.balance)/ 1_000_000 : 0;
     const availableReclaimable = (accountData.reclaimable) ? Number(accountData.reclaimable)/ 1_000_000 : 0;
-    sections.forEach(section => {
-      (section.fields ?? []).forEach(field => {
-        if (!isResolvedDataField(field)) return;
-        if (field.name !== 'claimedVNA') return;
-        field.validation = {
-          ...(field.validation ?? { type: 'Number' }),
-          lessThanOrEqual: availableReclaimable,
-        };
-      });
+    visibleFields.forEach(field => {
+      if (!isResolvedDataField(field)) return;
+      if (field.name !== 'claimedVNA') return;
+      field.validation = {
+        ...(field.validation ?? { type: 'Number' }),
+        lessThanOrEqual: availableReclaimable,
+      };
     });
     const hasEnoughBalance = 
       (availableBalance >= feeAmount) &&
@@ -129,19 +139,18 @@ export default function EditableDataView<T extends object>({
   // Computes if any required fields are currently invalid
   const hasInvalidRequired = useMemo(() => {
     const missing = new Set(errorFields);
-    sections.forEach(section => {
-      visibleFieldsForMode(section.fields, action)
-        .filter(isResolvedDataField)
-        .forEach(field => {
-          if (field.update === false) return;
-          const value = formData[field.name as keyof T];
-          if (!validatedRequiredField(field, value)) {
-            missing.add({key: String(field.name)});
-          }
-        });
-    });
+    visibleFields
+      .filter(isResolvedDataField)
+      .forEach(field => {
+        if (field.update === false) return;
+        const value = formData[field.name as keyof T];
+        if (!validatedRequiredField(field, value)) {
+          missing.add({key: String(field.name)});
+        }
+      });
     return missing.size > 0;
-  }, [formData, errorFields]);
+  // }, [formData, errorFields]);
+  }, []);
 
   // Handles save action; disables buttons while saving and prevents double submission
   async function handleSave() {
@@ -158,17 +167,14 @@ export default function EditableDataView<T extends object>({
   // Future helper: checks full form validity using extended field rules
   function hasInvalidData(): boolean {
     const invalid = new Map<string, string>();
-    for (const section of sections) {
-      const fields = visibleFieldsForMode(section.fields, action).filter(isResolvedDataField);
-      for (const field of fields) {
-        if (field.update === false) continue;
-        const typedField = field as ResolvedDataField<T>;
-        const value = formData[field.name as keyof T];
-        if (!isValidField(typedField, value)) {
-          const key = String(field.name);
-          const errorMessage = getErrorMessage(field);
-          invalid.set(key, errorMessage);
-        }
+    for (const field of visibleFields) {
+      if (field.update === false) continue;
+      const typedField = field as ResolvedDataField<T>;
+      const value = formData[field.name as keyof T];
+      if (!isValidField(typedField, value)) {
+        const key = String(field.name);
+        const errorMessage = getErrorMessage(field);
+        invalid.set(key, errorMessage);
       }
     }
     setErrorFields(Array.from(invalid.entries()).map(([key, errorMessage]) => ({ key, errorMessage })));
@@ -186,208 +192,203 @@ export default function EditableDataView<T extends object>({
     }
   }
 
-  return (
-    <div className="data-edit-container">
-      {sections.map((section, sectionIndex) => 
-        section.type && section.type !== "basic" ? null : (
-        <div key={sectionIndex} className="data-edit-section">
-          {section.name && action == 'create' && (
-            <h2 className="data-edit-section-title">{section.name}</h2>
-          )}
-          {uiMsgType.description && (
-            <div className="form-copy">
-            { (messageType === 'MsgReclaimTrustDeposit' )? 
-                getDescriptionMessage(uiMsgType.description, (100 - burnRate), burnRate )
-                : uiMsgType.description
-              }
-            </div>
-          )}
-          {!noForm && visibleFieldsForMode(section.fields, action)
-            .length > 0 && (
-            <div className="data-edit-scroll">
-              <table className="data-edit-table">
-                <tbody>
-                  {visibleFieldsForMode(section.fields, action)
-                    .filter(isResolvedDataField)
-                    .map((field, fieldIndex) => {
-                      const typedField = field as ResolvedDataField<T>;
-                      const value = formData[field.name as keyof T];
-                      const isDisabled = field.update === false;
-                      const key = String(field.name);
-                      const fieldError = errorFields.find(err => err.key === key);
-                      const showError = Boolean(fieldError)
-                        || (!validatedRequiredField(typedField, value));
-                      const errorMessage = fieldError?.errorMessage ?? 'Required';
+  const normalInputs: React.ReactNode[] = [];
+  const textareaInputs: React.ReactNode[] = [];
 
-                      // Build base input class for all fields
-                      const baseInputClass = 
-                        "input" +
-                        (showError ? " border-red-500" : "") +
-                        (isDisabled ? " opacity-70" : "");
+  visibleFields.forEach((field) => {
+    const typedField = field as ResolvedDataField<T>;
+    const value = formData[field.name as keyof T];
+    const isDisabled = field.update === false;
+    const key = String(field.name);
+    const fieldError = errorFields.find(err => err.key === key);
+    const showError = Boolean(fieldError)
+      || (!validatedRequiredField(typedField, value));
+    const errorMessage = fieldError?.errorMessage ?? 'Required';
 
-                      const rows: React.ReactNode[] = [];
+    // Build base input class for all fields
+    const baseInputClass = 
+      "input" +
+      (showError ? " border-red-500" : "") +
+      (isDisabled ? " bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed" : "");
 
-                      // --- Special case: textarea -> label and input in separate rows ---
-                      if (field.inputType === 'textarea') {
-                        rows.push(
-                          // Row with label only
-                          <tr key={`label-${fieldIndex}`}>
-                            <td className="data-edit-label-cell">
-                              <span className="data-edit-label">
-                                {field.label}
-                                {field.required && (
-                                  <span className="data-edit-required">*</span>
-                                )}
-                              </span>
-                            </td>
-                            <td></td>
-                          </tr>
-                        );
-                        rows.push(
-                          // Row with textarea input spanning across 2 columns
-                          <tr key={`input-${fieldIndex}`}>
-                            <td colSpan={2} className="data-edit-input-cell">
-                              <textarea
-                                className={baseInputClass + " w-full"}
-                                value={String(value ?? '')}
-                                disabled={isDisabled}
-                                onChange={e =>
-                                  handleChange(field.name as keyof T, e.target.value, field)
-                                }
-                                rows={20}
-                              />
-                              {/* Error message under textarea */}
-                              {showError && (
-                                <div className="data-edit-error">{errorMessage}</div>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                        // return <React.Fragment key={fieldIndex}>{rows}</React.Fragment>;
-                      }
+    // Render different input types
+    let inputEl: React.ReactNode;
 
-                      else{
-                      // Render different input types
-                      let inputEl: React.ReactNode;
-                      if (field.inputType === 'select') {
-                        inputEl = (
-                          <select
-                            className={baseInputClass}
-                            value={String(value ?? '')}
-                            disabled={isDisabled}
-                            onChange={e => handleChange(field.name as keyof T, e.target.value, field)}
-                          >
-                            <option value="" disabled>
-                              Select…
-                            </option>
-                            { (field.options ?? []).map(opt => (
-                              <option key={opt.value} value={opt.value}>
-                                {opt.label}
-                              </option>
-                            ))}
-                          </select>
-                        );
-                      } else if (field.inputType === 'number') {
-                        inputEl = (
-                          <input
-                            type="number"
-                            className={baseInputClass}
-                            value={String(value ?? '')}
-                            disabled={isDisabled}
-                            onChange={e => {
-                              const raw = e.target.value;
-                              const parsed = raw === '' ? '' : Number(raw);
-                              handleChange(field.name as keyof T, parsed, field);
-                            }}
-                          />
-                        );
-                      } else {
-                        inputEl = (
-                          <input
-                            type="text"
-                            className={baseInputClass}
-                            value={String(value ?? '')}
-                            disabled={isDisabled}
-                            placeholder={field.placeholder}
-                            onChange={e => handleChange(field.name as keyof T, e.target.value, field)}
-                          />
-                        );
-                      }
-
-                      rows.push(
-                          <tr key={`row-${fieldIndex}`}>
-                          {/* Label with asterisk if required */}
-                          <td className="data-edit-label-cell">
-                            <span className="data-edit-label">
-                              {field.label}
-                              {field.required && (
-                                <span className="data-edit-required">*</span>
-                              )}
-                            </span>
-                          </td>
-                          {/* Input and error message */}
-                          <td className="data-edit-input-cell">
-                            {inputEl}
-                            {showError && (
-                              <div className="data-edit-error">{errorMessage}</div>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                      }
-
-                      // Description row inputType
-                      if (field.description) {
-                        rows.push(
-                          <tr key={`desc-${fieldIndex}`}>
-                            <td colSpan={2} className="data-edit-input-cell">
-                              <span
-                                className="data-edit-input-description"
-                                dangerouslySetInnerHTML={{ __html: field.description }}
-                              /> 
-                            </td>
-                          </tr>
-                        );
-                      }
-
-                      return <React.Fragment key={fieldIndex}>{rows}</React.Fragment>;
-
-                    })
-                                        
-                  }
-                </tbody>
-              </table>
-            </div>
-          )}
-          {/* Action buttons: disabled if submitting or validation fails */}
-          {totalValue && (
-            <div className="text-center py-2">
-              <span
-                className="data-edit-input-description"
-                dangerouslySetInnerHTML={{ __html: getCostMessage(uiMsgType.cost, totalValue) }}
-              /> 
-            </div>
-          )}
-          <div className="actions-center">
-            {onCancel && (
-              <button
-                className="btn-action"
-                onClick={handleCancel}
-                disabled={submitting}
-              >
-                Cancel
-              </button>
-            )}
-            <button
-              className="btn-action"
-              onClick={handleSave}
-              disabled={!enabledAction || hasInvalidRequired || submitting}
-            >
-              {uiMsgType.label}
-            </button>
+    if (field.inputType === 'textarea') {
+      const jsonValue = isJson(value);
+      inputEl = (action == 'edit' && jsonValue) ?
+        (
+          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 h-64 overflow-y-auto border border-neutral-20 dark:border-neutral-70">
+            <JsonCodeBlock value={jsonValue} className="data-view-label" />
           </div>
+        ):(
+        <textarea
+          className={baseInputClass + " w-full"}
+          value={String(value ?? '')}
+          disabled={isDisabled}
+          onChange={e =>
+            handleChange(field.name as keyof T, e.target.value, field)
+          }
+          rows={20}
+        />
+      );
+    }
+    else if (field.inputType === 'select') {
+      inputEl = (
+        <select
+          className={baseInputClass}
+          value={String(value ?? '')}
+          disabled={isDisabled}
+          onChange={e => handleChange(field.name as keyof T, e.target.value, field)}
+        >
+          <option value="" disabled>
+            Select…
+          </option>
+          { (field.options ?? []).map(opt => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      );
+    } else if (field.inputType === 'number') {
+      inputEl = (
+        <input
+          type="number"
+          className={baseInputClass}
+          value={String(value ?? '')}
+          disabled={isDisabled}
+          onChange={e => {
+            const raw = e.target.value;
+            const parsed = raw === '' ? '' : Number(raw);
+            handleChange(field.name as keyof T, parsed, field);
+          }}
+        />
+      );
+    } else {
+      inputEl = (
+        <input
+          type="text"
+          className={baseInputClass}
+          value={String(value ?? '')}
+          disabled={isDisabled}
+          placeholder={field.placeholder}
+          onChange={e => handleChange(field.name as keyof T, e.target.value, field)}
+        />
+      );
+    }
+
+    const fieldBlock = (
+      <div key={field.name as string}>
+        {/* Label with asterisk if required */}
+        <label className="data-edit-label">
+          {field.label}
+          {field.required && (
+            <span className="data-edit-required">*</span>
+          )}
+        </label>
+        {/* Input and error message */}
+        {inputEl}
+        {showError && (
+            <div className="data-edit-error">{errorMessage}</div>
+        )}
+        {/* Description inputType */}
+        { (field.description) && (
+            <p className="data-edit-input-description"
+                dangerouslySetInnerHTML={{ __html: field.description }}
+            />
+          )
+        }
+      </div>
+    );
+
+    if (field.inputType === 'textarea') {
+      textareaInputs.push(
+        <div key={field.name as string}>
+          {fieldBlock}
         </div>
-      ))}
+      );
+    } else {
+      normalInputs.push(fieldBlock);
+    }
+
+  });
+
+  return (
+    <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6 space-y-4">
+      {basicSection.name && action == 'create' && (
+        <h2 className="data-edit-section-title">{basicSection.name}</h2>
+      )}
+
+      {/* {uiMsgType.description && (
+        <div className="form-copy">
+        { (messageType === 'MsgReclaimTrustDeposit' )? 
+            getDescriptionMessage(uiMsgType.description, (100 - burnRate), burnRate )
+            : uiMsgType.description
+          }
+        </div>
+      )} */}
+
+      {!noForm && normalInputs.length > 0 && (
+        <div className={`space-y-6 ${basicSection.classForm}`}>
+            {normalInputs}
+        </div>
+      )}
+
+      {/* textareas fuera del div anterior */}
+      {textareaInputs.length > 0 && 
+          textareaInputs
+      }
+
+      {/* Cost Message */}
+      {totalValue && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
+          <p
+            className="data-edit-form-description"
+            dangerouslySetInnerHTML={{ __html: getCostMessage(uiMsgType.cost, totalValue) }}
+          /> 
+        </div>
+      )}
+      {/* Cost Message */}
+      {uiMsgType.warning && (
+        <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 mb-4">
+            <div className="flex">
+                <i className="text-red-600 dark:text-red-400 mt-0.5 mr-3" data-fa-i2svg=""><svg className="svg-inline--fa fa-triangle-exclamation" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="triangle-exclamation" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" data-fa-i2svg=""><path fill="currentColor" d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"></path></svg></i>
+                <div>
+                    <h5 className="font-medium text-red-900 dark:text-red-100">{resolveTranslatable({key: 'messages.warning'}, translate)}</h5>
+                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">{uiMsgType.warning}</p>
+                </div>
+            </div>
+        </div>
+      )}
+
+      {/* Action buttons: disabled if submitting or validation fails */}
+      <div className="actions-center">
+        {onCancel && (
+          <button
+            className={clsx(
+              "btn-action-cancel", // base
+              isModal ? "flex-1" : ''
+            )}
+            onClick={handleCancel}
+            disabled={submitting}
+          >
+            {resolveTranslatable({key: 'messages.cancel'}, translate)}
+          </button>
+        )}
+        <button
+          className={clsx(
+            "btn-action-confirm", // base
+            isModal ? "flex-1" : '',
+            msgTypeStyle[messageType].button // specific
+          )}
+          onClick={handleSave}
+          disabled={!enabledAction || hasInvalidRequired || submitting}
+        >
+          {uiMsgType.label}
+        </button>
+      </div>
+
     </div>
   );
 }

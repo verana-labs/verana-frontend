@@ -45,7 +45,7 @@ export default function NavBar() {
                 </div>
 
                 {/* Settings */}
-                <IconLabelButton Icon={faGear} title={resolveTranslatable({key: 'navbar.settings.title'}, translate)} className='navbar-icon' />
+                <IconLabelButton icon={faGear} title={resolveTranslatable({key: 'navbar.settings.title'}, translate)} className='navbar-icon' />
 
                 {/* Theme Toggle */}
                 <ToggleTheme />

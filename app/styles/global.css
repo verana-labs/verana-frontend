@@ -67,13 +67,15 @@
 }
 
 .app-content {
-  @apply flex-1 bg-content-light-bg dark:bg-content-dark-bg 
-         min-h-0 overflow-hidden;
+  /* @apply flex-1 bg-content-light-bg dark:bg-content-dark-bg 
+         min-h-0 overflow-hidden; */
+  @apply flex-1 overflow-auto;
 }
 
 .app-content-inner {
-  @apply max-w-screen-xl mx-auto p-6
-         h-full overflow-y-auto;
+  /* @apply max-w-screen-xl mx-auto p-6
+         h-full overflow-y-auto; */
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
 }
 
   .app-skeleton {
@@ -164,13 +166,22 @@
     @apply p-2 text-neutral-70 hover:text-gray-500 hover:bg-surface-muted dark:hover:bg-surface-muted rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500;
   }
 
+  .btn-action-cancel {
+    @apply px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors;
+  }
+
+  .btn-action-confirm {
+    @apply px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors;
+  }
+
+
   .label {
     @apply block text-sm font-medium text-light-text dark:text-dark-text;
   }
 
   /* ---------- Input styles ---------- */
   .input {
-    @apply block w-full rounded-md
+    /* @apply block w-full rounded-md
            bg-white text-light-text
            border border-light-border
            placeholder:text-title-light-color
@@ -180,7 +191,12 @@
            dark:placeholder:text-title-dark-color
            dark:focus:ring-dark-selected-text
            px-2 py-1
-           text-sm font-normal leading-none;
+           text-sm font-normal leading-none; */
+    @apply w-full px-4 py-2 
+           border border-neutral-20 dark:border-neutral-70 
+           rounded-lg 
+           focus:ring-2 focus:ring-primary-500 focus:border-transparent 
+           bg-white dark:bg-surface text-gray-900 dark:text-white
   }
 
   /* Select inherits .input styles */
@@ -219,7 +235,8 @@
   }
 
   .actions-center {
-    @apply flex justify-center gap-2;
+    @apply flex space-x-3 pt-4;
+
   }
 
   .theme-surface {
@@ -268,7 +285,8 @@
 
   .data-edit-section-title,
   .data-view-section-title{
-    @apply text-lg font-medium mb-2 flex items-center gap-2;
+    /* @apply text-lg font-medium mb-2 flex items-center gap-2; */
+    @apply text-xl font-semibold text-gray-900 dark:text-white;
   }
 
   .data-edit-scroll,
@@ -276,9 +294,21 @@
     @apply overflow-x-auto;
   }
 
+  .data-edit-form-description{
+    @apply text-sm text-blue-700 dark:text-blue-300; 
+  }
+
   .data-edit-table,
   .data-view-table {
     @apply min-w-full;
+  }
+
+  .data-view-label {
+    @apply block text-sm font-medium text-neutral-70 dark:text-neutral-70 mb-1;
+  }
+
+  .data-view-value {
+    @apply text-sm text-gray-900 dark:text-white;
   }
 
   .data-edit-label-cell,
@@ -288,7 +318,8 @@
 
   .data-edit-label,
   .data-view-value {
-    @apply text-base font-semibold leading-none mb-1 break-all;
+    /* @apply text-base font-semibold leading-none mb-1 break-all; */
+    @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2;
   }
 
   .data-edit-required {
@@ -301,8 +332,7 @@
   }
 
   .data-edit-input-description{
-    @apply 
-           text-sm font-normal leading-none;
+    @apply text-xs text-neutral-70 dark:text-neutral-70 mt-1;
   }
 
   .data-edit-error {
@@ -361,10 +391,13 @@
     @apply w-full divide-y divide-gray-200 dark:divide-gray-700;
   }
 
+  .data-table-title {
+    @apply text-lg font-semibold text-gray-900 dark:text-white;
+  }
+
   .data-table-thead {
     @apply bg-gray-50 dark:bg-gray-700/50;
   }
-
 
   .data-table-th {
     /* @apply text-left text-base font-semibold leading-none text-gray-700 dark:text-gray-200 bg-white dark:bg-black px-4 py-3 cursor-pointer select-none; */

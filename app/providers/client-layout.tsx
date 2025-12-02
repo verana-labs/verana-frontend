@@ -29,11 +29,11 @@ export default function ClientLayout({ trustDepositParams, children }: { trustDe
 
               {/* Content */}
               <TrustDepositParamsProvider value={trustDepositParams}>
-                <main className="app-content">
-                  <div className="app-content-inner">
+                <div className="app-content">
+                  <main className="app-content-inner">
                       {children}
-                  </div>
-                </main>
+                  </main>
+                </div>
               </TrustDepositParamsProvider>
           </div>
       </Providers>

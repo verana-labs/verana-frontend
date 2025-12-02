@@ -25,6 +25,7 @@ export type Section<I> = {
   type?: "basic" | "help" | "advanced" | "actions";
   help?: string[];
   fields?: Field<I>[];
+  classForm?: string;
 };
 
 /* Base field shared by all field types */
@@ -338,6 +339,7 @@ export interface CsData {
   updateCredentialSchema?: string; // action type
   archiveCredentialSchema?: string; //action type
   title?: string;
+  description?: string;
 }
 
 // Sections configuration for GfdData

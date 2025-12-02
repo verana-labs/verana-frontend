@@ -40,11 +40,11 @@ export const columnsDidList: Column<DidList>[] = [
   { header: t("datatable.did.header.modified"), accessor: "modified", format: (value) => formatDate(value), priority: 1 },
   { header: t("datatable.did.header.expire"), accessor: "exp", format: (value) => formatDate(value), className: (value) => getExpireClass(value) },
   { header: t("datatable.did.header.deposit"), accessor: "deposit", format: (value) => formatVNA(String(value), 6), priority: 3 },
-  { header: t("datatable.did.header.status"), accessor: "status", format: (value) => getStatusLabel(value), priority: 9999, className: (value) => getStatusClass(value) },
+  { header: t("datatable.did.header.status"), accessor: "status", format: (value) => getStatusLabel(value), priority: 9999, className: (value) => getStatusClass(value), viewMobileRight: true },
 ];
 
 export const description: Translatable[] = [
-      t("datatable.did.description.1")
+      t("datatable.did.description")
 ];
 
 function getStatusLabel(value: string): string {

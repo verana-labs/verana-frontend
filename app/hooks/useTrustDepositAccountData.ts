@@ -6,6 +6,7 @@ import { useVeranaChain } from "@/hooks/useVeranaChain";
 import { useChain } from "@cosmos-kit/react";
 import { resolveTranslatable } from "@/ui/dataview/types";
 import { translate } from "@/i18n/dataview";
+import { ApiErrorResponse } from "@/types/apiErrorResponse";
 
 type TrustDepositAccountData = {
   address: string | null;
@@ -66,6 +67,11 @@ export function useTrustDepositAccountData(
     try {
       const resp = await fetch(`${getAccountURL}/get/${address}`);
       const json = await resp.json();
+      if (!resp.ok){
+        const { error, code } = json as ApiErrorResponse;
+        setError(`Error ${code}: ${error}`);
+        return;
+      } 
       if (json.trust_deposit) {
         totalTrustDeposit = json.trust_deposit.amount;
         claimableInterests = "0";

@@ -20,12 +20,12 @@ export default function AccountPage() {
   const { notify } = useNotification();
 
   // Refresh account/trust deposit data
-  const [refresh, setRefresh] = useState<string | null>(null);
+  const [refresh, setRefresh] = useState<boolean>(false);
   useEffect(() => {
     if (!refresh) return;
     (async () => {
       await refetchAD();
-      setRefresh(null);
+      setRefresh(false);
     })();
   }, [refresh]);
 
@@ -99,7 +99,7 @@ export default function AccountPage() {
         data={data}
         columnsCount={3}
         columnsCountMd={2}
-        setRefresh={setRefresh}
+        onRefresh={() => setRefresh(true)}
       />
     </>
   );

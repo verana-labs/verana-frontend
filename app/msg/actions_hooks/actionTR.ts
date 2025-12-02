@@ -20,6 +20,7 @@ import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import Long from 'long';
 import { translate } from '@/i18n/dataview';
 import { resolveTranslatable } from '@/ui/dataview/types';
+import { on } from 'node:stream';
 
 async function calculateSRIHash (docUrl: string | undefined): Promise<{ sri: string | undefined; error: string | undefined }> {
   if (!docUrl || !isValidUrl(docUrl)) return { sri: undefined, error: 'Invalid Document URL' };
@@ -95,8 +96,8 @@ type ActionTRParams =
     };
 
 // Hook to execute Trust Registry transactions and show notifications
-export function useActionTR(  setActiveActionId?: React.Dispatch<React.SetStateAction<string | null>>,
-                              setRefresh?: React.Dispatch<React.SetStateAction<string | null>>) {
+export function useActionTR(  onCancel?: () => void,
+                              onRefresh?: () => void) {
   const veranaChain = useVeranaChain();
   const {
     address,
@@ -110,8 +111,8 @@ export function useActionTR(  setActiveActionId?: React.Dispatch<React.SetStateA
 
   // Handler for Succes: refresh and collapses/hides the action UI
   const handleSuccess = () => {
-    setRefresh?.('actionTR');
-    setActiveActionId?.(null);
+    onRefresh?.();
+    onCancel?.();
   };
 
   /**

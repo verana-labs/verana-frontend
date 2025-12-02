@@ -3,6 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 
 interface TitleAndButtonProps {
   title: string;
@@ -10,8 +11,10 @@ interface TitleAndButtonProps {
   buttonLabel?: string;
   to?: string;
   onClick?: () => void;
-  Icon?: React.ComponentType<{ className?: string }> | any;
+  icon?: IconDefinition;
   className?: string;
+  backLink?: boolean;
+  isTable?: boolean;
 }
 
 export default function TitleAndButton({
@@ -20,8 +23,9 @@ export default function TitleAndButton({
   buttonLabel,
   to,
   onClick,
-  Icon,
-  className = '',
+  icon,
+  backLink,
+  isTable
 }: TitleAndButtonProps) {
   const router = useRouter();
   const handleClick = () => {
@@ -30,10 +34,26 @@ export default function TitleAndButton({
   };
 
   return (
-    <section id="page-header" className="mb-8">
+    <>
+    {/* Back Navigation */}
+    { backLink && (
+    <section id="back-nav" className="mb-6">
+      {(buttonLabel || icon) && (
+        <button
+          onClick={handleClick}
+          className="inline-flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+        >
+          {icon? (<FontAwesomeIcon className="icon-sm" aria-hidden="true" icon={icon} />) : null}
+          {buttonLabel && <span className="inline">&nbsp;{buttonLabel}</span>}
+        </button>
+      )}
+    </section>
+    )}
+    
+    <section id="page-header" className={isTable? "" : "mb-8"}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between">
             <div>
-                <h1 className="page-title">{title}</h1>
+                <h1 className={isTable? "data-table-title" : "page-title"}>{title}</h1>
                 {/* Help Section (if present) */}
                 {description && Array.isArray(description) && (
                   <>
@@ -45,20 +65,24 @@ export default function TitleAndButton({
                   </>
                 )}
             </div>
+            { !backLink && (
             <div className="mt-4 sm:mt-0">
               {/* Render button only if buttonLabel or Icon is provided */}
-              {(buttonLabel || Icon) && (
+              {(buttonLabel || icon) && (
                 <button
                   onClick={handleClick}
                   className="btn-link"
                 >
-                  {Icon && <FontAwesomeIcon className="icon-sm" aria-hidden="true" icon={Icon} />}
-                  {buttonLabel && <span className="hidden md:inline">{buttonLabel}</span>}
+                  {icon? (<FontAwesomeIcon className="icon-sm" aria-hidden="true" icon={icon} />) : null}
+                  {/* {buttonLabel && <span className="hidden md:inline">{buttonLabel}</span>} */}
+                  {buttonLabel && <span className="inline">&nbsp;{buttonLabel}</span>}
                 </button>
               )}
             </div>
+            )}
         </div>
     </section>
+    </>
 
   );
 }

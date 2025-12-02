@@ -1,6 +1,7 @@
-import { formatDate, formatVNA, shortenMiddle } from "@/util/util";
-import { Column } from "@/ui/datatable/types";
-import type { I18nValues } from "@/ui/dataview/types";
+import { formatDate, shortenMiddle } from "@/util/util";
+import { Column, Filter } from "@/ui/datatable/types";
+import { resolveTranslatable, type I18nValues, type Translatable } from "@/ui/dataview/types";
+import { translate } from "@/i18n/dataview";
 
 const t = (key: string, values?: I18nValues) => ({ key, values });
 
@@ -10,16 +11,56 @@ export interface TrList {
   controller: string;
   created: string;
   modified: string;
-  active_version: string;
-  deposit: string;
+  aka: string;
+  role: string;
 }
 
-export const columnsTrList: Column<TrList>[] = [
-  { header: t("datatable.tr.header.id"), accessor: "id", filterType: "text" },
-  { header: t("datatable.tr.header.did"), accessor: "did", filterType: "text", format: (value) => shortenMiddle(String(value), 30) },
-  { header: t("datatable.tr.header.controller"), accessor: "controller", filterType: "text", format: (value) => shortenMiddle(String(value), 25), priority: 2 },
-  { header: t("datatable.tr.header.created"), accessor: "created", filterType: "text", format: (value) => formatDate(value), priority: 4 },
-  { header: t("datatable.tr.header.modified"), accessor: "modified", filterType: "text", format: (value) => formatDate(value), priority: 1 },
-  { header: t("datatable.tr.header.activeVersion"), accessor: "active_version", filterType: "text" },
-  { header: t("datatable.tr.header.deposit"), accessor: "deposit", filterType: "text", format: (value) => formatVNA(String(value), 6), priority: 3 },
+const roleFilterOptions = [
+  { value: "", label: t("datatable.tr.filter.role.all") },
+  { value: "ISSUER", label: t("datatable.tr.filter.role.issuer"), class: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300" },
+  { value: "VERIFIER", label: t("datatable.tr.filter.role.verifier"), class: "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300" },
+  { value: "ISSUER_GRANTOR", label: t("datatable.tr.filter.role.issuergrantor"), class: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300" },
+  { value: "VERIFIER_GRANTOR", label: t("datatable.tr.filter.role.verifiergrantor"), class: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300" },
+  { value: "ECOSYSTEM", label: t("datatable.tr.filter.role.ecosystem"), class: "bg-primary-100 text-primary-800 dark:bg-primary-900/20 dark:text-primary-300" },
+  { value: "HOLDER", label: t("datatable.tr.filter.role.holder"), class: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300" }
 ];
+
+export const trFilter: Filter<TrList>[] = [
+  {label: t("datatable.tr.filter.did_aka.label"), columns: ["did", "aka"], inputType: "text", placeholder:  t("datatable.tr.filter.did_aka.placeholder")},
+  {label: t("datatable.tr.filter.role.label"), columns: ["role"], inputType: "select", options: roleFilterOptions}
+];
+
+export const columnsTrList: Column<TrList>[] = [
+  { header: t("datatable.tr.header.id"), accessor: "id"},
+  { header: t("datatable.tr.header.did"), accessor: "did", format: (value) => shortenMiddle(String(value), 30) },
+  { header: t("datatable.tr.header.controller"), accessor: "controller", format: (value) => shortenMiddle(String(value), 25), priority: 2 },
+  { header: t("datatable.tr.header.created"), accessor: "created", format: (value) => formatDate(value), priority: 4 },
+  { header: t("datatable.tr.header.modified"), accessor: "modified", format: (value) => formatDate(value), priority: 1 },
+  { header: t("datatable.tr.header.role"), accessor: "role", format: (value) => getRoleLabels(value), isHtml: true, viewMobileRight: true},
+];
+
+
+export const description: Translatable[] = [
+      t("datatable.tr.description")
+];
+
+function getRoleLabels(value: string): string {
+  if (!value?.trim()) return "";
+  return value
+    .split(",")
+    .map(v => v.trim())
+    .filter(Boolean)
+    .map(v => {
+      const found = roleFilterOptions.find(opt => opt.value === v);
+      return (
+        `<label class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleClass(v)}">${resolveTranslatable( found?.label, translate)}</label>`
+      );
+    })
+    .filter(Boolean)
+    .join("<br/>");
+}
+
+function getRoleClass(value: string): string {
+  const found = roleFilterOptions.find(opt => opt.value === value);
+  return found?.class ?? "";
+}

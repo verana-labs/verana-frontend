@@ -99,19 +99,19 @@ export default function AccountZone() {
 
         <div className="flex items-center space-x-1 ml-2">
           <IconLabelButton
-            Icon={faQrcode}
+            icon={faQrcode}
             title={resolveTranslatable({key: 'navbar.qr.title'}, translate)}
             className='navbar-icon'
           />
           <IconLabelButton
-            Icon={faUpRightFromSquare}
+            icon={faUpRightFromSquare}
             title={resolveTranslatable({key: 'navbar.mintscan.title'}, translate)}
             onClick={() => window.open(`https://www.mintscan.io/${veranaChain.chain_name}/account/${address}`, "_blank")}
             className='navbar-icon'
           />
           <IconLabelButton
             onClick={openView}
-            Icon={faRightFromBracket}
+            icon={faRightFromBracket}
             title={resolveTranslatable({key: 'navbar.disconnect.title'}, translate)}
             className='relative group p-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500'
           />

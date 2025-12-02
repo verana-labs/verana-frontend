@@ -1,6 +1,5 @@
-import { IdentificationIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
-
 import { Section } from "@/ui/dataview/types";
+import { faCalendarPlus, faHandPointer, faTrash } from "@fortawesome/free-solid-svg-icons";
 
 const t = (key: string) => ({ key });
 
@@ -34,13 +33,14 @@ export const yearsOptions = [
 // Sections configuration for DidData
 export const didSections: Section<DidData>[] = [
   {
-    name: t("dataview.did.sections.details"),
-    icon: IdentificationIcon,
+    // name: t("dataview.did.sections.details"),
+    // icon: IdentificationIcon,
     type: "basic",
     fields: [
       {
         name: "did",
-        label: t("dataview.did.fields.did"),
+        label: t("dataview.did.fields.did.label"),
+        description: t("dataview.did.fields.did.desc"),
         type: "data",
         show: "create",
         update: true,
@@ -51,6 +51,7 @@ export const didSections: Section<DidData>[] = [
       {
         name: "years",
         label: t("dataview.did.fields.years.label"),
+        description: t("dataview.did.fields.years.desc"),
         type: "data",
         inputType: "select",
         options: yearsOptions,
@@ -66,13 +67,13 @@ export const didSections: Section<DidData>[] = [
     ],
   },
   {
-    icon: WrenchScrewdriverIcon,
-    name: t("dataview.did.sections.actions"),
+    // icon: WrenchScrewdriverIcon,
+    // name: t("dataview.did.sections.actions"),
     type: "actions",
     fields: [
-      { name: "renewDID", label: t("dataview.did.actions.renew"), type: "action" },
-      { name: "touchDID", label: t("dataview.did.actions.touch"), type: "action" },
-      { name: "removeDID", label: t("dataview.did.actions.remove"), type: "action" },
+      { name: "renewDID", label: t("dataview.did.actions.renew.label"), type: "action", description: t("dataview.did.actions.renew.desc"), icon: faCalendarPlus, iconClass: "bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400" },
+      { name: "touchDID", label: t("dataview.did.actions.touch.label"), type: "action", description: t("dataview.did.actions.touch.desc"), icon: faHandPointer, iconClass: "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400" },
+      { name: "removeDID", label: t("dataview.did.actions.remove.label"), type: "action", description: t("dataview.did.actions.remove.desc"), icon: faTrash, iconClass: "bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400", isWarning: true },
     ],
   },
 ];

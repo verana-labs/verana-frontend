@@ -11,16 +11,16 @@ interface TdActionProps {
   action: MsgTypeTD;  // Action type to perform
   setActiveActionId: React.Dispatch<React.SetStateAction<string | null>>; // Collapse/hide action on cancel
   data: object;
-  setRefresh?: React.Dispatch<React.SetStateAction<string | null>>; // Refresh TD data
+  onRefresh?: React.Dispatch<React.SetStateAction<string | null>>; // Refresh TD data
 }
 
-export default function TdActionPage({ action, setActiveActionId, setRefresh }: TdActionProps) {
+export default function TdActionPage({ action, setActiveActionId, onRefresh }: TdActionProps) {
   // Compose initial data
   const [dataTD, setData] = useState<TdData>({
     claimedVNA: 0
   });
 
-  const actionTD = useActionTD(setActiveActionId, setRefresh);
+  const actionTD = useActionTD(setActiveActionId, onRefresh);
 
   // Save handler: called when the form is submitted
   async function onSave(newData: TdData) {

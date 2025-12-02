@@ -12,10 +12,10 @@ interface GfdPageProps {
   action: MsgTypeTR;  // Action type to perform
   setActiveActionId: React.Dispatch<React.SetStateAction<string | null>>; // Collapse/hide action on cancel
   data: object;
-  setRefresh?: React.Dispatch<React.SetStateAction<string | null>>; // Refresh TR data
+  onRefresh?: React.Dispatch<React.SetStateAction<string | null>>; // Refresh TR data
 }
 
-export default function GfdPage({ action, setActiveActionId, data, setRefresh }: GfdPageProps) {
+export default function GfdPage({ action, setActiveActionId, data, onRefresh }: GfdPageProps) {
     
   const trData: TrData = data as TrData;
   // Compose initial data, including controller and docUrl if needed
@@ -27,7 +27,7 @@ export default function GfdPage({ action, setActiveActionId, data, setRefresh }:
     docUrl: '',
   });
 
-  const actionTR = useActionTR(setActiveActionId, setRefresh);
+  const actionTR = useActionTR(setActiveActionId, onRefresh);
 
   // Save handler: called when the form is submitted
   async function onSave(newData: GfdData) {

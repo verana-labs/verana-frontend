@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { Dispatch, ReactNode, SetStateAction } from 'react';
 import {
   Translatable,
   resolveTranslatable,
@@ -13,6 +13,8 @@ export type Column<T> = {
   format?: (value: T[keyof T]) => ReactNode;
   priority?: number;
   className?: (value: T[keyof T]) => string;
+  viewMobileRight?: boolean;
+  isHtml?: boolean;
 };
 
 // Generic filter definition (i18n-aware)
@@ -41,7 +43,6 @@ export type ResolvedFilter<T> = Omit<
 };
 
 export interface DataTableProps<T extends object> {
-  entities: string;
   columnsI18n: Column<T>[];         // ← resolved
   data: T[];
   initialPageSize?: number;
@@ -52,6 +53,12 @@ export interface DataTableProps<T extends object> {
   defaultSortDirection?: "asc" | "desc";
   filterI18n?: Filter<T>[];
   showDetailModal?: boolean;
+  entities?: string;
+  tableTitle?: string;
+  addTitle?: string;
+  onAdd?: () => void;
+  detailTitle?: string;
+  onRefresh?: () => void;
 }
 
 // Helper: translate columns

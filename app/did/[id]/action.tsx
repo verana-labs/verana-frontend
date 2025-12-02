@@ -9,12 +9,13 @@ import { MsgTypeDID } from '@/msg/constants/notificationMsgForMsgType';
 // Define DidActionPage props interface
 interface DidActionProps {
   action: MsgTypeDID;  // Action type to perform
-  setActiveActionId: React.Dispatch<React.SetStateAction<string | null>>; // Collapse/hide action on cancel
+  onClose: () => void; // Collapse/hide action on cancel
   data: object;
-  setRefresh?: React.Dispatch<React.SetStateAction<string | null>>; // Refresh DID data
+  onRefresh?: () => void; // Refresh DID data
+  onBack?: () => void; // Close modal
 }
 
-export default function DidActionPage({ action, setActiveActionId, data, setRefresh }: DidActionProps) {
+export default function DidActionPage({ action, onClose, data, onRefresh, onBack }: DidActionProps) {
   const didData = data as DidData;
   // Compose initial data
   const [dataDID, setData] = useState<DidData>({
@@ -22,7 +23,7 @@ export default function DidActionPage({ action, setActiveActionId, data, setRefr
     years: 1
   });
 
-  const actionDID = useActionDID(setActiveActionId, setRefresh);
+  const actionDID = useActionDID(onClose, onRefresh, onBack);
 
   // Save handler: called when the form is submitted
   async function onSave(newData: DidData) {
@@ -54,7 +55,7 @@ export default function DidActionPage({ action, setActiveActionId, data, setRefr
         messageType={action}     
         data={dataDID}
         onSave={onSave}
-        onCancel={() => setActiveActionId(null)}
+        onCancel={onClose}
         noForm={action!=='MsgRenewDID'} />
     </>
   );

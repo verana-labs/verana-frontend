@@ -7,6 +7,7 @@ export type ResolvedMsgTypeInfo = {
   label: string;
   description: string;
   cost: string; // untranslated template (keeps placeholders)
+  warning: string;
 };
 
 // Ensure no interpolation in cost
@@ -31,5 +32,8 @@ export function resolveMsgCopy(type: MessageType): ResolvedMsgTypeInfo {
   const cost =
     resolveTranslatable(costTemplate, translate) ?? "";
 
-  return { label, description, cost };
+  const warning =
+    resolveTranslatable(cfg.warning, translate) ?? "";
+
+  return { label, description, cost, warning };
 }

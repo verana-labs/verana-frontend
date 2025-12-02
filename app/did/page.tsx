@@ -14,6 +14,8 @@ import { translate } from '@/i18n/dataview';
 import { translateDataTableDescriptions } from '@/ui/datatable/types';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { getStatus } from '@/util/util';
+import AddDidPage from './add/page';
+import { ModalAction } from '@/ui/common/modal-action';
 
 export default function DidPage() {
   const [dids, setDids] = useState<DidList[]>([]);
@@ -23,8 +25,13 @@ export default function DidPage() {
   const listUrl = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID;
   const veranaChain = useVeranaChain();
   const { address } = useChain(veranaChain.chain_name);
+  const [addEntity, setAddEntity] = useState<boolean>(false);
+  
+  // Refresh listDids
+  const [refresh, setRefresh] = useState<boolean>(true);
 
   useEffect(() => {
+    if (!refresh) return;
     const fetchDIDs = async () => {
       try {
           if (!listUrl){
@@ -50,10 +57,11 @@ export default function DidPage() {
         );
       } finally {
         setLoading(false);
+        setRefresh(false);
       }
     };
     fetchDIDs();
-  }, [listUrl, address]);
+  }, [listUrl, address, refresh]);
 
   if (loading) return (
       <p>
@@ -66,20 +74,44 @@ export default function DidPage() {
         title={resolveTranslatable({key: "directory.title"}, translate)?? "DID Directory"}
         description={translateDataTableDescriptions(description)}
         buttonLabel={resolveTranslatable({key: "button.did.add"}, translate)?? "Add DID"}
-        to="/did/add"
-        Icon={faPlus}
+        onClick={() => setAddEntity(true)}
+        icon={faPlus}
       />
       <DataTable
         entities={resolveTranslatable({key: "datatable.did.entities"}, translate)??''}
         columnsI18n={columnsDidList}
         data={dids}
         initialPageSize={10}
-        pageSizeOptions={[5, 10, 20, 50]}
         onRowClick={(row) => router.push(`/did/${encodeURIComponent(row.did)}`)}
         defaultSortColumn={'modified'}
         filterI18n={didFilter}
         showDetailModal={true}
+        detailTitle={resolveTranslatable({key: "datatable.did.detail"}, translate)}
+        onRefresh={() => {
+          console.info("onRefreshPage");
+          setRefresh(true);
+        }}
       />
+      {/* render modal */}
+      {addEntity && (
+      <ModalAction
+          onClose={() => setAddEntity(false)}
+          titleKey={"datatable.did.add"}
+          isActive={addEntity}
+        >
+        <AddDidPage
+          onCancel={() => {
+            setAddEntity(false);
+          }}
+          onRefresh={() => {
+            console.info("setAddEntity, setRefresh");
+            setAddEntity(false);
+            setRefresh(true);
+          }}
+        />
+      </ModalAction>
+      )}
+
     </>
   );
 }

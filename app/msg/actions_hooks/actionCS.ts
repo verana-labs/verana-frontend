@@ -68,8 +68,8 @@ type ActionCSParams =
     };
 
 // Hook to execute Credential Schema transactions + notifications
-export function useActionCS( setActiveActionId?: React.Dispatch<React.SetStateAction<string | null>>,
-                             setRefresh?: React.Dispatch<React.SetStateAction<string | null>>) {
+export function useActionCS( onCancel?: () => void,
+                             onRefresh?: () => void) {
   const veranaChain = useVeranaChain();
   const { address, isWalletConnected } = useChain(veranaChain.chain_name);
 
@@ -81,8 +81,8 @@ export function useActionCS( setActiveActionId?: React.Dispatch<React.SetStateAc
 
   // Handler for Succes: refresh and collapses/hides the action UI
   const handleSuccess = () => {
-    setRefresh?.('actionCS');
-    setActiveActionId?.(null);
+    onRefresh?.();
+    onCancel?.();
   };
 
   /**
