@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { env } from 'next-runtime-env';
-import { CsData } from '@/ui/dataview/datasections/cs';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { ApiErrorResponse } from '@/types/apiErrorResponse';

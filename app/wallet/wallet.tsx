@@ -41,7 +41,7 @@ export default function Wallet({ isNavBar = true }: { isNavBar?: boolean }) {
   const buttonByStatus: Record<WalletStatus, JSX.Element> = {
     Connected:   <ButtonConnected   onClick={openView} />,
     Connecting:  <ButtonConnecting  />,
-    Disconnected:<ButtonDisconnected onClick={connect} />,
+    Disconnected:<ButtonDisconnected onClick={connect} text={resolveTranslatable({key: isNavBar? 'wallet.nav.connect' : 'wallet.dashboard.connect' }, translate) }/>,
     Error:       <ButtonRejected    onClick={connect} />,
     Rejected:    <ButtonRejected    onClick={connect} />,
     NotExist:    <ButtonNotExist    onClick={openView} />,
@@ -49,7 +49,7 @@ export default function Wallet({ isNavBar = true }: { isNavBar?: boolean }) {
 
   const ConnectButton =
     buttonByStatus[status as WalletStatus] ?? (
-      <ButtonConnect onClick={connect} />
+      <ButtonConnect onClick={connect} text={ resolveTranslatable({key: isNavBar? 'wallet.nav.connect' : 'wallet.dashboard.connect' }, translate) }/>
     );
 
   const router = useRouter();
@@ -77,7 +77,7 @@ export default function Wallet({ isNavBar = true }: { isNavBar?: boolean }) {
   }
 
   return (
-    <div className="hidden lg:flex items-center space-x-4 rtl:space-x-reverse">
+    <div className="flex items-center space-x-4 rtl:space-x-reverse">
       { address && isNavBar ?
         <>
         <div className="flex items-center border rounded-md border-light-border dark:border-dark-border">

@@ -5,8 +5,6 @@ import { useParams, useSearchParams } from 'next/navigation';
 import DataView from '@/ui/common/data-view-columns';
 import TitleAndButton from '@/ui/common/title-and-button';
 import EditableDataView from '@/ui/common/data-edit';
-import { useChain } from '@cosmos-kit/react';
-import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
@@ -88,7 +86,6 @@ export default function CSViewPage() {
         sectionsI18n={csSections}
         data={data}
         id={id}
-        columnsCount={2} 
         onEdit={ isEdit? () => setEditing(true) : undefined } 
         // onRefresh={setRefresh}
         />

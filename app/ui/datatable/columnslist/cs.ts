@@ -1,7 +1,6 @@
-import { formatDate, formatVNA, getStatus, shortenMiddle } from "@/util/util";
-import { Column, Filter } from "@/ui/datatable/types";
-import { resolveTranslatable, type I18nValues, type Translatable } from "@/ui/dataview/types";
-import { translate } from "@/i18n/dataview";
+import { formatDate } from "@/util/util";
+import { Column } from "@/ui/datatable/types";
+import { type I18nValues, type Translatable } from "@/ui/dataview/types";
 
 const t = (key: string, values?: I18nValues) => ({ key, values });
 
@@ -14,46 +13,35 @@ export interface CsList {
   role: string;
 }
 
-const roleFilterOptions = [
-  { value: "", label: t("datatable.tr.filter.role.all") },
-  { value: "ISSUER", label: t("datatable.tr.filter.role.issuer"), class: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300" },
-  { value: "VERIFIER", label: t("datatable.tr.filter.role.verifier"), class: "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300" },
-  { value: "ISSUER_GRANTOR", label: t("datatable.tr.filter.role.issuergrantor"), class: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300" },
-  { value: "VERIFIER_GRANTOR", label: t("datatable.tr.filter.role.verifiergrantor"), class: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300" },
-  { value: "ECOSYSTEM", label: t("datatable.tr.filter.role.ecosystem"), class: "bg-primary-100 text-primary-800 dark:bg-primary-900/20 dark:text-primary-300" },
-  { value: "HOLDER", label: t("datatable.tr.filter.role.holder"), class: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300" }
+const modeOptions = [
+  { value: "ECOSYSTEM_ISSUER", class: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300" },
+  { value: "ECOSYSTEM_VERIFIER", class: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300" },
+  { value: "GRANTOR_ISSUER", class: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300" },
+  { value: "GRANTOR_VERIFIER", class: "bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-300" },
+  { value: "OPEN_ISSUER", class: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300" },
+  { value: "OPEN_VERIFIER", class: "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300" },
 ];
 
 export const columnsCsList: Column<CsList>[] = [
   { header: t("datatable.cs.header.id"), accessor: "id" },
-  { header: t("datatable.cs.header.title"), accessor: "title", priority: 1 },
-  { header: t("datatable.cs.header.desc"), accessor: "description", priority: 1 },
-  { header: t("datatable.cs.header.created"), accessor: "created", format: (value) => formatDate(value), priority: 2 },
+  { header: t("datatable.cs.header.title"), accessor: "title" },
+  { header: t("datatable.cs.header.desc"), accessor: "description" },
+  { header: t("datatable.cs.header.created"), accessor: "created", format: (value) => formatDate(value), priority: 2, viewMobileRight: true},
   { header: t("datatable.cs.header.modified"), accessor: "modified", format: (value) => formatDate(value), priority: 2 },
-  { header: t("datatable.cs.header.role"), accessor: "role", format: (value) => getRoleLabels(value), isHtml: true, viewMobileRight: true},
 ];
 
 export const description: Translatable[] = [
       t("datatable.cs.description")
 ];
 
-function getRoleLabels(value: string): string {
+export function getModeLabel(value: string, suffix: string): string {
   if (!value?.trim()) return "";
-  return value
-    .split(",")
-    .map(v => v.trim())
-    .filter(Boolean)
-    .map(v => {
-      const found = roleFilterOptions.find(opt => opt.value === v);
-      return (
-        `<label class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleClass(v)}">${resolveTranslatable( found?.label, translate)}</label>`
-      );
-    })
-    .filter(Boolean)
-    .join("<br/>");
+  return (
+    `<label class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getModeClass(value.concat(suffix))}">${value}</label>`
+  );
 }
 
-function getRoleClass(value: string): string {
-  const found = roleFilterOptions.find(opt => opt.value === value);
+function getModeClass(value: string): string {
+  const found = modeOptions.find(opt => opt.value === value);
   return found?.class ?? "";
 }

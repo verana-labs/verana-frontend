@@ -5,6 +5,7 @@ import { env } from 'next-runtime-env';
 export type TrustDepositParams = {
   didDirectoryTrustDeposit: string | number | null;
   trustRegistryTrustDeposit: string | number | null;
+  trustUnitPrice: string | number | null;
   trustDepositReclaimBurnRate: string | number | null;
   credentialSchemaTrustDeposit: string | number | null;
 };
@@ -12,6 +13,7 @@ export type TrustDepositParams = {
 export const trustDepositParamsInitialState: TrustDepositParams = {
   didDirectoryTrustDeposit: null,
   trustRegistryTrustDeposit: null,
+  trustUnitPrice: null,
   trustDepositReclaimBurnRate: null,
   credentialSchemaTrustDeposit: null,
 };
@@ -35,6 +37,12 @@ const configs: ParamConfig[] = [
   {
     key: 'trustRegistryTrustDeposit',
     responseKey: 'trust_registry_trust_deposit',
+    envKey: 'NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY',
+    transform: value => (value == null ? null : Number(value)),
+  },
+  {
+    key: 'trustUnitPrice',
+    responseKey: 'trust_unit_price',
     envKey: 'NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY',
     transform: value => (value == null ? null : Number(value)),
   },

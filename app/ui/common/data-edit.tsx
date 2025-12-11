@@ -9,13 +9,14 @@ import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData';
 import { useNotification } from '@/ui/common/notification-provider';
 import { useRouter } from 'next/navigation';
 import { getErrorMessage, isValidField } from '@/util/validations';
-import { useTrustDepositParams } from '@/providers/trust-deposit-params-context';
+// import { useTrustDepositParams } from '@/providers/trust-deposit-params-context';
 import { MessageType } from '@/msg/constants/types';
 import { resolveMsgCopy } from '@/msg/constants/resolveMsgTypeConfig';
 import clsx from "clsx"
 import { translate } from '@/i18n/dataview';
 import { isJson } from '@/util/util';
 import JsonCodeBlock from './json-code-block';
+import ActionCard, { ActionCardProps } from './action-card';
 
 type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & {
   data: T;
@@ -24,6 +25,7 @@ type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & 
   onCancel?: () => void;
   noForm?: boolean;
   isModal?: boolean;
+  actionCard?: ActionCardProps;
 };
 
 type FieldValidationError = {
@@ -39,30 +41,18 @@ export default function EditableDataView<T extends object>({
   onSave,
   onCancel,
   noForm = false,
-  isModal
+  isModal,
+  actionCard
 }: EditableDataViewProps<T>) {
   const sections = translateSections(sectionsI18n);
   const [formData, setFormData] = useState<T>(data);
   const [errorFields, setErrorFields] = useState<FieldValidationError[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const uiMsgType = resolveMsgCopy(messageType);
-  const trustDepositReclaimBurnRate = useTrustDepositParams().trustDepositReclaimBurnRate;
-  const burnRate = (messageType == 'MsgReclaimTrustDeposit' ? Number(trustDepositReclaimBurnRate) : 0);
+  // const trustDepositReclaimBurnRate = useTrustDepositParams().trustDepositReclaimBurnRate;
+  // const burnRate = (messageType == 'MsgReclaimTrustDeposit' ? Number(trustDepositReclaimBurnRate) : 0);
   const action = id? 'edit' : 'create';
-  
-  const basicSection = sections.find( (section) => !section.type || section.type === 'basic');
-  if (!basicSection) {
-    return null;
-  }
-  const visibleFields = visibleFieldsForMode(basicSection.fields, action).filter(isResolvedDataField);
-
-  // Checks if the current field value is valid
-  const validatedRequiredField = useCallback((field: ResolvedField<any>, value: unknown): boolean => { // eslint-disable-line @typescript-eslint/no-explicit-any
-    if (!field.required) return true;
-    if (value === undefined || value === null) return false;
-    if (typeof value === "string" && value.trim() === "") return false;
-    return true;
-  }, []);
+  const [hasTriedSubmit, setHasTriedSubmit] = useState(false);
 
   // Enabled Action
   const [enabledAction, setEnabledAction] = useState(false);
@@ -72,6 +62,14 @@ export default function EditableDataView<T extends object>({
   const { notify } = useNotification();
   const [errorNotified, setErrorNotified] = useState(false);
   
+  // Checks if the current field value is valid
+  const validatedRequiredField = useCallback((field: ResolvedField<any>, value: unknown): boolean => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    if (!field.required) return true;
+    if (value === undefined || value === null) return false;
+    if (typeof value === "string" && value.trim() === "") return false;
+    return true;
+  }, []);
+
   // Get fee and amount in VNA
   const { amountVNA } = useCalculateFee(messageType);
 
@@ -101,6 +99,12 @@ export default function EditableDataView<T extends object>({
   
   // Local state to store the total required value for action (deposit + fee)
   const [totalValue, setTotalValue] = useState<string>("0.00");
+
+  const basicSection = sections.find( (section) => !section.type || section.type === 'basic');
+  // if (!basicSection) {
+  //   return null;
+  // }
+  const visibleFields = visibleFieldsForMode(basicSection?.fields, action).filter(isResolvedDataField);
 
   useEffect(() => {
     // Calculate deposit and total required value
@@ -150,10 +154,11 @@ export default function EditableDataView<T extends object>({
       });
     return missing.size > 0;
   // }, [formData, errorFields]);
-  }, []);
+  }, [visibleFields, formData, errorFields, validatedRequiredField]);
 
   // Handles save action; disables buttons while saving and prevents double submission
   async function handleSave() {
+    setHasTriedSubmit(true);
     if (hasInvalidRequired || submitting) return;
     if (hasInvalidData()) return;
     setSubmitting(true);
@@ -198,11 +203,11 @@ export default function EditableDataView<T extends object>({
   visibleFields.forEach((field) => {
     const typedField = field as ResolvedDataField<T>;
     const value = formData[field.name as keyof T];
-    const isDisabled = field.update === false;
+    const isDisabled = (action === 'edit' && field.update === false);
     const key = String(field.name);
     const fieldError = errorFields.find(err => err.key === key);
-    const showError = Boolean(fieldError)
-      || (!validatedRequiredField(typedField, value));
+    const showError = hasTriedSubmit && (Boolean(fieldError)
+      || (!validatedRequiredField(typedField, value)));
     const errorMessage = fieldError?.errorMessage ?? 'Required';
 
     // Build base input class for all fields
@@ -229,11 +234,12 @@ export default function EditableDataView<T extends object>({
           onChange={e =>
             handleChange(field.name as keyof T, e.target.value, field)
           }
-          rows={20}
+          rows={8}
         />
       );
     }
     else if (field.inputType === 'select') {
+      console.info(field.options);
       inputEl = (
         <select
           className={baseInputClass}
@@ -244,7 +250,7 @@ export default function EditableDataView<T extends object>({
           <option value="" disabled>
             Select…
           </option>
-          { (field.options ?? []).map(opt => (
+          {(field.options ?? []).map(opt => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
             </option>
@@ -316,7 +322,7 @@ export default function EditableDataView<T extends object>({
 
   return (
     <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6 space-y-4">
-      {basicSection.name && action == 'create' && (
+      {basicSection?.name && action == 'create' && (
         <h2 className="data-edit-section-title">{basicSection.name}</h2>
       )}
 
@@ -329,8 +335,10 @@ export default function EditableDataView<T extends object>({
         </div>
       )} */}
 
+      {actionCard && <ActionCard {...actionCard} />}
+
       {!noForm && normalInputs.length > 0 && (
-        <div className={`space-y-6 ${basicSection.classForm}`}>
+        <div className={`space-y-2 ${basicSection?.classForm}`}>
             {normalInputs}
         </div>
       )}
@@ -341,15 +349,19 @@ export default function EditableDataView<T extends object>({
       }
 
       {/* Cost Message */}
-      {totalValue && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
+      {(!actionCard || actionCard.available) && totalValue && (
+        <div className={clsx('bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4',
+          actionCard && actionCard.available ? 'w-fit mx-auto text-center mb-6' : 'mb-4'
+          )}
+        >
           <p
             className="data-edit-form-description"
             dangerouslySetInnerHTML={{ __html: getCostMessage(uiMsgType.cost, totalValue) }}
           /> 
         </div>
       )}
-      {/* Cost Message */}
+
+      {/* Warning Message */}
       {uiMsgType.warning && (
         <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 mb-4">
             <div className="flex">
@@ -363,7 +375,11 @@ export default function EditableDataView<T extends object>({
       )}
 
       {/* Action buttons: disabled if submitting or validation fails */}
-      <div className="actions-center">
+      { (!actionCard || actionCard.available) && (
+      <div className={clsx('actions-center',
+        actionCard && actionCard.available ? 'w-fit mx-auto text-center mb-6' : ''
+        )}
+      >
         {onCancel && (
           <button
             className={clsx(
@@ -388,6 +404,7 @@ export default function EditableDataView<T extends object>({
           {uiMsgType.label}
         </button>
       </div>
+      )}
 
     </div>
   );

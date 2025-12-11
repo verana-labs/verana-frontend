@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, ReactNode } from 'react';
-import { DataViewProps, isResolvedActionField, isResolvedDataField, ResolvedActionField, ResolvedField, visibleFieldsForMode } from '@/ui/dataview/types';
+import { DataViewProps, isResolvedActionField, isResolvedDataField, ResolvedActionField, visibleFieldsForMode } from '@/ui/dataview/types';
 import { isJson } from '@/util/util';
 import JsonCodeBlock from '@/ui/common/json-code-block';
 import { translateSections } from '@/ui/dataview/types';
@@ -10,14 +10,15 @@ import { faChevronDown, faChevronUp, faEdit } from '@fortawesome/free-solid-svg-
 import clsx from "clsx"
 import IconLabelButton from './icon-label-button';
 import { renderActionComponent } from './data-view-typed';
+import CardView from './card-view';
 
 export default function DataView<T extends object>({
   sectionsI18n,
   data,
-  id,
   onEdit,
   onRefresh,
   onBack,
+  // showSectionTitle
 }: DataViewProps<T>) {
 
   const sections = translateSections(sectionsI18n);
@@ -31,7 +32,7 @@ export default function DataView<T extends object>({
     field: ResolvedActionField<T>,
     value: string,
     data: object,
-    id?: string,
+    // id?: string,
   ): ReactNode {
     return (
       <div key={rowId} className={clsx("bg-white dark:bg-surface rounded-xl border", field.isWarning? "border-red-200 dark:border-red-700" : "border-neutral-20 dark:border-neutral-70")}> 
@@ -62,8 +63,7 @@ export default function DataView<T extends object>({
   }
 
   return (
-    // <div className="data-view-container">
-    <>
+    <div className="space-y-6">
       {sections.map((section, sectionIndex) => (
         // <div key={sectionIndex} className="data-view-section">
         <div key={sectionIndex}>
@@ -85,8 +85,9 @@ export default function DataView<T extends object>({
           {(!section.type || section.type === "basic") && section.fields && section.fields.length > 0 && (
             <>
             <div className="mb-8">
-              <div className="bg-white dark:bg-surface bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6"> 
+              <div className={`${ section.cardView ? "": "bg-white dark:bg-surface bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6"}`}> 
                 {/* Header is always the same for any section type */}
+                {/* { showSectionTitle && section.name?.trim() && ( */}
                 { section.name?.trim() && (
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="data-view-section-title text-lg">{section.name}</h3>
@@ -115,13 +116,22 @@ export default function DataView<T extends object>({
                       if (jsonValue){
                         jsonField = { label: field.label, value: jsonValue };
                         return null;
-                      } 
+                      }
+                      if (section.cardView && isResolvedDataField(field)){
+                        return (
+                          <CardView key={section.name.concat(String(field.name))} field={field} data={data} largeTexts={section.largeTexts} />
+                        );
+                      }
                       return (
                         <div key={`${sectionIndex}-${fieldIndex}`}>
                           <label className="data-view-label">{field.label}</label>
-                          <p className="data-view-value">{String(value)}</p>
+                          {
+                            isResolvedDataField(field) && field.isHtml ?
+                            (<p className={field.classField?? "data-view-value"} dangerouslySetInnerHTML={{ __html: field.format? String(field.format(value)) : String(value)}}/>) :
+                            (<p className="data-view-value">{String(value)}</p>)
+                          }
                         </div>
-                      )
+                      );
                       }
                     )
                   }
@@ -144,6 +154,7 @@ export default function DataView<T extends object>({
           {/* Actions Section */}
           {section.type === "actions" && section.fields && section.fields.length > 0 && (
             <div className="space-y-4">
+              {section.name?.trim() && (<h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">{section.name}</h2>) }
               {/* Render action fields as a full-width */}
               {visibleFieldsForMode(section.fields, 'view')
               .map((field, fieldIndex) => {
@@ -151,68 +162,15 @@ export default function DataView<T extends object>({
                 if (!isResolvedActionField(field) || value == undefined ) return null;
                 const rowId = `${sectionIndex}-${fieldIndex}`;
                 const isActive = activeActionId === rowId;
-                return renderActionField(rowId, isActive, field, String(value), data, id);
+                return renderActionField(rowId, isActive, field, String(value), data);// id);
               })}
             </div>
           )}
 
         </div>
       ))}
-    </>
+    </div>
   );
-
-     // Helper to render the type data field
-  function renderDataFieldOneColumn(
-    groupIdx: number,
-    group: { field: ResolvedField<T>;
-             value: T[keyof T];
-             fieldIndex: number;
-            }[],
-  ): ReactNode {
-    return (
-      <>
-        {group.map(({ field, value }, idx) => {
-          const jsonValue = isJson(value); // helper: returns object if valid JSON, otherwise null
-
-          return (
-            <React.Fragment key={`data-row-${groupIdx}-${idx}`}>
-              {/* Main row: label + value (or empty cell if JSON will be shown below) */}
-              <tr>
-                <td className="data-view-label-cell">
-                  <span className="data-view-value">{field.label}</span>
-                </td>
-
-                {jsonValue ? (
-                  // If it's JSON, we leave this cell empty (or you could show a hint like "see below")
-                  <td className="data-view-input-cell" />
-                ) : (
-                  // Otherwise, show the value with line breaks preserved
-                  <td className="data-view-input-cell">
-                    <span
-                      className="data-view-label"
-                      style={{ whiteSpace: "pre-line" }}
-                    >
-                      {String(value ?? "")}
-                    </span>
-                  </td>
-                )}
-              </tr>
-
-              {/* Extra row: full width JSON pretty-printed */}
-              {jsonValue && (
-                <tr>
-                  {/* span across both columns */}
-                  <td className="data-view-input-cell" colSpan={2}>
-                    <JsonCodeBlock value={jsonValue} className="data-view-label" />
-                  </td>
-                </tr>
-              )}
-            </React.Fragment>
-          );
-        })}
-      </>
-    );
-  } 
 
 }
 

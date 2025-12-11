@@ -44,5 +44,5 @@ export default function AddDidPage({ onCancel, onRefresh }: AddDidPageProps) {
         isModal={true}
       />
     </>
-  )
+  );
 }

@@ -45,7 +45,7 @@
 .app-container {
   /* @apply max-w-[1440px] flex flex-col mx-auto
          h-screen overflow-hidden; */
-  @apply flex;
+  @apply flex overflow-hidden;
 
 }
 
@@ -126,13 +126,14 @@
   }
   
   .wallet-cta {
-    @apply w-72 px-6 py-5 rounded-lg gap-2
+    /* @apply w-72 px-6 py-5 rounded-lg gap-2
            justify-center items-center text-xl font-semibold leading-snug
            text-light-selected-bg bg-light-selected-text
            border border-light-border dark:border-dark-border
            text-connect-light-text-wallet dark:text-connect-dark-text
            hover:text-light-selected-text hover:bg-light-selected-bg
-           dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg;
+           dark:hover:text-dark-selected-text dark:hover:bg-dark-selected-bg; */
+    @apply inline-flex items-center px-8 py-4 bg-white text-primary-700 text-lg font-semibold rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-600; 
   }
 
   .form-card {
@@ -510,7 +511,7 @@
     @apply rounded-lg flex justify-center items-center gap-2;
   }
   .navbar-mobile-panel {
-    @apply md:hidden border border-light-border dark:border-dark-border px-6;
+    @apply lg:hidden border border-light-border dark:border-dark-border px-6;
   }
 
   .navbar-mobile-logo {

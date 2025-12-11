@@ -82,7 +82,9 @@ export function useActionCS( onCancel?: () => void,
   // Handler for Succes: refresh and collapses/hides the action UI
   const handleSuccess = () => {
     onRefresh?.();
-    onCancel?.();
+    setTimeout(()=>{ 
+      onCancel?.();
+    }, 500);
   };
 
   /**

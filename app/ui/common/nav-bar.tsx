@@ -11,6 +11,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faGear, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import AccountZone from './account-zone';
+import { formatNetwork } from '@/util/util';
 
 
 export default function NavBar() {
@@ -37,12 +38,9 @@ export default function NavBar() {
             {/* Right: Actions */}
             <div className="navbar-user-actions">
                 {/* Network Status */}
-                <div className="flex items-center space-x-2 px-3 py-1 bg-success-50 dark:bg-success-900/20 rounded-full">
-                  <div className="relative w-2 h-2 bg-success-500 rounded-full pulse-dot" />
-                  <span className="text-sm text-success-700 dark:text-success-300 font-medium">
-                    {veranaChain.chain_name}
-                  </span>
-                </div>
+                <div className="flex items-center space-x-2 px-3 py-1 bg-success-50 dark:bg-success-900/20 rounded-full"
+                  dangerouslySetInnerHTML= {{__html: formatNetwork(veranaChain.chain_id)}}
+                />
 
                 {/* Settings */}
                 <IconLabelButton icon={faGear} title={resolveTranslatable({key: 'navbar.settings.title'}, translate)} className='navbar-icon' />
@@ -51,7 +49,7 @@ export default function NavBar() {
                 <ToggleTheme />
 
                 {/* Account Zone */}
-                  <AccountZone />
+                <AccountZone />
             </div>
 
           </div>
@@ -60,9 +58,9 @@ export default function NavBar() {
           {/* Mobile panel */}
           <DisclosurePanel className='navbar-mobile-panel'>
             {/* Logo */}
-            <div className='navbar-mobile-logo'>
+            {/* <div className='navbar-mobile-logo'>
               <VeranaLog />
-            </div>
+            </div> */}
             {/* Links - Sublinks */}
             <NavLinks/>
           </DisclosurePanel>

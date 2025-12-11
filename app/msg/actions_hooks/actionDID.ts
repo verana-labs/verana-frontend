@@ -76,7 +76,7 @@ export function useActionDID(
   const inFlight = useRef(false);
 
   // After a successful broadcast, push or refresh the relevant route depending on the action performed.
-  const handleSuccess = (msgType: ActionDIDParams['msgType'], did: string) => {
+  const handleSuccess = (msgType: ActionDIDParams['msgType']) => {
     console.info("handleSuccess");
     onRefresh?.();
     setTimeout(()=>{ 
@@ -200,7 +200,7 @@ export function useActionDID(
       inFlight.current = false;
       if (notifyPromise) await notifyPromise;
       if (success && res) {
-        handleSuccess(params.msgType, did);
+        handleSuccess(params.msgType);
       } else if (!success) {
         handleFailure();
       }

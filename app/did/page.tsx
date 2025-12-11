@@ -14,7 +14,7 @@ import { translate } from '@/i18n/dataview';
 import { translateDataTableDescriptions } from '@/ui/datatable/types';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { getStatus } from '@/util/util';
-import AddDidPage from './add/page';
+import AddDidPage from './add/add';
 import { ModalAction } from '@/ui/common/modal-action';
 
 export default function DidPage() {
@@ -44,7 +44,7 @@ export default function DidPage() {
           const res = await fetch(listUrl + `/list?account=${address}`);
           const json = await res.json();
           let listDids = Array.isArray(json) ? json : json.dids || [];
-          listDids = listDids.map((did: any) => ({
+          listDids = listDids.map((did: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
             ...did,
             status: getStatus(did.exp)
           }));

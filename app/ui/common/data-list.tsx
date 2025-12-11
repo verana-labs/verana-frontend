@@ -3,12 +3,10 @@
 import React, { useState } from 'react';
 import { isResolvedActionField, isResolvedStringListField, Section, translateSections, visibleFieldsForMode } from "@/ui/dataview/types";
 import IconLabelButton from './icon-label-button';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { msgTypeStyle } from '@/msg/constants/msgTypeConfig';
 import clsx from 'clsx';
 import { MessageType } from '@/msg/constants/types';
-import { resolveMsgCopy } from '@/msg/constants/resolveMsgTypeConfig';
-import { renderActionComponent, validTRAction } from './data-view-typed';
+import { renderActionComponent } from './data-view-typed';
 import { ModalAction } from './modal-action';
 
 interface DataListProps<T extends object> {

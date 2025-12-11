@@ -108,7 +108,6 @@ export default function DIDView({ id, selectDidData, onBack, showHeader = true, 
         sectionsI18n={didSections}
         data={data}
         id={decodeURIComponent(data.did)}
-        columnsCount={2}
         onRefresh={() => setRefresh(true)}
         onBack={onBack}
       />

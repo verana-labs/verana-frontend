@@ -12,6 +12,7 @@ import { MsgTypeDID, MsgTypeTD, MsgTypeTR } from '@/msg/constants/notificationMs
 import GfdPage from '@/tr/[id]/gfd';
 import DidActionPage from '@/did/[id]/action';
 import TdActionPage from '@/account/action';
+import GetVNATokens from './get-vna';
 
 // Wrapper for DataView that lets you pass the generic parameter explicitly
 export default function DataViewTyped<I extends object>(props: {
@@ -19,16 +20,13 @@ export default function DataViewTyped<I extends object>(props: {
   sections: Section<I> | ReadonlyArray<Section<I>>;
   data: I;
   id?: string;
-  columnsCount?: number;
-  columnsCountMd?: number;
   edit?: boolean;
-  oneColumn?: boolean;
   getTitle?: (item: I) => React.ReactNode;
   onActiveActionId?: React.Dispatch<React.SetStateAction<string | null>>;
   onRefresh?: React.Dispatch<React.SetStateAction<string | null>>;
 }) {
   
-  const { objectData, sections, data, id, columnsCount, columnsCountMd, edit, oneColumn, getTitle, onRefresh } = props;
+  const { objectData, sections, data, id, edit, getTitle, onRefresh } = props;
   const normalized = Array.isArray(sections) ? sections : [sections];
   const title = getTitle?.(data);
   // Local expand/collapse state per instance (default: collapsed)
@@ -90,11 +88,8 @@ export default function DataViewTyped<I extends object>(props: {
           sectionsI18n={normalized}
           data={data}
           id={id}
-          columnsCount={columnsCount}
-          columnsCountMd={columnsCountMd}
           // onEdit={ () => setEditing(true)}
           onEdit={ edit? () => setEditing(true) : undefined }
-          oneColumn={oneColumn}
         />
       )}
 
@@ -114,7 +109,7 @@ export function renderObjectList<I extends object>(args: {
   getId?: (item: I, idx: number) => string | number | undefined;
   onRefresh?: React.Dispatch<React.SetStateAction<string | null>>;
 }) {
-  const { objectData, sections, items, columnsCount, edit, getId, onRefresh } = args;
+  const { objectData, sections, items, edit, getId, onRefresh } = args;
   return items.map((item, idx) => (
     <DataViewTyped<I>
       key={(getId?.(item, idx) || idx) as React.Key}
@@ -122,9 +117,7 @@ export function renderObjectList<I extends object>(args: {
       sections={sections}
       data={item}
       id={String(getId?.(item, idx) ?? idx)}
-      columnsCount={columnsCount ?? 2}
       edit={edit}
-      oneColumn={true}
       getTitle={(d) => (d as any).title ?? ""}  // eslint-disable-line @typescript-eslint/no-explicit-any
       onRefresh={onRefresh}
     />
@@ -153,6 +146,9 @@ export function renderActionComponent(
 ): ReactNode {
   if (validDIDAction(action)) {
     return <DidActionPage action={action} data={data} onClose={onClose} onRefresh={onRefresh} onBack={onBack}/>;
+  }
+  if (action === 'GetVNATrustDeposit') {
+    return <GetVNATokens/>;
   }
   if (validTDAction(action)) {
     return <TdActionPage action={action} data={data} setActiveActionId={onClose} onRefresh={onRefresh}/>;

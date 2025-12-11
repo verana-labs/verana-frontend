@@ -20,7 +20,6 @@ import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import Long from 'long';
 import { translate } from '@/i18n/dataview';
 import { resolveTranslatable } from '@/ui/dataview/types';
-import { on } from 'node:stream';
 
 async function calculateSRIHash (docUrl: string | undefined): Promise<{ sri: string | undefined; error: string | undefined }> {
   if (!docUrl || !isValidUrl(docUrl)) return { sri: undefined, error: 'Invalid Document URL' };
@@ -112,7 +111,9 @@ export function useActionTR(  onCancel?: () => void,
   // Handler for Succes: refresh and collapses/hides the action UI
   const handleSuccess = () => {
     onRefresh?.();
-    onCancel?.();
+    setTimeout(()=>{ 
+      onCancel?.();
+    }, 500);
   };
 
   /**

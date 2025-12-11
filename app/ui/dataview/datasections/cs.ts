@@ -1,3 +1,4 @@
+import { getModeLabel } from "@/ui/datatable/columnslist/cs";
 import { Section, typeOf } from "@/ui/dataview/types";
 import type { I18nValues } from "@/ui/dataview/types";
 import { MSG_SCHEMA_ID } from "@/util/json_schema_util";
@@ -36,7 +37,7 @@ export const csSections: Section<CsData>[] = [
   {
     name: t("dataview.cs.sections.main"),
     type: "basic",
-    classForm: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6",
+    classForm: "grid grid-cols-1 md:grid-cols-2 gap-6 mb-6", //lg:grid-cols-3
     fields: [
         {
         name: "id",
@@ -44,6 +45,7 @@ export const csSections: Section<CsData>[] = [
         type: "data",
         required: true,
         update: false,
+        show: "edit view"
         // description: t("dataview.cs.descriptions.id"),
       },
       {
@@ -91,10 +93,11 @@ export const csSections: Section<CsData>[] = [
         label: t("dataview.cs.fields.issuerPermManagementMode"),
         type: "data",
         required: true,
-        update: true,
-        show: "create",
+        update: false,
         inputType: "select",
         options: managementModeOptions,
+        format: (value) => getModeLabel(String(value),"_ISSUER"),
+        isHtml: true,
         // description: t("dataview.cs.descriptions.issuerPermManagementMode"),
       },
       {
@@ -102,10 +105,11 @@ export const csSections: Section<CsData>[] = [
         label: t("dataview.cs.fields.verifierPermManagementMode"),
         type: "data",
         required: true,
-        update: true,
-        show: "create",
+        update: false,
         inputType: "select",
         options: managementModeOptions,
+        format: (value) => getModeLabel(String(value), "_VERIFIER"),
+        isHtml: true,
         // description: t("dataview.cs.descriptions.verifierPermManagementMode"),
       },
       {
@@ -115,8 +119,7 @@ export const csSections: Section<CsData>[] = [
         inputType: "textarea",
         required: true,
         update: false,
-        // show: "create",
-        // description: t("dataview.cs.descriptions.jsonSchema", { id: MSG_SCHEMA_ID }),
+        description: t("dataview.cs.descriptions.jsonSchema", { id: MSG_SCHEMA_ID }),
         validation: { type: "JSON_SCHEMA" },
       },
       { name: "creator", label: t("dataview.cs.fields.creator"), type: "data", show: "none" },

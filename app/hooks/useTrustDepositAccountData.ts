@@ -15,6 +15,7 @@ type TrustDepositAccountData = {
   claimableInterests: string | null;
   reclaimable: string | null;
   message: string | null;
+  network: string | null;
 };
 
 /**
@@ -37,6 +38,7 @@ export function useTrustDepositAccountData(
     claimableInterests: null,
     reclaimable: null,
     message: null,
+    network: null
   });
   const [loading, setLoading] = useState(false);
   const [errorAccountData, setError] = useState<string | null>(null);
@@ -55,6 +57,7 @@ export function useTrustDepositAccountData(
     let claimableInterests = null;
     let reclaimable = null;
     let message = null;
+    const network = veranaChain.chain_id;
 
     try {
       const client = await getStargateClient();
@@ -90,6 +93,7 @@ export function useTrustDepositAccountData(
       claimableInterests,
       reclaimable,
       message,
+      network
     });
     setLoading(false);
   };

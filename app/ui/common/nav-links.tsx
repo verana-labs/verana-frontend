@@ -6,8 +6,13 @@ import { useState } from 'react';
 import { links } from '@/lib/navlinks';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
+import { useVeranaChain } from '@/hooks/useVeranaChain';
+import { useChain } from '@cosmos-kit/react';
 
 export default function NavLinks() {
+  const veranaChain = useVeranaChain();
+  const { isWalletConnected } = useChain(veranaChain.chain_name);
+  
   const pathname = usePathname();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
@@ -19,7 +24,7 @@ export default function NavLinks() {
     <nav className="mt-5 flex-1 px-2 space-y-1">
       {links.map((link, idx: number) => {
         const hasSubLinks = Array.isArray(link.links) && link.links.length > 0;
-
+        if (!isWalletConnected && !link.availableOffline ) return;
         return (
           <div key={link.name} className="relative w-full self-stretch justify-center items-center">
 

@@ -1,5 +1,5 @@
 import { Section } from "@/ui/dataview/types";
-import { CsData, CsDataToken, csSections } from "./cs";
+import { CsData } from "./cs";
 import { languageOptions } from "./gfd";
 
 const t = (key: string) => ({ key });
@@ -62,24 +62,24 @@ export const trSections: Section<TrData>[] = [
         update: true,
         validation: { type: "URL" },
       },
-      { name: "controller", label: t("dataview.tr.fields.controller"), type: "data", show: "all", update: false },
+      { name: "controller", label: t("dataview.tr.fields.controller"), type: "data", show: "view", update: false },
       {
         name: "language",
         label: t("dataview.tr.fields.language"),
         type: "data",
         inputType: "select",
         options: languageOptions,
-        show: "all",
-        required: true,
-        update: true,
+        show: "create view",
+        required: false,
+        update: false,
       },
       {
         name: "docUrl",
         label: t("dataview.tr.fields.docUrl"),
         type: "data",
-        show: "create",
+        show: "create view",
         required: true,
-        update: true,
+        update: false,
         validation: { type: "URL" },
       },
       { name: "deposit", label: t("dataview.tr.fields.deposit"), type: "data", show: "view" },

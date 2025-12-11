@@ -1,9 +1,11 @@
+'use client';
+
 export function formatVNA (amount: string | null, decimals?: number) : string {
     if (!amount) return ''
     return (
       Number(amount) / Math.pow(10, decimals ? decimals : 6)
     ).toLocaleString(undefined, {
-      minimumFractionDigits: 2,
+      minimumFractionDigits: 0,
       maximumFractionDigits: 6
     }) + ' VNA'
   }
@@ -18,6 +20,21 @@ export function parseVNA(formatted: string, decimals: number = 6): string {
   // Convert to microVNA (as integer string)
   const micro = Math.round(floatValue * Math.pow(10, decimals));
   return micro.toString();
+}
+
+export function formatUSDfromUVNA(
+  amount: string | null,
+  conversionFactorUSDfromVNA: number
+): string {
+  if (!amount) return ''
+  const usd = Number(amount) * conversionFactorUSDfromVNA
+
+  return ( '≈ $' +
+    usd.toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }) + ' USD'
+  )
 }
 
 export function shortenMiddle(str: string, maxLength: number): string {
@@ -82,3 +99,11 @@ export function getStatus(input: Date | string | number): 'expired' | 'expiring'
   return 'active';
 }
 
+export function formatNetwork(network: string){
+  const htmlNetwork = 
+    `
+    <div class="relative w-2 h-2 bg-success-500 rounded-full pulse-dot"></div>
+    <span class="text-sm text-success-700 dark:text-success-300 font-medium">${network}</span>
+    `;
+  return htmlNetwork;
+}

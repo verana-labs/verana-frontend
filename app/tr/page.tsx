@@ -4,16 +4,14 @@ import React, { useEffect, useState } from 'react';
 import { DataTable } from '@/ui/common/data-table';
 import { useRouter } from 'next/navigation';
 import TitleAndButton from '@/ui/common/title-and-button';
-import { env } from 'next-runtime-env';
 import { useNotification } from '@/ui/common/notification-provider';
 import { columnsTrList, description, trFilter, TrList } from '@/ui/datatable/columnslist/tr';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { translateDataTableDescriptions } from '@/ui/datatable/types';
 import { useTrustRegistries } from '@/hooks/useTrustRegistries';
-import { faPlus, faXmark } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import AddTrPage from '@/tr/add/page';
+import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import AddTrPage from '@/tr/add/add';
 import { ModalAction } from '@/ui/common/modal-action';
 
 export default function TrPage() {

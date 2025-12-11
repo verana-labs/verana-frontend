@@ -15,14 +15,13 @@ import { formatDate, formatVNA } from '@/util/util';
 import langs from 'langs';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
-import { faArrowLeft, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { columnsCsList } from '@/ui/datatable/columnslist/cs';
 import { DataTable } from '@/ui/common/data-table';
 import { DataList } from '@/ui/common/data-list';
 import { ModalAction } from '@/ui/common/modal-action';
-import AddDidPage from '@/did/add/page';
 import { useRouter } from 'next/navigation';
-import AddCsPage from '../cs/add/page';
+import AddCsPage from '../cs/add/add';
 
 export default function TRViewPage() {
   const params = useParams();
@@ -85,7 +84,7 @@ export default function TRViewPage() {
           lastVersion = version.version > lastVersion ? version.version : lastVersion;
           return text;
         })
-      );
+      ).reverse();
     computed.last_version = lastVersion;
 
     if (computed.controller === address){
@@ -165,7 +164,6 @@ export default function TRViewPage() {
         sectionsI18n={trSections}
         data={data}
         id={data.id}
-        columnsCount={2} 
         onEdit={ data.controller === address ? () => setEditing(true) : undefined } 
         // onRefresh={setRefresh}
         />

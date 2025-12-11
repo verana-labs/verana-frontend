@@ -36,7 +36,7 @@ export default function Button({
 }
 
 export const ButtonConnect = (
-  { text = resolveTranslatable({key: 'wallet.connect'}, translate), onClick = noop }: ConnectProps,
+  { text = resolveTranslatable({key: 'wallet.nav.connect'}, translate), onClick = noop }: ConnectProps,
 ) => <Button text={text} onClick={onClick} />;
 
 export const ButtonConnected = (
@@ -44,7 +44,7 @@ export const ButtonConnected = (
 ) => <Button text={text} icon="walletFilled" onClick={onClick} />;
 
 export const ButtonDisconnected = (
-  { text = resolveTranslatable({key: 'wallet.connect'}, translate), onClick = noop }: ConnectProps,
+  { text = resolveTranslatable({key: 'wallet.nav.connect'}, translate), onClick = noop }: ConnectProps,
 ) => <Button text={text} icon="walletFilled" onClick={onClick} />;
 
 export const ButtonConnecting = (

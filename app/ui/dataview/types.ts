@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { translate } from "@/i18n/dataview";
-import { ComponentType, Dispatch, SetStateAction } from "react";
+import { ComponentType, ReactNode } from "react";
 
 // Localization helpers
 export type MessagePrimitive = string | number | boolean | null;
@@ -126,28 +126,30 @@ export type Section<I> = {
   help?: Translatable[];
   fields?: Field<I>[];
   classForm?: string;
+  cardView?: boolean;
+  largeTexts?: boolean;
 };
 
 export interface DataViewProps<T extends object> {
   sectionsI18n: Section<T>[];
   data: T;
   id?: string;
-  columnsCount?: number;
-  columnsCountMd?: number;
   onEdit?: () => void;
   onRefresh?: () => void;
   onBack?:() => void;
-  oneColumn?: boolean;
+  showSectionTitle?: string;
 }
 
 /* Base field shared by all field types */
 type BaseField = {
   label: Translatable;
   description?: Translatable;
-  show?: 'view' | 'edit' | 'all' | 'none' | 'create';
+  show?: string; //'view' | 'edit' | 'all' | 'none' | 'create';
   required?: boolean;
   update?: boolean;
   id?: boolean;
+  icon?: any;
+  iconClass?: string;
 };
 
 /* Field validation params by all field types */
@@ -166,8 +168,6 @@ export type FieldValidation = {
 type ActionField<T> = BaseField & {
   type: "action";
   name: keyof T;
-  icon?: any;
-  iconClass?: string;
   isWarning?: boolean;
 };
 
@@ -179,6 +179,11 @@ export type DataField<T> = BaseField & {
   options?: { value: string | number; label: Translatable }[]; // (inputType === 'select');
   placeholder?: Translatable;
   validation?: FieldValidation;
+  classField?: string;
+  isHtml?: boolean;
+  usdValue?: boolean;
+  hasStats?: boolean;
+  format?: (value: T[keyof T]) => ReactNode;
 };
 
 /* Data & Action */
@@ -217,7 +222,7 @@ export type Field<T> =
 
 type BaseFieldResolved = Omit<BaseField, "label" | "description"> & {
   label: string;
-  description?: string;
+  description: string;
 };
 
 export type ResolvedDataField<T> = Omit<
@@ -306,8 +311,7 @@ export function isFieldVisibleInMode<T>(field: ResolvedField<T>, mode: DataViewM
   const show = field.show ?? "all";
   if (show === "none") return false;
   if (show === "all") return true;
-  if (show === "create" && mode === "view") return true;
-  return show === mode;
+  return show.includes(mode);
 }
 
 export function visibleFieldsForMode<T>(fields: ResolvedField<T>[] | undefined, mode: DataViewMode): ResolvedField<T>[] {

@@ -10,9 +10,9 @@ import { MsgTypeTR } from '@/msg/constants/notificationMsgForMsgType';
 // Define GfdPage props interface
 interface GfdPageProps {
   action: MsgTypeTR;  // Action type to perform
-  setActiveActionId: React.Dispatch<React.SetStateAction<string | null>>; // Collapse/hide action on cancel
+  setActiveActionId: () => void; // Collapse/hide action on cancel
   data: object;
-  onRefresh?: React.Dispatch<React.SetStateAction<string | null>>; // Refresh TR data
+  onRefresh?: () => void; // Refresh TR data
 }
 
 export default function GfdPage({ action, setActiveActionId, data, onRefresh }: GfdPageProps) {
@@ -62,7 +62,7 @@ export default function GfdPage({ action, setActiveActionId, data, onRefresh }: 
         messageType={action}     
         data={dataGFD}
         onSave={(action === 'MsgAddGovernanceFrameworkDocument')? onSave : onIncrement }
-        onCancel={() => setActiveActionId(null)} />
+        onCancel={setActiveActionId} />
     </>
   );
 }
