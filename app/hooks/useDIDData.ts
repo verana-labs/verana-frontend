@@ -5,6 +5,7 @@ import { env } from 'next-runtime-env';
 import { DidData } from '@/ui/dataview/datasections/did';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
+import { ApiErrorResponse } from '@/types/apiErrorResponse';
 
 export function useDIDData(id: string ) {
   const [dataDID, setData] = useState<DidData | null>(null);
@@ -16,7 +17,8 @@ export function useDIDData(id: string ) {
     process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID;
 
   const fetchDID = async () => {
-    if (!id || !getURL) {
+    if (!id) return;
+    if (!getURL) {
       setError(resolveTranslatable({key: "error.fetch.did"}, translate)??'Missing DID or endpoint URL');
       setLoading(false);
       return;
@@ -26,12 +28,17 @@ export function useDIDData(id: string ) {
     try {
       const url = `${getURL}/get/${decodeURIComponent(id)}`;
       const res = await fetch(url);
-      if (!res.ok) setError(`Error ${res.status}`);
-      // Parse response: DidData or { did_entry: DidData }
       const json = await res.json();
-      type ResponseShape = Partial<{ did_entry: DidData }> & DidData;
+      if (!res.ok){
+        const { error, code } = json as ApiErrorResponse;
+        setError(`Error ${code}: ${error}`);
+        return;
+      } 
+      // Parse response: DidData or { did: DidData }
+      // type ResponseShape = Partial<{ did: DidData }> & DidData;
+      type ResponseShape = Partial<{ did: DidData }> & DidData;
       const resp = json as ResponseShape;
-      const entry = resp.did_entry ?? (resp as DidData);
+      const entry = resp.did ?? (resp as DidData);
       setData(entry);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

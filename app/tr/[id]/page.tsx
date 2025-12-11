@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { TrData, trSections } from '@/ui/dataview/datasections/tr';
+import { GfdData, gfdSections, htmlGfd, TrData, trSections } from '@/ui/dataview/datasections/tr';
 import DataView from '@/ui/common/data-view-columns';
-import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import TitleAndButton from '@/ui/common/title-and-button';
 import EditableDataView from '@/ui/common/data-edit';
 import { useActionTR } from '@/msg/actions_hooks/actionTR';
@@ -16,12 +15,20 @@ import { formatDate, formatVNA } from '@/util/util';
 import langs from 'langs';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
+import { columnsCsList } from '@/ui/datatable/columnslist/cs';
+import { DataTable } from '@/ui/common/data-table';
+import { DataList } from '@/ui/common/data-list';
+import { ModalAction } from '@/ui/common/modal-action';
+import { useRouter } from 'next/navigation';
+import AddCsPage from '../cs/add/add';
 
 export default function TRViewPage() {
   const params = useParams();
   const id = params?.id as string;
   const [data, setData] = useState<TrData | null>(null);
   const [editing, setEditing] = useState(false);
+  const router = useRouter();
 
   const actionTR = useActionTR(); 
 
@@ -29,11 +36,13 @@ export default function TRViewPage() {
   const { address } = useChain(veranaChain.chain_name);
   const { csList, refetch: refetchCSList } = useCSList (id);
   const { dataTR, loading, errorTRData, refetch: refetchTR } = useTrustRegistryData(id);
+  const [ addCS, setAddCS ] = useState<boolean>(false);
 
   // Refresh data TR
   const [refresh, setRefresh] = useState<string | null>(null);
   useEffect(() => {
     if (!refresh) return;
+    console.info('useEffect TRViewPage');
     (async () => {
       if (refresh === 'actionTR') await refetchTR();
       if (refresh === 'actionCS') await refetchCSList();
@@ -51,46 +60,53 @@ export default function TRViewPage() {
     computed.docs = (computed.versions ?? [])
       .flatMap((version, index, versionsArr) =>
         (version.documents ?? []).map(doc => {
-          let text = `Version ${version.version}: <a href="${doc.url}" target="_blank" rel="noopener noreferrer" style="text-decoration: underline;">${doc.url}</a> (${doc.language}) `;
-          if (version.version == lastVersion) text = text.concat (`active since ${formatDate(version.active_since)}`);
-          else if (version.version > lastVersion) text = text.concat (` draft`);
+          let state = "";
+          let strState = "";
+          if (version.version == lastVersion){
+            strState = (`active since ${formatDate(version.active_since)}`);
+            state = 'active';
+          } 
+          else if (version.version > lastVersion){
+            strState = (`draft`);
+            state = (`draft`);
+          } 
           else if (version.version < lastVersion) {
             const nextVersion = versionsArr[index + 1];
             if (nextVersion?.active_since) {
-              text = text.concat(
-                ` from ${formatDate(version.active_since)} to ${formatDate(nextVersion.active_since)}`
+              strState = (
+                `from ${formatDate(version.active_since)} to ${formatDate(nextVersion.active_since)}`
               );
             } else {
-              text = text.concat(` from ${formatDate(version.active_since)}`);
+              strState = (`from ${formatDate(version.active_since)}`);
             }
+            state= 'inactive';
           }
+          const text = htmlGfd(String(version.version), doc.url, doc.language, state, strState);
           lastVersion = version.version > lastVersion ? version.version : lastVersion;
-          return version.version === computed.active_version
-            ? `<strong>${text}</strong>`
-            : text ;
+          return text;
         })
-      );
+      ).reverse();
     computed.last_version = lastVersion;
 
     if (computed.controller === address){
       computed.addGovernanceFrameworkDocument = "MsgAddGovernanceFrameworkDocument";
       computed.increaseActiveGovernanceFrameworkVersion =
-        computed.last_version > (computed.active_version ?? 0)
+        computed.last_version >= (computed.active_version ?? 0)
           ? "MsgIncreaseActiveGovernanceFrameworkVersion"
           : undefined;
     }
 
-    const newCS = {
-      trId: id, creator: '',
-      issuerGrantorValidationValidityPeriod: 0, verifierGrantorValidationValidityPeriod: 0,
-      issuerValidationValidityPeriod: 0, verifierValidationValidityPeriod: 0, holderValidationValidityPeriod: 0,
-      issuerPermManagementMode: 1, verifierPermManagementMode: 1, jsonSchema: "",
-      title: resolveTranslatable({key: "tr.cs.add.title"}, translate), id: ''
-      };
-    computed.csList =
-      computed.controller === address
-        ? [newCS, ...(csList ?? [])]
-        : (csList ?? []);
+    // const newCS = {
+    //   trId: id, creator: '',
+    //   issuerGrantorValidationValidityPeriod: 0, verifierGrantorValidationValidityPeriod: 0,
+    //   issuerValidationValidityPeriod: 0, verifierValidationValidityPeriod: 0, holderValidationValidityPeriod: 0,
+    //   issuerPermManagementMode: 1, verifierPermManagementMode: 1, jsonSchema: "",
+    //   title: resolveTranslatable({key: "tr.cs.add.title"}, translate), id: ''
+    //   };
+    // computed.csList =
+    //   computed.controller === address
+    //     ? [newCS, ...(csList ?? [])]
+    //     : (csList ?? []);
 
     setData(computed);
   }, [dataTR, address, csList, id]);
@@ -126,25 +142,74 @@ export default function TRViewPage() {
 
   return (
     <>
+      {/* Back Navigation & Back Navigation */}
       <TitleAndButton
-        title=  {`${resolveTranslatable({key: "tr.title"}, translate)?? "Trust Registry"}  ${data.did}`}
-        buttonLabel={resolveTranslatable({key: "button.tr.back"}, translate)?? "Back to List"}
+        title=  {`${data.aka}`}
+        buttonLabel={resolveTranslatable({key: "button.tr.back"}, translate)}
         to="/tr"
-        Icon={ChevronLeftIcon}
+        icon={faArrowLeft}
+        backLink= {true}
+        description={["Ecosystem trust registry and governance framework management."]}
       />
+      {/* Basic Information Section */}
       {editing ? (
-        <EditableDataView<TrData>
-          sectionsI18n={trSections}
-          data={data}
-          messageType={'MsgUpdateTrustRegistry'}
-          id={data.id}
-          onSave={ onSave }
-          onCancel={() => setEditing(false)}  />
+      <EditableDataView<TrData>
+        sectionsI18n={trSections}
+        data={data}
+        messageType={'MsgUpdateTrustRegistry'}
+        id={data.id}
+        onSave={ onSave }
+        onCancel={() => setEditing(false)}  />
       ) : (
-        <DataView<TrData> sectionsI18n={trSections} data={data} id={data.id} columnsCount={2} 
-            onEdit={ data.controller === address ? () => setEditing(true) : undefined } 
-            setRefresh={setRefresh}/>
+      <DataView<TrData> 
+        sectionsI18n={trSections}
+        data={data}
+        id={data.id}
+        onEdit={ data.controller === address ? () => setEditing(true) : undefined } 
+        // onRefresh={setRefresh}
+        />
       )}
+      {/* EGF Documents Section */}
+      <DataList<GfdData>
+        sectionsI18n={gfdSections}
+        data={data as GfdData}
+        listTitle={resolveTranslatable({key: "datalist.egf.title"}, translate)}
+        onRefresh={() => setRefresh('actionTR')}
+      />
+
+      {/* Credential Schemas Section */}
+      <DataTable
+        tableTitle={resolveTranslatable({key: "datatable.cs.title"}, translate)}
+        addTitle={resolveTranslatable({key: "button.cs.add"}, translate)}
+        columnsI18n={columnsCsList}
+        data={csList}
+        initialPageSize={10}
+        onRowClick={(row) => router.push(`/tr/cs/${encodeURIComponent(row.id)}?edit=${data.controller === address}`)}
+        defaultSortColumn={'modified'}
+        showDetailModal={false}
+        detailTitle={resolveTranslatable({key: "datatable.tr.detail"}, translate)}
+        onAdd={() => setAddCS(true)}
+      />
+
+      {/* render modal add Credential Schema*/}
+      {addCS && (
+      <ModalAction
+        onClose={() => setAddCS(false)}
+        titleKey={"datatable.cs.add" }
+        isActive={addCS}
+        classModal={"relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-xl bg-white dark:bg-surface"}
+      >
+        <AddCsPage
+            onCancel={() => setAddCS(false)}
+            onRefresh={() => {
+              setRefresh('actionCS');
+              setTimeout( () => setAddCS(false), 1000);
+            }} 
+            trId={Number(id)}
+        />
+      </ModalAction>
+      )}
+      
     </>
   );
 }

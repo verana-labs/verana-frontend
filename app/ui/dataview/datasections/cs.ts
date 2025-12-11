@@ -1,3 +1,4 @@
+import { getModeLabel } from "@/ui/datatable/columnslist/cs";
 import { Section, typeOf } from "@/ui/dataview/types";
 import type { I18nValues } from "@/ui/dataview/types";
 import { MSG_SCHEMA_ID } from "@/util/json_schema_util";
@@ -20,6 +21,7 @@ export interface CsData {
   updateCredentialSchema?: string; // action type
   archiveCredentialSchema?: string; // action type
   title?: string;
+  description?: string;
 }
 
 export const CsDataToken = typeOf<CsData>("CsData");
@@ -35,28 +37,16 @@ export const csSections: Section<CsData>[] = [
   {
     name: t("dataview.cs.sections.main"),
     type: "basic",
+    classForm: "grid grid-cols-1 md:grid-cols-2 gap-6 mb-6", //lg:grid-cols-3
     fields: [
-      {
-        name: "issuerPermManagementMode",
-        label: t("dataview.cs.fields.issuerPermManagementMode"),
+        {
+        name: "id",
+        label: t("dataview.cs.fields.id"),
         type: "data",
         required: true,
-        update: true,
-        show: "create",
-        inputType: "select",
-        options: managementModeOptions,
-        description: t("dataview.cs.descriptions.issuerPermManagementMode"),
-      },
-      {
-        name: "verifierPermManagementMode",
-        label: t("dataview.cs.fields.verifierPermManagementMode"),
-        type: "data",
-        required: true,
-        update: true,
-        show: "create",
-        inputType: "select",
-        options: managementModeOptions,
-        description: t("dataview.cs.descriptions.verifierPermManagementMode"),
+        update: false,
+        show: "edit view"
+        // description: t("dataview.cs.descriptions.id"),
       },
       {
         name: "issuerGrantorValidationValidityPeriod",
@@ -64,7 +54,7 @@ export const csSections: Section<CsData>[] = [
         type: "data",
         required: true,
         update: true,
-        description: t("dataview.cs.descriptions.issuerGrantorValidationValidityPeriod"),
+        // description: t("dataview.cs.descriptions.issuerGrantorValidationValidityPeriod"),
       },
       {
         name: "verifierGrantorValidationValidityPeriod",
@@ -72,7 +62,7 @@ export const csSections: Section<CsData>[] = [
         type: "data",
         required: true,
         update: true,
-        description: t("dataview.cs.descriptions.verifierGrantorValidationValidityPeriod"),
+        // description: t("dataview.cs.descriptions.verifierGrantorValidationValidityPeriod"),
       },
       {
         name: "issuerValidationValidityPeriod",
@@ -80,7 +70,7 @@ export const csSections: Section<CsData>[] = [
         type: "data",
         required: true,
         update: true,
-        description: t("dataview.cs.descriptions.issuerValidationValidityPeriod"),
+        // description: t("dataview.cs.descriptions.issuerValidationValidityPeriod"),
       },
       {
         name: "verifierValidationValidityPeriod",
@@ -88,7 +78,7 @@ export const csSections: Section<CsData>[] = [
         type: "data",
         required: true,
         update: true,
-        description: t("dataview.cs.descriptions.verifierValidationValidityPeriod"),
+        // description: t("dataview.cs.descriptions.verifierValidationValidityPeriod"),
       },
       {
         name: "holderValidationValidityPeriod",
@@ -96,7 +86,31 @@ export const csSections: Section<CsData>[] = [
         type: "data",
         required: true,
         update: true,
-        description: t("dataview.cs.descriptions.holderValidationValidityPeriod"),
+        // description: t("dataview.cs.descriptions.holderValidationValidityPeriod"),
+      },
+      {
+        name: "issuerPermManagementMode",
+        label: t("dataview.cs.fields.issuerPermManagementMode"),
+        type: "data",
+        required: true,
+        update: false,
+        inputType: "select",
+        options: managementModeOptions,
+        format: (value) => getModeLabel(String(value),"_ISSUER"),
+        isHtml: true,
+        // description: t("dataview.cs.descriptions.issuerPermManagementMode"),
+      },
+      {
+        name: "verifierPermManagementMode",
+        label: t("dataview.cs.fields.verifierPermManagementMode"),
+        type: "data",
+        required: true,
+        update: false,
+        inputType: "select",
+        options: managementModeOptions,
+        format: (value) => getModeLabel(String(value), "_VERIFIER"),
+        isHtml: true,
+        // description: t("dataview.cs.descriptions.verifierPermManagementMode"),
       },
       {
         name: "jsonSchema",
@@ -104,8 +118,7 @@ export const csSections: Section<CsData>[] = [
         type: "data",
         inputType: "textarea",
         required: true,
-        update: true,
-        show: "create",
+        update: false,
         description: t("dataview.cs.descriptions.jsonSchema", { id: MSG_SCHEMA_ID }),
         validation: { type: "JSON_SCHEMA" },
       },

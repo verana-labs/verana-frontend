@@ -3,52 +3,53 @@
 import React, { useEffect, useState } from 'react';
 import { DataTable } from '@/ui/common/data-table';
 import { useRouter } from 'next/navigation';
-import { PlusIcon } from '@heroicons/react/24/outline';
 import TitleAndButton from '@/ui/common/title-and-button';
-import { env } from 'next-runtime-env';
 import { useNotification } from '@/ui/common/notification-provider';
-import { columnsTrList, TrList } from '@/ui/datatable/columnslist/tr';
-import { useVeranaChain } from '@/hooks/useVeranaChain';
-import { useChain } from '@cosmos-kit/react';
+import { columnsTrList, description, trFilter, TrList } from '@/ui/datatable/columnslist/tr';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
+import { translateDataTableDescriptions } from '@/ui/datatable/types';
+import { useTrustRegistries } from '@/hooks/useTrustRegistries';
+import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import AddTrPage from '@/tr/add/add';
+import { ModalAction } from '@/ui/common/modal-action';
 
 export default function TrPage() {
   const [trs, setTrs] = useState<TrList[]>([]);
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { trList, loading, errorTrList, refetch: fetchTrList } = useTrustRegistries();
+  const [errorNotified, setErrorNotified] = useState(false);
+  // Notification context for showing error messages
   const { notify } = useNotification();
-  const listURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY;
-  const veranaChain = useVeranaChain();
-  const { address } = useChain(veranaChain.chain_name);
-
+  const [ addTR, setAddTR ] = useState<boolean>(false);
+  
   useEffect(() => {
-    const fetchTRs = async () => {
-      try {
-          if (!listURL){
-            notify(
-              resolveTranslatable({key: "error.endpoint"}, translate)?? 'API endpoint not configured',
-              'error',
-              resolveTranslatable({key: "error.fetch.tr.title"}, translate)?? 'Error fetching TR'
-            );
-          }
-          const res = await fetch(listURL + `/list?controller=${address}&response_max_size=100`);
-          const json = await res.json();
-          const trustRegistries = Array.isArray(json) ? json : json.trust_registries || [];
-          setTrs(trustRegistries);
-      } catch (err) {
-        notify(
-          err instanceof Error ? err.message : String(err),
-          'error',
-          resolveTranslatable({key: "error.fetch.tr.title"}, translate)?? 'Error fetching TR'
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchTRs();
-  }, [listURL, notify]);
+    setTrs(trList);
+  }, [trList]);
+  
+  // Refresh trList
+  const [refresh, setRefresh] = useState<boolean>(false);
+  useEffect(() => {
+    if (!refresh) return;
+    console.info('useEffect TrPage');
+    (async () => {
+      await fetchTrList();
+      setRefresh(false);
+    })();
+  }, [refresh]);
 
+  // Notify and redirect if there is an error fetching account data
+  useEffect(() => {
+    // Show a notification if an error occurred
+    if (errorTrList && !errorNotified) {
+      (async () => {
+        await notify(errorTrList, 'error', resolveTranslatable({key: "error.fetch.tr.title"}, translate));
+        setErrorNotified(true);
+        router.push('/');
+      })();
+    }
+  }, [errorTrList, router, errorNotified]);
+  
   if (loading) return (
       <p>
         {resolveTranslatable({ key: "loading.trlist" }, translate) ?? "Loading TR List..."}
@@ -57,19 +58,41 @@ export default function TrPage() {
   return (
     <>
       <TitleAndButton
-        title={resolveTranslatable({key: "trlist.title"}, translate)?? "Trust Registries"}
-        buttonLabel={resolveTranslatable({key: "button.tr.add"}, translate)?? "Add Trust Registry"}
-        to="/tr/add"
-        Icon={PlusIcon}
+        title=  {`${resolveTranslatable({key: "trlist.title"}, translate)?? "Trust Registry"}`}
+        description={translateDataTableDescriptions(description)}
+        buttonLabel={resolveTranslatable({key: "button.tr.add"}, translate)}
+        icon={faPlus}
+        onClick={() => setAddTR(true)}
       />
       <DataTable
+        entities={resolveTranslatable({key: "datatable.tr.entities"}, translate)??''}
         columnsI18n={columnsTrList}
         data={trs}
         initialPageSize={10}
-        pageSizeOptions={[5, 10, 20, 50]}
         onRowClick={(row) => router.push(`/tr/${encodeURIComponent(row.id)}`)}
         defaultSortColumn={'modified'}
+        filterI18n={trFilter}
+        showDetailModal={false}
+        detailTitle={resolveTranslatable({key: "datatable.tr.detail"}, translate)}
+        onRefresh={() => setRefresh(true)}
       />
+      {/* render modal add Trust Registry*/}
+      {addTR && (
+      <ModalAction
+        onClose={() => setAddTR(false)}
+        titleKey={"datatable.tr.add" }
+        isActive={addTR}
+      >
+        <AddTrPage
+          onCancel={() => setAddTR(false)}
+          onRefresh={() => {
+            setRefresh(true);
+            setTimeout( () => setAddTR(false), 1000);
+          }}
+        />
+      </ModalAction>
+      )}
+
     </>
   );
 }

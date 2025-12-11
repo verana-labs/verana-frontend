@@ -95,8 +95,8 @@ type ActionTRParams =
     };
 
 // Hook to execute Trust Registry transactions and show notifications
-export function useActionTR(  setActiveActionId?: React.Dispatch<React.SetStateAction<string | null>>,
-                              setRefresh?: React.Dispatch<React.SetStateAction<string | null>>) {
+export function useActionTR(  onCancel?: () => void,
+                              onRefresh?: () => void) {
   const veranaChain = useVeranaChain();
   const {
     address,
@@ -110,8 +110,9 @@ export function useActionTR(  setActiveActionId?: React.Dispatch<React.SetStateA
 
   // Handler for Succes: refresh and collapses/hides the action UI
   const handleSuccess = () => {
-    setRefresh?.('actionTR');
-    setActiveActionId?.(null);
+    onRefresh?.();
+    console.info('handleSuccess useActionTR');
+    setTimeout( () => { onCancel?.() }, 1000);
   };
 
   /**

@@ -1,7 +1,5 @@
-import { IdentificationIcon, ListBulletIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
-
 import { Section } from "@/ui/dataview/types";
-import { CsData, CsDataToken, csSections } from "./cs";
+import { CsData } from "./cs";
 import { languageOptions } from "./gfd";
 
 const t = (key: string) => ({ key });
@@ -41,7 +39,7 @@ export interface TrData {
 export const trSections: Section<TrData>[] = [
   {
     name: t("dataview.tr.sections.basicInformation"),
-    icon: ShieldCheckIcon,
+    // icon: ShieldCheckIcon,
     type: "basic",
     fields: [
       { name: "id", label: t("dataview.tr.fields.id"), type: "data", show: "none", update: false, id: true },
@@ -64,24 +62,24 @@ export const trSections: Section<TrData>[] = [
         update: true,
         validation: { type: "URL" },
       },
-      { name: "controller", label: t("dataview.tr.fields.controller"), type: "data", show: "all", update: false },
+      { name: "controller", label: t("dataview.tr.fields.controller"), type: "data", show: "view", update: false },
       {
         name: "language",
         label: t("dataview.tr.fields.language"),
         type: "data",
         inputType: "select",
         options: languageOptions,
-        show: "all",
-        required: true,
-        update: true,
+        show: "create view",
+        required: false,
+        update: false,
       },
       {
         name: "docUrl",
         label: t("dataview.tr.fields.docUrl"),
         type: "data",
-        show: "create",
+        show: "create view",
         required: true,
-        update: true,
+        update: false,
         validation: { type: "URL" },
       },
       { name: "deposit", label: t("dataview.tr.fields.deposit"), type: "data", show: "view" },
@@ -92,9 +90,43 @@ export const trSections: Section<TrData>[] = [
       { name: "schemas", label: t("dataview.tr.fields.schemas"), type: "data", show: "none" },
     ],
   },
+  // {
+  //   name: t("dataview.tr.sections.governanceFrameworkDocuments"),
+  //   // icon: ListBulletIcon,
+  //   type: "advanced",
+  //   fields: [
+  //     { name: "docs", label: t("dataview.tr.fields.docs"), type: "list", objectData: "string" },
+  //     { name: "addGovernanceFrameworkDocument", label: t("dataview.tr.actions.addGovernanceFrameworkDocument"), type: "action" },
+  //     {
+  //       name: "increaseActiveGovernanceFrameworkVersion",
+  //       label: t("dataview.tr.actions.increaseActiveGovernanceFrameworkVersion"),
+  //       type: "action",
+  //     },
+  //   ],
+  // },
+  // {
+  //   name: t("dataview.tr.sections.credentialSchemas"),
+  //   // icon: IdentificationIcon,
+  //   type: "advanced",
+  //   fields: [
+  //     { name: "csList", label: t("dataview.tr.fields.csList"), type: "list", objectData: CsDataToken, objectSections: csSections },
+  //   ],
+  // },
+];
+
+
+//GFD data
+export interface GfdData {
+  docs?: string[];
+  addGovernanceFrameworkDocument?: string; // action type
+  increaseActiveGovernanceFrameworkVersion?: string; // action type
+}
+
+// Sections configuration for TrData
+export const gfdSections: Section<GfdData>[] = [
   {
     name: t("dataview.tr.sections.governanceFrameworkDocuments"),
-    icon: ListBulletIcon,
+    // icon: ListBulletIcon,
     type: "advanced",
     fields: [
       { name: "docs", label: t("dataview.tr.fields.docs"), type: "list", objectData: "string" },
@@ -105,13 +137,26 @@ export const trSections: Section<TrData>[] = [
         type: "action",
       },
     ],
-  },
-  {
-    name: t("dataview.tr.sections.credentialSchemas"),
-    icon: IdentificationIcon,
-    type: "advanced",
-    fields: [
-      { name: "csList", label: t("dataview.tr.fields.csList"), type: "list", objectData: CsDataToken, objectSections: csSections },
-    ],
-  },
+  }
 ];
+
+export const htmlGfd = (
+  version: string,
+  url: string,
+  language: string,
+  state: string,
+  strState: string
+): string => {
+  return `
+<div class="flex items-center justify-between py-2 px-3 ${(state=="active") ? "bg-green-50 dark:bg-green-900/20" : "bg-gray-50 dark:bg-gray-700/50"} rounded-lg">
+  <div class="flex items-center space-x-3">
+    <span class="text-sm font-medium text-gray-900 dark:text-white">Version ${version}:</span>
+    <span class="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm cursor-pointer">${url}</span>
+    <span class="text-xs text-gray-500 dark:text-gray-400">(${language})</span>
+  </div>
+  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${(state=="draft") ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300": ((state=="active") ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 font-bold" : "text-gray-500 dark:text-gray-400")} ">
+    ${strState}
+  </span>
+</div>
+`;
+};

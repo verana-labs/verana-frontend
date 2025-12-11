@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { translate } from "@/i18n/dataview";
-import { ComponentType, Dispatch, SetStateAction } from "react";
+import { ComponentType, ReactNode } from "react";
 
 // Localization helpers
 export type MessagePrimitive = string | number | boolean | null;
@@ -48,10 +48,10 @@ export function translateSections<T>(
   return sections.map((section) => {
     const translatedFields: ResolvedField<T>[] | undefined = section.fields?.map((field) => {
       const label = resolveTranslatable(field.label, translate) ?? "";
+      const description = resolveTranslatable(field.description, translate);
 
       if (isDataField(field)) {
         const placeholder = resolveTranslatable(field.placeholder, translate);
-        const description = resolveTranslatable(field.description, translate);
         const options = field.options?.map((opt) => ({
           ...opt,
           label: resolveTranslatable(opt.label, translate) ?? "",
@@ -67,7 +67,11 @@ export function translateSections<T>(
       }
 
       if (isActionField(field)) {
-        const out: ResolvedActionField<T> = { ...(field as any), label };
+        const out: ResolvedActionField<T> = { 
+          ...(field as any),
+          label,
+          description,
+        };
         return out;
       }
 
@@ -116,31 +120,36 @@ export const typeOf = <I>(typeName: string): TypeToken<I> =>
 
 /* Section: groups a set of fields for a given type */
 export type Section<I> = {
-  name: Translatable;
+  name?: Translatable;
   icon?: ComponentType<{ className?: string }>;
   type?: "basic" | "help" | "advanced" | "actions";
   help?: Translatable[];
   fields?: Field<I>[];
+  classForm?: string;
+  cardView?: boolean;
+  largeTexts?: boolean;
 };
 
 export interface DataViewProps<T extends object> {
   sectionsI18n: Section<T>[];
   data: T;
   id?: string;
-  columnsCount?: number;
-  columnsCountMd?: number;
   onEdit?: () => void;
-  setRefresh?: Dispatch<SetStateAction<string | null>>;
-  oneColumn?: boolean;
+  onRefresh?: () => void;
+  onBack?:() => void;
+  showSectionTitle?: string;
 }
 
 /* Base field shared by all field types */
 type BaseField = {
   label: Translatable;
-  show?: 'view' | 'edit' | 'all' | 'none' | 'create';
+  description?: Translatable;
+  show?: string; //'view' | 'edit' | 'all' | 'none' | 'create';
   required?: boolean;
   update?: boolean;
   id?: boolean;
+  icon?: any;
+  iconClass?: string;
 };
 
 /* Field validation params by all field types */
@@ -159,6 +168,7 @@ export type FieldValidation = {
 type ActionField<T> = BaseField & {
   type: "action";
   name: keyof T;
+  isWarning?: boolean;
 };
 
 /* Data */
@@ -167,9 +177,13 @@ export type DataField<T> = BaseField & {
   name: keyof T;
   inputType?: 'text' | 'number' | 'textarea' | 'select';
   options?: { value: string | number; label: Translatable }[]; // (inputType === 'select');
-  description?: Translatable;
   placeholder?: Translatable;
   validation?: FieldValidation;
+  classField?: string;
+  isHtml?: boolean;
+  usdValue?: boolean;
+  hasStats?: boolean;
+  format?: (value: T[keyof T]) => ReactNode;
 };
 
 /* Data & Action */
@@ -206,21 +220,25 @@ export type Field<T> =
 // Use these when you want to render without calling resolveTranslatable in JSX.
 // ---------------------------------------------------------------------------
 
-type BaseFieldResolved = Omit<BaseField, "label"> & { label: string };
+type BaseFieldResolved = Omit<BaseField, "label" | "description"> & {
+  label: string;
+  description: string;
+};
 
 export type ResolvedDataField<T> = Omit<
   DataField<T>,
   "label" | "description" | "placeholder" | "options"
 > &
   BaseFieldResolved & {
-    description?: string;
     placeholder?: string;
     options?: { value: string | number; label: string }[];
   };
 
-export type ResolvedActionField<T> = Omit<ActionField<T>, "label"> & {
-  label: string;
-};
+export type ResolvedActionField<T> = Omit<
+  ActionField<T>,
+  "label" | "description"
+> &
+  BaseFieldResolved;  
 
 export type ResolvedStringListField<T> = Omit<StringListField<T>, "label"> & {
   label: string;
@@ -293,8 +311,7 @@ export function isFieldVisibleInMode<T>(field: ResolvedField<T>, mode: DataViewM
   const show = field.show ?? "all";
   if (show === "none") return false;
   if (show === "all") return true;
-  if (show === "create" && mode === "view") return true;
-  return show === mode;
+  return show.includes(mode);
 }
 
 export function visibleFieldsForMode<T>(fields: ResolvedField<T>[] | undefined, mode: DataViewMode): ResolvedField<T>[] {

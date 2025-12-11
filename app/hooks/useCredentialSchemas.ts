@@ -2,22 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { env } from 'next-runtime-env';
-import { CsData } from '@/ui/dataview/datasections/cs';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
+import { ApiErrorResponse } from '@/types/apiErrorResponse';
+import { CsList } from '@/ui/datatable/columnslist/cs';
 
 type RawSchema = Record<string, unknown> & {
   id?: string | number;
-  tr_id?: string | number;
-  creator?: string;
+  created?: string;
+  modified?: string;
   json_schema?: string;
-  issuer_grantor_validation_validity_period?: number;
-  verifier_grantor_validation_validity_period?: number;
-  issuer_validation_validity_period?: number;
-  verifier_validation_validity_period?: number;
-  holder_validation_validity_period?: number;
-  issuer_perm_management_mode?: number;
-  verifier_perm_management_mode?: number;
 };
 
 export function useCSList(trId: string) {
@@ -26,7 +20,7 @@ export function useCSList(trId: string) {
     env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA') ||
     process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA;
 
-  const [csList, setCsList] = useState<CsData[]>([]);
+  const [csList, setCsList] = useState<CsList[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorCSList, setError] = useState<string | null>(null);
 
@@ -45,10 +39,14 @@ export function useCSList(trId: string) {
     try {
       setLoading(true);
       const res = await fetch(url);
-      if (!res.ok) setError(`Error ${res.status}`);
       const json = await res.json();
+      if (!res.ok){
+        const { error, code } = json as ApiErrorResponse;
+        setError(`Error ${code}: ${error}`);
+        return;
+      } 
       const schemas: RawSchema[] = Array.isArray(json) ? json : (json.schemas ?? []);
-      const list: CsData[] = schemas.map((src) => {
+      const list: CsList[] = schemas.map((src) => {
         // Parse JSON schema safely
         let parsed: Record<string, unknown> = {};
         const rawJsonSchema = typeof src.json_schema === 'string' ? src.json_schema : '';
@@ -61,20 +59,13 @@ export function useCSList(trId: string) {
           (parsed.description as string | undefined) ??
           (parsed.title as string | undefined) ??
           'Schema';
-        const id = src.id ?? '';
         return {
-          id,
-          trId: src.tr_id ?? '',
-          creator: src.creator ?? '',
-          issuerGrantorValidationValidityPeriod: src.issuer_grantor_validation_validity_period ?? 0,
-          verifierGrantorValidationValidityPeriod: src.verifier_grantor_validation_validity_period ?? 0,
-          issuerValidationValidityPeriod: src.issuer_validation_validity_period ?? 0,
-          verifierValidationValidityPeriod: src.verifier_validation_validity_period ?? 0,
-          holderValidationValidityPeriod: src.holder_validation_validity_period ?? 0,
-          issuerPermManagementMode: src.issuer_perm_management_mode ?? 0,
-          verifierPermManagementMode: src.verifier_perm_management_mode ?? 0,
-          jsonSchema: src.json_schema ?? '',
-          title: `${titleCandidate} (id: ${id})`,
+          id: (src.id)?.toString() ?? '',
+          created: src.created ?? '',
+          modified: src.modified ?? '',
+          title: titleCandidate,
+          description: "",
+          role: ""
         };
       });
       setCsList(list);

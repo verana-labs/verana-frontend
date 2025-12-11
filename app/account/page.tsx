@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import DataView from '@/ui/common/data-view-columns';
-import { formatVNA } from '@/util/util';
+import { formatNetwork, formatVNA } from '@/util/util';
 import TitleAndButton from '@/ui/common/title-and-button';
 import { useNotification } from '@/ui/common/notification-provider';
 import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData';
@@ -20,12 +20,13 @@ export default function AccountPage() {
   const { notify } = useNotification();
 
   // Refresh account/trust deposit data
-  const [refresh, setRefresh] = useState<string | null>(null);
+  const [refresh, setRefresh] = useState<boolean>(false);
   useEffect(() => {
     if (!refresh) return;
     (async () => {
+      console.info('useEffect AccountPage');
       await refetchAD();
-      setRefresh(null);
+      setRefresh(false);
     })();
   }, [refresh]);
 
@@ -39,6 +40,12 @@ export default function AccountPage() {
     getVNA: undefined,
     claimInterests: undefined,
     reclaimDeposit: undefined,
+    address: null,
+    network: null,
+    created: "March 15, 2024",
+    totalTransactions: 765,
+    trustRegistriesJoined: 127,
+    didsManaged: 554
   });
 
 
@@ -59,47 +66,47 @@ export default function AccountPage() {
       // Prepare constants and process fields for the UI
       const getVNA = "GetVNATrustDeposit";
       // Only enable claim actions if value > 0
-      const claimInterests =
-        Number(accountData.claimableInterests) > 0 ? "MsgReclaimTrustDepositYield" : undefined;
-      const reclaimDeposit =
-        Number(accountData.reclaimable) > 0 ? "MsgReclaimTrustDeposit" : undefined;
+      const claimInterests = "MsgReclaimTrustDepositYield";
+        // Number(accountData.claimableInterests) > 0 ? "MsgReclaimTrustDepositYield" : undefined;
       
       if (accountData.message){
         setData({
+          ... data,
           balance: formatVNA(accountData.balance, 6),
-          totalTrustDeposit: null,
-          claimableInterests: null,
-          reclaimable: null,
           message: accountData.message,
           getVNA,
           claimInterests,
-          reclaimDeposit,
+          address: accountData.address,
+          network: formatNetwork(accountData.network??"")
         });
       }
       else{
         setData({
+          ... data,
           balance: formatVNA(accountData.balance, 6),
           totalTrustDeposit: formatVNA(accountData.totalTrustDeposit, 6),
-          claimableInterests: formatVNA(accountData.claimableInterests, 6),
+          claimableInterests: Number(accountData.claimableInterests) > 0 ? formatVNA(accountData.claimableInterests, 6) : null,
           reclaimable: formatVNA(accountData.reclaimable, 6),
           message: null,
           getVNA,
           claimInterests,
-          reclaimDeposit,
-        });
+          address: accountData.address,
+          network: formatNetwork(accountData.network??"")
+      });
       }
     }
   }, [accountData]);
 
   return (
     <>
-      <TitleAndButton title={resolveTranslatable({key: "account.title"}, translate)?? "Account"}/>
+      <TitleAndButton
+        title={resolveTranslatable({key: "account.title"}, translate)?? "Account"}
+        description={[resolveTranslatable({key: "account.desc"}, translate)??""]}
+      />
       <DataView<AccountData>
         sectionsI18n={accountSections}
         data={data}
-        columnsCount={3}
-        columnsCountMd={2}
-        setRefresh={setRefresh}
+        onRefresh={() => setRefresh(true)}
       />
     </>
   );

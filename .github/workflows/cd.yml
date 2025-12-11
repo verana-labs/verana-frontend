@@ -76,10 +76,12 @@ jobs:
             export NEXT_PUBLIC_VERANA_CHAIN_NAME=$VERANA_CHAIN_NAME
             export NEXT_PUBLIC_VERANA_RPC_ENDPOINT="https://rpc.${ENV}.verana.network"
             export NEXT_PUBLIC_VERANA_REST_ENDPOINT="https://api.${ENV}.verana.network"
-            export NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT="https://api.${ENV}.verana.network/verana/td/v1"
-            export NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID="https://api.${ENV}.verana.network/verana/dd/v1"
-            export NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY="https://api.${ENV}.verana.network/verana/tr/v1"
-            export NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA="https://api.${ENV}.verana.network/verana/cs/v1"
+            export NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT="https://idx.${ENV}.verana.network/verana/td/v1"
+            export NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID="https://idx.${ENV}.verana.network/verana/dd/v1"
+            export NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY="https://idx.${ENV}.verana.network/verana/tr/v1"
+            export NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA="https://idx.${ENV}.verana.network/verana/cs/v1"
+            export NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM="https://idx.${ENV}.verana.network/verana/perm/v1"
+            export NEXT_PUBLIC_VERANA_TOPUP_VS="did:web:faucet-vs.${ENV}.verana.network"
             export NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE=$VERANA_SIGN_DIRECT_MODE
             export NEXT_PUBLIC_SESSION_LIFETIME_SECONDS=86400
 

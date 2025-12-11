@@ -1,5 +1,6 @@
 import { I18nValues, Translatable } from "@/ui/dataview/types";
-import { MessageType, MsgTypeInfoI18n } from "@/msg/constants/types";
+import { MessageType, MsgTypeInfoI18n, MsgTypeStyle } from "@/msg/constants/types";
+import { faArrowUp, faPlus } from "@fortawesome/free-solid-svg-icons";
 
 const t = (key: string, values?: I18nValues): Translatable => ({ key, values });
 
@@ -23,6 +24,7 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     label: t("messages.MsgRemoveDID.label"),
     description: t("messages.MsgRemoveDID.description"),
     cost: t("messages.MsgRemoveDID.cost"), // {value} {td}
+    warning: t("messages.MsgRemoveDID.warning")
   },
 
   MsgReclaimTrustDepositYield: {
@@ -94,3 +96,32 @@ export function getDescriptionMessage(template: string, addBalance: string | num
   return template.replace('{addBalance}', String(addBalance)).replace('{burnRate}', String(burnRate));
 }
 
+export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
+  MsgAddDID: {},
+  MsgRenewDID: {
+    button: "bg-green-600 hover:bg-green-700"
+  },
+  MsgTouchDID: {
+    button: "bg-blue-600 hover:bg-blue-700"
+  },
+  MsgRemoveDID: {
+    button: "bg-red-600 hover:bg-red-700"
+  },
+  MsgReclaimTrustDepositYield: {},
+  MsgReclaimTrustDeposit: {},
+  MsgRepaySlashedTrustDeposit: {},
+  MsgCreateTrustRegistry: {},
+  MsgUpdateTrustRegistry: {},
+  MsgArchiveTrustRegistry: {},
+  MsgAddGovernanceFrameworkDocument: {
+    button: "",
+    icon: faPlus,
+  },
+  MsgIncreaseActiveGovernanceFrameworkVersion: {
+    button: "bg-green-600 hover:bg-green-700",
+    icon: faArrowUp
+  },
+  MsgCreateCredentialSchema: {},
+  MsgUpdateCredentialSchema: {},
+  MsgArchiveCredentialSchema: {}
+}

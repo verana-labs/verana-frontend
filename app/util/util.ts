@@ -1,9 +1,11 @@
+'use client';
+
 export function formatVNA (amount: string | null, decimals?: number) : string {
     if (!amount) return ''
     return (
       Number(amount) / Math.pow(10, decimals ? decimals : 6)
     ).toLocaleString(undefined, {
-      minimumFractionDigits: 2,
+      minimumFractionDigits: 0,
       maximumFractionDigits: 6
     }) + ' VNA'
   }
@@ -20,6 +22,21 @@ export function parseVNA(formatted: string, decimals: number = 6): string {
   return micro.toString();
 }
 
+export function formatUSDfromUVNA(
+  amount: string | null,
+  conversionFactorUSDfromVNA: number
+): string {
+  if (!amount) return ''
+  const usd = Number(amount) * conversionFactorUSDfromVNA
+
+  return ( '≈ $' +
+    usd.toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }) + ' USD'
+  )
+}
+
 export function shortenMiddle(str: string, maxLength: number): string {
   if (str.length <= maxLength) return str;
   const keep = Math.floor((maxLength - 3) / 2);
@@ -29,17 +46,8 @@ export function shortenMiddle(str: string, maxLength: number): string {
 }
 
 export function formatDate( input: Date | string | number ): string {
-  const date = input instanceof Date
-    ? input
-    : new Date(
-        typeof input === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(input)
-          ? input + 'T00:00:00Z'
-          : input
-      );
-  const year  = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day   = String(date.getUTCDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const date = new Date(input).toLocaleDateString();
+  return date;
 }
 
 export function isExpired (input: Date | string | number ): boolean {
@@ -68,4 +76,34 @@ export function isJson(value: unknown): object | null {
   }
 
   return null;
+}
+
+export function getStatus(input: Date | string | number): 'expired' | 'expiring' | 'active' {
+  const target = new Date(String(input));
+  if (Number.isNaN(target.getTime())) return 'expired'; // fallback
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const monthAfter = new Date(today);
+  monthAfter.setMonth(monthAfter.getMonth() + 1);
+
+  if (target < today) {
+    return 'expired';
+  }
+
+  if (target >= today && target < monthAfter) {
+    return 'expiring';
+  }
+
+  return 'active';
+}
+
+export function formatNetwork(network: string){
+  const htmlNetwork = 
+    `
+    <div class="relative w-2 h-2 bg-success-500 rounded-full pulse-dot"></div>
+    <span class="text-sm text-success-700 dark:text-success-300 font-medium">${network}</span>
+    `;
+  return htmlNetwork;
 }

@@ -12,12 +12,12 @@ import {
 } from "@/wallet/connect";
 import { useRouter } from "next/navigation";
 import { shortenMiddle } from "@/util/util";
-import { ArrowRightEndOnRectangleIcon, ArrowTopRightOnSquareIcon, QrCodeIcon, Square2StackIcon, CheckIcon } from "@heroicons/react/24/outline";
 import IconLabelButton from "@/ui/common/icon-label-button";
 import { JSX, useEffect, useState } from "react";
 import { useVeranaChain } from "@/hooks/useVeranaChain";
 import { translate } from "@/i18n/dataview";
 import { resolveTranslatable } from "@/ui/dataview/types";
+import { faArrowRightToBracket, faArrowUpRightFromSquare, faCheck, faCopy, faQrcode } from "@fortawesome/free-solid-svg-icons";
 
 export default function Wallet({ isNavBar = true }: { isNavBar?: boolean }) {
   
@@ -41,7 +41,7 @@ export default function Wallet({ isNavBar = true }: { isNavBar?: boolean }) {
   const buttonByStatus: Record<WalletStatus, JSX.Element> = {
     Connected:   <ButtonConnected   onClick={openView} />,
     Connecting:  <ButtonConnecting  />,
-    Disconnected:<ButtonDisconnected onClick={connect} />,
+    Disconnected:<ButtonDisconnected onClick={connect} text={resolveTranslatable({key: isNavBar? 'wallet.nav.connect' : 'wallet.dashboard.connect' }, translate) }/>,
     Error:       <ButtonRejected    onClick={connect} />,
     Rejected:    <ButtonRejected    onClick={connect} />,
     NotExist:    <ButtonNotExist    onClick={openView} />,
@@ -49,7 +49,7 @@ export default function Wallet({ isNavBar = true }: { isNavBar?: boolean }) {
 
   const ConnectButton =
     buttonByStatus[status as WalletStatus] ?? (
-      <ButtonConnect onClick={connect} />
+      <ButtonConnect onClick={connect} text={ resolveTranslatable({key: isNavBar? 'wallet.nav.connect' : 'wallet.dashboard.connect' }, translate) }/>
     );
 
   const router = useRouter();
@@ -77,17 +77,17 @@ export default function Wallet({ isNavBar = true }: { isNavBar?: boolean }) {
   }
 
   return (
-    <div className="flex items-center justify-center gap-2">
+    <div className="flex items-center space-x-4 rtl:space-x-reverse">
       { address && isNavBar ?
         <>
         <div className="flex items-center border rounded-md border-light-border dark:border-dark-border">
           <IconLabelButton
-            Icon={QrCodeIcon}
+            icon={faQrcode}
             title={resolveTranslatable({key: 'navbar.qr.title'}, translate)}
             className="border-transparent"
           />
           <IconLabelButton
-            Icon={copied? CheckIcon: Square2StackIcon}
+            icon={copied? faCheck: faCopy}
             onClick={() => handleCopy()}
             title={resolveTranslatable({key: 'navbar.addresscopy.title'}, translate)}
             className="border-transparent"
@@ -99,7 +99,7 @@ export default function Wallet({ isNavBar = true }: { isNavBar?: boolean }) {
             className="border-transparent underline text-connect-light-text dark:text-connect-dark-text"
           />
           <IconLabelButton
-            Icon={ArrowTopRightOnSquareIcon}
+            icon={faArrowUpRightFromSquare}
             title={resolveTranslatable({key: 'navbar.mintscan.title'}, translate)}
             className="border-transparent"
             onClick={() => window.open(`https://www.mintscan.io/${veranaChain.chain_name}/account/${address}`, "_blank")}
@@ -107,7 +107,7 @@ export default function Wallet({ isNavBar = true }: { isNavBar?: boolean }) {
         </div>
         <IconLabelButton
           onClick={openView}
-          Icon={ArrowRightEndOnRectangleIcon}
+          icon={faArrowRightToBracket}
           title={resolveTranslatable({key: 'navbar.disconnect.title'}, translate)}
         />
       </>

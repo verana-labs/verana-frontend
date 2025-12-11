@@ -15,27 +15,29 @@ export default function ClientLayout({ trustDepositParams, children }: { trustDe
 
     return (
       <Providers>
-          <div className="app-container">
-            {/* Header */}
-            <header className="app-header">
-              <NavBar />
-            </header>
-            {/* Main Container */}
-            <div className="app-main">
+        <div className="h-screen flex flex-col">
+          {/* Header */}
+          <header className="app-header">
+            <NavBar />
+          </header>
+
+          {/* Main Container */}
+          <div className="app-container flex-1 flex">
               {/* Side Navigation */}
-              <aside className="hidden md:block app-sidenav">
+              <aside className="hidden lg:flex">
                 <SideNav />
               </aside>
+
               {/* Content */}
               <TrustDepositParamsProvider value={trustDepositParams}>
-                <main className="app-content">
-                  <div className="app-content-inner">
+                <div className="app-content">
+                  <main className="app-content-inner h-full overflow-y-auto">
                       {children}
-                  </div>
-                </main>
+                  </main>
+                </div>
               </TrustDepositParamsProvider>
-            </div>
           </div>
+        </div>
       </Providers>
     );         
 }

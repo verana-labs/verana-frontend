@@ -5,6 +5,7 @@ import { env } from 'next-runtime-env';
 import { TrData } from '@/ui/dataview/datasections/tr';
 import { translate } from '@/i18n/dataview';
 import { resolveTranslatable } from '@/ui/dataview/types';
+import { ApiErrorResponse } from '@/types/apiErrorResponse';
 
 export function useTrustRegistryData(id: string,  ) {
   const getURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY;
@@ -23,9 +24,13 @@ export function useTrustRegistryData(id: string,  ) {
       setError(null);
       const url = `${getURL}/get/${id}`;
       const res = await fetch(url);
-      if (!res.ok) setError(`Error ${res.status}`);
+      const json = await res.json();
+      if (!res.ok){
+        const { error, code } = json as ApiErrorResponse;
+        setError(`Error ${code}: ${error}`);
+        return;
+      } 
       type ResponseShape = Partial<{ trust_registry: TrData }> & TrData;
-      const json: unknown = await res.json();
       const resp = json as ResponseShape;
       const entry = resp.trust_registry ?? (resp as TrData);
       setData(entry);

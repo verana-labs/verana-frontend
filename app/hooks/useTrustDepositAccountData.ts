@@ -6,6 +6,7 @@ import { useVeranaChain } from "@/hooks/useVeranaChain";
 import { useChain } from "@cosmos-kit/react";
 import { resolveTranslatable } from "@/ui/dataview/types";
 import { translate } from "@/i18n/dataview";
+import { ApiErrorResponse } from "@/types/apiErrorResponse";
 
 type TrustDepositAccountData = {
   address: string | null;
@@ -14,6 +15,7 @@ type TrustDepositAccountData = {
   claimableInterests: string | null;
   reclaimable: string | null;
   message: string | null;
+  network: string | null;
 };
 
 /**
@@ -36,6 +38,7 @@ export function useTrustDepositAccountData(
     claimableInterests: null,
     reclaimable: null,
     message: null,
+    network: null
   });
   const [loading, setLoading] = useState(false);
   const [errorAccountData, setError] = useState<string | null>(null);
@@ -54,6 +57,7 @@ export function useTrustDepositAccountData(
     let claimableInterests = null;
     let reclaimable = null;
     let message = null;
+    const network = veranaChain.chain_id;
 
     try {
       const client = await getStargateClient();
@@ -66,6 +70,11 @@ export function useTrustDepositAccountData(
     try {
       const resp = await fetch(`${getAccountURL}/get/${address}`);
       const json = await resp.json();
+      if (!resp.ok){
+        const { error, code } = json as ApiErrorResponse;
+        setError(`Error ${code}: ${error}`);
+        return;
+      } 
       if (json.trust_deposit) {
         totalTrustDeposit = json.trust_deposit.amount;
         claimableInterests = "0";
@@ -84,6 +93,7 @@ export function useTrustDepositAccountData(
       claimableInterests,
       reclaimable,
       message,
+      network
     });
     setLoading(false);
   };

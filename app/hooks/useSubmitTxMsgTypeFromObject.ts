@@ -66,10 +66,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * - Adds msgType + creator
  * - Dispatches via the correct action hook
  */
-export function useSubmitTxMsgTypeFromObject( setActiveActionId?: React.Dispatch<React.SetStateAction<string | null>>,
-                                              setRefresh?: React.Dispatch<React.SetStateAction<string | null>>) {
+export function useSubmitTxMsgTypeFromObject( onCancel?: () => void,
+                                              onRefresh?: () => void) {
     // Hooks are called at top-level (safe according to the Rules of Hooks)
-    const actionCS = useActionCS(setActiveActionId, setRefresh) as unknown as ActionHandler;
+    const actionCS = useActionCS(onCancel, onRefresh) as unknown as ActionHandler;
     const actionTR = useActionTR() as unknown as ActionHandler;
 
     /**
