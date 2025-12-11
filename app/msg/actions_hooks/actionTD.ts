@@ -1,7 +1,7 @@
 /* Hook for trust-deposit transactions (reclaim deposit or yield) with notification plumbing. */
 'use client';
 
-import { useRef, Dispatch, SetStateAction } from 'react';
+import { useRef } from 'react';
 import { DeliverTxResponse } from '@cosmjs/stargate';
 import { useChain } from '@cosmos-kit/react';
 import { EncodeObject } from '@cosmjs/proto-signing';
@@ -44,8 +44,8 @@ type ActionTDParams =
 
 // Build an executor for trust-deposit actions, handling wallet checks and UI refresh triggers.
 export function useActionTD(
-  setActiveActionId?: Dispatch<SetStateAction<string | null>>,
-  setRefresh?: Dispatch<SetStateAction<string | null>>
+  setActiveActionId?: () => void,
+  setRefresh?: () => void
 ) {
   const veranaChain = useVeranaChain();
   const { address, isWalletConnected } = useChain(veranaChain.chain_name);
@@ -55,13 +55,14 @@ export function useActionTD(
 
   // Refresh caller state once the transaction succeeds.
   const handleSuccess = () => {
-    setRefresh?.('actionTD');
-    setActiveActionId?.(null);
+    setRefresh?.();
+    console.info('handleSuccess useActionCS');
+    setTimeout( () => { setActiveActionId?.() }, 1000);
   };
 
   // Close the action UI when something goes wrong.
   const handleFailure = () => {
-    setActiveActionId?.(null);
+    setActiveActionId?.();
   };
 
   async function actionTD(params: ActionTDParams): Promise<DeliverTxResponse | void> {

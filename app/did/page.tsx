@@ -32,6 +32,7 @@ export default function DidPage() {
 
   useEffect(() => {
     if (!refresh) return;
+    console.info('useEffect DidPage');
     const fetchDIDs = async () => {
       try {
           if (!listUrl){
@@ -87,10 +88,7 @@ export default function DidPage() {
         filterI18n={didFilter}
         showDetailModal={true}
         detailTitle={resolveTranslatable({key: "datatable.did.detail"}, translate)}
-        onRefresh={() => {
-          console.info("onRefreshPage");
-          setRefresh(true);
-        }}
+        onRefresh={() => setRefresh(true)}
       />
       {/* render modal */}
       {addEntity && (
@@ -104,9 +102,8 @@ export default function DidPage() {
             setAddEntity(false);
           }}
           onRefresh={() => {
-            console.info("setAddEntity, setRefresh");
-            setAddEntity(false);
             setRefresh(true);
+            setTimeout( () => setAddEntity(false), 1000);
           }}
         />
       </ModalAction>

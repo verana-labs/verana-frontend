@@ -31,6 +31,7 @@ export default function TrPage() {
   const [refresh, setRefresh] = useState<boolean>(false);
   useEffect(() => {
     if (!refresh) return;
+    console.info('useEffect TrPage');
     (async () => {
       await fetchTrList();
       setRefresh(false);
@@ -73,10 +74,7 @@ export default function TrPage() {
         filterI18n={trFilter}
         showDetailModal={false}
         detailTitle={resolveTranslatable({key: "datatable.tr.detail"}, translate)}
-        onRefresh={() => {
-          console.info("onRefreshPage");
-          setRefresh(true);
-        }}
+        onRefresh={() => setRefresh(true)}
       />
       {/* render modal add Trust Registry*/}
       {addTR && (
@@ -87,7 +85,10 @@ export default function TrPage() {
       >
         <AddTrPage
           onCancel={() => setAddTR(false)}
-          onRefresh={() => setRefresh(true)}
+          onRefresh={() => {
+            setRefresh(true);
+            setTimeout( () => setAddTR(false), 1000);
+          }}
         />
       </ModalAction>
       )}

@@ -82,7 +82,7 @@ export function useActionDID(
     setTimeout(()=>{ 
       if (msgType === "MsgRemoveDID") onBack?.();
       else onClose?.();
-    }, 500);
+    }, 1000);
   };
 
   // Collapse the action UI when the broadcast fails or is rejected.

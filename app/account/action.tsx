@@ -16,9 +16,9 @@ import { resolveTranslatable } from '@/ui/dataview/types';
 // Define TdActionPage props interface
 interface TdActionProps {
   action: MsgTypeTD;  // Action type to perform
-  setActiveActionId: React.Dispatch<React.SetStateAction<string | null>>; // Collapse/hide action on cancel
+  setActiveActionId: () => void; // Collapse/hide action on cancel
   data: object;
-  onRefresh?: React.Dispatch<React.SetStateAction<string | null>>; // Refresh TD data
+  onRefresh?:  () => void; // Refresh TD data
 }
 
 export default function TdActionPage({ action, setActiveActionId, onRefresh, data }: TdActionProps) {
@@ -73,7 +73,7 @@ console.info(actionCardYield);
         messageType={action}     
         data={dataTD}
         onSave={onSave}
-        onCancel={() => setActiveActionId(null)}
+        onCancel={setActiveActionId}
         noForm={action!=='MsgReclaimTrustDeposit'}
         actionCard={(action==='MsgReclaimTrustDepositYield') ? actionCardYield : undefined}
          />

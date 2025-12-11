@@ -22,8 +22,8 @@ export default function DataViewTyped<I extends object>(props: {
   id?: string;
   edit?: boolean;
   getTitle?: (item: I) => React.ReactNode;
-  onActiveActionId?: React.Dispatch<React.SetStateAction<string | null>>;
-  onRefresh?: React.Dispatch<React.SetStateAction<string | null>>;
+  onActiveActionId?:  () => void;
+  onRefresh?:  () => void;
 }) {
   
   const { objectData, sections, data, id, edit, getTitle, onRefresh } = props;
@@ -107,7 +107,7 @@ export function renderObjectList<I extends object>(args: {
   columnsCount?: number;
   edit?: boolean;
   getId?: (item: I, idx: number) => string | number | undefined;
-  onRefresh?: React.Dispatch<React.SetStateAction<string | null>>;
+  onRefresh?:  () => void;
 }) {
   const { objectData, sections, items, edit, getId, onRefresh } = args;
   return items.map((item, idx) => (

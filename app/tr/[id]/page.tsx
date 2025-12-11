@@ -42,6 +42,7 @@ export default function TRViewPage() {
   const [refresh, setRefresh] = useState<string | null>(null);
   useEffect(() => {
     if (!refresh) return;
+    console.info('useEffect TRViewPage');
     (async () => {
       if (refresh === 'actionTR') await refetchTR();
       if (refresh === 'actionCS') await refetchCSList();
@@ -201,9 +202,9 @@ export default function TRViewPage() {
         <AddCsPage
             onCancel={() => setAddCS(false)}
             onRefresh={() => {
-              setAddCS(false);
               setRefresh('actionCS');
-            } } 
+              setTimeout( () => setAddCS(false), 1000);
+            }} 
             trId={Number(id)}
         />
       </ModalAction>
