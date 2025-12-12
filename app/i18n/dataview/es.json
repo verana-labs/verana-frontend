@@ -48,7 +48,7 @@
   "navbar.qr.title": "Código QR de la Dirección",
   "navbar.addresscopy.title": "Copiar Dirección",
   "navbar.account.title": "Ver Cuenta",
-  "navbar.mintscan.title": "Mintscan",
+  "navbar.mintscan.title": "Pingpub",
   "navbar.disconnect.title": "Desconectar",
 
   "modalqrcode.title": "Código QR de la cuenta",
