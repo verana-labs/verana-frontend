@@ -44,7 +44,8 @@
   "notconnected.dashboard.title": "Conecta tu Wallet",
   "notconnected.dashboard.msg": "Accede a tu cuenta, gestiona DIDs y crea o únete a Trust Registries del ecosistema.",
 
-  "wallet.connect": "Conectar",
+  "wallet.nav.connect": "Conectar",
+  "wallet.dashboard.connect": "Conectar Wallet",
   "wallet.wallet": "Mi Billetera",
   "wallet.connecting": "Conectando...",
   "wallet.reconnect": "Reconectar",
@@ -391,13 +392,44 @@
 
   "messages.MsgCreateCredentialSchema.label": "Confirmar",
   "messages.MsgCreateCredentialSchema.description": "",
-  "messages.MsgCreateCredentialSchema.cost": "<span class=\"data-edit-label\">Confirmación</span><br>Revisa cuidadosamente la información porque los Esquemas de Credenciales son inmutables. Si cometiste un error, deberás crear un nuevo Esquema de Credenciales.<br>Se requieren aprox. {value} VNA para ejecutar esta transacción, incluyendo el depósito de confianza.",
+  "messages.MsgCreateCredentialSchema.cost": "Se requieren aprox. {value} VNA para ejecutar esta transacción, incluyendo el depósito de confianza.",
 
   "messages.MsgUpdateCredentialSchema.label": "Confirmar",
   "messages.MsgUpdateCredentialSchema.description": "",
-  "messages.MsgUpdateCredentialSchema.cost": "<span class=\"data-edit-label\">Confirmación</span><br>Se requieren aprox. {value} VNA para ejecutar esta transacción.",
+  "messages.MsgUpdateCredentialSchema.cost": "Se requieren aprox. {value} VNA para ejecutar esta transacción.",
 
   "messages.MsgArchiveCredentialSchema.label": "Archivar Esquema de Credenciales",
   "messages.MsgArchiveCredentialSchema.description": "Archivar un Esquema de Credenciales.",
-  "messages.MsgArchiveCredentialSchema.cost": "No hay tarifa por archivar un Esquema de Credenciales."
+  "messages.MsgArchiveCredentialSchema.cost": "No hay tarifa por archivar un Esquema de Credenciales.",
+
+  "dashboardfooter.title": "Verana",
+  "dashboardfooter.msg": "La capa abierta de confianza para Internet, que habilita servicios digitales verificables y una verdadera soberanía digital.",
+  "dashboardfooter.copyright": "Fundación Verana",
+  "dashboardfooter.resources": "Recursos",
+  "dashboardfooter.resources.documentation": "Documentación",
+  "dashboardfooter.resources.github": "GitHub",
+  "dashboardfooter.resources.tutorials": "Tutoriales",
+  "dashboardfooter.resources.community": "Comunidad",
+  "dashboardfooter.support": "Soporte",
+  "dashboardfooter.support.helpcenter": "Centro de ayuda",
+  "dashboardfooter.support.contactcs": "Contáctanos",
+  "dashboardfooter.support.bugreports": "Reportes de errores",
+  "dashboardfooter.support.featurerequests": "Solicitudes de funciones",
+  "dashboardfooter.privacy": "Privacidad",
+  "dashboardfooter.terms": "Términos",
+  "dashboardfooter.security": "Seguridad",
+
+  "gettingstarted.title": "Primeros pasos con Verana",
+  "gettingstarted.step1.label": "Conecta tu billetera",
+  "gettingstarted.step1.description": "Conecta una billetera compatible para empezar a interactuar con la red.",
+  "gettingstarted.step2.label": "Obtén tokens VNA",
+  "gettingstarted.step2.description": "Adquiere tokens VNA para pagar transacciones de la red y depósitos.",
+  "gettingstarted.step3.label": "Crea o únete a Registros de Confianza del Ecosistema",
+  "gettingstarted.step3.description": "Explora y únete a ecosistemas existentes, o crea el tuyo propio.",
+  "gettingstarted.quicklinks.title": "Enlaces rápidos",
+  "gettingstarted.quicklinks.documentation": "Documentación",
+  "gettingstarted.quicklinks.tutorials": "Tutoriales en video",
+  "gettingstarted.quicklinks.community": "Soporte de la comunidad",
+  "gettingstarted.quicklinks.api": "Referencia de API"
+
 }

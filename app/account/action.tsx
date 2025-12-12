@@ -46,7 +46,6 @@ export default function TdActionPage({ action, setActiveActionId, onRefresh, dat
     valueUSD: claimableInterests? formatUSDfromUVNA(claimableInterests.split('VNA')[0], conversionFactorUSDfromVNA) : undefined
   };
 
-console.info(actionCardYield);
   // Save handler: called when the form is submitted
   async function onSave(newData: TdData) {
     setData(newData);
