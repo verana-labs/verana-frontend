@@ -3,20 +3,51 @@ import es from "./es.json";
 import type { Translator } from "@/ui/dataview/types";
 
 type FlatDict = Record<string, string>;
-type Locale = "en" | "es";
+export type Locale = "en" | "es";
+type TemplateValues = Record<string, string | number | boolean | null | undefined>;
+
+const DEFAULT_LOCALE: Locale = "en";
 
 const dictionaries: Record<Locale, FlatDict> = {
   en: en as FlatDict,
   es: es as FlatDict,
 };
 
-let currentLocale: Locale = "en";
+function interpolate(template: string, values?: TemplateValues): string {
+  if (!values) return template;
+  return template.replace(/\{(\w+)\}/g, (_, k) => {
+    const value = values[k];
+    if (value === undefined || value === null) return "";
+    return String(value);
+  });
+}
+
+export function getDictionary(locale: Locale = DEFAULT_LOCALE): FlatDict {
+  return dictionaries[locale] ?? dictionaries[DEFAULT_LOCALE];
+}
+
+let currentLocale: Locale = DEFAULT_LOCALE;
 export function setLocale(locale: Locale) { currentLocale = locale; }
 
-export const translate: Translator = (key, values) => {
-  const dict = dictionaries[currentLocale];
-  const template = dict[key] ?? key;
+export function translateWithLocale(
+  key: string,
+  locale: Locale = DEFAULT_LOCALE,
+  values?: TemplateValues
+): string {
+  const dict = getDictionary(locale);
+  const template = dict[key] ?? getDictionary(DEFAULT_LOCALE)[key] ?? key;
+  return interpolate(template, values);
+}
 
-  if (!values) return template;
-  return template.replace(/\{(\w+)\}/g, (_, k) => String(values[k] ?? ""));
+export function formatDictionaryValue(
+  template: string,
+  values?: TemplateValues
+): string {
+  return interpolate(template, values);
+}
+
+export const translate: Translator = (key, values) => {
+  const dict = getDictionary(currentLocale);
+  const template = dict[key] ?? getDictionary(DEFAULT_LOCALE)[key] ?? key;
+  return interpolate(template, values);
 };

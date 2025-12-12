@@ -1,6 +1,6 @@
 import { translate } from '@/i18n/dataview';
 import { resolveTranslatable } from '@/ui/dataview/types';
-import { faDiscord, faGithub, faTwitter } from '@fortawesome/free-brands-svg-icons';
+import { faDiscord, faGithub, faXTwitter, faLinkedin } from '@fortawesome/free-brands-svg-icons';
 import { faBook, faCode, faComments, faEnvelope, faVideo, IconDefinition } from '@fortawesome/free-solid-svg-icons';
 
 interface DashLink {
@@ -28,8 +28,8 @@ const footLinks : GroupLinks[] = [
   {
     title: resolveTranslatable({key: "dashboardfooter.support"}, translate)??'',
     links: [
-      { label: resolveTranslatable({key: "dashboardfooter.support.helpcenter"}, translate), href: 'https://verana.io/' },
-      { label: resolveTranslatable({key: "dashboardfooter.support.contactcs"}, translate), href: 'mailto:hello@verana.io' },
+    /*  { label: resolveTranslatable({key: "dashboardfooter.support.helpcenter"}, translate), href: 'https://verana.io/' },*/
+      { label: resolveTranslatable({key: "dashboardfooter.support.contactcs"}, translate), href: 'https://discord.gg/edjaFn252q' },
       { label: resolveTranslatable({key: "dashboardfooter.support.bugreports"}, translate), href: 'https://github.com/verana-labs' },
       { label: resolveTranslatable({key: "dashboardfooter.support.featurerequests"}, translate), href: 'https://github.com/verana-labs' },
     ]
@@ -37,16 +37,18 @@ const footLinks : GroupLinks[] = [
 ];
 
 const veranaLinks : DashLink[] = [
-  { label: resolveTranslatable({key: "dashboardfooter.privacy"}, translate), href: 'https://verana.io/' },
-  { label: resolveTranslatable({key: "dashboardfooter.terms"}, translate), href: 'https://verana.io/' },
-  { label: resolveTranslatable({key: "dashboardfooter.security"}, translate), href: 'https://verana.io/' },
+  { label: resolveTranslatable({key: "dashboardfooter.privacy"}, translate), href: 'https://verana.io/page/privacy-policy/' },
+  { label: resolveTranslatable({key: "dashboardfooter.terms"}, translate), href: 'https://verana.io/page/terms-of-service/' },
+ /* { label: resolveTranslatable({key: "dashboardfooter.security"}, translate), href: 'https://verana.io/' },*/
 ];
 
 const communityLinks : DashLink[] = [
   {icon: faGithub, href: 'https://github.com/verana-labs'},
-  {icon: faTwitter, href: 'https://github.com/verana-labs'},
+  {icon: faXTwitter, href: 'https://x.com/Verana_io'},
+  {icon: faLinkedin, href: 'https://x.com/Verana_io'},
+
   {icon: faDiscord, href: 'https://discord.gg/edjaFn252q'},
-  {icon: faEnvelope, href: 'mailto:hello@verana.io'},
+/*  {icon: faEnvelope, href: 'mailto:hello@verana.io'},*/
 ];
 
 const configFooter = {
@@ -62,7 +64,7 @@ const quickLinks: GroupLinks = {
       { icon: faBook, label: resolveTranslatable({key: "gettingstarted.quicklinks.documentation"}, translate), href: 'https://docs.verana.io' },
       { icon: faVideo, label: resolveTranslatable({key: "gettingstarted.quicklinks.tutorials"}, translate), href: 'https://docs.verana.io/docs/next/learn/verifiable-trust/introduction' },
       { icon: faComments, label: resolveTranslatable({key: "gettingstarted.quicklinks.community"}, translate), href: 'https://discord.gg/edjaFn252q' },
-      { icon: faCode, label: resolveTranslatable({key: "gettingstarted.quicklinks.api"}, translate), href: 'https://docs.verana.io/docs/next/use/ecosystems/intro' },
+ /*     { icon: faCode, label: resolveTranslatable({key: "gettingstarted.quicklinks.api"}, translate), href: 'https://docs.verana.io/docs/next/use/ecosystems/intro' },*/
     ]
 };
 
