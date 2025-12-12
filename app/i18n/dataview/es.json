@@ -264,7 +264,7 @@
   "dataview.cs.descriptions.issuerValidationValidityPeriod": "Número máximo de días que puede ser válida una validación del emisor. Usa 0 para que nunca expire, o un número menor a 3650.",
   "dataview.cs.descriptions.verifierValidationValidityPeriod": "Número máximo de días que puede ser válida una validación del verificador. Usa 0 para que nunca expire, o un número menor a 3650.",
   "dataview.cs.descriptions.holderValidationValidityPeriod": "Número máximo de días que puede ser válida una validación del titular. Usa 0 para que nunca expire, o un número menor a 3650.",
-  "dataview.cs.descriptions.jsonSchema": "Se realizará una validación básica de tu Json Schema. Asegúrate de configurar la sección \"$id\" como \"{id}\".",
+  "dataview.cs.descriptions.jsonSchema": "Se realizará una validación básica de tu Json Schema.",
 
   "dataview.tr.sections.basicInformation": "Información Básica",
   "dataview.tr.sections.governanceFrameworkDocuments": "Documentos del Marco de Gobernanza",

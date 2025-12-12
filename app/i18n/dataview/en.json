@@ -264,7 +264,7 @@
   "dataview.cs.descriptions.issuerValidationValidityPeriod": "maximum number of days an issuer validation can be valid for, in days. Use 0 so that validation never expires, or set a number of days lower than 3650. Example, if you want a validation process to be valid for one year so that applicant will have to renew the validation process each year, set this parameter to 365.",
   "dataview.cs.descriptions.verifierValidationValidityPeriod": "maximum number of days a verifier validation can be valid for, in days. Use 0 so that validation never expires, or set a number of days lower than 3650. Example, if you want a validation process to be valid for one year so that applicant will have to renew the validation process each year, set this parameter to 365.",
   "dataview.cs.descriptions.holderValidationValidityPeriod": "maximum number of days holder validation can be valid for, in days. Use 0 so that validation never expires, or set a number of days lower than 3650. Example, if you want a validation process to be valid for one year so that applicant will have to renew the validation process each year, set this parameter to 365.",
-  "dataview.cs.descriptions.jsonSchema": "A basic validation of your Json Schema will be done. Make sure to set the \"$id\" section to \"{id}\".",
+  "dataview.cs.descriptions.jsonSchema": "A basic validation of your Json Schema will be done.",
 
   "dataview.tr.sections.basicInformation": "Basic Information",
   "dataview.tr.sections.governanceFrameworkDocuments": "Governance Framework Documents",
