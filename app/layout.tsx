@@ -12,8 +12,11 @@ import { config } from '@fortawesome/fontawesome-svg-core';
 config.autoAddCss = false;
 
 export const metadata: Metadata = {
-  title: 'Verana Front',
-  description: 'Verana Front',
+  title: {
+    default: 'Verana Dashboard',
+    template: '%s · Verana'
+  },
+  description: 'Verana Frontend dashboard for managing and joining digital trust Ecosystems.',
   icons: {
     icon: [
       { url: '/favicon.ico', type: 'image/x-icon' },
