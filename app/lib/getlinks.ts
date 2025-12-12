@@ -36,6 +36,7 @@ const getVNALinks : GetVNALink[] = [
       { icon: faDroplet, iconClass: 'text-blue-600' }
     ]
   }, 
+  /*
   {
     name: resolveTranslatable({ key: 'getvna.ramp.name' }, translate) ?? '',
     by: resolveTranslatable({ key: 'getvna.ramp.by' }, translate) ?? '',
@@ -48,7 +49,7 @@ const getVNALinks : GetVNALink[] = [
       { icon: faGooglePay, iconClass: 'text-green-600' },
     ]
   },  
- 
+ */
 ];
 
 export {getVNALinks};

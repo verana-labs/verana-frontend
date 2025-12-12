@@ -29,7 +29,7 @@ export default function GetVNATokens (){
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <p className="text-sm font-medium text-gray-900 dark:text-white">{item.name}t</p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-white">{item.name}</p>
                                             <p className="text-xs text-neutral-70 dark:text-neutral-70">{item.by}</p>
                                         </div>
                                         <div className="flex items-center space-x-2">
