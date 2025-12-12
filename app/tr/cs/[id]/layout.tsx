@@ -3,11 +3,13 @@ import type { ReactNode } from 'react';
 import { formatDictionaryValue, getDictionary } from '@/i18n/dataview';
 
 type Params = { id: string };
+type Props = { params: Promise<Params> };
 const TITLE_FALLBACK = 'Credential Schema {id}';
 const DESCRIPTION_FALLBACK = 'Inspect and manage credential schema {id} within its trust registry.';
 
-export function generateMetadata({ params }: { params: Params }): Metadata {
-  const schemaId = decodeURIComponent(params.id);
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const {id } = await params;
+  const schemaId = decodeURIComponent(id);
   const dict = getDictionary();
   return {
     title: formatDictionaryValue(dict['meta.cs.detail.title'] ?? TITLE_FALLBACK, { id: schemaId }),

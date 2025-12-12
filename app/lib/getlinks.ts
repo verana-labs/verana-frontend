@@ -1,6 +1,6 @@
 import { translate } from '@/i18n/dataview';
 import { resolveTranslatable } from '@/ui/dataview/types';
-import { faCcMastercard, faGooglePay } from '@fortawesome/free-brands-svg-icons';
+import { faCcMastercard, faGooglePay } from '@fortawesome/free-brands-svg-icons'; // eslint-disable-line @typescript-eslint/no-unused-vars
 import { faDroplet, IconDefinition } from '@fortawesome/free-solid-svg-icons';
 import { env } from 'next-runtime-env';
 
