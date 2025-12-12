@@ -2,21 +2,25 @@ import '@/styles/global.css';
 import { inter } from '@/ui/common/fonts'
 import "@interchain-ui/react/styles";
 import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
 import { PublicEnvScript } from 'next-runtime-env';
 import ClientLayout from '@/providers/client-layout';
 import "@/init-long";
 import { getTrustDepositParams } from '@/lib/trustDepositParams';
 import '@fortawesome/fontawesome-svg-core/styles.css';
 import { config } from '@fortawesome/fontawesome-svg-core';
+import { getDictionary } from '@/i18n/dataview';
 
 config.autoAddCss = false;
 
+const dict = getDictionary();
+
 export const metadata: Metadata = {
   title: {
-    default: 'Verana Dashboard',
-    template: '%s · Verana'
+    default: dict['meta.root.title'] ?? 'Verana Dashboard',
+    template: dict['meta.title.template'] ?? '%s · Verana'
   },
-  description: 'Verana Frontend dashboard for managing and joining digital trust Ecosystems.',
+  description: dict['meta.root.description'] ?? 'Verana Frontend dashboard for managing and joining digital trust Ecosystems.',
   icons: {
     icon: [
       { url: '/favicon.ico', type: 'image/x-icon' },
@@ -31,7 +35,7 @@ export const metadata: Metadata = {
   manifest: '/site.webmanifest'
 }
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
   const trustDepositParamsResult = await getTrustDepositParams(); // 1 fetch for request (dedupe + ISR)
 
   return (
