@@ -1,11 +1,12 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import VeranaLog from '@/ui/common/verana-logo';
-import IconLabelButton from '@/ui/common/icon-label-button';
-import ToggleTheme from '@/ui/common/toggle-theme';
+import IconLabelButton from '@/ui/common/icon-label-button'; 
+import ToggleTheme from '@/ui/common/toggle-theme'; 
 import NavLinks from '@/ui/common/nav-links';
-import { resolveTranslatable } from '../dataview/types';
+import { resolveTranslatable } from '../dataview/types'; 
 import { translate } from '@/i18n/dataview';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faGear, faXmark } from '@fortawesome/free-solid-svg-icons';

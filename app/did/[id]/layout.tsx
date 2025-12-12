@@ -3,11 +3,13 @@ import type { ReactNode } from 'react';
 import { formatDictionaryValue, getDictionary } from '@/i18n/dataview';
 
 type Params = { id: string };
+type Props = { params: Promise<Params> };
 const TITLE_FALLBACK = 'DID {id}';
 const DESCRIPTION_FALLBACK = 'View metadata, status, and governance for decentralized identifier {id}.';
 
-export function generateMetadata({ params }: { params: Params }): Metadata {
-  const did = decodeURIComponent(params.id);
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const {id } = await params;
+  const did = decodeURIComponent(id);
   const dict = getDictionary();
   return {
     title: formatDictionaryValue(dict['meta.did.detail.title'] ?? TITLE_FALLBACK, { id: did }),

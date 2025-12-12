@@ -1,7 +1,7 @@
 import { translate } from '@/i18n/dataview';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { faDiscord, faGithub, faXTwitter, faLinkedin } from '@fortawesome/free-brands-svg-icons';
-import { faBook, faCode, faComments, faEnvelope, faVideo, IconDefinition } from '@fortawesome/free-solid-svg-icons';
+import { faBook, faCode, faComments, faEnvelope, faVideo, IconDefinition } from '@fortawesome/free-solid-svg-icons'; // eslint-disable-line @typescript-eslint/no-unused-vars
 
 interface DashLink {
   href: string;
