@@ -42,12 +42,12 @@ export default function NavBar() {
                   dangerouslySetInnerHTML= {{__html: formatNetwork(veranaChain.chain_id)}}
                 />
 
-                {/* Settings */}
+                {/* Settings 
                 <IconLabelButton icon={faGear} title={resolveTranslatable({key: 'navbar.settings.title'}, translate)} className='navbar-icon' />
-
-                {/* Theme Toggle */}
+*/}
+                {/* Theme Toggle 
                 <ToggleTheme />
-
+*/}
                 {/* Account Zone */}
                 <AccountZone />
             </div>

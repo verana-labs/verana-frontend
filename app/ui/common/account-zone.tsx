@@ -106,7 +106,7 @@ export default function AccountZone() {
           <IconLabelButton
             icon={faUpRightFromSquare}
             title={resolveTranslatable({key: 'navbar.mintscan.title'}, translate)}
-            onClick={() => window.open(`https://www.mintscan.io/${veranaChain.chain_name}/account/${address}`, "_blank")}
+            onClick={() => window.open(`https://explorer.testnet.verana.network/Verana%20Testnet/account/${address}`, "_blank")}
             className='navbar-icon'
           />
           <IconLabelButton
