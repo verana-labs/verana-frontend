@@ -13,7 +13,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faWallet } from "@fortawesome/free-solid-svg-icons";
 import FeaturedServices from "@/ui/common/featured-services";
 import GettingStarted from "@/ui/common/getting-started";
-import VeranaFooter from "@/ui/common/verana-footer";
+import DashboardFooter from "@/ui/common/dashboard-footer";
 
 export default function Page() {
 
@@ -93,7 +93,7 @@ export default function Page() {
       <GettingStarted/>
 
       {/* Footer */}
-      <VeranaFooter/>
+      <DashboardFooter/>
 
     </>
   );

@@ -2,10 +2,10 @@
 
 import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBook, faCircleQuestion } from '@fortawesome/free-solid-svg-icons';
-import { faGithub } from '@fortawesome/free-brands-svg-icons';
 import { resolveTranslatable } from '../dataview/types';
 import { translate } from '@/i18n/dataview';
+import { communityLinks, configFooter } from '@/lib/dashlinks';
+import Link from 'next/link';
 
 export function Footer() {
   return (
@@ -13,7 +13,7 @@ export function Footer() {
       {/* Logo & version */}
       <div className="flex items-center">
         <Image
-          src="https://verana.io/logo.svg"
+          src={configFooter.img}
           alt="Verana Logo"
           width={24}
           height={24}
@@ -30,7 +30,19 @@ export function Footer() {
       </div>
 
       {/* Social Ícons */}
-      <div className="mt-3 flex space-x-2">
+      <div className="mt-3 flex space-x-4">
+        {communityLinks.map((link, idx) => {
+            return (
+                <Link key={`communityLink-${idx}`} href={link.href} target="_blank">
+                <span className="text-neutral-70 hover:text-gray-500 dark:hover:text-gray-300 cursor-pointer">
+                    <FontAwesomeIcon icon={link.icon??'0'}/>
+                    </span>
+                </Link>
+            );
+        })}
+      </div>
+
+      {/* <div className="mt-3 flex space-x-2">
         <a
           href="https://github.com/verana-network"
           target="_blank"
@@ -60,7 +72,7 @@ export function Footer() {
         >
           <FontAwesomeIcon icon={faCircleQuestion} className="text-sm h-[18px] w-[18px]" />
         </a>
-      </div>
+      </div> */}
     </div>
   );
 }

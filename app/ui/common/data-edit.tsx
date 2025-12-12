@@ -239,7 +239,6 @@ export default function EditableDataView<T extends object>({
       );
     }
     else if (field.inputType === 'select') {
-      console.info(field.options);
       inputEl = (
         <select
           className={baseInputClass}

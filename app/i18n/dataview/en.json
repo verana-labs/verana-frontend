@@ -396,10 +396,40 @@
 
   "messages.MsgUpdateCredentialSchema.label": "Confirm",
   "messages.MsgUpdateCredentialSchema.description": "",
-  "messages.MsgUpdateCredentialSchema.cost": "<span class=\"data-edit-label\">Confirmation</span><br>Approx. {value} VNA are required to execute this transaction.",
+  "messages.MsgUpdateCredentialSchema.cost": "You'll need approx. {value} VNA are required to execute this transaction.",
 
   "messages.MsgArchiveCredentialSchema.label": "Archive Credential Schema",
   "messages.MsgArchiveCredentialSchema.description": "Archive a Credential Schema.",
-  "messages.MsgArchiveCredentialSchema.cost": "There is no fee for archiving a Credential Schema."
+  "messages.MsgArchiveCredentialSchema.cost": "There is no fee for archiving a Credential Schema.",
+
+  "dashboardfooter.title": "Verana",
+  "dashboardfooter.msg": "The open trust layer for the internet, enabling verifiable digital services and true digital sovereignty.",
+  "dashboardfooter.copyright": "Verana Foundation",
+  "dashboardfooter.resources": "Resources",
+  "dashboardfooter.resources.documentation": "Documentation",
+  "dashboardfooter.resources.github": "Github",
+  "dashboardfooter.resources.tutorials": "Tutorials",
+  "dashboardfooter.resources.community": "Community",
+  "dashboardfooter.support": "Support",
+  "dashboardfooter.support.helpcenter": "Help Center",
+  "dashboardfooter.support.contactcs": "Contact Us",
+  "dashboardfooter.support.bugreports": "Bug Reports",
+  "dashboardfooter.support.featurerequests": "Feature Requests",
+  "dashboardfooter.privacy": "Privacy",
+  "dashboardfooter.terms": "Terms",
+  "dashboardfooter.security": "Security",
+
+  "gettingstarted.title": "Getting Started with Verana",
+  "gettingstarted.step1.label": "Connect Your Wallet",
+  "gettingstarted.step1.description": "Connect a compatible wallet to start interacting with the network.",
+  "gettingstarted.step2.label": "Get VNA Tokens",
+  "gettingstarted.step2.description": "Acquire VNA tokens to pay for network transactions and deposits..",
+  "gettingstarted.step3.label": "Create or Join Ecosystem Trust Registries",
+  "gettingstarted.step3.description": "Browse and join existing ecosystems, or create your own.",
+  "gettingstarted.quicklinks.title": "Quick Links",
+  "gettingstarted.quicklinks.documentation": "Documentation",
+  "gettingstarted.quicklinks.tutorials": "Video Tutorials",
+  "gettingstarted.quicklinks.community": "Community Support",
+  "gettingstarted.quicklinks.api": "API Reference"
 
 }
