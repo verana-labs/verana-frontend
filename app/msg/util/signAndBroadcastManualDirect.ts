@@ -71,7 +71,12 @@ export async function signAndBroadcastManualDirect({
   // feeGranter,
   // feePayer,
 }: ManualSignOptions): Promise<DeliverTxResponse> {
-  // Connect a client — only used for simulate and broadcast
+
+const anys = messages.map(m => registry.encodeAsAny(m));
+console.log("Any.typeUrl:", anys[0].typeUrl);
+console.log("Any.value(hex):", Buffer.from(anys[0].value).toString("hex"));
+
+// Connect a client — only used for simulate and broadcast
   const client = await SigningStargateClient.connectWithSigner(rpcEndpoint, signer, { registry });
 
   // Simulate gas usage for the messages

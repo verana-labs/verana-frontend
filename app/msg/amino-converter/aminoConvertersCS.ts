@@ -6,7 +6,8 @@ import {
   MsgUpdateCredentialSchema,
   MsgArchiveCredentialSchema,
 } from 'proto-codecs/codec/verana/cs/v1/tx';
-import { u64ToStr, strToU64, u32ToAmino, pickU32 } from '@/util/aminoHelpers';
+import { u64ToStr, strToU64, u32ToAmino, fromOptU32Amino, toOptU32Amino } from '@/util/aminoHelpers';
+import Long from "long";
 
 /**
  * Amino converter for MsgCreateCredentialSchema
@@ -18,38 +19,27 @@ export const MsgCreateCredentialSchemaAminoConverter = {
     creator: m.creator ?? '',
     tr_id: u64ToStr(m.trId), // uint64 -> string
     json_schema: m.jsonSchema ?? '',
-    issuer_grantor_validation_validity_period: u32ToAmino(m.issuerGrantorValidationValidityPeriod) , // uint32 -> number
-    verifier_grantor_validation_validity_period: u32ToAmino(m.verifierGrantorValidationValidityPeriod) , // uint32 -> number
-    issuer_validation_validity_period: u32ToAmino(m.issuerValidationValidityPeriod) , // uint32 -> number
-    verifier_validation_validity_period: u32ToAmino(m.verifierValidationValidityPeriod) , // uint32 -> number
-    holder_validation_validity_period: u32ToAmino(m.holderValidationValidityPeriod) , // uint32 -> number
+    issuer_grantor_validation_validity_period: toOptU32Amino(m.issuerGrantorValidationValidityPeriod),
+    verifier_grantor_validation_validity_period: toOptU32Amino(m.verifierGrantorValidationValidityPeriod),
+    issuer_validation_validity_period: toOptU32Amino(m.issuerValidationValidityPeriod),
+    verifier_validation_validity_period: toOptU32Amino(m.verifierValidationValidityPeriod),
+    holder_validation_validity_period: toOptU32Amino(m.holderValidationValidityPeriod),
     issuer_perm_management_mode: u32ToAmino(m.issuerPermManagementMode) , // uint32 -> number
     verifier_perm_management_mode: u32ToAmino(m.verifierPermManagementMode) , // uint32 -> number
   }),
   // Amino JSON → Proto
-  fromAmino: (a: {
-    creator: string;
-    tr_id?: string; // uint64
-    json_schema: string;
-    issuer_grantor_validation_validity_period: number; // uint32
-    verifier_grantor_validation_validity_period: number; // uint32
-    issuer_validation_validity_period: number; // uint32
-    verifier_validation_validity_period: number; // uint32
-    holder_validation_validity_period: number; // uint32
-    issuer_perm_management_mode: number; // enum/int32
-    verifier_perm_management_mode: number; // enum/int32
-  }): MsgCreateCredentialSchema =>
+  fromAmino: (a: any ): MsgCreateCredentialSchema =>
     MsgCreateCredentialSchema.fromPartial({
       creator: a.creator ?? '',
       trId: strToU64(a.tr_id),
       jsonSchema: a.json_schema ?? '',
-      issuerGrantorValidationValidityPeriod: pickU32(a.issuer_grantor_validation_validity_period) ,
-      verifierGrantorValidationValidityPeriod: pickU32(a.verifier_grantor_validation_validity_period) ,
-      issuerValidationValidityPeriod: pickU32(a.issuer_validation_validity_period) ,
-      verifierValidationValidityPeriod: pickU32(a.verifier_validation_validity_period) ,
-      holderValidationValidityPeriod: pickU32(a.holder_validation_validity_period) ,
-      issuerPermManagementMode: pickU32(a.issuer_perm_management_mode) ,
-      verifierPermManagementMode: pickU32(a.verifier_perm_management_mode) ,
+      issuerGrantorValidationValidityPeriod: fromOptU32Amino(a.issuer_grantor_validation_validity_period),
+      verifierGrantorValidationValidityPeriod: fromOptU32Amino(a.verifier_grantor_validation_validity_period),
+      issuerValidationValidityPeriod: fromOptU32Amino(a.issuer_validation_validity_period),
+      verifierValidationValidityPeriod: fromOptU32Amino(a.verifier_validation_validity_period),
+      holderValidationValidityPeriod: fromOptU32Amino(a.holder_validation_validity_period),
+      issuerPermManagementMode: (a.issuer_perm_management_mode) ,
+      verifierPermManagementMode: (a.verifier_perm_management_mode) ,
     }),
 };
 
@@ -61,20 +51,22 @@ export const MsgUpdateCredentialSchemaAminoConverter = {
   toAmino: (m: MsgUpdateCredentialSchema) => clean({
     creator: m.creator ?? '',
     id: u64ToStr(m.id),
-    issuer_grantor_validation_validity_period: u32ToAmino(m.issuerGrantorValidationValidityPeriod),
-    verifier_grantor_validation_validity_period: u32ToAmino(m.verifierGrantorValidationValidityPeriod),
-    issuer_validation_validity_period: u32ToAmino(m.issuerValidationValidityPeriod),
-    verifier_validation_validity_period: u32ToAmino(m.verifierValidationValidityPeriod),
-    holder_validation_validity_period: u32ToAmino(m.holderValidationValidityPeriod),
+    issuer_grantor_validation_validity_period: toOptU32Amino(m.issuerGrantorValidationValidityPeriod),
+    verifier_grantor_validation_validity_period: toOptU32Amino(m.verifierGrantorValidationValidityPeriod),
+    issuer_validation_validity_period: toOptU32Amino(m.issuerValidationValidityPeriod),
+    verifier_validation_validity_period: toOptU32Amino(m.verifierValidationValidityPeriod),
+    holder_validation_validity_period: toOptU32Amino(m.holderValidationValidityPeriod),
+
+
   }),
   fromAmino: (a: any) => MsgUpdateCredentialSchema.fromPartial({
     creator: a.creator ?? '',
     id: strToU64(a.id),
-    issuerGrantorValidationValidityPeriod: pickU32(a.issuer_grantor_validation_validity_period),
-    verifierGrantorValidationValidityPeriod: pickU32(a.verifier_grantor_validation_validity_period),
-    issuerValidationValidityPeriod: pickU32(a.issuer_validation_validity_period),
-    verifierValidationValidityPeriod: pickU32(a.verifier_validation_validity_period),
-    holderValidationValidityPeriod: pickU32(a.holder_validation_validity_period),
+    issuerGrantorValidationValidityPeriod: fromOptU32Amino(a.issuer_grantor_validation_validity_period),
+    verifierGrantorValidationValidityPeriod: fromOptU32Amino(a.verifier_grantor_validation_validity_period),
+    issuerValidationValidityPeriod: fromOptU32Amino(a.issuer_validation_validity_period),
+    verifierValidationValidityPeriod: fromOptU32Amino(a.verifier_validation_validity_period),
+    holderValidationValidityPeriod: fromOptU32Amino(a.holder_validation_validity_period),
   }),
 };
 

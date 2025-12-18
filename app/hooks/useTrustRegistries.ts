@@ -47,7 +47,7 @@ export function useTrustRegistries () {
     setTrList([]);
     try {
       setLoading(true);
-      const urlTrList = `${getTrURL}/list?controller=${address}`;
+      const urlTrList = `${getTrURL}/list?controller=${address}&response_max_size=1024`;
       const resTrList = await fetch(urlTrList);
       const jsonTrList = await resTrList.json();
       if (!resTrList.ok){

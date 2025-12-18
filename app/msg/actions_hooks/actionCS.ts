@@ -21,7 +21,8 @@ import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import { hasValidCredentialSchemaId, MSG_SCHEMA_ID, normalizeJsonSchema } from '@/util/json_schema_util';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
-import { sanitizeProtoMsg } from '../util/sanitizeProtoMsg';
+// import { sanitizeProtoMsg } from '../util/sanitizeProtoMsg';
+import { fromOptU32Amino, pickOptionalUInt32 } from '@/util/aminoHelpers';
 
 // Message type configuration (typeUrl + label for memo/notification)
 export const MSG_TYPE_CONFIG_CS = {
@@ -154,11 +155,11 @@ export function useActionCS( onCancel?: () => void,
           creator: address, // always use the connected wallet address
           trId: Long.fromValue(params.trId), // uint64
           jsonSchema: normalizeJsonSchema(params.jsonSchema),
-          issuerGrantorValidationValidityPeriod: params.issuerGrantorValidationValidityPeriod,
-          verifierGrantorValidationValidityPeriod: params.verifierGrantorValidationValidityPeriod,
-          issuerValidationValidityPeriod: params.issuerValidationValidityPeriod,
-          verifierValidationValidityPeriod: params.verifierValidationValidityPeriod,
-          holderValidationValidityPeriod: params.holderValidationValidityPeriod,
+          issuerGrantorValidationValidityPeriod: fromOptU32Amino(params.issuerGrantorValidationValidityPeriod),
+          verifierGrantorValidationValidityPeriod: fromOptU32Amino(params.verifierGrantorValidationValidityPeriod),
+          issuerValidationValidityPeriod: fromOptU32Amino(params.issuerValidationValidityPeriod),
+          verifierValidationValidityPeriod: fromOptU32Amino(params.verifierValidationValidityPeriod),
+          holderValidationValidityPeriod: fromOptU32Amino(params.holderValidationValidityPeriod),
           issuerPermManagementMode: params.issuerPermManagementMode,
           verifierPermManagementMode: params.verifierPermManagementMode,
         });
@@ -170,11 +171,11 @@ export function useActionCS( onCancel?: () => void,
         value = MsgUpdateCredentialSchema.fromPartial({
           creator: address, // always use the connected wallet address
           id: Long.fromValue(params.id), // uint64
-          issuerGrantorValidationValidityPeriod: params.issuerGrantorValidationValidityPeriod,
-          verifierGrantorValidationValidityPeriod: params.verifierGrantorValidationValidityPeriod,
-          issuerValidationValidityPeriod: params.issuerValidationValidityPeriod,
-          verifierValidationValidityPeriod: params.verifierValidationValidityPeriod,
-          holderValidationValidityPeriod: params.holderValidationValidityPeriod
+          issuerGrantorValidationValidityPeriod: pickOptionalUInt32(params.issuerGrantorValidationValidityPeriod),
+          verifierGrantorValidationValidityPeriod: pickOptionalUInt32(params.verifierGrantorValidationValidityPeriod),
+          issuerValidationValidityPeriod: pickOptionalUInt32(params.issuerValidationValidityPeriod),
+          verifierValidationValidityPeriod: pickOptionalUInt32(params.verifierValidationValidityPeriod),
+          holderValidationValidityPeriod: pickOptionalUInt32(params.holderValidationValidityPeriod),
         });
         break;
       }
@@ -208,14 +209,17 @@ export function useActionCS( onCancel?: () => void,
     try {
 
       const msg: EncodeObject = { typeUrl, value };
-      const msgSanitized = sanitizeProtoMsg(msg);
+      // console.info(msg);
+      // const msgSanitized = sanitizeProtoMsg(msg);
 
       res = await sendTx({
-        msgs: [msgSanitized],
+        // msgs: [msgSanitized],
+        msgs: [msg],
         memo: MSG_TYPE_CONFIG_CS[params.msgType].txLabel
       });      
 
       if (res.code === 0) {
+        console.info("DeliverTxResponse: ", res);
         if (params.msgType === 'MsgCreateCredentialSchema') id = extractCreatedCSId(res);        
         if (id) sessionStorage.setItem('id_updated', id);
         success = true;
@@ -227,7 +231,6 @@ export function useActionCS( onCancel?: () => void,
       } else {
         notifyPromise =  notify(
           MSG_ERROR_ACTION_CS[params.msgType](id, res.code, res.rawLog) || `(${res.code}): ${res.rawLog}`,
-
           'error',
           resolveTranslatable({key: 'notification.msg.failed.title'}, translate)
         );
