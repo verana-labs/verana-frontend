@@ -47,8 +47,8 @@ export function DataList<T extends object>({
                 if (isResolvedActionField(field) && messageType !== undefined){
                   const isActive = activeActionId === String(field.name);
                   return (
-                  <>
-                  <IconLabelButton key={`action-${fieldIndex}`}
+                  <section key={`action-${String(field.name)}-${fieldIndex}`}>
+                  <IconLabelButton 
                     label={field.label}
                     icon={messageTypeStyle.icon}
                     className={clsx(
@@ -64,8 +64,7 @@ export function DataList<T extends object>({
                   >
                     {renderActionComponent(String(messageType), () => setActiveActionId(null), data, onRefresh?? undefined, onBack?? undefined )}
                   </ModalAction>
-                  </>
-                  
+                  </section>
                 )}
                 // For fields that don't match the condition, return null
                 return null;

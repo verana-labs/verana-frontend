@@ -53,6 +53,7 @@ function assertAminoShape(a: any) { // eslint-disable-line @typescript-eslint/no
  * Debug helper: round-trip Amino <-> Proto and check consistency.
  */
 export function debugAminoRoundTrip(msg: EncodeObject) {
+  console.info('[PROTO typeof] ->', msg);
   const pv: any = msg.value as any; // eslint-disable-line @typescript-eslint/no-explicit-any
   console.info('[PROTO typeof] ->', {
     issuerGrantorValidationValidityPeriod: typeof pv?.issuerGrantorValidationValidityPeriod,
@@ -104,7 +105,7 @@ export function debugAminoRoundTrip(msg: EncodeObject) {
 
   // 7) Deep equality of values (watch out for Long vs number mismatches)
   console.info(
-    'Deep equal value? (beware of Long differences)',
+    'Equal value?',
     deepEqual(msg.value, back.value)
   );
 }
