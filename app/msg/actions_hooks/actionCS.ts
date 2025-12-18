@@ -22,7 +22,7 @@ import { hasValidCredentialSchemaId, MSG_SCHEMA_ID, normalizeJsonSchema } from '
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 // import { sanitizeProtoMsg } from '../util/sanitizeProtoMsg';
-import { fromOptU32Amino, pickOptionalUInt32 } from '@/util/aminoHelpers';
+import { pickOptionalUInt32 } from '@/util/aminoHelpers';
 
 // Message type configuration (typeUrl + label for memo/notification)
 export const MSG_TYPE_CONFIG_CS = {
@@ -155,11 +155,11 @@ export function useActionCS( onCancel?: () => void,
           creator: address, // always use the connected wallet address
           trId: Long.fromValue(params.trId), // uint64
           jsonSchema: normalizeJsonSchema(params.jsonSchema),
-          issuerGrantorValidationValidityPeriod: fromOptU32Amino(params.issuerGrantorValidationValidityPeriod),
-          verifierGrantorValidationValidityPeriod: fromOptU32Amino(params.verifierGrantorValidationValidityPeriod),
-          issuerValidationValidityPeriod: fromOptU32Amino(params.issuerValidationValidityPeriod),
-          verifierValidationValidityPeriod: fromOptU32Amino(params.verifierValidationValidityPeriod),
-          holderValidationValidityPeriod: fromOptU32Amino(params.holderValidationValidityPeriod),
+          issuerGrantorValidationValidityPeriod: pickOptionalUInt32(params.issuerGrantorValidationValidityPeriod),
+          verifierGrantorValidationValidityPeriod: pickOptionalUInt32(params.verifierGrantorValidationValidityPeriod),
+          issuerValidationValidityPeriod: pickOptionalUInt32(params.issuerValidationValidityPeriod),
+          verifierValidationValidityPeriod: pickOptionalUInt32(params.verifierValidationValidityPeriod),
+          holderValidationValidityPeriod: pickOptionalUInt32(params.holderValidationValidityPeriod),
           issuerPermManagementMode: params.issuerPermManagementMode,
           verifierPermManagementMode: params.verifierPermManagementMode,
         });

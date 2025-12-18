@@ -30,28 +30,17 @@ export const pickOptionalUInt32 = (v: any): OptionalUInt32 | undefined => {
   const n = Number(v);
   if (!Number.isFinite(n)) return undefined;
   const value = (n >>> 0);
-  // if (value === 0) return undefined;
   return { value };
 };
 
-// export const toOptU32Amino = (m?: { value: number } | undefined) =>
-//   m ? { value: (m.value >>> 0) } : undefined;
-
-// Regla: 0 => {} (para coincidir con omitempty del chain), >0 => {value:n}
+// 0 => {} (omitempty chain), >0 => {value:n}
 export const toOptU32Amino = (m?: { value: number } | undefined) => {
   if (!m) return undefined;
   const value = (Number(m.value) >>> 0);
   return value === 0 ? {} : { value };
 };
 
-// export const fromOptU32Amino = (x: any) => {
-//   if (x == null) return undefined;
-//   const n = typeof x === "object" ? x.value : x;   // soporta {value:10} o 10
-//   if (n == null) return undefined;
-//   return { value: (Number(n) >>> 0) };
-// };
-
-// Acepta: {}  (=> 0), {value:n}, o incluso n directo
+// {}  (=> 0), {value:n}
 export const fromOptU32Amino = (x: any): OptionalUInt32 | undefined => {
   if (x == null) return undefined;
   // {} => wrapper, value default 0
