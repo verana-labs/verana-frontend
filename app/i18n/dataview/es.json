@@ -55,7 +55,7 @@
   "modalqrcode.msg": "Escanea este código QR para enviar tokens VNA a tu cuenta",
 
   "footer.title": "Verana Network",
-  "footer.version": "v0.91-dev.1",
+  "footer.version": "v0.xx",
   
   "connected.title": "Conectado",
   "connected.msg": "Tu billetera cripto está conectada a Verana, lo que te permite acceder a todas las funciones.",
