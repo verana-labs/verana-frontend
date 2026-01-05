@@ -6,8 +6,11 @@ import { resolveTranslatable } from '../dataview/types';
 import { translate } from '@/i18n/dataview';
 import { communityLinks, configFooter } from '@/lib/dashlinks';
 import Link from 'next/link';
+import { useChainVersion } from '@/hooks/useChainVersion';
 
 export function Footer() {
+  const chainVersion = useChainVersion();
+
   return (
     <div className="flex-shrink-0 px-2 py-4 border-t border-neutral-20 dark:border-neutral-70">
       {/* Logo & version */}
@@ -24,7 +27,7 @@ export function Footer() {
             {resolveTranslatable({key: "footer.title"}, translate)}
           </p>
           <p className="text-xs text-neutral-70 dark:text-neutral-70">
-            {resolveTranslatable({key: "footer.version"}, translate)}
+            {chainVersion ?? resolveTranslatable({key: "footer.version"}, translate)}
           </p>
         </div>
       </div>

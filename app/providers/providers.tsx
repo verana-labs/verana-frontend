@@ -13,7 +13,12 @@ const VeranaChainProvider = dynamic(
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider attribute="class" enableSystem={true} defaultTheme="system">
+    <ThemeProvider
+      attribute="class"
+      forcedTheme="light"
+      enableSystem={false}
+      defaultTheme="light"
+    >
         <VeranaChainProvider>
             <RequireConnectedWallet>
                 <NotificationProvider>
