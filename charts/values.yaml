@@ -1,0 +1,54 @@
+# General configuration
+name: verana-frontend
+replicas: 1
+
+# Image configuration
+image:
+  repository: veranalabs/verana-front
+  tag: dev
+  pullPolicy: IfNotPresent
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 2904
+  targetPort: 2904
+
+# Node scheduling preferences
+nodeSelector:
+  kubernetes.io/hostname: cluster-utc-node-07efe5
+
+# Environment variables consumed by the application 
+env:
+  NEXT_PUBLIC_PORT: "2904"
+  NEXT_PUBLIC_BASE_URL: "http://localhost:2904"
+  NEXT_PUBLIC_VERANA_CHAIN_ID: "vna-devnet-1"
+  NEXT_PUBLIC_VERANA_CHAIN_NAME: "VeranaDevnet1"
+  NEXT_PUBLIC_VERANA_RPC_ENDPOINT: "https://rpc.devnet.verana.network"
+  NEXT_PUBLIC_VERANA_REST_ENDPOINT: "https://api.devnet.verana.network"
+  NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT: "https://idx.devnet.verana.network/verana/td/v1"
+  NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID: "https://idx.devnet.verana.network/verana/dd/v1"
+  NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY: "https://idx.devnet.verana.network/verana/tr/v1"
+  NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA: "https://idx.devnet.verana.network/verana/cs/v1"
+  NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM: "https://idx.devnet.verana.network/verana/perm/v1"
+  NEXT_PUBLIC_VERANA_TOPUP_VS: "did:web:faucet-vs.devnet.verana.network"
+  NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE: "false"
+  NEXT_PUBLIC_SESSION_LIFETIME_SECONDS: "86400"
+
+# Additional env variables if needed (list of {name, value})
+extraEnv: []
+
+# Resource requests/limits for the frontend container
+resources: {}
+
+# Optional ingress configuration
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: ""
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
