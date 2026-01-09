@@ -144,9 +144,10 @@ export default function TRViewPage() {
     <>
       {/* Back Navigation & Back Navigation */}
       <TitleAndButton
-        title=  {`${data.aka}`}
+        title=  {`${data.did}`}
         buttonLabel={resolveTranslatable({key: "button.tr.back"}, translate)}
-        to="/tr"
+        // to="/tr"
+        onClick={() => router.back()}
         icon={faArrowLeft}
         backLink= {true}
         description={["Ecosystem trust registry and governance framework management."]}

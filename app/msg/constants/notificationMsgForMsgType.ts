@@ -15,6 +15,20 @@ export type MsgTypeTR = 'MsgCreateTrustRegistry' | 'MsgUpdateTrustRegistry' | 'M
 // Supported Credential Schema actions
 export type MsgTypeCS = 'MsgCreateCredentialSchema' | 'MsgUpdateCredentialSchema' | 'MsgArchiveCredentialSchema';
 
+// Supported Permission actions
+export type MsgTypePERM =
+  | 'MsgStartPermissionVP'
+  | 'MsgRenewPermissionVP'
+  | 'MsgSetPermissionVPToValidated'
+  | 'MsgCancelPermissionVPLastRequest'
+  | 'MsgCreateRootPermission'
+  | 'MsgExtendPermission'
+  | 'MsgRevokePermission'
+  | 'MsgCreateOrUpdatePermissionSession'
+  | 'MsgSlashPermissionTrustDeposit'
+  | 'MsgRepayPermissionSlashedTrustDeposit'
+  | 'MsgCreatePermission';
+
 /** Safely cast any object to I18nValues */
 function toI18nValues(values?: Record<string, unknown>): I18nValues | undefined {
   if (!values) return undefined;
@@ -159,4 +173,73 @@ export const MSG_ERROR_ACTION_CS: Record<
     t('notification.MsgUpdateCredentialSchema.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
   MsgArchiveCredentialSchema: (id, code, msg) =>
     t('notification.MsgArchiveCredentialSchema.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+};
+
+// ============================================================================
+// PERMISSION ACTIONS
+// ============================================================================
+
+/**
+ * Success messages for Permission actions
+ */
+export const MSG_SUCCESS_ACTION_PERM: Record<MsgTypePERM, () => string> = {
+  MsgStartPermissionVP: () => t('notification.MsgStartPermissionVP.success'),
+  MsgRenewPermissionVP: () => t('notification.MsgRenewPermissionVP.success'),
+  MsgSetPermissionVPToValidated: () => t('notification.MsgSetPermissionVPToValidated.success'),
+  MsgCancelPermissionVPLastRequest: () => t('notification.MsgCancelPermissionVPLastRequest.success'),
+  MsgCreateRootPermission: () => t('notification.MsgCreateRootPermission.success'),
+  MsgExtendPermission: () => t('notification.MsgExtendPermission.success'),
+  MsgRevokePermission: () => t('notification.MsgRevokePermission.success'),
+  MsgCreateOrUpdatePermissionSession: () => t('notification.MsgCreateOrUpdatePermissionSession.success'),
+  MsgSlashPermissionTrustDeposit: () => t('notification.MsgSlashPermissionTrustDeposit.success'),
+  MsgRepayPermissionSlashedTrustDeposit: () => t('notification.MsgRepayPermissionSlashedTrustDeposit.success'),
+  MsgCreatePermission: () => t('notification.MsgCreatePermission.success'),
+};
+
+/**
+ * In-progress messages for Permission actions
+ */
+export const MSG_INPROGRESS_ACTION_PERM: Record<MsgTypePERM, () => string> = {
+  MsgStartPermissionVP: () => t('notification.MsgStartPermissionVP.inprogress'),
+  MsgRenewPermissionVP: () => t('notification.MsgRenewPermissionVP.inprogress'),
+  MsgSetPermissionVPToValidated: () => t('notification.MsgSetPermissionVPToValidated.inprogress'),
+  MsgCancelPermissionVPLastRequest: () => t('notification.MsgCancelPermissionVPLastRequest.inprogress'),
+  MsgCreateRootPermission: () => t('notification.MsgCreateRootPermission.inprogress'),
+  MsgExtendPermission: () => t('notification.MsgExtendPermission.inprogress'),
+  MsgRevokePermission: () => t('notification.MsgRevokePermission.inprogress'),
+  MsgCreateOrUpdatePermissionSession: () => t('notification.MsgCreateOrUpdatePermissionSession.inprogress'),
+  MsgSlashPermissionTrustDeposit: () => t('notification.MsgSlashPermissionTrustDeposit.inprogress'),
+  MsgRepayPermissionSlashedTrustDeposit: () => t('notification.MsgRepayPermissionSlashedTrustDeposit.inprogress'),
+  MsgCreatePermission: () => t('notification.MsgCreatePermission.inprogress'),
+};
+
+/**
+ * Error messages for Permission actions (with id + optional error code/log)
+ */
+export const MSG_ERROR_ACTION_PERM: Record<
+  MsgTypePERM,
+  (id: string | number | undefined, code?: number, msg?: string) => string
+> = {
+  MsgStartPermissionVP: (id, code, msg) =>
+    t('notification.MsgStartPermissionVP.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgRenewPermissionVP: (id, code, msg) =>
+    t('notification.MsgRenewPermissionVP.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgSetPermissionVPToValidated: (id, code, msg) =>
+    t('notification.MsgSetPermissionVPToValidated.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgCancelPermissionVPLastRequest: (id, code, msg) =>
+    t('notification.MsgCancelPermissionVPLastRequest.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgCreateRootPermission: (id, code, msg) =>
+    t('notification.MsgCreateRootPermission.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgExtendPermission: (id, code, msg) =>
+    t('notification.MsgExtendPermission.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgRevokePermission: (id, code, msg) =>
+    t('notification.MsgRevokePermission.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgCreateOrUpdatePermissionSession: (id, code, msg) =>
+    t('notification.MsgCreateOrUpdatePermissionSession.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgSlashPermissionTrustDeposit: (id, code, msg) =>
+    t('notification.MsgSlashPermissionTrustDeposit.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgRepayPermissionSlashedTrustDeposit: (id, code, msg) =>
+    t('notification.MsgRepayPermissionSlashedTrustDeposit.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgCreatePermission: (id, code, msg) =>
+    t('notification.MsgCreatePermission.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
 };

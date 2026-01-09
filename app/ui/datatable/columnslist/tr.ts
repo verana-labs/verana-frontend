@@ -13,6 +13,18 @@ export interface TrList {
   modified: string;
   aka: string;
   role: string;
+  deposit: string;
+  versions?: {
+    id: string;
+    version: number;
+    active_since: string;
+    documents?: {
+      id: string;
+      url: string;
+      language: string;
+    }[];
+  }[];
+  active_version?: number;
 }
 
 const roleFilterOptions = [
@@ -34,9 +46,9 @@ export const columnsTrList: Column<TrList>[] = [
   { header: t("datatable.tr.header.id"), accessor: "id"},
   { header: t("datatable.tr.header.did"), accessor: "did", format: (value) => shortenMiddle(String(value), 30) },
   { header: t("datatable.tr.header.controller"), accessor: "controller", format: (value) => shortenMiddle(String(value), 25), priority: 2 },
-  { header: t("datatable.tr.header.created"), accessor: "created", format: (value) => formatDate(value), priority: 4 },
-  { header: t("datatable.tr.header.modified"), accessor: "modified", format: (value) => formatDate(value), priority: 1 },
-  { header: t("datatable.tr.header.role"), accessor: "role", format: (value) => getRoleLabels(value), isHtml: true, viewMobileRight: true},
+  { header: t("datatable.tr.header.created"), accessor: "created", format: (value) => formatDate(value as string), priority: 4 },
+  { header: t("datatable.tr.header.modified"), accessor: "modified", format: (value) => formatDate(value as string), priority: 1 },
+  { header: t("datatable.tr.header.role"), accessor: "role", format: (value) => getRoleLabels(value as string), isHtml: true, viewMobileRight: true},
 ];
 
 

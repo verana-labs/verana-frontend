@@ -15,9 +15,16 @@
   "tr.desc": "Gestión del registro de confianza y del marco de gobernanza del ecosistema.",
   "tr.cs.add.title": "Nuevo Esquema de Credenciales",
   "tr.add.title": "Nuevo Registro de Confianza",
+  "task.title": "Tareas Pendientes",
+
   "discover.title": "Descubre & Unete",
   "discover.description": "Explora, descubre y únete a ecosistemas existentes.",
-  "task.title": "Tareas Pendientes",
+  "discover.search.placeholder": "Buscar ecosistema por DID...",
+  "discover.cs.label": "Esquemas de Credentiales",
+  "discover.td.label": "Deposito",
+  "discover.btn.egf": "EGF",
+  "discover.btn.view": "Ver Ecosistema",
+  "discover.btn.join": "Unirse a Ecosistema",
 
   "meta.title.template": "%s · Verana",
   "meta.root.title": "Tablero de Verana",

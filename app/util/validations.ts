@@ -30,6 +30,11 @@ export function isValidHttpUrl(url: string): boolean {
   }
 }
 
+export function isValidCountryCode(code: string): boolean {
+  // ISO 3166-1 alpha-2: two capital letters
+  return /^[A-Z]{2}$/.test(code);
+}
+
 export function isValidField(field: DataField<any>, value: unknown): boolean { // eslint-disable-line @typescript-eslint/no-explicit-any
   const validation = field.validation;
   const isEmptyString = typeof value === 'string' && value.trim() === '';

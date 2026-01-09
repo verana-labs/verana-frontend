@@ -8,13 +8,23 @@ import { ApiErrorResponse } from '@/types/apiErrorResponse';
 import { CsList } from '@/ui/datatable/columnslist/cs';
 
 type RawSchema = Record<string, unknown> & {
-  id?: string | number;
+  id?: number;
+  tr_id?: string | number;
+  json_schema?: string;
+  deposit?: string;
+  issuer_grantor_validation_validity_period?: number;
+  verifier_grantor_validation_validity_period?: number;
+  issuer_validation_validity_period?: number;
+  verifier_validation_validity_period?: number;
+  holder_validation_validity_period?: number;
+  issuer_perm_management_mode?: string;
+  verifier_perm_management_mode?: string;
+  archived?: string;
   created?: string;
   modified?: string;
-  json_schema?: string;
 };
 
-export function useCSList(trId: string) {
+export function useCSList(trId?: string, all: boolean = true) {
 
   const getURL =
     env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA') ||
@@ -26,7 +36,7 @@ export function useCSList(trId: string) {
 
   const fetchCS = async () => {
 
-    if (!trId || !getURL) {
+    if ((!all && !trId) || !getURL) {
       setError(resolveTranslatable({key: "error.fetch.cs"}, translate)?? 'Missing TR id or endpoint URL');
       setLoading(false);
       return;
@@ -35,7 +45,7 @@ export function useCSList(trId: string) {
     // Reset state when inputs change
     setError(null);
     setCsList([]);
-    const url = `${getURL}/list?tr_id=${trId}`;
+    const url = ( trId == undefined && all )? `${getURL}/list` : `${getURL}/list?tr_id=${trId}`;
     try {
       setLoading(true);
       const res = await fetch(url);
@@ -61,11 +71,18 @@ export function useCSList(trId: string) {
           'Schema';
         return {
           id: (src.id)?.toString() ?? '',
+          trId: (src.tr_id)?.toString() ?? '',
           created: src.created ?? '',
           modified: src.modified ?? '',
+          issuerPermManagementMode: src.issuer_perm_management_mode ?? '',
+          verifierPermManagementMode: src.verifier_perm_management_mode ?? '',
+          issuerValidationValidityPeriod: src.issuer_grantor_validation_validity_period ?? 0,
+          verifierValidationValidityPeriod: src.verifier_grantor_validation_validity_period ?? 0,
+          jsonSchema: src.json_schema ?? '',
           title: titleCandidate,
           description: "",
-          role: ""
+          role: "",
+          participants: 0
         };
       });
       setCsList(list);
