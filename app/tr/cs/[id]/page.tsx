@@ -8,9 +8,8 @@ import EditableDataView from '@/ui/common/data-edit';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
-import { CsData } from '@/types/dataViewTypes';
 import { useCsData } from '@/hooks/useCredentialSchemaData';
-import { csSections } from '@/ui/dataview/datasections/cs';
+import { CsData, csSections } from '@/ui/dataview/datasections/cs';
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject';
 import { DataType, getMsgTypeFor } from '@/msg/constants/msgTypeForDataType';
 

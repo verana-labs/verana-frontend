@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getDictionary } from '@/i18n/dataview';
+import { redirect } from "next/navigation";
 
 const dict = getDictionary();
 
@@ -9,12 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return (
-    <>
-      <h1 className="text-2xl font-bold mb-6">Home</h1>
-      <div className="p-6 bg-white dark:bg-zinc-900 rounded-xl shadow">
-        <p>Verana</p>
-      </div>
-    </>
-  );
+  redirect("/dashboard");
 }

@@ -19,7 +19,7 @@ type ResponseWrappedSchema = { schema: { tr_id: string | number } };
 
 type ResponseWrappedTr = { trust_registry: TrList };
 
-export function useTrustRegistries () {
+export function useTrustRegistries (all: boolean = false) {
   const veranaChain = useVeranaChain();
   const { address, isWalletConnected, getStargateClient } = useChain(veranaChain.chain_name);
 
@@ -47,7 +47,7 @@ export function useTrustRegistries () {
     setTrList([]);
     try {
       setLoading(true);
-      const urlTrList = `${getTrURL}/list?controller=${address}&response_max_size=1024`;
+      const urlTrList = all ? `${getTrURL}/list` : `${getTrURL}/list?controller=${address}&response_max_size=1024`;
       const resTrList = await fetch(urlTrList);
       const jsonTrList = await resTrList.json();
       if (!resTrList.ok){
@@ -56,6 +56,11 @@ export function useTrustRegistries () {
         return;
       } 
       const trListController: TrList[] = Array.isArray(jsonTrList.trust_registries) ? jsonTrList.trust_registries : [];
+      if (all){
+        setTrList(trListController);
+        return;
+      }
+      
       const seenTrIds = new Map<string, string>();
       trListController.forEach(tr => {
         if (tr.id != null) seenTrIds.set(String(tr.id), "");
@@ -111,7 +116,6 @@ export function useTrustRegistries () {
         return { ...tr, role: rolesStr };
       });
       setTrList(trListAll);
-
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);

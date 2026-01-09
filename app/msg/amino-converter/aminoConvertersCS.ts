@@ -7,7 +7,6 @@ import {
   MsgArchiveCredentialSchema,
 } from 'proto-codecs/codec/verana/cs/v1/tx';
 import { u64ToStr, strToU64, u32ToAmino, fromOptU32Amino, toOptU32Amino } from '@/util/aminoHelpers';
-import Long from "long";
 
 /**
  * Amino converter for MsgCreateCredentialSchema

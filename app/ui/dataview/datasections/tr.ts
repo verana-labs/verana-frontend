@@ -16,6 +16,7 @@ export interface TrData {
   role?: string;
   created?: string;
   modified?: string;
+  archived?: string;
   active_version?: number;
   schemas?: string;
   docs?: string[];
@@ -33,6 +34,7 @@ export interface TrData {
   }[];
   last_version?: number;
   csList?: CsData[];
+  participants?: number;
 }
 
 // Sections configuration for TrData

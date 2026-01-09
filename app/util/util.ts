@@ -50,6 +50,18 @@ export function formatDate( input: Date | string | number ): string {
   return date;
 }
 
+export function formatLongDateUserLocale(date: Date | string) {
+  const d = typeof date === "string" ? new Date(date) : date;
+
+  if (Number.isNaN(d.getTime())) return "";
+
+  return d.toLocaleDateString(undefined, {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 export function isExpired (input: Date | string | number ): boolean {
   const cellDate = new Date(String(input));
   const today = new Date();

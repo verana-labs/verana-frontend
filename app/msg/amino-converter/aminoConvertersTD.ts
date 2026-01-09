@@ -6,7 +6,7 @@ import {
   MsgReclaimTrustDeposit,
   MsgRepaySlashedTrustDeposit,
 } from 'proto-codecs/codec/verana/td/v1/tx'
-import Long from 'long';
+import { strToU64, u64ToStr } from '@/util/aminoHelpers';
     
 /**
  * Amino converter for MsgReclaimTrustDeposit
@@ -15,12 +15,12 @@ export const MsgReclaimTrustDepositAminoConverter = {
   aminoType: '/verana.td.v1.MsgReclaimTrustDeposit',
   toAmino: ({ creator, claimed }: MsgReclaimTrustDeposit) => ({
     creator,
-    claimed: claimed != null ? claimed.toString() : undefined // uint64 -> string
+    claimed: u64ToStr(claimed) // uint64 -> string
   }),
   fromAmino: (value: { creator: string; claimed: number }) =>      
     MsgReclaimTrustDeposit.fromPartial({
       creator: value.creator,
-      claimed: value.claimed != null ? Long.fromString(value.claimed.toString()) : undefined // string -> Long (uint64)
+      claimed: strToU64(value.claimed.toString()) // string -> Long (uint64)
     }),
 }
 
@@ -46,13 +46,13 @@ export const MsgRepaySlashedTrustDepositAminoConverter: AminoConverter = {
   toAmino: ({ creator, account, amount }: MsgRepaySlashedTrustDeposit) => ({
     creator,
     account,
-    amount: amount != null ? amount.toString() : undefined // uint64 -> string
+    amount: u64ToStr(amount) // uint64 -> string
   }),
   fromAmino: (value: { creator: string; account: string; amount: string }) =>
     MsgRepaySlashedTrustDeposit.fromPartial({
       creator: value.creator,
       account: value.account,
-      amount: value.amount != null ? Long.fromString(value.amount) : undefined // string -> Long (uint64)
+      amount: strToU64(value.amount) // string -> Long (uint64)
     }),
 }
 

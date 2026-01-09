@@ -19,6 +19,10 @@ export const languageOptions = [
   { value: "fr", label: t("dataview.gfd.fields.language.option.fr") },
 ];
 
+export function getLabelByValue(value?: string) {
+  return languageOptions.find((o) => o.value === value)?.label ?? "";
+}
+
 // Sections configuration for GfdData
 export const gfdSections: Section<GfdData>[] = [
   {
