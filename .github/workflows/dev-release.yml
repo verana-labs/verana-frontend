@@ -2,7 +2,7 @@ name: Dev Pre-release (semantic-release)
 
 on:
   push:
-    branches: [main, 'release/**']
+    branches: [main, "release/**"]
 
 jobs:
   dev-release:
@@ -85,25 +85,30 @@ jobs:
             ${{ secrets.DOCKER_HUB_LOGIN }}/verana-front:dev
             ${{ secrets.DOCKER_HUB_LOGIN }}/verana-front:v${{ steps.semantic.outputs.release-major }}-dev
             ${{ secrets.DOCKER_HUB_LOGIN }}/verana-front:v${{ steps.semantic.outputs.release-major }}.${{ steps.semantic.outputs.release-minor }}-dev
-            ${{ secrets.DOCKER_HUB_LOGIN }}/verana-front:v${{ steps.semantic.outputs.release-major }}.${{ steps.semantic.outputs.release-minor }}.${{ steps.semantic.outputs.release-patch }}
             ${{ secrets.DOCKER_HUB_LOGIN }}/verana-front:v${{ steps.semantic.outputs.release-version }}
 
       - name: Set up kubectl
         if: steps.semantic.outputs.new-release-published == 'true'
         uses: azure/setup-kubectl@v4
         with:
+          version: "latest"
+
+      - uses: azure/k8s-set-context@v4
+        if: steps.semantic.outputs.new-release-published == 'true'
+        with:
+          method: kubeconfig
           kubeconfig: ${{ secrets.OVH_KUBECONFIG }}
 
       - name: Set up Helm
         if: steps.semantic.outputs.new-release-published == 'true'
         uses: azure/setup-helm@v3
 
-      - name: Uninstall previous release
+      - name: Deploy (Helm upgrade --install)
         if: steps.semantic.outputs.new-release-published == 'true'
         run: |
-          helm uninstall verana-frontend --namespace vna-testnet-1 || true
-
-      - name: Install fresh release
-        if: steps.semantic.outputs.new-release-published == 'true'
-        run: |
-          helm install -n vna-testnet-1 verana-frontend ./charts
+          helm upgrade --install verana-frontend ./charts \
+            -n vna-testnet-1 \
+            --create-namespace \
+            --wait \
+            --atomic \
+            --timeout 20m
