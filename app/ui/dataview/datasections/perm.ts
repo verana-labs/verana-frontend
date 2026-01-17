@@ -50,4 +50,10 @@ export interface Permission {
   vp_exp: string;   // ISO datetime
   vp_validator_deposit: string;
   vp_term_requested: string;    // ISO datetime
+  perm_state: string;
+  grantee_available_actions: string[];
+  validator_available_actions: string[];
+  weight: string;
+  issued: string;
+  verified: string;
 }

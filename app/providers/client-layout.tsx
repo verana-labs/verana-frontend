@@ -31,7 +31,7 @@ export default function ClientLayout({ trustDepositParams, children }: { trustDe
               {/* Content */}
               <TrustDepositParamsProvider value={trustDepositParams}>
                 <div className="app-content">
-                  <main className="app-content-inner h-full overflow-y-auto">
+                  <main id="app-scroll" className="app-content-inner h-full overflow-y-auto">
                       {children}
                   </main>
                 </div>

@@ -109,6 +109,10 @@ export default function DiscoverJoinPage() {
       setPage(1);
     }, [search]);
 
+    useEffect(() => {
+      document.getElementById("app-scroll")?.scrollTo({ top: 0, behavior: "smooth" });
+    }, [page]);
+
     // Refresh trList
     const [refresh, setRefresh] = useState<boolean>(false);
     useEffect(() => {

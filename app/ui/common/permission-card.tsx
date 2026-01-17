@@ -1,7 +1,7 @@
 'use client';
 
 import { IconProp } from "@fortawesome/fontawesome-svg-core";
-import { PermissionRole, statusBadgeClass, TreeNode } from "./permission-tree";
+import { PermissionType, permStateBadgeClass, PermState, TreeNode } from "./permission-tree";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBan,
@@ -24,7 +24,7 @@ type PermissionCardProps = {
   path: TreeNode[]
 };
 
-function roleBadgeClass(role: PermissionRole) {
+function roleBadgeClass(role: PermissionType) {
   switch (role) {
     case "ECOSYSTEM":
       return "bg-purple-100 text-purple-800";
@@ -127,25 +127,26 @@ export default function PermissionCard({
   console.info("selectedNode: ", selectedNode);
   return (
     <section className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6">
+    {selectedNode.permission && (
+      <>
       <div className="mb-6">
         <div className="flex items-start justify-between mb-3">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{selectedNode.name}</h2>
           <div className="flex items-center space-x-2">
             <span
               className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${roleBadgeClass(
-                selectedNode.role
+                selectedNode.permission.type
               )}`}
             >
-              {selectedNode.role}
+              {selectedNode.permission.type}
             </span>
 
-            {selectedNode.status ? (
+            {selectedNode.permission.perm_state ? (
               <span
-                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusBadgeClass(
-                  selectedNode.status
-                )}`}
+                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${permStateBadgeClass(
+                  selectedNode.permission.perm_state as PermState,false)}`}
               >
-                {selectedNode.status}
+                {selectedNode.permission.perm_state}
               </span>
             ) : null}
           </div>
@@ -167,39 +168,39 @@ export default function PermissionCard({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Meta
               label="DID"
-              value={selectedNode.detail?.did ?? "—"}
+              value={selectedNode.permission?.did ?? "—"}
               mono
               actions={[
-                { icon: faCopy, label: "copy", onClick: () => navigator.clipboard.writeText(selectedNode.detail?.did ?? "") },
+                { icon: faCopy, label: "copy", onClick: () => navigator.clipboard.writeText(selectedNode.permission?.did ?? "") },
                 { icon: faEye, label: "visualizer", onClick: () => console.log("visualizer DID") },
                 { icon: faUpRightFromSquare, label: "service", onClick: () => console.log("service") },
               ]}
             />
             <Meta
               label="Grantee"
-              value={selectedNode.detail?.grantee ?? "—"}
+              value={selectedNode.permission?.grantee ?? "—"}
               mono
               actions={[
-                { icon: faCopy, label: "copy", onClick: () => navigator.clipboard.writeText(selectedNode.detail?.grantee ?? "") },
+                { icon: faCopy, label: "copy", onClick: () => navigator.clipboard.writeText(selectedNode.permission?.grantee ?? "") },
                 { icon: faEye, label: "visualizer", onClick: () => console.log("visualizer grantee") },
                 { icon: faUpRightFromSquare, label: "explorer", onClick: () => window.open("https://explorer.verana.io", "_blank") },
               ]}
             />
             <Meta
               label="ID"
-              value={selectedNode.detail?.permissionId ?? "—"}
+              value={selectedNode.permission?.id ?? "—"}
               mono
               actions={[
-                { icon: faCopy, label: "copy", onClick: () => navigator.clipboard.writeText(selectedNode.detail?.permissionId ?? "") },
+                { icon: faCopy, label: "copy", onClick: () => navigator.clipboard.writeText(selectedNode.permission?.id ?? "") },
                 { icon: faEye, label: "visualizer", onClick: () => console.log("visualizer id") },
               ]}
             />
-            <Meta label="Deposit" value={selectedNode.detail?.deposit ?? "—"} mono />
-            <Meta label="Effective From" value={selectedNode.detail?.effectiveFrom ?? "—"} />
-            <Meta label="Effective Until" value={selectedNode.detail?.effectiveUntil ?? "—"} />
-            <Meta label="Country" value={selectedNode.detail?.country ?? "—"} />
-            <Meta label="Issued Credentials" value={selectedNode.detail?.issuedCredentials ?? "—"} />
-            <Meta label="Verified Credentials" value={selectedNode.detail?.verifiedCredentials ?? "—"} />
+            <Meta label="Deposit" value={selectedNode.permission?.deposit ?? "—"} mono />
+            <Meta label="Effective From" value={selectedNode.permission?.effective_from ?? "—"} />
+            <Meta label="Effective Until" value={selectedNode.permission?.effective_until ?? "—"} />
+            <Meta label="Country" value={selectedNode.permission?.country ?? "—"} />
+            <Meta label="Issued Credentials" value={selectedNode.permission?.issued ?? "—"} />
+            <Meta label="Verified Credentials" value={selectedNode.permission?.verified ?? "—"} />
           </div>
         </div>
 
@@ -208,12 +209,12 @@ export default function PermissionCard({
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Permission Lifecycle</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <Meta label="Created" value={selectedNode.detail?.created ?? "—"} />
-            <Meta label="Created By" value={selectedNode.detail?.createdBy ?? "—"} mono />
-            <Meta label="Modified" value={selectedNode.detail?.modified ?? "—"} />
-            <Meta label="Modified By" value={selectedNode.detail?.modifiedBy ?? "—"} mono />
-            <Meta label="Extended" value={selectedNode.detail?.extended ?? "—"} />
-            <Meta label="Extended By" value={selectedNode.detail?.extendedBy ?? "—"} mono />
+            <Meta label="Created" value={selectedNode.permission?.created ?? "—"} />
+            <Meta label="Created By" value={selectedNode.permission?.created_by ?? "—"} mono />
+            <Meta label="Modified" value={selectedNode.permission?.modified ?? "—"} />
+            <Meta label="Modified By" value={selectedNode.permission?.modified ?? "—"} mono />
+            <Meta label="Extended" value={selectedNode.permission?.extended ?? "—"} />
+            <Meta label="Extended By" value={selectedNode.permission?.extended_by ?? "—"} mono />
           </div>
 
           <div className="flex flex-wrap gap-3 mt-4">
@@ -246,12 +247,12 @@ export default function PermissionCard({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <Meta label="VP Expiration" value={selectedNode.detail?.vpExpiration ?? "—"} />
-            <Meta label="VP Last State Change" value={selectedNode.detail?.vpLastStateChange ?? "—"} />
-            <Meta label="VP Validator Deposit" value={selectedNode.detail?.vpValidatorDeposit ?? "—"} mono />
-            <Meta label="VP Current Fees" value={selectedNode.detail?.vpCurrentFees ?? "—"} mono />
-            <Meta label="VP Current Deposit" value={selectedNode.detail?.vpCurrentDeposit ?? "—"} mono />
-            <Meta label="VP Summary Digest" value={selectedNode.detail?.vpSummaryDigest ?? "—"} mono />
+            <Meta label="VP Expiration" value={selectedNode.permission?.vp_exp ?? "—"} />
+            <Meta label="VP Last State Change" value={selectedNode.permission?.vp_last_state_change ?? "—"} />
+            <Meta label="VP Validator Deposit" value={selectedNode.permission?.vp_validator_deposit ?? "—"} mono />
+            <Meta label="VP Current Fees" value={selectedNode.permission?.vp_current_fees ?? "—"} mono />
+            <Meta label="VP Current Deposit" value={selectedNode.permission?.vp_current_deposit ?? "—"} mono />
+            <Meta label="VP Summary Digest" value={selectedNode.permission?.vp_summary_digest_sri ?? "—"} mono />
           </div>
 
           <div className="flex flex-wrap gap-3 mt-4">
@@ -286,9 +287,9 @@ export default function PermissionCard({
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Business Models</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Meta label="Validation Fees" value={selectedNode.detail?.validationFees ?? "—"} mono />
-            <Meta label="Issuance Fees" value={selectedNode.detail?.issuanceFees ?? "—"} mono />
-            <Meta label="Verification Fees" value={selectedNode.detail?.verificationFees ?? "—"} mono />
+            <Meta label="Validation Fees" value={selectedNode.permission?.validation_fees ?? "—"} mono />
+            <Meta label="Issuance Fees" value={selectedNode.permission?.issuance_fees ?? "—"} mono />
+            <Meta label="Verification Fees" value={selectedNode.permission?.verification_fees ?? "—"} mono />
           </div>
         </div>
 
@@ -296,8 +297,8 @@ export default function PermissionCard({
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Slashing</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <Meta label="Slashed Deposit" value={selectedNode.detail?.slashedDeposit ?? "—"} mono />
-            <Meta label="Repaid Deposit" value={selectedNode.detail?.repaidDeposit ?? "—"} mono />
+            <Meta label="Slashed Deposit" value={selectedNode.permission?.slashed_deposit ?? "—"} mono />
+            <Meta label="Repaid Deposit" value={selectedNode.permission?.repaid_deposit ?? "—"} mono />
           </div>
           <div className="flex flex-wrap gap-3 mt-4">
             <button
@@ -347,6 +348,8 @@ export default function PermissionCard({
           </div>
         </div>
       </div>
+      </> 
+    )}
     </section>
   );
 }

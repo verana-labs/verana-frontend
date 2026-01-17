@@ -6,7 +6,7 @@ import { isJson } from '@/util/util';
 import JsonCodeBlock from '@/ui/common/json-code-block';
 import { translateSections } from '@/ui/dataview/types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronDown, faChevronUp, faEdit } from '@fortawesome/free-solid-svg-icons';
+import { faChevronDown, faChevronUp, faEdit, faSitemap } from '@fortawesome/free-solid-svg-icons';
 import clsx from "clsx"
 import IconLabelButton from './icon-label-button';
 import { renderActionComponent } from './data-view-typed';
@@ -18,7 +18,8 @@ export default function DataView<T extends object>({
   onEdit,
   onRefresh,
   onBack,
-  // showSectionTitle
+  // showSectionTitle,
+  otherButton
 }: DataViewProps<T>) {
 
   const sections = translateSections(sectionsI18n);
@@ -91,14 +92,17 @@ export default function DataView<T extends object>({
                 { section.name?.trim() && (
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="data-view-section-title text-lg">{section.name}</h3>
-                    { onEdit && (
-                    <div className="actions-right">
+                    { (onEdit || otherButton) && (
+                    <div className="actions-right gap-3">
+                      {otherButton ? otherButton : null}
+                      { onEdit && (
                       <IconLabelButton
                         icon={faEdit}
                         label={"Edit"}
                         onClick={() => onEdit?.()}
                         className="btn-link px-3 py-1.5"
                       />
+                      )}
                     </div>
                     )}
                 </div>

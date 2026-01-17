@@ -138,6 +138,7 @@ export interface DataViewProps<T extends object> {
   onRefresh?: () => void;
   onBack?:() => void;
   showSectionTitle?: string;
+  otherButton?: React.ReactNode;
 }
 
 /* Base field shared by all field types */
