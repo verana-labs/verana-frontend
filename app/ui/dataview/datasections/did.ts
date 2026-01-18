@@ -71,9 +71,9 @@ export const didSections: Section<DidData>[] = [
     // name: t("dataview.did.sections.actions"),
     type: "actions",
     fields: [
-      { name: "renewDID", label: t("dataview.did.actions.renew.label"), type: "action", description: t("dataview.did.actions.renew.desc"), icon: faCalendarPlus, iconClass: "bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400" },
-      { name: "touchDID", label: t("dataview.did.actions.touch.label"), type: "action", description: t("dataview.did.actions.touch.desc"), icon: faHandPointer, iconClass: "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400" },
-      { name: "removeDID", label: t("dataview.did.actions.remove.label"), type: "action", description: t("dataview.did.actions.remove.desc"), icon: faTrash, iconClass: "bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400", isWarning: true },
+      { name: "renewDID", label: t("dataview.did.actions.renew.label"), type: "action", description: t("dataview.did.actions.renew.desc"), icon: faCalendarPlus, iconClass: "bg-green-100 dark:bg-green-900/20", iconColorClass: "text-green-600 dark:text-green-400" },
+      { name: "touchDID", label: t("dataview.did.actions.touch.label"), type: "action", description: t("dataview.did.actions.touch.desc"), icon: faHandPointer, iconClass: "bg-blue-100 dark:bg-blue-900/20", iconColorClass: "text-blue-600 dark:text-blue-400" },
+      { name: "removeDID", label: t("dataview.did.actions.remove.label"), type: "action", description: t("dataview.did.actions.remove.desc"), icon: faTrash, iconClass: "bg-red-100 dark:bg-red-900/20", iconColorClass: "text-red-600 dark:text-red-400", isWarning: true },
     ],
   },
 ];

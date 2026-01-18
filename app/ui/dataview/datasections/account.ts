@@ -33,14 +33,16 @@ export const accountSections: Section<AccountData>[] = [
         label: t("dataview.account.fields.balance.label"), 
         description: t("dataview.account.fields.balance.desc"), 
         icon: faCoins,
-        iconClass: "bg-gradient-to-br from-primary-500 to-primary-700 text-white text-xl",
+        iconClass: "bg-gradient-to-br from-primary-500 to-primary-700",
+        iconColorClass: "text-white text-xl",
         usdValue: true, hasStats: true
       },
       { name: "totalTrustDeposit", type: "data",
         label: t("dataview.account.fields.totalTrustDeposit.label"),
         description: t("dataview.account.fields.totalTrustDeposit.desc"),
         icon: faShieldHalved,
-        iconClass: "bg-gradient-to-br from-blue-500 to-blue-700 text-white text-xl",
+        iconClass: "bg-gradient-to-br from-blue-500 to-blue-700",
+        iconColorClass: "text-white text-xl",
         usdValue: true, hasStats: true
       },
     ],
@@ -73,12 +75,14 @@ export const accountSections: Section<AccountData>[] = [
       { name: "getVNA", label: t("dataview.account.actions.getVNA.label"), type: "action",
         description: t("dataview.account.actions.getVNA.desc"), 
         icon: faPlus,
-        iconClass: "bg-gradient-to-br from-green-500 to-green-700 to-green-700 text-white"
+        iconClass: "bg-gradient-to-br from-green-500 to-green-700",
+        iconColorClass: "text-white"
       },
       { name: "claimInterests", label: t("dataview.account.actions.claimInterests.label"), type: "action",
         description: t("dataview.account.actions.claimInterests.desc"), 
         icon: faCoins,
-        iconClass: "bg-gradient-to-br from-orange-500 to-orange-700 text-white"
+        iconClass: "bg-gradient-to-br from-orange-500 to-orange-700",
+        iconColorClass: "text-white"
       },
       // { name: "reclaimDeposit", label: t("dataview.account.actions.reclaimDeposit"), type: "action" }
     ],
