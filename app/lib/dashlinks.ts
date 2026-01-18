@@ -45,7 +45,7 @@ const veranaLinks : DashLink[] = [
 const communityLinks : DashLink[] = [
   {icon: faGithub, href: 'https://github.com/verana-labs'},
   {icon: faXTwitter, href: 'https://x.com/Verana_io'},
-  {icon: faLinkedin, href: 'https://x.com/Verana_io'},
+  {icon: faLinkedin, href: 'https://www.linkedin.com/company/105558934'},
 
   {icon: faDiscord, href: 'https://discord.gg/edjaFn252q'},
 /*  {icon: faEnvelope, href: 'mailto:hello@verana.io'},*/
