@@ -20,6 +20,8 @@ export default function CardView<T>({ field, data, largeTexts }: CardViewProps<T
     const trustUnitPrice = useTrustDepositParams().trustUnitPrice;
     const conversionFactorUSDfromVNA = 1_000_000 / Number(trustUnitPrice);
     const valueUSD = field.usdValue ? formatUSDfromUVNA(value.split('VNA')[0], conversionFactorUSDfromVNA) : null;
+    const iconWrapperClass = field.iconClass ?? '';
+    const iconColorClass = field.iconColorClass ?? field.iconClass ?? '';
   return (
     <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 overflow-hidden">
         <div className="p-6">
@@ -27,15 +29,15 @@ export default function CardView<T>({ field, data, largeTexts }: CardViewProps<T
             (largeTexts) ? (
                 <>
                 <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center">
-                        { field.icon && (
-                        <div className= {clsx("w-12 h-12 rounded-xl flex items-center justify-center mr-4", field.iconClass)}>
-                            <FontAwesomeIcon icon={field.icon} className={field.iconClass?? ""}/>
+                        <div className="flex items-center">
+                            { field.icon && (
+                        <div className= {clsx("w-12 h-12 rounded-xl flex items-center justify-center mr-4", iconWrapperClass)}>
+                            <FontAwesomeIcon icon={field.icon} className={iconColorClass}/>
                         </div>
-                        )}
-                        <div>
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{field.label}</h3>
-                            <p className="text-sm text-neutral-70 dark:text-neutral-70">{field.description}</p>
+                            )}
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{field.label}</h3>
+                                <p className="text-sm text-neutral-70 dark:text-neutral-70">{field.description}</p>
                         </div>
                     </div>
                 </div>
@@ -74,14 +76,14 @@ export default function CardView<T>({ field, data, largeTexts }: CardViewProps<T
                 </>
                 )
             : (
-            <div className="flex items-center">
-                <div className="flex-shrink-0">
-                    { field.icon && (
-                    <div className= {clsx("w-12 h-12 rounded-xl flex items-center justify-center", field.iconClass)}>
-                        <FontAwesomeIcon icon={field.icon} className={field.iconClass?? ""}/>
+                <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                        { field.icon && (
+                    <div className= {clsx("w-12 h-12 rounded-xl flex items-center justify-center", iconWrapperClass)}>
+                        <FontAwesomeIcon icon={field.icon} className={iconColorClass}/>
                     </div>
-                    )}
-                </div>
+                        )}
+                    </div>
                 <div className="ml-4 flex-1 min-w-0">
                     <p className="text-sm font-medium text-neutral-70 dark:text-neutral-70">{field.label}</p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white font-mono">{value}</p>

@@ -44,7 +44,7 @@ export default function DataView<T extends object>({
           <div className="flex items-center">
             { field.icon && (
             <div className= {clsx("w-10 h-10 rounded-lg flex items-center justify-center mr-3", field.iconClass)}>
-              <FontAwesomeIcon icon={field.icon} className={field.iconClass?? ""}/>
+              <FontAwesomeIcon icon={field.icon} className={field.iconColorClass ?? field.iconClass ?? ""}/>
             </div>
             )}
             <div>
@@ -177,4 +177,3 @@ export default function DataView<T extends object>({
   );
 
 }
-
