@@ -32,27 +32,33 @@ export const dashboardSections: Section<DashboardData>[] = [
       // { name: "walletPrettyName", label: t("dataview.dashboard.fields.walletPrettyName"), type: "data" },
       { name: "blockHeight", label: t("dataview.dashboard.fields.blockHeight"), type: "data",
         icon: faCubes,
-        iconClass: "bg-accent-100 dark:bg-accent-900/20 text-accent-600 dark:text-accent-400 text-xl"
+        iconClass: "bg-accent-100 dark:bg-accent-900/20",
+        iconColorClass: "text-accent-600 dark:text-accent-400 text-xl"
       },
       { name: "totalDIDs", label: t("dataview.dashboard.fields.totalDIDs"), type: "data",
         icon: faIdCard,
-        iconClass: "bg-primary-100 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 ttext-xl"
+        iconClass: "bg-primary-100 dark:bg-primary-900/20",
+        iconColorClass: "text-primary-600 dark:text-primary-400 text-xl"
       },
       { name: "trustRegistries", label: t("dataview.dashboard.fields.trustRegistries"), type: "data",
         icon: faShieldHalved,
-        iconClass: "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xl"
+        iconClass: "bg-blue-100 dark:bg-blue-900/20",
+        iconColorClass: "text-blue-600 dark:text-blue-400 text-xl"
       },
       { name: "participants", label: t("dataview.dashboard.fields.participants"), type: "data",
         icon: faUsers,
-        iconClass: "bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 text-xl"
+        iconClass: "bg-purple-100 dark:bg-purple-900/20",
+        iconColorClass: "text-purple-600 dark:text-purple-400 text-xl"
       },
       { name: "sessions", label: t("dataview.dashboard.fields.sessions"), type: "data",
         icon: faChartLine,
-        iconClass: "bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 text-xl"
+        iconClass: "bg-orange-100 dark:bg-orange-900/20",
+        iconColorClass: "text-orange-600 dark:text-orange-400 text-xl"
       },
        { name: "totalDepositValue", label: t("dataview.dashboard.fields.totalDepositValue"), type: "data",
         icon: faCoins,
-        iconClass: "bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 text-xl"
+        iconClass: "bg-green-100 dark:bg-green-900/20",
+        iconColorClass: "text-green-600 dark:text-green-400 text-xl"
       },
    ],
   },

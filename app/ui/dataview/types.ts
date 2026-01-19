@@ -150,6 +150,7 @@ type BaseField = {
   id?: boolean;
   icon?: any;
   iconClass?: string;
+  iconColorClass?: string;
 };
 
 /* Field validation params by all field types */
