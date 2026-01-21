@@ -9,6 +9,22 @@ import { ApiErrorResponse } from '@/types/apiErrorResponse';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
 
+/**
+ * Safely fetch JSON from a URL, throwing a clear error if the response is not JSON
+ */
+async function fetchJson<T>(url: string): Promise<{ data: T; response: Response }> {
+  const response = await fetch(url);
+  const contentType = response.headers.get('content-type');
+
+  if (!contentType || !contentType.includes('application/json')) {
+    const text = await response.text();
+    throw new Error(`Expected JSON from ${url} but got ${contentType || 'unknown'}: ${text.substring(0, 100)}...`);
+  }
+
+  const data = await response.json() as T;
+  return { data, response };
+}
+
 type RawPerm = {
   id: string | number;
   schema_id: string | number;
@@ -48,49 +64,45 @@ export function useTrustRegistries (all: boolean = false) {
     try {
       setLoading(true);
       const urlTrList = all ? `${getTrURL}/list` : `${getTrURL}/list?controller=${address}&response_max_size=1024`;
-      const resTrList = await fetch(urlTrList);
-      const jsonTrList = await resTrList.json();
-      if (!resTrList.ok){
-        const { error, code } = jsonTrList as ApiErrorResponse;
+      const { data: jsonTrList, response: resTrList } = await fetchJson<{ trust_registries?: TrList[] } & ApiErrorResponse>(urlTrList);
+      if (!resTrList.ok) {
+        const { error, code } = jsonTrList;
         setError(`Error ${code}: ${error}`);
         return;
-      } 
+      }
       const trListController: TrList[] = Array.isArray(jsonTrList.trust_registries) ? jsonTrList.trust_registries : [];
-      if (all){
+      if (all) {
         setTrList(trListController);
         return;
       }
-      
+
       const seenTrIds = new Map<string, string>();
       trListController.forEach(tr => {
         if (tr.id != null) seenTrIds.set(String(tr.id), "");
       });
 
       const urlPerm = `${permListURL}/list?grantee=${address}&only_valid=true`;
-      const resPerm = await fetch(urlPerm);
-      const jsonPerm = await resPerm.json();
-      if (!resPerm.ok){
-        const { error, code } = jsonPerm as ApiErrorResponse;
+      const { data: jsonPerm, response: resPerm } = await fetchJson<{ permissions?: RawPerm[] } & ApiErrorResponse>(urlPerm);
+      if (!resPerm.ok) {
+        const { error, code } = jsonPerm;
         setError(`Error ${code}: ${error}`);
         return;
-      } 
-      const perms: RawPerm[] = Array.isArray(jsonPerm?.permissions) ? jsonPerm.permissions: [];
-      
+      }
+      const perms: RawPerm[] = Array.isArray(jsonPerm?.permissions) ? jsonPerm.permissions : [];
+
       const trListPerm: TrList[] = [];
       for (const permission of perms) {
         const urlSchema = `${getCsURL}/get/${permission.schema_id}`;
-        const resSchema = await fetch(urlSchema);
-        const jsonSchema = await resSchema.json();
-        if (!resSchema.ok){
-          const { error, code } = jsonSchema as ApiErrorResponse;
+        const { data: jsonSchema, response: resSchema } = await fetchJson<ResponseWrappedSchema & ApiErrorResponse>(urlSchema);
+        if (!resSchema.ok) {
+          const { error, code } = jsonSchema;
           setError(`Error ${code}: ${error}`);
           return;
-        } 
-        const respSchema = jsonSchema as ResponseWrappedSchema;
-        const { tr_id } = respSchema.schema;
+        }
+        const { tr_id } = jsonSchema.schema;
         const trKey = String(tr_id);
         const trSeen = seenTrIds.get(trKey);
-        if (trSeen != undefined){
+        if (trSeen != undefined) {
           const perms = trSeen.split(",").filter(Boolean);
           if (!perms.includes(permission.type)) perms.push(permission.type);
           seenTrIds.set(trKey, perms.join(","));
@@ -99,14 +111,13 @@ export function useTrustRegistries (all: boolean = false) {
         seenTrIds.set(trKey, permission.type);
 
         const urlTr = `${getTrURL}/get/${tr_id}`;
-        const resTr = await fetch(urlTr);
-        const jsonTr = await resTr.json();
-        if (!resTr.ok){
-          const { error, code } = jsonTr as ApiErrorResponse;
+        const { data: jsonTr, response: resTr } = await fetchJson<ResponseWrappedTr & ApiErrorResponse>(urlTr);
+        if (!resTr.ok) {
+          const { error, code } = jsonTr;
           setError(`Error ${code}: ${error}`);
           return;
-        } 
-        const trEntry = (jsonTr as ResponseWrappedTr).trust_registry;
+        }
+        const trEntry = jsonTr.trust_registry;
         trListPerm.push(trEntry);
       }
       
