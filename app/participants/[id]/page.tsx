@@ -10,6 +10,7 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { useCsData } from "@/hooks/useCredentialSchemaData";
 import { useVeranaChain } from "@/hooks/useVeranaChain";
 import { useChain } from "@cosmos-kit/react";
+import { useTrustRegistryData } from "@/hooks/useTrustRegistryData";
 
 export default function ParicipantsPage() {
   
@@ -43,14 +44,12 @@ export default function ParicipantsPage() {
         setIdsPredecessor((prev) => {
           return [...prev, permission.id];
         });
-        return { icon: faCrown, iconColorClass: "text-grey-500" };
+        return { icon: faCrown, iconColorClass: "text-gray-500" };
       }
       else {
-        return { icon: faEye, iconColorClass: "text-grey-500" };
+        return { icon: faEye, iconColorClass: "text-gray-500" };
       }
   }
-
-
 
   type BuiltNode = Permission & { children: BuiltNode[] };
 
@@ -110,7 +109,7 @@ export default function ParicipantsPage() {
 
     return {
       nodeId: node.id,
-      name: node.did ? `${node.type} • ${node.did}` : node.type,
+      name: node.did ? node.did : node.type,
       group: false,
       roleColorClass: roleColorClass(node.type),
       icon,
@@ -130,13 +129,20 @@ export default function ParicipantsPage() {
   const {permissionsList} = usePermissions(schemaId);
   const [permissionsTree, setPermissionsTree] = useState<TreeNode[] | []>([]);
   const {csData} = useCsData(schemaId);
+  const {dataTR, refetch} = useTrustRegistryData(csData?.trId as string);
 
   useEffect(() => {
     const groupedTreeNodes = buildPermissionTreeGroupedByType(permissionsList);
     setPermissionsTree(groupedTreeNodes);
   }, [permissionsList]);
 
-  return csData ? <PermissionTree tree={permissionsTree} trId={csData.trId as string} /> : null;
+  useEffect(() => {
+    console.info("csData", csData)
+    refetch();
+    console.info("dataTR", dataTR)
+  }, [csData]);
+
+  return csData && dataTR ? <PermissionTree tree={permissionsTree} csData={csData} dataTr={dataTR} /> : null;
 
 };
 

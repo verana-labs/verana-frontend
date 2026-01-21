@@ -13,13 +13,14 @@ import {
 import PermissionCard from "./permission-card";
 import { Permission } from "../dataview/datasections/perm";
 import Link from "next/link";
-import { resolveTranslatable } from "../dataview/types";
-import { translate } from "@/i18n/dataview";
 import { formatVNA } from "@/util/util";
+import { CsData } from '@/ui/dataview/datasections/cs';
+import { TrData } from '@/ui/dataview/datasections/tr';
 
 type PermissionTreeProps = {
   tree: TreeNode[];
-  trId: string; 
+  csData: CsData; 
+  dataTr: TrData;
 };
 
 /** ------------ Types ------------ */
@@ -61,13 +62,13 @@ function findNodeAndPath(nodes: TreeNode[], id: string): { node?: TreeNode; path
 export function permStateBadgeClass(permState: PermState, expireSoon: boolean) {
   switch (permState) {
     case "REPAID":
-      return "bg-grey-100 text-red-800 dark:bg-grey-900/20 dark:text-red-300";
+      return "bg-gray-100 text-red-800 dark:bg-gray-900/20 dark:text-red-300";
     case "SLASHED":
       return "bg-red-900 text-red-100 dark:bg-red-300/20 dark:text-red-800";
     case "ACTIVE":
       return expireSoon? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300" : "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300";
     case "INACTIVE":
-      return "bg-grey-100 text-grey-800 dark:bg-grey-900/20 dark:text-grey-300";
+      return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300";
   }
 }
 
@@ -220,7 +221,7 @@ function Tree({
   );
 }
 
-export default function PermissionTree({ tree, trId }: PermissionTreeProps) {
+export default function PermissionTree({ tree, csData, dataTr }: PermissionTreeProps) {
   const [showWeight, setShowWeight] = useState(false);
   const [showBusiness, setShowBusiness] = useState(false);
   const [showStats, setShowStats] = useState(false);
@@ -267,7 +268,7 @@ export default function PermissionTree({ tree, trId }: PermissionTreeProps) {
             onClick={(e) => e.preventDefault()}
             className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
           >
-            Healthcare Trust Registry
+            {dataTr.did}
           </a>
           <FontAwesomeIcon icon={faChevronRight} className="mx-2 text-neutral-70 text-xs" />
           <a
@@ -275,7 +276,7 @@ export default function PermissionTree({ tree, trId }: PermissionTreeProps) {
             onClick={(e) => e.preventDefault()}
             className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
           >
-            Healthcare Credential Schema
+            {csData.title}
           </a>
           <FontAwesomeIcon icon={faChevronRight} className="mx-2 text-neutral-70 text-xs" />
           <span className="text-gray-900 dark:text-white font-medium">Participants</span>
@@ -324,7 +325,7 @@ export default function PermissionTree({ tree, trId }: PermissionTreeProps) {
         <div className="space-y-1">
           <Tree
             nodes={tree}
-            trId={trId}
+            trId={csData.trId as string}
             showWeight={showWeight}
             showBusiness={showBusiness}
             showStats={showStats}
@@ -347,7 +348,7 @@ export default function PermissionTree({ tree, trId }: PermissionTreeProps) {
 
       {/* Detail Card */}
       {selectedNode ? (
-        <PermissionCard selectedNode={selectedNode} path={path} />
+        <PermissionCard selectedNode={selectedNode} path={path} csData={csData} />
       ) : null}
     </>
   );

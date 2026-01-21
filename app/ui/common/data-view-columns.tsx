@@ -6,7 +6,7 @@ import { isJson } from '@/util/util';
 import JsonCodeBlock from '@/ui/common/json-code-block';
 import { translateSections } from '@/ui/dataview/types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronDown, faChevronUp, faEdit, faSitemap } from '@fortawesome/free-solid-svg-icons';
+import { faChevronDown, faChevronUp, faEdit } from '@fortawesome/free-solid-svg-icons';
 import clsx from "clsx"
 import IconLabelButton from './icon-label-button';
 import { renderActionComponent } from './data-view-typed';

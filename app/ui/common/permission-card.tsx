@@ -1,27 +1,20 @@
 'use client';
 
-import { IconProp } from "@fortawesome/fontawesome-svg-core";
 import { PermissionType, permStateBadgeClass, PermState, TreeNode } from "./permission-tree";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBan,
-  faCheck,
-  faClockRotateLeft,
-  faCopy,
-  faEye,
-  faHandHoldingDollar,
-  faPlay,
-  faPlus,
-  faRotate,
-  faTriangleExclamation,
-  faUpRightFromSquare,
-} from "@fortawesome/free-solid-svg-icons";
 import { useMemo } from "react";
+import { CsData } from "../dataview/datasections/cs";
+import { permissionActionLifecycle, permissionActionSlashing, permissionActionValidationProcess, permissionBusinessModels, permissionLifecycle, permissionMetaItems, permissionSlashing, permissionValidationProcess } from "../dataview/datasections/perm";
+import PermissionAttribute from "./permission-atrribute";
+import IconLabelButton from "./icon-label-button";
+import clsx from "clsx";
+import { usePermissionHistory } from "@/hooks/usePermissionHistory";
+import PermissionTimeline from "./permission-timeline";
 
 
 type PermissionCardProps = {
   selectedNode: TreeNode;
-  path: TreeNode[]
+  path: TreeNode[];
+  csData: CsData; 
 };
 
 function roleBadgeClass(role: PermissionType) {
@@ -43,88 +36,31 @@ function roleBadgeClass(role: PermissionType) {
   }
 }
 
-/** ------------ UI pieces ------------ */
-function Meta({
-  label,
-  value,
-  mono,
-  actions,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-  actions?: { icon: IconProp; label: string; onClick: () => void }[];
-}) {
-  return (
-    <div>
-      <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">{label}</label>
-      <p className={`text-sm ${mono ? "font-mono" : ""} text-gray-900 dark:text-white break-all`}>{value}</p>
-      {actions?.length ? (
-        <div className="flex items-center space-x-2 mt-1">
-          {actions.map((a) => (
-            <button
-              key={a.label}
-              onClick={a.onClick}
-              className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
-              type="button"
-            >
-              <FontAwesomeIcon icon={a.icon} className="mr-1" />
-              {a.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function TimelineItem({
-  icon,
-  iconClass,
-  title,
-  meta,
-  detail,
-}: {
-  icon: IconProp;
-  iconClass: string;
-  title: string;
-  meta: string;
-  detail: string;
-}) {
-  return (
-    <div className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-      <div className="w-8 h-8 bg-white/60 dark:bg-white/5 rounded-full flex items-center justify-center flex-shrink-0">
-        <FontAwesomeIcon icon={icon} className={`text-xs ${iconClass}`} />
-      </div>
-      <div className="flex-1">
-        <p className="text-sm font-medium text-gray-900 dark:text-white">{title}</p>
-        <p className="text-xs text-neutral-70 dark:text-neutral-70 mt-1">{meta}</p>
-        <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">{detail}</p>
-      </div>
-    </div>
-  );
-}
 
 export default function PermissionCard({
   selectedNode,
-  path
+  path,
+  csData
 }: PermissionCardProps) {
-  const onExtendPermission = () => console.log("extend permission");
-  const onRevokePermission = () => console.log("revoke permission");
-
-  const onRenewVP = () => console.log("renew VP");
-  const onCancelVP = () => console.log("cancel VP");
-  const onAcceptVP = () => console.log("accept VP");
-
-  const onSlashDeposit = () => console.log("slash deposit");
-  const onRepaySlash = () => console.log("repay slash",);
 
   const detailBreadcrumb = useMemo(() => {
     if (!path.length) return "";
-    return path.map((p) => p.name).slice(0, -1).join(" → ");
+    return path.filter((p) => !p.group).slice(0, -1).map((p) => p.name).join(" → ");
   }, [path]);
 
-  console.info("selectedNode: ", selectedNode);
+  const toMetaValue = (v: unknown): string => {
+    if (v == null) return "—";
+    if (Array.isArray(v)) return v.join(", ");
+    return String(v);
+  };
+
+  const granteeActions = selectedNode.permission?.grantee_available_actions ?? [];
+  const validatorActions = selectedNode.permission?.validator_available_actions ?? [];
+  const allowed = new Set<string>([...granteeActions, ...validatorActions]);
+
+  const permissionId = selectedNode.permission?.id as string;
+  const {permissionHistoryList} = usePermissionHistory(permissionId);
+
   return (
     <section className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6">
     {selectedNode.permission && (
@@ -154,11 +90,9 @@ export default function PermissionCard({
 
         <p className="text-sm text-neutral-70 dark:text-neutral-70 mb-2">
           {detailBreadcrumb}
-          {detailBreadcrumb ? " → " : ""}
-          {selectedNode.name}
         </p>
 
-        <p className="text-sm text-gray-700 dark:text-gray-300">Healthcare Credential Schema</p>
+        <p className="text-sm text-gray-700 dark:text-gray-300">{csData.title}</p>
       </div>
 
       <div className="space-y-8">
@@ -166,41 +100,20 @@ export default function PermissionCard({
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Key Metadata</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Meta
-              label="DID"
-              value={selectedNode.permission?.did ?? "—"}
-              mono
-              actions={[
-                { icon: faCopy, label: "copy", onClick: () => navigator.clipboard.writeText(selectedNode.permission?.did ?? "") },
-                { icon: faEye, label: "visualizer", onClick: () => console.log("visualizer DID") },
-                { icon: faUpRightFromSquare, label: "service", onClick: () => console.log("service") },
-              ]}
-            />
-            <Meta
-              label="Grantee"
-              value={selectedNode.permission?.grantee ?? "—"}
-              mono
-              actions={[
-                { icon: faCopy, label: "copy", onClick: () => navigator.clipboard.writeText(selectedNode.permission?.grantee ?? "") },
-                { icon: faEye, label: "visualizer", onClick: () => console.log("visualizer grantee") },
-                { icon: faUpRightFromSquare, label: "explorer", onClick: () => window.open("https://explorer.verana.io", "_blank") },
-              ]}
-            />
-            <Meta
-              label="ID"
-              value={selectedNode.permission?.id ?? "—"}
-              mono
-              actions={[
-                { icon: faCopy, label: "copy", onClick: () => navigator.clipboard.writeText(selectedNode.permission?.id ?? "") },
-                { icon: faEye, label: "visualizer", onClick: () => console.log("visualizer id") },
-              ]}
-            />
-            <Meta label="Deposit" value={selectedNode.permission?.deposit ?? "—"} mono />
-            <Meta label="Effective From" value={selectedNode.permission?.effective_from ?? "—"} />
-            <Meta label="Effective Until" value={selectedNode.permission?.effective_until ?? "—"} />
-            <Meta label="Country" value={selectedNode.permission?.country ?? "—"} />
-            <Meta label="Issued Credentials" value={selectedNode.permission?.issued ?? "—"} />
-            <Meta label="Verified Credentials" value={selectedNode.permission?.verified ?? "—"} />
+          {permissionMetaItems.map((item) => {
+            const raw = selectedNode.permission?.[item.attr];
+            if (raw == null) return null;
+
+            return (
+              <PermissionAttribute
+                key={item.attr}
+                label={item.label}
+                value={item.format? item.format(toMetaValue(raw)) as string : toMetaValue(raw)}
+                mono={item.mono}
+                actions={item.extraActions}
+              />
+            )}
+          )}
           </div>
         </div>
 
@@ -209,31 +122,47 @@ export default function PermissionCard({
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Permission Lifecycle</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <Meta label="Created" value={selectedNode.permission?.created ?? "—"} />
-            <Meta label="Created By" value={selectedNode.permission?.created_by ?? "—"} mono />
-            <Meta label="Modified" value={selectedNode.permission?.modified ?? "—"} />
-            <Meta label="Modified By" value={selectedNode.permission?.modified ?? "—"} mono />
-            <Meta label="Extended" value={selectedNode.permission?.extended ?? "—"} />
-            <Meta label="Extended By" value={selectedNode.permission?.extended_by ?? "—"} mono />
+          {permissionLifecycle.map((item) => {
+            const raw = selectedNode.permission?.[item.attr];
+            if (raw == null) return null;
+
+            return (
+              <PermissionAttribute
+                key={item.attr}
+                label={item.label}
+                value={item.format? item.format(toMetaValue(raw)) as string : toMetaValue(raw)}
+                mono={item.mono}
+                actions={item.extraActions}
+              />
+            )}
+          )}
           </div>
 
           <div className="flex flex-wrap gap-3 mt-4">
-            <button
-              onClick={onExtendPermission}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
-              type="button"
-            >
-              <FontAwesomeIcon icon={faClockRotateLeft} className="mr-2" />
-              Extend Permission
-            </button>
-            <button
-              onClick={onRevokePermission}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
-              type="button"
-            >
-              <FontAwesomeIcon icon={faBan} className="mr-2" />
-              Revoke Permission
-            </button>
+          {permissionActionLifecycle
+            .filter((action) => action.name && allowed.has(action.name))
+            .map((action, idx) => {
+              return (
+              <section key={`action-${String(action.name)}-${idx}`}>
+              <IconLabelButton 
+                label={action.label}
+                icon={action.icon}
+                className={clsx(
+                  "btn-action-confirm text-sm", // base
+                  action.buttonClass // specific
+                )}
+                onClick={action.onClick}
+              />
+              {/* <ModalAction
+                onClose={() => setActiveActionId(null)}
+                titleKey={field.label}
+                isActive={isActive}
+              >
+                {renderActionComponent(String(messageType), () => setActiveActionId(null), data, onRefresh?? undefined, onBack?? undefined )}
+              </ModalAction> */}
+              </section>
+            )}
+          )}
           </div>
         </div>
 
@@ -247,39 +176,47 @@ export default function PermissionCard({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <Meta label="VP Expiration" value={selectedNode.permission?.vp_exp ?? "—"} />
-            <Meta label="VP Last State Change" value={selectedNode.permission?.vp_last_state_change ?? "—"} />
-            <Meta label="VP Validator Deposit" value={selectedNode.permission?.vp_validator_deposit ?? "—"} mono />
-            <Meta label="VP Current Fees" value={selectedNode.permission?.vp_current_fees ?? "—"} mono />
-            <Meta label="VP Current Deposit" value={selectedNode.permission?.vp_current_deposit ?? "—"} mono />
-            <Meta label="VP Summary Digest" value={selectedNode.permission?.vp_summary_digest_sri ?? "—"} mono />
+          {permissionValidationProcess.map((item) => {
+            const raw = selectedNode.permission?.[item.attr];
+            if (raw == null) return null;
+
+            return (
+              <PermissionAttribute
+                key={item.attr}
+                label={item.label}
+                value={item.format? item.format(toMetaValue(raw)) as string : toMetaValue(raw)}
+                mono={item.mono}
+                actions={item.extraActions}
+              />
+            )}
+          )}
           </div>
 
           <div className="flex flex-wrap gap-3 mt-4">
-            <button
-              onClick={onRenewVP}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
-              type="button"
-            >
-              <FontAwesomeIcon icon={faRotate} className="mr-2" />
-              Renew Validation Process
-            </button>
-            <button
-              onClick={onCancelVP}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
-              type="button"
-            >
-              <FontAwesomeIcon icon={faTriangleExclamation} className="mr-2" />
-              Cancel Request
-            </button>
-            <button
-              onClick={onAcceptVP}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-              type="button"
-            >
-              <FontAwesomeIcon icon={faCheck} className="mr-2" />
-              Accept and Set Validated
-            </button>
+          {permissionActionValidationProcess
+            .filter((action) => action.name && allowed.has(action.name))
+            .map((action, idx) => {
+              return (
+              <section key={`action-${String(action.name)}-${idx}`}>
+              <IconLabelButton 
+                label={action.label}
+                icon={action.icon}
+                className={clsx(
+                  "btn-action-confirm text-sm", // base
+                  action.buttonClass // specific
+                )}
+                onClick={action.onClick}
+              />
+              {/* <ModalAction
+                onClose={() => setActiveActionId(null)}
+                titleKey={field.label}
+                isActive={isActive}
+              >
+                {renderActionComponent(String(messageType), () => setActiveActionId(null), data, onRefresh?? undefined, onBack?? undefined )}
+              </ModalAction> */}
+              </section>
+            )}
+          )}
           </div>
         </div>
 
@@ -287,9 +224,20 @@ export default function PermissionCard({
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Business Models</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Meta label="Validation Fees" value={selectedNode.permission?.validation_fees ?? "—"} mono />
-            <Meta label="Issuance Fees" value={selectedNode.permission?.issuance_fees ?? "—"} mono />
-            <Meta label="Verification Fees" value={selectedNode.permission?.verification_fees ?? "—"} mono />
+          {permissionBusinessModels.map((item) => {
+            const raw = selectedNode.permission?.[item.attr];
+            if (raw == null) return null;
+
+            return (
+              <PermissionAttribute
+                key={item.attr}
+                label={item.label}
+                value={item.format? item.format(toMetaValue(raw)) as string : toMetaValue(raw)}
+                mono={item.mono}
+                actions={item.extraActions}
+              />
+            )}
+          )}
           </div>
         </div>
 
@@ -297,26 +245,46 @@ export default function PermissionCard({
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Slashing</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <Meta label="Slashed Deposit" value={selectedNode.permission?.slashed_deposit ?? "—"} mono />
-            <Meta label="Repaid Deposit" value={selectedNode.permission?.repaid_deposit ?? "—"} mono />
+          {permissionSlashing.map((item) => {
+            const raw = selectedNode.permission?.[item.attr];
+            if (raw == null) return null;
+
+            return (
+              <PermissionAttribute
+                key={item.attr}
+                label={item.label}
+                value={item.format? item.format(toMetaValue(raw)) as string : toMetaValue(raw)}
+                mono={item.mono}
+                actions={item.extraActions}
+              />
+            )}
+          )}
           </div>
           <div className="flex flex-wrap gap-3 mt-4">
-            <button
-              onClick={onSlashDeposit}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
-              type="button"
-            >
-              <FontAwesomeIcon icon={faTriangleExclamation} className="mr-2" />
-              Slash Deposit
-            </button>
-            <button
-              onClick={onRepaySlash}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-              type="button"
-            >
-              <FontAwesomeIcon icon={faHandHoldingDollar} className="mr-2" />
-              Repay Slashed Deposit
-            </button>
+          {permissionActionSlashing
+            .filter((action) => action.name && allowed.has(action.name))
+            .map((action, idx) => {
+              return (
+              <section key={`action-${String(action.name)}-${idx}`}>
+              <IconLabelButton 
+                label={action.label}
+                icon={action.icon}
+                className={clsx(
+                  "btn-action-confirm text-sm", // base
+                  action.buttonClass // specific
+                )}
+                onClick={action.onClick}
+              />
+              {/* <ModalAction
+                onClose={() => setActiveActionId(null)}
+                titleKey={field.label}
+                isActive={isActive}
+              >
+                {renderActionComponent(String(messageType), () => setActiveActionId(null), data, onRefresh?? undefined, onBack?? undefined )}
+              </ModalAction> */}
+              </section>
+            )}
+          )}
           </div>
         </div>
 
@@ -324,27 +292,11 @@ export default function PermissionCard({
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Activity Timeline</h3>
           <div className="space-y-4">
-            <TimelineItem
-              icon={faCheck}
-              iconClass="text-green-600 dark:text-green-400"
-              title="Accept and Set Validated"
-              meta="2024-02-01 09:20:00 by verana1ghi...rst"
-              detail="Set validation_fees: 1.5 VNA, issuance_fees: 0.10 VNA"
-            />
-            <TimelineItem
-              icon={faPlay}
-              iconClass="text-blue-600 dark:text-blue-400"
-              title="Start Validation Process"
-              meta="2024-01-20 11:30:00 by verana1abc...xyz"
-              detail="Initiated validation process with 5,000 VNA deposit"
-            />
-            <TimelineItem
-              icon={faPlus}
-              iconClass="text-purple-600 dark:text-purple-400"
-              title="Permission Created"
-              meta="2024-01-15 14:30:00 by verana1def...uvw"
-              detail="Created with 45,000 VNA deposit, effective until 2024-12-15"
-            />
+          {permissionHistoryList.map((history, idx) => {
+            return (
+              <PermissionTimeline permissionHistory={history} key={`${history.permission_id}-${idx}`}/>
+            )}
+          )}
           </div>
         </div>
       </div>
