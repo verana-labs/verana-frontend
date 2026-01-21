@@ -181,7 +181,7 @@ export default function JoinEcosystemWizard() {
   
   const actionPerm = useActionPerm(undefined, 
     () => { setCurrentStep((prev) => prev + 1);
-            window.scrollTo({ top: 0, behavior: "smooth" });
+            document.getElementById("app-scroll")?.scrollTo({ top: 0, behavior: "smooth" });
     });
 
   // Save handler: called when the form is submitted
@@ -252,12 +252,12 @@ export default function JoinEcosystemWizard() {
     }
 
     setCurrentStep((prev) => prev + 1);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // document.getElementById("app-scroll")?.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   useEffect(() => {
     enableContinueStep();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    document.getElementById("app-scroll")?.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentStep]);
 
   function enableContinueStep(){
