@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.0](https://github.com/verana-labs/verana-frontend/compare/v0.1.1...v0.2.0) (2026-01-22)
+
+
+### Features
+
+* **main:** participants  ([#181](https://github.com/verana-labs/verana-frontend/issues/181)) ([6e78711](https://github.com/verana-labs/verana-frontend/commit/6e78711ba0385c90ce7317c19778b5891bbda3ea))
+* **main:** participants ([#176](https://github.com/verana-labs/verana-frontend/issues/176)) ([e3f0eba](https://github.com/verana-labs/verana-frontend/commit/e3f0eba0b98deb4ecf0cddb2016879311c95f623))
+
+
+### Bug Fixes
+
+* fix build failure caused by recursive chown ([#178](https://github.com/verana-labs/verana-frontend/issues/178)) ([28aa7c6](https://github.com/verana-labs/verana-frontend/commit/28aa7c6efa022bfc47b6a933dd0220faf3e170e0))
+
 ## [0.1.1](https://github.com/verana-labs/verana-frontend/compare/v0.1.0...v0.1.1) (2026-01-20)
 
 
