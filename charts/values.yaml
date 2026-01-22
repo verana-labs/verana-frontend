@@ -28,7 +28,7 @@ env:
   NEXT_PUBLIC_PORT: "3000"
   NEXT_PUBLIC_BASE_URL: "http://localhost:3000"
   NEXT_PUBLIC_VERANA_CHAIN_ID: "vna-testnet-1"
-  NEXT_PUBLIC_VERANA_CHAIN_NAME: "Veranatestnet1"
+  NEXT_PUBLIC_VERANA_CHAIN_NAME: "VeranaTestnet1"
   NEXT_PUBLIC_VERANA_RPC_ENDPOINT: "https://rpc.testnet.verana.network"
   NEXT_PUBLIC_VERANA_REST_ENDPOINT: "https://api.testnet.verana.network"
   NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT: "https://idx.testnet.verana.network/verana/td/v1"
