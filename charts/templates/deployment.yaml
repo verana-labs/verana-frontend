@@ -58,34 +58,26 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Values.name }}
-  labels:
-    app: {{ .Values.name }}
-{{- with .Values.ingress.annotations }}
+  name: public-{{ .Values.name }}
+  namespace: {{ .Release.Namespace }}
   annotations:
-{{ toYaml . | indent 4 }}
-{{- end }}
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/enable-cors: "{{ .Values.ingress.public.enableCors | default "true" }}"
 spec:
-{{- if .Values.ingress.className }}
-  ingressClassName: {{ .Values.ingress.className }}
-{{- end }}
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - {{ tpl .Values.ingress.host . }}
+      secretName: {{ tpl .Values.ingress.tlsSecret . }}
   rules:
-{{- range .Values.ingress.hosts }}
-    - host: {{ .host | quote }}
+    - host: {{ tpl .Values.ingress.host . }}
       http:
         paths:
-{{- range .paths }}
-          - path: {{ .path }}
-            pathType: {{ .pathType }}
+          - path: /
+            pathType: Prefix
             backend:
               service:
-                name: {{ $.Values.name }}
-                port:
-                  number: {{ $.Values.service.port }}
-{{- end }}
-{{- end }}
-{{- if .Values.ingress.tls }}
-  tls:
-{{ toYaml .Values.ingress.tls | indent 4 }}
-{{- end }}
+                 name: {{ .Values.name }}
+                 port:
+                   number: {{ .Values.service.port }}
 {{- end }}
