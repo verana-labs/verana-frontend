@@ -44,7 +44,13 @@ env:
 extraEnv: []
 
 # Resource requests/limits for the frontend container
-resources: {}
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  limits:
+    memory: "1Gi"
+    cpu: "500m"
 
 # Optional ingress configuration
 ingress:
