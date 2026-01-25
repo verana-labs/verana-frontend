@@ -28,10 +28,8 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy source code
 COPY . .
 
-# Set build-time environment variables (placeholders for runtime substitution)
+# Set build-time environment variables
 ENV NODE_ENV=production
-ENV NEXT_PUBLIC_PORT=APP_NEXT_PUBLIC_PORT
-ENV NEXT_PUBLIC_BASE_URL=APP_NEXT_PUBLIC_BASE_URL
 
 # Build the application (standalone output configured in next.config.ts)
 RUN yarn build
@@ -68,6 +66,8 @@ EXPOSE 3000
 
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+# Limit Node.js memory to prevent OOM kills in constrained environments
+ENV NODE_OPTIONS="--max-old-space-size=512"
 
 ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["node", "server.js"]
