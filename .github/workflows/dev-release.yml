@@ -109,11 +109,22 @@ jobs:
         if: steps.semantic.outputs.new-release-published == 'true'
         uses: azure/setup-helm@v3
 
-      - name: Deploy (Helm upgrade --install)
+      - name: Deploy to testnet (Helm upgrade --install)
         if: steps.semantic.outputs.new-release-published == 'true'
         run: |
           helm upgrade --install verana-frontend ./charts \
             -n vna-testnet-1 \
+            --create-namespace \
+            --wait \
+            --atomic \
+            --timeout 20m
+
+      - name: Deploy to betanet (Helm upgrade --install)
+        if: steps.semantic.outputs.new-release-published == 'true'
+        run: |
+          helm upgrade --install verana-frontend ./charts \
+            -f ./charts/values-betanet.yaml \
+            -n vna-betanet-1 \
             --create-namespace \
             --wait \
             --atomic \

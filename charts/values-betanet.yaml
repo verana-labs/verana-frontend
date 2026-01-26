@@ -1,0 +1,66 @@
+# Betanet configuration for the application
+global:
+  domain: betanet.verana.network
+
+# General configuration
+name: verana-frontend
+host: app
+replicas: 1
+
+# Image configuration
+image:
+  repository: veranalabs/verana-front
+  tag: dev
+  pullPolicy: IfNotPresent
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 3000
+  targetPort: 3000
+
+# Node scheduling preferences
+nodeSelector:
+  kubernetes.io/hostname: cluster-utc-node-07efe5
+
+# Environment variables consumed by the application
+env:
+  NEXT_PUBLIC_PORT: "3000"
+  NEXT_PUBLIC_BASE_URL: "http://localhost:3000"
+  NEXT_PUBLIC_VERANA_CHAIN_ID: "vna-betanet-1"
+  NEXT_PUBLIC_VERANA_CHAIN_NAME: "VeranaBetanet1"
+  NEXT_PUBLIC_VERANA_RPC_ENDPOINT: "https://rpc.betanet.verana.network"
+  NEXT_PUBLIC_VERANA_REST_ENDPOINT: "https://api.betanet.verana.network"
+  NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT: "https://idx.betanet.verana.network/verana/td/v1"
+  NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID: "https://idx.betanet.verana.network/verana/dd/v1"
+  NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY: "https://idx.betanet.verana.network/verana/tr/v1"
+  NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA: "https://idx.betanet.verana.network/verana/cs/v1"
+  NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM: "https://idx.betanet.verana.network/verana/perm/v1"
+  NEXT_PUBLIC_VERANA_TOPUP_VS: "did:web:faucet-vs.betanet.verana.network"
+  NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE: "false"
+  NEXT_PUBLIC_SESSION_LIFETIME_SECONDS: "86400"
+
+# Additional env variables if needed (list of {name, value})
+extraEnv: []
+
+# Resource requests/limits for the frontend container
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  limits:
+    memory: "1Gi"
+    cpu: "500m"
+
+# Optional ingress configuration
+ingress:
+  enabled: true
+  host: "{{ .Values.host }}.{{ .Values.global.domain }}"
+  tlsSecret: public.{{ .Values.host }}.{{ .Values.global.domain }}-cert
+  public:
+    enableCors: true
+  private:
+    enableCors: true
+    whitelistSourceRange: "" # e.g. "xxx.xx.xxx.xxx/32"
+    tlsSecret: "private.{{ .Values.host }}.{{ .Values.global.domain }}-cert"
+    host: ""
