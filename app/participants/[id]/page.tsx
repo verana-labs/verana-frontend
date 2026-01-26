@@ -11,6 +11,7 @@ import { useCsData } from "@/hooks/useCredentialSchemaData";
 import { useVeranaChain } from "@/hooks/useVeranaChain";
 import { useChain } from "@cosmos-kit/react";
 import { useTrustRegistryData } from "@/hooks/useTrustRegistryData";
+import { roleColorClass } from "@/util/util";
 
 export default function ParicipantsPage() {
   
@@ -18,14 +19,6 @@ export default function ParicipantsPage() {
   const { address } = useChain(veranaChain.chain_name);
   const [idsAddress, setIdsAddress] = useState<string[]>([]);
   const [idsPredecessor, setIdsPredecessor] = useState<string[]>([]);
-
-  useEffect(() => {
-    console.info("idsAddress", idsAddress);
-  }, [idsAddress]);
-
-  useEffect(() => {
-    console.info("idsPredecessor", idsPredecessor);
-  }, [idsPredecessor]);
 
   function authorityIcon (permission: Permission ): { icon: IconDefinition; iconColorClass: string } {
       if (permission.validator_perm_id && idsAddress.includes(permission.validator_perm_id)){ // validator
@@ -137,40 +130,10 @@ export default function ParicipantsPage() {
   }, [permissionsList]);
 
   useEffect(() => {
-    console.info("csData", csData)
     refetch();
-    console.info("dataTR", dataTR)
   }, [csData]);
 
-  return csData && dataTR ? <PermissionTree tree={permissionsTree} csData={csData} dataTr={dataTR} /> : null;
+  return <PermissionTree tree={permissionsTree} type={"participants"} csTitle={csData?.title??""} trTitle={dataTR?.did??""} />;
 
 };
-
-function roleColorClass(type: string): string {
-  let color = "";
-  switch (type) {
-    case "ECOSYSTEM":
-      color = "purple";
-      break;
-    case "ISSUER_GRANTOR":
-      color = "blue";
-      break;
-    case "VERIFIER_GRANTOR":
-      color = "slate";
-      break;
-    case "ISSUER":
-      color = "green";
-      break;
-    case "VERIFIER":
-      color = "orange";
-      break;
-    case "HOLDER":
-      color = "pink";
-      break;
-    default:
-      color = "gray";
-      break;
-  }
-  return `text-${color}-500`;
-}
 

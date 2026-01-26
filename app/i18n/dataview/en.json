@@ -15,7 +15,6 @@
   "tr.desc": "Ecosystem trust registry and governance framework management.",
   "tr.cs.add.title": "New Credential Schema",
   "tr.add.title": "New Trust Registry",
-  "task.title": "Pending Tasks",
 
   "discover.title": "Discover & Join",
   "discover.description": "Explore, discover and join existing ecosystems.",
@@ -50,6 +49,19 @@
   "join.role.verifier.description": "Request and verify presentations of credentials of this schema",
   "join.role.holder.description": "Obtain and hold credentials from authorized issuers",
 
+  "participants.title": "Participants",
+  "participants.description": "Page for viewing/interacting with the permission tree of a given credential schema.",
+  "participants.tree.title": "Permission Tree",
+  "participants.btn.join": "join",
+  "participants.show.weight": "Weight",
+  "participants.show.businessrules": "Business Rules",
+  "participants.show.stats": "Stats",
+  "participants.action.newperm": "New Ecosystem Permission",
+
+  "task.title": "Pending Tasks",
+  "task.description": "See your pending actions and pending actions of your grantees.",
+  "task.tree.title": "Pending Tasks",
+
   "meta.title.template": "%s · Verana",
   "meta.root.title": "Verana Dashboard",
   "meta.root.description": "Verana Frontend dashboard for managing and joining digital trust Ecosystems.",
@@ -73,6 +85,10 @@
   "meta.discover.description": "Explore, discover and join existing ecosystems.",
   "meta.join.title": "Join Ecosystem Trust Registry {id}",
   "meta.join.description": "Join existing ecosystem.",
+  "meta.participants.title": "Participants",
+  "meta.participants.description": "Page for viewing/interacting with the permission tree of a given credential schema.",
+  "meta.task.title": "Pending Tasks",
+  "meta.task.description": "See your pending actions and pending actions of your grantees.",
 
   "featuredservices.title": "Featured Services",
   "featuredservices.explore": "Explore →",

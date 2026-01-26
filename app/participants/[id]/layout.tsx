@@ -17,6 +17,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default function JoinLayout({ children }: { children: ReactNode }) {
+export default function ParicipantsLayout({ children }: { children: ReactNode }) {
   return children;
 }

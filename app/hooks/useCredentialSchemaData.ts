@@ -31,6 +31,12 @@ export function useCsData(id: string) {
   const [loading, setLoading] = useState(false);
   const [errorCS, setError] = useState<string | null>(null);
 
+  // Clear previous result when id changes to avoid stale data being reused
+  useEffect(() => {
+    setData(null);
+    setError(null);
+  }, [id]);
+
   const fetchCS = async () => {
 
     if (!id || !getURL) {
@@ -93,9 +99,11 @@ export function useCsData(id: string) {
     }
   };
 
+  // Fetch whenever id changes
   useEffect(() => {
+    if (!id) return;
     fetchCS();
-  }, []);
+  }, [id, fetchCS]);
 
   return { csData, loading, errorCS, refetch: fetchCS };
 }

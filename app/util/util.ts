@@ -1,5 +1,8 @@
 'use client';
 
+import { PermState } from "@/ui/common/permission-tree";
+import { PermissionType, VpState } from "@/ui/dataview/datasections/perm";
+
 export function formatVNA (amount: string | null, decimals?: number) : string {
     if (!amount) return ''
     return (
@@ -63,10 +66,19 @@ export function formatLongDateUserLocale(date: Date | string) {
 }
 
 export function isExpired (input: Date | string | number ): boolean {
-  const cellDate = new Date(String(input));
+  const date = new Date(String(input));
   const today = new Date();
   today.setHours(0,0,0,0);
-  return cellDate < today;
+  return date < today;
+}
+
+const soonDays = 1;
+export function isExpireSoon (input: Date | string | number ): boolean {
+  const date = new Date(String(input));
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const diff = date.getTime() - today.getTime();
+  return diff > 0 && diff <= soonDays * 24 * 60 * 60 * 1000;
 }
 
 export function isJson(value: unknown): object | null {
@@ -118,4 +130,64 @@ export function formatNetwork(network: string){
     <span class="text-sm text-success-700 dark:text-success-300 font-medium">${network}</span>
     `;
   return htmlNetwork;
+}
+
+export function roleBadgeClass(role: PermissionType) {
+  switch (role) {
+    case "ECOSYSTEM":
+      return "bg-purple-100 text-purple-800";
+    case "ISSUER_GRANTOR":
+      return "bg-blue-100 text-blue-800";
+    case "VERIFIER_GRANTOR":
+      return "bg-slate-100 text-slate-800";
+    case "ISSUER":
+      return "bg-green-100 text-green-800";
+    case "VERIFIER":
+      return "bg-orange-100 text-orange-800";
+    case "HOLDER":
+      return "bg-pink-100 text-pink-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+}
+
+export function roleColorClass(type: string): string {
+  switch (type) {
+    case "ECOSYSTEM":        return "text-purple-500";
+    case "ISSUER_GRANTOR":   return "text-blue-500";
+    case "VERIFIER_GRANTOR": return "text-slate-500";
+    case "ISSUER":           return "text-green-500";
+    case "VERIFIER":         return "text-orange-500";
+    case "HOLDER":           return "text-pink-500";
+    default:                 return "text-gray-500";
+  }
+}
+
+export function permStateBadgeClass(permState: PermState, expireSoon: boolean) {
+  switch (permState) {
+    case "REPAID":
+      return "bg-gray-100 text-red-800 dark:bg-gray-900/20 dark:text-red-300";
+    case "SLASHED":
+      return "bg-red-900 text-red-100 dark:bg-red-300/20 dark:text-red-800";
+    case "ACTIVE":
+      return expireSoon? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300" : "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300";
+    case "INACTIVE":
+      return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300";
+  }
+}
+
+export function vpStateColor(vpState: VpState, vpExp: string): {labelVpState: string, classVpState: string} {
+  const GRAY = "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300";
+  switch (vpState) {
+    case "PENDING":    
+      return { labelVpState: "pending approbation", classVpState: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300" };
+    case "TERMINATED": 
+      return { labelVpState: "terminated", classVpState: GRAY };
+    case "VALIDATED":  
+      return isExpired(vpExp) ? { labelVpState: "expired", classVpState: GRAY }
+          : isExpireSoon(vpExp) ? { labelVpState: "expire soon", classVpState: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300" }
+          : { labelVpState: "validated", classVpState: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300" };
+    default:           
+      return { labelVpState: String(vpState), classVpState: GRAY };
+  }
 }
