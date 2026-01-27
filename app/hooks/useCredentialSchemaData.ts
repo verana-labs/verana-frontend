@@ -21,7 +21,7 @@ type RawSchema = Record<string, unknown> & {
   verifier_perm_management_mode?: number;
 };
 
-export function useCsData(id: string) {
+export function useCsData(id: string, enabled = true) {
 
   const getURL =
     env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA') ||
@@ -30,6 +30,12 @@ export function useCsData(id: string) {
   const [csData, setData] = useState<CsData| null>(null);
   const [loading, setLoading] = useState(false);
   const [errorCS, setError] = useState<string | null>(null);
+
+  // Clear previous result when id changes to avoid stale data being reused
+  useEffect(() => {
+    setData(null);
+    setError(null);
+  }, [id]);
 
   const fetchCS = async () => {
 
@@ -93,9 +99,11 @@ export function useCsData(id: string) {
     }
   };
 
+  // Fetch whenever id changes
   useEffect(() => {
+    if (!enabled) return;
     fetchCS();
-  }, []);
+  }, [enabled, fetchCS]);
 
   return { csData, loading, errorCS, refetch: fetchCS };
 }

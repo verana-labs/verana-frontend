@@ -28,7 +28,7 @@ const links : NavLink[] = [
     iconClass: "bg-gradient-to-br from-blue-500 to-blue-700 text-white",
     featuredService: true, description: resolveTranslatable({key: "discover.description"}, translate),
     availableOffline: true },
-  { name: resolveTranslatable({key: "task.title"}, translate)??'Pending Tasks', href: '/task', icon: faTasks, className: 'bg-red-500' }
+  { name: resolveTranslatable({key: "task.title"}, translate)??'Pending Tasks', href: '/pendingtasks', icon: faTasks, className: 'bg-red-500' }
 ];
 
 export {links};

@@ -1,46 +1,26 @@
 'use client';
 
-import { PermissionType, permStateBadgeClass, PermState, TreeNode } from "./permission-tree";
+import { PermState, TreeNode } from "./permission-tree";
 import { useMemo } from "react";
-import { CsData } from "../dataview/datasections/cs";
 import { permissionActionLifecycle, permissionActionSlashing, permissionActionValidationProcess, permissionBusinessModels, permissionLifecycle, permissionMetaItems, permissionSlashing, permissionValidationProcess } from "../dataview/datasections/perm";
 import PermissionAttribute from "./permission-atrribute";
 import IconLabelButton from "./icon-label-button";
 import clsx from "clsx";
 import { usePermissionHistory } from "@/hooks/usePermissionHistory";
 import PermissionTimeline from "./permission-timeline";
+import { permStateBadgeClass, roleBadgeClass } from "@/util/util";
 
 
 type PermissionCardProps = {
   selectedNode: TreeNode;
   path: TreeNode[];
-  csData: CsData; 
+  csTitle: string;
 };
-
-function roleBadgeClass(role: PermissionType) {
-  switch (role) {
-    case "ECOSYSTEM":
-      return "bg-purple-100 text-purple-800";
-    case "ISSUER_GRANTOR":
-      return "bg-blue-100 text-blue-800";
-    case "VERIFIER_GRANTOR":
-      return "bg-slate-100 text-slate-800";
-    case "ISSUER":
-      return "bg-green-100 text-green-800";
-    case "VERIFIER":
-      return "bg-orange-100 text-orange-800";
-    case "HOLDER":
-      return "bg-pink-100 text-pink-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-}
-
 
 export default function PermissionCard({
   selectedNode,
   path,
-  csData
+  csTitle
 }: PermissionCardProps) {
 
   const detailBreadcrumb = useMemo(() => {
@@ -70,9 +50,7 @@ export default function PermissionCard({
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{selectedNode.name}</h2>
           <div className="flex items-center space-x-2">
             <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${roleBadgeClass(
-                selectedNode.permission.type
-              )}`}
+              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${roleBadgeClass(selectedNode.permission.type)}`}
             >
               {selectedNode.permission.type}
             </span>
@@ -92,7 +70,7 @@ export default function PermissionCard({
           {detailBreadcrumb}
         </p>
 
-        <p className="text-sm text-gray-700 dark:text-gray-300">{csData.title}</p>
+        <p className="text-sm text-gray-700 dark:text-gray-300">{csTitle}</p>
       </div>
 
       <div className="space-y-8">
