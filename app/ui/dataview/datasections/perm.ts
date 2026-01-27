@@ -182,3 +182,13 @@ export const permissionActionSlashing: PermissionAction[] = [
     buttonClass: "bg-green-600 hover:bg-green-700"
   },
 ];
+
+export const permissionAction: PermissionAction[] = [
+  { name: "VP_SET_VALIDATED", icon: faCheck, label: "Approve", onClick: () => console.log("Approve Permission"),
+    buttonClass: "bg-green-600 hover:bg-green-700"
+   },
+  { name: "VP_CANCEL", icon: faXmark, label: "Reject", onClick: () => console.log("Reject Request"),
+    buttonClass: "bg-red-600 hover:bg-red-700"
+   },
+  { name: "PERM_EXTEND", icon: faClockRotateLeft, label: "Extend", onClick: () => console.log("Extend Permission") },
+];

@@ -2,22 +2,24 @@
 
 import { PermState, TreeNode } from "./permission-tree";
 import { useMemo } from "react";
-import { permissionActionLifecycle, permissionActionSlashing, permissionActionValidationProcess, permissionBusinessModels, permissionLifecycle, permissionMetaItems, permissionSlashing, permissionValidationProcess } from "../dataview/datasections/perm";
+import { permissionAction, permissionActionLifecycle, permissionActionSlashing, permissionActionValidationProcess, permissionBusinessModels, permissionLifecycle, permissionMetaItems, permissionSlashing, permissionValidationProcess, VpState } from "../dataview/datasections/perm";
 import PermissionAttribute from "./permission-atrribute";
 import IconLabelButton from "./icon-label-button";
 import clsx from "clsx";
 import { usePermissionHistory } from "@/hooks/usePermissionHistory";
 import PermissionTimeline from "./permission-timeline";
-import { permStateBadgeClass, roleBadgeClass } from "@/util/util";
+import { permStateBadgeClass, roleBadgeClass, vpStateColor } from "@/util/util";
 
 
 type PermissionCardProps = {
+  type: "participants" | "tasks";
   selectedNode: TreeNode;
   path: TreeNode[];
   csTitle: string;
 };
 
 export default function PermissionCard({
+  type,
   selectedNode,
   path,
   csTitle
@@ -40,6 +42,8 @@ export default function PermissionCard({
 
   const permissionId = selectedNode.permission?.id as string;
   const {permissionHistoryList} = usePermissionHistory(permissionId);
+  
+  const {labelVpState, classVpState} = vpStateColor(selectedNode.permission?.vp_state as VpState, selectedNode.permission?.vp_exp as string);
 
   return (
     <section className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6">
@@ -55,7 +59,7 @@ export default function PermissionCard({
               {selectedNode.permission.type}
             </span>
 
-            {selectedNode.permission.perm_state ? (
+            { type==="participants" && selectedNode.permission.perm_state ? (
               <span
                 className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${permStateBadgeClass(
                   selectedNode.permission.perm_state as PermState,false)}`}
@@ -63,6 +67,13 @@ export default function PermissionCard({
                 {selectedNode.permission.perm_state}
               </span>
             ) : null}
+
+            { type==="tasks" && selectedNode.permission?.vp_state ? (
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${classVpState}`}>
+                {labelVpState}
+              </span>
+            ) : null}
+
           </div>
         </div>
 
@@ -144,6 +155,8 @@ export default function PermissionCard({
           </div>
         </div>
 
+        {type === "participants" ? (
+        <>
         {/* Validation Process */}
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
           <div className="flex items-center justify-between mb-4">
@@ -277,6 +290,45 @@ export default function PermissionCard({
           )}
           </div>
         </div>
+        </>
+        ):(
+        <>
+        {/* Actions */}
+        <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Actions</h3>
+          </div>
+          <div className="flex flex-wrap gap-3 mt-4">
+          {permissionAction
+            // .filter((action) => action.name && allowed.has(action.name))
+            .map((action, idx) => {
+              return (
+              <section key={`action-${String(action.name)}-${idx}`}>
+              <IconLabelButton 
+                label={action.label}
+                icon={action.icon}
+                className={clsx(
+                  "btn-action-confirm text-sm", // base
+                  action.buttonClass // specific
+                )}
+                onClick={action.onClick}
+              />
+              {/* <ModalAction
+                onClose={() => setActiveActionId(null)}
+                titleKey={field.label}
+                isActive={isActive}
+              >
+                {renderActionComponent(String(messageType), () => setActiveActionId(null), data, onRefresh?? undefined, onBack?? undefined )}
+              </ModalAction> */}
+              </section>
+            )}
+          )}
+          </div>
+        </div>
+        </>
+        )}
+
+
       </div>
       </> 
     )}

@@ -363,7 +363,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle 
 
       {/* Detail Card  */}
       {selectedNode ? (
-        <PermissionCard selectedNode={selectedNode} path={path} csTitle={csTitle??""} />
+        <PermissionCard type={type} selectedNode={selectedNode} path={path} csTitle={csTitle??""} />
       ) : null}
     </>
   );
