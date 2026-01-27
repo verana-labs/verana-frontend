@@ -65,7 +65,6 @@ function findNodeAndPath(nodes: TreeNode[], id: string): { node?: TreeNode; path
 function Tree({
   type,
   nodes,
-  trId,
   showWeight,
   showBusiness,
   showStats,
@@ -78,7 +77,6 @@ function Tree({
 }: {
   type: "participants" | "tasks";
   nodes: TreeNode[];
-  trId: string;
   showWeight: boolean;
   showBusiness: boolean;
   showStats: boolean;
@@ -363,7 +361,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle 
         </div>
       </section>
 
-      {/* Detail Card */}
+      {/* Detail Card  */}
       {selectedNode ? (
         <PermissionCard selectedNode={selectedNode} path={path} csTitle={csTitle??""} />
       ) : null}
