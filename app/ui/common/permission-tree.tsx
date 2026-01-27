@@ -65,6 +65,7 @@ function findNodeAndPath(nodes: TreeNode[], id: string): { node?: TreeNode; path
 function Tree({
   type,
   nodes,
+  trId,
   showWeight,
   showBusiness,
   showStats,
@@ -77,6 +78,7 @@ function Tree({
 }: {
   type: "participants" | "tasks";
   nodes: TreeNode[];
+  trId: string;
   showWeight: boolean;
   showBusiness: boolean;
   showStats: boolean;

@@ -1,5 +1,5 @@
 
-# VERANA FRONT - Next.js Starter Project 
+# Verana Frontend - Next.js Starter Project 
 
 This is a starter project for React that uses Next.js.
 

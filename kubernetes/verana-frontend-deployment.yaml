@@ -49,3 +49,10 @@ spec:
           value: "${NEXT_PUBLIC_SESSION_LIFETIME_SECONDS}"
         ports:
         - containerPort: 3000
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"

@@ -1,0 +1,5 @@
+name: verana-frontend-chart
+description: A Helm chart for deploying Verana Frontend
+apiVersion: v2
+version: 0.0.1
+appVersion: "0.1.0"
