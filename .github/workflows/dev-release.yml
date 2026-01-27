@@ -109,6 +109,41 @@ jobs:
         if: steps.semantic.outputs.new-release-published == 'true'
         uses: azure/setup-helm@v3
 
+      - name: Log in to Docker Hub Helm Registry
+        if: steps.semantic.outputs.new-release-published == 'true'
+        run: |
+          echo "${{ secrets.DOCKER_HUB_PWD }}" | helm registry login -u "${{ secrets.DOCKER_HUB_LOGIN }}" --password-stdin docker.io
+
+      - name: Push Helm chart to Docker Hub OCI repo
+        if: steps.semantic.outputs.new-release-published == 'true'
+        run: |
+          TAGS=(
+            "v${{ steps.semantic.outputs.release-major }}.${{ steps.semantic.outputs.release-minor }}-dev"
+            "v${{ steps.semantic.outputs.release-version }}"
+          )
+          for tag in "${TAGS[@]}"; do
+            CHART_NAME=$(grep '^name:' ./charts/Chart.yaml | awk '{print $2}')
+            helm dependency update ./charts
+            helm package ./charts --version $tag -d ./charts
+            helm push ./charts/$CHART_NAME-$tag.tgz oci://docker.io/"${{ secrets.DOCKER_HUB_LOGIN }}"
+          done
+
+      - name: Publish Summary
+        if: steps.semantic.outputs.new-release-published == 'true'
+        run: |
+          echo "Docker Images" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- verana-front:dev" >> $GITHUB_STEP_SUMMARY
+          echo "- verana-front:v${{ steps.semantic.outputs.release-major }}-dev" >> $GITHUB_STEP_SUMMARY
+          echo "- verana-front:v${{ steps.semantic.outputs.release-major }}.${{ steps.semantic.outputs.release-minor }}-dev" >> $GITHUB_STEP_SUMMARY
+          echo "- verana-front:v${{ steps.semantic.outputs.release-version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Helm Charts" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- verana-front:v${{ steps.semantic.outputs.release-major }}.${{ steps.semantic.outputs.release-minor }}-dev" >> $GITHUB_STEP_SUMMARY
+          echo "- verana-front:v${{ steps.semantic.outputs.release-version }}" >> $GITHUB_STEP_SUMMARY
+
+      # This will be removed once we have a proper CI/CD setup
       - name: Deploy (Helm upgrade --install)
         if: steps.semantic.outputs.new-release-published == 'true'
         run: |
