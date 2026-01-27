@@ -16,12 +16,16 @@ export function useCsDataMany(schemaIds: string[]): UseCsDataManyResult {
   const ids = useMemo(() => {
     const out: string[] = [];
     const seen = new Set<string>();
+
     for (const id of schemaIds) {
       if (!id) continue;
       if (seen.has(id)) continue;
       seen.add(id);
       out.push(id);
     }
+
+    // Keep order stable to avoid unnecessary resets
+    out.sort((a, b) => a.localeCompare(b));
     return out;
   }, [schemaIds]);
 
@@ -30,7 +34,6 @@ export function useCsDataMany(schemaIds: string[]): UseCsDataManyResult {
   const [csDataById, setCsDataById] = useState<Record<string, CsData>>({});
   const [errorsById, setErrorsById] = useState<Record<string, string>>({});
 
-  // resetea cuando cambie el set de ids
   const idsKey = useMemo(() => ids.join("|"), [ids]);
   const seenRef = useRef(new Set<string>());
 
@@ -44,40 +47,39 @@ export function useCsDataMany(schemaIds: string[]): UseCsDataManyResult {
 
   const currentId = ids[idx] ?? "";
 
-  const { csData, loading: loadingOne, errorCS, refetch } = useCsData(currentId);
+  const hasData = !!csDataById[currentId];
+  const hasError = !!errorsById[currentId];
+  const enabled = !!currentId && !hasData && !hasError;
 
-  const refetchRef = useRef(refetch);
-  useEffect(() => {
-    refetchRef.current = refetch;
-  }, [refetch]);
-
-  useEffect(() => {
-    if (!currentId) return;
-    refetchRef.current();
-  }, [currentId]);
+  const { csData, loading: loadingOne, errorCS } = useCsData(currentId, enabled);
 
   useEffect(() => {
     if (!currentId) return;
+
+    // Skip fetching if already resolved
+    if (!enabled) {
+      setIdx((prev) => prev + 1);
+      return;
+    }
 
     if (csData) {
-      const key = String(csData.id ?? currentId);
-
+      const key = String(currentId);
       if (!seenRef.current.has(key)) {
         seenRef.current.add(key);
         setCsDataList((prev) => [...prev, csData]);
         setCsDataById((prev) => ({ ...prev, [key]: csData }));
       }
-
       setIdx((prev) => prev + 1);
       return;
     }
 
     if (errorCS && !loadingOne) {
-      setErrorsById((prev) => ({ ...prev, [currentId]: errorCS }));
+      const key = String(currentId);
+      setErrorsById((prev) => ({ ...prev, [key]: errorCS }));
       setIdx((prev) => prev + 1);
     }
-  }, [csData, errorCS, loadingOne, currentId]);
-
+  }, [csData, errorCS, loadingOne, currentId, enabled, csDataById, errorsById]);
+  
   const loading = ids.length > 0 && (loadingOne || idx < ids.length);
 
   const refetchAll = () => {
