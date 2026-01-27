@@ -12,12 +12,14 @@ import { permStateBadgeClass, roleBadgeClass } from "@/util/util";
 
 
 type PermissionCardProps = {
+  type: "participants" | "tasks";
   selectedNode: TreeNode;
   path: TreeNode[];
   csTitle: string;
 };
 
 export default function PermissionCard({
+  type,
   selectedNode,
   path,
   csTitle
@@ -43,7 +45,7 @@ export default function PermissionCard({
 
   return (
     <section className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6">
-    {selectedNode.permission && (
+    {type === "participants" && selectedNode.permission && (
       <>
       <div className="mb-6">
         <div className="flex items-start justify-between mb-3">
