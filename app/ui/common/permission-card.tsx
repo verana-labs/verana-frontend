@@ -1,8 +1,7 @@
 'use client';
 
-import { PermissionType, PermState, TreeNode } from "./permission-tree";
+import { PermState, TreeNode } from "./permission-tree";
 import { useMemo } from "react";
-import { CsData } from "../dataview/datasections/cs";
 import { permissionActionLifecycle, permissionActionSlashing, permissionActionValidationProcess, permissionBusinessModels, permissionLifecycle, permissionMetaItems, permissionSlashing, permissionValidationProcess } from "../dataview/datasections/perm";
 import PermissionAttribute from "./permission-atrribute";
 import IconLabelButton from "./icon-label-button";

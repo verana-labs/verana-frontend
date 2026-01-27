@@ -71,9 +71,16 @@ export function useTrustDepositAccountData(
       const resp = await fetch(`${getAccountURL}/get/${address}`);
       const json = await resp.json();
       if (!resp.ok){
-        const { error, code } = json as ApiErrorResponse;
-        setError(`Error ${code}: ${error}`);
-        return;
+        const { error, status } = json as ApiErrorResponse;
+        if (status == 404){
+          totalTrustDeposit = "0";
+          claimableInterests = "0";
+          reclaimable = "0";
+        }
+        else {
+          setError(`Error ${status}: ${error}`);
+          // return;
+        }
       } 
       if (json.trust_deposit) {
         totalTrustDeposit = json.trust_deposit.amount;

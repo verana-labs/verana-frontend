@@ -3,14 +3,14 @@
 import { DidData, didSections } from '@/ui/dataview/datasections/did';
 import DataView from '@/ui/common/data-view-columns';
 import TitleAndButton from '@/ui/common/title-and-button';
-import { useNotification } from '@/ui/common/notification-provider';
-import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData';
 import { useDIDData } from '@/hooks/useDIDData';
 import { useEffect, useState, useMemo } from 'react';
 import { formatVNA } from '@/util/util';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { faChevronLeft } from '@fortawesome/free-solid-svg-icons';
+import { useVeranaChain } from '@/hooks/useVeranaChain';
+import { useChain } from '@cosmos-kit/react';
 
 type DIDViewProps = {
   id?: string;
@@ -23,9 +23,8 @@ type DIDViewProps = {
 export default function DIDView({ id, selectDidData, onBack, showHeader = true, onRefreshTable}: DIDViewProps) {
 
   // Hook to get connected account data (includes address)
-  const { accountData, errorAccountData, refetch: refetchAD } = useTrustDepositAccountData();
-  const { notify } = useNotification();
-  const [errorNotified, setErrorNotified] = useState(false);
+  const veranaChain = useVeranaChain();
+  const { address } = useChain(veranaChain.chain_name);
 
   // Hook to fetch the DID data (optionally actions if controller matches)
   const { dataDID, errorDIDData, refetch: refetchDID } = useDIDData((id?? selectDidData?.did) ?? "");
@@ -37,23 +36,12 @@ export default function DIDView({ id, selectDidData, onBack, showHeader = true, 
     console.info('useEffect DIDView');
     (async () => {
       await refetchDID();
-      await refetchAD();
+      // await refetchAD();
       setRefresh(false);
       onRefreshTable?.();
     })();
   }, [refresh]);
   
-  // Notify and redirect if there is an error fetching account data
-  useEffect(() => {
-    if (errorAccountData && !errorNotified) {
-      (async () => {
-        await notify(errorAccountData, 'error', resolveTranslatable({key: "error.fetch.account.title"}, translate)?? 'Error fetching account balance');
-        setErrorNotified(true);
-        if (onBack) onBack();
-      })();
-    }
-  }, [errorAccountData, errorNotified, onBack]);
-
   // DidData, formatting deposit and setting actions if controller matches
   const data: DidData | null = useMemo(() => {
     // const source: DidData | null = (selectDidData ?? dataDID) ?? null;
@@ -64,7 +52,7 @@ export default function DIDView({ id, selectDidData, onBack, showHeader = true, 
     // Create a copy of dataDID to avoid mutating the original
     const data = { ...source };
 
-    if (accountData.address &&  accountData.address === data.controller) {
+    if (address &&  address === data.controller) {
       data.renewDID = 'MsgRenewDID';
       data.touchDID = 'MsgTouchDID';
       data.removeDID = 'MsgRemoveDID';
@@ -75,19 +63,8 @@ export default function DIDView({ id, selectDidData, onBack, showHeader = true, 
       ...data,
       deposit: formatVNA(data.deposit ?? '0', 6),
     };
-  }, [selectDidData, dataDID, accountData.address]);
+  }, [selectDidData, dataDID]);
   
-  if (!refresh) {
-    // Wait until accountData.address exists before loading the DID info
-    if (!accountData?.address) {
-      return <div className="p-6 text-center">{resolveTranslatable({key: "loading.accountdata"}, translate)?? "Loading account data..."}</div>;
-    }
-    // Show loading spinner/message while fetching DID details
-    // if (loading) {
-    //   return <div className="p-6 text-center">{resolveTranslatable({key: "loading.did"}, translate)?? "Loading DID details..."}</div>;
-    // }
-  }
-
   // Show error message if fetch failed or DID not found
   if (errorDIDData || !data) {
     return <div className="p-6 text-red-600">{ errorDIDData || (resolveTranslatable({key: "error.did.notfound"}, translate)?? "DID not found")}</div>;

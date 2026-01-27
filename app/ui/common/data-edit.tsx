@@ -85,14 +85,14 @@ export default function EditableDataView<T extends object>({
       (async () => {
         await notify(errorTrustDepositValue, 'error', 'Error fetching trust deposit cost');
         setErrorNotified(true);
-        router.push('/tr');
+        // router.push('/tr');
       })();
     }
     if (errorAccountData && !errorNotified) {
       (async () => {
         await notify(errorAccountData, 'error', 'Error fetching account balance');
         setErrorNotified(true);
-        router.push('/tr');
+        // router.push('/tr');
       })();
     }
   }, [errorAccountData, errorTrustDepositValue, router, errorNotified]);

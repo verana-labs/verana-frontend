@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { env } from 'next-runtime-env';
 import { ApiErrorResponse } from '@/types/apiErrorResponse';
 import { Permission } from '@/ui/dataview/datasections/perm';
-import { Role } from '@/ui/common/role-card';
 
 export function usePermissionsForAddress(address?: string) {
   const getURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM;
