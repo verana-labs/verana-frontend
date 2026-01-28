@@ -71,14 +71,14 @@ export function useTrustDepositAccountData(
       const resp = await fetch(`${getAccountURL}/get/${address}`);
       const json = await resp.json();
       if (!resp.ok){
-        const { error, status } = json as ApiErrorResponse;
-        if (status == 404){
+        const { error, code } = json as ApiErrorResponse;
+        if (code == 404){
           totalTrustDeposit = "0";
           claimableInterests = "0";
           reclaimable = "0";
         }
-        else {
-          setError(`Error ${status}: ${error}`);
+        else { 
+          setError(`Error ${code}: ${error}`);
           // return;
         }
       } 
