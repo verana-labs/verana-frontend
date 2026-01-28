@@ -2,7 +2,7 @@
 
 import { PermState, TreeNode } from "./permission-tree";
 import { useMemo } from "react";
-import { permissionAction, permissionActionLifecycle, permissionActionSlashing, permissionActionValidationProcess, permissionBusinessModels, permissionLifecycle, permissionMetaItems, permissionSlashing, permissionValidationProcess, VpState } from "../dataview/datasections/perm";
+import { permissionActionLifecycle, permissionActionSlashing, permissionActionTasks, permissionActionValidationProcess, permissionBusinessModels, permissionLifecycle, permissionMetaItems, permissionSlashing, permissionValidationProcess, VpState } from "../dataview/datasections/perm";
 import PermissionAttribute from "./permission-atrribute";
 import IconLabelButton from "./icon-label-button";
 import clsx from "clsx";
@@ -299,7 +299,7 @@ export default function PermissionCard({
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Actions</h3>
           </div>
           <div className="flex flex-wrap gap-3 mt-4">
-          {permissionAction
+          {permissionActionTasks
             // .filter((action) => action.name && allowed.has(action.name))
             .map((action, idx) => {
               return (

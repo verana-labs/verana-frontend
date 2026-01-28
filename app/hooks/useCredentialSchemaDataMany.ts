@@ -51,7 +51,7 @@ export function useCsDataMany(schemaIds: string[]): UseCsDataManyResult {
   const hasError = !!errorsById[currentId];
   const enabled = !!currentId && !hasData && !hasError;
 
-  const { csData, loading: loadingOne, errorCS } = useCsData(currentId, enabled);
+  const { csData, loading: loadingOne, errorCS } = useCsData(currentId);//, enabled);
 
   useEffect(() => {
     if (!currentId) return;
