@@ -150,6 +150,7 @@ jobs:
           helm upgrade --install verana-frontend ./charts \
             -n vna-testnet-1 \
             --create-namespace \
+            --set image.tag=v${{ steps.semantic.outputs.release-version }} \
             --wait \
             --atomic \
             --timeout 20m
