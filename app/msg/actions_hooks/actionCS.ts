@@ -18,7 +18,7 @@ import {
 import Long from 'long';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
-import { hasValidCredentialSchemaId, MSG_SCHEMA_ID, normalizeJsonSchema } from '@/util/json_schema_util';
+import { normalizeJsonSchema, validateJSONSchemaReturn } from '@/util/json_schema_util';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 // import { sanitizeProtoMsg } from '../util/sanitizeProtoMsg';
@@ -128,13 +128,13 @@ export function useActionCS( onCancel?: () => void,
 
     if (params.msgType === 'MsgCreateCredentialSchema') {
       try {
-        const parsedSchema = JSON.parse(params.jsonSchema);
-        if (!hasValidCredentialSchemaId(parsedSchema)) {
-          await notify(`${resolveTranslatable({key: "error.msg.cs.create.schema.id"}, translate)} ${MSG_SCHEMA_ID}`, 'error');
+        const errorValidate = validateJSONSchemaReturn(params.jsonSchema);
+        if (errorValidate !== null) {
+          await notify(`${resolveTranslatable({key: "error.msg.cs.create.schema.json"}, translate)} ${errorValidate}`, 'error');
           return;
         }
       } catch {
-        await notify(resolveTranslatable({key: "error.msg.cs.create.schema.id"}, translate)??'', 'error');
+        await notify(resolveTranslatable({key: "error.msg.cs.create.schema.json"}, translate)??'', 'error');
         return;
       }
     }
