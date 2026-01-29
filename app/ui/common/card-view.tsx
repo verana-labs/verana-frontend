@@ -18,7 +18,7 @@ type CardViewProps<T> = {
 export default function CardView<T>({ field, data, largeTexts }: CardViewProps<T>) {
     const value = String(data[field.name]);
     const trustUnitPrice = useTrustDepositParams().trustUnitPrice;
-    const conversionFactorUSDfromVNA = 1_000_000 / Number(trustUnitPrice);
+    const conversionFactorUSDfromVNA = trustUnitPrice ? 1_000_000 / Number(trustUnitPrice) : 0;
     const valueUSD = field.usdValue ? formatUSDfromUVNA(value.split('VNA')[0], conversionFactorUSDfromVNA) : null;
     const iconWrapperClass = field.iconClass ?? '';
     const iconColorClass = field.iconColorClass ?? field.iconClass ?? '';
