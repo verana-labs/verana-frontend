@@ -64,6 +64,7 @@ export interface Permission {
   weight: string;
   issued: string;
   verified: string;
+  expire_soon: boolean;
 };
 export interface PermissionHistory {
   permission_id: string;

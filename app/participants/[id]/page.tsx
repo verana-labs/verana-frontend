@@ -133,7 +133,7 @@ export default function ParicipantsPage() {
     refetch();
   }, [csData]);
 
-  return <PermissionTree tree={permissionsTree} type={"participants"} csTitle={csData?.title??""} trTitle={dataTR?.did??""} />;
+  return <PermissionTree tree={permissionsTree} type={"participants"} csTitle={csData?.title??""} trTitle={dataTR?.did??""} csId={csData?.id as string} trId={csData?.trId as string} />;
 
 };
 

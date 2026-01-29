@@ -1,4 +1,4 @@
-import { formatDate, formatVNA, getStatus, shortenMiddle } from "@/util/util";
+import { formatDate, formatVNA, getStatus, shortenDID, shortenMiddle } from "@/util/util";
 import { Column, Filter } from "@/ui/datatable/types";
 import { resolveTranslatable, type I18nValues, type Translatable } from "@/ui/dataview/types";
 import { translate } from "@/i18n/dataview";
@@ -34,7 +34,7 @@ export const didFilter: Filter<DidList>[] = [
 ];
 
 export const columnsDidList: Column<DidList>[] = [
-  { header: t("datatable.did.header.did"), accessor: "did", format: (value) => shortenMiddle(String(value), 30) },
+  { header: t("datatable.did.header.did"), accessor: "did", format: (value) => shortenDID(String(value)) },
   { header: t("datatable.did.header.controller"), accessor: "controller", format: (value) => shortenMiddle(String(value), 25), priority: 2 },
   { header: t("datatable.did.header.created"), accessor: "created", format: (value) => formatDate(value), priority: 4 },
   { header: t("datatable.did.header.modified"), accessor: "modified", format: (value) => formatDate(value), priority: 1 },

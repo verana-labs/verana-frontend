@@ -8,7 +8,7 @@ import IconLabelButton from "./icon-label-button";
 import clsx from "clsx";
 import { usePermissionHistory } from "@/hooks/usePermissionHistory";
 import PermissionTimeline from "./permission-timeline";
-import { permStateBadgeClass, roleBadgeClass, vpStateColor } from "@/util/util";
+import { permStateBadgeClass, roleBadgeClass, shortenDID, vpStateColor } from "@/util/util";
 
 
 type PermissionCardProps = {
@@ -43,7 +43,8 @@ export default function PermissionCard({
   const permissionId = selectedNode.permission?.id as string;
   const {permissionHistoryList} = usePermissionHistory(permissionId);
   
-  const {labelVpState, classVpState} = vpStateColor(selectedNode.permission?.vp_state as VpState, selectedNode.permission?.vp_exp as string);
+  const {labelVpState, classVpState} = vpStateColor(selectedNode.permission?.vp_state as VpState, selectedNode.permission?.vp_exp as string, selectedNode.permission?.expire_soon ?? false);
+  const {labelPermState, classPermState} = permStateBadgeClass(selectedNode.permission?.perm_state as PermState, selectedNode.permission?.expire_soon as boolean);
 
   return (
     <section className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6">
@@ -51,7 +52,7 @@ export default function PermissionCard({
       <>
       <div className="mb-6">
         <div className="flex items-start justify-between mb-3">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{selectedNode.name}</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{shortenDID(selectedNode.name as string)}</h2>
           <div className="flex items-center space-x-2">
             <span
               className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${roleBadgeClass(selectedNode.permission.type)}`}
@@ -61,10 +62,9 @@ export default function PermissionCard({
 
             { type==="participants" && selectedNode.permission.perm_state ? (
               <span
-                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${permStateBadgeClass(
-                  selectedNode.permission.perm_state as PermState,false)}`}
+                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${classPermState}`}
               >
-                {selectedNode.permission.perm_state}
+                {labelPermState}
               </span>
             ) : null}
 

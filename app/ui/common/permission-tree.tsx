@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import {
@@ -13,7 +13,7 @@ import {
 import PermissionCard from "./permission-card";
 import { Permission, VpState } from "../dataview/datasections/perm";
 import Link from "next/link";
-import { formatVNA, permStateBadgeClass, roleBadgeClass, vpStateColor } from "@/util/util";
+import { formatVNA, permStateBadgeClass, roleBadgeClass, shortenDID, vpStateColor } from "@/util/util";
 import { translate } from "@/i18n/dataview";
 import { resolveTranslatable } from "../dataview/types";
 import TitleAndButton from "./title-and-button";
@@ -22,7 +22,9 @@ type PermissionTreeProps = {
   tree: TreeNode[];
   type: "participants" | "tasks";
   csTitle?: string;
+  csId?: string;
   trTitle?: string;
+  trId?: string;
   hrefJoin?: string;
 };
 
@@ -94,8 +96,8 @@ function Tree({
         const hasChildren = !!node.children?.length;
         const isExpanded = expanded[node.nodeId] ?? false;
         const isSelected = selectedId === node.nodeId;
-        const {labelVpState, classVpState} = vpStateColor(node.permission?.vp_state as VpState, node.permission?.vp_exp as string);
-
+        const {labelVpState, classVpState} = vpStateColor(node.permission?.vp_state as VpState, node.permission?.vp_exp as string, node.permission?.expire_soon ?? false);
+        const {labelPermState, classPermState} = permStateBadgeClass(node.permission?.perm_state as PermState, node.permission?.expire_soon ?? false);
         return (
           <div key={node.nodeId}>
             <div
@@ -148,12 +150,12 @@ function Tree({
                       node.group ? "text-gray-700 dark:text-gray-300" : "text-gray-900 dark:text-white",
                     ].join(" ")}
                   >
-                    {node.group ? node.name : node.permission?.did}
+                    {node.group ? node.name : shortenDID(node.permission?.did as string)}
                   </span>
 
                   { type==="participants" && node.permission?.perm_state ? (
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${permStateBadgeClass(node.permission.perm_state as PermState, false)}`}>
-                      {node.permission.perm_state}
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${classPermState}`}>
+                      {labelPermState}
                     </span>
                   ) : null}
 
@@ -227,7 +229,7 @@ function Tree({
   );
 }
 
-export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle }: PermissionTreeProps) {
+export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle, csId, trId }: PermissionTreeProps) {
   const [showWeight, setShowWeight] = useState(false);
   const [showBusiness, setShowBusiness] = useState(false);
   const [showStats, setShowStats] = useState(false);
@@ -271,16 +273,14 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle 
       <section className="mb-6">
         <nav className="flex flex-wrap items-center text-sm" aria-label="Breadcrumb">
           <a
-            href="#"
-            onClick={(e) => e.preventDefault()}
+            href={`/tr/${trId}`}
             className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
           >
-            {trTitle}
+            {shortenDID(trTitle)}
           </a>
           <FontAwesomeIcon icon={faChevronRight} className="mx-2 text-neutral-70 text-xs" />
           <a
-            href="#"
-            onClick={(e) => e.preventDefault()}
+            href={`/tr/cs/${csId}`}
             className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
           >
             {csTitle}

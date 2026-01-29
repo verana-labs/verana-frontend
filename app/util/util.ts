@@ -1,7 +1,9 @@
 'use client';
 
+import { translate } from "@/i18n/dataview";
 import { PermState } from "@/ui/common/permission-tree";
 import { PermissionType, VpState } from "@/ui/dataview/datasections/perm";
+import { resolveTranslatable } from "@/ui/dataview/types";
 
 export function formatVNA (amount: string | null, decimals?: number) : string {
     if (!amount) return ''
@@ -49,13 +51,17 @@ export function formatUSDfromUVNA(
 }
 
 export function shortenMiddle(str: string, maxLength: number): string {
-  if (str.length <= maxLength) return str;
+  if (str===null || str.length <= maxLength) return str;
   const keep = Math.floor((maxLength - 3) / 2);
   const start = str.slice(0, keep);
   const end = str.slice(-keep);
   return `${start}...${end}`;
 }
 
+export function shortenDID(str: string) : string {
+  return shortenMiddle(str, 30);
+
+}
 export function formatDate( input: Date | string | number ): string {
   const date = new Date(input).toLocaleDateString();
   return date;
@@ -171,30 +177,41 @@ export function roleColorClass(type: string): string {
   }
 }
 
-export function permStateBadgeClass(permState: PermState, expireSoon: boolean) {
+export function permStateBadgeClass(permState: PermState, expireSoon: boolean) : {labelPermState: string, classPermState: string} {
   switch (permState) {
     case "REPAID":
-      return "bg-gray-100 text-red-800 dark:bg-gray-900/20 dark:text-red-300";
+      return { labelPermState: resolveTranslatable({key: "permission.labelpermstate.repaid"}, translate) ?? "REPAID", 
+              classPermState: "bg-gray-100 text-red-800 dark:bg-gray-900/20 dark:text-red-300"};
     case "SLASHED":
-      return "bg-red-900 text-red-100 dark:bg-red-300/20 dark:text-red-800";
+      return { labelPermState: resolveTranslatable({key: "permission.labelpermstate.slashed"}, translate) ?? "SLASHED", 
+              classPermState: "bg-red-900 text-red-100 dark:bg-red-300/20 dark:text-red-800"};
     case "ACTIVE":
-      return expireSoon? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300" : "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300";
+      return expireSoon? { labelPermState: resolveTranslatable({key: "permission.labelpermstate.expiresoon"}, translate) ?? "EXPIRE SOON", 
+              classPermState: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300"}
+              : { labelPermState: resolveTranslatable({key: "permission.labelpermstate.active"}, translate) ?? "ACTIVE", 
+              classPermState: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300"};
     case "INACTIVE":
-      return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300";
+      return { labelPermState: resolveTranslatable({key: "permission.labelpermstate.inactive"}, translate) ?? "INACTIVE", 
+              classPermState: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300"};
+    default:
+      return { labelPermState: "UNKNOWN", classPermState: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300" };
   }
 }
 
-export function vpStateColor(vpState: VpState, vpExp: string): {labelVpState: string, classVpState: string} {
+export function vpStateColor(vpState: VpState, vpExp: string, expireSoon: boolean): {labelVpState: string, classVpState: string} {
   const GRAY = "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300";
   switch (vpState) {
     case "PENDING":    
-      return { labelVpState: "pending approbation", classVpState: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300" };
+      return { labelVpState: resolveTranslatable({key: "permission.labelvpstate.pending"}, translate) ?? "pending approbation", 
+                classVpState: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300" };
     case "TERMINATED": 
-      return { labelVpState: "terminated", classVpState: GRAY };
+      return { labelVpState: resolveTranslatable({key: "permission.labelvpstate.terminated"}, translate) ?? "terminated", classVpState: GRAY };
     case "VALIDATED":  
-      return isExpired(vpExp) ? { labelVpState: "expired", classVpState: GRAY }
-          : isExpireSoon(vpExp) ? { labelVpState: "expire soon", classVpState: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300" }
-          : { labelVpState: "validated", classVpState: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300" };
+      return isExpired(vpExp) ? { labelVpState: resolveTranslatable({key: "permission.labelvpstate.expired"}, translate) ?? "expired", classVpState: GRAY }
+          : expireSoon ? { labelVpState: resolveTranslatable({key: "permission.labelvpstate.expiresoon"}, translate) ?? "expire soon", 
+                          classVpState: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300" }
+                       : { labelVpState: resolveTranslatable({key: "permission.labelvpstate.validated"}, translate) ?? "validated", 
+                          classVpState: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300" };
     default:           
       return { labelVpState: String(vpState), classVpState: GRAY };
   }
