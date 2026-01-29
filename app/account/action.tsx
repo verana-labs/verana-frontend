@@ -31,7 +31,7 @@ export default function TdActionPage({ action, setActiveActionId, onRefresh, dat
   const claimableInterests = (data as AccountData).claimableInterests?? undefined;
   const available = claimableInterests ? true : false;
   const trustUnitPrice = useTrustDepositParams().trustUnitPrice;
-  const conversionFactorUSDfromVNA = 1_000_000 / Number(trustUnitPrice);
+  const conversionFactorUSDfromVNA = trustUnitPrice ? 1_000_000 / Number(trustUnitPrice) : 0;
 
   const actionCardYield: ActionCardProps = {
     available,

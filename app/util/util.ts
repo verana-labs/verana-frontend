@@ -30,7 +30,15 @@ export function formatUSDfromUVNA(
   conversionFactorUSDfromVNA: number
 ): string {
   if (!amount) return ''
-  const usd = Number(amount) * conversionFactorUSDfromVNA
+  if (!Number.isFinite(conversionFactorUSDfromVNA) || conversionFactorUSDfromVNA <= 0) return ''
+
+  // Clean locale-formatted number (remove thousands separators and whitespace)
+  const cleanAmount = amount.trim().replace(/[^\d.,-]/g, '').replace(/,/g, '');
+  const numericAmount = parseFloat(cleanAmount);
+
+  if (!Number.isFinite(numericAmount)) return ''
+
+  const usd = numericAmount * conversionFactorUSDfromVNA
 
   return ( '≈ $' +
     usd.toLocaleString(undefined, {
