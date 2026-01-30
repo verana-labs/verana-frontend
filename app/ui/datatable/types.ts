@@ -10,7 +10,7 @@ import { translate } from '@/i18n/dataview';
 export type Column<T> = {
   header: Translatable;                 // ← before: string
   accessor: keyof T;
-  format?: (value: T[keyof T]) => ReactNode;
+  format?: (value: T[keyof T], row?: T) => ReactNode;
   priority?: number;
   className?: (value: T[keyof T]) => string;
   viewMobileRight?: boolean;

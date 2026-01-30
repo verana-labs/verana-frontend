@@ -231,7 +231,7 @@ export function DataTable<T extends object>({
                     >
                       {columns.map((col) => {
                         const formatted = col.format
-                          ? col.format(row[col.accessor])
+                          ? col.format(row[col.accessor], row)
                           : row[col.accessor];
 
                         const valueStr = String(formatted ?? "");
@@ -278,12 +278,12 @@ export function DataTable<T extends object>({
                       .map((col) => (
                         <div key={String(col.accessor)} >
                           <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">{col.header}</label>
-                          <p 
+                          <p
                             className={`text-sm font-mono text-gray-900 dark:text-white ${
                                 col.className ? col.className(row[col.accessor]) : ''
                               }`}
                           >
-                            {col.format ? col.format(row[col.accessor]) : String(row[col.accessor] ?? '')}
+                            {col.format ? col.format(row[col.accessor], row) : String(row[col.accessor] ?? '')}
                           </p>
                         </div>
                       ))}
@@ -292,7 +292,7 @@ export function DataTable<T extends object>({
                       {columns.filter((col) => col.viewMobileRight)
                       .map((col) => {
                         const formatted = col.format
-                        ? col.format(row[col.accessor])
+                        ? col.format(row[col.accessor], row)
                         : row[col.accessor];
                         const valueStr = String(formatted ?? "");
                         return (

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { GfdData, gfdSections, htmlGfd, TrData, trSections } from '@/ui/dataview/datasections/tr';
 import DataView from '@/ui/common/data-view-columns';
@@ -16,7 +16,7 @@ import langs from 'langs';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
-import { columnsCsList } from '@/ui/datatable/columnslist/cs';
+import { createColumnsCsList } from '@/ui/datatable/columnslist/cs';
 import { DataTable } from '@/ui/common/data-table';
 import { DataList } from '@/ui/common/data-list';
 import { ModalAction } from '@/ui/common/modal-action';
@@ -34,21 +34,33 @@ export default function TRViewPage() {
 
   const veranaChain = useVeranaChain();
   const { address } = useChain(veranaChain.chain_name);
-  const { csList, refetch: refetchCSList } = useCSList (id);
+  const [showArchived, setShowArchived] = useState<boolean>(false);
+  const { csList, refetch: refetchCSList } = useCSList(id, false, !showArchived);
   const { dataTR, loading, errorTRData, refetch: refetchTR } = useTrustRegistryData(id);
   const [ addCS, setAddCS ] = useState<boolean>(false);
 
+  // Create columns with translated ARCHIVED label
+  const archivedLabel = resolveTranslatable({key: "datatable.cs.label.archived"}, translate) ?? 'ARCHIVED';
+  const csColumns = useMemo(() => createColumnsCsList(archivedLabel), [archivedLabel]);
+
   // Refresh data TR
   const [refresh, setRefresh] = useState<string | null>(null);
-  useEffect(() => {
+
+  const handleRefresh = useCallback(async () => {
     if (!refresh) return;
-    console.info('useEffect TRViewPage');
-    (async () => {
+    try {
       if (refresh === 'actionTR') await refetchTR();
       if (refresh === 'actionCS') await refetchCSList();
+    } catch (err) {
+      console.error('Failed to refresh data:', err);
+    } finally {
       setRefresh(null);
-    })();
-  }, [refresh]);
+    }
+  }, [refresh, refetchTR, refetchCSList]);
+
+  useEffect(() => {
+    handleRefresh();
+  }, [handleRefresh]);
 
   useEffect(() => {
     if (!dataTR || !address) return;
@@ -179,17 +191,43 @@ export default function TRViewPage() {
       />
 
       {/* Credential Schemas Section */}
+      <section className="mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 sm:px-6 py-4">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            {resolveTranslatable({key: "datatable.cs.title"}, translate)}
+          </h2>
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            {/* Show archived checkbox */}
+            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showArchived}
+                onChange={(e) => setShowArchived(e.target.checked)}
+                className="w-4 h-4 text-primary-600 border-neutral-20 dark:border-neutral-70 rounded focus:ring-primary-500"
+              />
+              {resolveTranslatable({key: "datatable.cs.filter.showArchived"}, translate)}
+            </label>
+            {/* New Schema button - only show if user is controller */}
+            {data.controller === address && (
+              <button
+                onClick={() => setAddCS(true)}
+                className="inline-flex items-center px-3 sm:px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm sm:text-base"
+              >
+                <span className="mr-1 sm:mr-2">+</span>
+                {resolveTranslatable({key: "button.cs.add"}, translate)}
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
       <DataTable
-        tableTitle={resolveTranslatable({key: "datatable.cs.title"}, translate)}
-        addTitle={resolveTranslatable({key: "button.cs.add"}, translate)}
-        columnsI18n={columnsCsList}
+        columnsI18n={csColumns}
         data={csList}
         initialPageSize={10}
         onRowClick={(row) => router.push(`/tr/cs/${encodeURIComponent(row.id)}?edit=${data.controller === address}`)}
-        defaultSortColumn={'modified'}
+        defaultSortColumn={'id'}
         showDetailModal={false}
         detailTitle={resolveTranslatable({key: "datatable.tr.detail"}, translate)}
-        onAdd={() => setAddCS(true)}
       />
 
       {/* render modal add Credential Schema*/}

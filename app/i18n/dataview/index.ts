@@ -28,6 +28,7 @@ export function getDictionary(locale: Locale = DEFAULT_LOCALE): FlatDict {
 
 let currentLocale: Locale = DEFAULT_LOCALE;
 export function setLocale(locale: Locale) { currentLocale = locale; }
+export function getLocale(): Locale { return currentLocale; }
 
 export function translateWithLocale(
   key: string,

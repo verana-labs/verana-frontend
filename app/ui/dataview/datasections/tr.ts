@@ -150,13 +150,13 @@ export const htmlGfd = (
   strState: string
 ): string => {
   return `
-<div class="flex items-center justify-between py-2 px-3 ${(state=="active") ? "bg-green-50 dark:bg-green-900/20" : "bg-gray-50 dark:bg-gray-700/50"} rounded-lg">
-  <div class="flex items-center space-x-3">
-    <span class="text-sm font-medium text-gray-900 dark:text-white">Version ${version}:</span>
-    <span class="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm cursor-pointer">${url}</span>
-    <span class="text-xs text-gray-500 dark:text-gray-400">(${language})</span>
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 px-3 gap-2 ${(state=="active") ? "bg-green-50 dark:bg-green-900/20" : "bg-gray-50 dark:bg-gray-700/50"} rounded-lg">
+  <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 min-w-0">
+    <span class="text-sm font-medium text-gray-900 dark:text-white shrink-0">Version ${version}:</span>
+    <a href="${url}" target="_blank" rel="noopener noreferrer" class="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm cursor-pointer break-all sm:truncate sm:max-w-[300px] md:max-w-[400px] lg:max-w-[500px]" title="${url}">${url}</a>
+    <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">(${language})</span>
   </div>
-  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${(state=="draft") ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300": ((state=="active") ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 font-bold" : "text-gray-500 dark:text-gray-400")} ">
+  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium shrink-0 self-start sm:self-auto ${(state=="draft") ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300": ((state=="active") ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 font-bold" : "text-gray-500 dark:text-gray-400")} ">
     ${strState}
   </span>
 </div>

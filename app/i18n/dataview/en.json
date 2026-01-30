@@ -463,9 +463,12 @@
   "datatable.cs.header.id": "Id",
   "datatable.cs.header.title": "Title",
   "datatable.cs.header.desc": "Description",
-  "datatable.cs.header.created": "Created",
-  "datatable.cs.header.modified": "Modified",
+  "datatable.cs.header.participants": "Participants",
+  "datatable.cs.header.issued": "Issued Credentials",
+  "datatable.cs.header.verified": "Verified Credentials",
   "datatable.cs.header.role": "Role",
+  "datatable.cs.filter.showArchived": "Show archived",
+  "datatable.cs.label.archived": "ARCHIVED",
 
   "datalist.egf.title": "EGF Documents",
 

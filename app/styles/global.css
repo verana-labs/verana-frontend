@@ -265,7 +265,7 @@
 
   .page-title {
     /* @apply text-xl font-medium text-title-light-color dark:text-title-dark-color; */
-    @apply text-3xl font-bold text-gray-900 dark:text-white;
+    @apply text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white break-all;
   }
 
   .page-description {
@@ -320,7 +320,7 @@
   }
 
   .data-view-value {
-    @apply text-sm text-gray-900 dark:text-white;
+    @apply text-sm text-gray-900 dark:text-white break-all;
   }
 
   .data-edit-label-cell,
@@ -331,7 +331,7 @@
   .data-edit-label,
   .data-view-value {
     /* @apply text-base font-semibold leading-none mb-1 break-all; */
-    @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2;
+    @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 break-all;
   }
 
   .data-edit-required {
@@ -452,7 +452,7 @@
   }
 
   .data-table-td {
-    @apply px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white;
+    @apply px-6 py-4 text-sm font-mono text-gray-900 dark:text-white break-all md:whitespace-nowrap md:break-normal;
   }
 
   .data-table-list {
@@ -472,7 +472,7 @@
   }
 
   .data-table-body-text {
-    @apply text-sm font-normal leading-none text-light-text dark:text-dark-text px-4 py-4 whitespace-nowrap;
+    @apply text-sm font-normal leading-none text-light-text dark:text-dark-text px-4 py-4 break-all md:whitespace-nowrap md:break-normal;
   }
 
   .data-table-current-page {
