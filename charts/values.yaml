@@ -9,8 +9,6 @@ replicas: 1
 
 # Image configuration
 image:
-  repository: veranalabs/verana-front
-  tag: dev
   pullPolicy: IfNotPresent
 
 # Service configuration

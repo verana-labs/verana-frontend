@@ -147,10 +147,11 @@ jobs:
       - name: Deploy (Helm upgrade --install)
         if: steps.semantic.outputs.new-release-published == 'true'
         run: |
-          helm upgrade --install verana-frontend ./charts \
+          helm upgrade --install verana-frontend \
+            oci://docker.io/${{ secrets.DOCKER_HUB_LOGIN }}/verana-front \
+            --version v${{ steps.semantic.outputs.release-version }} \
             -n vna-testnet-1 \
             --create-namespace \
-            --set image.tag=v${{ steps.semantic.outputs.release-version }} \
             --wait \
             --atomic \
             --timeout 20m
