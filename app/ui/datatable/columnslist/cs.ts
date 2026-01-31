@@ -60,7 +60,7 @@ export function createColumnsCsList(archivedLabel: string = 'ARCHIVED'): Column<
         return titleStr;
       }
     },
-    { header: t("datatable.cs.header.desc"), accessor: "description" },
+    { header: t("datatable.cs.header.desc"), accessor: "description", priority: 4 },
     {
       header: t("datatable.cs.header.participants"),
       accessor: "participants",
@@ -97,7 +97,7 @@ export const columnsCsList: Column<CsList>[] = [
       return titleStr;
     }
   },
-  { header: t("datatable.cs.header.desc"), accessor: "description" },
+  { header: t("datatable.cs.header.desc"), accessor: "description", priority: 4 },
   {
     header: t("datatable.cs.header.participants"),
     accessor: "participants",

@@ -10,6 +10,8 @@ import { CsList } from '@/ui/datatable/columnslist/cs';
 type RawSchema = Record<string, unknown> & {
   id?: number;
   tr_id?: string | number;
+  title?: string;
+  description?: string;
   json_schema?: string;
   deposit?: string;
   issuer_grantor_validation_validity_period?: number;
@@ -27,7 +29,7 @@ type RawSchema = Record<string, unknown> & {
   verified?: number;
 };
 
-export function useCSList(trId?: string, all: boolean = true, onlyActive: boolean = true) {
+export function useCSList(trId?: string, all: boolean = true) {
 
   const getURL =
     env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA') ||
@@ -37,9 +39,7 @@ export function useCSList(trId?: string, all: boolean = true, onlyActive: boolea
   const [loading, setLoading] = useState(false);
   const [errorCSList, setError] = useState<string | null>(null);
 
-  const fetchCS = useCallback(async (activeOnly?: boolean) => {
-    const useOnlyActive = activeOnly !== undefined ? activeOnly : onlyActive;
-
+  const fetchCS = useCallback(async () => {
     if ((!all && !trId) || !getURL) {
       setError(resolveTranslatable({key: "error.fetch.cs"}, translate)?? 'Missing TR id or endpoint URL');
       setLoading(false);
@@ -51,8 +51,7 @@ export function useCSList(trId?: string, all: boolean = true, onlyActive: boolea
     setCsList([]);
 
     // Build URL with query parameters
-    // Note: only_active parameter is not yet supported by the API (returns 500)
-    // We fetch all schemas and filter client-side for now
+    // Fetch all schemas - filtering is done client-side
     const params = new URLSearchParams();
     if (trId !== undefined) {
       params.append('tr_id', trId);
@@ -70,15 +69,7 @@ export function useCSList(trId?: string, all: boolean = true, onlyActive: boolea
         setError(`Error ${code}: ${error}`);
         return;
       }
-      let schemas: RawSchema[] = Array.isArray(json) ? json : (json.schemas ?? []);
-
-      // Client-side filtering for archived schemas (API doesn't support only_active yet)
-      if (useOnlyActive) {
-        schemas = schemas.filter((src) => {
-          const isArchived = src.archived === true || src.archived === 'true';
-          return !isArchived;
-        });
-      }
+      const schemas: RawSchema[] = Array.isArray(json) ? json : (json.schemas ?? []);
 
       const list: CsList[] = schemas.map((src) => {
         // Parse JSON schema safely
@@ -90,12 +81,14 @@ export function useCSList(trId?: string, all: boolean = true, onlyActive: boolea
           console.error(`Failed to parse json_schema for credential schema id=${src.id}, tr_id=${src.tr_id}:`, err);
           parsed = {};
         }
-        // Title comes from JSON schema title, fallback to 'Schema'
+        // Title: API data first, then JSON schema, then fallback to 'Schema'
         const title =
+          (src.title && src.title.trim() !== '' ? src.title : null) ??
           (parsed.title as string | undefined) ??
           'Schema';
-        // Description comes from JSON schema description
+        // Description: API data first, then JSON schema
         const description =
+          (src.description && src.description.trim() !== '' ? src.description : null) ??
           (parsed.description as string | undefined) ?? '';
 
         // Parse archived field (can be boolean or string)
@@ -125,7 +118,7 @@ export function useCSList(trId?: string, all: boolean = true, onlyActive: boolea
     } finally {
       setLoading(false);
     }
-  }, [trId, all, onlyActive, getURL]);
+  }, [trId, all, getURL]);
 
   useEffect(() => {
     fetchCS();
