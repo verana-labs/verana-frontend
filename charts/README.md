@@ -21,8 +21,7 @@ This chart deploys the Verana frontend (Next.js) as a Deployment with a Service,
 | --- | --- | --- |
 | `name` | Application name/labels | `verana-frontend` |
 | `replicas` | Deployment replicas | `1` |
-| `image.repository` | Image repository | `veranalabs/verana-front` |
-| `image.tag` | Image tag | `dev` |
+| `image.tag` | Image tag | `{{ .Chart.Version }}` |
 | `image.pullPolicy` | Image pull policy | `IfNotPresent` |
 | `service.type` | Service type | `ClusterIP` |
 | `service.port` | Service port | `3000` |
@@ -32,6 +31,7 @@ This chart deploys the Verana frontend (Next.js) as a Deployment with a Service,
 | `extraEnv` | Additional env entries (`[{name, value}]`) | `[]` |
 | `resources` | Pod resources | `{}` |
 | `ingress.enabled` | Enable ingress | `false` |
+> **Note:** The image tag should match the Chart version by default to ensure deployment consistency. It can be overridden for debugging purposes if needed.
 
 ### Required environment variables
 
@@ -65,8 +65,6 @@ Install/upgrade (override image tag and a couple env vars):
 ```bash
 helm upgrade --install verana-frontend ./charts \
   -n vna-testnet-1 \
-  --set image.repository=veranalabs/verana-front \
-  --set image.tag=dev \
   --set env.NEXT_PUBLIC_BASE_URL=https://frontend.testnet.verana.network \
   --set env.NEXT_PUBLIC_VERANA_CHAIN_ID=vna-testnet-1
 ```
