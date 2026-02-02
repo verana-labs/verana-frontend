@@ -148,7 +148,7 @@ jobs:
         if: steps.semantic.outputs.new-release-published == 'true'
         run: |
           helm upgrade --install verana-frontend \
-            oci://docker.io/${{ secrets.DOCKER_HUB_LOGIN }}/verana-front \
+            oci://registry-1.docker.io/${{ secrets.DOCKER_HUB_LOGIN }}/verana-frontend-chart \
             --version v${{ steps.semantic.outputs.release-version }} \
             -n vna-testnet-1 \
             --create-namespace \
