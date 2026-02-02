@@ -36,7 +36,7 @@ spec:
 {{- end }}
       containers:
         - name: {{ .Values.name }}
-          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          image: veranalabs/verana-front:{{ tpl .Values.image.tag . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
 {{- range $key, $value := .Values.env }}

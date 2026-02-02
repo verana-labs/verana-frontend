@@ -9,9 +9,8 @@ replicas: 1
 
 # Image configuration
 image:
-  repository: veranalabs/verana-front
-  tag: dev
   pullPolicy: IfNotPresent
+  tag: "{{ .Chart.Version }}" # Kept aligned with chart version for consistency
 
 # Service configuration
 service:
