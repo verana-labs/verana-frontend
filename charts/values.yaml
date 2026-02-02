@@ -10,7 +10,7 @@ replicas: 1
 # Image configuration
 image:
   pullPolicy: IfNotPresent
-  tag: "{{ .Chart.Version }}" #Please avoid using any different tag then the chart version for consistency on deployments
+  tag: "{{ .Chart.Version }}" # Kept aligned with chart version for consistency
 
 # Service configuration
 service:
