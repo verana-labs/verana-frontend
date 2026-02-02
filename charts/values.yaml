@@ -10,6 +10,7 @@ replicas: 1
 # Image configuration
 image:
   pullPolicy: IfNotPresent
+  tag: "{{ .Chart.Version }}"
 
 # Service configuration
 service:
