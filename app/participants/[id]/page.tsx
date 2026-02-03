@@ -121,19 +121,24 @@ export default function ParicipantsPage() {
   const schemaId = params?.id as string;
   const {permissionsList} = usePermissions(schemaId);
   const [permissionsTree, setPermissionsTree] = useState<TreeNode[] | []>([]);
+  const [showArchived, setShowArchived] = useState(false);
   const {csData} = useCsData(schemaId);
   const {dataTR, refetch} = useTrustRegistryData(csData?.trId as string);
 
   useEffect(() => {
-    const groupedTreeNodes = buildPermissionTreeGroupedByType(permissionsList);
+    // Filter permissions client-side based on showArchived state
+    const filteredPermissions = showArchived
+      ? permissionsList
+      : permissionsList.filter(p => p.perm_state === 'ACTIVE');
+    const groupedTreeNodes = buildPermissionTreeGroupedByType(filteredPermissions);
     setPermissionsTree(groupedTreeNodes);
-  }, [permissionsList]);
+  }, [permissionsList, showArchived]);
 
   useEffect(() => {
     refetch();
   }, [csData]);
 
-  return <PermissionTree tree={permissionsTree} type={"participants"} csTitle={csData?.title??""} trTitle={dataTR?.did??""} />;
+  return <PermissionTree tree={permissionsTree} type={"participants"} csTitle={csData?.title??""} trTitle={dataTR?.did??""} showArchived={showArchived} onShowArchivedChange={setShowArchived} />;
 
 };
 

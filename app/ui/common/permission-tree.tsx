@@ -24,6 +24,8 @@ type PermissionTreeProps = {
   csTitle?: string;
   trTitle?: string;
   hrefJoin?: string;
+  showArchived?: boolean;
+  onShowArchivedChange?: (value: boolean) => void;
 };
 
 /** ------------ Types ------------ */
@@ -227,7 +229,7 @@ function Tree({
   );
 }
 
-export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle }: PermissionTreeProps) {
+export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle, showArchived, onShowArchivedChange }: PermissionTreeProps) {
   const [showWeight, setShowWeight] = useState(false);
   const [showBusiness, setShowBusiness] = useState(false);
   const [showStats, setShowStats] = useState(false);
@@ -298,10 +300,10 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle 
 
       {/* Permission Tree Card */}
       <section className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6 mb-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{resolveTranslatable({key: (type === "participants")? "participants.tree.title" : "task.tree.title"}, translate)??"Tree"}</h2>
           { type === "participants" ? (
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <label className="flex items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -309,7 +311,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle 
                 checked={showWeight}
                 onChange={(e) => setShowWeight(e.target.checked)}
               />
-              <span className="text-sm text-gray-700 dark:text-gray-300">{resolveTranslatable({key: "participants.show.weight"}, translate)}</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{resolveTranslatable({key: "participants.show.weight"}, translate)}</span>
             </label>
             <label className="flex items-center space-x-2 cursor-pointer">
               <input
@@ -318,7 +320,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle 
                 checked={showBusiness}
                 onChange={(e) => setShowBusiness(e.target.checked)}
               />
-              <span className="text-sm text-gray-700 dark:text-gray-300">{resolveTranslatable({key: "participants.show.businessrules"}, translate)}</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{resolveTranslatable({key: "participants.show.businessrules"}, translate)}</span>
             </label>
             <label className="flex items-center space-x-2 cursor-pointer">
               <input
@@ -327,7 +329,16 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle 
                 checked={showStats}
                 onChange={(e) => setShowStats(e.target.checked)}
               />
-              <span className="text-sm text-gray-700 dark:text-gray-300">{resolveTranslatable({key: "participants.show.stats"}, translate)}</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{resolveTranslatable({key: "participants.show.stats"}, translate)}</span>
+            </label>
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                className="w-4 h-4 text-primary-600 border-neutral-20 rounded focus:ring-primary-500"
+                checked={showArchived ?? false}
+                onChange={(e) => onShowArchivedChange?.(e.target.checked)}
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{resolveTranslatable({key: "participants.show.archived"}, translate)}</span>
             </label>
           </div>
           ):null}
