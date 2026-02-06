@@ -468,7 +468,6 @@
   "datatable.cs.header.verified": "Verified Credentials",
   "datatable.cs.header.role": "Role",
   "datatable.cs.filter.showArchived": "Show archived",
-  "datatable.cs.label.archived": "ARCHIVED",
 
   "datalist.egf.title": "EGF Documents",
 

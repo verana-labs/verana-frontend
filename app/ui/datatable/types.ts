@@ -57,6 +57,7 @@ export interface DataTableProps<T extends object> {
   tableTitle?: string;
   addTitle?: string;
   onAdd?: () => void;
+  titleFilter?: ReactNode;
   detailTitle?: string;
   onRefresh?: () => void;
 }

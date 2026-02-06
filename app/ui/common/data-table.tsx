@@ -34,6 +34,7 @@ export function DataTable<T extends object>({
   tableTitle,
   addTitle,
   onAdd,
+  titleFilter,
   detailTitle,
   onRefresh
 }: DataTableProps<T>) {
@@ -184,14 +185,14 @@ export function DataTable<T extends object>({
                 </div>
               </div>
               )}
-              { tableTitle && addTitle && (
+              { tableTitle && (
               <TitleAndButton
                 title=  {tableTitle}
                 buttonLabel={addTitle}
-                // to="/tr/add"
-                icon={faPlus}
+                icon={onAdd ? faPlus : undefined}
                 isTable={true}
                 onClick={onAdd}
+                titleFilter={titleFilter}
               />
               )}
             </div>
@@ -271,7 +272,6 @@ export function DataTable<T extends object>({
                   }}
                   className={'data-table-card'}
                 >
-                  {/* <div className="flex flex-col space-y-2"> */}
                     <div className="flex justify-between">
                       <div className="flex flex-col space-y-2">
                       {columns.filter((col) => col.priority === undefined &&  !col.viewMobileRight)
@@ -297,15 +297,30 @@ export function DataTable<T extends object>({
                         const valueStr = String(formatted ?? "");
                         return (
                           <div key={String(col.accessor)}>
-                            {col.isHtml ? 
-                            (<p dangerouslySetInnerHTML={{ __html: valueStr }} />) : 
+                            {col.isHtml ?
+                            (<p dangerouslySetInnerHTML={{ __html: valueStr }} />) :
                             (<label  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${col.className ? col.className(row[col.accessor]) : ''}`}>{ valueStr }</label>)
                             }
                           </div>)
                       })}
                       </div>
                     </div>
-                  {/* </div> */}
+                    {/* Priority columns shown as compact metrics grid on mobile */}
+                    {columns.filter((col) => col.priority !== undefined && !col.viewMobileRight).length > 0 && (
+                      <div className="grid grid-cols-2 gap-2 text-sm mt-3">
+                        {columns.filter((col) => col.priority !== undefined && !col.viewMobileRight)
+                        .map((col) => {
+                          const value = col.format ? col.format(row[col.accessor], row) : row[col.accessor];
+                          const valueStr = String(value ?? '');
+                          return (
+                            <div key={String(col.accessor)}>
+                              <span className="text-neutral-70 dark:text-neutral-70">{col.header}: </span>
+                              <span className="font-medium text-gray-900 dark:text-white">{valueStr}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                 </div>
               ))}
             </div>

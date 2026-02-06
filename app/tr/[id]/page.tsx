@@ -16,7 +16,7 @@ import langs from 'langs';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
-import { createColumnsCsList } from '@/ui/datatable/columnslist/cs';
+import { columnsCsList } from '@/ui/datatable/columnslist/cs';
 import { DataTable } from '@/ui/common/data-table';
 import { DataList } from '@/ui/common/data-list';
 import { ModalAction } from '@/ui/common/modal-action';
@@ -46,10 +46,6 @@ export default function TRViewPage() {
   }, [allCsList, showArchived]);
   const { dataTR, loading, errorTRData, refetch: refetchTR } = useTrustRegistryData(id);
   const [ addCS, setAddCS ] = useState<boolean>(false);
-
-  // Create columns with translated ARCHIVED label
-  const archivedLabel = resolveTranslatable({key: "datatable.cs.label.archived"}, translate) ?? 'ARCHIVED';
-  const csColumns = useMemo(() => createColumnsCsList(archivedLabel), [archivedLabel]);
 
   // Refresh data TR
   const [refresh, setRefresh] = useState<string | null>(null);
@@ -198,106 +194,29 @@ export default function TRViewPage() {
         onRefresh={() => setRefresh('actionTR')}
       />
 
-      {/* Credential Schemas Section - Unified header and table */}
-      <section id="credential-schemas-section" className="mb-8">
-        <div className="data-table-section-div overflow-hidden">
-          {/* Table Header with title, checkbox, and button - all on same row */}
-          <div className="px-4 sm:px-6 py-4 border-b border-neutral-20 dark:border-neutral-70">
-            <div className="flex items-center justify-between gap-2 sm:gap-4">
-              <h3 className="data-table-title whitespace-nowrap">
-                <span className="sm:hidden">{resolveTranslatable({key: "datatable.cs.title.short"}, translate) ?? "Schemas"}</span>
-                <span className="hidden sm:inline">{resolveTranslatable({key: "datatable.cs.title"}, translate)}</span>
-              </h3>
-              <div className="flex items-center gap-2 sm:gap-4">
-                {/* Show archived checkbox - on the left of the button */}
-                <label className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showArchived}
-                    onChange={(e) => setShowArchived(e.target.checked)}
-                    className="w-4 h-4 text-primary-600 border-neutral-20 dark:border-neutral-70 rounded focus:ring-primary-500 flex-shrink-0"
-                  />
-                  <span className="leading-tight">{resolveTranslatable({key: "datatable.cs.filter.showArchived"}, translate) ?? "Show Archived"}</span>
-                </label>
-                {/* New Schema button - only show if user is controller */}
-                {data.controller === address && (
-                  <button
-                    onClick={() => setAddCS(true)}
-                    className="inline-flex items-center px-3 sm:px-4 py-2 bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-colors text-xs sm:text-sm"
-                  >
-                    <span className="mr-1">+</span>
-                    <span className="leading-tight">{resolveTranslatable({key: "button.cs.add"}, translate) ?? "New Schema"}</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile Cards - Custom layout matching reference template */}
-          <div className="md:hidden divide-y divide-neutral-20 dark:divide-neutral-70">
-            {csList.length === 0 && (
-              <div className="text-center py-10 text-neutral-70 dark:text-neutral-70">
-                {resolveTranslatable({key: "datatable.empty"}, translate) ?? "No results found"}
-              </div>
-            )}
-            {csList.map((row) => (
-              <div
-                key={row.id}
-                onClick={() => router.push(`/tr/cs/${encodeURIComponent(row.id)}?edit=${data.controller === address}`)}
-                className={`p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors ${row.archived ? 'line-through decoration-2 decoration-[#763EF0]' : ''}`}
-              >
-                {/* ID */}
-                <p className="text-sm font-medium text-gray-900 dark:text-white">CS-{row.id}</p>
-                {/* Title with optional ARCHIVED badge */}
-                <h4 className="text-base font-semibold text-gray-900 dark:text-white mt-1">
-                  {row.title}
-                  {row.archived && (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-900 text-slate-300 dark:bg-slate-700 dark:text-slate-300 ml-2">
-                      {archivedLabel}
-                    </span>
-                  )}
-                </h4>
-                {/* Description */}
-                {row.description && (
-                  <p className="text-sm text-neutral-70 dark:text-neutral-70 mb-3">{row.description}</p>
-                )}
-                {/* Metrics grid */}
-                <div className="grid grid-cols-2 gap-2 text-sm mt-3">
-                  <div>
-                    <span className="text-neutral-70 dark:text-neutral-70">{resolveTranslatable({key: "datatable.cs.header.participants"}, translate)}: </span>
-                    <span className="font-medium text-gray-900 dark:text-white">{row.participants ?? '-'}</span>
-                  </div>
-                  <div>
-                    <span className="text-neutral-70 dark:text-neutral-70">{resolveTranslatable({key: "datatable.cs.header.issued"}, translate)}: </span>
-                    <span className="font-medium text-gray-900 dark:text-white">{row.issued ?? '-'}</span>
-                  </div>
-                  <div>
-                    <span className="text-neutral-70 dark:text-neutral-70">{resolveTranslatable({key: "datatable.cs.header.verified"}, translate)}: </span>
-                    <span className="font-medium text-gray-900 dark:text-white">{row.verified ?? '-'}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-            {/* Mobile pagination info */}
-            <div className="px-4 py-4 text-sm text-neutral-70 dark:text-neutral-70">
-              {resolveTranslatable({key: "datatable.pagination.showing", values: { count: csList.length }}, translate) ?? `Showing ${csList.length} results`}
-            </div>
-          </div>
-
-          {/* Desktop Table - hide DataTable's outer wrapper styling */}
-          <div className="hidden md:block [&_section]:mb-0 [&_section>div]:border-0 [&_section>div]:rounded-none [&_section>div>div:first-child]:hidden">
-            <DataTable
-              columnsI18n={csColumns}
-              data={csList}
-              initialPageSize={10}
-              onRowClick={(row) => router.push(`/tr/cs/${encodeURIComponent(row.id)}?edit=${data.controller === address}`)}
-              defaultSortColumn={'id'}
-              showDetailModal={false}
-              detailTitle={resolveTranslatable({key: "datatable.tr.detail"}, translate)}
+      {/* Credential Schemas Section */}
+      <DataTable
+        tableTitle={resolveTranslatable({key: "datatable.cs.title"}, translate)}
+        addTitle={data.controller === address ? resolveTranslatable({key: "button.cs.add"}, translate) : undefined}
+        titleFilter={
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showArchived}
+              onChange={(e) => setShowArchived(e.target.checked)}
+              className="w-4 h-4 text-primary-600 border-neutral-20 dark:border-neutral-70 rounded focus:ring-primary-500"
             />
-          </div>
-        </div>
-      </section>
+            <span>{resolveTranslatable({key: "datatable.cs.filter.showArchived"}, translate)}</span>
+          </label>
+        }
+        columnsI18n={columnsCsList}
+        data={csList}
+        initialPageSize={10}
+        onRowClick={(row) => router.push(`/tr/cs/${encodeURIComponent(row.id)}?edit=${data.controller === address}`)}
+        defaultSortColumn={'id'}
+        showDetailModal={false}
+        onAdd={data.controller === address ? () => setAddCS(true) : undefined}
+      />
 
       {/* render modal add Credential Schema*/}
       {addCS && (
