@@ -22,7 +22,7 @@ import { normalizeJsonSchema, validateJSONSchemaReturn } from '@/util/json_schem
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 // import { sanitizeProtoMsg } from '../util/sanitizeProtoMsg';
-import { pickOptionalUInt32 } from '@/util/aminoHelpers';
+import { pickOptionalUInt32 } from '@/msg/util/aminoHelpers';
 
 // Message type configuration (typeUrl + label for memo/notification)
 export const MSG_TYPE_CONFIG_CS = {

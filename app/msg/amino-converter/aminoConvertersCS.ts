@@ -6,7 +6,7 @@ import {
   MsgUpdateCredentialSchema,
   MsgArchiveCredentialSchema,
 } from 'proto-codecs/codec/verana/cs/v1/tx';
-import { u64ToStr, strToU64, u32ToAmino, fromOptU32Amino, toOptU32Amino } from '@/util/aminoHelpers';
+import { u64ToStr, strToU64, u32ToAmino, fromOptU32Amino, toOptU32Amino } from '@/msg/util/aminoHelpers';
 
 /**
  * Amino converter for MsgCreateCredentialSchema

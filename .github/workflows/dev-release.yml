@@ -142,15 +142,3 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- verana-front:v${{ steps.semantic.outputs.release-major }}.${{ steps.semantic.outputs.release-minor }}-dev" >> $GITHUB_STEP_SUMMARY
           echo "- verana-front:v${{ steps.semantic.outputs.release-version }}" >> $GITHUB_STEP_SUMMARY
-
-      # This will be removed once we have a proper CI/CD setup
-      - name: Deploy (Helm upgrade --install)
-        if: steps.semantic.outputs.new-release-published == 'true'
-        run: |
-          helm upgrade --install verana-frontend ./charts \
-            -n vna-testnet-1 \
-            --create-namespace \
-            --set image.tag=v${{ steps.semantic.outputs.release-version }} \
-            --wait \
-            --atomic \
-            --timeout 20m

@@ -1,4 +1,4 @@
-import { shortenMiddle } from "@/util/util";
+import { shortenDID, shortenMiddle } from "@/util/util";
 import { Column, Filter } from "@/ui/datatable/types";
 import { type I18nValues, type Translatable } from "@/ui/dataview/types";
 
@@ -43,7 +43,7 @@ const formatNumber = (value: unknown): string => {
 
 export const columnsTrList: Column<TrList>[] = [
   { header: t("datatable.tr.header.id"), accessor: "id"},
-  { header: t("datatable.tr.header.did"), accessor: "did", format: (value) => shortenMiddle(String(value), 30) },
+  { header: t("datatable.tr.header.did"), accessor: "did", format: (value) => shortenDID(String(value)) },
   { header: t("datatable.tr.header.controller"), accessor: "controller", format: (value) => shortenMiddle(String(value), 25), priority: 2 },
   { header: t("datatable.tr.header.activeSchemas"), accessor: "active_schemas", format: formatNumber, priority: 3 },
   { header: t("datatable.tr.header.participants"), accessor: "participants", format: formatNumber, priority: 3 },
