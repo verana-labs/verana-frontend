@@ -14,10 +14,7 @@ import {
   MsgCreatePermission,
 } from 'proto-codecs/codec/verana/perm/v1/tx';
 
-import { strToU64, u64ToStr } from '@/util/aminoHelpers';
-
-const dateToIso = (d?: Date) => (d ? d.toISOString() : undefined);
-const isoToDate = (s?: string) => (s ? new Date(s) : undefined);
+import { strToU64, u64ToStr, dateToIsoAmino, isoToDate } from '@/msg/util/aminoHelpers';
 
 /**
  * Amino converter for MsgStartPermissionVP
@@ -80,7 +77,7 @@ export const MsgSetPermissionVPToValidatedAminoConverter = {
   }: MsgSetPermissionVPToValidated) => ({
     creator,
     id: u64ToStr(id), // uint64 -> string
-    effective_until: dateToIso(effectiveUntil), // Date -> ISO string (optional)
+    effective_until: dateToIsoAmino(effectiveUntil), // Date -> ISO string (optional)
     validation_fees: u64ToStr(validationFees), // uint64 -> string
     issuance_fees: u64ToStr(issuanceFees), // uint64 -> string
     verification_fees: u64ToStr(verificationFees), // uint64 -> string
@@ -145,8 +142,8 @@ export const MsgCreateRootPermissionAminoConverter = {
     schema_id: u64ToStr(schemaId), // uint64 -> string
     did,
     country,
-    effective_from: dateToIso(effectiveFrom), // Date -> ISO string (optional)
-    effective_until: dateToIso(effectiveUntil), // Date -> ISO string (optional)
+    effective_from: dateToIsoAmino(effectiveFrom), // Date -> ISO string (optional)
+    effective_until: dateToIsoAmino(effectiveUntil), // Date -> ISO string (optional)
     validation_fees: u64ToStr(validationFees), // uint64 -> string
     issuance_fees: u64ToStr(issuanceFees), // uint64 -> string
     verification_fees: u64ToStr(verificationFees), // uint64 -> string
@@ -183,7 +180,7 @@ export const MsgExtendPermissionAminoConverter = {
   toAmino: ({ creator, id, effectiveUntil }: MsgExtendPermission) => ({
     creator,
     id: u64ToStr(id), // uint64 -> string
-    effective_until: dateToIso(effectiveUntil), // Date -> ISO string (optional)
+    effective_until: dateToIsoAmino(effectiveUntil), // Date -> ISO string (optional)
   }),
   fromAmino: (value: { creator: string; id: string; effective_until?: string }) =>
     MsgExtendPermission.fromPartial({
@@ -302,8 +299,8 @@ export const MsgCreatePermissionAminoConverter = {
     type,
     did,
     country,
-    effective_from: dateToIso(effectiveFrom), // Date -> ISO string (optional)
-    effective_until: dateToIso(effectiveUntil), // Date -> ISO string (optional)
+    effective_from: dateToIsoAmino(effectiveFrom), // Date -> ISO string (optional)
+    effective_until: dateToIsoAmino(effectiveUntil), // Date -> ISO string (optional)
     verification_fees: u64ToStr(verificationFees), // uint64 -> string
     validation_fees: u64ToStr(validationFees), // uint64 -> string
   }),

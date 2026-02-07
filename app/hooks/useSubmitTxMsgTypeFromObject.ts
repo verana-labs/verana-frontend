@@ -10,45 +10,53 @@ import { MessageType } from "@/msg/constants/types";
  * This is the only place you touch when adding a new MsgType.
  */
 const requiredFieldsByMsgType: Record<MessageType, readonly string[]> = {
-    // CS
-    MsgCreateCredentialSchema: [
-        "trId",
-        "jsonSchema",
-        "issuerGrantorValidationValidityPeriod",
-        "verifierGrantorValidationValidityPeriod",
-        "issuerValidationValidityPeriod",
-        "verifierValidationValidityPeriod",
-        "holderValidationValidityPeriod",
-        "issuerPermManagementMode",
-        "verifierPermManagementMode"
-    ],
-    MsgUpdateCredentialSchema: [
-        "id",
-        "issuerGrantorValidationValidityPeriod",
-        "verifierGrantorValidationValidityPeriod",
-        "issuerValidationValidityPeriod",
-        "verifierValidationValidityPeriod",
-        "holderValidationValidityPeriod"
-    ],
-    MsgArchiveCredentialSchema: ["id"],
+  // CS
+  MsgCreateCredentialSchema: [
+    "trId",
+    "jsonSchema",
+    "issuerGrantorValidationValidityPeriod",
+    "verifierGrantorValidationValidityPeriod",
+    "issuerValidationValidityPeriod",
+    "verifierValidationValidityPeriod",
+    "holderValidationValidityPeriod",
+    "issuerPermManagementMode",
+    "verifierPermManagementMode"
+  ],
+  MsgUpdateCredentialSchema: [
+    "id",
+    "issuerGrantorValidationValidityPeriod",
+    "verifierGrantorValidationValidityPeriod",
+    "issuerValidationValidityPeriod",
+    "verifierValidationValidityPeriod",
+    "holderValidationValidityPeriod"
+  ],
+  MsgArchiveCredentialSchema: ["id"],
 
-    // TR
-    MsgCreateTrustRegistry: ["did", "aka", "language", "docUrl"],
-    MsgUpdateTrustRegistry: ["id", "did", "aka", "language", "docUrl"],
-    MsgArchiveTrustRegistry: ["id"],
-    MsgAddGovernanceFrameworkDocument: [],
-    MsgIncreaseActiveGovernanceFrameworkVersion: [],
+  // TR
+  MsgCreateTrustRegistry: ["did", "aka", "language", "docUrl"],
+  MsgUpdateTrustRegistry: ["id", "did", "aka", "language", "docUrl"],
+  MsgArchiveTrustRegistry: ["id"],
+  MsgAddGovernanceFrameworkDocument: [],
+  MsgIncreaseActiveGovernanceFrameworkVersion: [],
 
-    // DID
-    MsgAddDID: [],
-    MsgRenewDID: [],
-    MsgTouchDID: [],
-    MsgRemoveDID: [],
+  // DID
+  MsgAddDID: [],
+  MsgRenewDID: [],
+  MsgTouchDID: [],
+  MsgRemoveDID: [],
 
-    // TD
-    MsgReclaimTrustDepositYield: [],
-    MsgReclaimTrustDeposit: [],
-    MsgRepaySlashedTrustDeposit: []
+  // TD
+  MsgReclaimTrustDepositYield: [],
+  MsgReclaimTrustDeposit: [],
+  MsgRepaySlashedTrustDeposit: [],
+  MsgRenewPermissionVP: [],
+  MsgSetPermissionVPToValidated: [],
+  MsgCancelPermissionVPLastRequest: [],
+  MsgExtendPermission: [],
+  MsgRevokePermission: [],
+  MsgSlashPermissionTrustDeposit: [],
+  MsgRepayPermissionSlashedTrustDeposit: [],
+  MsgCreateRootPermission: []
 };
 
 // Generic type for an action handler

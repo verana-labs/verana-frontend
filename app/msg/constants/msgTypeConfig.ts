@@ -1,6 +1,6 @@
 import { I18nValues, Translatable } from "@/ui/dataview/types";
 import { MessageType, MsgTypeInfoI18n, MsgTypeStyle } from "@/msg/constants/types";
-import { faArrowUp, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faArrowUp, faPlus, faXmark } from "@fortawesome/free-solid-svg-icons";
 
 const t = (key: string, values?: I18nValues): Translatable => ({ key, values });
 
@@ -84,6 +84,46 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     description: t("messages.MsgArchiveCredentialSchema.description"),
     cost: t("messages.MsgArchiveCredentialSchema.cost"),
   },
+  MsgCancelPermissionVPLastRequest: {
+    label: t("messages.MsgCancelPermissionVPLastRequest.label"),
+    description: t("messages.MsgCancelPermissionVPLastRequest.description"),
+    cost: t("messages.MsgCancelPermissionVPLastRequest.cost"), // {value}
+  },
+  MsgRenewPermissionVP: {
+    label: t("messages.MsgRenewPermissionVP.label"),
+    description: t("messages.MsgRenewPermissionVP.description"),
+    cost: t("messages.MsgRenewPermissionVP.cost"), // {value}
+  },
+  MsgSetPermissionVPToValidated: {
+    label: t("messages.MsgSetPermissionVPToValidated.label"),
+    description: t("messages.MsgSetPermissionVPToValidated.description"),
+    cost: t("messages.MsgSetPermissionVPToValidated.cost"), // {value}
+  },
+  MsgExtendPermission: {
+    label: t("messages.MsgExtendPermission.label"),
+    description: t("messages.MsgExtendPermission.description"),
+    cost: t("messages.MsgExtendPermission.cost"), // {value}
+  },
+  MsgRevokePermission: {
+    label: t("messages.MsgRevokePermission.label"),
+    description: t("messages.MsgRevokePermission.description"),
+    cost: t("messages.MsgRevokePermission.cost"), // {value}
+  },
+  MsgSlashPermissionTrustDeposit: {
+    label: t("messages.MsgSlashPermissionTrustDeposit.label"),
+    description: t("messages.MsgSlashPermissionTrustDeposit.description"),
+    cost: t("messages.MsgSlashPermissionTrustDeposit.cost"), // {value}
+  },
+  MsgRepayPermissionSlashedTrustDeposit: {
+    label: t("messages.MsgRepayPermissionSlashedTrustDeposit.label"),
+    description: t("messages.MsgRepayPermissionSlashedTrustDeposit.description"),
+    cost: t("messages.MsgRepayPermissionSlashedTrustDeposit.cost"), // {value}
+  },
+  MsgCreateRootPermission: {
+    label: t("messages.MsgCreateRootPermission.label"),
+    description: t("messages.MsgCreateRootPermission.description"),
+    cost: t("messages.MsgCreateRootPermission.cost"), // {value}
+  }
 };
 
 // Utility function to fill {value} in the cost message
@@ -123,5 +163,23 @@ export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
   },
   MsgCreateCredentialSchema: {},
   MsgUpdateCredentialSchema: {},
-  MsgArchiveCredentialSchema: {}
+  MsgArchiveCredentialSchema: {},
+  MsgCancelPermissionVPLastRequest: {
+    button: "bg-gray-600 hover:bg-gray-700"
+  },
+  MsgRenewPermissionVP: {},
+  MsgSetPermissionVPToValidated: {
+    button: "bg-green-600 hover:bg-green-700"
+  },
+  MsgExtendPermission: {},
+  MsgRevokePermission: {
+    button: "bg-red-600 hover:bg-red-700"
+  },
+  MsgSlashPermissionTrustDeposit: {
+    button: "bg-red-600 hover:bg-red-700"
+  },
+  MsgRepayPermissionSlashedTrustDeposit: {
+    button: "bg-green-600 hover:bg-green-700"
+  },
+  MsgCreateRootPermission: {}
 }

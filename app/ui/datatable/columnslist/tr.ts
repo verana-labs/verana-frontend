@@ -1,4 +1,4 @@
-import { formatDate, shortenMiddle } from "@/util/util";
+import { formatDate, shortenDID, shortenMiddle } from "@/util/util";
 import { Column, Filter } from "@/ui/datatable/types";
 import { resolveTranslatable, type I18nValues, type Translatable } from "@/ui/dataview/types";
 import { translate } from "@/i18n/dataview";
@@ -44,7 +44,7 @@ export const trFilter: Filter<TrList>[] = [
 
 export const columnsTrList: Column<TrList>[] = [
   { header: t("datatable.tr.header.id"), accessor: "id"},
-  { header: t("datatable.tr.header.did"), accessor: "did", format: (value) => shortenMiddle(String(value), 30) },
+  { header: t("datatable.tr.header.did"), accessor: "did", format: (value) => shortenDID(String(value)) },
   { header: t("datatable.tr.header.controller"), accessor: "controller", format: (value) => shortenMiddle(String(value), 25), priority: 2 },
   { header: t("datatable.tr.header.created"), accessor: "created", format: (value) => formatDate(value as string), priority: 4 },
   { header: t("datatable.tr.header.modified"), accessor: "modified", format: (value) => formatDate(value as string), priority: 1 },

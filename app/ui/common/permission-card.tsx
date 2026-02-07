@@ -1,25 +1,28 @@
 'use client';
 
 import { PermState, TreeNode } from "./permission-tree";
-import { useMemo } from "react";
-import { permissionActionLifecycle, permissionActionSlashing, permissionActionTasks, permissionActionValidationProcess, permissionBusinessModels, permissionLifecycle, permissionMetaItems, permissionSlashing, permissionValidationProcess, VpState } from "../dataview/datasections/perm";
+import { useMemo, useState } from "react";
+import { permissionActionLifecycle, permissionActionSlashing, permissionActionValidationProcess, 
+  permissionBusinessModels, permissionLifecycle, permissionMetaItems, permissionSlashing, permissionValidationProcess, VpState 
+} from "../dataview/datasections/perm";
 import PermissionAttribute from "./permission-atrribute";
 import IconLabelButton from "./icon-label-button";
 import clsx from "clsx";
 import { usePermissionHistory } from "@/hooks/usePermissionHistory";
 import PermissionTimeline from "./permission-timeline";
-import { permStateBadgeClass, roleBadgeClass, vpStateColor } from "@/util/util";
-
+import { permStateBadgeClass, roleBadgeClass, shortenDID, vpStateColor } from "@/util/util";
+import { ModalAction } from "./modal-action";
+import { renderActionComponent } from "./data-view-typed";
+import { translate } from "@/i18n/dataview";
+import { resolveTranslatable } from "../dataview/types";
 
 type PermissionCardProps = {
-  type: "participants" | "tasks";
   selectedNode: TreeNode;
   path: TreeNode[];
   csTitle: string;
 };
 
 export default function PermissionCard({
-  type,
   selectedNode,
   path,
   csTitle
@@ -36,22 +39,66 @@ export default function PermissionCard({
     return String(v);
   };
 
-  const granteeActions = selectedNode.permission?.grantee_available_actions ?? [];
-  const validatorActions = selectedNode.permission?.validator_available_actions ?? [];
+  const granteeActions =
+    selectedNode.isGrantee
+      ? (selectedNode.permission?.grantee_available_actions ?? [])
+      : [];
+  const validatorActions =
+    selectedNode.isValidator
+      ? (selectedNode.permission?.validator_available_actions ?? [])
+      : [];
+
   const allowed = new Set<string>([...granteeActions, ...validatorActions]);
 
   const permissionId = selectedNode.permission?.id as string;
   const {permissionHistoryList} = usePermissionHistory(permissionId);
   
-  const {labelVpState, classVpState} = vpStateColor(selectedNode.permission?.vp_state as VpState, selectedNode.permission?.vp_exp as string);
+  const {labelVpState, classVpState} = vpStateColor(selectedNode.permission?.vp_state as VpState, selectedNode.permission?.vp_exp as string, selectedNode.permission?.expire_soon ?? false);
+  const {labelPermState, classPermState} = permStateBadgeClass(selectedNode.permission?.perm_state as PermState, selectedNode.permission?.expire_soon as boolean);
 
+  const [activeActionId, setActiveActionId] = useState<string | null>(null);
+
+  function renderValidationActionItem(action: any, idx: number) {
+    const isActive = activeActionId === String(action.name);
+
+    return (
+      <section key={`action-${String(action.name)}-${idx}`}>
+        <IconLabelButton
+          label={action.label}
+          icon={action.icon}
+          className={clsx(
+            "btn-action-confirm text-sm", // base
+            action.buttonClass // specific
+          )}
+          onClick={() => setActiveActionId(isActive ? null : String(action.name))}
+        />
+
+        {action.value ? (
+          <ModalAction
+            onClose={() => setActiveActionId(null)}
+            titleKey={action.label}
+            isActive={isActive}
+          >
+            {renderActionComponent(
+              action.value,
+              () => setActiveActionId(null),
+              selectedNode.permission ?? {},
+              undefined,
+              undefined
+            )}
+          </ModalAction>
+        ) : null}
+      </section>
+    );
+  }
+  
   return (
     <section className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6">
     {selectedNode.permission && (
       <>
       <div className="mb-6">
         <div className="flex items-start justify-between mb-3">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{selectedNode.name}</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{shortenDID(selectedNode.name as string)}</h2>
           <div className="flex items-center space-x-2">
             <span
               className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${roleBadgeClass(selectedNode.permission.type)}`}
@@ -59,16 +106,15 @@ export default function PermissionCard({
               {selectedNode.permission.type}
             </span>
 
-            { type==="participants" && selectedNode.permission.perm_state ? (
+            { selectedNode.permission.perm_state ? (
               <span
-                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${permStateBadgeClass(
-                  selectedNode.permission.perm_state as PermState,false)}`}
+                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${classPermState}`}
               >
-                {selectedNode.permission.perm_state}
+                {labelPermState}
               </span>
             ) : null}
 
-            { type==="tasks" && selectedNode.permission?.vp_state ? (
+            { selectedNode.permission?.vp_state ? (
               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${classVpState}`}>
                 {labelVpState}
               </span>
@@ -87,7 +133,7 @@ export default function PermissionCard({
       <div className="space-y-8">
         {/* Key Metadata */}
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Key Metadata</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{resolveTranslatable({key: "permissioncard.meta.title"}, translate)}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {permissionMetaItems.map((item) => {
             const raw = selectedNode.permission?.[item.attr];
@@ -108,7 +154,7 @@ export default function PermissionCard({
 
         {/* Permission Lifecycle */}
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Permission Lifecycle</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{resolveTranslatable({key: "permissioncard.lifecycle.title"}, translate)}</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           {permissionLifecycle.map((item) => {
@@ -130,39 +176,16 @@ export default function PermissionCard({
           <div className="flex flex-wrap gap-3 mt-4">
           {permissionActionLifecycle
             .filter((action) => action.name && allowed.has(action.name))
-            .map((action, idx) => {
-              return (
-              <section key={`action-${String(action.name)}-${idx}`}>
-              <IconLabelButton 
-                label={action.label}
-                icon={action.icon}
-                className={clsx(
-                  "btn-action-confirm text-sm", // base
-                  action.buttonClass // specific
-                )}
-                onClick={action.onClick}
-              />
-              {/* <ModalAction
-                onClose={() => setActiveActionId(null)}
-                titleKey={field.label}
-                isActive={isActive}
-              >
-                {renderActionComponent(String(messageType), () => setActiveActionId(null), data, onRefresh?? undefined, onBack?? undefined )}
-              </ModalAction> */}
-              </section>
-            )}
-          )}
+            .map((action, idx) => renderValidationActionItem(action, idx))}
           </div>
         </div>
 
-        {type === "participants" ? (
-        <>
         {/* Validation Process */}
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Validation Process</h3>
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
-              VALIDATED
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{resolveTranslatable({key: "permissioncard.validationprocess.title"}, translate)}</h3>
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${classVpState}`}>
+              {labelVpState}
             </span>
           </div>
 
@@ -186,34 +209,13 @@ export default function PermissionCard({
           <div className="flex flex-wrap gap-3 mt-4">
           {permissionActionValidationProcess
             .filter((action) => action.name && allowed.has(action.name))
-            .map((action, idx) => {
-              return (
-              <section key={`action-${String(action.name)}-${idx}`}>
-              <IconLabelButton 
-                label={action.label}
-                icon={action.icon}
-                className={clsx(
-                  "btn-action-confirm text-sm", // base
-                  action.buttonClass // specific
-                )}
-                onClick={action.onClick}
-              />
-              {/* <ModalAction
-                onClose={() => setActiveActionId(null)}
-                titleKey={field.label}
-                isActive={isActive}
-              >
-                {renderActionComponent(String(messageType), () => setActiveActionId(null), data, onRefresh?? undefined, onBack?? undefined )}
-              </ModalAction> */}
-              </section>
-            )}
-          )}
+            .map((action, idx) => renderValidationActionItem(action, idx))}
           </div>
         </div>
 
         {/* Business Models */}
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Business Models</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{resolveTranslatable({key: "permissioncard.businessmodels.title"}, translate)}</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {permissionBusinessModels.map((item) => {
             const raw = selectedNode.permission?.[item.attr];
@@ -234,7 +236,7 @@ export default function PermissionCard({
 
         {/* Slashing */}
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Slashing</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{resolveTranslatable({key: "permissioncard.slashing.title"}, translate)}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           {permissionSlashing.map((item) => {
             const raw = selectedNode.permission?.[item.attr];
@@ -254,34 +256,13 @@ export default function PermissionCard({
           <div className="flex flex-wrap gap-3 mt-4">
           {permissionActionSlashing
             .filter((action) => action.name && allowed.has(action.name))
-            .map((action, idx) => {
-              return (
-              <section key={`action-${String(action.name)}-${idx}`}>
-              <IconLabelButton 
-                label={action.label}
-                icon={action.icon}
-                className={clsx(
-                  "btn-action-confirm text-sm", // base
-                  action.buttonClass // specific
-                )}
-                onClick={action.onClick}
-              />
-              {/* <ModalAction
-                onClose={() => setActiveActionId(null)}
-                titleKey={field.label}
-                isActive={isActive}
-              >
-                {renderActionComponent(String(messageType), () => setActiveActionId(null), data, onRefresh?? undefined, onBack?? undefined )}
-              </ModalAction> */}
-              </section>
-            )}
-          )}
+            .map((action, idx) => renderValidationActionItem(action, idx))}
           </div>
         </div>
 
         {/* Activity Timeline */}
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Activity Timeline</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{resolveTranslatable({key: "permissioncard.timeline.title"}, translate)}</h3>
           <div className="space-y-4">
           {permissionHistoryList.map((history, idx) => {
             return (
@@ -290,44 +271,6 @@ export default function PermissionCard({
           )}
           </div>
         </div>
-        </>
-        ):(
-        <>
-        {/* Actions */}
-        <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Actions</h3>
-          </div>
-          <div className="flex flex-wrap gap-3 mt-4">
-          {permissionActionTasks
-            // .filter((action) => action.name && allowed.has(action.name))
-            .map((action, idx) => {
-              return (
-              <section key={`action-${String(action.name)}-${idx}`}>
-              <IconLabelButton 
-                label={action.label}
-                icon={action.icon}
-                className={clsx(
-                  "btn-action-confirm text-sm", // base
-                  action.buttonClass // specific
-                )}
-                onClick={action.onClick}
-              />
-              {/* <ModalAction
-                onClose={() => setActiveActionId(null)}
-                titleKey={field.label}
-                isActive={isActive}
-              >
-                {renderActionComponent(String(messageType), () => setActiveActionId(null), data, onRefresh?? undefined, onBack?? undefined )}
-              </ModalAction> */}
-              </section>
-            )}
-          )}
-          </div>
-        </div>
-        </>
-        )}
-
 
       </div>
       </> 

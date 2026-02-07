@@ -6,7 +6,7 @@ import {
   MsgReclaimTrustDeposit,
   MsgRepaySlashedTrustDeposit,
 } from 'proto-codecs/codec/verana/td/v1/tx'
-import { strToU64, u64ToStr } from '@/util/aminoHelpers';
+import { strToU64, u64ToStr } from '@/msg/util/aminoHelpers';
     
 /**
  * Amino converter for MsgReclaimTrustDeposit
