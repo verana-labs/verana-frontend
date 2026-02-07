@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.3.0](https://github.com/verana-labs/verana-frontend/compare/v0.2.0...v0.3.0) (2026-02-07)
+
+
+### Features
+
+* 145 participants, actions tx permissions ([#220](https://github.com/verana-labs/verana-frontend/issues/220)) ([7eda8ea](https://github.com/verana-labs/verana-frontend/commit/7eda8ea99f5a13afca8dc0583fcb8166571e7515))
+* pending-tasks ([#197](https://github.com/verana-labs/verana-frontend/issues/197)) ([f883cd3](https://github.com/verana-labs/verana-frontend/commit/f883cd3c031a0e92c7fd22741623f8d9187ebab0))
+* replace role filter with ecosystem stats columns in TR table ([#218](https://github.com/verana-labs/verana-frontend/issues/218)) ([3859fc9](https://github.com/verana-labs/verana-frontend/commit/3859fc9ff879a4e4da77d260faacfa0aa4386590))
+
+
+### Bug Fixes
+
+* Add config to generate ingress in chart into deployment ([#185](https://github.com/verana-labs/verana-frontend/issues/185)) ([16203a6](https://github.com/verana-labs/verana-frontend/commit/16203a6e5a21da09a384ff83ddaf068410b642d0))
+* add helm registry ([#194](https://github.com/verana-labs/verana-frontend/issues/194)) ([1d4a04a](https://github.com/verana-labs/verana-frontend/commit/1d4a04ade812c3a8790d6cbc1f7e9ec43d99c558))
+* align bottom elements in featured services cards ([#211](https://github.com/verana-labs/verana-frontend/issues/211)) ([7ddf85e](https://github.com/verana-labs/verana-frontend/commit/7ddf85ec3b5c1a84ac4801941f11402d9876c451)), closes [#150](https://github.com/verana-labs/verana-frontend/issues/150)
+* align service port with app port ([#186](https://github.com/verana-labs/verana-frontend/issues/186)) ([8cba548](https://github.com/verana-labs/verana-frontend/commit/8cba548a909302f9f00d6b6739ae047385bf503d))
+* ApiErrorResponse ([#204](https://github.com/verana-labs/verana-frontend/issues/204)) ([567fac0](https://github.com/verana-labs/verana-frontend/commit/567fac043fa5c46aa7170ce73ffbe36fa42c371e))
+* create direct deploy with version ([#198](https://github.com/verana-labs/verana-frontend/issues/198)) ([ff2e058](https://github.com/verana-labs/verana-frontend/commit/ff2e05829ddef45bac248ed811284633569e7542))
+* deployemnt control by verana-deploy repository ([#219](https://github.com/verana-labs/verana-frontend/issues/219)) ([87e934c](https://github.com/verana-labs/verana-frontend/commit/87e934cd62541a38b95cbb18aa98918e1223f634))
+* deployment version accortding to helm chart ([#214](https://github.com/verana-labs/verana-frontend/issues/214)) ([5fd84d7](https://github.com/verana-labs/verana-frontend/commit/5fd84d75d98a89a29939183da865bb2883e20d17))
+* handle null trustUnitPrice and locale-formatted numbers in USD conversion ([#212](https://github.com/verana-labs/verana-frontend/issues/212)) ([6099649](https://github.com/verana-labs/verana-frontend/commit/6099649d7d8c2534e13fc51a18ed9af819dcf202)), closes [#205](https://github.com/verana-labs/verana-frontend/issues/205)
+* json_schema validation and credential schema view  ([#203](https://github.com/verana-labs/verana-frontend/issues/203)) ([2562c86](https://github.com/verana-labs/verana-frontend/commit/2562c860f6a5aff56d07bf780a31cf6d8ce2f43f))
+* **main:** resolves error trust deposit not found ([#195](https://github.com/verana-labs/verana-frontend/issues/195)) ([e068e11](https://github.com/verana-labs/verana-frontend/commit/e068e11266a76acd4f0bff7e4e06479d28ca7b28))
+* resolve ETXTBSY error and pod memory pressure ([#191](https://github.com/verana-labs/verana-frontend/issues/191)) ([686d16c](https://github.com/verana-labs/verana-frontend/commit/686d16c8b71acc846072ad01d7d4ba033d26f0ba))
+* return old version self deployment ([#217](https://github.com/verana-labs/verana-frontend/issues/217)) ([52ae482](https://github.com/verana-labs/verana-frontend/commit/52ae48268f8a557525c2213cb2c807a9110d4242))
+* testing readme ([#183](https://github.com/verana-labs/verana-frontend/issues/183)) ([c6c7253](https://github.com/verana-labs/verana-frontend/commit/c6c7253142c57b534ed0c8d65a7c111bf2491180))
+* trId error build ([#196](https://github.com/verana-labs/verana-frontend/issues/196)) ([2ab4f04](https://github.com/verana-labs/verana-frontend/commit/2ab4f04f0dffcf9ae69e4fdcbb076eeede8f58a1))
+* update ci to point to current version ([#216](https://github.com/verana-labs/verana-frontend/issues/216)) ([44f600f](https://github.com/verana-labs/verana-frontend/commit/44f600f0e1eed9cd1346fd4381dc5f46bc4dea37))
+* Update endpoint charts testnet ([#187](https://github.com/verana-labs/verana-frontend/issues/187)) ([242b279](https://github.com/verana-labs/verana-frontend/commit/242b279bc9670640063f4731379099f9b61812c7))
+
 ## [0.2.0](https://github.com/verana-labs/verana-frontend/compare/v0.1.1...v0.2.0) (2026-01-22)
 
 
