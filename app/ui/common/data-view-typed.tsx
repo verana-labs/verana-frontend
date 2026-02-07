@@ -8,11 +8,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 import EditableDataView from './data-edit';
 import DataView from './data-view-columns';
-import { MsgTypeDID, MsgTypeTD, MsgTypeTR } from '@/msg/constants/notificationMsgForMsgType';
+import { MsgTypeDID, MsgTypePERM, MsgTypeTD, MsgTypeTR } from '@/msg/constants/notificationMsgForMsgType';
 import GfdPage from '@/tr/[id]/gfd';
 import DidActionPage from '@/did/[id]/action';
 import TdActionPage from '@/account/action';
 import GetVNATokens from './get-vna';
+import PermActionPage from '@/participants/[id]/action';
 
 // Wrapper for DataView that lets you pass the generic parameter explicitly
 export default function DataViewTyped<I extends object>(props: {
@@ -136,6 +137,13 @@ const validTDAction = (action: string): action is MsgTypeTD =>
 export const validTRAction = (action: string): action is MsgTypeTR => 
   action === 'MsgAddGovernanceFrameworkDocument' || action === 'MsgIncreaseActiveGovernanceFrameworkVersion';
 
+// Define the valid actions for PERM
+export const validPermAction = (action: string): action is MsgTypePERM => 
+  action === 'MsgCancelPermissionVPLastRequest' || action === 'MsgRenewPermissionVP' || action === 'MsgSetPermissionVPToValidated' || 
+  action === 'MsgExtendPermission' || action === 'MsgRevokePermission' || action === 'MsgSlashPermissionTrustDeposit' || action === 'MsgRepayPermissionSlashedTrustDeposit' ||
+  action === 'MsgCreateRootPermission';
+
+
 // Helper to render the correct action component
 export function renderActionComponent(
   action: string,
@@ -156,6 +164,10 @@ export function renderActionComponent(
   if (validTRAction(action)) {
     return <GfdPage action={action} data={data} setActiveActionId={onClose} onRefresh={onRefresh}/>;
   }
+  if (validPermAction(action)) {
+    return <PermActionPage action={action} data={data} setActiveActionId={onClose} onRefresh={onRefresh}/>;
+  }
+
   return null;
 }
 

@@ -20,32 +20,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRight, faQrcode } from "@fortawesome/free-solid-svg-icons";
 import { useActionPerm } from "@/msg/actions_hooks/actionPerm";
 import { PermissionType } from "proto-codecs/codec/verana/perm/v1/types";
-
-function rolesSchema(schema: CsList): Role[] {
-  const roles = new Set<Role>();
-
-  // Issuance roles
-  if (schema.issuerPermManagementMode === "GRANTOR_VALIDATION") {
-    roles.add("ISSUER_GRANTOR");
-    roles.add("ISSUER");
-  } else {
-    // OPEN o ECOSYSTEM
-    roles.add("ISSUER");
-  }
-
-  // Verification roles
-  if (schema.verifierPermManagementMode === "GRANTOR_VALIDATION") {
-    roles.add("VERIFIER_GRANTOR");
-    roles.add("VERIFIER");
-  } else {
-    // OPEN o ECOSYSTEM
-    roles.add("VERIFIER");
-  }
-
-  roles.add("HOLDER");
-
-  return Array.from(roles);
-}
+import { rolesSchema } from "@/util/util";
 
 // function requiresValidation(schema: CsList, role: Role): boolean {
 //   const issuanceRoles: Role[] = ["ISSUER_GRANTOR", "ISSUER", "HOLDER"];
@@ -404,7 +379,7 @@ export default function JoinEcosystemWizard() {
         {/* Step 3 */}
         {(currentStep === 3 && selectedSchema) ? (
         <>
-          {rolesSchema(selectedSchema).map((role) => {
+          {rolesSchema(selectedSchema.issuerPermManagementMode, selectedSchema.verifierPermManagementMode).map((role) => {
             return (
               <RoleCard
                 key={role}

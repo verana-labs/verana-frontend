@@ -8,7 +8,7 @@ import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { useVeranaChain } from "@/hooks/useVeranaChain";
 import { useChain } from "@cosmos-kit/react";
 import { usePermissionsForAddress } from "@/hooks/usePermissionsForAddress";
-import { roleColorClass } from "@/util/util";
+import { authorityPaticipants, roleColorClass } from "@/util/util";
 
 export default function PendingTasksPage() {
   const veranaChain = useVeranaChain();
@@ -18,24 +18,34 @@ export default function PendingTasksPage() {
   const [permissionsTree, setPermissionsTree] = useState<TreeNode[]>([]);
 
   // Collect permission IDs granted to the current address
-  const [idsGrantedToAddress, setIdsGrantedToAddress] = useState<string[]>([]);
+  const idsAddress = new Set<string>();
+  const idsPredecessor = new Set<string>();
   
-  function authorityIcon(permission: Permission): { icon: IconDefinition; iconColorClass: string } {
-    if (permission.validator_perm_id && idsGrantedToAddress.includes(permission.validator_perm_id)) {
-      return { icon: faCrown, iconColorClass: "text-yellow-500" };
-    }
-    if (address === permission.grantee) {
-      return { icon: faCrown, iconColorClass: "text-green-500" };
-    }
-    return { icon: faEye, iconColorClass: "text-gray-500" };
-  }
-
   function permissionToTreeNode(p: Permission): TreeNode {
-    const { icon, iconColorClass } = authorityIcon(p);
+    let isGrantee = false;
+    let isValidator = false;
+    let isPredecessor = false;
+    if (address === p.grantee){
+      isGrantee = true;
+      idsAddress.add(p.id);
+    }
+    if (idsAddress.has(p.validator_perm_id)){
+      isValidator = true;
+      idsPredecessor.add(p.id);
+    }
+    if (idsPredecessor.has(p.validator_perm_id)){
+      isPredecessor = true;
+      idsPredecessor.add(p.id);
+    }
+
+    const {icon, iconColorClass } = authorityPaticipants(isGrantee, isValidator, isPredecessor);
     return {
       nodeId: p.id,
       name: p.did,
       group: false,
+      parentId: p.validator_perm_id,
+      isGrantee,
+      isValidator,
       roleColorClass: roleColorClass(p.type),
       icon,
       iconColorClass,
@@ -46,11 +56,10 @@ export default function PendingTasksPage() {
 
   function groupPermissionsBySchema(perms: Permission[]) {
     const buckets = new Map<string, Permission[]>();
-    const grantedSet = new Set<string>();
 
     for (const p of perms) {
       const key = p.schema_id;
-      grantedSet.add(p.id);
+      idsPredecessor.add(p.id);
       const arr = buckets.get(key);
       if (arr) arr.push(p);
       else buckets.set(key, [p]);
@@ -65,6 +74,8 @@ export default function PendingTasksPage() {
       return {
         nodeId: `schema:${schemaId}`,
         name: `${title} (${list.length})`,
+        isGrantee: false,
+        isValidator: false,
         group: true,
         schemaId,
         parentId: "root",
@@ -76,13 +87,12 @@ export default function PendingTasksPage() {
       };
     });
     
-    return { tree, grantedSet};
+    return tree;
   }
 
   useEffect(() => {
-    const { tree, grantedSet } = groupPermissionsBySchema(permissionsList);
+    const tree = groupPermissionsBySchema(permissionsList);
     setPermissionsTree(tree);
-    setIdsGrantedToAddress(Array.from(grantedSet));
   }, [permissionsList]);
   
   return <PermissionTree tree={permissionsTree} type={"tasks"} />;

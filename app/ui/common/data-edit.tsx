@@ -14,7 +14,7 @@ import { MessageType } from '@/msg/constants/types';
 import { resolveMsgCopy } from '@/msg/constants/resolveMsgTypeConfig';
 import clsx from "clsx"
 import { translate } from '@/i18n/dataview';
-import { isJson } from '@/util/util';
+import { isJson, withCurrentLocalTimePlusOneMinute } from '@/util/util';
 import JsonCodeBlock from './json-code-block';
 import ActionCard, { ActionCardProps } from './action-card';
 
@@ -71,7 +71,7 @@ export default function EditableDataView<T extends object>({
   }, []);
 
   // Get fee and amount in VNA
-  const { amountVNA } = useCalculateFee(messageType);
+  const { amountVNA } = useCalculateFee();
 
   // Get the trust deposit value for the message type
   const { value, errorTrustDepositValue } = useTrustDepositValue(messageType);
@@ -270,6 +270,16 @@ export default function EditableDataView<T extends object>({
           }}
         />
       );
+    } else if (field.inputType === 'date') {
+      inputEl = (
+        <input
+          type="datetime-local"
+          className={baseInputClass}
+          value={String(value ?? '')}
+          disabled={isDisabled}
+          onChange={e => handleChange(field.name as keyof T, e.target.value, field)}
+        />
+      );
     } else {
       inputEl = (
         <input
@@ -342,7 +352,7 @@ export default function EditableDataView<T extends object>({
         </div>
       )}
 
-      {/* textareas fuera del div anterior */}
+      {/* Inputs Textarea */}
       {textareaInputs.length > 0 && 
           textareaInputs
       }

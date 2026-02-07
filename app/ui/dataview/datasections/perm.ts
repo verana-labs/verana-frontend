@@ -1,9 +1,357 @@
 import { faBan, faCheck, faClockRotateLeft, faCopy, faEye, faHandHoldingDollar, faRotate, faTriangleExclamation, faUpRightFromSquare, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { ReactNode } from "react";
-import { formatDate, formatVNA } from "@/util/util";
+import { formatDate, formatVNAFromUVNA } from "@/util/util";
 import { translate } from "@/i18n/dataview";
-import { resolveTranslatable } from "../types";
+import { Field, resolveTranslatable, Section } from "@/ui/dataview/types";
+import { ActionPermParams } from "@/msg/actions_hooks/actionPerm";
+
+const t = (key: string) => ({ key });
+
+// Permission data (must include every field used by the sections)
+export interface PermissionData {
+  // Common
+  creator?: string;
+  country?: string;
+  // Identifiers
+  id?: string | number;
+  schemaId?: string | number;
+  validatorPermId?: string | number;
+  // Role / type
+  type?: PermissionType | number;
+  // DID
+  did?: string;
+  // Dates
+  effectiveFrom?: string | Date;
+  effectiveUntil?: string | Date;
+  // Fees
+  validationFees?: string | number;
+  issuanceFees?: string | number;
+  verificationFees?: string | number;
+  // VP validation
+  vpSummaryDigestSri?: string;
+  // Permission session
+  issuerPermId?: string | number;
+  verifierPermId?: string | number;
+  agentPermId?: string | number;
+  walletAgentPermId?: string | number;
+  // Slashing
+  amount?: string | number;
+}
+
+
+const commonIdentityFields = (opts?: { includeCountry?: boolean }): Field<PermissionData>[] => {
+  const out: Field<PermissionData>[] = [
+    {
+      name: "creator",
+      label: t("dataview.perm.fields.creator"),
+      type: "data",
+      inputType: "text",
+      show: "none",
+      required: true,
+      update: false,
+    },
+    {
+      name: "id",
+      label: t("dataview.perm.fields.id"),
+      type: "data",
+      inputType: "text",
+      show: "none",
+      required: true,
+      update: false,
+    }
+  ]
+
+  if (opts?.includeCountry) {
+    out.push({
+      name: "country",
+      label: t("dataview.perm.fields.country"),
+      type: "data",
+      inputType: "text",
+      show: "edit create",
+      required: false,
+      update: true,
+    });
+  }
+
+  return out;
+};
+
+const dateFields = (opts?: { from?: boolean; until?: boolean; untilRequired?: boolean }): Field<PermissionData>[] => {
+  const out: Field<PermissionData>[] = [];
+
+  if (opts?.from) {
+    out.push({
+      name: "effectiveFrom",
+      label: t("dataview.perm.fields.effectiveFrom"),
+      type: "data",
+      inputType: "date",
+      show: "edit create",
+      required: false,
+      update: true,
+    });
+  }
+
+  if (opts?.until) {
+    out.push({
+      name: "effectiveUntil",
+      label: t("dataview.perm.fields.effectiveUntil"),
+      type: "data",
+      inputType: "date",
+      show: "edit create",
+      required: opts?.untilRequired,
+      update: true,
+    });
+  }
+
+  return out;
+};
+
+const feeFields = (opts?: { includeIssuance?: boolean }): Field<PermissionData>[] => {
+  const out: Field<PermissionData>[] = [
+    {
+      name: "validationFees",
+      label: t("dataview.perm.fields.validationFees"),
+      type: "data",
+      inputType: "number",
+      show: "edit create",
+      required: false,
+      update: true,
+      validation: { type: "Long", greaterThan: 0 },
+    },
+  ];
+
+  if (opts?.includeIssuance) {
+    out.push({
+      name: "issuanceFees",
+      label: t("dataview.perm.fields.issuanceFees"),
+      type: "data",
+      inputType: "number",
+      show: "edit create",
+      required: false,
+      update: true,
+      validation: { type: "Long", greaterThan: 0 },
+    });
+  }
+
+  out.push({
+    name: "verificationFees",
+    label: t("dataview.perm.fields.verificationFees"),
+    type: "data",
+    inputType: "number",
+    show: "edit create",
+    required: false,
+    update: true,
+    validation: { type: "Long", greaterThan: 0 },
+  });
+
+  return out;
+};
+
+const commonCreateFields = (opts?: { includeType?: boolean, includeValidatorPermId?: boolean }): Field<PermissionData>[] => {
+  const out: Field<PermissionData>[] = [
+    {
+      name: "schemaId",
+      label: t("dataview.perm.fields.schemaId"),
+      type: "data",
+      inputType: "text",
+      show: "none",
+      required: true,
+      update: false,
+    },
+    {
+      name: "did",
+      label: t("dataview.perm.fields.did"),
+      type: "data",
+      inputType: "text",
+      show: "create",
+      required: true,
+      update: false,
+      placeholder: "did:method:identifier",
+      validation: { type: "DID" },
+    }
+  ];
+
+  if (opts?.includeType) {
+    out.push({
+      name: "type",
+      label: t("dataview.perm.fields.type"),
+      type: "data",
+      inputType: "text",
+      show: "none",
+      required: true,
+      update: false,
+    });
+  }
+
+  if (opts?.includeValidatorPermId) {
+    out.push({
+      name: "validatorPermId",
+      label: t("dataview.perm.fields.validatorPermId"),
+      type: "data",
+      inputType: "text",
+      show: "none",
+      required: true,
+      update: false,
+    });
+  }
+
+  return out;
+};
+
+type MsgType = ActionPermParams["msgType"];
+
+/* ---------- Sections factory by msgType ---------- */
+
+export function getActionPermSections(msgType: MsgType): Section<PermissionData>[] {
+  switch (msgType) {
+    case "MsgStartPermissionVP":
+      return [
+        {
+          name: t("dataview.perm.sections.main"),
+          type: "basic",
+          fields: [
+            ...commonIdentityFields({includeCountry: true}),
+            ...commonCreateFields({ includeType: true, includeValidatorPermId: true})
+          ],
+        },
+      ];
+
+    case "MsgSetPermissionVPToValidated":
+      return [
+        {
+          name: t("dataview.perm.sections.main"),
+          type: "basic",
+          fields: [
+            ...commonIdentityFields({includeCountry: true}),
+            ...dateFields({ until: true }),
+            ...feeFields({ includeIssuance: true }),
+            {
+              name: "vpSummaryDigestSri",
+              label: t("dataview.perm.fields.vpSummaryDigestSri"),
+              type: "data",
+              inputType: "text",
+              show: "none",
+              required: false,
+              update: false,
+            },
+          ],
+        },
+      ];
+
+    case "MsgCreateRootPermission":
+      return [
+        {
+          // name: t("dataview.perm.sections.main"),
+          type: "basic",
+          fields: [
+            ...commonIdentityFields({includeCountry: true}),
+            ...commonCreateFields({includeType: false}),
+            ...dateFields({ from: true, until: true }),
+            ...feeFields({ includeIssuance: true }),
+          ],
+        },
+      ];
+
+    case "MsgExtendPermission":
+      return [
+        {
+          name: t("dataview.perm.sections.main"),
+          type: "basic",
+          fields: [
+            ...commonIdentityFields(),
+            ...dateFields({ until: true }),
+          ],
+        },
+      ];
+
+    case "MsgCreateOrUpdatePermissionSession":
+      return [
+        {
+          name: t("dataview.perm.sections.main"),
+          type: "basic",
+          fields: [
+            ...commonIdentityFields(),
+            {
+              name: "issuerPermId",
+              label: t("dataview.perm.fields.issuerPermId"),
+              type: "data",
+              inputType: "text",
+              show: "edit",
+              required: true,
+              update: true,
+            },
+            {
+              name: "verifierPermId",
+              label: t("dataview.perm.fields.verifierPermId"),
+              type: "data",
+              inputType: "text",
+              show: "edit",
+              required: true,
+              update: true,
+            },
+            {
+              name: "agentPermId",
+              label: t("dataview.perm.fields.agentPermId"),
+              type: "data",
+              inputType: "text",
+              show: "edit",
+              required: true,
+              update: true,
+            },
+            {
+              name: "walletAgentPermId",
+              label: t("dataview.perm.fields.walletAgentPermId"),
+              type: "data",
+              inputType: "text",
+              show: "edit",
+              required: true,
+              update: true,
+            },
+          ],
+        },
+      ];
+
+    case "MsgSlashPermissionTrustDeposit":
+      return [
+        {
+          name: t("dataview.perm.sections.main"),
+          type: "basic",
+          fields: [
+            ...commonIdentityFields(),
+            {
+              name: "amount",
+              label: t("dataview.perm.fields.amount"),
+              type: "data",
+              inputType: "number",
+              show: "edit",
+              required: true,
+              update: true,
+              validation: { type: "Long", greaterThan: 0 },
+            },
+          ],
+        },
+      ];
+
+    case "MsgCreatePermission":
+      return [
+        {
+          name: t("dataview.perm.sections.main"),
+          type: "basic",
+          fields: [
+            ...commonIdentityFields({includeCountry: true}),
+            ...commonCreateFields({includeType: true}),
+            ...dateFields({ from: true, until: true }),
+            ...feeFields({ includeIssuance: false }),
+          ],
+        },
+      ];
+
+    default:
+      return [];
+  }
+}
+
 
 export type PermissionType =
   | "ECOSYSTEM"
@@ -80,10 +428,11 @@ export interface PermissionHistory {
 type PermissionKey = keyof Permission;
 
 export type PermissionAction = {
+  name?: string;
+  value?: string;
   icon: IconDefinition;
   label: string;
-  onClick: () => void;
-  name?: string;
+  onClick?: () => void;
   buttonClass?: string;
 };
 
@@ -124,7 +473,7 @@ export const permissionMetaItems: PermissionItem[] = [
       { icon: faCopy, label: resolveTranslatable({key: "permissioncard.action.copy"}, translate)?? "copy", onClick: () => console.log("copyAttr(item.attr)") },
       { icon: faEye, label: resolveTranslatable({key: "permissioncard.action.visualizer"}, translate)?? "visualizer", onClick: () => console.log("visualizer id", "permission?.id") }],
   },
-  { label: resolveTranslatable({key: "permissioncard.meta.deposit"}, translate)?? "Deposit", attr: "deposit", mono: true, format: (value) => formatVNA(String(value)) },
+  { label: resolveTranslatable({key: "permissioncard.meta.deposit"}, translate)?? "Deposit", attr: "deposit", mono: true, format: (value) => formatVNAFromUVNA(String(value)) },
   { label: resolveTranslatable({key: "permissioncard.meta.effectivefrom"}, translate)?? "Effective From", attr: "effective_from", format: (value) => formatDate(value as string) },
   { label: resolveTranslatable({key: "permissioncard.meta.effectiveuntil"}, translate)?? "Effective Until", attr: "effective_until", format: (value) => formatDate(value as string) },
   { label: resolveTranslatable({key: "permissioncard.meta.country"}, translate)?? "Country", attr: "country" },
@@ -142,56 +491,54 @@ export const permissionLifecycle: PermissionItem[] = [
 ];
 
 export const permissionActionLifecycle: PermissionAction[] = [
-  { name: "PERM_EXTEND", icon: faClockRotateLeft, label: resolveTranslatable({key: "permissioncard.lifecycle.action.permextend"}, translate)?? "Extend Permission", onClick: () => console.log("Extend Permission") },
-  { name: "PERM_REVOKE", icon: faBan, label: resolveTranslatable({key: "permissioncard.lifecycle.action.permrevoke"}, translate)?? "Revoke Permission", onClick: () => console.log("Revoke Permission"),
+  { name: "PERM_EXTEND", value: "MsgExtendPermission",
+    icon: faClockRotateLeft, label: resolveTranslatable({key: "permissioncard.lifecycle.action.permextend"}, translate)?? "Extend Permission"},
+  { name: "PERM_REVOKE", value: "MsgRevokePermission",
+    icon: faBan, label: resolveTranslatable({key: "permissioncard.lifecycle.action.permrevoke"}, translate)?? "Revoke Permission",
     buttonClass: "bg-red-600 hover:bg-red-700"}
 ];
 
 export const permissionValidationProcess: PermissionItem[] = [
   { label: resolveTranslatable({key: "permissioncard.validationprocess.vpexp"}, translate)?? "VP Expiration", attr: "vp_exp", format: (value) => formatDate(value as string) },
   { label: resolveTranslatable({key: "permissioncard.validationprocess.vplaststatechange"}, translate)?? "VP Last State Change", attr: "vp_last_state_change"},
-  { label: resolveTranslatable({key: "permissioncard.validationprocess.vpvalidatordeposit"}, translate)?? "VP Validator Deposit", attr: "vp_validator_deposit", format: (value) => formatVNA(String(value)), mono: true },
-  { label: resolveTranslatable({key: "permissioncard.validationprocess.vpcurrentfees"}, translate)?? "VP Current Fees", attr: "vp_current_fees", format: (value) => formatVNA(String(value)), mono: true },
-  { label: resolveTranslatable({key: "permissioncard.validationprocess.vpcurrentdeposit"}, translate)?? "VP Current Deposit", attr: "vp_current_deposit", format: (value) => formatVNA(String(value)), mono: true },
+  { label: resolveTranslatable({key: "permissioncard.validationprocess.vpvalidatordeposit"}, translate)?? "VP Validator Deposit", attr: "vp_validator_deposit", format: (value) => formatVNAFromUVNA(String(value)), mono: true },
+  { label: resolveTranslatable({key: "permissioncard.validationprocess.vpcurrentfees"}, translate)?? "VP Current Fees", attr: "vp_current_fees", format: (value) => formatVNAFromUVNA(String(value)), mono: true },
+  { label: resolveTranslatable({key: "permissioncard.validationprocess.vpcurrentdeposit"}, translate)?? "VP Current Deposit", attr: "vp_current_deposit", format: (value) => formatVNAFromUVNA(String(value)), mono: true },
   { label: resolveTranslatable({key: "permissioncard.validationprocess.vpsummarydigestsri"}, translate)?? "VP Summary Digest", attr: "vp_summary_digest_sri", mono: true },
 ];
 
 export const permissionActionValidationProcess: PermissionAction[] = [
-  { name: "VP_RENEW", icon: faRotate, label: resolveTranslatable({key: "permissioncard.validationprocess.action.vprenew"}, translate)?? "Renew Validation Process", onClick: () => console.log("Renew Validation Process") },
-  { name: "VP_CANCEL", icon: faXmark, label: resolveTranslatable({key: "permissioncard.validationprocess.action.vpcancel"}, translate)?? "Cancel Request", onClick: () => console.log("Cancel Request"),
+  { name: "VP_RENEW", value: "MsgRenewPermissionVP",
+    icon: faRotate, label: resolveTranslatable({key: "permissioncard.validationprocess.action.vprenew"}, translate)?? "Renew Validation Process",
+  },
+  { name: "VP_CANCEL", value: "MsgCancelPermissionVPLastRequest",
+    icon: faXmark, label: resolveTranslatable({key: "permissioncard.validationprocess.action.vpcancel"}, translate)?? "Cancel Request",
     buttonClass: "bg-gray-600 hover:bg-gray-700"
    },
-  { name: "VP_SET_VALIDATED", icon: faCheck, label: resolveTranslatable({key: "permissioncard.validationprocess.action.vpsetvalidated"}, translate)?? "Accept and Set Validated", onClick: () => console.log("Accept and Set Validated"),
+  { name: "VP_SET_VALIDATED", value: "MsgSetPermissionVPToValidated",
+    icon: faCheck, label: resolveTranslatable({key: "permissioncard.validationprocess.action.vpsetvalidated"}, translate)?? "Accept and Set Validated",
     buttonClass: "bg-green-600 hover:bg-green-700"
    },
 ];
 
 export const permissionBusinessModels: PermissionItem[] = [
-  { label: resolveTranslatable({key: "permissioncard.businessmodels.validationfees"}, translate)?? "Validation Fees", attr: "validation_fees", format: (value) => formatVNA(String(value)), mono: true },
-  { label: resolveTranslatable({key: "permissioncard.businessmodels.issuancefees"}, translate)?? "Issuance Fees", attr: "issuance_fees", format: (value) => formatVNA(String(value)), mono: true },
-  { label: resolveTranslatable({key: "permissioncard.businessmodels.verificationfees"}, translate)?? "Verification Fees", attr: "verification_fees", format: (value) => formatVNA(String(value)), mono: true },
+  { label: resolveTranslatable({key: "permissioncard.businessmodels.validationfees"}, translate)?? "Validation Fees", attr: "validation_fees", format: (value) => formatVNAFromUVNA(String(value)), mono: true },
+  { label: resolveTranslatable({key: "permissioncard.businessmodels.issuancefees"}, translate)?? "Issuance Fees", attr: "issuance_fees", format: (value) => formatVNAFromUVNA(String(value)), mono: true },
+  { label: resolveTranslatable({key: "permissioncard.businessmodels.verificationfees"}, translate)?? "Verification Fees", attr: "verification_fees", format: (value) => formatVNAFromUVNA(String(value)), mono: true },
 ];
 
 export const permissionSlashing: PermissionItem[] = [
-  { label: resolveTranslatable({key: "permissioncard.slashing.slasheddeposit"}, translate)?? "Slashed Deposit", attr: "slashed_deposit", format: (value) => formatVNA(String(value)), mono: true },
-  { label: resolveTranslatable({key: "permissioncard.slashing.repaiddeposit"}, translate)?? "Repaid Deposit", attr: "repaid_deposit", format: (value) => formatVNA(String(value)), mono: true },
+  { label: resolveTranslatable({key: "permissioncard.slashing.slasheddeposit"}, translate)?? "Slashed Deposit", attr: "slashed_deposit", format: (value) => formatVNAFromUVNA(String(value)), mono: true },
+  { label: resolveTranslatable({key: "permissioncard.slashing.repaiddeposit"}, translate)?? "Repaid Deposit", attr: "repaid_deposit", format: (value) => formatVNAFromUVNA(String(value)), mono: true },
 ];
 
 export const permissionActionSlashing: PermissionAction[] = [
-  { name: "PERM_SLASH", icon: faTriangleExclamation, label: resolveTranslatable({key: "permissioncard.slashing.action.permslash"}, translate)?? "Slash Deposit", onClick: () => console.log("Slash Deposit"),
+  { name: "PERM_SLASH", value: "MsgSlashPermissionTrustDeposit",
+    icon: faTriangleExclamation, label: resolveTranslatable({key: "permissioncard.slashing.action.permslash"}, translate)?? "Slash Deposit",
     buttonClass: "bg-red-600 hover:bg-red-700"
   },
-  { name: "PERM_REPAY", icon: faHandHoldingDollar, label: resolveTranslatable({key: "permissioncard.slashing.action.permrepay"}, translate)?? "Repay Slashed Deposit", onClick: () => console.log("Repay Slashed Deposit"),
+  { name: "PERM_REPAY", value: "MsgRepayPermissionSlashedTrustDeposit",
+    icon: faHandHoldingDollar, label: resolveTranslatable({key: "permissioncard.slashing.action.permrepay"}, translate)?? "Repay Slashed Deposit",
     buttonClass: "bg-green-600 hover:bg-green-700"
   },
-];
-
-export const permissionActionTasks: PermissionAction[] = [
-  { name: "VP_SET_VALIDATED", icon: faCheck, label: resolveTranslatable({key: "permissioncard.tasks.action.vpsetvalidated"}, translate)?? "Approve", onClick: () => console.log("Approve Permission"),
-    buttonClass: "bg-green-600 hover:bg-green-700"
-   },
-  { name: "VP_CANCEL", icon: faXmark, label: resolveTranslatable({key: "permissioncard.tasks.action.vpcancel"}, translate)?? "Reject", onClick: () => console.log("Reject Request"),
-    buttonClass: "bg-red-600 hover:bg-red-700"
-   },
-  { name: "PERM_EXTEND", icon: faClockRotateLeft, label: resolveTranslatable({key: "permissioncard.tasks.action.permextend"}, translate)?? "Extend", onClick: () => console.log("Extend Permission") },
 ];

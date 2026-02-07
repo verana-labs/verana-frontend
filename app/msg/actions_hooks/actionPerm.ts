@@ -31,6 +31,7 @@ import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import Long from 'long';
 import { translate } from '@/i18n/dataview';
 import { resolveTranslatable } from '@/ui/dataview/types';
+import { stripZerosUndefinedAndEmptyStrings } from '@/msg/util/signerUtil'
 
 const toDate = (v?: string | Date) => (v ? (v instanceof Date ? v : new Date(v)) : undefined);
 
@@ -82,7 +83,7 @@ export const MSG_TYPE_CONFIG_PERM = {
 } as const;
 
 /** Union type for action parameters */
-type ActionPermParams =
+export type ActionPermParams =
   | {
       msgType: 'MsgStartPermissionVP';
       creator: string;
@@ -99,7 +100,7 @@ type ActionPermParams =
   | {
       msgType: 'MsgSetPermissionVPToValidated';
       creator: string;
-      id: string | number;
+      id: string | number | Long;
       effectiveUntil?: string | Date;
       validationFees: string | number;
       issuanceFees: string | number;
@@ -164,8 +165,8 @@ type ActionPermParams =
       country: string;
       effectiveFrom?: string | Date;
       effectiveUntil?: string | Date;
-      verificationFees: string | number;
       validationFees: string | number;
+      verificationFees: string | number;
     };
 
 /**
@@ -299,11 +300,11 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: () => void) {
         typeUrl = MSG_TYPE_CONFIG_PERM.MsgSetPermissionVPToValidated.typeUrl;
         value = MsgSetPermissionVPToValidated.fromPartial({
           creator: address,
-          id: Long.fromString(String(params.id)),
+          id: Long.fromValue(params.id), // uint64
           effectiveUntil: toDate(params.effectiveUntil),
-          validationFees: Long.fromString(String(params.validationFees)),
-          issuanceFees: Long.fromString(String(params.issuanceFees)),
-          verificationFees: Long.fromString(String(params.verificationFees)),
+          validationFees: Long.fromValue(params.validationFees), // uint64
+          issuanceFees: Long.fromValue(params.issuanceFees), // uint64
+          verificationFees: Long.fromValue(params.verificationFees), // uint64
           country: params.country,
           vpSummaryDigestSri: params.vpSummaryDigestSri,
         });
@@ -321,14 +322,14 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: () => void) {
         typeUrl = MSG_TYPE_CONFIG_PERM.MsgCreateRootPermission.typeUrl;
         value = MsgCreateRootPermission.fromPartial({
           creator: address,
-          schemaId: Long.fromString(String(params.schemaId)),
+          schemaId: Long.fromValue(params.schemaId),
           did: params.did,
           country: params.country,
           effectiveFrom: toDate(params.effectiveFrom),
           effectiveUntil: toDate(params.effectiveUntil),
-          validationFees: Long.fromString(String(params.validationFees)),
-          issuanceFees: Long.fromString(String(params.issuanceFees)),
-          verificationFees: Long.fromString(String(params.verificationFees)),
+          validationFees: Long.fromValue(params.validationFees),
+          issuanceFees: Long.fromValue(params.issuanceFees),
+          verificationFees: Long.fromValue(params.verificationFees),
         });
         break;
 
@@ -411,7 +412,9 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: () => void) {
     let success = false;
 
     try {
+      value = stripZerosUndefinedAndEmptyStrings(value);
       const msg: EncodeObject = { typeUrl, value };
+      console.info("msg", msg);
       res = await sendTx({
         msgs: [msg],
         memo: MSG_TYPE_CONFIG_PERM[params.msgType].txLabel,

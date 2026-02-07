@@ -2,8 +2,11 @@
 
 import { translate } from "@/i18n/dataview";
 import { PermState } from "@/ui/common/permission-tree";
-import { PermissionType, VpState } from "@/ui/dataview/datasections/perm";
+import { Role } from "@/ui/common/role-card";
+import { Permission, PermissionType, VpState } from "@/ui/dataview/datasections/perm";
 import { resolveTranslatable } from "@/ui/dataview/types";
+import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { faCrown, faEye } from "@fortawesome/free-solid-svg-icons";
 
 export function formatVNA (amount: string | null, decimals?: number) : string {
     if (!amount) return ''
@@ -13,7 +16,12 @@ export function formatVNA (amount: string | null, decimals?: number) : string {
       minimumFractionDigits: 0,
       maximumFractionDigits: 6
     }) + ' VNA'
-  }
+}
+
+export function formatVNAFromUVNA (amount: string | null, decimals?: number) : string {
+  if (!amount?.trim() || !Number.isFinite(Number(amount))) return '';    
+  return formatVNA(String(Number(amount)/1_000_000), decimals);
+}
 
 export function parseVNA(formatted: string, decimals: number = 6): string {
   if (!formatted) return '0';
@@ -185,6 +193,9 @@ export function permStateBadgeClass(permState: PermState, expireSoon: boolean) :
     case "SLASHED":
       return { labelPermState: resolveTranslatable({key: "permission.labelpermstate.slashed"}, translate) ?? "SLASHED", 
               classPermState: "bg-red-900 text-red-100 dark:bg-red-300/20 dark:text-red-800"};
+    case "FUTURE":
+      return { labelPermState: resolveTranslatable({key: "permission.labelpermstate.future"}, translate) ?? "FUTURE",
+              classPermState: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300"};
     case "ACTIVE":
       return expireSoon? { labelPermState: resolveTranslatable({key: "permission.labelpermstate.expiresoon"}, translate) ?? "EXPIRE SOON", 
               classPermState: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300"}
@@ -194,7 +205,7 @@ export function permStateBadgeClass(permState: PermState, expireSoon: boolean) :
       return { labelPermState: resolveTranslatable({key: "permission.labelpermstate.inactive"}, translate) ?? "INACTIVE", 
               classPermState: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300"};
     default:
-      return { labelPermState: "UNKNOWN", classPermState: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300" };
+      return { labelPermState: permState, classPermState: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300" };
   }
 }
 
@@ -215,4 +226,94 @@ export function vpStateColor(vpState: VpState, vpExp: string, expireSoon: boolea
     default:           
       return { labelVpState: String(vpState), classVpState: GRAY };
   }
+}
+
+export function authorityPaticipants (isGrantee: boolean, isValidator: boolean, isPredecessor: boolean ): { icon: IconDefinition; iconColorClass: string; } {
+  if (isValidator){ // validator
+    return { icon: faCrown, iconColorClass: "text-yellow-500" };
+  }
+  else if (isGrantee){ // grantee
+    return { icon: faCrown, iconColorClass: "text-green-500" };
+  }
+  else if (isPredecessor){ // predecessor
+    return { icon: faCrown, iconColorClass: "text-gray-500" };
+  }
+  else {
+    return { icon: faEye, iconColorClass: "text-gray-500" };
+  }
+}
+
+export function rolesSchema(issuerPermManagementMode: string, verifierPermManagementMode: string): Role[] {
+  const roles = new Set<Role>();
+
+  // Issuance roles
+  if (issuerPermManagementMode === "GRANTOR_VALIDATION") {
+    roles.add("ISSUER_GRANTOR");
+    roles.add("ISSUER");
+  } else {
+    // OPEN o ECOSYSTEM
+    roles.add("ISSUER");
+  }
+
+  // Verification roles
+  if (verifierPermManagementMode === "GRANTOR_VALIDATION") {
+    roles.add("VERIFIER_GRANTOR");
+    roles.add("VERIFIER");
+  } else {
+    // OPEN o ECOSYSTEM
+    roles.add("VERIFIER");
+  }
+
+  roles.add("HOLDER");
+  return Array.from(roles);
+}
+
+export function nodeChildRoles(issuerPermManagementMode: string, verifierPermManagementMode: string, role: string): Role[] {
+  const roles = new Set<Role>();
+
+  if (role === "ECOSYSTEM"){
+    // Issuance roles
+    if (issuerPermManagementMode === "GRANTOR_VALIDATION"){
+      roles.add("ISSUER_GRANTOR");
+    } else {
+      // OPEN o ECOSYSTEM
+      roles.add("ISSUER");
+    }
+    // Verification roles
+    if (verifierPermManagementMode === "GRANTOR_VALIDATION") {
+      roles.add("VERIFIER_GRANTOR");
+    } else {
+      // OPEN o ECOSYSTEM
+      roles.add("VERIFIER");
+    }
+  }
+  else if (role === "ISSUER_GRANTOR"){
+    roles.add("ISSUER");
+  }
+  else if (role === "VERIFIER_GRANTOR"){
+    roles.add("VERIFIER");
+  }
+  else if (role === "ISSUER"){
+    roles.add("HOLDER");
+  }
+
+  return Array.from(roles);
+}
+
+// Takes "YYYY-MM-DD" and returns an ISO string with today's time (+1 min) applied to that date.
+// Example: "2026-02-06" -> "2026-02-06T15:21:00.000Z" (depending on timezone)
+export function withCurrentLocalTimePlusOneMinute(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  if (!y || !m || !d) return "";
+
+  const now = new Date(Date.now() + 60_000);
+  const combined = new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds(), 0);
+
+  const yyyy = combined.getFullYear();
+  const mm = String(combined.getMonth() + 1).padStart(2, "0");
+  const dd = String(combined.getDate()).padStart(2, "0");
+  const hh = String(combined.getHours()).padStart(2, "0");
+  const mi = String(combined.getMinutes()).padStart(2, "0");
+  const ss = String(combined.getSeconds()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}`;
 }
