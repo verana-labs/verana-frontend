@@ -2,31 +2,12 @@
 
 import { veranaGasLimit, veranaGasPrice, veranaDenom } from '@/config/veranaChain.sign.client';
 import { calculateFee, GasPrice, type StdFee } from '@cosmjs/stargate';
-import type { MessageType } from '@/msg/constants/types';
-
-const gasConfig: Record<MessageType, { gasLimit: number; gasPrice: string; denom: string }> = {
-  MsgAddDID: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
-  MsgRenewDID: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
-  MsgTouchDID: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
-  MsgRemoveDID: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
-  MsgReclaimTrustDepositYield: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
-  MsgReclaimTrustDeposit: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
-  MsgRepaySlashedTrustDeposit: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
-  MsgCreateTrustRegistry: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
-  MsgUpdateTrustRegistry: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
-  MsgArchiveTrustRegistry: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
-  MsgAddGovernanceFrameworkDocument: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
-  MsgIncreaseActiveGovernanceFrameworkVersion: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
-  MsgCreateCredentialSchema: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
-  MsgUpdateCredentialSchema: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom },
-  MsgArchiveCredentialSchema: { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom }
-};
 
 /**
  * Custom hook to calculate fee and fee in VNA for a given message type.
  */
-export function useCalculateFee(type: MessageType): { fee: StdFee; amountVNA: number } {
-  const { gasLimit, gasPrice, denom } = gasConfig[type];
+export function useCalculateFee(): { fee: StdFee; amountVNA: number } {
+  const { gasLimit, gasPrice, denom } = { gasLimit: veranaGasLimit, gasPrice: veranaGasPrice, denom: veranaDenom };
   const amount = Math.ceil(Number(gasPrice.substring(0, gasPrice.indexOf(denom))) * Number(gasLimit));
   const amountVNA = (amount / 1_000_000);
   const fee = calculateFee(veranaGasLimit, GasPrice.fromString(`${gasPrice}`)); 

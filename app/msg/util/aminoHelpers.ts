@@ -53,3 +53,10 @@ export const fromOptU32Amino = (x: any): OptionalUInt32 | undefined => {
   const u = (Number(n) >>> 0);
   return { value: u };
 };
+
+export const dateToIsoAmino = (d?: Date) => {
+  if (!d) return undefined;
+  return d.toISOString().replace(".000Z", "Z");
+};
+
+export const isoToDate = (s?: string) => (s ? new Date(s) : undefined);

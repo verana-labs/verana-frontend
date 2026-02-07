@@ -8,6 +8,7 @@ import { calculateFee, DeliverTxResponse, GasPrice, SigningStargateClient } from
 import { veranaAmino, veranaRegistry} from '@/config/veranaChain.sign.client';
 import { MsgCreateCredentialSchema, MsgUpdateCredentialSchema } from 'proto-codecs/codec/verana/cs/v1/tx';
 import { toHex } from "@cosmjs/encoding";
+import { debugAminoRoundTrip } from './debugAminoRoundTrip';
 
 type AminoSignOptions = {
   rpcEndpoint: string;
@@ -47,8 +48,8 @@ export async function signAndBroadcastManualAmino({
   await client.getSequence(address);
 
   console.info('messages:', messages[0]);
-  // const any = veranaRegistry.encodeAsAny(messages[0]);
-  // debugCreateAny(any);
+  const any = veranaRegistry.encodeAsAny(messages[0]);
+  debugCreateAny(any);
   
   let res = await client.signAndBroadcast(address, messages, fee, memo);
   if (res.code === 0) return res;

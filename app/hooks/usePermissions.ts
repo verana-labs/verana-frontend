@@ -1,21 +1,27 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { env } from 'next-runtime-env';
 import { ApiErrorResponse } from '@/types/apiErrorResponse';
 import { Permission } from '@/ui/dataview/datasections/perm';
-import { Role } from '@/ui/common/role-card';
 
-export function usePermissions(schema?: string, type?: Role) {
-  const getURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM;
+export function usePermissions(schema?: string, type?: string, validatorId?: string) {
+  const getURL = useMemo(
+    () =>
+      env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM') ||
+      process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM ||
+      '',
+    []
+  );
 
   const [permissionsList, setPermissionsList] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorPermissionsList, setError] = useState<string | null>(null);
 
-  const fetchPermissions = useCallback(async (schemaOverride?: string, typeOverride?: Role) => {
+  const fetchPermissions = useCallback(async (schemaOverride?: string, typeOverride?: string, validatorIdOverride?: string) => {
     const schemaToUse = schemaOverride ?? schema;
     const typeToUse = typeOverride ?? type;
+    const validatorIdToUse = validatorIdOverride ?? validatorId;
 
     if (!schemaToUse || !getURL) {
       setPermissionsList([]);
@@ -24,11 +30,12 @@ export function usePermissions(schema?: string, type?: Role) {
     }
 
     setError(null);
-    // setPermissionsList([]);
 
-    const url =
-      `${getURL}/list?schema_id=${encodeURIComponent(schemaToUse)}` +
-      (typeToUse ? `&type=${encodeURIComponent(typeToUse)}` : "");
+    const params = new URLSearchParams();
+    params.set('schema_id', schemaToUse); // incluido siempre
+    if (typeToUse) params.set('type', typeToUse);
+    if (validatorIdToUse) params.set('validator_perm_id', validatorIdToUse);
+    const url = `${getURL}/list?${params.toString()}`;
 
     try {
       setLoading(true);

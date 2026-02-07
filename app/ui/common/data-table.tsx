@@ -179,9 +179,6 @@ export function DataTable<T extends object>({
               { entities && (
               <div className="flex items-center justify-between">
                 <h3 className="data-table-title">{resolveTranslatable({key: 'datatable.your'}, translate)} {entities}</h3>
-                <div className="text-sm text-neutral-70 dark:text-neutral-70">
-                  <span id="results-count" className="">{currentData.length} {entities}</span>
-                </div>
               </div>
               )}
               { tableTitle && addTitle && (

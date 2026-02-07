@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import {
@@ -13,19 +13,30 @@ import {
 import PermissionCard from "./permission-card";
 import { Permission, VpState } from "../dataview/datasections/perm";
 import Link from "next/link";
-import { formatVNA, permStateBadgeClass, roleBadgeClass, vpStateColor } from "@/util/util";
+import { formatVNAFromUVNA, permStateBadgeClass, roleBadgeClass, shortenDID, vpStateColor } from "@/util/util";
 import { translate } from "@/i18n/dataview";
 import { resolveTranslatable } from "../dataview/types";
 import TitleAndButton from "./title-and-button";
+import { ModalAction } from "./modal-action";
+import { renderActionComponent } from "./data-view-typed";
 
 type PermissionTreeProps = {
   tree: TreeNode[];
   type: "participants" | "tasks";
   csTitle?: string;
+  csId?: string;
   trTitle?: string;
+  trId?: string;
+  isTrController?: boolean;
   hrefJoin?: string;
   showArchived?: boolean;
   onShowArchivedChange?: (value: boolean) => void;
+  setNodeRequestParams?:  (
+    nodeId: string | undefined,
+    type: string | undefined,
+    validatorId: string | undefined
+  ) => void;
+  refreshRoot?: () => void;
 };
 
 /** ------------ Types ------------ */
@@ -37,12 +48,14 @@ export type PermissionType =
   | "VERIFIER"
   | "HOLDER";
 
-export type PermState = "ACTIVE" | "INACTIVE" | "REPAID" | "SLASHED";
+export type PermState = "ACTIVE" | "INACTIVE" | "REPAID" | "SLASHED" | "FUTURE";
 
 export type TreeNode = {
   nodeId: string;
   icon: IconDefinition;
   iconColorClass: string;
+  isGrantee: boolean;
+  isValidator: boolean;
   group?: boolean;
   schemaId?: string;
   parentId?: string;
@@ -75,7 +88,7 @@ function Tree({
   expanded,
   onToggle,
   depth = 0,
-  hrefJoin
+  hrefJoin,
 }: {
   type: "participants" | "tasks";
   nodes: TreeNode[];
@@ -85,7 +98,7 @@ function Tree({
   selectedId?: string;
   onSelect: (id: string) => void;
   expanded: Record<string, boolean>;
-  onToggle: (id: string) => void;
+  onToggle: (id: string, type: string, validatorId: string) => void;
   depth?: number;
   hrefJoin?: string;
 }) {
@@ -96,8 +109,8 @@ function Tree({
         const hasChildren = !!node.children?.length;
         const isExpanded = expanded[node.nodeId] ?? false;
         const isSelected = selectedId === node.nodeId;
-        const {labelVpState, classVpState} = vpStateColor(node.permission?.vp_state as VpState, node.permission?.vp_exp as string);
-
+        const {labelVpState, classVpState} = vpStateColor(node.permission?.vp_state as VpState, node.permission?.vp_exp as string, node.permission?.expire_soon ?? false);
+        const {labelPermState, classPermState} = permStateBadgeClass(node.permission?.perm_state as PermState, node.permission?.expire_soon ?? false);
         return (
           <div key={node.nodeId}>
             <div
@@ -111,12 +124,12 @@ function Tree({
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  {hasChildren ? (
+                  {/* {hasChildren ? ( */}
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onToggle(node.nodeId);
+                        onToggle(node.nodeId, node.type as string, node.parentId as string);
                       }}
                       className="text-gray-400 text-xs w-4"
                       aria-label={isExpanded ? "Collapse" : "Expand"}
@@ -126,18 +139,17 @@ function Tree({
                         className={`transition-transform ${isExpanded ? "rotate-90" : ""}`}
                       />
                     </button>
-                  ) : (
+                  {/* ) : (
                     <div className="w-4" />
-                  )}
+                  )} */}
 
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (hasChildren) onToggle(node.nodeId);
+                      if (hasChildren) onToggle(node.nodeId, node.type as string, node.parentId as string);
                       else onSelect(node.nodeId);
                     }}
-                    // className={`${node.iconColorClass ?? "text-gray-500"}`}
                     aria-label="Toggle"
                     aria-expanded={hasChildren ? isExpanded : undefined}
                   >
@@ -150,12 +162,12 @@ function Tree({
                       node.group ? "text-gray-700 dark:text-gray-300" : "text-gray-900 dark:text-white",
                     ].join(" ")}
                   >
-                    {node.group ? node.name : node.permission?.did}
+                    {node.group ? node.name : shortenDID(node.permission?.did as string)}
                   </span>
 
                   { type==="participants" && node.permission?.perm_state ? (
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${permStateBadgeClass(node.permission.perm_state as PermState, false)}`}>
-                      {node.permission.perm_state}
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${classPermState}`}>
+                      {labelPermState}
                     </span>
                   ) : null}
 
@@ -178,13 +190,13 @@ function Tree({
                   {showWeight && node.permission.weight ? (
                     <span >
                       <FontAwesomeIcon icon={faScaleBalanced} className="mr-1" />
-                      {formatVNA(node.permission.weight)}
+                      {formatVNAFromUVNA(node.permission.weight)}
                     </span>
                   ) : null}
                   {showBusiness && ( node.permission.validation_fees || node.permission.issuance_fees) ? (
                     <span >
                       <FontAwesomeIcon icon={faCoins} className="mr-1" />
-                      {`validation fees: ${node.permission.validation_fees} VNA issuance fees: ${node.permission.issuance_fees} VNA`} {node.permission.verification_fees && node.permission.verification_fees !== "0" ? `verification fees:  ${node.permission.verification_fees}  VNA` : ""}
+                      {`validation fees: ${node.permission.validation_fees} VNA issuance fees: ${formatVNAFromUVNA(node.permission.issuance_fees)}`} {node.permission.verification_fees && node.permission.verification_fees !== "0" ? `verification fees:  ${formatVNAFromUVNA(node.permission.verification_fees)}` : ""}
                     </span>
                   ) : null}
                   {showStats && node.permission.issued &&  node.permission.verified && (node.permission.issued !== "0" || node.permission.verified !== "0" ) ? (
@@ -229,17 +241,39 @@ function Tree({
   );
 }
 
-export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle, showArchived, onShowArchivedChange }: PermissionTreeProps) {
+export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle, csId, trId, isTrController, setNodeRequestParams, refreshRoot, showArchived, onShowArchivedChange }: PermissionTreeProps) {
   const [showWeight, setShowWeight] = useState(false);
   const [showBusiness, setShowBusiness] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [addPermission, setAddPermission] = useState<boolean>(false);
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     const first = tree?.[0]?.nodeId;
     return first ? { [first]: true } : {};
   });
 
-  const toggleNode = (id: string) => setExpanded((p) => ({ ...p, [id]: !(p[id] ?? false) }));
+  const toggleNode = (id: string, type: string, validatorId: string) => {
+    const isOpening = !(expanded[id] ?? false);
+    setExpanded((p) => ({ ...p, [id]: isOpening }));
+    if (isOpening) {
+      const node = findNodeById(tree, id);
+      const alreadyLoaded = (node?.children?.length ?? 0) > 0;
+      if (!alreadyLoaded) {
+        setNodeRequestParams?.(id, type, validatorId);
+      }
+    }
+  };
+
+  function findNodeById(nodes: TreeNode[], targetId: string): TreeNode | undefined {
+    for (const n of nodes) {
+      if (n.nodeId === targetId) return n;
+      if (n.children?.length) {
+        const found = findNodeById(n.children, targetId);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  }  
 
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const { node: selectedNode, path } = useMemo(
@@ -260,11 +294,20 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
   }, [tree, selectedId]);
 
   useEffect(() => {
-    const first = tree?.[0]?.nodeId;
-    if (!first) return;
-    setExpanded({ [first]: true });
-    setSelectedId(undefined);
-  }, [tree]);  
+    setExpanded((prev) => {
+      const next: Record<string, boolean> = {};
+      const collect = (arr: TreeNode[]) => {
+        for (const n of arr) {
+          if (prev[n.nodeId]) next[n.nodeId] = true;
+          if (n.children?.length) collect(n.children);
+        }
+      };
+      collect(tree);
+      const first = tree?.[0]?.nodeId;
+      if (Object.keys(next).length === 0 && first) next[first] = true;
+      return next;
+    });
+  }, [tree]);
   
   return (
     <>
@@ -273,16 +316,14 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
       <section className="mb-6">
         <nav className="flex flex-wrap items-center text-sm" aria-label="Breadcrumb">
           <a
-            href="#"
-            onClick={(e) => e.preventDefault()}
+            href={`/tr/${trId}`}
             className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
           >
-            {trTitle}
+            {shortenDID(trTitle)}
           </a>
           <FontAwesomeIcon icon={faChevronRight} className="mx-2 text-neutral-70 text-xs" />
           <a
-            href="#"
-            onClick={(e) => e.preventDefault()}
+            href={`/tr/cs/${csId}`}
             className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
           >
             {csTitle}
@@ -358,11 +399,11 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
             onToggle={toggleNode}
           />
 
-          { type==="participants" ? (
+          { type==="participants" && isTrController ? (
           <button
             type="button"
             className="flex items-center space-x-2 p-2 text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 transition-colors"
-            onClick={() => console.log("New ecosystem permission")}
+            onClick={() => setAddPermission(true)}
           >
             <FontAwesomeIcon icon={faPlus} className="text-sm" />
             <span className="text-sm font-medium">{resolveTranslatable({key: "participants.action.newperm"}, translate)}</span>
@@ -372,9 +413,25 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
         </div>
       </section>
 
+      {addPermission ? (
+        <ModalAction
+          onClose={() => setAddPermission(false)}
+          titleKey={"participants.action.newperm"}
+          isActive={addPermission}
+        >
+          {renderActionComponent(
+            "MsgCreateRootPermission",
+            () => setAddPermission(false),
+            {schema_id: csId},
+            () => refreshRoot?.(),
+            undefined
+          )}
+        </ModalAction>
+      ) : null}
+      
       {/* Detail Card  */}
       {selectedNode ? (
-        <PermissionCard type={type} selectedNode={selectedNode} path={path} csTitle={csTitle??""} />
+        <PermissionCard selectedNode={selectedNode} path={path} csTitle={csTitle??""} />
       ) : null}
     </>
   );
