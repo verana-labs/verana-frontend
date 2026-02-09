@@ -29,8 +29,6 @@ type PermissionTreeProps = {
   trId?: string;
   isTrController?: boolean;
   hrefJoin?: string;
-  showArchived?: boolean;
-  onShowArchivedChange?: (value: boolean) => void;
   setNodeRequestParams?:  (
     nodeId: string | undefined,
     type: string | undefined,
@@ -77,12 +75,15 @@ function findNodeAndPath(nodes: TreeNode[], id: string): { node?: TreeNode; path
   return { node: undefined, path: [] };
 }
 
+const ARCHIVED_PERM_STATES = ["REPAID", "SLASHED"];
+
 function Tree({
   type,
   nodes,
   showWeight,
   showBusiness,
   showStats,
+  showArchived,
   selectedId,
   onSelect,
   expanded,
@@ -95,6 +96,7 @@ function Tree({
   showWeight: boolean;
   showBusiness: boolean;
   showStats: boolean;
+  showArchived: boolean;
   selectedId?: string;
   onSelect: (id: string) => void;
   expanded: Record<string, boolean>;
@@ -103,9 +105,13 @@ function Tree({
   hrefJoin?: string;
 }) {
 
+  const filteredNodes = showArchived
+    ? nodes
+    : nodes.filter(node => node.group || !ARCHIVED_PERM_STATES.includes(node.permission?.perm_state ?? ''));
+
   return (
     <div className="space-y-1">
-      {nodes.map((node) => {
+      {filteredNodes.map((node) => {
         const hasChildren = !!node.children?.length;
         const isExpanded = expanded[node.nodeId] ?? false;
         const isSelected = selectedId === node.nodeId;
@@ -227,6 +233,7 @@ function Tree({
                 showWeight={showWeight}
                 showBusiness={showBusiness}
                 showStats={showStats}
+                showArchived={showArchived}
                 selectedId={selectedId}
                 onSelect={onSelect}
                 expanded={expanded}
@@ -241,10 +248,11 @@ function Tree({
   );
 }
 
-export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle, csId, trId, isTrController, setNodeRequestParams, refreshRoot, showArchived, onShowArchivedChange }: PermissionTreeProps) {
+export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle, csId, trId, isTrController, setNodeRequestParams, refreshRoot }: PermissionTreeProps) {
   const [showWeight, setShowWeight] = useState(false);
   const [showBusiness, setShowBusiness] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [addPermission, setAddPermission] = useState<boolean>(false);
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
@@ -376,8 +384,8 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
               <input
                 type="checkbox"
                 className="w-4 h-4 text-primary-600 border-neutral-20 rounded focus:ring-primary-500"
-                checked={showArchived ?? false}
-                onChange={(e) => onShowArchivedChange?.(e.target.checked)}
+                checked={showArchived}
+                onChange={(e) => setShowArchived(e.target.checked)}
               />
               <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{resolveTranslatable({key: "participants.show.archived"}, translate)}</span>
             </label>
@@ -393,6 +401,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
             showWeight={showWeight}
             showBusiness={showBusiness}
             showStats={showStats}
+            showArchived={showArchived}
             selectedId={selectedId}
             onSelect={setSelectedId}
             expanded={expanded}

@@ -135,15 +135,10 @@ export default function ParicipantsPage() {
   const {permissionsList, refetch: refetchPermission} = usePermissions(schemaId, type, validatorId);
 
   const [permissionsTree, setPermissionsTree] = useState<TreeNode[] | []>([]);
-  const [showArchived, setShowArchived] = useState(false);
   const {csData} = useCsData(schemaId);
   const {dataTR, refetch} = useTrustRegistryData(csData?.trId as string);
 
   useEffect(() => {
-    // Filter permissions client-side based on showArchived state
-    const filteredPermissions = showArchived
-      ? permissionsList
-      : permissionsList.filter(p => p.perm_state === 'ACTIVE');
     const typesToShow = csData
       ? nodeChildRoles(csData.issuerPermManagementMode as string, csData.verifierPermManagementMode as string, type as string)
       : [];
@@ -151,19 +146,19 @@ export default function ParicipantsPage() {
       console.info("useEffect", "ECOSYSTEM");
       idsAddressRef.current.clear();
       idsPredecessorRef.current.clear();
-      const groupedTreeNodes = buildPermissionTreeGroupedByType(filteredPermissions, typesToShow);
+      const groupedTreeNodes = buildPermissionTreeGroupedByType(permissionsList, typesToShow);
       setPermissionsTree(groupedTreeNodes);
     }
     else if (type != undefined && validatorId != undefined && nodeUptade != undefined) {
       // childs TreeNode
-      const newChildren = filteredPermissions.map((p) =>
+      const newChildren = permissionsList.map((p) =>
         toTreeNode({ ...(p as Permission), children: [] } as BuiltNode, typesToShow)
       );
       // update nodo folder
       setPermissionsTree((prev) => setChildrenOnNodeId(prev, nodeUptade, newChildren));
-      console.info("add child nodes", filteredPermissions);
+      console.info("add child nodes", permissionsList);
     }
-  }, [permissionsList, showArchived, address, csData?.issuerPermManagementMode, csData?.verifierPermManagementMode]);
+  }, [permissionsList, address, csData?.issuerPermManagementMode, csData?.verifierPermManagementMode]);
 
   useEffect(() => {
     refetch();
@@ -182,7 +177,7 @@ export default function ParicipantsPage() {
 
   return address ? (
    <PermissionTree tree={permissionsTree} type={"participants"} csTitle={csData?.title??""} trTitle={dataTR?.did??""} csId={csData?.id as string} trId={csData?.trId as string}
-        isTrController={dataTR?.controller==address} setNodeRequestParams={setNodeRequestParams} refreshRoot={()=>setRefreshRoot(true)} showArchived={showArchived} onShowArchivedChange={setShowArchived}/>
+        isTrController={dataTR?.controller==address} setNodeRequestParams={setNodeRequestParams} refreshRoot={()=>setRefreshRoot(true)}/>
   ) : null;
 
 };
