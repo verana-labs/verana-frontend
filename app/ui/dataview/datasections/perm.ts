@@ -117,7 +117,7 @@ const feeFields = (opts?: { includeIssuance?: boolean }): Field<PermissionData>[
       show: "edit create",
       required: false,
       update: true,
-      validation: { type: "Long", greaterThan: 0 },
+      validation: { type: "Long", greaterThanOrEqual: 0 },
     },
   ];
 
@@ -130,7 +130,7 @@ const feeFields = (opts?: { includeIssuance?: boolean }): Field<PermissionData>[
       show: "edit create",
       required: false,
       update: true,
-      validation: { type: "Long", greaterThan: 0 },
+      validation: { type: "Long", greaterThanOrEqual: 0 },
     });
   }
 
@@ -142,7 +142,7 @@ const feeFields = (opts?: { includeIssuance?: boolean }): Field<PermissionData>[
     show: "edit create",
     required: false,
     update: true,
-    validation: { type: "Long", greaterThan: 0 },
+    validation: { type: "Long", greaterThanOrEqual: 0 },
   });
 
   return out;

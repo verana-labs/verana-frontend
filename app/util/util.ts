@@ -10,17 +10,18 @@ import { faCrown, faEye } from "@fortawesome/free-solid-svg-icons";
 
 export function formatVNA (amount: string | null, decimals?: number) : string {
     if (!amount) return ''
+    decimals = decimals?? 6;
     return (
-      Number(amount) / Math.pow(10, decimals ? decimals : 6)
+      Number(amount) / Math.pow(10, decimals)
     ).toLocaleString(undefined, {
       minimumFractionDigits: 0,
-      maximumFractionDigits: 6
+      maximumFractionDigits: decimals
     }) + ' VNA'
 }
 
-export function formatVNAFromUVNA (amount: string | null, decimals?: number) : string {
+export function formatVNAFromUVNA (amount: string | null) : string {
   if (!amount?.trim() || !Number.isFinite(Number(amount))) return '';    
-  return formatVNA(String(Number(amount)/1_000_000), decimals);
+  return formatVNA(String(Number(amount)), 6);
 }
 
 export function parseVNA(formatted: string, decimals: number = 6): string {
