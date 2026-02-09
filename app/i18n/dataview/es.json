@@ -349,9 +349,13 @@
   "datatable.cs.header.id": "Id",
   "datatable.cs.header.title": "Título",
   "datatable.cs.header.desc": "Descripción",
-  "datatable.cs.header.created": "Creado",
-  "datatable.cs.header.modified": "Modificado",
-  "datatable.cs.header.role": "Rol",
+  "datatable.cs.header.participants": "Participantes",
+  "datatable.cs.header.issuedCredentials": "Credenciales Emitidas",
+  "datatable.cs.header.verifiedCredentials": "Credenciales Verificadas",
+  "datatable.cs.mobile.participants": "Participantes:",
+  "datatable.cs.mobile.issued": "Emitidas:",
+  "datatable.cs.mobile.verified": "Verificadas:",
+  "datatable.cs.filter.showArchived": "Mostrar Archivados",
 
   "datalist.egf.title": "Documentos EGF",
 

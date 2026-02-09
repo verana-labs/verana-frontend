@@ -34,6 +34,9 @@ export function DataTable<T extends object>({
   tableTitle,
   addTitle,
   onAdd,
+  titleFilter,
+  rowClassName,
+  renderMobileCard,
   detailTitle,
   onRefresh
 }: DataTableProps<T>) {
@@ -181,14 +184,14 @@ export function DataTable<T extends object>({
                 <h3 className="data-table-title">{resolveTranslatable({key: 'datatable.your'}, translate)} {entities}</h3>
               </div>
               )}
-              { tableTitle && addTitle && (
+              { tableTitle && (addTitle || titleFilter) && (
               <TitleAndButton
                 title=  {tableTitle}
                 buttonLabel={addTitle}
-                // to="/tr/add"
-                icon={faPlus}
+                icon={addTitle ? faPlus : undefined}
                 isTable={true}
                 onClick={onAdd}
+                titleFilter={titleFilter}
               />
               )}
             </div>
@@ -224,7 +227,7 @@ export function DataTable<T extends object>({
                         if (showDetailModal) setSelectedRow(row);
                         else onRowClick?.(row);
                       }}
-                      className={'data-table-row'}
+                      className={`data-table-row ${rowClassName ? rowClassName(row) : ''}`}
                     >
                       {columns.map((col) => {
                         const formatted = col.format
@@ -259,23 +262,32 @@ export function DataTable<T extends object>({
                     No results found
                 </div>
               )}
-              {currentData.map((row, rowIdx) => (
+              {currentData.map((row, rowIdx) => {
+                const cardClick = () => {
+                  if (showDetailModal) setSelectedRow(row);
+                  else onRowClick?.(row);
+                };
+                return renderMobileCard ? (
+                  <div
+                    key={rowIdx}
+                    onClick={cardClick}
+                    className={`data-table-card ${rowClassName ? rowClassName(row) : ''}`}
+                  >
+                    {renderMobileCard(row)}
+                  </div>
+                ) : (
                 <div
                   key={rowIdx}
-                  onClick={() => {
-                    if (showDetailModal) setSelectedRow(row);   // ← NEW
-                    else onRowClick?.(row);
-                  }}
-                  className={'data-table-card'}
+                  onClick={cardClick}
+                  className={`data-table-card ${rowClassName ? rowClassName(row) : ''}`}
                 >
-                  {/* <div className="flex flex-col space-y-2"> */}
                     <div className="flex justify-between">
                       <div className="flex flex-col space-y-2">
                       {columns.filter((col) => col.priority === undefined &&  !col.viewMobileRight)
                       .map((col) => (
                         <div key={String(col.accessor)} >
                           <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">{col.header}</label>
-                          <p 
+                          <p
                             className={`text-sm font-mono text-gray-900 dark:text-white ${
                                 col.className ? col.className(row[col.accessor]) : ''
                               }`}
@@ -294,17 +306,17 @@ export function DataTable<T extends object>({
                         const valueStr = String(formatted ?? "");
                         return (
                           <div key={String(col.accessor)}>
-                            {col.isHtml ? 
-                            (<p dangerouslySetInnerHTML={{ __html: valueStr }} />) : 
+                            {col.isHtml ?
+                            (<p dangerouslySetInnerHTML={{ __html: valueStr }} />) :
                             (<label  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${col.className ? col.className(row[col.accessor]) : ''}`}>{ valueStr }</label>)
                             }
                           </div>)
                       })}
                       </div>
                     </div>
-                  {/* </div> */}
                 </div>
-              ))}
+                );
+              })}
             </div>
             {/* Pagination controls */}
             <div className="px-6 py-4 border-t border-neutral-20 dark:border-neutral-70">

@@ -504,9 +504,13 @@
   "datatable.cs.header.id": "Id",
   "datatable.cs.header.title": "Title",
   "datatable.cs.header.desc": "Description",
-  "datatable.cs.header.created": "Created",
-  "datatable.cs.header.modified": "Modified",
-  "datatable.cs.header.role": "Role",
+  "datatable.cs.header.participants": "Participants",
+  "datatable.cs.header.issuedCredentials": "Issued Credentials",
+  "datatable.cs.header.verifiedCredentials": "Verified Credentials",
+  "datatable.cs.mobile.participants": "Participants:",
+  "datatable.cs.mobile.issued": "Issued:",
+  "datatable.cs.mobile.verified": "Verified:",
+  "datatable.cs.filter.showArchived": "Show Archived",
 
   "datalist.egf.title": "EGF Documents",
 

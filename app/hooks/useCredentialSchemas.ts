@@ -22,6 +22,11 @@ type RawSchema = Record<string, unknown> & {
   archived?: string;
   created?: string;
   modified?: string;
+  title?: string;
+  description?: string;
+  participants?: number;
+  issued?: number;
+  verified?: number;
 };
 
 export function useCSList(trId?: string, all: boolean = true) {
@@ -65,24 +70,29 @@ export function useCSList(trId?: string, all: boolean = true) {
         } catch {
           parsed = {};
         }
-        const titleCandidate =
-          (parsed.description as string | undefined) ??
-          (parsed.title as string | undefined) ??
-          'Schema';
+        const title = (typeof src.title === 'string' && src.title.trim())
+          ? src.title
+          : (parsed.title as string | undefined) || 'Schema';
+
+        const description = (typeof src.description === 'string' && src.description.trim())
+          ? src.description
+          : (parsed.description as string | undefined) || '';
+
         return {
           id: (src.id)?.toString() ?? '',
           trId: (src.tr_id)?.toString() ?? '',
-          created: src.created ?? '',
-          modified: src.modified ?? '',
           issuerPermManagementMode: src.issuer_perm_management_mode ?? '',
           verifierPermManagementMode: src.verifier_perm_management_mode ?? '',
           issuerValidationValidityPeriod: src.issuer_grantor_validation_validity_period ?? 0,
           verifierValidationValidityPeriod: src.verifier_grantor_validation_validity_period ?? 0,
           jsonSchema: src.json_schema ?? '',
-          title: titleCandidate,
-          description: "",
+          title,
+          description,
+          participants: typeof src.participants === 'number' ? src.participants : 0,
+          issuedCredentials: typeof src.issued === 'number' ? src.issued : 0,
+          verifiedCredentials: typeof src.verified === 'number' ? src.verified : 0,
+          archived: src.archived ?? '',
           role: "",
-          participants: 0
         };
       });
       setCsList(list);

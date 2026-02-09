@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import {
   Translatable,
   resolveTranslatable,
@@ -57,6 +57,9 @@ export interface DataTableProps<T extends object> {
   tableTitle?: string;
   addTitle?: string;
   onAdd?: () => void;
+  titleFilter?: React.ReactNode;
+  rowClassName?: (row: T) => string;
+  renderMobileCard?: (row: T) => React.ReactNode;
   detailTitle?: string;
   onRefresh?: () => void;
 }
