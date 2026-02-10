@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { GfdData, gfdSections, htmlGfd, TrData, trSections } from '@/ui/dataview/datasections/tr';
 import DataView from '@/ui/common/data-view-columns';
@@ -16,7 +16,7 @@ import langs from 'langs';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
-import { columnsCsList, CsList } from '@/ui/datatable/columnslist/cs';
+import { columnsCsList } from '@/ui/datatable/columnslist/cs';
 import { DataTable } from '@/ui/common/data-table';
 import { DataList } from '@/ui/common/data-list';
 import { ModalAction } from '@/ui/common/modal-action';
@@ -38,38 +38,6 @@ export default function TRViewPage() {
   const { dataTR, loading, errorTRData, refetch: refetchTR } = useTrustRegistryData(id);
   const [ addCS, setAddCS ] = useState<boolean>(false);
   const [showArchived, setShowArchived] = useState(false);
-  const filteredCsList = useMemo(() => {
-    if (showArchived) return csList;
-    return csList.filter((cs) => !cs.archived);
-  }, [csList, showArchived]);
-
-  const renderCsMobileCard = (row: CsList) => (
-    <>
-      <div className="flex items-start justify-between mb-2">
-        <div>
-          <p className="text-sm font-medium text-gray-900 dark:text-white">{row.id}</p>
-          <p className="text-base font-semibold text-gray-900 dark:text-white mt-1">{row.title}</p>
-        </div>
-      </div>
-      {row.description && (
-        <p className="text-sm text-neutral-70 dark:text-neutral-70 mb-3">{row.description}</p>
-      )}
-      <div className="grid grid-cols-2 gap-2 text-sm">
-        <div>
-          <span className="text-neutral-70 dark:text-neutral-70">{resolveTranslatable({key: "datatable.cs.mobile.participants"}, translate)} </span>
-          <span className="font-medium text-gray-900 dark:text-white">{row.participants.toLocaleString()}</span>
-        </div>
-        <div>
-          <span className="text-neutral-70 dark:text-neutral-70">{resolveTranslatable({key: "datatable.cs.mobile.issued"}, translate)} </span>
-          <span className="font-medium text-gray-900 dark:text-white">{row.issuedCredentials.toLocaleString()}</span>
-        </div>
-        <div>
-          <span className="text-neutral-70 dark:text-neutral-70">{resolveTranslatable({key: "datatable.cs.mobile.verified"}, translate)} </span>
-          <span className="font-medium text-gray-900 dark:text-white">{row.verifiedCredentials.toLocaleString()}</span>
-        </div>
-      </div>
-    </>
-  );
 
   const archivedCheckbox = (
     <label className="flex items-center space-x-2 cursor-pointer">
@@ -230,7 +198,7 @@ export default function TRViewPage() {
         tableTitle={resolveTranslatable({key: "datatable.cs.title"}, translate)}
         addTitle={data.controller === address ? resolveTranslatable({key: "button.cs.add"}, translate) : undefined}
         columnsI18n={columnsCsList}
-        data={filteredCsList}
+        data={csList.filter(cs => showArchived || !cs.archived)}
         initialPageSize={10}
         onRowClick={(row) => router.push(`/tr/cs/${encodeURIComponent(row.id)}?edit=${data.controller === address}`)}
         defaultSortColumn={'id'}
@@ -238,8 +206,6 @@ export default function TRViewPage() {
         detailTitle={resolveTranslatable({key: "datatable.tr.detail"}, translate)}
         onAdd={data.controller === address ? () => setAddCS(true) : undefined}
         titleFilter={archivedCheckbox}
-        rowClassName={(row) => row.archived ? 'archived-row' : ''}
-        renderMobileCard={renderCsMobileCard}
       />
 
       {/* render modal add Credential Schema*/}

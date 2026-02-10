@@ -21,6 +21,10 @@ function getColumnClasses(priority?: number) {
   return 'hidden';
 }
 
+function isArchivedRow<T extends object>(row: T): boolean {
+  return 'archived' in row && Boolean((row as Record<string, unknown>).archived);
+}
+
 export function DataTable<T extends object>({
   entities,
   columnsI18n,
@@ -227,7 +231,7 @@ export function DataTable<T extends object>({
                         if (showDetailModal) setSelectedRow(row);
                         else onRowClick?.(row);
                       }}
-                      className={`data-table-row ${rowClassName ? rowClassName(row) : ''}`}
+                      className={`data-table-row ${isArchivedRow(row) ? 'archived-row' : ''} ${rowClassName ? rowClassName(row) : ''}`}
                     >
                       {columns.map((col) => {
                         const formatted = col.format
@@ -271,7 +275,7 @@ export function DataTable<T extends object>({
                   <div
                     key={rowIdx}
                     onClick={cardClick}
-                    className={`data-table-card ${rowClassName ? rowClassName(row) : ''}`}
+                    className={`data-table-card ${isArchivedRow(row) ? 'archived-row' : ''} ${rowClassName ? rowClassName(row) : ''}`}
                   >
                     {renderMobileCard(row)}
                   </div>
@@ -279,7 +283,7 @@ export function DataTable<T extends object>({
                 <div
                   key={rowIdx}
                   onClick={cardClick}
-                  className={`data-table-card ${rowClassName ? rowClassName(row) : ''}`}
+                  className={`data-table-card ${isArchivedRow(row) ? 'archived-row' : ''} ${rowClassName ? rowClassName(row) : ''}`}
                 >
                     <div className="flex justify-between">
                       <div className="flex flex-col space-y-2">
