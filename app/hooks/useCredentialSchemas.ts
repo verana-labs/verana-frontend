@@ -88,9 +88,9 @@ export function useCSList(trId?: string, all: boolean = true) {
           jsonSchema: src.json_schema ?? '',
           title,
           description,
-          participants: typeof src.participants === 'number' ? src.participants : 0,
-          issuedCredentials: typeof src.issued === 'number' ? src.issued : 0,
-          verifiedCredentials: typeof src.verified === 'number' ? src.verified : 0,
+          participants: src.participants ?? 0,
+          issuedCredentials: src.issued ?? 0,
+          verifiedCredentials: src.verified ?? 0,
           archived: src.archived ?? '',
           role: "",
         };

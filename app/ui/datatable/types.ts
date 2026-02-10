@@ -58,8 +58,6 @@ export interface DataTableProps<T extends object> {
   addTitle?: string;
   onAdd?: () => void;
   titleFilter?: React.ReactNode;
-  rowClassName?: (row: T) => string;
-  renderMobileCard?: (row: T) => React.ReactNode;
   detailTitle?: string;
   onRefresh?: () => void;
 }

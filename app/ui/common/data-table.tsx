@@ -21,10 +21,6 @@ function getColumnClasses(priority?: number) {
   return 'hidden';
 }
 
-function isArchivedRow<T extends object>(row: T): boolean {
-  return 'archived' in row && Boolean((row as Record<string, unknown>).archived);
-}
-
 export function DataTable<T extends object>({
   entities,
   columnsI18n,
@@ -39,8 +35,6 @@ export function DataTable<T extends object>({
   addTitle,
   onAdd,
   titleFilter,
-  rowClassName,
-  renderMobileCard,
   detailTitle,
   onRefresh
 }: DataTableProps<T>) {
@@ -231,7 +225,7 @@ export function DataTable<T extends object>({
                         if (showDetailModal) setSelectedRow(row);
                         else onRowClick?.(row);
                       }}
-                      className={`data-table-row ${isArchivedRow(row) ? 'archived-row' : ''} ${rowClassName ? rowClassName(row) : ''}`}
+                      className={`data-table-row ${(row as Record<string, unknown>)["archived"] === true || (row as Record<string, unknown>)["archived"] === "true" ? "archived-row" : ""}`}
                     >
                       {columns.map((col) => {
                         const formatted = col.format
@@ -271,22 +265,15 @@ export function DataTable<T extends object>({
                   if (showDetailModal) setSelectedRow(row);
                   else onRowClick?.(row);
                 };
-                return renderMobileCard ? (
-                  <div
-                    key={rowIdx}
-                    onClick={cardClick}
-                    className={`data-table-card ${isArchivedRow(row) ? 'archived-row' : ''} ${rowClassName ? rowClassName(row) : ''}`}
-                  >
-                    {renderMobileCard(row)}
-                  </div>
-                ) : (
+                return (
                 <div
                   key={rowIdx}
                   onClick={cardClick}
-                  className={`data-table-card ${isArchivedRow(row) ? 'archived-row' : ''} ${rowClassName ? rowClassName(row) : ''}`}
+                  className={`data-table-card ${(row as Record<string, unknown>)["archived"] === true || (row as Record<string, unknown>)["archived"] === "true" ? "archived-row" : ""}`}
                 >
                     <div className="flex justify-between">
                       <div className="flex flex-col space-y-2">
+
                       {columns.filter((col) => col.priority === undefined &&  !col.viewMobileRight)
                       .map((col) => (
                         <div key={String(col.accessor)} >
