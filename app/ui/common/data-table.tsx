@@ -225,7 +225,7 @@ export function DataTable<T extends object>({
                         if (showDetailModal) setSelectedRow(row);
                         else onRowClick?.(row);
                       }}
-                      className={`data-table-row ${(row as Record<string, unknown>)["archived"] === true || (row as Record<string, unknown>)["archived"] === "true" ? "archived-row" : ""}`}
+                      className={`data-table-row ${ ((row as Record<string, unknown>)["archived"] as string) ? "archived-row" : ""}`}
                     >
                       {columns.map((col) => {
                         const formatted = col.format
@@ -269,7 +269,7 @@ export function DataTable<T extends object>({
                 <div
                   key={rowIdx}
                   onClick={cardClick}
-                  className={`data-table-card ${(row as Record<string, unknown>)["archived"] === true || (row as Record<string, unknown>)["archived"] === "true" ? "archived-row" : ""}`}
+                  className={`data-table-card ${ ((row as Record<string, unknown>)["archived"] as string) ? "archived-row" : ""}`}
                 >
                     <div className="flex justify-between">
                       <div className="flex flex-col space-y-2">
