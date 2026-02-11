@@ -260,15 +260,13 @@ export function DataTable<T extends object>({
                     No results found
                 </div>
               )}
-              {currentData.map((row, rowIdx) => {
-                const cardClick = () => {
-                  if (showDetailModal) setSelectedRow(row);
-                  else onRowClick?.(row);
-                };
-                return (
+              {currentData.map((row, rowIdx) => (
                 <div
                   key={rowIdx}
-                  onClick={cardClick}
+                  onClick={() => {
+                    if (showDetailModal) setSelectedRow(row);   // ← NEW
+                    else onRowClick?.(row);
+                  }}
                   className={`data-table-card ${ ((row as Record<string, unknown>)["archived"] as string) ? "archived-row" : ""}`}
                 >
                     <div className="flex justify-between">
