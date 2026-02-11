@@ -304,8 +304,7 @@ export function DataTable<T extends object>({
                       </div>
                     </div>
                 </div>
-                );
-              })}
+              ))}
             </div>
             {/* Pagination controls */}
             <div className="px-6 py-4 border-t border-neutral-20 dark:border-neutral-70">
