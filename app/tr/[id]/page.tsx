@@ -198,9 +198,7 @@ export default function TRViewPage() {
         tableTitle={resolveTranslatable({key: "datatable.cs.title"}, translate)}
         addTitle={data.controller === address ? resolveTranslatable({key: "button.cs.add"}, translate) : undefined}
         columnsI18n={columnsCsList}
-        data={csList.filter(cs =>
-          showArchived || cs.archived !== "true"
-        )}
+        data={csList.filter(cs => showArchived || !cs.archived)}
         initialPageSize={10}
         onRowClick={(row) => router.push(`/tr/cs/${encodeURIComponent(row.id)}?edit=${data.controller === address}`)}
         defaultSortColumn={'id'}
