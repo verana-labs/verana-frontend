@@ -268,6 +268,11 @@
     @apply text-3xl font-bold text-gray-900 dark:text-white;
   }
 
+  .view-title {
+    /* @apply text-xl font-medium text-title-light-color dark:text-title-dark-color; */
+    @apply text-2xl font-bold text-gray-900 dark:text-white;
+  }
+
   .page-description {
     @apply mt-2 text-sm text-neutral-70 dark:text-neutral-70;
   }

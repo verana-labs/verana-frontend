@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { CsData, csSections } from '@/ui/dataview/datasections/cs';
 import EditableDataView from '@/ui/common/data-edit';
 import { DataType, getMsgTypeFor } from '@/msg/constants/msgTypeForDataType';

@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
@@ -12,9 +11,8 @@ interface TitleAndButtonProps {
   to?: string;
   onClick?: () => void;
   icon?: IconDefinition;
-  className?: string;
   backLink?: boolean;
-  isTable?: boolean;
+  type?: 'page' | 'view' | 'table';
 }
 
 export default function TitleAndButton({
@@ -25,7 +23,7 @@ export default function TitleAndButton({
   onClick,
   icon,
   backLink,
-  isTable
+  type,
 }: TitleAndButtonProps) {
   const router = useRouter();
   const handleClick = () => {
@@ -50,10 +48,10 @@ export default function TitleAndButton({
     </section>
     )}
     
-    <section id="page-header" className={isTable? "" : "mb-8"}>
+    <section id="page-header" className={ type === "table" ? "" : "mb-8"}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between">
             <div>
-                <h1 className={isTable? "data-table-title" : "page-title"}>{title}</h1>
+                <h1 className={ type === "table" ? "data-table-title" : type === "view" ? "view-title" : "page-title"}>{title}</h1>
                 {/* Help Section (if present) */}
                 {description && Array.isArray(description) && (
                   <>
@@ -65,6 +63,7 @@ export default function TitleAndButton({
                   </>
                 )}
             </div>
+            {}
             { !backLink && (
             <div className="mt-4 sm:mt-0">
               {/* Render button only if buttonLabel or Icon is provided */}
@@ -74,7 +73,6 @@ export default function TitleAndButton({
                   className="btn-link"
                 >
                   {icon? (<FontAwesomeIcon className="icon-sm" aria-hidden="true" icon={icon} />) : null}
-                  {/* {buttonLabel && <span className="hidden md:inline">{buttonLabel}</span>} */}
                   {buttonLabel && <span className="inline">&nbsp;{buttonLabel}</span>}
                 </button>
               )}

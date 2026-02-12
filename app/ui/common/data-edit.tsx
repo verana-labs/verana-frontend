@@ -14,7 +14,7 @@ import { MessageType } from '@/msg/constants/types';
 import { resolveMsgCopy } from '@/msg/constants/resolveMsgTypeConfig';
 import clsx from "clsx"
 import { translate } from '@/i18n/dataview';
-import { isJson, withCurrentLocalTimePlusOneMinute } from '@/util/util';
+import { isJson } from '@/util/util';
 import JsonCodeBlock from './json-code-block';
 import ActionCard, { ActionCardProps } from './action-card';
 
@@ -26,6 +26,7 @@ type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & 
   noForm?: boolean;
   isModal?: boolean;
   actionCard?: ActionCardProps;
+  withinView?: boolean;
 };
 
 type FieldValidationError = {
@@ -42,7 +43,8 @@ export default function EditableDataView<T extends object>({
   onCancel,
   noForm = false,
   isModal,
-  actionCard
+  actionCard,
+  withinView
 }: EditableDataViewProps<T>) {
   const sections = translateSections(sectionsI18n);
   const [formData, setFormData] = useState<T>(data);
@@ -100,7 +102,7 @@ export default function EditableDataView<T extends object>({
   // Local state to store the total required value for action (deposit + fee)
   const [totalValue, setTotalValue] = useState<string>("0.00");
 
-  const basicSection = sections.find( (section) => !section.type || section.type === 'basic');
+  const basicSection = sections.find( (section) => (!section.type || section.type === 'basic' ) && !section.noEdit);
   // if (!basicSection) {
   //   return null;
   // }
@@ -330,10 +332,13 @@ export default function EditableDataView<T extends object>({
   });
 
   return (
-    <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6 space-y-4">
-      {basicSection?.name && action == 'create' && (
-        <h2 className="data-edit-section-title">{basicSection.name}</h2>
+    <div className={`bg-white dark:bg-surface ${withinView? "" : "rounded-xl border border-neutral-20 dark:border-neutral-70 p-6 space-y-4"}`}>
+      { (basicSection?.name || basicSection?.nameCreate) && action == 'create' && (
+        <h2 className="data-edit-section-title">{basicSection?.nameCreate ?? basicSection?.name}</h2>
       )}
+      {/* { basicSection?.name && action == 'edit' && withinView && (
+        <h3 className="data-view-section-title text-lg mb-6">{basicSection?.name}</h3>
+      )} */}
 
       {/* {uiMsgType.description && (
         <div className="form-copy">

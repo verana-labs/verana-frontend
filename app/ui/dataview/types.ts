@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { translate } from "@/i18n/dataview";
+import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { ComponentType, ReactNode } from "react";
 
 // Localization helpers
@@ -97,6 +98,7 @@ export function translateSections<T>(
     const out: ResolvedSection<T> = {
       ...(section as any),
       name: resolveTranslatable(section.name, translate) ?? "",
+      nameCreate: resolveTranslatable(section.nameCreate, translate) ?? "",
       help: section.help
         ? resolveTranslatables(section.help as ReadonlyArray<Translatable>, translate)
         : section.help,
@@ -121,6 +123,7 @@ export const typeOf = <I>(typeName: string): TypeToken<I> =>
 /* Section: groups a set of fields for a given type */
 export type Section<I> = {
   name?: Translatable;
+  nameCreate?: Translatable;
   icon?: ComponentType<{ className?: string }>;
   type?: "basic" | "help" | "advanced" | "actions";
   help?: Translatable[];
@@ -128,6 +131,8 @@ export type Section<I> = {
   classForm?: string;
   cardView?: boolean;
   largeTexts?: boolean;
+  sectionBorder?: boolean;
+  noEdit?: boolean;
 };
 
 export interface DataViewProps<T extends object> {
@@ -137,8 +142,12 @@ export interface DataViewProps<T extends object> {
   onEdit?: () => void;
   onRefresh?: () => void;
   onBack?:() => void;
-  showSectionTitle?: string;
-  otherButton?: React.ReactNode;
+  showViewTitle?: boolean;
+  viewTitle?: string;
+  viewDescription?: string;
+  viewTitleButton?: {icon: IconDefinition; buttonLabel: string; onClick: () => void;};
+  generalBorder?: boolean;
+  viewEditButton?: boolean;
 }
 
 /* Base field shared by all field types */
@@ -152,6 +161,7 @@ type BaseField = {
   icon?: any;
   iconClass?: string;
   iconColorClass?: string;
+  isEditButton?: boolean; 
 };
 
 /* Field validation params by all field types */
@@ -260,8 +270,9 @@ export type ResolvedField<T> =
   | ResolvedStringListField<T>
   | ResolvedObjectListField<T, any>;
 
-export type ResolvedSection<I> = Omit<Section<I>, "name" | "help" | "fields"> & {
+export type ResolvedSection<I> = Omit<Section<I>, "name" | "nameCreate" | "help" | "fields"> & {
   name: string;
+  nameCreate: string;
   help?: string[];
   fields?: ResolvedField<I>[];
 };

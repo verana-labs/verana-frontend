@@ -16,18 +16,18 @@ import { resolveTranslatable } from '@/ui/dataview/types';
 // Define TdActionPage props interface
 interface TdActionProps {
   action: MsgTypeTD;  // Action type to perform
-  setActiveActionId: () => void; // Collapse/hide action on cancel
   data: object;
+  onClose: () => void; // Collapse/hide action on cancel
   onRefresh?:  () => void; // Refresh TD data
 }
 
-export default function TdActionPage({ action, setActiveActionId, onRefresh, data }: TdActionProps) {
+export default function TdActionPage({ action, data, onClose, onRefresh }: TdActionProps) {
   // Compose initial data
   const [dataTD, setData] = useState<TdData>({
     claimedVNA: 0
   });
 
-  const actionTD = useActionTD(setActiveActionId, onRefresh);
+  const actionTD = useActionTD(onClose, onRefresh);
   const claimableInterests = (data as AccountData).claimableInterests?? undefined;
   const available = claimableInterests ? true : false;
   const trustUnitPrice = useTrustDepositParams().trustUnitPrice;
@@ -72,7 +72,7 @@ export default function TdActionPage({ action, setActiveActionId, onRefresh, dat
         messageType={action}     
         data={dataTD}
         onSave={onSave}
-        onCancel={setActiveActionId}
+        onCancel={onClose}
         noForm={action!=='MsgReclaimTrustDeposit'}
         actionCard={(action==='MsgReclaimTrustDepositYield') ? actionCardYield : undefined}
          />

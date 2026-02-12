@@ -185,7 +185,7 @@ export default function TRViewPage() {
         columnsI18n={columnsCsList}
         data={csList}
         initialPageSize={10}
-        onRowClick={(row) => router.push(`/tr/cs/${encodeURIComponent(row.id)}?edit=${data.controller === address}`)}
+        onRowClick={(row) => router.push(`/tr/cs/${row.id}?tr=${data.id}`)}
         defaultSortColumn={'modified'}
         showDetailModal={false}
         detailTitle={resolveTranslatable({key: "datatable.tr.detail"}, translate)}

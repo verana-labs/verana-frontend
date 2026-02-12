@@ -19,6 +19,8 @@ type RawSchema = Record<string, unknown> & {
   holder_validation_validity_period?: number;
   issuer_perm_management_mode?: number;
   verifier_perm_management_mode?: number;
+  state?: string;
+  archived?: string;
 };
 
 export function useCsData(id: string) {
@@ -83,6 +85,8 @@ export function useCsData(id: string) {
           jsonSchema: entry.json_schema ?? '',
           title: `${titleCandidate}`,
           description: `${descCandidate}`,
+          state: entry.state,
+          archived: entry.archived??''
         }
       );
     } catch (err) {
