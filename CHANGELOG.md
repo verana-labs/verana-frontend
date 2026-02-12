@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/verana-labs/verana-frontend/compare/v0.4.0...v0.5.0) (2026-02-12)
+
+
+### Features
+
+* [View Credential Schema] Reorganize page with new design ([#239](https://github.com/verana-labs/verana-frontend/issues/239)) ([4329bda](https://github.com/verana-labs/verana-frontend/commit/4329bdab4af89cad43f3ebf58525c66ed9e5ab53))
+
 ## [0.4.0](https://github.com/verana-labs/verana-frontend/compare/v0.3.0...v0.4.0) (2026-02-12)
 
 
