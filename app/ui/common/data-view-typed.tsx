@@ -6,14 +6,19 @@ import { DataType, getMsgTypeFor } from '@/msg/constants/msgTypeForDataType';
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
+import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import EditableDataView from './data-edit';
 import DataView from './data-view-columns';
-import { MsgTypeDID, MsgTypePERM, MsgTypeTD, MsgTypeTR } from '@/msg/constants/notificationMsgForMsgType';
+import { MsgTypeCS, MsgTypeDID, MsgTypePERM, MsgTypeTD, MsgTypeTR } from '@/msg/constants/notificationMsgForMsgType';
 import GfdPage from '@/tr/[id]/gfd';
 import DidActionPage from '@/did/[id]/action';
 import TdActionPage from '@/account/action';
 import GetVNATokens from './get-vna';
 import PermActionPage from '@/participants/[id]/action';
+import IconLabelButton from './icon-label-button';
+import clsx from 'clsx';
+import { ModalAction } from './modal-action';
+import CsActionPage from '@/tr/cs/[id]/action';
 
 // Wrapper for DataView that lets you pass the generic parameter explicitly
 export default function DataViewTyped<I extends object>(props: {
@@ -127,22 +132,25 @@ export function renderObjectList<I extends object>(args: {
 
 // Define the valid actions for DID
 const validDIDAction = (action: string): action is MsgTypeDID => 
-  action === 'MsgAddDID' || action === 'MsgRenewDID' || action === 'MsgTouchDID' || action === 'MsgRemoveDID';
+  ['MsgAddDID','MsgRenewDID','MsgTouchDID','MsgRemoveDID'].includes(action);
 
 // Define the valid actions for TD
 const validTDAction = (action: string): action is MsgTypeTD => 
-  action === 'MsgReclaimTrustDeposit' || action === 'MsgReclaimTrustDepositYield';
+  ['MsgReclaimTrustDeposit','MsgReclaimTrustDepositYield'].includes(action);
 
 // Define the valid actions for TR
 export const validTRAction = (action: string): action is MsgTypeTR => 
-  action === 'MsgAddGovernanceFrameworkDocument' || action === 'MsgIncreaseActiveGovernanceFrameworkVersion';
+  ['MsgAddGovernanceFrameworkDocument','MsgIncreaseActiveGovernanceFrameworkVersion'].includes(action);
 
 // Define the valid actions for PERM
 export const validPermAction = (action: string): action is MsgTypePERM => 
-  action === 'MsgCancelPermissionVPLastRequest' || action === 'MsgRenewPermissionVP' || action === 'MsgSetPermissionVPToValidated' || 
-  action === 'MsgExtendPermission' || action === 'MsgRevokePermission' || action === 'MsgSlashPermissionTrustDeposit' || action === 'MsgRepayPermissionSlashedTrustDeposit' ||
-  action === 'MsgCreateRootPermission';
+  ['MsgCancelPermissionVPLastRequest','MsgRenewPermissionVP','MsgSetPermissionVPToValidated', 
+  'MsgExtendPermission','MsgRevokePermission','MsgSlashPermissionTrustDeposit','MsgRepayPermissionSlashedTrustDeposit',
+  'MsgCreateRootPermission'].includes(action);
 
+// Define the valid actions for CS
+const validCSAction = (action: string): action is MsgTypeCS => 
+  ['MsgArchiveCredentialSchema','MsgUpdateCredentialSchema'].includes(action);
 
 // Helper to render the correct action component
 export function renderActionComponent(
@@ -159,17 +167,68 @@ export function renderActionComponent(
     return <GetVNATokens/>;
   }
   if (validTDAction(action)) {
-    return <TdActionPage action={action} data={data} setActiveActionId={onClose} onRefresh={onRefresh}/>;
+    return <TdActionPage action={action} data={data} onClose={onClose} onRefresh={onRefresh}/>;
   }
   if (validTRAction(action)) {
-    return <GfdPage action={action} data={data} setActiveActionId={onClose} onRefresh={onRefresh}/>;
+    return <GfdPage action={action} data={data} onClose={onClose} onRefresh={onRefresh}/>;
   }
   if (validPermAction(action)) {
-    return <PermActionPage action={action} data={data} setActiveActionId={onClose} onRefresh={onRefresh}/>;
+    return <PermActionPage action={action} data={data} onClose={onClose} onRefresh={onRefresh}/>;
   }
-
+  if (validCSAction(action)) {
+    return <CsActionPage action={action} data={data} onClose={onClose} onRefresh={onRefresh}/>;
+  }
   return null;
 }
 
+export interface ActionFieldProps {
+  name: string;
+  label: string;
+  value: string;
+  description?: string; 
+  icon?: IconDefinition;
+  iconColorClass?: string;
+  iconClass?: string;
+  isWarning?: boolean;
+}
 
+// Helper to render the correct action field: Button & Modal
+export function renderActionFieldModalAndButton(
+  data: object,
+  action: ActionFieldProps,
+  idx: number,
+  isActive: boolean,
+  onClickButton: () => void,
+  onClose: () => void,
+  onRefresh?: () => void
+  ) {
+    return (
+      <section key={`action-${String(action.name)}-${idx}`}>
+        <IconLabelButton
+          label={action.label}
+          icon={action.icon}
+          className={clsx(
+            "btn-action-confirm text-sm", // base
+            action.iconColorClass // specific
+          )}
+          onClick={onClickButton}
+        />
 
+        {action.value ? (
+          <ModalAction
+            onClose={onClose}
+            titleKey={action.label}
+            isActive={isActive}
+          >
+            {renderActionComponent(
+              action.value,
+              onClose,
+              data,
+              onRefresh,
+              undefined
+            )}
+          </ModalAction>
+        ) : null}
+      </section>
+    );
+  }

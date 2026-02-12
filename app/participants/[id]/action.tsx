@@ -9,14 +9,14 @@ import { MessageType } from '@/msg/constants/types';
 // Define PermActionPage props interface
 interface PermActionProps {
   action: MsgTypePERM;  // Action type to perform
-  setActiveActionId: () => void; // Collapse/hide action on cancel
   data: object;
-  onRefresh?: () => void; // Refresh DID data
+  onClose: () => void; // Collapse/hide action on cancel
+  onRefresh?: () => void; // Refresh Permission data
 }
 
-export default function PermActionPage({ action, setActiveActionId, data, onRefresh }: PermActionProps) {
+export default function PermActionPage({ action, data, onClose, onRefresh }: PermActionProps) {
   const permData = data as Permission;
-  const actionPerm = useActionPerm(setActiveActionId, onRefresh);
+  const actionPerm = useActionPerm(onClose, onRefresh);
 
   // Save handler: called when the form is submitted
   async function onSave(formData: object) {
@@ -109,7 +109,7 @@ export default function PermActionPage({ action, setActiveActionId, data, onRefr
         data={{}}
         onSave={onSave}
         isModal={true}
-        onCancel={setActiveActionId}
+        onCancel={onClose}
         noForm={isNoForm()} />
     </>
   );

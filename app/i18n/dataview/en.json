@@ -381,7 +381,9 @@
   "dataview.gfd.fields.language.option.es": "Spanish",
   "dataview.gfd.fields.language.option.fr": "French",
 
-  "dataview.cs.sections.main": "Information",
+  "dataview.cs.title": "Credential Schema",
+  "dataview.cs.description": "View and manage this Credential Schema",
+  "dataview.cs.sections.main": "Basic Information",
   "dataview.cs.managementMode.OPEN": "OPEN",
   "dataview.cs.managementMode.GRANTOR_VALIDATION": "GRANTOR_VALIDATION",
   "dataview.cs.managementMode.TRUST_REGISTRY_VALIDATION": "TRUST_REGISTRY_VALIDATION",
@@ -396,8 +398,8 @@
   "dataview.cs.fields.creator": "Controller",
   "dataview.cs.fields.trId": "TR Id",
   "dataview.cs.fields.id": "Credential Schema ID",
-  "dataview.cs.actions.updateCredentialSchema": "Controller",
-  "dataview.cs.actions.archiveCredentialSchema": "Controller",
+  "dataview.cs.actions.updateCredentialSchema": "Edit Configuration",
+  "dataview.cs.actions.archiveCredentialSchema": "Archive Schema",
   "dataview.cs.descriptions.issuerPermManagementMode": "defines how permission are managed for issuers of this Credential Schema:\n<ul class=\"list-disc pl-6\">\n<li>OPEN means anyone can create its own ISSUER permission;</li>\n<li>GRANTOR_VALIDATION means a validation process MUST be run between a candidate ISSUER and an ISSUER_GRANTOR in order to create an ISSUER permission;</li>\n<li>TRUST_REGISTRY_VALIDATION means a validation process MUST be run between a candidate ISSUER and the trust registry owner in order to create an ISSUER permission.</li>\n</ul>\nChoose wisely, as a Credential Schemas is immutable and thus cannot be modified.",
   "dataview.cs.descriptions.verifierPermManagementMode": "defines how permission are managed for verifiers of this Credential Schema:\n<ul class=\"list-disc pl-6\">\n<li>OPEN means anyone can create its own VERIFIER permission;</li>\n<li>GRANTOR_VALIDATION means a validation process MUST be run between a candidate VERIFIER and a VERIFIER_GRANTOR in order to create a VERIFIER permission;</li>\n<li>TRUST_REGISTRY_VALIDATION means a validation process MUST be run between a candidate VERIFIER and the trust registry owner in order to create a VERIFIER permission.</li>\n</ul>\nChoose wisely, as a Credential Schema is immutable and thus cannot be modified.",
   "dataview.cs.descriptions.issuerGrantorValidationValidityPeriod": "maximum number of days an issuer grantor validation can be valid for, in days. Use 0 so that validation never expires, or set a number of days lower than 3650. Example, if you want a validation process to be valid for one year so that applicant will have to renew the validation process each year, set this parameter to 365.",
@@ -586,13 +588,13 @@
   "messages.MsgCreateCredentialSchema.description": "",
   "messages.MsgCreateCredentialSchema.cost": "You'll need approx. {value} VNA are required to execute this transaction, including trust deposit.",
 
-  "messages.MsgUpdateCredentialSchema.label": "Confirm",
+  "messages.MsgUpdateCredentialSchema.label": "Confirm Update",
   "messages.MsgUpdateCredentialSchema.description": "",
   "messages.MsgUpdateCredentialSchema.cost": "You'll need approx. {value} VNA are required to execute this transaction.",
 
   "messages.MsgArchiveCredentialSchema.label": "Archive Credential Schema",
   "messages.MsgArchiveCredentialSchema.description": "Archive a Credential Schema.",
-  "messages.MsgArchiveCredentialSchema.cost": "There is no fee for archiving a Credential Schema.",
+  "messages.MsgArchiveCredentialSchema.cost": "You'll need approx. {value} VNA are required to execute this transaction.",
 
   "messages.MsgCancelPermissionVPLastRequest.label": "Confirm",
   "messages.MsgCancelPermissionVPLastRequest.description": "Cancel Permission Validation Process.",

@@ -186,8 +186,8 @@ export function DataTable<T extends object>({
               <TitleAndButton
                 title=  {tableTitle}
                 buttonLabel={addTitle}
-                icon={addTitle ? faPlus : undefined}
-                isTable={true}
+                // to="/tr/add"
+                icon={faPlus}
                 onClick={onAdd}
                 titleFilter={titleFilter}
               />
@@ -205,7 +205,7 @@ export function DataTable<T extends object>({
                         className={`data-table-th ${getColumnClasses(col.priority)}`}
                       >
                           {col.header}
-                          <FontAwesomeIcon icon={faSort}/>
+                          {/* <FontAwesomeIcon icon={faSort}/> */}
                       </th>
                     ))}
                   </tr>

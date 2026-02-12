@@ -36,6 +36,7 @@ export const didSections: Section<DidData>[] = [
     // name: t("dataview.did.sections.details"),
     // icon: IdentificationIcon,
     type: "basic",
+    sectionBorder: true,
     fields: [
       {
         name: "did",

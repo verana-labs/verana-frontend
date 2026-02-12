@@ -9,22 +9,29 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown, faChevronUp, faEdit } from '@fortawesome/free-solid-svg-icons';
 import clsx from "clsx"
 import IconLabelButton from './icon-label-button';
-import { renderActionComponent } from './data-view-typed';
+import { ActionFieldProps, renderActionComponent, renderActionFieldModalAndButton } from './data-view-typed';
 import CardView from './card-view';
+import TitleAndButton from './title-and-button';
+import ActionFieldButton from './action-field-button';
 
 export default function DataView<T extends object>({
   sectionsI18n,
   data,
+  viewEditButton = true,
   onEdit,
   onRefresh,
   onBack,
-  // showSectionTitle,
-  otherButton
+  showViewTitle,
+  viewTitleButton,
+  generalBorder
 }: DataViewProps<T>) {
 
   const sections = translateSections(sectionsI18n);
   const [activeActionId, setActiveActionId] = useState<string | null>(null);
   let jsonField: { label: string; value: unknown } | null = null;
+  type ViewTitle = { title?: string; description?: string };
+  const viewTitle = data as ViewTitle;
+  const [showView, setShowView] = useState<boolean>(true);
 
   // Helper to render the type action field
   function renderActionField(
@@ -64,12 +71,26 @@ export default function DataView<T extends object>({
   }
 
   return (
+    <div className={`${ generalBorder ? "bg-white dark:bg-surface bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6" : ""}`}> 
+
+    {showViewTitle && viewTitle.title ? (
+      <div className="border-b border-neutral-20 dark:border-neutral-70">
+      <TitleAndButton
+        title= {viewTitle.title}
+        description={[`${viewTitle.description}`]}
+        type='view'
+        buttonLabel={viewTitleButton?.buttonLabel}
+        icon={viewTitleButton?.icon}
+        onClick={viewTitleButton?.onClick}
+      /></div>
+    ) : null}
+
     <div className="space-y-6">
       {sections.map((section, sectionIndex) => (
-        // <div key={sectionIndex} className="data-view-section">
         <div key={sectionIndex}>
+          
           {/* Help Section */}
-          {section.type === "help" && Array.isArray(section.help) && (
+          {section.type === "help" && Array.isArray(section.help) ? (
             <ul className="data-view-list-help">
               {section.help.map((h, idx) => (
                 <li
@@ -80,80 +101,96 @@ export default function DataView<T extends object>({
                 </li>
               ))}
             </ul>
-          )}
+          ) : null}
 
           {/* Basic Section */}
-          {(!section.type || section.type === "basic") && section.fields && section.fields.length > 0 && (
-            <>
-            <div className="mb-8">
-              <div className={`${ section.cardView ? "": "bg-white dark:bg-surface bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6"}`}> 
-                {/* Header is always the same for any section type */}
-                {/* { showSectionTitle && section.name?.trim() && ( */}
-                { section.name?.trim() && (
-                <div className="flex items-center justify-between mb-6">
-                    <h3 className="data-view-section-title text-lg">{section.name}</h3>
-                    { (onEdit || otherButton) && (
-                    <div className="actions-right gap-3">
-                      {otherButton ? otherButton : null}
-                      { onEdit && (
-                      <IconLabelButton
-                        icon={faEdit}
-                        label={"Edit"}
-                        onClick={() => onEdit?.()}
-                        className="btn-link px-3 py-1.5"
-                      />
+          {(!section.type || section.type === "basic") && section.fields && section.fields.length > 0 ? (
+            (() => {
+            const actionRenders: React.ReactNode[] = [];
+            return (
+              <>
+              <div className="mb-8">
+                <div className={`${ section.sectionBorder ? 
+                  "bg-white dark:bg-surface bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6"
+                  : !section.cardView && sectionIndex !== 0 ? "border-t border-neutral-20 dark:border-neutral-70" : ""} pt-6 mb-8`}> 
+                  {/* Header is always the same for any section type */}
+                  { section.name?.trim() && (
+                  <div className="flex items-center justify-between mb-6">
+                      <h3 className="data-view-section-title text-lg">{section.name}</h3>
+                      { viewEditButton && onEdit && (
+                      <div className="actions-right gap-3">
+                        <IconLabelButton
+                          icon={faEdit}
+                          label={"Edit"}
+                          onClick={() => onEdit?.()}
+                          className="btn-link px-3 py-1.5"
+                        />
+                      </div>
                       )}
-                    </div>
-                    )}
-                </div>
-                )}
-                <div className={section.classForm ?? "grid grid-cols-1 md:grid-cols-2 gap-4"}>
-                  { visibleFieldsForMode(section.fields, 'view')
-                    .map((field, fieldIndex) => ({
-                      field,
-                      value: data[field.name],
-                      fieldIndex,
-                    }))
-                    .filter(f => isResolvedDataField(f.field) && f.value != null)
-                    .map(({ field, value, fieldIndex }) => {
-                      const jsonValue = isJson(value); // helper: returns object if valid JSON, otherwise null
-                      if (jsonValue){
-                        jsonField = { label: field.label, value: jsonValue };
-                        return null;
-                      }
-                      if (section.cardView && isResolvedDataField(field)){
-                        return (
-                          <CardView key={section.name.concat(String(field.name))} field={field} data={data} largeTexts={section.largeTexts} />
-                        );
-                      }
-                      return (
-                        <div key={`${sectionIndex}-${fieldIndex}`}>
-                          <label className="data-view-label">{field.label}</label>
-                          {
-                            isResolvedDataField(field) && field.isHtml ?
-                            (<p className={field.classField?? "data-view-value"} dangerouslySetInnerHTML={{ __html: field.format? String(field.format(value)) : String(value)}}/>) :
-                            (<p className="data-view-value">{String(value)}</p>)
-                          }
-                        </div>
-                      );
-                      }
-                    )
-                  }
-                </div>
-                {/* Extra row: full width JSON pretty-printed */}
-                {jsonField && (
-                  <div className='py-4'>
-                    {/* span across both columns */}
-                    <label className="data-view-label">{jsonField.label}</label>
-                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 h-64 overflow-y-auto border border-neutral-20 dark:border-neutral-70">
-                    <JsonCodeBlock value={jsonField.value} className="data-view-label" />
-                    </div>
                   </div>
-                )}
+                  )}
+                  <div className={`${showView || section.noEdit ? "block" : "hidden"} ${section.classForm ?? "grid grid-cols-1 md:grid-cols-2 gap-4"}`}>
+                    { visibleFieldsForMode(section.fields, 'view')
+                      .map((field, fieldIndex ) => {
+                        const value= data[field.name];
+                        if (isResolvedDataField(field) && value != null){
+                          const jsonValue = isJson(value); // helper: returns object if valid JSON, otherwise null
+                          if (jsonValue){
+                            jsonField = { label: field.label, value: jsonValue };
+                            return null;
+                          }
+                          if (section.cardView && isResolvedDataField(field)){
+                            return (
+                              <CardView key={section.name.concat(String(field.name))} field={field} data={data} largeTexts={section.largeTexts} />
+                            );
+                          }
+                          return (
+                            <div key={`${sectionIndex}-${fieldIndex}`}>
+                              <label className="data-view-label">{field.label}</label>
+                              {
+                                isResolvedDataField(field) && field.isHtml ?
+                                (<p className={field.classField?? "data-view-value"} dangerouslySetInnerHTML={{ __html: field.format? String(field.format(value)) : String(value)}}/>) :
+                                (<p className="data-view-value">{String(value)}</p>)
+                              }
+                            </div>
+                          );
+                        }
+
+                        // Collect actions Basic Section to render after the grid
+                        if (isResolvedActionField(field) && value != undefined ) {
+                          const rowId = `${sectionIndex}-${fieldIndex}`;
+                          const isActive = activeActionId === rowId;
+                          const obj = { ...field, value: String(value) };
+                          actionRenders.push(
+                            field.isEditButton ?
+                            <ActionFieldButton type='button' data={data} field={obj as ActionFieldProps} key={rowId} 
+                              onRefresh={onRefresh} onClickButton={() => setShowView(false)} onClose={() => setShowView(true)} />
+                            : renderActionFieldModalAndButton(data, obj as ActionFieldProps, fieldIndex, isActive, ()=> setActiveActionId(rowId), ()=> setActiveActionId(null), onRefresh)
+                          );
+                        }
+
+                      })
+                    }
+                  </div>
+                  {/* Extra row: full width JSON pretty-printed */}
+                  {jsonField && (
+                    <div className='py-4'>
+                      {/* span across both columns */}
+                      <label className="data-view-label">{jsonField.label}</label>
+                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 h-64 overflow-y-auto border border-neutral-20 dark:border-neutral-70">
+                      <JsonCodeBlock value={jsonField.value} className="data-view-label" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Render collected actions AFTER the section box */}
+                  {actionRenders.length ? <div className="space-y-4">{actionRenders}</div> : null}
+
+                </div>
               </div>
-            </div>
-            </>
-          )}
+              </>
+            )})() 
+          ) : null }
 
           {/* Actions Section */}
           {section.type === "actions" && section.fields && section.fields.length > 0 && (
@@ -174,6 +211,8 @@ export default function DataView<T extends object>({
         </div>
       ))}
     </div>
+    </div>
+
   );
 
 }

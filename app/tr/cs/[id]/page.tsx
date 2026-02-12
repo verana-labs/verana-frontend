@@ -1,24 +1,28 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import DataView from '@/ui/common/data-view-columns';
 import TitleAndButton from '@/ui/common/title-and-button';
 import EditableDataView from '@/ui/common/data-edit';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
-import { faArrowLeft, faSitemap } from '@fortawesome/free-solid-svg-icons';
+import { faChevronRight, faSitemap } from '@fortawesome/free-solid-svg-icons';
 import { useCsData } from '@/hooks/useCredentialSchemaData';
 import { CsData, csSections } from '@/ui/dataview/datasections/cs';
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject';
 import { DataType, getMsgTypeFor } from '@/msg/constants/msgTypeForDataType';
-import IconLabelButton from '@/ui/common/icon-label-button';
+import { useChain } from '@cosmos-kit/react';
+import { useVeranaChain } from '@/hooks/useVeranaChain';
+import { useTrustRegistryData } from '@/hooks/useTrustRegistryData';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { shortenDID } from '@/util/util';
 
 export default function CSViewPage() {
   const params = useParams();
   const id = params?.id as string;
   const qParams = useSearchParams();
-  const isEdit = qParams.get('edit')=='true';
+  const tr =qParams.get('tr');
 
   const [data, setData] = useState<CsData | null>(null);
   const [editing, setEditing] = useState(false);
@@ -38,8 +42,14 @@ export default function CSViewPage() {
     setEditing(false);
   }
 
-  // const veranaChain = useVeranaChain();
-  // const { address } = useChain(veranaChain.chain_name);
+  const veranaChain = useVeranaChain();
+  const { address } = useChain(veranaChain.chain_name);
+  const [ trController, setTrController ] = useState<boolean>(false);
+  const { dataTR } = useTrustRegistryData(tr??'');
+  useEffect(() => {
+    setTrController(dataTR?.controller === address);
+  }, [dataTR, address]);
+
   const { csData, loading, errorCS, refetch: refetchCS } = useCsData(id);
 
   // Refresh data TR
@@ -54,8 +64,13 @@ export default function CSViewPage() {
   }, [refresh]);
 
   useEffect(() => {
-    setData(csData);
-  }, [csData]);
+    if (!csData) return;
+    setData({
+      ...csData,
+      archiveCredentialSchema: trController && !csData.archived ? "MsgArchiveCredentialSchema" : undefined,
+      updateCredentialSchema: trController ? "MsgUpdateCredentialSchema" : undefined,
+    });
+  }, [csData, trController]);
 
   if (loading && !refresh) {
     return <div className="loading-paner">{resolveTranslatable({key: "loading.cs"}, translate)?? "Loading Credential Schema details..."}</div>;
@@ -66,14 +81,28 @@ export default function CSViewPage() {
 
   return (
     <>
+      {/* Breadcrumbs */}
+      <section className="mb-6">
+        <nav className="flex flex-wrap items-center text-sm" aria-label="Breadcrumb">
+          <a
+            href={`/tr/${tr}`}
+            className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+          >
+            {dataTR && shortenDID(dataTR.did as string)}
+          </a>
+          <FontAwesomeIcon icon={faChevronRight} className="mx-2 text-neutral-70 text-xs" />
+          <span className="text-gray-900 dark:text-white font-medium">{csData?.title}</span>
+        </nav>
+      </section>
+
       {/* Back Navigation & Back Navigation */}
       <TitleAndButton
-        title=  {`${data.title}`}
-        buttonLabel={resolveTranslatable({key: "button.cs.back"}, translate)}
-        to={`/tr/${encodeURIComponent(data.trId)}`}
-        icon={faArrowLeft}
-        backLink= {true}
-        description={[`${data.description}`]}
+        title= {resolveTranslatable({key: "dataview.cs.title"}, translate) ?? "Credential Schema"}
+        description={[resolveTranslatable({key: "dataview.cs.description"}, translate)??""]}
+        // buttonLabel={resolveTranslatable({key: "button.cs.back"}, translate)}
+        // to={`/tr/${encodeURIComponent(data.trId)}`}
+        // icon={faArrowLeft}
+        // backLink= {true}
       />
       {/* Basic Information Section */}
       {editing ? (
@@ -89,18 +118,13 @@ export default function CSViewPage() {
         sectionsI18n={csSections}
         data={data}
         id={id}
-        onEdit={ isEdit? () => setEditing(true) : undefined } 
-        // onRefresh={setRefresh}
-        otherButton={ 
-                      <IconLabelButton
-                        icon={faSitemap}
-                        label={"Participants"}
-                        onClick={() => router.push(`/participants/${data.id}`)}
-                        // onClick={undefined}
-                        className="text-sm font-medium relative p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
-                      />
-                    }
-        />
+        viewEditButton={false}
+        onEdit={ trController? () => setEditing(true) : undefined } 
+        onRefresh={()=>setRefresh(true)}
+        showViewTitle={true}
+        generalBorder={true}
+        viewTitleButton={ {icon: faSitemap, buttonLabel: resolveTranslatable({key: "participants.title"}, translate)??"participants", onClick: () => router.push(`/participants/${data.id}`)} }
+      />
       )}
     </>
   );

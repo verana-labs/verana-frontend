@@ -1,6 +1,6 @@
 import { I18nValues, Translatable } from "@/ui/dataview/types";
 import { MessageType, MsgTypeInfoI18n, MsgTypeStyle } from "@/msg/constants/types";
-import { faArrowUp, faPlus, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faArrowUp, faBoxArchive, faPlus } from "@fortawesome/free-solid-svg-icons";
 
 const t = (key: string, values?: I18nValues): Translatable => ({ key, values });
 
@@ -163,7 +163,10 @@ export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
   },
   MsgCreateCredentialSchema: {},
   MsgUpdateCredentialSchema: {},
-  MsgArchiveCredentialSchema: {},
+  MsgArchiveCredentialSchema: {
+    button: "bg-gray-600 hover:bg-gray-700",
+    icon: faBoxArchive
+  },
   MsgCancelPermissionVPLastRequest: {
     button: "bg-gray-600 hover:bg-gray-700"
   },

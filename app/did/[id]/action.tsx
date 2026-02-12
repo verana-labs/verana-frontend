@@ -9,13 +9,13 @@ import { MsgTypeDID } from '@/msg/constants/notificationMsgForMsgType';
 // Define DidActionPage props interface
 interface DidActionProps {
   action: MsgTypeDID;  // Action type to perform
-  onClose: () => void; // Collapse/hide action on cancel
   data: object;
+  onClose: () => void; // Collapse/hide action on cancel
   onRefresh?: () => void; // Refresh DID data
   onBack?: () => void; // Close modal
 }
 
-export default function DidActionPage({ action, onClose, data, onRefresh, onBack }: DidActionProps) {
+export default function DidActionPage({ action, data, onClose,  onRefresh, onBack }: DidActionProps) {
   const didData = data as DidData;
   // Compose initial data
   const [dataDID, setData] = useState<DidData>({

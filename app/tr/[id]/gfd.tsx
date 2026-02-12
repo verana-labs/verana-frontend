@@ -10,12 +10,12 @@ import { MsgTypeTR } from '@/msg/constants/notificationMsgForMsgType';
 // Define GfdPage props interface
 interface GfdPageProps {
   action: MsgTypeTR;  // Action type to perform
-  setActiveActionId: () => void; // Collapse/hide action on cancel
   data: object;
+  onClose: () => void; // Collapse/hide action on cancel
   onRefresh?: () => void; // Refresh TR data
 }
 
-export default function GfdPage({ action, setActiveActionId, data, onRefresh }: GfdPageProps) {
+export default function GfdPage({ action, data, onClose, onRefresh }: GfdPageProps) {
     
   const trData: TrData = data as TrData;
   // Compose initial data, including controller and docUrl if needed
@@ -27,7 +27,7 @@ export default function GfdPage({ action, setActiveActionId, data, onRefresh }: 
     docUrl: '',
   });
 
-  const actionTR = useActionTR(setActiveActionId, onRefresh);
+  const actionTR = useActionTR(onClose, onRefresh);
 
   // Save handler: called when the form is submitted
   async function onSave(newData: GfdData) {
@@ -62,7 +62,7 @@ export default function GfdPage({ action, setActiveActionId, data, onRefresh }: 
         messageType={action}     
         data={dataGFD}
         onSave={(action === 'MsgAddGovernanceFrameworkDocument')? onSave : onIncrement }
-        onCancel={setActiveActionId} />
+        onCancel={onClose} />
     </>
   );
 }

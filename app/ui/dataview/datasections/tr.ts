@@ -43,6 +43,7 @@ export const trSections: Section<TrData>[] = [
     name: t("dataview.tr.sections.basicInformation"),
     // icon: ShieldCheckIcon,
     type: "basic",
+    sectionBorder: true,
     fields: [
       { name: "id", label: t("dataview.tr.fields.id"), type: "data", show: "none", update: false, id: true },
       {
