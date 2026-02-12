@@ -195,7 +195,7 @@ function Tree({
                   {showBusiness && ( node.permission.validation_fees || node.permission.issuance_fees) ? (
                     <span >
                       <FontAwesomeIcon icon={faCoins} className="mr-1" />
-                      {`validation fees: ${node.permission.validation_fees} VNA issuance fees: ${formatVNAFromUVNA(node.permission.issuance_fees)}`} {node.permission.verification_fees && node.permission.verification_fees !== "0" ? `verification fees:  ${formatVNAFromUVNA(node.permission.verification_fees)}` : ""}
+                      {`validation fees: ${formatVNAFromUVNA(node.permission.validation_fees)} issuance fees: ${formatVNAFromUVNA(node.permission.issuance_fees)}`} {node.permission.verification_fees && node.permission.verification_fees !== "0" ? `verification fees:  ${formatVNAFromUVNA(node.permission.verification_fees)}` : ""}
                     </span>
                   ) : null}
                   {showStats && node.permission.issued &&  node.permission.verified && (node.permission.issued !== "0" || node.permission.verified !== "0" ) ? (
