@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.0](https://github.com/verana-labs/verana-frontend/compare/v0.3.0...v0.4.0) (2026-02-12)
+
+
+### Features
+
+* add show archived filter to participants page ([#221](https://github.com/verana-labs/verana-frontend/issues/221)) ([c7b2d42](https://github.com/verana-labs/verana-frontend/commit/c7b2d42dfad4d0705dc9c19607f424b2e236852d))
+* update credential schemas table — columns, filter and mobile ([#170](https://github.com/verana-labs/verana-frontend/issues/170)) ([#227](https://github.com/verana-labs/verana-frontend/issues/227)) ([48e6844](https://github.com/verana-labs/verana-frontend/commit/48e68448403fd76f76ee17fbbc5d11d401f73d6b))
+
+
+### Bug Fixes
+
+* Related-to-Bugs:-[#222](https://github.com/verana-labs/verana-frontend/issues/222),-[#225](https://github.com/verana-labs/verana-frontend/issues/225),-[#226](https://github.com/verana-labs/verana-frontend/issues/226) ([#228](https://github.com/verana-labs/verana-frontend/issues/228)) ([6a9ff76](https://github.com/verana-labs/verana-frontend/commit/6a9ff76c924eaa85322b8895ec85e95937b56fdc))
+
 ## [0.3.0](https://github.com/verana-labs/verana-frontend/compare/v0.2.0...v0.3.0) (2026-02-07)
 
 

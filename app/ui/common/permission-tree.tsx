@@ -35,7 +35,6 @@ type PermissionTreeProps = {
     validatorId: string | undefined
   ) => void;
   refreshRoot?: () => void;
-
 };
 
 /** ------------ Types ------------ */
@@ -76,12 +75,15 @@ function findNodeAndPath(nodes: TreeNode[], id: string): { node?: TreeNode; path
   return { node: undefined, path: [] };
 }
 
+const ARCHIVED_PERM_STATES = ["REPAID", "SLASHED"];
+
 function Tree({
   type,
   nodes,
   showWeight,
   showBusiness,
   showStats,
+  showArchived,
   selectedId,
   onSelect,
   expanded,
@@ -94,6 +96,7 @@ function Tree({
   showWeight: boolean;
   showBusiness: boolean;
   showStats: boolean;
+  showArchived: boolean;
   selectedId?: string;
   onSelect: (id: string) => void;
   expanded: Record<string, boolean>;
@@ -102,9 +105,13 @@ function Tree({
   hrefJoin?: string;
 }) {
 
+  const filteredNodes = showArchived
+    ? nodes
+    : nodes.filter(node => node.group || !ARCHIVED_PERM_STATES.includes(node.permission?.perm_state ?? ''));
+
   return (
     <div className="space-y-1">
-      {nodes.map((node) => {
+      {filteredNodes.map((node) => {
         const hasChildren = !!node.children?.length;
         const isExpanded = expanded[node.nodeId] ?? false;
         const isSelected = selectedId === node.nodeId;
@@ -195,7 +202,7 @@ function Tree({
                   {showBusiness && ( node.permission.validation_fees || node.permission.issuance_fees) ? (
                     <span >
                       <FontAwesomeIcon icon={faCoins} className="mr-1" />
-                      {`validation fees: ${node.permission.validation_fees} VNA issuance fees: ${formatVNAFromUVNA(node.permission.issuance_fees)}`} {node.permission.verification_fees && node.permission.verification_fees !== "0" ? `verification fees:  ${formatVNAFromUVNA(node.permission.verification_fees)}` : ""}
+                      {`validation fees: ${formatVNAFromUVNA(node.permission.validation_fees)} issuance fees: ${formatVNAFromUVNA(node.permission.issuance_fees)}`} {node.permission.verification_fees && node.permission.verification_fees !== "0" ? `verification fees:  ${formatVNAFromUVNA(node.permission.verification_fees)}` : ""}
                     </span>
                   ) : null}
                   {showStats && node.permission.issued &&  node.permission.verified && (node.permission.issued !== "0" || node.permission.verified !== "0" ) ? (
@@ -226,6 +233,7 @@ function Tree({
                 showWeight={showWeight}
                 showBusiness={showBusiness}
                 showStats={showStats}
+                showArchived={showArchived}
                 selectedId={selectedId}
                 onSelect={onSelect}
                 expanded={expanded}
@@ -244,6 +252,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
   const [showWeight, setShowWeight] = useState(false);
   const [showBusiness, setShowBusiness] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [addPermission, setAddPermission] = useState<boolean>(false);
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
@@ -340,10 +349,10 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
 
       {/* Permission Tree Card */}
       <section className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6 mb-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{resolveTranslatable({key: (type === "participants")? "participants.tree.title" : "task.tree.title"}, translate)??"Tree"}</h2>
           { type === "participants" ? (
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <label className="flex items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -351,7 +360,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
                 checked={showWeight}
                 onChange={(e) => setShowWeight(e.target.checked)}
               />
-              <span className="text-sm text-gray-700 dark:text-gray-300">{resolveTranslatable({key: "participants.show.weight"}, translate)}</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{resolveTranslatable({key: "participants.show.weight"}, translate)}</span>
             </label>
             <label className="flex items-center space-x-2 cursor-pointer">
               <input
@@ -360,7 +369,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
                 checked={showBusiness}
                 onChange={(e) => setShowBusiness(e.target.checked)}
               />
-              <span className="text-sm text-gray-700 dark:text-gray-300">{resolveTranslatable({key: "participants.show.businessrules"}, translate)}</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{resolveTranslatable({key: "participants.show.businessrules"}, translate)}</span>
             </label>
             <label className="flex items-center space-x-2 cursor-pointer">
               <input
@@ -369,7 +378,16 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
                 checked={showStats}
                 onChange={(e) => setShowStats(e.target.checked)}
               />
-              <span className="text-sm text-gray-700 dark:text-gray-300">{resolveTranslatable({key: "participants.show.stats"}, translate)}</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{resolveTranslatable({key: "participants.show.stats"}, translate)}</span>
+            </label>
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                className="w-4 h-4 text-primary-600 border-neutral-20 rounded focus:ring-primary-500"
+                checked={showArchived}
+                onChange={(e) => setShowArchived(e.target.checked)}
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{resolveTranslatable({key: "participants.show.archived"}, translate)}</span>
             </label>
           </div>
           ):null}
@@ -383,6 +401,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
             showWeight={showWeight}
             showBusiness={showBusiness}
             showStats={showStats}
+            showArchived={showArchived}
             selectedId={selectedId}
             onSelect={setSelectedId}
             expanded={expanded}

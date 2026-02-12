@@ -13,6 +13,7 @@ interface TitleAndButtonProps {
   icon?: IconDefinition;
   backLink?: boolean;
   type?: 'page' | 'view' | 'table';
+  titleFilter?: React.ReactNode;
 }
 
 export default function TitleAndButton({
@@ -24,6 +25,7 @@ export default function TitleAndButton({
   icon,
   backLink,
   type,
+  titleFilter
 }: TitleAndButtonProps) {
   const router = useRouter();
   const handleClick = () => {
@@ -65,7 +67,8 @@ export default function TitleAndButton({
             </div>
             {}
             { !backLink && (
-            <div className="mt-4 sm:mt-0">
+            <div className="mt-4 sm:mt-0 flex items-center space-x-6">
+              {titleFilter}
               {/* Render button only if buttonLabel or Icon is provided */}
               {(buttonLabel || icon) && (
                 <button

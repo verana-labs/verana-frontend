@@ -265,7 +265,7 @@
 
   .page-title {
     /* @apply text-xl font-medium text-title-light-color dark:text-title-dark-color; */
-    @apply text-3xl font-bold text-gray-900 dark:text-white;
+    @apply text-3xl font-bold text-gray-900 dark:text-white break-all;
   }
 
   .view-title {
@@ -325,7 +325,7 @@
   }
 
   .data-view-value {
-    @apply text-sm text-gray-900 dark:text-white;
+    @apply text-sm text-gray-900 dark:text-white break-all;
   }
 
   .data-edit-label-cell,
@@ -335,8 +335,7 @@
 
   .data-edit-label,
   .data-view-value {
-    /* @apply text-base font-semibold leading-none mb-1 break-all; */
-    @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2;
+    @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 break-all;
   }
 
   .data-edit-required {
@@ -454,6 +453,12 @@
 
   .data-table-row {
     @apply hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer;
+  }
+
+  .archived-row {
+    text-decoration: line-through;
+    text-decoration-color: #763EF0;
+    text-decoration-thickness: 2px;
   }
 
   .data-table-td {

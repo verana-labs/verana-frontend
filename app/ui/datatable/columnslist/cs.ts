@@ -1,4 +1,3 @@
-import { formatDate } from "@/util/util";
 import { Column } from "@/ui/datatable/types";
 import { type I18nValues, type Translatable } from "@/ui/dataview/types";
 
@@ -9,15 +8,16 @@ export interface CsList {
   trId: string;
   title: string;
   description: string;
-  created: string;
-  modified: string;
   role: string;
   issuerPermManagementMode: string;
   verifierPermManagementMode: string;
   jsonSchema: string;
   participants: number;
-  issuerValidationValidityPeriod: number;  
-  verifierValidationValidityPeriod: number;  
+  issuedCredentials: number;
+  verifiedCredentials: number;
+  archived: string;
+  issuerValidationValidityPeriod: number;
+  verifierValidationValidityPeriod: number;
 }
 
 const modeOptions = [
@@ -29,12 +29,19 @@ const modeOptions = [
   { value: "OPEN_VERIFIER", class: "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300" },
 ];
 
+const formatNumber = (value: unknown): string => {
+  if (value === null || value === undefined) return "0";
+  const num = Number(value);
+  return isNaN(num) ? "0" : String(num);
+};
+
 export const columnsCsList: Column<CsList>[] = [
   { header: t("datatable.cs.header.id"), accessor: "id" },
   { header: t("datatable.cs.header.title"), accessor: "title" },
-  { header: t("datatable.cs.header.desc"), accessor: "description" },
-  { header: t("datatable.cs.header.created"), accessor: "created", format: (value) => formatDate(value), priority: 2, viewMobileRight: true},
-  { header: t("datatable.cs.header.modified"), accessor: "modified", format: (value) => formatDate(value), priority: 2 },
+  { header: t("datatable.cs.header.desc"), accessor: "description", priority: 4 },
+  { header: t("datatable.cs.header.participants"), accessor: "participants", format: formatNumber },
+  { header: t("datatable.cs.header.issuedCredentials"), accessor: "issuedCredentials", format: formatNumber },
+  { header: t("datatable.cs.header.verifiedCredentials"), accessor: "verifiedCredentials", format: formatNumber },
 ];
 
 export const description: Translatable[] = [

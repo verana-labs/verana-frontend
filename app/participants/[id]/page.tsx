@@ -10,8 +10,7 @@ import { useCsData } from "@/hooks/useCredentialSchemaData";
 import { useVeranaChain } from "@/hooks/useVeranaChain";
 import { useChain } from "@cosmos-kit/react";
 import { useTrustRegistryData } from "@/hooks/useTrustRegistryData";
-import { authorityPaticipants, nodeChildRoles, roleColorClass, rolesSchema } from "@/util/util";
-import { refresh } from "next/cache";
+import { authorityPaticipants, nodeChildRoles, roleColorClass } from "@/util/util";
 
 export default function ParicipantsPage() {
   
@@ -159,7 +158,7 @@ export default function ParicipantsPage() {
       setPermissionsTree((prev) => setChildrenOnNodeId(prev, nodeUptade, newChildren));
       console.info("add child nodes", permissionsList);
     }
-  }, [permissionsList, address, csData?.issuerPermManagementMode, csData?.verifierPermManagementMode]);  
+  }, [permissionsList, address, csData?.issuerPermManagementMode, csData?.verifierPermManagementMode]);
 
   useEffect(() => {
     refetch();
