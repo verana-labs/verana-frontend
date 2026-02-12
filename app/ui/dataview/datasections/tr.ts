@@ -150,10 +150,10 @@ export const htmlGfd = (
   strState: string
 ): string => {
   return `
-<div class="flex items-center justify-between py-2 px-3 ${(state=="active") ? "bg-green-50 dark:bg-green-900/20" : "bg-gray-50 dark:bg-gray-700/50"} rounded-lg">
-  <div class="flex items-center space-x-3">
-    <span class="text-sm font-medium text-gray-900 dark:text-white">Version ${version}:</span>
-    <span class="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm cursor-pointer">${url}</span>
+<div class="flex flex-wrap items-center justify-between gap-2 py-2 px-3 ${(state=="active") ? "bg-green-50 dark:bg-green-900/20" : "bg-gray-50 dark:bg-gray-700/50"} rounded-lg overflow-hidden">
+  <div class="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
+    <span class="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">Version ${version}:</span>
+    <span class="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm cursor-pointer break-all">${url}</span>
     <span class="text-xs text-gray-500 dark:text-gray-400">(${language})</span>
   </div>
   <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${(state=="draft") ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300": ((state=="active") ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 font-bold" : "text-gray-500 dark:text-gray-400")} ">

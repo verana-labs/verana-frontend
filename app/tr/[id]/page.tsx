@@ -37,6 +37,21 @@ export default function TRViewPage() {
   const { csList, refetch: refetchCSList } = useCSList (id);
   const { dataTR, loading, errorTRData, refetch: refetchTR } = useTrustRegistryData(id);
   const [ addCS, setAddCS ] = useState<boolean>(false);
+  const [showArchived, setShowArchived] = useState(false);
+
+  const archivedCheckbox = (
+    <label className="flex items-center space-x-2 cursor-pointer">
+      <input
+        type="checkbox"
+        checked={showArchived}
+        onChange={(e) => setShowArchived(e.target.checked)}
+        className="w-4 h-4 text-primary-600 bg-white dark:bg-surface border-neutral-20 dark:border-neutral-70 rounded focus:ring-2 focus:ring-primary-500"
+      />
+      <span className="text-sm text-gray-700 dark:text-gray-300">
+        {resolveTranslatable({key: "datatable.cs.filter.showArchived"}, translate)}
+      </span>
+    </label>
+  );
 
   // Refresh data TR
   const [refresh, setRefresh] = useState<string | null>(null);
@@ -181,15 +196,16 @@ export default function TRViewPage() {
       {/* Credential Schemas Section */}
       <DataTable
         tableTitle={resolveTranslatable({key: "datatable.cs.title"}, translate)}
-        addTitle={resolveTranslatable({key: "button.cs.add"}, translate)}
+        addTitle={data.controller === address ? resolveTranslatable({key: "button.cs.add"}, translate) : undefined}
         columnsI18n={columnsCsList}
-        data={csList}
+        data={csList.filter(cs => showArchived || !cs.archived)}
         initialPageSize={10}
         onRowClick={(row) => router.push(`/tr/cs/${encodeURIComponent(row.id)}?edit=${data.controller === address}`)}
-        defaultSortColumn={'modified'}
+        defaultSortColumn={'id'}
         showDetailModal={false}
         detailTitle={resolveTranslatable({key: "datatable.tr.detail"}, translate)}
-        onAdd={() => setAddCS(true)}
+        onAdd={data.controller === address ? () => setAddCS(true) : undefined}
+        titleFilter={archivedCheckbox}
       />
 
       {/* render modal add Credential Schema*/}

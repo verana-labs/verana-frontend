@@ -34,6 +34,7 @@ export function DataTable<T extends object>({
   tableTitle,
   addTitle,
   onAdd,
+  titleFilter,
   detailTitle,
   onRefresh
 }: DataTableProps<T>) {
@@ -181,14 +182,14 @@ export function DataTable<T extends object>({
                 <h3 className="data-table-title">{resolveTranslatable({key: 'datatable.your'}, translate)} {entities}</h3>
               </div>
               )}
-              { tableTitle && addTitle && (
+              { tableTitle && (addTitle || titleFilter) && (
               <TitleAndButton
                 title=  {tableTitle}
                 buttonLabel={addTitle}
-                // to="/tr/add"
-                icon={faPlus}
+                icon={addTitle ? faPlus : undefined}
                 isTable={true}
                 onClick={onAdd}
+                titleFilter={titleFilter}
               />
               )}
             </div>
@@ -224,7 +225,7 @@ export function DataTable<T extends object>({
                         if (showDetailModal) setSelectedRow(row);
                         else onRowClick?.(row);
                       }}
-                      className={'data-table-row'}
+                      className={`data-table-row ${ ((row as Record<string, unknown>)["archived"] as string) ? "archived-row" : ""}`}
                     >
                       {columns.map((col) => {
                         const formatted = col.format
@@ -266,16 +267,16 @@ export function DataTable<T extends object>({
                     if (showDetailModal) setSelectedRow(row);   // ← NEW
                     else onRowClick?.(row);
                   }}
-                  className={'data-table-card'}
+                  className={`data-table-card ${ ((row as Record<string, unknown>)["archived"] as string) ? "archived-row" : ""}`}
                 >
-                  {/* <div className="flex flex-col space-y-2"> */}
                     <div className="flex justify-between">
                       <div className="flex flex-col space-y-2">
+
                       {columns.filter((col) => col.priority === undefined &&  !col.viewMobileRight)
                       .map((col) => (
                         <div key={String(col.accessor)} >
                           <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">{col.header}</label>
-                          <p 
+                          <p
                             className={`text-sm font-mono text-gray-900 dark:text-white ${
                                 col.className ? col.className(row[col.accessor]) : ''
                               }`}
@@ -294,15 +295,14 @@ export function DataTable<T extends object>({
                         const valueStr = String(formatted ?? "");
                         return (
                           <div key={String(col.accessor)}>
-                            {col.isHtml ? 
-                            (<p dangerouslySetInnerHTML={{ __html: valueStr }} />) : 
+                            {col.isHtml ?
+                            (<p dangerouslySetInnerHTML={{ __html: valueStr }} />) :
                             (<label  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${col.className ? col.className(row[col.accessor]) : ''}`}>{ valueStr }</label>)
                             }
                           </div>)
                       })}
                       </div>
                     </div>
-                  {/* </div> */}
                 </div>
               ))}
             </div>
