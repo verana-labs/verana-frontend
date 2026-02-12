@@ -16,6 +16,18 @@
   "tr.cs.add.title": "Nuevo Esquema de Credenciales",
   "tr.add.title": "Nuevo Registro de Confianza",
   "task.title": "Tareas Pendientes",
+  "task.description": "Consulta tus tareas pendientes y las de tus otorgantes.",
+  "task.tree.title": "Tareas Pendientes",
+
+  "participants.title": "Participantes",
+  "participants.description": "Página para ver/interactuar con el árbol de permisos de un esquema de credenciales dado.",
+  "participants.tree.title": "Árbol de Permisos",
+  "participants.btn.join": "unirse",
+  "participants.show.weight": "Peso",
+  "participants.show.businessrules": "Reglas de Negocio",
+  "participants.show.stats": "Estadísticas",
+  "participants.show.archived": "Mostrar Archivados",
+  "participants.action.newperm": "Nuevo Permiso de Ecosistema",
 
   "discover.title": "Descubre & Unete",
   "discover.description": "Explora, descubre y únete a ecosistemas existentes.",
