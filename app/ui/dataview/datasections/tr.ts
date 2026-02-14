@@ -45,7 +45,7 @@ export const trSections: Section<TrData>[] = [
     type: "basic",
     sectionBorder: true,
     fields: [
-      { name: "id", label: t("dataview.tr.fields.id"), type: "data", show: "none", update: false, id: true },
+      { name: "id", label: t("dataview.tr.fields.id"), type: "data", show: "view", update: false, id: true },
       {
         name: "did",
         label: t("dataview.tr.fields.did"),

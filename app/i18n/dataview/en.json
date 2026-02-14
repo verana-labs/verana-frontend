@@ -64,6 +64,7 @@
   "task.tree.title": "Pending Tasks",
 
   "permissioncard.action.copy": "copy",
+  "permissioncard.action.copied": "copied!",
   "permissioncard.action.visualizer": "visualizer",
   "permissioncard.action.service": "service",
   "permissioncard.action.explorer": "explorer",
@@ -115,6 +116,12 @@
   "permission.labelvpstate.expired": "expired",
   "permission.labelvpstate.expiresoon": "expire soon",
   "permission.labelvpstate.validated": "validated",
+  "permission.labelrole.ecosystem": "Ecosystems",
+  "permission.labelrole.issuergrantor": "Issuer Grantors",
+  "permission.labelrole.verifiergrantor": "Verifier Grantors",
+  "permission.labelrole.issuer": "Issuers",
+  "permission.labelrole.verifier": "Verifiers",
+  "permission.labelrole.holder": "Holders",
 
   "meta.title.template": "%s · Verana",
   "meta.root.title": "Verana Dashboard",
@@ -163,6 +170,7 @@
   "footer.version": "v0.xx",
   
   "connected.title": "Connected",
+  "copied.label": "Copied!",
   "connected.msg": "Your crypto wallet is connected to Verana allowing you to proceed with all features.",
   "notconnected.nav.title": "Not Connected",
   "notconnected.nav.click": "Click to connect",

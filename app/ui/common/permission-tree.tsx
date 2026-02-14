@@ -7,6 +7,7 @@ import {
   faChartColumn,
   faChevronRight,
   faCoins,
+  faHandshake,
   faPlus,
   faScaleBalanced,
 } from "@fortawesome/free-solid-svg-icons";
@@ -62,6 +63,8 @@ export type TreeNode = {
   roleColorClass?: string;
   permission?: Permission;
   children?: TreeNode[];
+  validationProcessLabel?: string;
+  validationProcessColor?: string;
 };
 
 /** ------------ Helpers ------------ */
@@ -111,14 +114,14 @@ function Tree({
 
   return (
     <div className="space-y-1">
-      {filteredNodes.map((node) => {
+      {filteredNodes.map((node, idx) => {
         const hasChildren = !!node.children?.length;
         const isExpanded = expanded[node.nodeId] ?? false;
         const isSelected = selectedId === node.nodeId;
         const {labelVpState, classVpState} = vpStateColor(node.permission?.vp_state as VpState, node.permission?.vp_exp as string, node.permission?.expire_soon ?? false);
         const {labelPermState, classPermState} = permStateBadgeClass(node.permission?.perm_state as PermState, node.permission?.expire_soon ?? false);
         return (
-          <div key={node.nodeId}>
+          <div key={`${node.nodeId}-${idx}`}>
             <div
               className={[
                 "rounded-lg p-2 transition-all cursor-pointer",
@@ -126,11 +129,11 @@ function Tree({
                 isSelected ? "bg-primary-600/10" : "",
               ].join(" ")}
               style={{ marginLeft: depth * 24 }}
-              onClick={() => onSelect(node.nodeId)}
+              onClick={() => !node.group && onSelect(node.nodeId)}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  {/* {hasChildren ? ( */}
+                  {hasChildren || node.group ? (
                     <button
                       type="button"
                       onClick={(e) => {
@@ -145,9 +148,9 @@ function Tree({
                         className={`transition-transform ${isExpanded ? "rotate-90" : ""}`}
                       />
                     </button>
-                  {/* ) : (
+                  ) : (
                     <div className="w-4" />
-                  )} */}
+                  )}
 
                   <button
                     type="button"
@@ -217,9 +220,13 @@ function Tree({
                     href={hrefJoin??""}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className= {`text-xs ${node.roleColorClass} hover:text-purple-600`}
+                    className= {`text-xs ${node.roleColorClass} hover:text-purple-600 flex items-center space-x-3`}
                   >
-                    {resolveTranslatable({key: "participants.btn.join"}, translate)}
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${node.validationProcessColor}`}>
+                      {node.validationProcessLabel}
+                    </span>
+                    <FontAwesomeIcon icon={faHandshake} className="mr-1" />
+                    {" "}{resolveTranslatable({key: "participants.btn.join"}, translate)}
                   </Link>
                 ) ) }
               </div>

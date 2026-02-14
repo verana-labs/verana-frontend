@@ -174,13 +174,13 @@ export default function DataView<T extends object>({
                   </div>
                   {/* Extra row: full width JSON pretty-printed */}
                   {jsonField && (
-                    <div className='py-4'>
+                    <>
                       {/* span across both columns */}
                       <label className="data-view-label">{jsonField.label}</label>
-                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 h-64 overflow-y-auto border border-neutral-20 dark:border-neutral-70">
-                      <JsonCodeBlock value={jsonField.value} className="data-view-label" />
+                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-neutral-20 dark:border-neutral-70">
+                        <JsonCodeBlock value={jsonField.value} className="data-view-label" />
                       </div>
-                    </div>
+                    </>
                   )}
 
                   {/* Render collected actions AFTER the section box */}

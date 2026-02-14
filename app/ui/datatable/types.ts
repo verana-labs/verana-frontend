@@ -15,6 +15,7 @@ export type Column<T> = {
   className?: (value: T[keyof T]) => string;
   viewMobileRight?: boolean;
   isHtml?: boolean;
+  break?: string;
 };
 
 // Generic filter definition (i18n-aware)

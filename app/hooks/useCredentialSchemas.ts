@@ -63,20 +63,20 @@ export function useCSList(trId?: string, all: boolean = true) {
       const schemas: RawSchema[] = Array.isArray(json) ? json : (json.schemas ?? []);
       const list: CsList[] = schemas.map((src) => {
         // Parse JSON schema safely
-        let parsed: Record<string, unknown> = {};
-        const rawJsonSchema = typeof src.json_schema === 'string' ? src.json_schema : '';
-        try {
-          parsed = rawJsonSchema ? JSON.parse(rawJsonSchema) : {};
-        } catch {
-          parsed = {};
-        }
-        const title = (typeof src.title === 'string' && src.title.trim())
-          ? src.title
-          : (parsed.title as string | undefined) || 'Schema';
+        // let parsed: Record<string, unknown> = {};
+        // const rawJsonSchema = typeof src.json_schema === 'string' ? src.json_schema : '';
+        // try {
+        //   parsed = rawJsonSchema ? JSON.parse(rawJsonSchema) : {};
+        // } catch {
+        //   parsed = {};
+        // }
+        // const title = (typeof src.title === 'string' && src.title.trim())
+        //   ? src.title
+        //   : (parsed.title as string | undefined) || 'Schema';
 
-        const description = (typeof src.description === 'string' && src.description.trim())
-          ? src.description
-          : (parsed.description as string | undefined) || '';
+        // const description = (typeof src.description === 'string' && src.description.trim())
+        //   ? src.description
+        //   : (parsed.description as string | undefined) || '';
 
         return {
           id: (src.id)?.toString() ?? '',
@@ -86,8 +86,8 @@ export function useCSList(trId?: string, all: boolean = true) {
           issuerValidationValidityPeriod: src.issuer_grantor_validation_validity_period ?? 0,
           verifierValidationValidityPeriod: src.verifier_grantor_validation_validity_period ?? 0,
           jsonSchema: src.json_schema ?? '',
-          title,
-          description,
+          title: src.title ?? '',
+          description: src.description ?? '',
           participants: src.participants ?? 0,
           issuedCredentials: src.issued ?? 0,
           verifiedCredentials: src.verified ?? 0,
