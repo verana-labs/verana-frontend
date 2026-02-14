@@ -3,7 +3,7 @@
 import { translate } from "@/i18n/dataview";
 import { PermState } from "@/ui/common/permission-tree";
 import { Role } from "@/ui/common/role-card";
-import { Permission, PermissionType, VpState } from "@/ui/dataview/datasections/perm";
+import { PermissionType, VpState } from "@/ui/dataview/datasections/perm";
 import { resolveTranslatable } from "@/ui/dataview/types";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { faCrown, faEye } from "@fortawesome/free-solid-svg-icons";
@@ -186,6 +186,29 @@ export function roleColorClass(type: string): string {
   }
 }
 
+export function roleJoinColorClass(type: string): string {
+  switch (type) {
+    case "ISSUER_GRANTOR":   return "bg-blue-100 text-blue-500";
+    case "VERIFIER_GRANTOR": return "bg-slate-100 text-slate-500";
+    case "ISSUER":           return "bg-green-100 text-green-500";
+    case "VERIFIER":         return "bg-orange-100 text-orange-500";
+    case "HOLDER":           return "bg-pink-100 text-pink-500";
+    default:                 return "bg-gray-100 text-gray-500";
+  }
+}
+
+export function roleLabel(type: string): string {
+  switch (type) {
+    case "ECOSYSTEM":        return resolveTranslatable({key: "permission.labelrole.ecosystem"}, translate)??'Ecosystems';
+    case "ISSUER_GRANTOR":   return resolveTranslatable({key: "permission.labelrole.issuergrantor"}, translate)??'Issuer Grantors';
+    case "VERIFIER_GRANTOR": return resolveTranslatable({key: "permission.labelrole.verifiergrantor"}, translate)??'Verifier Grantors';
+    case "ISSUER":           return resolveTranslatable({key: "permission.labelrole.issuer"}, translate)??'Issuers';
+    case "VERIFIER":         return resolveTranslatable({key: "permission.labelrole.verifier"}, translate)??'Verifiers';
+    case "HOLDER":           return resolveTranslatable({key: "permission.labelrole.holder"}, translate)??'Holders';
+    default:                 return "";
+  }
+}
+
 export function permStateBadgeClass(permState: PermState, expireSoon: boolean) : {labelPermState: string, classPermState: string} {
   switch (permState) {
     case "REPAID":
@@ -206,7 +229,7 @@ export function permStateBadgeClass(permState: PermState, expireSoon: boolean) :
       return { labelPermState: resolveTranslatable({key: "permission.labelpermstate.inactive"}, translate) ?? "INACTIVE", 
               classPermState: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300"};
     default:
-      return { labelPermState: permState, classPermState: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300" };
+      return  { labelPermState: permState, classPermState: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300" };
   }
 }
 
@@ -225,7 +248,7 @@ export function vpStateColor(vpState: VpState, vpExp: string, expireSoon: boolea
                        : { labelVpState: resolveTranslatable({key: "permission.labelvpstate.validated"}, translate) ?? "validated", 
                           classVpState: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300" };
     default:           
-      return { labelVpState: String(vpState), classVpState: GRAY };
+      return { labelVpState: "", classVpState: "" };// labelVpState: String(vpState), classVpState: GRAY };
   }
 }
 
@@ -269,33 +292,34 @@ export function rolesSchema(issuerPermManagementMode: string, verifierPermManage
   return Array.from(roles);
 }
 
-export function nodeChildRoles(issuerPermManagementMode: string, verifierPermManagementMode: string, role: string): Role[] {
-  const roles = new Set<Role>();
+
+export function nodeChildRoles(issuerPermManagementMode: string, verifierPermManagementMode: string, role: string): {role: Role; label: string; validation: boolean}[] {
+  const roles = new Set<{role: Role; label: string; validation: boolean}>();
 
   if (role === "ECOSYSTEM"){
     // Issuance roles
     if (issuerPermManagementMode === "GRANTOR_VALIDATION"){
-      roles.add("ISSUER_GRANTOR");
+      roles.add({role: "ISSUER_GRANTOR", label: resolveTranslatable({key: "permission.labelrole.issuergrantor"}, translate)??'Issuer Grantors', validation: true});
     } else {
       // OPEN o ECOSYSTEM
-      roles.add("ISSUER");
+      roles.add({role: "ISSUER", label: resolveTranslatable({key: "permission.labelrole.issuer"}, translate)??'Issuers', validation: false});
     }
     // Verification roles
     if (verifierPermManagementMode === "GRANTOR_VALIDATION") {
-      roles.add("VERIFIER_GRANTOR");
+      roles.add({role: "VERIFIER_GRANTOR", label: resolveTranslatable({key: "permission.labelrole.verifiergrantor"}, translate)??'Verifier Grantors', validation: true});
     } else {
       // OPEN o ECOSYSTEM
-      roles.add("VERIFIER");
+      roles.add({role: "VERIFIER", label: resolveTranslatable({key: "permission.labelrole.verifier"}, translate)??'Verifiers', validation: false});
     }
   }
   else if (role === "ISSUER_GRANTOR"){
-    roles.add("ISSUER");
+    roles.add({role: "ISSUER", label: resolveTranslatable({key: "permission.labelrole.issuer"}, translate)??'Issuers', validation: true});
   }
   else if (role === "VERIFIER_GRANTOR"){
-    roles.add("VERIFIER");
+    roles.add({role: "VERIFIER", label: resolveTranslatable({key: "permission.labelrole.verifier"}, translate)??'Verifiers', validation: true});
   }
   else if (role === "ISSUER"){
-    roles.add("HOLDER");
+    roles.add({role: "HOLDER", label: resolveTranslatable({key: "permission.labelrole.holder"}, translate)??'Holders', validation: true});
   }
 
   return Array.from(roles);
@@ -317,4 +341,21 @@ export function withCurrentLocalTimePlusOneMinute(dateStr: string): string {
   const mi = String(combined.getMinutes()).padStart(2, "0");
   const ss = String(combined.getSeconds()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}`;
+}
+
+export async function copyToClipboard(
+  text: string,
+  change?: (value: boolean) => void
+) {
+  if (!text) return;
+  try {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      await navigator.clipboard.writeText(text);
+      change?.(true);
+      return;
+    }
+  } catch {
+    // ignore
+  }
+  change?.(false);
 }

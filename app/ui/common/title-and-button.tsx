@@ -53,7 +53,12 @@ export default function TitleAndButton({
     <section id="page-header" className={ type === "table" ? "" : "mb-8"}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between">
             <div>
-                <h1 className={ type === "table" ? "data-table-title" : type === "view" ? "view-title" : "page-title"}>{title}</h1>
+                { type === "table" ? (
+                <h3 className="data-table-title">{title}</h3>
+                ):(
+                <h1 className={type === "view" ? "view-title" : "page-title"}>{title}</h1>
+                )}
+
                 {/* Help Section (if present) */}
                 {description && Array.isArray(description) && (
                   <>

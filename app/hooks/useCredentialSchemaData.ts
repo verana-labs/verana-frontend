@@ -21,6 +21,8 @@ type RawSchema = Record<string, unknown> & {
   verifier_perm_management_mode?: number;
   state?: string;
   archived?: string;
+  title?: string;
+  description?: string;
 };
 
 export function useCsData(id: string) {
@@ -59,16 +61,16 @@ export function useCsData(id: string) {
       const entry = resp.schema ?? (resp as RawSchema);
       
       // Parse JSON schema safely
-      let parsed: Record<string, unknown> = {};
-      const rawJsonSchema = typeof entry.json_schema === 'string' ? entry.json_schema : '';
-      try {
-        parsed = rawJsonSchema ? JSON.parse(rawJsonSchema) : {};
-      } catch {
-        parsed = {};
-      }
+      // let parsed: Record<string, unknown> = {};
+      // const rawJsonSchema = typeof entry.json_schema === 'string' ? entry.json_schema : '';
+      // try {
+      //   parsed = rawJsonSchema ? JSON.parse(rawJsonSchema) : {};
+      // } catch {
+      //   parsed = {};
+      // }
       const id = entry.id ?? '';
-      const titleCandidate = (parsed.title as string | undefined) ?? `Schema (id: ${id})`;
-      const descCandidate =  (parsed.description as string | undefined) ?? "";
+      // const titleCandidate = (parsed.title as string | undefined) ?? `Schema (id: ${id})`;
+      // const descCandidate =  (parsed.description as string | undefined) ?? "";
 
       setData(
         {
@@ -83,8 +85,8 @@ export function useCsData(id: string) {
           issuerPermManagementMode: entry.issuer_perm_management_mode ?? 0,
           verifierPermManagementMode: entry.verifier_perm_management_mode ?? 0,
           jsonSchema: entry.json_schema ?? '',
-          title: `${titleCandidate}`,
-          description: `${descCandidate}`,
+          title: entry.title,
+          description: entry.description,
           state: entry.state,
           archived: entry.archived??''
         }

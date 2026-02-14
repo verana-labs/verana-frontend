@@ -187,9 +187,10 @@ export function DataTable<T extends object>({
                 title=  {tableTitle}
                 buttonLabel={addTitle}
                 // to="/tr/add"
-                icon={faPlus}
+                icon={addTitle ? faPlus : undefined}
                 onClick={onAdd}
                 titleFilter={titleFilter}
+                type='table'
               />
               )}
             </div>
@@ -237,9 +238,10 @@ export function DataTable<T extends object>({
                         return (
                           <td
                             key={String(col.accessor)}
-                            className={`data-table-td ${getColumnClasses(col.priority)} ${
-                              col.className ? col.className(row[col.accessor]) : ""
-                            }`}
+                            className={`data-table-td ${getColumnClasses(col.priority)} 
+                              ${col.className ? col.className(row[col.accessor]) : ""} 
+                              ${col.break} 
+                            `}
                           >
                             {col.isHtml ? 
                             (<p dangerouslySetInnerHTML={{ __html: valueStr }}/>) : 

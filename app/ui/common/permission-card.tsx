@@ -1,20 +1,18 @@
 'use client';
 
 import { PermState, TreeNode } from "./permission-tree";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { permissionActionLifecycle, permissionActionSlashing, permissionActionValidationProcess, 
   permissionBusinessModels, permissionLifecycle, permissionMetaItems, permissionSlashing, permissionValidationProcess, VpState 
 } from "../dataview/datasections/perm";
 import PermissionAttribute from "./permission-atrribute";
-import IconLabelButton from "./icon-label-button";
-import clsx from "clsx";
 import { usePermissionHistory } from "@/hooks/usePermissionHistory";
 import PermissionTimeline from "./permission-timeline";
 import { permStateBadgeClass, roleBadgeClass, shortenDID, vpStateColor } from "@/util/util";
-import { ModalAction } from "./modal-action";
-import { renderActionComponent } from "./data-view-typed";
+import { ActionFieldProps, renderActionFieldModalAndButton } from "./data-view-typed";
 import { translate } from "@/i18n/dataview";
 import { resolveTranslatable } from "../dataview/types";
+import { usePermission } from "@/hooks/usePermission";
 
 type PermissionCardProps = {
   selectedNode: TreeNode;
@@ -47,7 +45,6 @@ export default function PermissionCard({
     selectedNode.isValidator
       ? (selectedNode.permission?.validator_available_actions ?? [])
       : [];
-
   const allowed = new Set<string>([...granteeActions, ...validatorActions]);
 
   const permissionId = selectedNode.permission?.id as string;
@@ -58,48 +55,21 @@ export default function PermissionCard({
 
   const [activeActionId, setActiveActionId] = useState<string | null>(null);
 
-  function renderValidationActionItem(action: any, idx: number) {
-    const isActive = activeActionId === String(action.name);
+  const [idUpdate, setIdUpdate] = useState<string|undefined>(undefined);
+  const{ permission } = usePermission(idUpdate);
 
-    return (
-      <section key={`action-${String(action.name)}-${idx}`}>
-        <IconLabelButton
-          label={action.label}
-          icon={action.icon}
-          className={clsx(
-            "btn-action-confirm text-sm", // base
-            action.buttonClass // specific
-          )}
-          onClick={() => setActiveActionId(isActive ? null : String(action.name))}
-        />
+  useEffect(() => {
+    if (permission) selectedNode.permission = permission;
+  }, [permission]);
 
-        {action.value ? (
-          <ModalAction
-            onClose={() => setActiveActionId(null)}
-            titleKey={action.label}
-            isActive={isActive}
-          >
-            {renderActionComponent(
-              action.value,
-              () => setActiveActionId(null),
-              selectedNode.permission ?? {},
-              undefined,
-              undefined
-            )}
-          </ModalAction>
-        ) : null}
-      </section>
-    );
-  }
-  
   return (
     <section className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6">
     {selectedNode.permission && (
       <>
       <div className="mb-6">
         <div className="flex items-start justify-between mb-3">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{shortenDID(selectedNode.name as string)}</h2>
-          <div className="flex items-center space-x-2">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white break-all">{shortenDID(selectedNode.name as string)}</h2>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-2 justify-end">
             <span
               className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${roleBadgeClass(selectedNode.permission.type)}`}
             >
@@ -127,7 +97,7 @@ export default function PermissionCard({
           {detailBreadcrumb}
         </p>
 
-        <p className="text-sm text-gray-700 dark:text-gray-300">{csTitle}</p>
+        <p className="text-sm text-gray-700 dark:text-gray-300 break-all">{csTitle}</p>
       </div>
 
       <div className="space-y-8">
@@ -176,11 +146,14 @@ export default function PermissionCard({
           <div className="flex flex-wrap gap-3 mt-4">
           {permissionActionLifecycle
             .filter((action) => action.name && allowed.has(action.name))
-            .map((action, idx) => renderValidationActionItem(action, idx))}
+            .map((action, idx) => 
+              renderActionFieldModalAndButton(selectedNode.permission ?? {}, action as ActionFieldProps, idx, activeActionId === String(action.name), () => setActiveActionId(activeActionId === String(action.name) ? null : String(action.name)), ()=> setActiveActionId(null), ()=> setIdUpdate(permissionId))
+          )}
           </div>
         </div>
 
         {/* Validation Process */}
+        { selectedNode.permission?.vp_state!=="VALIDATION_STATE_UNSPECIFIED" ? (
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{resolveTranslatable({key: "permissioncard.validationprocess.title"}, translate)}</h3>
@@ -209,9 +182,13 @@ export default function PermissionCard({
           <div className="flex flex-wrap gap-3 mt-4">
           {permissionActionValidationProcess
             .filter((action) => action.name && allowed.has(action.name))
-            .map((action, idx) => renderValidationActionItem(action, idx))}
+            .map((action, idx) => 
+              renderActionFieldModalAndButton(selectedNode.permission ?? {}, action as ActionFieldProps, idx, activeActionId === String(action.name), () => setActiveActionId(activeActionId === String(action.name) ? null : String(action.name)), ()=> setActiveActionId(null), ()=> setIdUpdate(permissionId))
+          )}
           </div>
         </div>
+        ) : null
+        }
 
         {/* Business Models */}
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
@@ -256,7 +233,9 @@ export default function PermissionCard({
           <div className="flex flex-wrap gap-3 mt-4">
           {permissionActionSlashing
             .filter((action) => action.name && allowed.has(action.name))
-            .map((action, idx) => renderValidationActionItem(action, idx))}
+            .map((action, idx) => 
+              renderActionFieldModalAndButton(selectedNode.permission ?? {}, action as ActionFieldProps, idx, activeActionId === String(action.name), () => setActiveActionId(activeActionId === String(action.name) ? null : String(action.name)), ()=> setActiveActionId(null), ()=> setIdUpdate(permissionId))
+          )}
           </div>
         </div>
 
