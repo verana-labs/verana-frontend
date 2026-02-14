@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/verana-labs/verana-frontend/compare/v0.5.0...v0.5.1) (2026-02-14)
+
+
+### Bug Fixes
+
+* [Participants, Permission, Pending Tasks, Ecosystem] Related issues: [#159](https://github.com/verana-labs/verana-frontend/issues/159), [#230](https://github.com/verana-labs/verana-frontend/issues/230), [#231](https://github.com/verana-labs/verana-frontend/issues/231), [#232](https://github.com/verana-labs/verana-frontend/issues/232), [#233](https://github.com/verana-labs/verana-frontend/issues/233), [#234](https://github.com/verana-labs/verana-frontend/issues/234), [#235](https://github.com/verana-labs/verana-frontend/issues/235), [#237](https://github.com/verana-labs/verana-frontend/issues/237),  [#238](https://github.com/verana-labs/verana-frontend/issues/238), [#240](https://github.com/verana-labs/verana-frontend/issues/240), [#241](https://github.com/verana-labs/verana-frontend/issues/241), [#242](https://github.com/verana-labs/verana-frontend/issues/242), [#244](https://github.com/verana-labs/verana-frontend/issues/244), [#245](https://github.com/verana-labs/verana-frontend/issues/245), [#246](https://github.com/verana-labs/verana-frontend/issues/246) ([#250](https://github.com/verana-labs/verana-frontend/issues/250)) ([57cc98a](https://github.com/verana-labs/verana-frontend/commit/57cc98a5f668e804caf865b7a73d0681e460a333))
+
 ## [0.5.0](https://github.com/verana-labs/verana-frontend/compare/v0.4.0...v0.5.0) (2026-02-12)
 
 
