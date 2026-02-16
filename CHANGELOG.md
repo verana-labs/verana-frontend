@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/verana-labs/verana-frontend/compare/v0.5.1...v0.6.0) (2026-02-16)
+
+
+### Features
+
+* register Verana in WalletConnect Cloud / Reown with projectId and metadata ([#248](https://github.com/verana-labs/verana-frontend/issues/248)) ([74f1707](https://github.com/verana-labs/verana-frontend/commit/74f1707512aa4454cf8f94ffaaaef3b7e4c2f543)), closes [#247](https://github.com/verana-labs/verana-frontend/issues/247)
+
+
+### Bug Fixes
+
+* Update util.ts ([#255](https://github.com/verana-labs/verana-frontend/issues/255)) ([5b2a6bd](https://github.com/verana-labs/verana-frontend/commit/5b2a6bdfd74cc9f2203ee4d7d99f9142fe6994c8))
+
 ## [0.5.1](https://github.com/verana-labs/verana-frontend/compare/v0.5.0...v0.5.1) (2026-02-14)
 
 
