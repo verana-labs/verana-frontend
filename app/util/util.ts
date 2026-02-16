@@ -20,8 +20,9 @@ export function formatVNA (amount: string | null, decimals?: number) : string {
 }
 
 export function formatVNAFromUVNA (amount: string | null) : string {
-  if (!amount?.trim() || !Number.isFinite(Number(amount))) return '';    
-  return formatVNA(String(Number(amount)), 6);
+    const s = amount == null ? "" : String(amount);
+    if (!s?.trim() || !Number.isFinite(Number(s))) return '';
+    return formatVNA(String(Number(s)), 6);
 }
 
 export function parseVNA(formatted: string, decimals: number = 6): string {
