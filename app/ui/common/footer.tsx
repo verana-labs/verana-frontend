@@ -7,28 +7,33 @@ import { translate } from '@/i18n/dataview';
 import { communityLinks, configFooter } from '@/lib/dashlinks';
 import Link from 'next/link';
 import { useChainVersion } from '@/hooks/useChainVersion';
+import { useIndexerVersion } from '@/hooks/useIndexerVersion';
 
 export function Footer() {
-  const chainVersion = useChainVersion();
+  const networkVersion = useChainVersion();
+  const indexerVersion = useIndexerVersion();
+  const frontendVersion = process.env.NEXT_PUBLIC_APP_VERSION;
 
   return (
     <div className="flex-shrink-0 px-2 py-4 border-t border-neutral-20 dark:border-neutral-70">
-      {/* Logo & version */}
-      <div className="flex items-center">
+      {/* Logo & versions */}
+      <div className="flex items-start">
         <Image
           src={configFooter.img}
           alt="Verana Logo"
           width={24}
           height={24}
-          className="w-6 h-6 mr-2"
+          className="w-6 h-6 mr-2 mt-0.5"
         />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-            {resolveTranslatable({key: "footer.title"}, translate)}
+            Verana
           </p>
-          <p className="text-xs text-neutral-70 dark:text-neutral-70">
-            {chainVersion ?? resolveTranslatable({key: "footer.version"}, translate)}
-          </p>
+          <div className="text-xs text-neutral-70 dark:text-neutral-70 space-y-0">
+            <p>network {networkVersion ?? '...'}</p>
+            <p>indexer {indexerVersion ?? '...'}</p>
+            <p>frontend {frontendVersion ? `v${frontendVersion}` : '...'}</p>
+          </div>
         </div>
       </div>
 

@@ -15,10 +15,10 @@ interface NavLink {
 const links : NavLink[] = [
   { name: resolveTranslatable({key: "dashboard.title"}, translate)??'Dashboard', href: '/dashboard', icon: faGaugeHigh, availableOffline: true},
   { name: resolveTranslatable({key: "account.title"}, translate)??'Account', href: '/account', icon: faCircleUser },
-  { name: resolveTranslatable({key: "directory.title"}, translate)??'Manage DIDs', href: '/did',
+  /* { name: resolveTranslatable({key: "directory.title"}, translate)??'Manage DIDs', href: '/did',
     icon: faIdCard,
     iconClass: "bg-gradient-to-br from-purple-500 to-purple-700 text-white",
-    featuredService: true, description: resolveTranslatable({key: "directory.description"}, translate) },
+    featuredService: true, description: resolveTranslatable({key: "directory.description"}, translate) }, */
   { name: resolveTranslatable({key: "trlist.title"}, translate)??'My Ecosystems', href: '/tr',
     icon: faShieldHalved,
     iconClass: "bg-gradient-to-br from-orange-500 to-orange-700 text-white",
