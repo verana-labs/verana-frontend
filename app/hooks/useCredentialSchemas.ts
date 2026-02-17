@@ -29,7 +29,7 @@ type RawSchema = Record<string, unknown> & {
   verified?: number;
 };
 
-export function useCSList(trId?: string, all: boolean = true) {
+export function useCSList(trId?: string, all: boolean = true, onlyActive?: boolean) {
 
   const getURL =
     env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA') ||
@@ -47,10 +47,11 @@ export function useCSList(trId?: string, all: boolean = true) {
       return;
     }
 
-    // Reset state when inputs change
     setError(null);
-    setCsList([]);
-    const url = ( trId == undefined && all )? `${getURL}/list` : `${getURL}/list?tr_id=${trId}`;
+    let url = ( trId == undefined && all )? `${getURL}/list` : `${getURL}/list?tr_id=${trId}`;
+    if (onlyActive === true) {
+      url += url.includes('?') ? '&only_active=true' : '?only_active=true';
+    }
     try {
       setLoading(true);
       const res = await fetch(url);
@@ -106,7 +107,7 @@ export function useCSList(trId?: string, all: boolean = true) {
 
   useEffect(() => {
     fetchCS();
-  }, []);
+  }, [onlyActive]);
 
   return { csList, loading, errorCSList, refetch: fetchCS };
 }

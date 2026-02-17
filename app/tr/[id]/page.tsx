@@ -34,10 +34,10 @@ export default function TRViewPage() {
 
   const veranaChain = useVeranaChain();
   const { address } = useChain(veranaChain.chain_name);
-  const { csList, refetch: refetchCSList } = useCSList (id);
+  const [showArchived, setShowArchived] = useState(false);
+  const { csList, refetch: refetchCSList } = useCSList(id, true, !showArchived ? true : undefined);
   const { dataTR, loading, errorTRData, refetch: refetchTR } = useTrustRegistryData(id);
   const [ addCS, setAddCS ] = useState<boolean>(false);
-  const [showArchived, setShowArchived] = useState(false);
 
   const archivedCheckbox = (
     <label className="flex items-center space-x-2 cursor-pointer">
@@ -198,7 +198,7 @@ export default function TRViewPage() {
         tableTitle={resolveTranslatable({key: "datatable.cs.title"}, translate)}
         addTitle={data.controller === address ? resolveTranslatable({key: "button.cs.add"}, translate) : undefined}
         columnsI18n={columnsCsList}
-        data={csList.filter(cs => showArchived || !cs.archived)}
+        data={csList}
         initialPageSize={10}
         onRowClick={(row) => router.push(`/tr/cs/${row.id}?tr=${data.id}`)}
         defaultSortColumn={'id'}
