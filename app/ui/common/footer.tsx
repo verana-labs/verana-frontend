@@ -17,24 +17,25 @@ export function Footer() {
   return (
     <div className="flex-shrink-0 px-2 py-4 border-t border-neutral-20 dark:border-neutral-70">
       {/* Logo & versions */}
-      <div className="flex items-start">
+      <div className="flex items-center">
         <Image
           src={configFooter.img}
           alt="Verana Logo"
           width={24}
           height={24}
-          className="w-6 h-6 mr-2 mt-0.5"
+          className="w-6 h-6 mr-2"
         />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
           {resolveTranslatable({key: "footer.title"}, translate)}
-          </p>
-          <div className="text-xs text-neutral-70 dark:text-neutral-70 space-y-0">
-            <p>{resolveTranslatable({key: "footer.network"}, translate)} {networkVersion ?? resolveTranslatable({key: "footer.version"}, translate)}</p>
-            <p>{resolveTranslatable({key: "footer.indexer"}, translate)} {indexerVersion ?? resolveTranslatable({key: "footer.version"}, translate)}</p>
-            <p>{resolveTranslatable({key: "footer.frontend"}, translate)} {frontendVersion ? `v${frontendVersion}` : resolveTranslatable({key: "footer.version"}, translate)}</p>
-          </div>
-        </div>
+        </p>
+      </div>
+      <div className="mt-1 grid grid-cols-2 text-xs text-neutral-70 dark:text-neutral-70">
+        <span>{resolveTranslatable({key: "footer.network"}, translate)}</span>
+        <span>{networkVersion ?? resolveTranslatable({key: "footer.version"}, translate)}</span>
+        <span>{resolveTranslatable({key: "footer.indexer"}, translate)}</span>
+        <span>{indexerVersion ?? resolveTranslatable({key: "footer.version"}, translate)}</span>
+        <span>{resolveTranslatable({key: "footer.frontend"}, translate)}</span>
+        <span>{frontendVersion ? `v${frontendVersion}` : resolveTranslatable({key: "footer.version"}, translate)}</span>
       </div>
 
       {/* Social Ícons */}
