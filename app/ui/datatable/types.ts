@@ -12,7 +12,8 @@ export type Column<T> = {
   accessor: keyof T;
   format?: (value: T[keyof T]) => ReactNode;
   priority?: number;
-  className?: (value: T[keyof T]) => string;
+  getClassName?: (value: T[keyof T]) => string;
+  className?: string;
   viewMobileRight?: boolean;
   isHtml?: boolean;
   break?: string;
@@ -58,9 +59,9 @@ export interface DataTableProps<T extends object> {
   tableTitle?: string;
   addTitle?: string;
   onAdd?: () => void;
-  titleFilter?: React.ReactNode;
   detailTitle?: string;
   onRefresh?: () => void;
+  checkFilter?: {show: boolean; changeFilter: (value: boolean) => void; label: string};
 }
 
 // Helper: translate columns

@@ -34,24 +34,10 @@ export default function TRViewPage() {
 
   const veranaChain = useVeranaChain();
   const { address } = useChain(veranaChain.chain_name);
-  const { csList, refetch: refetchCSList } = useCSList (id);
+  const [ showArchived, setShowArchived ] = useState(false);
+  const { csList, refetch: refetchCSList } = useCSList (id, false, !showArchived);
   const { dataTR, loading, errorTRData, refetch: refetchTR } = useTrustRegistryData(id);
   const [ addCS, setAddCS ] = useState<boolean>(false);
-  const [showArchived, setShowArchived] = useState(false);
-
-  const archivedCheckbox = (
-    <label className="flex items-center space-x-2 cursor-pointer">
-      <input
-        type="checkbox"
-        checked={showArchived}
-        onChange={(e) => setShowArchived(e.target.checked)}
-        className="w-4 h-4 text-primary-600 bg-white dark:bg-surface border-neutral-20 dark:border-neutral-70 rounded focus:ring-2 focus:ring-primary-500"
-      />
-      <span className="text-sm text-gray-700 dark:text-gray-300">
-        {resolveTranslatable({key: "datatable.cs.filter.showArchived"}, translate)}
-      </span>
-    </label>
-  );
 
   // Refresh data TR
   const [refresh, setRefresh] = useState<string | null>(null);
@@ -104,6 +90,7 @@ export default function TRViewPage() {
     computed.last_version = lastVersion;
 
     if (computed.controller === address){
+      computed.updateTrustRegistry = "MsgUpdateTrustRegistry";
       computed.addGovernanceFrameworkDocument = "MsgAddGovernanceFrameworkDocument";
       computed.increaseActiveGovernanceFrameworkVersion =
         computed.last_version >= (computed.active_version ?? 0)
@@ -111,17 +98,8 @@ export default function TRViewPage() {
           : undefined;
     }
 
-    // const newCS = {
-    //   trId: id, creator: '',
-    //   issuerGrantorValidationValidityPeriod: 0, verifierGrantorValidationValidityPeriod: 0,
-    //   issuerValidationValidityPeriod: 0, verifierValidationValidityPeriod: 0, holderValidationValidityPeriod: 0,
-    //   issuerPermManagementMode: 1, verifierPermManagementMode: 1, jsonSchema: "",
-    //   title: resolveTranslatable({key: "tr.cs.add.title"}, translate), id: ''
-    //   };
-    // computed.csList =
-    //   computed.controller === address
-    //     ? [newCS, ...(csList ?? [])]
-    //     : (csList ?? []);
+    computed.title = computed.did;
+    computed.description = "";
 
     setData(computed);
   }, [dataTR, address, csList, id]);
@@ -159,13 +137,12 @@ export default function TRViewPage() {
     <>
       {/* Back Navigation & Back Navigation */}
       <TitleAndButton
-        title=  {`${data.did}`}
+        title= {resolveTranslatable({key: "dataview.tr.title"}, translate) ?? "Ecosytem"}
+        description={[resolveTranslatable({key: "dataview.tr.description"}, translate) ?? ""]}
         buttonLabel={resolveTranslatable({key: "button.tr.back"}, translate)}
-        // to="/tr"
-        onClick={() => router.back()}
+        to="/tr"
         icon={faArrowLeft}
         backLink= {true}
-        description={["Ecosystem trust registry and governance framework management."]}
       />
       {/* Basic Information Section */}
       {editing ? (
@@ -181,9 +158,12 @@ export default function TRViewPage() {
         sectionsI18n={trSections}
         data={data}
         id={data.id}
+        viewEditButton={false}
         onEdit={ data.controller === address ? () => setEditing(true) : undefined } 
-        // onRefresh={setRefresh}
-        />
+        onRefresh={() => setRefresh("actionTR")}
+        showViewTitle={true}
+        generalBorder={true}
+      />
       )}
       {/* EGF Documents Section */}
       <DataList<GfdData>
@@ -198,15 +178,19 @@ export default function TRViewPage() {
         tableTitle={resolveTranslatable({key: "datatable.cs.title"}, translate)}
         addTitle={data.controller === address ? resolveTranslatable({key: "button.cs.add"}, translate) : undefined}
         columnsI18n={columnsCsList}
-        data={csList.filter(cs => showArchived || !cs.archived)}
+        data={csList}
         initialPageSize={10}
         onRowClick={(row) => router.push(`/tr/cs/${row.id}?tr=${data.id}`)}
         defaultSortColumn={'id'}
         showDetailModal={false}
         detailTitle={resolveTranslatable({key: "datatable.tr.detail"}, translate)}
         onAdd={data.controller === address ? () => setAddCS(true) : undefined}
-        titleFilter={archivedCheckbox}
-      />
+        checkFilter={{
+          show: showArchived,
+          changeFilter: setShowArchived,
+          label: resolveTranslatable({ key: "datatable.cs.filter.showArchived" }, translate)??'Show Archived',
+        }}
+        />
 
       {/* render modal add Credential Schema*/}
       {addCS && (

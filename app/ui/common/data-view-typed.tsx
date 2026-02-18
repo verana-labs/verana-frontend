@@ -19,6 +19,7 @@ import IconLabelButton from './icon-label-button';
 import clsx from 'clsx';
 import { ModalAction } from './modal-action';
 import CsActionPage from '@/tr/cs/[id]/action';
+import TrActionPage from '@/tr/[id]/action';
 
 // Wrapper for DataView that lets you pass the generic parameter explicitly
 export default function DataViewTyped<I extends object>(props: {
@@ -138,9 +139,13 @@ const validDIDAction = (action: string): action is MsgTypeDID =>
 const validTDAction = (action: string): action is MsgTypeTD => 
   ['MsgReclaimTrustDeposit','MsgReclaimTrustDepositYield'].includes(action);
 
+// Define the valid actions for TR-GFD
+export const validGFDAction = (action: string): action is MsgTypeTR => 
+  ['MsgAddGovernanceFrameworkDocument','MsgIncreaseActiveGovernanceFrameworkVersion'].includes(action);
+
 // Define the valid actions for TR
 export const validTRAction = (action: string): action is MsgTypeTR => 
-  ['MsgAddGovernanceFrameworkDocument','MsgIncreaseActiveGovernanceFrameworkVersion'].includes(action);
+  ['MsgUpdateTrustRegistry','MsgArchiveTrustRegistry'].includes(action);
 
 // Define the valid actions for PERM
 export const validPermAction = (action: string): action is MsgTypePERM => 
@@ -150,7 +155,7 @@ export const validPermAction = (action: string): action is MsgTypePERM =>
 
 // Define the valid actions for CS
 const validCSAction = (action: string): action is MsgTypeCS => 
-  ['MsgArchiveCredentialSchema','MsgUpdateCredentialSchema'].includes(action);
+  ['MsgUnarchiveCredentialSchema','MsgArchiveCredentialSchema','MsgUpdateCredentialSchema'].includes(action);
 
 // Helper to render the correct action component
 export function renderActionComponent(
@@ -169,7 +174,7 @@ export function renderActionComponent(
   if (validTDAction(action)) {
     return <TdActionPage action={action} data={data} onClose={onClose} onRefresh={onRefresh}/>;
   }
-  if (validTRAction(action)) {
+  if (validGFDAction(action)) {
     return <GfdPage action={action} data={data} onClose={onClose} onRefresh={onRefresh}/>;
   }
   if (validPermAction(action)) {
@@ -177,6 +182,9 @@ export function renderActionComponent(
   }
   if (validCSAction(action)) {
     return <CsActionPage action={action} data={data} onClose={onClose} onRefresh={onRefresh}/>;
+  }
+  if (validTRAction(action)) {
+    return <TrActionPage action={action} data={data} onClose={onClose} onRefresh={onRefresh}/>;
   }
   return null;
 }

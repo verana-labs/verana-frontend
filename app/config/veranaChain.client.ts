@@ -16,6 +16,7 @@ export const veranaChainEnv = {
   network_type: 'testnet',
   bech32_prefix: "verana",
   slip44:  118,
+  key_algos: ['secp256k1'],
   staking: {
     staking_tokens: [
       { denom: "uvna" }
@@ -34,7 +35,7 @@ export const veranaChainEnv = {
   },
   explorers: [
     {
-      kind: 'veranaexplorer',
+      kind: 'Verana Explorer',
       url: 'https://explorer.testnet.verana.network',
       tx_page: 'https://explorer.mychain.org/tx/${txHash}',
     },  
@@ -43,10 +44,10 @@ export const veranaChainEnv = {
 };
 
 export const veranaAssets: Asset = {
-    description: "Verana Token",
-    type_asset: 'unknown',
+    description: "The native staking and governance token of the Verana testnet.",
+    type_asset: 'sdk.coin',
     base: 'uvna',
-    name: 'VeranaToken',
+    name: 'Verana Token',
     display: 'VNA',
     symbol: 'VNA',
     denom_units: [

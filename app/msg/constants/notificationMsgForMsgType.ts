@@ -13,7 +13,7 @@ export type MsgTypeTD = 'MsgReclaimTrustDeposit' | 'MsgReclaimTrustDepositYield'
 export type MsgTypeTR = 'MsgCreateTrustRegistry' | 'MsgUpdateTrustRegistry' | 'MsgArchiveTrustRegistry' | 'MsgAddGovernanceFrameworkDocument' | 'MsgIncreaseActiveGovernanceFrameworkVersion';
 
 // Supported Credential Schema actions
-export type MsgTypeCS = 'MsgCreateCredentialSchema' | 'MsgUpdateCredentialSchema' | 'MsgArchiveCredentialSchema';
+export type MsgTypeCS = 'MsgCreateCredentialSchema' | 'MsgUpdateCredentialSchema' | 'MsgArchiveCredentialSchema' | 'MsgUnarchiveCredentialSchema';
 
 // Supported Permission actions
 export type MsgTypePERM =
@@ -154,6 +154,7 @@ export const MSG_SUCCESS_ACTION_CS: Record<MsgTypeCS, () => string> = {
   MsgCreateCredentialSchema: () => t('notification.MsgCreateCredentialSchema.success'),
   MsgUpdateCredentialSchema: () => t('notification.MsgUpdateCredentialSchema.success'),
   MsgArchiveCredentialSchema: () => t('notification.MsgArchiveCredentialSchema.success'),
+  MsgUnarchiveCredentialSchema: () => t('notification.MsgUnarchiveCredentialSchema.success')
 };
 
 // In-progress messages for CS actions
@@ -161,18 +162,17 @@ export const MSG_INPROGRESS_ACTION_CS: Record<MsgTypeCS, () => string> = {
   MsgCreateCredentialSchema: () => t('notification.MsgCreateCredentialSchema.inprogress'),
   MsgUpdateCredentialSchema: () => t('notification.MsgUpdateCredentialSchema.inprogress'),
   MsgArchiveCredentialSchema: () => t('notification.MsgArchiveCredentialSchema.inprogress'),
+  MsgUnarchiveCredentialSchema: () => t('notification.MsgUnarchiveCredentialSchema.inprogress')
 };
 // Error messages for CS actions (with id + optional error code/log)
 export const MSG_ERROR_ACTION_CS: Record<
   MsgTypeCS,
   (id: string | number | undefined, code?: number, msg?: string) => string
 > = {
-  MsgCreateCredentialSchema: (id, code, msg) =>
-    t('notification.MsgCreateCredentialSchema.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-  MsgUpdateCredentialSchema: (id, code, msg) =>
-    t('notification.MsgUpdateCredentialSchema.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-  MsgArchiveCredentialSchema: (id, code, msg) =>
-    t('notification.MsgArchiveCredentialSchema.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgCreateCredentialSchema: (id, code, msg) => t('notification.MsgCreateCredentialSchema.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgUpdateCredentialSchema: (id, code, msg) => t('notification.MsgUpdateCredentialSchema.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgArchiveCredentialSchema: (id, code, msg) => t('notification.MsgArchiveCredentialSchema.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgUnarchiveCredentialSchema: (id, code, msg) => t('notification.MsgUnarchiveCredentialSchema.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' })
 };
 
 // ============================================================================

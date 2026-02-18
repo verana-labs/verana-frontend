@@ -84,6 +84,11 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     description: t("messages.MsgArchiveCredentialSchema.description"),
     cost: t("messages.MsgArchiveCredentialSchema.cost"),
   },
+  MsgUnarchiveCredentialSchema: {
+    label: t("messages.MsgUnarchiveCredentialSchema.label"),
+    description: t("messages.MsgUnarchiveCredentialSchema.description"),
+    cost: t("messages.MsgUnarchiveCredentialSchema.cost"),
+  },
   MsgCancelPermissionVPLastRequest: {
     label: t("messages.MsgCancelPermissionVPLastRequest.label"),
     description: t("messages.MsgCancelPermissionVPLastRequest.description"),
@@ -165,6 +170,10 @@ export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
   MsgUpdateCredentialSchema: {},
   MsgArchiveCredentialSchema: {
     button: "bg-gray-600 hover:bg-gray-700",
+    icon: faBoxArchive
+  },
+  MsgUnarchiveCredentialSchema: {
+    button: "bg-green-600 hover:bg-green-700",
     icon: faBoxArchive
   },
   MsgCancelPermissionVPLastRequest: {

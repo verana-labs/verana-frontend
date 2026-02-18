@@ -17,7 +17,8 @@ import { ModalAction } from '@/ui/common/modal-action';
 export default function TrPage() {
   const [trs, setTrs] = useState<TrList[]>([]);
   const router = useRouter();
-  const { trList, loading, errorTrList, refetch: fetchTrList } = useTrustRegistries();
+  const [ showArchived, setShowArchived ] = useState(false);
+  const { trList, loading, errorTrList, refetch: fetchTrList } = useTrustRegistries(false, !showArchived);
   const [errorNotified, setErrorNotified] = useState(false);
   // Notification context for showing error messages
   const { notify } = useNotification();
@@ -37,6 +38,11 @@ export default function TrPage() {
       setRefresh(false);
     })();
   }, [refresh]);
+
+  // Refresh trList for showArchived change
+  useEffect(() => {
+    setRefresh(true);
+  }, [showArchived]);
 
   // Notify and redirect if there is an error fetching account data
   useEffect(() => {
@@ -60,12 +66,10 @@ export default function TrPage() {
       <TitleAndButton
         title=  {`${resolveTranslatable({key: "trlist.title"}, translate)?? "Trust Registry"}`}
         description={translateDataTableDescriptions(description)}
-        buttonLabel={resolveTranslatable({key: "button.tr.add"}, translate)}
-        icon={faPlus}
-        onClick={() => setAddTR(true)}
       />
       <DataTable
-        entities={resolveTranslatable({key: "datatable.tr.entities"}, translate)??''}
+        tableTitle={resolveTranslatable({key: "datatable.tr.title"}, translate)}
+        addTitle={resolveTranslatable({key: "datatable.tr.add"}, translate)}
         columnsI18n={columnsTrList}
         data={trs}
         initialPageSize={10}
@@ -75,6 +79,12 @@ export default function TrPage() {
         showDetailModal={false}
         detailTitle={resolveTranslatable({key: "datatable.tr.detail"}, translate)}
         onRefresh={() => setRefresh(true)}
+        onAdd={() => setAddTR(true)}
+        checkFilter={{
+          show: showArchived,
+          changeFilter: setShowArchived,
+          label: resolveTranslatable({ key: "datatable.tr.filter.showArchived" }, translate)??'Show Archived',
+        }}
       />
       {/* render modal add Trust Registry*/}
       {addTR && (

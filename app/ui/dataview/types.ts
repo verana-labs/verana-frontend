@@ -128,7 +128,8 @@ export type Section<I> = {
   type?: "basic" | "help" | "advanced" | "actions";
   help?: Translatable[];
   fields?: Field<I>[];
-  classForm?: string;
+  classFormEdit?: string;
+  classFormCreate?: string;
   cardView?: boolean;
   largeTexts?: boolean;
   sectionBorder?: boolean;

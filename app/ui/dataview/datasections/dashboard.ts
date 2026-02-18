@@ -23,7 +23,7 @@ export const dashboardSections: Section<DashboardData>[] = [
   {
     // name: t("dataview.dashboard.sections.connectionDetails"),
     cardView: true,
-    classForm: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6",
+    classFormEdit: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6",
     fields: [
       // { name: "chainName", label: t("dataview.dashboard.fields.chainName"), type: "data" },
       // { name: "status", label: t("dataview.dashboard.fields.status"), type: "data" },
