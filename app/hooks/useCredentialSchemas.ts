@@ -29,7 +29,7 @@ type RawSchema = Record<string, unknown> & {
   verified?: number;
 };
 
-export function useCSList(trId?: string, all: boolean = true) {
+export function useCSList(trId?: string, all: boolean = true, onlyActive: boolean = false) {
 
   const getURL =
     env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA') ||
@@ -50,7 +50,12 @@ export function useCSList(trId?: string, all: boolean = true) {
     // Reset state when inputs change
     setError(null);
     setCsList([]);
-    const url = ( trId == undefined && all )? `${getURL}/list` : `${getURL}/list?tr_id=${trId}`;
+
+    const params = new URLSearchParams();
+    if ( trId != undefined && !all) params.set('tr_id', trId);
+    if ( onlyActive ) params.set('only_active', 'true');
+    const url = `${getURL}/list?${params.toString()}`;
+
     try {
       setLoading(true);
       const res = await fetch(url);
@@ -62,22 +67,6 @@ export function useCSList(trId?: string, all: boolean = true) {
       } 
       const schemas: RawSchema[] = Array.isArray(json) ? json : (json.schemas ?? []);
       const list: CsList[] = schemas.map((src) => {
-        // Parse JSON schema safely
-        // let parsed: Record<string, unknown> = {};
-        // const rawJsonSchema = typeof src.json_schema === 'string' ? src.json_schema : '';
-        // try {
-        //   parsed = rawJsonSchema ? JSON.parse(rawJsonSchema) : {};
-        // } catch {
-        //   parsed = {};
-        // }
-        // const title = (typeof src.title === 'string' && src.title.trim())
-        //   ? src.title
-        //   : (parsed.title as string | undefined) || 'Schema';
-
-        // const description = (typeof src.description === 'string' && src.description.trim())
-        //   ? src.description
-        //   : (parsed.description as string | undefined) || '';
-
         return {
           id: (src.id)?.toString() ?? '',
           trId: (src.tr_id)?.toString() ?? '',
@@ -106,7 +95,7 @@ export function useCSList(trId?: string, all: boolean = true) {
 
   useEffect(() => {
     fetchCS();
-  }, []);
+  }, [onlyActive]);
 
   return { csList, loading, errorCSList, refetch: fetchCS };
 }

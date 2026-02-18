@@ -75,10 +75,10 @@ export const MsgUpdateCredentialSchemaAminoConverter = {
 export const MsgArchiveCredentialSchemaAminoConverter = {
   aminoType: '/verana.cs.v1.MsgArchiveCredentialSchema',
   // Proto → Amino JSON
-  toAmino: (m: MsgArchiveCredentialSchema) => ({
+  toAmino: (m: MsgArchiveCredentialSchema) => clean({
     creator: m.creator ?? '',
     id: u64ToStr(m.id),
-    archive: m.archive ?? false,
+    archive: m.archive ? true : undefined, // omit if false
   }),
   // Amino JSON → Proto
   fromAmino: (a: { creator: string; id: string; archive: boolean }): MsgArchiveCredentialSchema =>

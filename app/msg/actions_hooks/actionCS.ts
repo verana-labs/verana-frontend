@@ -38,6 +38,10 @@ export const MSG_TYPE_CONFIG_CS = {
     typeUrl: '/verana.cs.v1.MsgArchiveCredentialSchema',
     txLabel: 'MsgArchiveCredentialSchema',
   },
+  MsgUnarchiveCredentialSchema: {
+    typeUrl: '/verana.cs.v1.MsgArchiveCredentialSchema',
+    txLabel: 'MsgArchiveCredentialSchema',
+  },
 } as const;
 
 // Union type for all action parameters
@@ -66,6 +70,10 @@ type ActionCSParams =
   | {
       msgType: 'MsgArchiveCredentialSchema';
       id: string | number | Long;
+    }
+  | {
+      msgType: 'MsgUnarchiveCredentialSchema';
+      id: string | number | Long;
     };
 
 // Hook to execute Credential Schema transactions + notifications
@@ -82,8 +90,8 @@ export function useActionCS( onCancel?: () => void,
 
   // Handler for Succes: refresh and collapses/hides the action UI
   const handleSuccess = () => {
-    onRefresh?.();
     console.info('handleSuccess useActionCS');
+    onRefresh?.();
     setTimeout( () => { onCancel?.() }, 1000);
   };
 
@@ -190,6 +198,16 @@ export function useActionCS( onCancel?: () => void,
         break;
       }
 
+      case 'MsgUnarchiveCredentialSchema': {
+        typeUrl = MSG_TYPE_CONFIG_CS.MsgArchiveCredentialSchema.typeUrl;
+        value = MsgArchiveCredentialSchema.fromPartial({
+          creator: address,
+          id: Long.fromValue(params.id), // uint64
+          archive: false,
+        });
+        break;
+      }
+
       default:
         await notify(resolveTranslatable({key: "error.msg.invalid.msgtype"}, translate)??'', 'error');
         return;
@@ -197,7 +215,6 @@ export function useActionCS( onCancel?: () => void,
 
     // Show "in progress" notification
     let notifyPromise: Promise<void> = notify(
-      // MSG_INPROGRESS_ACTION_CS[params.msgType],
       MSG_INPROGRESS_ACTION_CS[params.msgType](),
       'inProgress',
       resolveTranslatable({key: 'notification.msg.inprogress.title'}, translate)
@@ -211,7 +228,7 @@ export function useActionCS( onCancel?: () => void,
       const msg: EncodeObject = { typeUrl, value };
       // console.info(msg);
       // const msgSanitized = sanitizeProtoMsg(msg);
-
+      console.info(msg);
       res = await sendTx({
         // msgs: [msgSanitized],
         msgs: [msg],

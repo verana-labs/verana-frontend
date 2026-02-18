@@ -247,14 +247,17 @@
   "notification.MsgCreateCredentialSchema.success": "Credential Schema successfully created",
   "notification.MsgUpdateCredentialSchema.success": "Credential Schema successfully updated",
   "notification.MsgArchiveCredentialSchema.success": "Credential Schema successfully archived",
+  "notification.MsgUnarchiveCredentialSchema.success": "Credential Schema successfully unarchived",
 
   "notification.MsgCreateCredentialSchema.inprogress": "Creating Credential Schema...",
   "notification.MsgUpdateCredentialSchema.inprogress": "Updating Credential Schema...",
   "notification.MsgArchiveCredentialSchema.inprogress": "Archiving Credential Schema...",
+  "notification.MsgUnarchiveCredentialSchema.inprogress": "Unarchiving Credential Schema...",
 
   "notification.MsgCreateCredentialSchema.error": "Unable to create Credential Schema {id}. {code}{msg}",
   "notification.MsgUpdateCredentialSchema.error": "Unable to update Credential Schema {id}. {code}{msg}",
   "notification.MsgArchiveCredentialSchema.error": "Unable to archive Credential Schema {id}. {code}{msg}",
+  "notification.MsgUnarchiveCredentialSchema.error": "Unable to unarchive Credential Schema {id}. {code}{msg}",
 
   "notification.MsgStartPermissionVP.success": "Validation process started successfully",
   "notification.MsgRenewPermissionVP.success": "Validation process renewed successfully",
@@ -318,6 +321,8 @@
   "error.endpoint": "API endpoint not configured",
   "error.did.notfound": "DID not found",
   "error.tr.notfound": "Trust Registry not found",
+
+  "dataview.section.mutable": "Mutable Configuration",
 
   "dataview.account.sections.mainBalance": "Main Balance",
   "dataview.account.sections.trustDeposit": "Trust Deposit",
@@ -408,6 +413,7 @@
   "dataview.cs.fields.id": "Credential Schema ID",
   "dataview.cs.actions.updateCredentialSchema": "Edit Configuration",
   "dataview.cs.actions.archiveCredentialSchema": "Archive Schema",
+  "dataview.cs.actions.unarchiveCredentialSchema": "Unarchive Schema",
   "dataview.cs.descriptions.issuerPermManagementMode": "defines how permission are managed for issuers of this Credential Schema:\n<ul class=\"list-disc pl-6\">\n<li>OPEN means anyone can create its own ISSUER permission;</li>\n<li>GRANTOR_VALIDATION means a validation process MUST be run between a candidate ISSUER and an ISSUER_GRANTOR in order to create an ISSUER permission;</li>\n<li>TRUST_REGISTRY_VALIDATION means a validation process MUST be run between a candidate ISSUER and the trust registry owner in order to create an ISSUER permission.</li>\n</ul>\nChoose wisely, as a Credential Schemas is immutable and thus cannot be modified.",
   "dataview.cs.descriptions.verifierPermManagementMode": "defines how permission are managed for verifiers of this Credential Schema:\n<ul class=\"list-disc pl-6\">\n<li>OPEN means anyone can create its own VERIFIER permission;</li>\n<li>GRANTOR_VALIDATION means a validation process MUST be run between a candidate VERIFIER and a VERIFIER_GRANTOR in order to create a VERIFIER permission;</li>\n<li>TRUST_REGISTRY_VALIDATION means a validation process MUST be run between a candidate VERIFIER and the trust registry owner in order to create a VERIFIER permission.</li>\n</ul>\nChoose wisely, as a Credential Schema is immutable and thus cannot be modified.",
   "dataview.cs.descriptions.issuerGrantorValidationValidityPeriod": "maximum number of days an issuer grantor validation can be valid for, in days. Use 0 so that validation never expires, or set a number of days lower than 3650. Example, if you want a validation process to be valid for one year so that applicant will have to renew the validation process each year, set this parameter to 365.",
@@ -417,6 +423,8 @@
   "dataview.cs.descriptions.holderValidationValidityPeriod": "maximum number of days holder validation can be valid for, in days. Use 0 so that validation never expires, or set a number of days lower than 3650. Example, if you want a validation process to be valid for one year so that applicant will have to renew the validation process each year, set this parameter to 365.",
   "dataview.cs.descriptions.jsonSchema": "A basic validation of your Json Schema will be done.",
 
+  "dataview.tr.title": "Ecosystem",
+  "dataview.tr.description": "Ecosystem trust registry and governance framework management",
   "dataview.tr.sections.basicInformation": "Basic Information",
   "dataview.tr.sections.governanceFrameworkDocuments": "Governance Framework Documents",
   "dataview.tr.sections.credentialSchemas": "Credential Schemas",
@@ -437,6 +445,8 @@
   "dataview.tr.fields.participants": "Participants",
   "dataview.tr.actions.addGovernanceFrameworkDocument": "Add New EGF Document",
   "dataview.tr.actions.increaseActiveGovernanceFrameworkVersion": "Increase Active EGF Version",
+  "dataview.tr.actions.updateTrustRegistry": "Edit Configuration",
+
 
   "dataview.perm.sections.main": "Main",
   "dataview.perm.fields.creator": "Creator",
@@ -483,9 +493,10 @@
   "datatable.did.filter.status.expiring": "Expiring Soon",
   "datatable.did.filter.status.expired": "Expired",
 
-  "datatable.tr.entities": "Ecosystems",
+  "datatable.tr.title": "Ecosystems",
   "datatable.tr.description": "Ecosystems you own and Ecosystems you joined",
   "datatable.tr.add": "Create Ecosystem",
+  "datatable.tr.filter.showArchived": "Show Archived",
   "datatable.tr.header.id": "Id",
   "datatable.tr.header.did": "DID",
   "datatable.tr.header.controller": "Controller",
@@ -512,6 +523,7 @@
 
   "datatable.cs.title": "Credential Schemas",
   "datatable.cs.add": "Create New Credential Schema",
+  "datatable.cs.filter.showArchived": "Show Archived",
   "datatable.cs.header.id": "Id",
   "datatable.cs.header.title": "Title",
   "datatable.cs.header.desc": "Description",
@@ -521,7 +533,6 @@
   "datatable.cs.mobile.participants": "Participants:",
   "datatable.cs.mobile.issued": "Issued:",
   "datatable.cs.mobile.verified": "Verified:",
-  "datatable.cs.filter.showArchived": "Show Archived",
 
   "datalist.egf.title": "EGF Documents",
 
@@ -603,6 +614,10 @@
   "messages.MsgArchiveCredentialSchema.label": "Archive Credential Schema",
   "messages.MsgArchiveCredentialSchema.description": "Archive a Credential Schema.",
   "messages.MsgArchiveCredentialSchema.cost": "You'll need approx. {value} VNA are required to execute this transaction.",
+
+  "messages.MsgUnarchiveCredentialSchema.label": "Unarchive Credential Schema",
+  "messages.MsgUnarchiveCredentialSchema.description": "Unarchive a Credential Schema.",
+  "messages.MsgUnarchiveCredentialSchema.cost": "You'll need approx. {value} VNA are required to execute this transaction.",
 
   "messages.MsgCancelPermissionVPLastRequest.label": "Confirm",
   "messages.MsgCancelPermissionVPLastRequest.description": "Cancel Permission Validation Process.",

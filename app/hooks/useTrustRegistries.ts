@@ -9,7 +9,7 @@ import { ApiErrorResponse } from '@/types/apiErrorResponse';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
 
-export function useTrustRegistries (all: boolean = false) {
+export function useTrustRegistries (all: boolean = false, onlyActive: boolean = true) {
   const veranaChain = useVeranaChain();
   const { address, isWalletConnected, getStargateClient } = useChain(veranaChain.chain_name);
 
@@ -32,7 +32,13 @@ export function useTrustRegistries (all: boolean = false) {
     setTrList([]);
     try {
       setLoading(true);
-      const urlTrList = all ? `${getTrURL}/list` : `${getTrURL}/list?participant=${address}&response_max_size=1024`;
+
+      const params = new URLSearchParams();
+      params.set('response_max_size', '1024');
+      if ( !all) params.set('participant', address);
+      if ( onlyActive ) params.set('only_active', 'true');
+      const urlTrList = `${getTrURL}/list?${params.toString()}`;
+
       const resTrList = await fetch(urlTrList);
       const jsonTrList = await resTrList.json();
       if (!resTrList.ok){

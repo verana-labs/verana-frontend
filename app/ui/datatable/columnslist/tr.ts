@@ -42,7 +42,7 @@ const formatNumber = (value: unknown): string => {
 };
 
 export const columnsTrList: Column<TrList>[] = [
-  { header: t("datatable.tr.header.id"), accessor: "id"},
+  { header: t("datatable.tr.header.id"), accessor: "id", className: "font-medium"},
   { header: t("datatable.tr.header.did"), accessor: "did", format: (value) => shortenDID(String(value)), break: "break-all" },
   { header: t("datatable.tr.header.controller"), accessor: "controller", format: (value) => shortenMiddle(String(value), 25), priority: 5, break: "break-all" },
   { header: t("datatable.tr.header.activeSchemas"), accessor: "active_schemas", format: formatNumber, priority: 4 },

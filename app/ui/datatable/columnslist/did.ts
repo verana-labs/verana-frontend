@@ -38,9 +38,9 @@ export const columnsDidList: Column<DidList>[] = [
   { header: t("datatable.did.header.controller"), accessor: "controller", format: (value) => shortenMiddle(String(value), 25), priority: 2 },
   { header: t("datatable.did.header.created"), accessor: "created", format: (value) => formatDate(value), priority: 4 },
   { header: t("datatable.did.header.modified"), accessor: "modified", format: (value) => formatDate(value), priority: 1 },
-  { header: t("datatable.did.header.expire"), accessor: "exp", format: (value) => formatDate(value), className: (value) => getExpireClass(value) },
+  { header: t("datatable.did.header.expire"), accessor: "exp", format: (value) => formatDate(value), getClassName: (value) => getExpireClass(value) },
   { header: t("datatable.did.header.deposit"), accessor: "deposit", format: (value) => formatVNA(String(value), 6), priority: 3 },
-  { header: t("datatable.did.header.status"), accessor: "status", format: (value) => getStatusLabel(value), priority: 9999, className: (value) => getStatusClass(value), viewMobileRight: true },
+  { header: t("datatable.did.header.status"), accessor: "status", format: (value) => getStatusLabel(value), priority: 9999, getClassName: (value) => getStatusClass(value), viewMobileRight: true },
 ];
 
 export const description: Translatable[] = [

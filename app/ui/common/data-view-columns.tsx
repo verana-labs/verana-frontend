@@ -129,7 +129,7 @@ export default function DataView<T extends object>({
                       )}
                   </div>
                   )}
-                  <div className={`${showView || section.noEdit ? "block" : "hidden"} ${section.classForm ?? "grid grid-cols-1 md:grid-cols-2 gap-4"}`}>
+                  <div className={`${showView || section.noEdit ? "block" : "hidden"} ${section.classFormEdit ?? "grid grid-cols-1 md:grid-cols-2 gap-4"}`}>
                     { visibleFieldsForMode(section.fields, 'view')
                       .map((field, fieldIndex ) => {
                         const value= data[field.name];

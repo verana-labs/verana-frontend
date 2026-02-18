@@ -68,6 +68,7 @@ export default function CSViewPage() {
     setData({
       ...csData,
       archiveCredentialSchema: trController && !csData.archived ? "MsgArchiveCredentialSchema" : undefined,
+      unarchiveCredentialSchema: trController && csData.archived ? "MsgUnarchiveCredentialSchema" : undefined,
       updateCredentialSchema: trController ? "MsgUpdateCredentialSchema" : undefined,
     });
   }, [csData, trController]);

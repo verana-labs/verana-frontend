@@ -31,6 +31,7 @@ const requiredFieldsByMsgType: Record<MessageType, readonly string[]> = {
     "holderValidationValidityPeriod"
   ],
   MsgArchiveCredentialSchema: ["id"],
+  MsgUnarchiveCredentialSchema: ["id"],
 
   // TR
   MsgCreateTrustRegistry: ["did", "aka", "language", "docUrl"],
@@ -78,7 +79,7 @@ export function useSubmitTxMsgTypeFromObject( onCancel?: () => void,
                                               onRefresh?: () => void) {
     // Hooks are called at top-level (safe according to the Rules of Hooks)
     const actionCS = useActionCS(onCancel, onRefresh) as unknown as ActionHandler;
-    const actionTR = useActionTR() as unknown as ActionHandler;
+    const actionTR = useActionTR(onCancel, onRefresh) as unknown as ActionHandler;
 
     /**
      * Returns the action hook implementation for a given MessageType.
@@ -88,7 +89,8 @@ export function useSubmitTxMsgTypeFromObject( onCancel?: () => void,
       if (
         msgType === "MsgCreateCredentialSchema" ||
         msgType === "MsgUpdateCredentialSchema" ||
-        msgType === "MsgArchiveCredentialSchema"
+        msgType === "MsgArchiveCredentialSchema" ||
+        msgType === "MsgUnarchiveCredentialSchema"
       ) return actionCS;
 
       if (
