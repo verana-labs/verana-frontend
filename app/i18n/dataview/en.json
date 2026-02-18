@@ -166,7 +166,7 @@
   "modalqrcode.title": "Account QR Code",
   "modalqrcode.msg": "Scan this QR code to send VNA tokens to your account",
 
-  "footer.title": "Verana Network",
+  "footer.title": "Verana",
   "footer.version": "v0.xx",
   
   "connected.title": "Connected",

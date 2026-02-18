@@ -27,7 +27,7 @@ export function Footer() {
         />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-            Verana
+          {resolveTranslatable({key: "footer.title"}, translate)}
           </p>
           <div className="text-xs text-neutral-70 dark:text-neutral-70 space-y-0">
             <p>network {networkVersion ?? '...'}</p>

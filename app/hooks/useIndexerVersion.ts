@@ -12,14 +12,13 @@ export function useIndexerVersion() {
 
     const fetchVersion = async () => {
       try {
-        const didEndpoint =
-          env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID') ||
-          process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID;
-        if (!didEndpoint) return;
+        const indexerEndpoint =
+          env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_INDEXER') ||
+          process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_INDEXER;
+        if (!indexerEndpoint) return;
 
-        const baseUrl = didEndpoint.replace(/\/verana\/.*$/, '');
         const response = await fetch(
-          `${baseUrl}/verana/indexer/v1/version`,
+          `${indexerEndpoint}/version`,
           { signal: controller.signal }
         );
         if (!response.ok) throw new Error(`Failed to load indexer version: ${response.status}`);
