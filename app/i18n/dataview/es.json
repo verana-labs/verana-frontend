@@ -75,6 +75,9 @@
 
   "footer.title": "Verana",
   "footer.version": "v0.xx",
+  "footer.network": "network",
+  "footer.indexer": "indexer",
+  "footer.frontend": "frontend",
   
   "connected.title": "Conectado",
   "connected.msg": "Tu billetera cripto está conectada a Verana, lo que te permite acceder a todas las funciones.",

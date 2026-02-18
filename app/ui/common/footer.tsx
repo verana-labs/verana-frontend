@@ -30,9 +30,9 @@ export function Footer() {
           {resolveTranslatable({key: "footer.title"}, translate)}
           </p>
           <div className="text-xs text-neutral-70 dark:text-neutral-70 space-y-0">
-            <p>network {networkVersion ?? '...'}</p>
-            <p>indexer {indexerVersion ?? '...'}</p>
-            <p>frontend {frontendVersion ? `v${frontendVersion}` : '...'}</p>
+            <p>{resolveTranslatable({key: "footer.network"}, translate)} {networkVersion ?? resolveTranslatable({key: "footer.version"}, translate)}</p>
+            <p>{resolveTranslatable({key: "footer.indexer"}, translate)} {indexerVersion ?? resolveTranslatable({key: "footer.version"}, translate)}</p>
+            <p>{resolveTranslatable({key: "footer.frontend"}, translate)} {frontendVersion ? `v${frontendVersion}` : resolveTranslatable({key: "footer.version"}, translate)}</p>
           </div>
         </div>
       </div>

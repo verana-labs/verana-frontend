@@ -168,6 +168,9 @@
 
   "footer.title": "Verana",
   "footer.version": "v0.xx",
+  "footer.network": "network",
+  "footer.indexer": "indexer",
+  "footer.frontend": "frontend",
   
   "connected.title": "Connected",
   "copied.label": "Copied!",
