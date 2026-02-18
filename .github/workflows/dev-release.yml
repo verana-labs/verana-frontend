@@ -93,18 +93,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Set up kubectl
-        if: steps.semantic.outputs.new-release-published == 'true'
-        uses: azure/setup-kubectl@v4
-        with:
-          version: "latest"
-
-      - uses: azure/k8s-set-context@v4
-        if: steps.semantic.outputs.new-release-published == 'true'
-        with:
-          method: kubeconfig
-          kubeconfig: ${{ secrets.OVH_KUBECONFIG }}
-
       - name: Set up Helm
         if: steps.semantic.outputs.new-release-published == 'true'
         uses: azure/setup-helm@v3
