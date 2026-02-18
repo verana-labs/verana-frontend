@@ -24,14 +24,18 @@ const TOPUP_VS =
 
 const urlGetVNA = (TOPUP_VS ? TOPUP_VS.split(':')[2] : '');
 
+// Extract network name (e.g. "Testnet", "Devnet") from did:web:faucet-vs.{network}.verana.network
+const networkName = urlGetVNA.split('.')[1] ?? '';
+const networkLabel = networkName.charAt(0).toUpperCase() + networkName.slice(1);
+
 const getVNALinks : GetVNALink[] = [
   {
-    name: resolveTranslatable({ key: 'getvna.veranatestnet.name' }, translate) ?? '',
-    by: resolveTranslatable({ key: 'getvna.veranatestnet.by' }, translate) ?? '',
+    name: resolveTranslatable({ key: 'getvna.faucet.name', values: { network: networkLabel } }, translate) ?? '',
+    by: resolveTranslatable({ key: 'getvna.faucet.by' }, translate) ?? '',
     hrefQr: `https://${urlGetVNA}/qr`,
-    instructions: resolveTranslatable({ key: 'getvna.veranatestnet.instructions' }, translate) ?? '',
+    instructions: resolveTranslatable({ key: 'getvna.faucet.instructions' }, translate) ?? '',
     href: `https://${urlGetVNA}/invitation`,
-    goTo: resolveTranslatable({ key: 'getvna.veranatestnet.goto' }, translate) ?? '',
+    goTo: resolveTranslatable({ key: 'getvna.faucet.goto' }, translate) ?? '',
     iconsPay: [
       { icon: faDroplet, iconClass: 'text-blue-600' }
     ]

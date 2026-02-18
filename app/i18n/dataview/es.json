@@ -73,8 +73,11 @@
   "modalqrcode.title": "Código QR de la cuenta",
   "modalqrcode.msg": "Escanea este código QR para enviar tokens VNA a tu cuenta",
 
-  "footer.title": "Verana Network",
+  "footer.title": "Verana",
   "footer.version": "v0.xx",
+  "footer.network": "network",
+  "footer.indexer": "indexer",
+  "footer.frontend": "frontend",
   
   "connected.title": "Conectado",
   "connected.msg": "Tu billetera cripto está conectada a Verana, lo que te permite acceder a todas las funciones.",
@@ -373,10 +376,10 @@
 
   "gettoken.title": "Selecciona el servicio de recarga",
   "gettoken.instructions": "Instrucciones",
-  "getvna.veranatestnet.name": "Faucet de Verana Testnet",
-  "getvna.veranatestnet.by": "por la Fundación Verana",
-  "getvna.veranatestnet.instructions": "Escanea el código QR con Hologram Messaging o haz clic en el enlace de abajo para ir a hologram.zone y obtener tus VNA.",
-  "getvna.veranatestnet.goto": "Ir a Zona Hologram",
+  "getvna.faucet.name": "Faucet de Verana {network}",
+  "getvna.faucet.by": "por la Fundación Verana",
+  "getvna.faucet.instructions": "Escanea el código QR con Hologram Messaging o haz clic en el enlace de abajo para ir a hologram.zone y obtener tus VNA.",
+  "getvna.faucet.goto": "Ir a Zona Hologram",
   "getvna.ramp.name": "Ramp Network",
   "getvna.ramp.by": "por Ramp Network Inc.",
   "getvna.ramp.instructions": "Escanea el código QR con Hologram Messaging o haz clic en el enlace de abajo para ir a hologram.zone y obtener tus VNA.",
