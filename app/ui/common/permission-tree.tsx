@@ -261,7 +261,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
     const isOpening = !(expanded[id] ?? false);
     setExpanded((p) => ({ ...p, [id]: isOpening }));
     if (isOpening) {
-      const node = findNodeById(tree, id);
+      const node = findNodeById(treeState, id);
       const alreadyLoaded = (node?.children?.length ?? 0) > 0;
       if (!alreadyLoaded) {
         setNodeRequestParams?.(id, type, validatorId);
@@ -280,10 +280,12 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
     return undefined;
   }  
 
+  const [treeState, setTreeState] = useState<TreeNode[]>(tree);
+
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const { node: selectedNode, path } = useMemo(
-    () => (selectedId ? findNodeAndPath(tree, selectedId) : { node: undefined, path: [] }),
-    [tree, selectedId]
+    () => (selectedId ? findNodeAndPath(treeState, selectedId) : { node: undefined, path: [] }),
+    [treeState, selectedId]
   );
 
   // UX: expand
@@ -313,7 +315,27 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
       return next;
     });
   }, [tree]);
+
+  useEffect(() => {
+    setTreeState(tree);
+  }, [tree]);
+
+  function updateNodePermission(nodes: TreeNode[], nodeId: string, perm: Permission): TreeNode[] {
+    return nodes.map((n) => {
+      if (n.nodeId === nodeId) {
+        return { ...n, permission: perm };
+      }
+      if (n.children?.length) {
+        return { ...n, children: updateNodePermission(n.children, nodeId, perm) };
+      }
+      return n;
+    });
+  }
   
+  function refreshNode(perm: Permission): void {
+    setTreeState((prev) => updateNodePermission(prev, perm.id, perm));
+  }
+
   return (
     <>
       {/* Breadcrumbs */}
@@ -384,7 +406,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
         <div className="space-y-1">
           <Tree
             type={type}
-            nodes={tree}
+            nodes={treeState}
             hrefJoin={hrefJoin}
             showWeight={showWeight}
             showBusiness={showBusiness}
@@ -427,7 +449,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
       
       {/* Detail Card  */}
       {selectedNode ? (
-        <PermissionCard selectedNode={selectedNode} path={path} csTitle={csTitle??""} />
+        <PermissionCard selectedNode={selectedNode} path={path} csTitle={csTitle??""} onRefresh={(perm: Permission) => refreshNode(perm)}/>
       ) : null}
     </>
   );
