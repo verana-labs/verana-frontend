@@ -29,6 +29,7 @@ export interface TrList {
   weight?: number | null;
   issued?: number | null;
   verified?: number | null;
+  archived?: string;
 }
 
 export const trFilter: Filter<TrList>[] = [

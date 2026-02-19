@@ -147,7 +147,7 @@ export default function JoinEcosystemWizard() {
   const { dataTR, errorTRData } = useTrustRegistryData(trId);
 
   const router = useRouter();
-  const { csList } = useCSList (trId, true);
+  const { csList } = useCSList (trId, false);
  
   const schemaId = selectedSchema?.id;
   const roleVal = (selectedSchema && selectedRole) ? validatorRole(selectedSchema, selectedRole) : undefined ;

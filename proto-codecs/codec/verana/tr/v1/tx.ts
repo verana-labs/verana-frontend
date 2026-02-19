@@ -47,8 +47,6 @@ export interface MsgCreateTrustRegistryResponse {
 /** MsgAddGovernanceFrameworkDocument defines the Msg/AddGovernanceFrameworkDocument request type. */
 export interface MsgAddGovernanceFrameworkDocument {
   creator: string;
-  // id: string;
-  // id: number;
   id: Long;
   docLanguage: string;
   docUrl: string;
@@ -391,8 +389,6 @@ export const MsgCreateTrustRegistryResponse = {
 };
 
 function createBaseMsgAddGovernanceFrameworkDocument(): MsgAddGovernanceFrameworkDocument {
-  // return { creator: "", id: "", docLanguage: "", docUrl: "", docDigestSri: "", version: 0 };
-  // return { creator: "", id: 0, docLanguage: "", docUrl: "", docDigestSri: "", version: 0 };
   return { creator: "", id: Long.UZERO, docLanguage: "", docUrl: "", docDigestSri: "", version: 0 };
 }
 
@@ -401,14 +397,8 @@ export const MsgAddGovernanceFrameworkDocument = {
     if (message.creator !== "") {
       writer.uint32(10).string(message.creator);
     }
-    // if (message.id !== "") {
-    //   writer.uint32(18).string(message.id);
-    // }
-    // if (message.id !== 0) {
-    //   writer.uint32(16).uint32(message.id);
-    // }
     if (!message.id.equals(Long.UZERO)) {
-      writer.uint32(16).uint64(message.id);      
+      writer.uint32(16).uint64(message.id);
     }
     if (message.docLanguage !== "") {
       writer.uint32(26).string(message.docLanguage);
@@ -440,14 +430,10 @@ export const MsgAddGovernanceFrameworkDocument = {
           message.creator = reader.string();
           continue;
         case 2:
-          // if (tag !== 18) {
-          // if (tag !== 24) {
           if (tag !== 16) {
             break;
           }
 
-          // message.id = reader.string();
-          // message.id = reader.uint32();
           message.id = reader.uint64() as Long;
           continue;
         case 3:
@@ -490,8 +476,6 @@ export const MsgAddGovernanceFrameworkDocument = {
   fromJSON(object: any): MsgAddGovernanceFrameworkDocument {
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
-      // id: isSet(object.id) ? globalThis.String(object.id) : "",
-      // id: isSet(object.id) ? globalThis.Number(object.id) : 0,
       id: isSet(object.id) ? Long.fromValue(object.id) : Long.UZERO,
       docLanguage: isSet(object.docLanguage) ? globalThis.String(object.docLanguage) : "",
       docUrl: isSet(object.docUrl) ? globalThis.String(object.docUrl) : "",
@@ -505,12 +489,6 @@ export const MsgAddGovernanceFrameworkDocument = {
     if (message.creator !== "") {
       obj.creator = message.creator;
     }
-    // if (message.id !== "") {
-    //   obj.id = message.id;
-    // }
-    // if (message.id !== 0) {
-    //   obj.id = Math.round(message.id);
-    // }
     if (!message.id.equals(Long.UZERO)) {
       obj.id = (message.id || Long.UZERO).toString();
     }
@@ -539,8 +517,6 @@ export const MsgAddGovernanceFrameworkDocument = {
   ): MsgAddGovernanceFrameworkDocument {
     const message = createBaseMsgAddGovernanceFrameworkDocument();
     message.creator = object.creator ?? "";
-    // message.id = object.id ?? "";
-    // message.id = object.id ?? 0;
     message.id = (object.id !== undefined && object.id !== null) ? Long.fromValue(object.id) : Long.UZERO;
     message.docLanguage = object.docLanguage ?? "";
     message.docUrl = object.docUrl ?? "";

@@ -21,7 +21,7 @@ export interface GenesisState {
 /** TrustDepositRecord defines a trust deposit entry for genesis state */
 export interface TrustDepositRecord {
   account: string;
-  share: Long;
+  share: string;
   amount: Long;
   claimable: Long;
 }
@@ -105,7 +105,7 @@ export const GenesisState = {
 };
 
 function createBaseTrustDepositRecord(): TrustDepositRecord {
-  return { account: "", share: Long.UZERO, amount: Long.UZERO, claimable: Long.UZERO };
+  return { account: "", share: "", amount: Long.UZERO, claimable: Long.UZERO };
 }
 
 export const TrustDepositRecord = {
@@ -113,8 +113,8 @@ export const TrustDepositRecord = {
     if (message.account !== "") {
       writer.uint32(10).string(message.account);
     }
-    if (!message.share.equals(Long.UZERO)) {
-      writer.uint32(16).uint64(message.share);
+    if (message.share !== "") {
+      writer.uint32(18).string(message.share);
     }
     if (!message.amount.equals(Long.UZERO)) {
       writer.uint32(24).uint64(message.amount);
@@ -140,11 +140,11 @@ export const TrustDepositRecord = {
           message.account = reader.string();
           continue;
         case 2:
-          if (tag !== 16) {
+          if (tag !== 18) {
             break;
           }
 
-          message.share = reader.uint64() as Long;
+          message.share = reader.string();
           continue;
         case 3:
           if (tag !== 24) {
@@ -172,7 +172,7 @@ export const TrustDepositRecord = {
   fromJSON(object: any): TrustDepositRecord {
     return {
       account: isSet(object.account) ? globalThis.String(object.account) : "",
-      share: isSet(object.share) ? Long.fromValue(object.share) : Long.UZERO,
+      share: isSet(object.share) ? globalThis.String(object.share) : "",
       amount: isSet(object.amount) ? Long.fromValue(object.amount) : Long.UZERO,
       claimable: isSet(object.claimable) ? Long.fromValue(object.claimable) : Long.UZERO,
     };
@@ -183,8 +183,8 @@ export const TrustDepositRecord = {
     if (message.account !== "") {
       obj.account = message.account;
     }
-    if (!message.share.equals(Long.UZERO)) {
-      obj.share = (message.share || Long.UZERO).toString();
+    if (message.share !== "") {
+      obj.share = message.share;
     }
     if (!message.amount.equals(Long.UZERO)) {
       obj.amount = (message.amount || Long.UZERO).toString();
@@ -201,7 +201,7 @@ export const TrustDepositRecord = {
   fromPartial<I extends Exact<DeepPartial<TrustDepositRecord>, I>>(object: I): TrustDepositRecord {
     const message = createBaseTrustDepositRecord();
     message.account = object.account ?? "";
-    message.share = (object.share !== undefined && object.share !== null) ? Long.fromValue(object.share) : Long.UZERO;
+    message.share = object.share ?? "";
     message.amount = (object.amount !== undefined && object.amount !== null)
       ? Long.fromValue(object.amount)
       : Long.UZERO;

@@ -29,7 +29,7 @@ export function useTrustRegistries (all: boolean = false, onlyActive: boolean = 
 
     // Reset state when inputs change
     setError(null);
-    setTrList([]);
+    // setTrList([]);
     try {
       setLoading(true);
 
