@@ -332,7 +332,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
     });
   }
   
-  function refreshNode(perm: Permission): void {
+  function refreshNode(perm: Permission): void { // update permission -> node -> treeState
     setTreeState((prev) => updateNodePermission(prev, perm.id, perm));
   }
 
