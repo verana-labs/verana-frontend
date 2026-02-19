@@ -14,7 +14,7 @@ export const protobufPackage = "verana.td.v1";
 /** TrustDeposit represents an account's trust deposit */
 export interface TrustDeposit {
   account: string;
-  share: Long;
+  share: string;
   amount: Long;
   claimable: Long;
   /** NEW v2 fields: Slashing related */
@@ -36,7 +36,7 @@ export interface SlashTrustDepositProposal {
 function createBaseTrustDeposit(): TrustDeposit {
   return {
     account: "",
-    share: Long.UZERO,
+    share: "",
     amount: Long.UZERO,
     claimable: Long.UZERO,
     slashedDeposit: Long.UZERO,
@@ -53,8 +53,8 @@ export const TrustDeposit = {
     if (message.account !== "") {
       writer.uint32(10).string(message.account);
     }
-    if (!message.share.equals(Long.UZERO)) {
-      writer.uint32(16).uint64(message.share);
+    if (message.share !== "") {
+      writer.uint32(18).string(message.share);
     }
     if (!message.amount.equals(Long.UZERO)) {
       writer.uint32(24).uint64(message.amount);
@@ -98,11 +98,11 @@ export const TrustDeposit = {
           message.account = reader.string();
           continue;
         case 2:
-          if (tag !== 16) {
+          if (tag !== 18) {
             break;
           }
 
-          message.share = reader.uint64() as Long;
+          message.share = reader.string();
           continue;
         case 3:
           if (tag !== 24) {
@@ -172,7 +172,7 @@ export const TrustDeposit = {
   fromJSON(object: any): TrustDeposit {
     return {
       account: isSet(object.account) ? globalThis.String(object.account) : "",
-      share: isSet(object.share) ? Long.fromValue(object.share) : Long.UZERO,
+      share: isSet(object.share) ? globalThis.String(object.share) : "",
       amount: isSet(object.amount) ? Long.fromValue(object.amount) : Long.UZERO,
       claimable: isSet(object.claimable) ? Long.fromValue(object.claimable) : Long.UZERO,
       slashedDeposit: isSet(object.slashedDeposit) ? Long.fromValue(object.slashedDeposit) : Long.UZERO,
@@ -189,8 +189,8 @@ export const TrustDeposit = {
     if (message.account !== "") {
       obj.account = message.account;
     }
-    if (!message.share.equals(Long.UZERO)) {
-      obj.share = (message.share || Long.UZERO).toString();
+    if (message.share !== "") {
+      obj.share = message.share;
     }
     if (!message.amount.equals(Long.UZERO)) {
       obj.amount = (message.amount || Long.UZERO).toString();
@@ -225,7 +225,7 @@ export const TrustDeposit = {
   fromPartial<I extends Exact<DeepPartial<TrustDeposit>, I>>(object: I): TrustDeposit {
     const message = createBaseTrustDeposit();
     message.account = object.account ?? "";
-    message.share = (object.share !== undefined && object.share !== null) ? Long.fromValue(object.share) : Long.UZERO;
+    message.share = object.share ?? "";
     message.amount = (object.amount !== undefined && object.amount !== null)
       ? Long.fromValue(object.amount)
       : Long.UZERO;

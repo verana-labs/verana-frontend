@@ -1,6 +1,6 @@
 'use client';
 
-import { AminoConverter, AminoTypes } from '@cosmjs/stargate'
+import { AminoConverter } from '@cosmjs/stargate'
 import { MsgAddDID, MsgRenewDID, MsgTouchDID, MsgRemoveDID } from 'proto-codecs/codec/verana/dd/v1/tx'
 
 /**
@@ -8,12 +8,12 @@ import { MsgAddDID, MsgRenewDID, MsgTouchDID, MsgRemoveDID } from 'proto-codecs/
  */
 export const MsgAddDIDAminoConverter: AminoConverter = {
   aminoType: '/verana.dd.v1.MsgAddDID',
-  toAmino: ({ creator, did, years }: MsgAddDID) => ({
-    creator,
-    did,
-    years,
+  toAmino: (msg: MsgAddDID) => ({
+    creator: msg.creator,
+    did: msg.did,
+    years: msg.years,
   }),
-  fromAmino: (value: { creator: string; did: string; years: number }) =>
+  fromAmino: (value: any) =>
     MsgAddDID.fromPartial({
       creator: value.creator,
       did: value.did,
@@ -26,12 +26,12 @@ export const MsgAddDIDAminoConverter: AminoConverter = {
  */
 export const MsgRenewDIDAminoConverter: AminoConverter = {
   aminoType: '/verana.dd.v1.MsgRenewDID',
-  toAmino: ({ creator, did, years }: MsgRenewDID) => ({
-    creator,
-    did,
-    years,
+  toAmino: (msg: MsgRenewDID) => ({
+    creator: msg.creator,
+    did: msg.did,
+    years: msg.years,
   }),
-  fromAmino: (value: { creator: string; did: string; years: number }) =>
+  fromAmino: (value: any) =>
     MsgRenewDID.fromPartial({
       creator: value.creator,
       did: value.did,
@@ -44,11 +44,11 @@ export const MsgRenewDIDAminoConverter: AminoConverter = {
  */
 export const MsgTouchDIDAminoConverter: AminoConverter = {
   aminoType: '/verana.dd.v1.MsgTouchDID',
-  toAmino: ({ creator, did }: MsgTouchDID) => ({
-    creator,
-    did,
+  toAmino: (msg: MsgTouchDID) => ({
+    creator: msg.creator,
+    did: msg.did,
   }),
-  fromAmino: (value: { creator: string; did: string }) =>
+  fromAmino: (value: any) =>
     MsgTouchDID.fromPartial({
       creator: value.creator,
       did: value.did,
@@ -60,27 +60,13 @@ export const MsgTouchDIDAminoConverter: AminoConverter = {
  */
 export const MsgRemoveDIDAminoConverter: AminoConverter = {
   aminoType: '/verana.dd.v1.MsgRemoveDID',
-  toAmino: ({ creator, did }: MsgRemoveDID) => ({
-    creator,
-    did,
+  toAmino: (msg: MsgRemoveDID) => ({
+    creator: msg.creator,
+    did: msg.did,
   }),
-  fromAmino: (value: { creator: string; did: string }) =>
+  fromAmino: (value: any) =>
     MsgRemoveDID.fromPartial({
       creator: value.creator,
       did: value.did,
     }),
 }
-
-export const veranaDIDAminoConverters = new AminoTypes ({
-  '/verana.dd.v1.MsgAddDID': MsgAddDIDAminoConverter,
-  '/verana.dd.v1.MsgRenewDID': MsgRenewDIDAminoConverter,
-  '/verana.dd.v1.MsgTouchDID': MsgTouchDIDAminoConverter,
-  '/verana.dd.v1.MsgRemoveDID': MsgRemoveDIDAminoConverter
-});
-
-// Supported Cosmos Amino message types for DID actions
-export type MsgAny =
-  | { typeUrl: '/verana.dd.v1.MsgAddDID'; value: MsgAddDID }
-  | { typeUrl: '/verana.dd.v1.MsgRenewDID'; value: MsgRenewDID }
-  | { typeUrl: '/verana.dd.v1.MsgTouchDID'; value: MsgTouchDID }
-  | { typeUrl: '/verana.dd.v1.MsgRemoveDID'; value: MsgRemoveDID };

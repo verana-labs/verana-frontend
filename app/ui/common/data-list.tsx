@@ -35,7 +35,7 @@ export function DataList<T extends object>({
 
 
   return (
-    <section id="data-list-section" className="mb-8">
+    <section id="data-list-section" className="py-8">
       { showFields && showFields.length > 0 && (
       <div className="data-table-section-div p-6">
         <div className="flex items-center justify-between mb-6">

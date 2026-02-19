@@ -49,7 +49,7 @@ export function useCSList(trId?: string, all: boolean = true, onlyActive: boolea
 
     // Reset state when inputs change
     setError(null);
-    setCsList([]);
+    // setCsList([]);
 
     const params = new URLSearchParams();
     if ( trId != undefined && !all) params.set('tr_id', trId);
@@ -95,7 +95,7 @@ export function useCSList(trId?: string, all: boolean = true, onlyActive: boolea
 
   useEffect(() => {
     fetchCS();
-  }, [onlyActive]);
+  }, []);
 
   return { csList, loading, errorCSList, refetch: fetchCS };
 }

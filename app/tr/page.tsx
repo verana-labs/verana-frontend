@@ -1,31 +1,30 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DataTable } from '@/ui/common/data-table';
 import { useRouter } from 'next/navigation';
 import TitleAndButton from '@/ui/common/title-and-button';
 import { useNotification } from '@/ui/common/notification-provider';
-import { columnsTrList, description, trFilter, TrList } from '@/ui/datatable/columnslist/tr';
+import { columnsTrList, description, trFilter } from '@/ui/datatable/columnslist/tr';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { translateDataTableDescriptions } from '@/ui/datatable/types';
 import { useTrustRegistries } from '@/hooks/useTrustRegistries';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import AddTrPage from '@/tr/add/add';
 import { ModalAction } from '@/ui/common/modal-action';
 
 export default function TrPage() {
-  const [trs, setTrs] = useState<TrList[]>([]);
   const router = useRouter();
   const [ showArchived, setShowArchived ] = useState(false);
-  const { trList, loading, errorTrList, refetch: fetchTrList } = useTrustRegistries(false, !showArchived);
+  const [ trListAll, setTrListAll ] = useState(false);
+  const { trList, errorTrList, refetch: fetchTrList } = useTrustRegistries(false, !showArchived);
   const [errorNotified, setErrorNotified] = useState(false);
   // Notification context for showing error messages
   const { notify } = useNotification();
   const [ addTR, setAddTR ] = useState<boolean>(false);
   
   useEffect(() => {
-    setTrs(trList);
+    if ( showArchived ) setTrListAll(true);
   }, [trList]);
   
   // Refresh trList
@@ -41,7 +40,7 @@ export default function TrPage() {
 
   // Refresh trList for showArchived change
   useEffect(() => {
-    setRefresh(true);
+    if ( showArchived && !trListAll ) setRefresh(true);
   }, [showArchived]);
 
   // Notify and redirect if there is an error fetching account data
@@ -56,10 +55,10 @@ export default function TrPage() {
     }
   }, [errorTrList, router, errorNotified]);
   
-  if (loading) return (
-      <p>
-        {resolveTranslatable({ key: "loading.trlist" }, translate) ?? "Loading TR List..."}
-      </p>);
+  // if (loading) return (
+  //     <p>
+  //       {resolveTranslatable({ key: "loading.trlist" }, translate) ?? "Loading TR List..."}
+  //     </p>);
 
   return (
     <>
@@ -71,7 +70,7 @@ export default function TrPage() {
         tableTitle={resolveTranslatable({key: "datatable.tr.title"}, translate)}
         addTitle={resolveTranslatable({key: "datatable.tr.add"}, translate)}
         columnsI18n={columnsTrList}
-        data={trs}
+        data={ trList.filter(item => showArchived || !item.archived)}
         initialPageSize={10}
         onRowClick={(row) => router.push(`/tr/${encodeURIComponent(row.id)}`)}
         defaultSortColumn={'modified'}

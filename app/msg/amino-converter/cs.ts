@@ -1,12 +1,11 @@
 'use client';
 
-/* eslint-disable */
 import {
   MsgCreateCredentialSchema,
   MsgUpdateCredentialSchema,
   MsgArchiveCredentialSchema,
 } from 'proto-codecs/codec/verana/cs/v1/tx';
-import { u64ToStr, strToU64, u32ToAmino, fromOptU32Amino, toOptU32Amino } from '@/msg/util/aminoHelpers';
+import { u64ToStr, strToU64, u32ToAmino, fromOptU32Amino, toOptU32Amino, clean } from '@/msg/amino-converter/util/helpers';
 
 /**
  * Amino converter for MsgCreateCredentialSchema
@@ -14,31 +13,31 @@ import { u64ToStr, strToU64, u32ToAmino, fromOptU32Amino, toOptU32Amino } from '
 export const MsgCreateCredentialSchemaAminoConverter = {
   aminoType: '/verana.cs.v1.MsgCreateCredentialSchema',
   // Proto → Amino JSON
-  toAmino: (m: MsgCreateCredentialSchema) => clean({
-    creator: m.creator ?? '',
-    tr_id: u64ToStr(m.trId), // uint64 -> string
-    json_schema: m.jsonSchema ?? '',
-    issuer_grantor_validation_validity_period: toOptU32Amino(m.issuerGrantorValidationValidityPeriod),
-    verifier_grantor_validation_validity_period: toOptU32Amino(m.verifierGrantorValidationValidityPeriod),
-    issuer_validation_validity_period: toOptU32Amino(m.issuerValidationValidityPeriod),
-    verifier_validation_validity_period: toOptU32Amino(m.verifierValidationValidityPeriod),
-    holder_validation_validity_period: toOptU32Amino(m.holderValidationValidityPeriod),
-    issuer_perm_management_mode: u32ToAmino(m.issuerPermManagementMode) , // uint32 -> number
-    verifier_perm_management_mode: u32ToAmino(m.verifierPermManagementMode) , // uint32 -> number
+  toAmino: (msg: MsgCreateCredentialSchema) => clean({
+    creator: msg.creator ?? '',
+    tr_id: u64ToStr(msg.trId), // uint64 -> string
+    json_schema: msg.jsonSchema ?? '',
+    issuer_grantor_validation_validity_period: toOptU32Amino(msg.issuerGrantorValidationValidityPeriod),
+    verifier_grantor_validation_validity_period: toOptU32Amino(msg.verifierGrantorValidationValidityPeriod),
+    issuer_validation_validity_period: toOptU32Amino(msg.issuerValidationValidityPeriod),
+    verifier_validation_validity_period: toOptU32Amino(msg.verifierValidationValidityPeriod),
+    holder_validation_validity_period: toOptU32Amino(msg.holderValidationValidityPeriod),
+    issuer_perm_management_mode: u32ToAmino(msg.issuerPermManagementMode) , // uint32 -> number
+    verifier_perm_management_mode: u32ToAmino(msg.verifierPermManagementMode) , // uint32 -> number
   }),
   // Amino JSON → Proto
-  fromAmino: (a: any ): MsgCreateCredentialSchema =>
+  fromAmino: (value: any ): MsgCreateCredentialSchema =>
     MsgCreateCredentialSchema.fromPartial({
-      creator: a.creator ?? '',
-      trId: strToU64(a.tr_id),
-      jsonSchema: a.json_schema ?? '',
-      issuerGrantorValidationValidityPeriod: fromOptU32Amino(a.issuer_grantor_validation_validity_period),
-      verifierGrantorValidationValidityPeriod: fromOptU32Amino(a.verifier_grantor_validation_validity_period),
-      issuerValidationValidityPeriod: fromOptU32Amino(a.issuer_validation_validity_period),
-      verifierValidationValidityPeriod: fromOptU32Amino(a.verifier_validation_validity_period),
-      holderValidationValidityPeriod: fromOptU32Amino(a.holder_validation_validity_period),
-      issuerPermManagementMode: (a.issuer_perm_management_mode) ,
-      verifierPermManagementMode: (a.verifier_perm_management_mode) ,
+      creator: value.creator ?? '',
+      trId: strToU64(value.tr_id),
+      jsonSchema: value.json_schema ?? '',
+      issuerGrantorValidationValidityPeriod: fromOptU32Amino(value.issuer_grantor_validation_validity_period),
+      verifierGrantorValidationValidityPeriod: fromOptU32Amino(value.verifier_grantor_validation_validity_period),
+      issuerValidationValidityPeriod: fromOptU32Amino(value.issuer_validation_validity_period),
+      verifierValidationValidityPeriod: fromOptU32Amino(value.verifier_validation_validity_period),
+      holderValidationValidityPeriod: fromOptU32Amino(value.holder_validation_validity_period),
+      issuerPermManagementMode: (value.issuer_perm_management_mode) ,
+      verifierPermManagementMode: (value.verifier_perm_management_mode) ,
     }),
 };
 
@@ -47,25 +46,23 @@ export const MsgCreateCredentialSchemaAminoConverter = {
  */
 export const MsgUpdateCredentialSchemaAminoConverter = {
   aminoType: '/verana.cs.v1.MsgUpdateCredentialSchema',
-  toAmino: (m: MsgUpdateCredentialSchema) => clean({
-    creator: m.creator ?? '',
-    id: u64ToStr(m.id),
-    issuer_grantor_validation_validity_period: toOptU32Amino(m.issuerGrantorValidationValidityPeriod),
-    verifier_grantor_validation_validity_period: toOptU32Amino(m.verifierGrantorValidationValidityPeriod),
-    issuer_validation_validity_period: toOptU32Amino(m.issuerValidationValidityPeriod),
-    verifier_validation_validity_period: toOptU32Amino(m.verifierValidationValidityPeriod),
-    holder_validation_validity_period: toOptU32Amino(m.holderValidationValidityPeriod),
-
-
+  toAmino: (msg: MsgUpdateCredentialSchema) => clean({
+    creator: msg.creator ?? '',
+    id: u64ToStr(msg.id),
+    issuer_grantor_validation_validity_period: toOptU32Amino(msg.issuerGrantorValidationValidityPeriod),
+    verifier_grantor_validation_validity_period: toOptU32Amino(msg.verifierGrantorValidationValidityPeriod),
+    issuer_validation_validity_period: toOptU32Amino(msg.issuerValidationValidityPeriod),
+    verifier_validation_validity_period: toOptU32Amino(msg.verifierValidationValidityPeriod),
+    holder_validation_validity_period: toOptU32Amino(msg.holderValidationValidityPeriod),
   }),
-  fromAmino: (a: any) => MsgUpdateCredentialSchema.fromPartial({
-    creator: a.creator ?? '',
-    id: strToU64(a.id),
-    issuerGrantorValidationValidityPeriod: fromOptU32Amino(a.issuer_grantor_validation_validity_period),
-    verifierGrantorValidationValidityPeriod: fromOptU32Amino(a.verifier_grantor_validation_validity_period),
-    issuerValidationValidityPeriod: fromOptU32Amino(a.issuer_validation_validity_period),
-    verifierValidationValidityPeriod: fromOptU32Amino(a.verifier_validation_validity_period),
-    holderValidationValidityPeriod: fromOptU32Amino(a.holder_validation_validity_period),
+  fromAmino: (value: any) => MsgUpdateCredentialSchema.fromPartial({
+    creator: value.creator ?? '',
+    id: strToU64(value.id),
+    issuerGrantorValidationValidityPeriod: fromOptU32Amino(value.issuer_grantor_validation_validity_period),
+    verifierGrantorValidationValidityPeriod: fromOptU32Amino(value.verifier_grantor_validation_validity_period),
+    issuerValidationValidityPeriod: fromOptU32Amino(value.issuer_validation_validity_period),
+    verifierValidationValidityPeriod: fromOptU32Amino(value.verifier_validation_validity_period),
+    holderValidationValidityPeriod: fromOptU32Amino(value.holder_validation_validity_period),
   }),
 };
 
@@ -75,21 +72,16 @@ export const MsgUpdateCredentialSchemaAminoConverter = {
 export const MsgArchiveCredentialSchemaAminoConverter = {
   aminoType: '/verana.cs.v1.MsgArchiveCredentialSchema',
   // Proto → Amino JSON
-  toAmino: (m: MsgArchiveCredentialSchema) => clean({
-    creator: m.creator ?? '',
-    id: u64ToStr(m.id),
-    archive: m.archive ? true : undefined, // omit if false
+  toAmino: (msg: MsgArchiveCredentialSchema) => clean({
+    creator: msg.creator ?? '',
+    id: u64ToStr(msg.id),
+    archive: msg.archive ? true : undefined, // omit if false
   }),
   // Amino JSON → Proto
-  fromAmino: (a: { creator: string; id: string; archive: boolean }): MsgArchiveCredentialSchema =>
+  fromAmino: (value: any): MsgArchiveCredentialSchema =>
     MsgArchiveCredentialSchema.fromPartial({
-      creator: a.creator,
-      id: strToU64(a.id),
-      archive: a.archive ?? false,
+      creator: value.creator,
+      id: strToU64(value.id),
+      archive: value.archive ?? false,
     }),
-};
-
-const clean = <T extends Record<string, any>>(o: T): T => {
-  Object.keys(o).forEach((k) => o[k] === undefined && delete o[k]);
-  return o;
 };

@@ -40,7 +40,7 @@ export interface QueryGetDIDRequest {
 }
 
 export interface QueryGetDIDResponse {
-  didEntry?: DIDDirectory | undefined;
+  did?: DIDDirectory | undefined;
 }
 
 function createBaseQueryParamsRequest(): QueryParamsRequest {
@@ -381,13 +381,13 @@ export const QueryGetDIDRequest = {
 };
 
 function createBaseQueryGetDIDResponse(): QueryGetDIDResponse {
-  return { didEntry: undefined };
+  return { did: undefined };
 }
 
 export const QueryGetDIDResponse = {
   encode(message: QueryGetDIDResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.didEntry !== undefined) {
-      DIDDirectory.encode(message.didEntry, writer.uint32(10).fork()).ldelim();
+    if (message.did !== undefined) {
+      DIDDirectory.encode(message.did, writer.uint32(10).fork()).ldelim();
     }
     return writer;
   },
@@ -404,7 +404,7 @@ export const QueryGetDIDResponse = {
             break;
           }
 
-          message.didEntry = DIDDirectory.decode(reader, reader.uint32());
+          message.did = DIDDirectory.decode(reader, reader.uint32());
           continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
@@ -416,13 +416,13 @@ export const QueryGetDIDResponse = {
   },
 
   fromJSON(object: any): QueryGetDIDResponse {
-    return { didEntry: isSet(object.didEntry) ? DIDDirectory.fromJSON(object.didEntry) : undefined };
+    return { did: isSet(object.did) ? DIDDirectory.fromJSON(object.did) : undefined };
   },
 
   toJSON(message: QueryGetDIDResponse): unknown {
     const obj: any = {};
-    if (message.didEntry !== undefined) {
-      obj.didEntry = DIDDirectory.toJSON(message.didEntry);
+    if (message.did !== undefined) {
+      obj.did = DIDDirectory.toJSON(message.did);
     }
     return obj;
   },
@@ -432,9 +432,7 @@ export const QueryGetDIDResponse = {
   },
   fromPartial<I extends Exact<DeepPartial<QueryGetDIDResponse>, I>>(object: I): QueryGetDIDResponse {
     const message = createBaseQueryGetDIDResponse();
-    message.didEntry = (object.didEntry !== undefined && object.didEntry !== null)
-      ? DIDDirectory.fromPartial(object.didEntry)
-      : undefined;
+    message.did = (object.did !== undefined && object.did !== null) ? DIDDirectory.fromPartial(object.did) : undefined;
     return message;
   },
 };

@@ -6,18 +6,18 @@ import {
   MsgReclaimTrustDeposit,
   MsgRepaySlashedTrustDeposit,
 } from 'proto-codecs/codec/verana/td/v1/tx'
-import { strToU64, u64ToStr } from '@/msg/util/aminoHelpers';
+import { strToU64, u64ToStr } from '@/msg/amino-converter/util/helpers';
     
 /**
  * Amino converter for MsgReclaimTrustDeposit
  */
 export const MsgReclaimTrustDepositAminoConverter = {
   aminoType: '/verana.td.v1.MsgReclaimTrustDeposit',
-  toAmino: ({ creator, claimed }: MsgReclaimTrustDeposit) => ({
-    creator,
-    claimed: u64ToStr(claimed) // uint64 -> string
+  toAmino: (msg: MsgReclaimTrustDeposit) => ({
+    creator: msg.creator,
+    claimed: u64ToStr(msg.claimed) // uint64 -> string
   }),
-  fromAmino: (value: { creator: string; claimed: number }) =>      
+  fromAmino: (value: any) =>      
     MsgReclaimTrustDeposit.fromPartial({
       creator: value.creator,
       claimed: strToU64(value.claimed.toString()) // string -> Long (uint64)
@@ -29,10 +29,10 @@ export const MsgReclaimTrustDepositAminoConverter = {
  */
 export const MsgReclaimTrustDepositYieldAminoConverter: AminoConverter = {
   aminoType: '/verana.td.v1.MsgReclaimTrustDepositYield',
-  toAmino: ({ creator }: MsgReclaimTrustDepositYield) => ({
-    creator,
+  toAmino: (msg: MsgReclaimTrustDepositYield) => ({
+    creator: msg.creator,
   }),
-  fromAmino: (value: { creator: string }) =>
+  fromAmino: (value: any) =>
     MsgReclaimTrustDepositYield.fromPartial({
       creator: value.creator,
     }),
@@ -43,12 +43,12 @@ export const MsgReclaimTrustDepositYieldAminoConverter: AminoConverter = {
  */
 export const MsgRepaySlashedTrustDepositAminoConverter: AminoConverter = {
   aminoType: '/verana.td.v1.MsgRepaySlashedTrustDeposit',
-  toAmino: ({ creator, account, amount }: MsgRepaySlashedTrustDeposit) => ({
-    creator,
-    account,
-    amount: u64ToStr(amount) // uint64 -> string
+  toAmino: (msg: MsgRepaySlashedTrustDeposit) => ({
+    creator: msg.creator,
+    account: msg.account,
+    amount: u64ToStr(msg.amount) // uint64 -> string
   }),
-  fromAmino: (value: { creator: string; account: string; amount: string }) =>
+  fromAmino: (value: any) =>
     MsgRepaySlashedTrustDeposit.fromPartial({
       creator: value.creator,
       account: value.account,

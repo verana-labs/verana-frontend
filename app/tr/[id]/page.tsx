@@ -16,7 +16,7 @@ import langs from 'langs';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
-import { columnsCsList } from '@/ui/datatable/columnslist/cs';
+import { columnsCsList, CsList } from '@/ui/datatable/columnslist/cs';
 import { DataTable } from '@/ui/common/data-table';
 import { DataList } from '@/ui/common/data-list';
 import { ModalAction } from '@/ui/common/modal-action';
@@ -38,18 +38,26 @@ export default function TRViewPage() {
   const { csList, refetch: refetchCSList } = useCSList (id, false, !showArchived);
   const { dataTR, loading, errorTRData, refetch: refetchTR } = useTrustRegistryData(id);
   const [ addCS, setAddCS ] = useState<boolean>(false);
+  const [ csListAll, setCsListAll ] = useState<boolean>(false);
 
   // Refresh data TR
   const [refresh, setRefresh] = useState<string | null>(null);
   useEffect(() => {
     if (!refresh) return;
-    console.info('useEffect TRViewPage');
     (async () => {
       if (refresh === 'actionTR') await refetchTR();
       if (refresh === 'actionCS') await refetchCSList();
       setRefresh(null);
     })();
   }, [refresh]);
+
+  useEffect(() => {
+    if ( showArchived && !csListAll ) setRefresh("actionCS");
+  }, [showArchived]);
+
+  useEffect(() => {
+    if ( showArchived ) setCsListAll(true);
+  }, [csList]);
 
   useEffect(() => {
     if (!dataTR || !address) return;
@@ -102,7 +110,7 @@ export default function TRViewPage() {
     computed.description = "";
 
     setData(computed);
-  }, [dataTR, address, csList, id]);
+  }, [dataTR, address]);
 
   if (loading &&   !refresh) {
     return <div className="loading-paner">{resolveTranslatable({key: "loading.tr"}, translate)?? "Loading Trust Registry details..."}</div>;
@@ -178,7 +186,7 @@ export default function TRViewPage() {
         tableTitle={resolveTranslatable({key: "datatable.cs.title"}, translate)}
         addTitle={data.controller === address ? resolveTranslatable({key: "button.cs.add"}, translate) : undefined}
         columnsI18n={columnsCsList}
-        data={csList}
+        data={ csList.filter(item => showArchived || !item.archived)}
         initialPageSize={10}
         onRowClick={(row) => router.push(`/tr/cs/${row.id}?tr=${data.id}`)}
         defaultSortColumn={'id'}
