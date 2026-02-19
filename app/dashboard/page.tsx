@@ -5,6 +5,8 @@ import { DashboardData, dashboardSections } from "@/ui/dataview/datasections/das
 import DataView from "@/ui/common/data-view-columns";
 import { useChain } from "@cosmos-kit/react";
 import { useVeranaChain } from "@/hooks/useVeranaChain";
+import { useGlobalMetrics } from "@/hooks/useGlobalMetrics";
+import { useNotification } from "@/ui/common/notification-provider";
 import TitleAndButton from "@/ui/common/title-and-button";
 import { resolveTranslatable } from "@/ui/dataview/types";
 import { translate } from "@/i18n/dataview";
@@ -14,15 +16,15 @@ import { faWallet } from "@fortawesome/free-solid-svg-icons";
 import FeaturedServices from "@/ui/common/featured-services";
 import GettingStarted from "@/ui/common/getting-started";
 import DashboardFooter from "@/ui/common/dashboard-footer";
-import { env } from "next-runtime-env";
 
 export default function Page() {
 
   const veranaChain = useVeranaChain();
-
   const { getStargateClient, status, isWalletConnected, address, wallet } = useChain(veranaChain.chain_name);
   const [blockHeight, setBlockHeight] = useState<string>("");
-  const [metrics, setMetrics] = useState<Record<string, string> | null>(null);
+  const { metrics, errorMetrics } = useGlobalMetrics();
+  const [errorNotified, setErrorNotified] = useState(false);
+  const { notify } = useNotification();
 
   const data: DashboardData = {
     chainName: isWalletConnected
@@ -54,13 +56,13 @@ export default function Page() {
   }, [getStargateClient, isWalletConnected]);
 
   useEffect(() => {
-    const metricsEndpoint = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_METRICS') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_METRICS;
-    if (!metricsEndpoint) return;
-    fetch(`${metricsEndpoint}/all`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => { if (data) setMetrics(data); })
-      .catch(err => console.error('Failed to fetch metrics', err));
-  }, []);
+    if (errorMetrics && !errorNotified) {
+      (async () => {
+        await notify(errorMetrics, 'error', resolveTranslatable({key: "error.fetch.metrics.title"}, translate));
+        setErrorNotified(true);
+      })();
+    }
+  }, [errorMetrics, errorNotified]);
 
   return (
     <>

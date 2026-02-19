@@ -172,6 +172,8 @@
   "error.fetch.cs": "Falta el id del TR o la URL del endpoint",
   "error.fetch.did": "Falta el DID o la URL del endpoint",
   "error.fetch.tr": "Falta el Registro de Confianza o la URL del endpoint",
+  "error.fetch.metrics": "Falta la URL del endpoint de métricas",
+  "error.fetch.metrics.title": "Error al obtener las métricas",
   "error.fetch.td.account": "Error de billetera o URL del endpoint",
   "error.fetch.td.value.notfound": "no encontrado",
   "error.fetch.td.value.notnumber": "no es un número válido",

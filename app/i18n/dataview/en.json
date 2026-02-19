@@ -305,6 +305,8 @@
   "error.fetch.cs": "Missing TR id or endpoint URL",
   "error.fetch.did": "Missing DID or endpoint URL",
   "error.fetch.tr": "Missing Tust Registry or endpoint URL",
+  "error.fetch.metrics": "Missing metrics endpoint URL",
+  "error.fetch.metrics.title": "Error fetching metrics",
   "error.fetch.td.account": "Wallet error or endpoint URL",
   "error.fetch.td.value.notfound": "not found",
   "error.fetch.td.value.notnumber": "is not a valid number",
