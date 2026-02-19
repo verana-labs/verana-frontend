@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, ReactNode } from 'react';
-import { DataViewProps, isResolvedActionField, isResolvedDataField, ResolvedActionField, visibleFieldsForMode } from '@/ui/dataview/types';
+import { DataViewProps, isResolvedActionField, isResolvedDataField, ResolvedActionField, resolveTranslatable, visibleFieldsForMode } from '@/ui/dataview/types';
 import { isJson } from '@/util/util';
 import JsonCodeBlock from '@/ui/common/json-code-block';
 import { translateSections } from '@/ui/dataview/types';
@@ -13,6 +13,7 @@ import { ActionFieldProps, renderActionComponent, renderActionFieldModalAndButto
 import CardView from './card-view';
 import TitleAndButton from './title-and-button';
 import ActionFieldButton from './action-field-button';
+import { translate } from '@/i18n/dataview';
 
 export default function DataView<T extends object>({
   sectionsI18n,
@@ -117,6 +118,14 @@ export default function DataView<T extends object>({
                   { section.name?.trim() && (
                   <div className="flex items-center justify-between mb-6">
                       <h3 className="data-view-section-title text-lg">{section.name}</h3>
+                      { section.noEdit && (data as any).archived ? (
+                        <span
+                          className={"inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300"}
+                        >
+                          {resolveTranslatable({key: "dataview.archived.label"}, translate)}
+                        </span>
+                      ) : null}
+
                       { viewEditButton && onEdit && (
                       <div className="actions-right gap-3">
                         <IconLabelButton
