@@ -14,6 +14,7 @@ import { faWallet } from "@fortawesome/free-solid-svg-icons";
 import FeaturedServices from "@/ui/common/featured-services";
 import GettingStarted from "@/ui/common/getting-started";
 import DashboardFooter from "@/ui/common/dashboard-footer";
+import { env } from "next-runtime-env";
 
 export default function Page() {
 
@@ -21,6 +22,7 @@ export default function Page() {
 
   const { getStargateClient, status, isWalletConnected, address, wallet } = useChain(veranaChain.chain_name);
   const [blockHeight, setBlockHeight] = useState<string>("");
+  const [metrics, setMetrics] = useState<Record<string, string> | null>(null);
 
   const data: DashboardData = {
     chainName: isWalletConnected
@@ -31,11 +33,11 @@ export default function Page() {
     isWalletConnected: String(isWalletConnected),
     address: address ? String(address) : null,
     walletPrettyName: wallet ? wallet.prettyName : null,
-    totalDIDs: "124,857",
-    trustRegistries: "2,341",
-    participants: "8,192",
-    sessions: "156,789",
-    totalDepositValue: "34,495,324 VNA"
+    ecosystems: metrics ? Number(metrics.active_trust_registries).toLocaleString() : null,
+    schemas: metrics ? Number(metrics.active_schemas).toLocaleString() : null,
+    totalLockedTrustDeposit: metrics ? `${Number(metrics.weight).toLocaleString()} VNA` : null,
+    issuedCredentials: metrics ? Number(metrics.issued).toLocaleString() : null,
+    verifiedCredentials: metrics ? Number(metrics.verified).toLocaleString() : null,
   };
 
   useEffect(() => {
@@ -50,6 +52,15 @@ export default function Page() {
     const interval = setInterval(fetchHeight, 5000);
     return () => clearInterval(interval);
   }, [getStargateClient, isWalletConnected]);
+
+  useEffect(() => {
+    const metricsEndpoint = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_METRICS') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_METRICS;
+    if (!metricsEndpoint) return;
+    fetch(`${metricsEndpoint}/all`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data) setMetrics(data); })
+      .catch(err => console.error('Failed to fetch metrics', err));
+  }, []);
 
   return (
     <>
