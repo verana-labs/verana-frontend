@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.7.0](https://github.com/verana-labs/verana-frontend/compare/v0.6.0...v0.7.0) (2026-02-20)
+
+
+### Features
+
+* [Schema] If schema is archived, show a tag "archived" on the right ([#289](https://github.com/verana-labs/verana-frontend/issues/289)) ([e78930d](https://github.com/verana-labs/verana-frontend/commit/e78930dc446be313765369f3441de16901e6ecab))
+* [tables, my ecosystem,  view ecosytem, unarchive schema] Related Issues:  [#210](https://github.com/verana-labs/verana-frontend/issues/210), [#258](https://github.com/verana-labs/verana-frontend/issues/258), [#259](https://github.com/verana-labs/verana-frontend/issues/259), [#260](https://github.com/verana-labs/verana-frontend/issues/260), [#263](https://github.com/verana-labs/verana-frontend/issues/263), [#264](https://github.com/verana-labs/verana-frontend/issues/264) ([#267](https://github.com/verana-labs/verana-frontend/issues/267)) ([86c9ca1](https://github.com/verana-labs/verana-frontend/commit/86c9ca1ec01f036188f0f3e8fda6cd1002445760))
+* Faucet devnet support, remove DID management, footer versions ([#266](https://github.com/verana-labs/verana-frontend/issues/266)) ([95e2f68](https://github.com/verana-labs/verana-frontend/commit/95e2f68d4301b010ba566afe8543c6b7f34e129a))
+
+
+### Bug Fixes
+
+* [Participants] When I revoke a root permission, it is properly revoked but permission state not updated [#237](https://github.com/verana-labs/verana-frontend/issues/237) ([#288](https://github.com/verana-labs/verana-frontend/issues/288)) ([ee60a52](https://github.com/verana-labs/verana-frontend/commit/ee60a52d50edd369c0495d797874b5641cdc116a))
+
 ## [0.6.0](https://github.com/verana-labs/verana-frontend/compare/v0.5.1...v0.6.0) (2026-02-16)
 
 
