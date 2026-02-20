@@ -5,6 +5,8 @@ import { DashboardData, dashboardSections } from "@/ui/dataview/datasections/das
 import DataView from "@/ui/common/data-view-columns";
 import { useChain } from "@cosmos-kit/react";
 import { useVeranaChain } from "@/hooks/useVeranaChain";
+import { useGlobalMetrics } from "@/hooks/useGlobalMetrics";
+import { useNotification } from "@/ui/common/notification-provider";
 import TitleAndButton from "@/ui/common/title-and-button";
 import { resolveTranslatable } from "@/ui/dataview/types";
 import { translate } from "@/i18n/dataview";
@@ -18,9 +20,11 @@ import DashboardFooter from "@/ui/common/dashboard-footer";
 export default function Page() {
 
   const veranaChain = useVeranaChain();
-
   const { getStargateClient, status, isWalletConnected, address, wallet } = useChain(veranaChain.chain_name);
   const [blockHeight, setBlockHeight] = useState<string>("");
+  const { metrics, errorMetrics } = useGlobalMetrics();
+  const [errorNotified, setErrorNotified] = useState(false);
+  const { notify } = useNotification();
 
   const data: DashboardData = {
     chainName: isWalletConnected
@@ -31,11 +35,11 @@ export default function Page() {
     isWalletConnected: String(isWalletConnected),
     address: address ? String(address) : null,
     walletPrettyName: wallet ? wallet.prettyName : null,
-    totalDIDs: "124,857",
-    trustRegistries: "2,341",
-    participants: "8,192",
-    sessions: "156,789",
-    totalDepositValue: "34,495,324 VNA"
+    ecosystems: metrics ? Number(metrics.active_trust_registries).toLocaleString() : null,
+    schemas: metrics ? Number(metrics.active_schemas).toLocaleString() : null,
+    totalLockedTrustDeposit: metrics ? `${Number(metrics.weight).toLocaleString()} VNA` : null,
+    issuedCredentials: metrics ? Number(metrics.issued).toLocaleString() : null,
+    verifiedCredentials: metrics ? Number(metrics.verified).toLocaleString() : null,
   };
 
   useEffect(() => {
@@ -50,6 +54,15 @@ export default function Page() {
     const interval = setInterval(fetchHeight, 5000);
     return () => clearInterval(interval);
   }, [getStargateClient, isWalletConnected]);
+
+  useEffect(() => {
+    if (errorMetrics && !errorNotified) {
+      (async () => {
+        await notify(errorMetrics, 'error', resolveTranslatable({key: "error.fetch.metrics.title"}, translate));
+        setErrorNotified(true);
+      })();
+    }
+  }, [errorMetrics, errorNotified]);
 
   return (
     <>
