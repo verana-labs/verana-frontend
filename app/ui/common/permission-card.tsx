@@ -2,7 +2,7 @@
 
 import { PermState, TreeNode } from "./permission-tree";
 import { useEffect, useMemo, useState } from "react";
-import { permissionActionLifecycle, permissionActionSlashing, permissionActionValidationProcess, 
+import { Permission, permissionActionLifecycle, permissionActionSlashing, permissionActionValidationProcess, 
   permissionBusinessModels, permissionLifecycle, permissionMetaItems, permissionSlashing, permissionValidationProcess, VpState 
 } from "../dataview/datasections/perm";
 import PermissionAttribute from "./permission-atrribute";
@@ -18,12 +18,14 @@ type PermissionCardProps = {
   selectedNode: TreeNode;
   path: TreeNode[];
   csTitle: string;
+  onRefresh?: (node: Permission) => void;
 };
 
 export default function PermissionCard({
   selectedNode,
   path,
-  csTitle
+  csTitle,
+  onRefresh
 }: PermissionCardProps) {
 
   const detailBreadcrumb = useMemo(() => {
@@ -59,7 +61,10 @@ export default function PermissionCard({
   const{ permission } = usePermission(idUpdate);
 
   useEffect(() => {
-    if (permission) selectedNode.permission = permission;
+    if (permission){
+      selectedNode.permission = permission;
+      onRefresh?.(permission);
+    }
   }, [permission]);
 
   return (
