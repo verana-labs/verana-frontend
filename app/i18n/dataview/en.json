@@ -326,7 +326,8 @@
   "error.tr.notfound": "Trust Registry not found",
 
   "dataview.section.mutable": "Mutable Configuration",
-
+  "dataview.archived.label": "ARCHIVED",
+  
   "dataview.account.sections.mainBalance": "Main Balance",
   "dataview.account.sections.trustDeposit": "Trust Deposit",
   "dataview.account.sections.aboutBalances": "About your Balances",
