@@ -2,13 +2,13 @@ import type { Translatable } from "@/ui/dataview/types";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 
 export type MessageType =
-  | "MsgAddDID" | "MsgRenewDID" | "MsgTouchDID" | "MsgRemoveDID"              // DID
+  | "MsgAddDID" | "MsgRenewDID" | "MsgTouchDID" | "MsgRemoveDID" // DID
   | "MsgReclaimTrustDepositYield" | "MsgReclaimTrustDeposit" | "MsgRepaySlashedTrustDeposit" // TD
-  | "MsgCreateTrustRegistry" | "MsgUpdateTrustRegistry" | "MsgArchiveTrustRegistry"
+  | "MsgCreateTrustRegistry" | "MsgUpdateTrustRegistry" | "MsgArchiveTrustRegistry" | "MsgUnarchiveTrustRegistry" // TR
   | "MsgAddGovernanceFrameworkDocument" | "MsgIncreaseActiveGovernanceFrameworkVersion" // TR
   | "MsgCreateCredentialSchema" | "MsgUpdateCredentialSchema" | "MsgArchiveCredentialSchema" | "MsgUnarchiveCredentialSchema"// CS
   | "MsgCancelPermissionVPLastRequest" | "MsgRenewPermissionVP" | "MsgSetPermissionVPToValidated" // VP PERM
-  | "MsgExtendPermission" | "MsgRevokePermission" | "MsgSlashPermissionTrustDeposit" | "MsgRepayPermissionSlashedTrustDeposit" 
+  | "MsgExtendPermission" | "MsgRevokePermission" | "MsgSlashPermissionTrustDeposit" | "MsgRepayPermissionSlashedTrustDeposit" // PERM
   | "MsgCreateRootPermission" ; // PERM
 
 export interface MsgTypeInfoI18n {

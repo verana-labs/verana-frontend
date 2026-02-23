@@ -21,7 +21,6 @@ import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import { normalizeJsonSchema, validateJSONSchemaReturn } from '@/util/json_schema_util';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
-// import { sanitizeProtoMsg } from '../util/sanitizeProtoMsg';
 import { pickOptionalUInt32 } from '@/msg/amino-converter/util/helpers';
 
 // Message type configuration (typeUrl + label for memo/notification)
@@ -226,11 +225,7 @@ export function useActionCS( onCancel?: () => void,
     try {
 
       const msg: EncodeObject = { typeUrl, value };
-      // console.info(msg);
-      // const msgSanitized = sanitizeProtoMsg(msg);
-      console.info(msg);
       res = await sendTx({
-        // msgs: [msgSanitized],
         msgs: [msg],
         memo: MSG_TYPE_CONFIG_CS[params.msgType].txLabel
       });      

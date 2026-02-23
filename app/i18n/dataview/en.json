@@ -232,18 +232,21 @@
   "notification.MsgCreateTrustRegistry.success": "Ecosystem Trust Registry successfully created",
   "notification.MsgUpdateTrustRegistry.success": "Ecosystem Trust Registry successfully updated",
   "notification.MsgArchiveTrustRegistry.success": "Ecosystem Trust Registry successfully archived",
+  "notification.MsgUnarchiveTrustRegistry.success": "Ecosystem Trust Registry successfully unarchived",
   "notification.MsgAddGovernanceFrameworkDocument.success": "Governance Framework Document successfully added",
   "notification.MsgIncreaseActiveGovernanceFrameworkVersion.success": "Active Governance Framework Version successfully increased",
 
   "notification.MsgCreateTrustRegistry.inprogress": "Creating Ecosystem Trust Registry...",
   "notification.MsgUpdateTrustRegistry.inprogress": "Updating Ecosystem Trust Registry...",
   "notification.MsgArchiveTrustRegistry.inprogress": "Archiving Ecosystem Trust Registry...",
+  "notification.MsgUnarchiveTrustRegistry.inprogress": "Unarchiving Ecosystem Trust Registry...",
   "notification.MsgAddGovernanceFrameworkDocument.inprogress": "Adding Governance Framework Document...",
   "notification.MsgIncreaseActiveGovernanceFrameworkVersion.inprogress": "Increasing Active Governance Framework Version...",
 
   "notification.MsgCreateTrustRegistry.error": "Unable to create Ecosystem Trust Registry {id}. {code}{msg}",
   "notification.MsgUpdateTrustRegistry.error": "Unable to update Ecosystem Trust Registry {id}. {code}{msg}",
   "notification.MsgArchiveTrustRegistry.error": "Unable to archive Ecosystem Trust Registry {id}. {code}{msg}",
+  "notification.MsgUnarchiveTrustRegistry.error": "Unable to unarchive Ecosystem Trust Registry {id}. {code}{msg}",
   "notification.MsgAddGovernanceFrameworkDocument.error": "Unable to add Governance Framework Document, for Ecosystem Trust Registry {id}. {code}{msg}",
   "notification.MsgIncreaseActiveGovernanceFrameworkVersion.error": "Unable to increase Active Governance Framework Version, for Ecosystem Trust Registry {id}. {code}{msg}",
 
@@ -450,6 +453,8 @@
   "dataview.tr.actions.addGovernanceFrameworkDocument": "Add New EGF Document",
   "dataview.tr.actions.increaseActiveGovernanceFrameworkVersion": "Increase Active EGF Version",
   "dataview.tr.actions.updateTrustRegistry": "Edit Configuration",
+  "dataview.tr.actions.archiveTrustRegistry": "Archive Ecosystem",
+  "dataview.tr.actions.unarchiveTrustRegistry": "Unarchive Ecosystem",
 
 
   "dataview.perm.sections.main": "Main",
@@ -598,6 +603,10 @@
   "messages.MsgArchiveTrustRegistry.label": "Archive Trust Registry",
   "messages.MsgArchiveTrustRegistry.description": "Archive a Trust Registry.",
   "messages.MsgArchiveTrustRegistry.cost": "There is no fee for archiving a trust registry.",
+
+  "messages.MsgUnarchiveTrustRegistry.label": "Unarchive Trust Registry",
+  "messages.MsgUnarchiveTrustRegistry.description": "Unarchive a Trust Registry.",
+  "messages.MsgUnarchiveTrustRegistry.cost": "There is no fee for unarchiving a trust registry.",
 
   "messages.MsgAddGovernanceFrameworkDocument.label": "Confirm",
   "messages.MsgAddGovernanceFrameworkDocument.description": "Add Governance Framework Document.",

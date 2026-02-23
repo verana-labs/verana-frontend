@@ -101,12 +101,12 @@ export const MsgArchiveTrustRegistryAminoConverter = {
   toAmino: (msg: MsgArchiveTrustRegistry) => ({
     creator: msg.creator,
     id: u64ToStr(msg.id), // uint64 -> string
-    archive: msg.archive,
+    archive: msg.archive ? true : undefined, // omit if false
   }),
   fromAmino: (value: any) =>
     MsgArchiveTrustRegistry.fromPartial({
       creator: value.creator,
       id: strToU64(value.id), // string -> Long (uint64)
-      archive: value.archive,
+      archive: value.archive ?? false,
     }),
 };

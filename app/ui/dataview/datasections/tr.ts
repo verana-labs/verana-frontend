@@ -1,7 +1,7 @@
 import { Section } from "@/ui/dataview/types";
 import { CsData } from "./cs";
 import { languageOptions } from "./gfd";
-import { faEdit } from "@fortawesome/free-solid-svg-icons";
+import { faBoxArchive, faEdit } from "@fortawesome/free-solid-svg-icons";
 
 const t = (key: string) => ({ key });
 
@@ -39,6 +39,8 @@ export interface TrData {
   title?: string;
   description?: string;
   updateTrustRegistry?: string; // action type
+  archiveTrustRegistry?: string; // action type
+  unarchiveTrustRegistry?: string; // action type
 }
 
 // Sections configuration for TrData
@@ -46,6 +48,7 @@ export const trSections: Section<TrData>[] = [
   {
     name: t("dataview.tr.sections.basicInformation"),
     type: "basic",
+    classFormEdit: "grid grid-cols-1 md:grid-cols-2 gap-6 mb-6", //lg:grid-cols-3
     noEdit: true,
     fields: [
       { name: "id", label: t("dataview.tr.fields.id"), type: "data", show: "view", update: false, id: true },
@@ -94,6 +97,8 @@ export const trSections: Section<TrData>[] = [
       { name: "modified", label: t("dataview.tr.fields.modified"), type: "data", show: "none" },
       { name: "active_version", label: t("dataview.tr.fields.active_version"), type: "data", show: "view" },
       { name: "schemas", label: t("dataview.tr.fields.schemas"), type: "data", show: "none" },
+      { name: "archiveTrustRegistry", label: t("dataview.tr.actions.archiveTrustRegistry"), type: "action", icon: faBoxArchive, iconColorClass: "bg-gray-600 text-white hover:bg-gray-700" },
+      { name: "unarchiveTrustRegistry", label: t("dataview.tr.actions.unarchiveTrustRegistry"), type: "action", icon: faBoxArchive, iconColorClass: "bg-green-600 text-white hover:bg-green-700" },
     ],
   },
   {

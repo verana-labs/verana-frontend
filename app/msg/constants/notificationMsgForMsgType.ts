@@ -10,7 +10,7 @@ export type MsgTypeDID = 'MsgAddDID' | 'MsgRenewDID' | 'MsgTouchDID' | 'MsgRemov
 export type MsgTypeTD = 'MsgReclaimTrustDeposit' | 'MsgReclaimTrustDepositYield';
 
 // Supported Trust Registry actions
-export type MsgTypeTR = 'MsgCreateTrustRegistry' | 'MsgUpdateTrustRegistry' | 'MsgArchiveTrustRegistry' | 'MsgAddGovernanceFrameworkDocument' | 'MsgIncreaseActiveGovernanceFrameworkVersion';
+export type MsgTypeTR = 'MsgCreateTrustRegistry' | 'MsgUpdateTrustRegistry' | 'MsgArchiveTrustRegistry' | 'MsgUnarchiveTrustRegistry' | 'MsgAddGovernanceFrameworkDocument' | 'MsgIncreaseActiveGovernanceFrameworkVersion';
 
 // Supported Credential Schema actions
 export type MsgTypeCS = 'MsgCreateCredentialSchema' | 'MsgUpdateCredentialSchema' | 'MsgArchiveCredentialSchema' | 'MsgUnarchiveCredentialSchema';
@@ -117,6 +117,7 @@ export const MSG_SUCCESS_ACTION_TR: Record<MsgTypeTR, () => string> = {
   MsgCreateTrustRegistry: () => t('notification.MsgCreateTrustRegistry.success'),
   MsgUpdateTrustRegistry: () => t('notification.MsgUpdateTrustRegistry.success'),
   MsgArchiveTrustRegistry: () => t('notification.MsgArchiveTrustRegistry.success'),
+  MsgUnarchiveTrustRegistry: () => t('notification.MsgUnarchiveTrustRegistry.success'),
   MsgAddGovernanceFrameworkDocument: () => t('notification.MsgAddGovernanceFrameworkDocument.success'),
   MsgIncreaseActiveGovernanceFrameworkVersion: () => t('notification.MsgIncreaseActiveGovernanceFrameworkVersion.success'),
 };
@@ -125,6 +126,7 @@ export const MSG_INPROGRESS_ACTION_TR: Record<MsgTypeTR, () => string> = {
   MsgCreateTrustRegistry: () => t('notification.MsgCreateTrustRegistry.inprogress'),
   MsgUpdateTrustRegistry: () => t('notification.MsgUpdateTrustRegistry.inprogress'),
   MsgArchiveTrustRegistry: () => t('notification.MsgArchiveTrustRegistry.inprogress'),
+  MsgUnarchiveTrustRegistry: () => t('notification.MsgUnarchiveTrustRegistry.inprogress'),
   MsgAddGovernanceFrameworkDocument: () => t('notification.MsgAddGovernanceFrameworkDocument.inprogress'),
   MsgIncreaseActiveGovernanceFrameworkVersion: () => t('notification.MsgIncreaseActiveGovernanceFrameworkVersion.inprogress'),
 };
@@ -139,6 +141,8 @@ export const MSG_ERROR_ACTION_TR: Record<
     t('notification.MsgUpdateTrustRegistry.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
   MsgArchiveTrustRegistry: (id, code, msg) =>
     t('notification.MsgArchiveTrustRegistry.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgUnarchiveTrustRegistry: (id, code, msg) =>
+    t('notification.MsgUnarchiveTrustRegistry.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
   MsgAddGovernanceFrameworkDocument: (id, code, msg) =>
     t('notification.MsgAddGovernanceFrameworkDocument.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
   MsgIncreaseActiveGovernanceFrameworkVersion: (id, code, msg) =>
