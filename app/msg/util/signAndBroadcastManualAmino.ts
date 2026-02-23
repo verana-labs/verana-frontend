@@ -1,9 +1,6 @@
 'use client'
 
-import {
-  EncodeObject,
-  OfflineSigner as OfflineSignerAmino
-} from '@cosmjs/proto-signing';
+import { EncodeObject, OfflineSigner as OfflineSignerAmino } from '@cosmjs/proto-signing';
 import { calculateFee, DeliverTxResponse, GasPrice, SigningStargateClient } from '@cosmjs/stargate';
 import { veranaAmino, veranaRegistry} from '@/config/veranaChain.sign.client';
 import { MsgCreateCredentialSchema, MsgUpdateCredentialSchema } from 'proto-codecs/codec/verana/cs/v1/tx';
