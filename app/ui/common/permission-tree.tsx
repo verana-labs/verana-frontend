@@ -350,7 +350,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
           </a>
           <FontAwesomeIcon icon={faChevronRight} className="mx-2 text-neutral-70 text-xs" />
           <a
-            href={`/tr/cs/${csId}?tr=${trId}`}
+            href={`/tr/cs/${csId}`}
             className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
           >
             {csTitle}

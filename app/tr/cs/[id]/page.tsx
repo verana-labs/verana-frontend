@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import DataView from '@/ui/common/data-view-columns';
 import TitleAndButton from '@/ui/common/title-and-button';
 import EditableDataView from '@/ui/common/data-edit';
@@ -21,8 +21,6 @@ import { shortenDID } from '@/util/util';
 export default function CSViewPage() {
   const params = useParams();
   const id = params?.id as string;
-  const qParams = useSearchParams();
-  const tr =qParams.get('tr');
 
   const [data, setData] = useState<CsData | null>(null);
   const [editing, setEditing] = useState(false);
@@ -32,25 +30,22 @@ export default function CSViewPage() {
   
   const router = useRouter();
   
-  /**
-   * Generic save handler:
-   * - Receives msgType and a generic data object
-   * - Directly forwards both to submitTx
-   */
-  async function onSave(data: object) {
-    await submitTx(msgType, data);
-    setEditing(false);
-  }
-
   const veranaChain = useVeranaChain();
   const { address } = useChain(veranaChain.chain_name);
   const [ trController, setTrController ] = useState<boolean>(false);
-  const { dataTR } = useTrustRegistryData(tr??'');
+  const [ trId, setTrId] = useState<string>('');
+  const { dataTR, refetch: refetchTR } = useTrustRegistryData(trId);
+  const { csData, loading, errorCS, refetch: refetchCS } = useCsData(id);
+
+  useEffect(() => {
+    (async () => {
+      await refetchTR();
+    })();
+  }, [trId]);
+
   useEffect(() => {
     setTrController(dataTR?.controller === address);
   }, [dataTR, address]);
-
-  const { csData, loading, errorCS, refetch: refetchCS } = useCsData(id);
 
   // Refresh data TR
   const [refresh, setRefresh] = useState<boolean>(false);
@@ -71,13 +66,24 @@ export default function CSViewPage() {
       unarchiveCredentialSchema: trController && csData.archived ? "MsgUnarchiveCredentialSchema" : undefined,
       updateCredentialSchema: trController ? "MsgUpdateCredentialSchema" : undefined,
     });
+    if (trId == "") setTrId(csData.trId as string);
   }, [csData, trController]);
 
+  /**
+   * Generic save handler:
+   * - Receives msgType and a generic data object
+   * - Directly forwards both to submitTx
+   */
+  async function onSave(data: object) {
+    await submitTx(msgType, data);
+    setEditing(false);
+  }
+
   if (loading && !refresh) {
-    return <div className="loading-paner">{resolveTranslatable({key: "loading.cs"}, translate)?? "Loading Credential Schema details..."}</div>;
+    return null;//<div className="loading-paner">{resolveTranslatable({key: "loading.cs"}, translate)?? "Loading Credential Schema details..."}</div>;
   }
   if (errorCS || !data) {
-    return <div className="error-pane">{errorCS || (resolveTranslatable({key: "error.cs.notfound"}, translate)?? 'Credential Schema not found')}</div>;
+    return null;//<div className="error-pane">{errorCS || (resolveTranslatable({key: "error.cs.notfound"}, translate)?? 'Credential Schema not found')}</div>;
   }
 
   return (
@@ -86,7 +92,7 @@ export default function CSViewPage() {
       <section className="mb-6">
         <nav className="flex flex-wrap items-center text-sm" aria-label="Breadcrumb">
           <a
-            href={`/tr/${tr}`}
+            href={`/tr/${trId}`}
             className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
           >
             {dataTR && shortenDID(dataTR.did as string)}
