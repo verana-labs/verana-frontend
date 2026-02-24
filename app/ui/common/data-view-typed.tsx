@@ -145,7 +145,7 @@ export const validGFDAction = (action: string): action is MsgTypeTR =>
 
 // Define the valid actions for TR
 export const validTRAction = (action: string): action is MsgTypeTR => 
-  ['MsgUpdateTrustRegistry','MsgArchiveTrustRegistry'].includes(action);
+  ['MsgUpdateTrustRegistry','MsgArchiveTrustRegistry','MsgUnarchiveTrustRegistry'].includes(action);
 
 // Define the valid actions for PERM
 export const validPermAction = (action: string): action is MsgTypePERM => 

@@ -33,6 +33,7 @@ export default function TrActionPage({ action, onClose, data, onRefresh }: TrAct
       case 'MsgUpdateTrustRegistry':
         return false;
       case 'MsgArchiveTrustRegistry':
+      case 'MsgUnarchiveTrustRegistry':
       default:
         return true;
     }

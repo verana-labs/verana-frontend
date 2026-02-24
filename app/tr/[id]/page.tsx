@@ -104,6 +104,8 @@ export default function TRViewPage() {
         computed.last_version >= (computed.active_version ?? 0)
           ? "MsgIncreaseActiveGovernanceFrameworkVersion"
           : undefined;
+      if (computed.archived) computed.unarchiveTrustRegistry =  "MsgUnarchiveTrustRegistry";
+      else computed.archiveTrustRegistry = "MsgArchiveTrustRegistry";
     }
 
     computed.title = computed.did;

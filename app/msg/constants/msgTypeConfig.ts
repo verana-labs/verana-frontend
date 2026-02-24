@@ -58,6 +58,11 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     description: t("messages.MsgArchiveTrustRegistry.description"),
     cost: t("messages.MsgArchiveTrustRegistry.cost"),
   },
+  MsgUnarchiveTrustRegistry: {
+    label: t("messages.MsgUnarchiveTrustRegistry.label"),
+    description: t("messages.MsgUnarchiveTrustRegistry.description"),
+    cost: t("messages.MsgUnarchiveTrustRegistry.cost"),
+  },
   MsgAddGovernanceFrameworkDocument: {
     label: t("messages.MsgAddGovernanceFrameworkDocument.label"),
     description: t("messages.MsgAddGovernanceFrameworkDocument.description"),
@@ -157,7 +162,14 @@ export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
   MsgRepaySlashedTrustDeposit: {},
   MsgCreateTrustRegistry: {},
   MsgUpdateTrustRegistry: {},
-  MsgArchiveTrustRegistry: {},
+  MsgArchiveTrustRegistry: {
+    button: "bg-gray-600 hover:bg-gray-700",
+    icon: faBoxArchive
+  },
+  MsgUnarchiveTrustRegistry: {
+    button: "bg-green-600 hover:bg-green-700",
+    icon: faBoxArchive
+  },
   MsgAddGovernanceFrameworkDocument: {
     button: "",
     icon: faPlus,

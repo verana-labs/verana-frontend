@@ -37,6 +37,7 @@ const requiredFieldsByMsgType: Record<MessageType, readonly string[]> = {
   MsgCreateTrustRegistry: ["did", "aka", "language", "docUrl"],
   MsgUpdateTrustRegistry: ["id", "did", "aka", "language", "docUrl"],
   MsgArchiveTrustRegistry: ["id"],
+  MsgUnarchiveTrustRegistry: ["id"],
   MsgAddGovernanceFrameworkDocument: [],
   MsgIncreaseActiveGovernanceFrameworkVersion: [],
 
@@ -86,18 +87,11 @@ export function useSubmitTxMsgTypeFromObject( onCancel?: () => void,
      * Hooks are called unconditionally here, so we respect Rules of Hooks.
      */
     const selectActionFor = (msgType: MessageType) : ActionHandler => {
-      if (
-        msgType === "MsgCreateCredentialSchema" ||
-        msgType === "MsgUpdateCredentialSchema" ||
-        msgType === "MsgArchiveCredentialSchema" ||
-        msgType === "MsgUnarchiveCredentialSchema"
-      ) return actionCS;
+      if (["MsgCreateCredentialSchema", "MsgUpdateCredentialSchema", "MsgArchiveCredentialSchema", "MsgUnarchiveCredentialSchema"].includes(msgType))
+        return actionCS;
 
-      if (
-        msgType === "MsgCreateTrustRegistry" ||
-        msgType === "MsgUpdateTrustRegistry" ||
-        msgType === "MsgArchiveTrustRegistry"
-      ) return actionTR;
+      if (["MsgCreateTrustRegistry", "MsgUpdateTrustRegistry", "MsgArchiveTrustRegistry", "MsgUnarchiveTrustRegistry"].includes(msgType))
+        return actionTR;
 
       // Exhaustiveness guard
       throw new Error(`Unsupported MsgType: ${msgType}`);
