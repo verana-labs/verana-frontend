@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { GfdData, gfdSections, htmlGfd, TrData, trSections } from '@/ui/dataview/datasections/tr';
 import DataView from '@/ui/common/data-view-columns';
@@ -16,7 +16,7 @@ import langs from 'langs';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
-import { columnsCsList, CsList } from '@/ui/datatable/columnslist/cs';
+import { columnsCsList } from '@/ui/datatable/columnslist/cs';
 import { DataTable } from '@/ui/common/data-table';
 import { DataList } from '@/ui/common/data-list';
 import { ModalAction } from '@/ui/common/modal-action';
@@ -115,10 +115,10 @@ export default function TRViewPage() {
   }, [dataTR, address]);
 
   if (loading &&   !refresh) {
-    return <div className="loading-paner">{resolveTranslatable({key: "loading.tr"}, translate)?? "Loading Trust Registry details..."}</div>;
+    return null;//<div className="loading-paner">{resolveTranslatable({key: "loading.tr"}, translate)?? "Loading Trust Registry details..."}</div>;
   }
   if (errorTRData || !data) {
-    return <div className="error-pane">{errorTRData || (resolveTranslatable({key: "error.tr.notfound"}, translate)?? 'Trust Registry not found')}</div>;
+    return null;//<div className="error-pane">{errorTRData || (resolveTranslatable({key: "error.tr.notfound"}, translate)?? 'Trust Registry not found')}</div>;
   }
 
   async function onSave(newData: TrData) {

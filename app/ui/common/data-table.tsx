@@ -212,13 +212,13 @@ export function DataTable<T extends object>({
                   </tr>
                 </thead>
                 <tbody>
-                  {currentData.length === 0 && (
+                  {/* {currentData.length === 0 && (
                     <tr>
                       <td colSpan={columns.length} className="text-center py-10">
                         No results found
                       </td>
                     </tr>
-                  )}
+                  )} */}
                   {currentData.map((row, rowIdx) => (
                     <tr
                       key={rowIdx}
