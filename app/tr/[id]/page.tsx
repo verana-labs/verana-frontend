@@ -190,7 +190,7 @@ export default function TRViewPage() {
         columnsI18n={columnsCsList}
         data={ csList.filter(item => showArchived || !item.archived)}
         initialPageSize={10}
-        onRowClick={(row) => router.push(`/tr/cs/${row.id}?tr=${data.id}`)}
+        onRowClick={(row) => router.push(`/tr/cs/${row.id}`)}
         defaultSortColumn={'id'}
         showDetailModal={false}
         detailTitle={resolveTranslatable({key: "datatable.tr.detail"}, translate)}
