@@ -55,11 +55,6 @@ export default function TrPage() {
     }
   }, [errorTrList, router, errorNotified]);
   
-  // if (loading) return (
-  //     <p>
-  //       {resolveTranslatable({ key: "loading.trlist" }, translate) ?? "Loading TR List..."}
-  //     </p>);
-
   return (
     <>
       <TitleAndButton
