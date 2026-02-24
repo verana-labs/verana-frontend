@@ -3,24 +3,6 @@ import { faCertificate, faCheck, faCoins, faCubes, faFileLines, faShieldHalved }
 
 const t = (key: string) => ({ key });
 
-// API response from /verana/metrics/v1/all
-export type GlobalMetrics = {
-  participants: number;
-  active_trust_registries: number;
-  archived_trust_registries: number;
-  active_schemas: number;
-  archived_schemas: number;
-  weight: number;
-  issued: number;
-  verified: number;
-  ecosystem_slash_events: number;
-  ecosystem_slashed_amount: number;
-  ecosystem_slashed_amount_repaid: number;
-  network_slash_events: number;
-  network_slashed_amount: number;
-  network_slashed_amount_repaid: number;
-};
-
 //Dashboard data
 export interface DashboardData {
   chainName: string | null;
