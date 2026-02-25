@@ -64,10 +64,7 @@ export default function DidPage() {
     fetchDIDs();
   }, [listUrl, address, refresh]);
 
-  if (loading) return (
-      <p>
-        {resolveTranslatable({ key: "loading.directory" }, translate) ?? "Loading DID Directory..."}
-      </p>);
+  if (loading) return null;
 
   return (
     <>

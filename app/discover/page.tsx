@@ -136,11 +136,7 @@ export default function DiscoverJoinPage() {
         }
     }, [errorTrList, router, errorNotified]);
 
-    if (loading) return (
-        <p>
-            {resolveTranslatable({ key: "loading.trlist" }, translate) ?? "Loading Discover..."}
-        </p>
-    );
+    if (loading) return null; //(<p>{resolveTranslatable({ key: "loading.trlist" }, translate) ?? "Loading Discover..."}</p>);
   
   return (
     <>
