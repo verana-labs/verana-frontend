@@ -86,5 +86,5 @@ export default function PendingTasksPage() {
     setPermissionsTree(tree);
   }, [permissionsList]);
   
-  return <PermissionTree tree={permissionsTree} type={"tasks"} />;
+  return <PermissionTree tree={permissionsTree} type={"tasks"} defaultExpandAll />;
 }

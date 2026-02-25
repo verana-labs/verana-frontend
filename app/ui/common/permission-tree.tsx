@@ -36,6 +36,7 @@ type PermissionTreeProps = {
     validatorId: string | undefined
   ) => void;
   refreshRoot?: () => void;
+  defaultExpandAll?: boolean;
 };
 
 /** ------------ Types ------------ */
@@ -246,7 +247,7 @@ function Tree({
   );
 }
 
-export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle, csId, trId, isTrController, setNodeRequestParams, refreshRoot }: PermissionTreeProps) {
+export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle, csId, trId, isTrController, setNodeRequestParams, refreshRoot, defaultExpandAll }: PermissionTreeProps) {
   const [showWeight, setShowWeight] = useState(false);
   const [showBusiness, setShowBusiness] = useState(false);
   const [showStats, setShowStats] = useState(false);
@@ -290,7 +291,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
 
   // UX: expand
   useEffect(() => {
-    if (!selectedId) return;
+    if (!selectedId || defaultExpandAll) return;
     const { path } = findNodeAndPath(tree, selectedId);
     if (!path.length) return;
     setExpanded((prev) => {
@@ -298,10 +299,21 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
       for (const p of path) next[p.nodeId] = true;
       return next;
     });
-  }, [tree, selectedId]);
+  }, [tree, selectedId, defaultExpandAll]);
 
   useEffect(() => {
     setExpanded((prev) => {
+      if (defaultExpandAll) {
+        const next: Record<string, boolean> = {};
+        const walk = (arr: TreeNode[]) => {
+          for (const n of arr) {
+            if (n.group) next[n.nodeId] = prev[n.nodeId] ?? true;
+            if (n.children?.length) walk(n.children);
+          }
+        };
+        walk(tree);
+        return next;
+      }
       const next: Record<string, boolean> = {};
       const collect = (arr: TreeNode[]) => {
         for (const n of arr) {
@@ -314,7 +326,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
       if (Object.keys(next).length === 0 && first) next[first] = true;
       return next;
     });
-  }, [tree]);
+  }, [tree, defaultExpandAll]);
 
   useEffect(() => {
     setTreeState(tree);
