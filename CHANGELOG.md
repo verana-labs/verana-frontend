@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.8.0](https://github.com/verana-labs/verana-frontend/compare/v0.7.0...v0.8.0) (2026-02-25)
+
+
+### Features
+
+* [My Ecosystem] Immediate loading ([#298](https://github.com/verana-labs/verana-frontend/issues/298)) ([21f59f4](https://github.com/verana-labs/verana-frontend/commit/21f59f4858ca65cffcd83cd553065ddbcc3b813d))
+* [Page Loading] remove loading message ([#301](https://github.com/verana-labs/verana-frontend/issues/301)) ([de5df1b](https://github.com/verana-labs/verana-frontend/commit/de5df1b4d132b72d045b31c96387d2de737ee68d))
+* [View Ecosystem] Modify layout to match the View Schema layout ([#296](https://github.com/verana-labs/verana-frontend/issues/296)) ([1b5f2aa](https://github.com/verana-labs/verana-frontend/commit/1b5f2aabffe964834a30e335abc6ccfa273f9075))
+* [View Schema] trust registry id propagation ([#299](https://github.com/verana-labs/verana-frontend/issues/299)) ([0e3bd1e](https://github.com/verana-labs/verana-frontend/commit/0e3bd1e7502665b6340881e11c0045ce501b5f34))
+* Dashboard fill in global metrics ([#287](https://github.com/verana-labs/verana-frontend/issues/287)) ([d7a6278](https://github.com/verana-labs/verana-frontend/commit/d7a627837dd752e7916fab92a5c488e0f18619ed)), closes [#274](https://github.com/verana-labs/verana-frontend/issues/274)
+
 ## [0.7.0](https://github.com/verana-labs/verana-frontend/compare/v0.6.0...v0.7.0) (2026-02-20)
 
 
