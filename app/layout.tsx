@@ -44,7 +44,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <PublicEnvScript />
       </head>
       <body className="app-body">
-        <ClientLayout trustDepositParams={trustDepositParamsResult.params}> {children} </ClientLayout>
+        <ClientLayout trustDepositParams={trustDepositParamsResult.params} >
+          {children}
+        </ClientLayout>
       </body>
     </html>
   )

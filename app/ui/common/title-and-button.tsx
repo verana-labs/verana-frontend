@@ -40,6 +40,7 @@ export default function TitleAndButton({
     <section id="back-nav" className="mb-6">
       {(buttonLabel || icon) && (
         <button
+          type="button"
           onClick={handleClick}
           className="inline-flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
         >

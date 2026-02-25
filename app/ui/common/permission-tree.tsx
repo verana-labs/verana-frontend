@@ -342,19 +342,19 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
       { (type === "participants" && csTitle && trTitle) ?  (
       <section className="mb-6">
         <nav className="flex flex-wrap items-center text-sm" aria-label="Breadcrumb">
-          <a
+          <Link
             href={`/tr/${trId}`}
             className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
           >
             {shortenDID(trTitle)}
-          </a>
+          </Link>
           <FontAwesomeIcon icon={faChevronRight} className="mx-2 text-neutral-70 text-xs" />
-          <a
+          <Link
             href={`/tr/cs/${csId}`}
             className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
           >
             {csTitle}
-          </a>
+          </Link>
           <FontAwesomeIcon icon={faChevronRight} className="mx-2 text-neutral-70 text-xs" />
           <span className="text-gray-900 dark:text-white font-medium">{resolveTranslatable({key: "participants.title"}, translate)}</span>
         </nav>

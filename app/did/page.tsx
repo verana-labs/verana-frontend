@@ -64,8 +64,6 @@ export default function DidPage() {
     fetchDIDs();
   }, [listUrl, address, refresh]);
 
-  if (loading) return null;
-
   return (
     <>
       <TitleAndButton

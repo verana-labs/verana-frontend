@@ -6,15 +6,17 @@ import { Permission, TrustRegistriesPermission } from "@/ui/dataview/datasection
 import { faFolder } from "@fortawesome/free-solid-svg-icons";
 import { useVeranaChain } from "@/hooks/useVeranaChain";
 import { useChain } from "@cosmos-kit/react";
-import { usePendingFlatPermissions } from "@/hooks/usePendingFlatPermissions";
 import { authorityPaticipants, roleColorClass } from "@/util/util";
+import { usePendingTasksCtx, useUpdatePendingTasksCtx } from '@/providers/pending-tasks-provider-context';
 
 export default function PendingTasksPage() {
   const veranaChain = useVeranaChain();
   const { address } = useChain(veranaChain.chain_name);
 
-  const { permissionsList } = usePendingFlatPermissions(address);
+  const permissionsList = usePendingTasksCtx();
+  const updatePermissionList = useUpdatePendingTasksCtx();
   const [permissionsTree, setPermissionsTree] = useState<TreeNode[]>([]);
+  const [refreshRoot, setRefreshRoot] = useState<boolean>(false);
 
   // Collect permission IDs granted to the current address
   const idsAddress = new Set<string>();
@@ -86,5 +88,10 @@ export default function PendingTasksPage() {
     setPermissionsTree(tree);
   }, [permissionsList]);
   
-  return <PermissionTree tree={permissionsTree} type={"tasks"} />;
+  useEffect(() => {
+    if (refreshRoot) updatePermissionList();
+    setRefreshRoot(false);
+  }, [refreshRoot]);
+
+  return <PermissionTree tree={permissionsTree} type={"tasks"} refreshRoot={()=>setRefreshRoot(true)} />;
 }

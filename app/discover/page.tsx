@@ -135,8 +135,6 @@ export default function DiscoverJoinPage() {
         })();
         }
     }, [errorTrList, router, errorNotified]);
-
-    if (loading) return null; //(<p>{resolveTranslatable({ key: "loading.trlist" }, translate) ?? "Loading Discover..."}</p>);
   
   return (
     <>
@@ -233,6 +231,7 @@ export default function DiscoverJoinPage() {
         )})}
       </section>
 
+      {filtered.length>0 ? (
       <section id="pagination" className="mt-8 flex justify-center">
         <nav className="inline-flex rounded-lg shadow-sm" aria-label="Pagination">
           <button
@@ -286,6 +285,7 @@ export default function DiscoverJoinPage() {
           </button>
         </nav>
       </section>
+      ) : null }
 
     </>
   );

@@ -114,13 +114,6 @@ export default function TRViewPage() {
     setData(computed);
   }, [dataTR, address]);
 
-  if (loading &&   !refresh) {
-    return null;//<div className="loading-paner">{resolveTranslatable({key: "loading.tr"}, translate)?? "Loading Trust Registry details..."}</div>;
-  }
-  if (errorTRData || !data) {
-    return null;//<div className="error-pane">{errorTRData || (resolveTranslatable({key: "error.tr.notfound"}, translate)?? 'Trust Registry not found')}</div>;
-  }
-
   async function onSave(newData: TrData) {
     const cleaned = {
       ...newData,
@@ -154,6 +147,10 @@ export default function TRViewPage() {
         icon={faArrowLeft}
         backLink= {true}
       />
+
+      {data ? (
+      <>
+
       {/* Basic Information Section */}
       {editing ? (
       <EditableDataView<TrData>
@@ -220,6 +217,13 @@ export default function TRViewPage() {
         />
       </ModalAction>
       )}
+
+      </>
+      ) : errorTRData ? (
+        <div className="error-pane">
+          {errorTRData || (resolveTranslatable({key: "error.tr.notfound"}, translate)?? 'Trust Registry not found')}
+        </div>
+      ) : null }      
       
     </>
   );

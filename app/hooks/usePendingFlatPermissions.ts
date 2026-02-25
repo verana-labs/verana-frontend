@@ -1,30 +1,34 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { env } from 'next-runtime-env';
 import { ApiErrorResponse } from '@/types/apiErrorResponse';
 import { TrustRegistriesPermission } from '@/ui/dataview/datasections/perm';
+import { useVeranaChain } from '@/hooks/useVeranaChain';
+import { useChain } from '@cosmos-kit/react';
+import { translate } from '@/i18n/dataview';
+import { resolveTranslatable } from '@/ui/dataview/types';
 
-export function usePendingFlatPermissions(address?: string) {
+export function usePendingFlatPermissions() {
+  const veranaChain = useVeranaChain();
+  const { address } = useChain(veranaChain.chain_name);
   const getURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM;
 
   const [permissionsList, setPermissionsList] = useState<TrustRegistriesPermission[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorPermissionsList, setError] = useState<string | null>(null);
 
-  const fetchPermissions = useCallback(async (addressOverride?: string) => {
-    const addressToUse = addressOverride ?? address;
+  const fetchPermissions = async () => {
 
-    if (!addressToUse || !getURL) {
-      setPermissionsList([]);
-      setLoading(false);
+    if (!address || !getURL) {
+      setError(resolveTranslatable({key: "error.fetch.perm"}, translate)?? 'Missing address or endpoint URL');
       return;
     }
 
     setError(null);
 
     const url =
-      `${getURL}/pending/flat?account=${addressToUse}`;
+      `${getURL}/pending/flat?account=${address}`;
 
     try {
       setLoading(true);
@@ -44,12 +48,12 @@ export function usePendingFlatPermissions(address?: string) {
     } finally {
       setLoading(false);
     }
-  }, [address, getURL]);
+  }
 
   useEffect(() => {
     if (!address) return;
-    fetchPermissions(address);
-  }, [address, fetchPermissions]);
+    fetchPermissions();
+  },[address, getURL]);
 
   return { permissionsList, loading, errorPermissionsList, refetch: fetchPermissions };
 }
