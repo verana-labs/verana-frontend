@@ -3,11 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { links } from '@/lib/navlinks';
+import { getNavLinks } from '@/lib/navlinks';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
+import { usePendingTasksCtx } from '@/providers/pending-tasks-provider-context';
 
 export default function NavLinks() {
   const veranaChain = useVeranaChain();
@@ -19,6 +20,9 @@ export default function NavLinks() {
   const toggleDropdown = (idx: number) => {
     setOpenIndex(openIndex === idx ? null : idx);
   };
+
+  const tasks = usePendingTasksCtx();
+  const links = getNavLinks(tasks.length);
 
   return (
     <nav className="mt-5 flex-1 px-2 space-y-1">
@@ -36,6 +40,9 @@ export default function NavLinks() {
                   icon={link.icon} 
                   className={(pathname === link.href) ? 'nav-links-icon-selected' : 'nav-links-icon'}
                 />
+                {link.count ? (
+                  <span className="absolute top-0 left-4 min-w-4 h-4 px-1 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center leading-none">{link.count}</span>
+                ) : null }
                 {link.name && (<span className="nav-links-label">{link.name}</span>)}
                 {hasSubLinks && (
                   <FontAwesomeIcon

@@ -1,5 +1,5 @@
 import { translate } from '@/i18n/dataview';
-import { links } from '@/lib/navlinks';
+import { getNavLinks } from '@/lib/navlinks';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { resolveTranslatable } from '../dataview/types';
 import Link from 'next/link';
@@ -9,7 +9,8 @@ type FeaturedServicesProps = {
 };
 
 export default function FeaturedServices({ isWalletConnected }: FeaturedServicesProps) {
-
+    const links = getNavLinks();
+    
     return (
         <section className="mb-8">
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">{resolveTranslatable({key: 'featuredservices.title'}, translate)}</h3>

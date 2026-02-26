@@ -17,6 +17,7 @@ import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useTrustRegistryData } from '@/hooks/useTrustRegistryData';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { shortenDID } from '@/util/util';
+import Link from 'next/link';
 
 export default function CSViewPage() {
   const params = useParams();
@@ -35,7 +36,7 @@ export default function CSViewPage() {
   const [ trController, setTrController ] = useState<boolean>(false);
   const [ trId, setTrId] = useState<string>('');
   const { dataTR, refetch: refetchTR } = useTrustRegistryData(trId);
-  const { csData, loading, errorCS, refetch: refetchCS } = useCsData(id);
+  const { csData, errorCS, refetch: refetchCS } = useCsData(id);
 
   useEffect(() => {
     (async () => {
@@ -79,24 +80,17 @@ export default function CSViewPage() {
     setEditing(false);
   }
 
-  if (loading && !refresh) {
-    return null;//<div className="loading-paner">{resolveTranslatable({key: "loading.cs"}, translate)?? "Loading Credential Schema details..."}</div>;
-  }
-  if (errorCS || !data) {
-    return null;//<div className="error-pane">{errorCS || (resolveTranslatable({key: "error.cs.notfound"}, translate)?? 'Credential Schema not found')}</div>;
-  }
-
   return (
     <>
       {/* Breadcrumbs */}
       <section className="mb-6">
         <nav className="flex flex-wrap items-center text-sm" aria-label="Breadcrumb">
-          <a
+          <Link
             href={`/tr/${trId}`}
             className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
           >
             {dataTR && shortenDID(dataTR.did as string)}
-          </a>
+          </Link>
           <FontAwesomeIcon icon={faChevronRight} className="mx-2 text-neutral-70 text-xs" />
           <span className="text-gray-900 dark:text-white font-medium">{csData?.title}</span>
         </nav>
@@ -111,28 +105,36 @@ export default function CSViewPage() {
         // icon={faArrowLeft}
         // backLink= {true}
       />
-      {/* Basic Information Section */}
-      {editing ? (
-      <EditableDataView<CsData>
-        sectionsI18n={csSections}
-        data={data}
-        messageType={msgType}
-        id={id}
-        onSave={ onSave }
-        onCancel={() => setEditing(false)}  />
-      ) : (
-      <DataView<CsData> 
-        sectionsI18n={csSections}
-        data={data}
-        id={id}
-        viewEditButton={false}
-        onEdit={ trController? () => setEditing(true) : undefined } 
-        onRefresh={()=>setRefresh(true)}
-        showViewTitle={true}
-        generalBorder={true}
-        viewTitleButton={ {icon: faSitemap, buttonLabel: resolveTranslatable({key: "participants.title"}, translate)??"participants", onClick: () => router.push(`/participants/${data.id}`)} }
-      />
-      )}
+      {data ? (
+        <>
+        {/* Basic Information Section */}
+        {editing ? (
+        <EditableDataView<CsData>
+          sectionsI18n={csSections}
+          data={data}
+          messageType={msgType}
+          id={id}
+          onSave={ onSave }
+          onCancel={() => setEditing(false)}  />
+        ) : (
+        <DataView<CsData> 
+          sectionsI18n={csSections}
+          data={data}
+          id={id}
+          viewEditButton={false}
+          onEdit={ trController? () => setEditing(true) : undefined } 
+          onRefresh={()=>setRefresh(true)}
+          showViewTitle={true}
+          generalBorder={true}
+          viewTitleButton={ {icon: faSitemap, buttonLabel: resolveTranslatable({key: "participants.title"}, translate)??"participants", onClick: () => router.push(`/participants/${data.id}`)} }
+        />
+        )}
+        </>
+      ) : errorCS ? (
+        <div className="error-pane">
+          {errorCS || (resolveTranslatable({ key: 'error.cs.notfound' }, translate) ?? 'Credential Schema not found')}
+        </div>
+      ) : null }      
     </>
   );
 }
