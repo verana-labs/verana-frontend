@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/verana-labs/verana-frontend/compare/v0.8.0...v0.9.0) (2026-02-26)
+
+
+### Features
+
+* [Pending Tasks] Bubble with pending task number and preload ([#303](https://github.com/verana-labs/verana-frontend/issues/303)) ([471f962](https://github.com/verana-labs/verana-frontend/commit/471f962c94651e7288fa6b4ee015796491c0778d))
+
 ## [0.8.0](https://github.com/verana-labs/verana-frontend/compare/v0.7.0...v0.8.0) (2026-02-25)
 
 
