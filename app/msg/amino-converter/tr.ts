@@ -7,36 +7,22 @@ import {
   MsgUpdateTrustRegistry,
   MsgArchiveTrustRegistry,
 } from 'proto-codecs/codec/verana/tr/v1/tx'
-import { strToU64, u64ToStr } from '@/msg/util/aminoHelpers';
+import { strToU64, u64ToStr } from '@/msg/amino-converter/util/helpers';
 
 /**
  * Amino converter for MsgCreateTrustRegistry
  */
 export const MsgCreateTrustRegistryAminoConverter = {
   aminoType: '/verana.tr.v1.MsgCreateTrustRegistry',
-  toAmino: ({
-    creator,
-    did,
-    aka,
-    language,
-    docUrl,
-    docDigestSri,
-  }: MsgCreateTrustRegistry) => ({
-    creator,
-    did,
-    aka,
-    language,
-    doc_url: docUrl,
-    doc_digest_sri: docDigestSri,
+  toAmino: (msg: MsgCreateTrustRegistry) => ({
+    creator: msg.creator,
+    did: msg.did,
+    aka: msg.aka,
+    language: msg.language,
+    doc_url: msg.docUrl,
+    doc_digest_sri: msg.docDigestSri,
   }),
-  fromAmino: (value: {
-    creator: string;
-    did: string;
-    aka: string;
-    language: string;
-    doc_url: string;
-    doc_digest_sri: string;
-  }) =>
+  fromAmino: (value: any) =>
     MsgCreateTrustRegistry.fromPartial({
       creator: value.creator,
       did: value.did,
@@ -52,29 +38,15 @@ export const MsgCreateTrustRegistryAminoConverter = {
  */
 export const MsgAddGovernanceFrameworkDocumentAminoConverter = {
   aminoType: '/verana.tr.v1.MsgAddGovernanceFrameworkDocument',
-  toAmino: ({
-    creator,
-    id,
-    docLanguage,
-    docUrl,
-    docDigestSri,
-    version,
-  }: MsgAddGovernanceFrameworkDocument) => ({
-    creator,
-    id: u64ToStr(id), // uint64 -> string
-    doc_language: docLanguage,
-    doc_url: docUrl,
-    doc_digest_sri: docDigestSri,
-    version,
+  toAmino: (msg: MsgAddGovernanceFrameworkDocument) => ({
+    creator: msg.creator,
+    id: u64ToStr(msg.id), // uint64 -> string
+    doc_language: msg.docLanguage,
+    doc_url: msg.docUrl,
+    doc_digest_sri: msg.docDigestSri,
+    version: msg.version,
   }),
-  fromAmino: (value: {
-    creator: string;
-    id: string;
-    doc_language: string;
-    doc_url: string;
-    doc_digest_sri: string;
-    version: number;
-  }) =>
+  fromAmino: (value: any) =>
     MsgAddGovernanceFrameworkDocument.fromPartial({
       creator: value.creator,
       id: strToU64(value.id), // string -> Long (uint64)
@@ -90,11 +62,11 @@ export const MsgAddGovernanceFrameworkDocumentAminoConverter = {
  */
 export const MsgIncreaseActiveGovernanceFrameworkVersionAminoConverter = {
   aminoType: '/verana.tr.v1.MsgIncreaseActiveGovernanceFrameworkVersion',
-  toAmino: ({ creator, id }: MsgIncreaseActiveGovernanceFrameworkVersion) => ({
-    creator,
-    id: u64ToStr(id) // uint64 -> string
+  toAmino: (msg: MsgIncreaseActiveGovernanceFrameworkVersion) => ({
+    creator: msg.creator,
+    id: u64ToStr(msg.id) // uint64 -> string
   }),
-  fromAmino: (value: { creator: string; id: string }) =>
+  fromAmino: (value: any) =>
     MsgIncreaseActiveGovernanceFrameworkVersion.fromPartial({
       creator: value.creator,
       id: strToU64(value.id), // string -> Long (uint64)
@@ -106,13 +78,13 @@ export const MsgIncreaseActiveGovernanceFrameworkVersionAminoConverter = {
  */
 export const MsgUpdateTrustRegistryAminoConverter = {
   aminoType: '/verana.tr.v1.MsgUpdateTrustRegistry',
-  toAmino: ({ creator, id, did, aka }: MsgUpdateTrustRegistry) => ({
-    creator,
-    id: u64ToStr(id), // uint64 -> string
-    did,
-    aka,
+  toAmino: (msg: MsgUpdateTrustRegistry) => ({
+    creator: msg.creator,
+    id: u64ToStr(msg.id), // uint64 -> string
+    did: msg.did,
+    aka: msg.aka,
   }),
-  fromAmino: (value: { creator: string; id: string; did: string; aka: string }) =>
+  fromAmino: (value: any) =>
     MsgUpdateTrustRegistry.fromPartial({
       creator: value.creator,
       id: strToU64(value.id), // string -> Long (uint64)
@@ -126,15 +98,15 @@ export const MsgUpdateTrustRegistryAminoConverter = {
  */
 export const MsgArchiveTrustRegistryAminoConverter = {
   aminoType: '/verana.tr.v1.MsgArchiveTrustRegistry',
-  toAmino: ({ creator, id, archive }: MsgArchiveTrustRegistry) => ({
-    creator,
-    id: u64ToStr(id), // uint64 -> string
-    archive,
+  toAmino: (msg: MsgArchiveTrustRegistry) => ({
+    creator: msg.creator,
+    id: u64ToStr(msg.id), // uint64 -> string
+    archive: msg.archive ? true : undefined, // omit if false
   }),
-  fromAmino: (value: { creator: string; id: string; archive: boolean }) =>
+  fromAmino: (value: any) =>
     MsgArchiveTrustRegistry.fromPartial({
       creator: value.creator,
       id: strToU64(value.id), // string -> Long (uint64)
-      archive: value.archive,
+      archive: value.archive ?? false,
     }),
 };

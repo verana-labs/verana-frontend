@@ -34,9 +34,9 @@ export function DataTable<T extends object>({
   tableTitle,
   addTitle,
   onAdd,
-  titleFilter,
   detailTitle,
-  onRefresh
+  onRefresh,
+  checkFilter
 }: DataTableProps<T>) {
   const columns = translateColumns(columnsI18n);
   const filter = translateFilter(filterI18n);
@@ -182,14 +182,15 @@ export function DataTable<T extends object>({
                 <h3 className="data-table-title">{resolveTranslatable({key: 'datatable.your'}, translate)} {entities}</h3>
               </div>
               )}
-              { tableTitle && (addTitle || titleFilter) && (
+              { tableTitle && (addTitle || checkFilter) && (
               <TitleAndButton
                 title=  {tableTitle}
                 buttonLabel={addTitle}
                 // to="/tr/add"
-                icon={faPlus}
+                icon={addTitle ? faPlus : undefined}
                 onClick={onAdd}
-                titleFilter={titleFilter}
+                checkFilter={checkFilter}
+                type='table'
               />
               )}
             </div>
@@ -211,13 +212,13 @@ export function DataTable<T extends object>({
                   </tr>
                 </thead>
                 <tbody>
-                  {currentData.length === 0 && (
+                  {/* {currentData.length === 0 && (
                     <tr>
                       <td colSpan={columns.length} className="text-center py-10">
                         No results found
                       </td>
                     </tr>
-                  )}
+                  )} */}
                   {currentData.map((row, rowIdx) => (
                     <tr
                       key={rowIdx}
@@ -237,9 +238,7 @@ export function DataTable<T extends object>({
                         return (
                           <td
                             key={String(col.accessor)}
-                            className={`data-table-td ${getColumnClasses(col.priority)} ${
-                              col.className ? col.className(row[col.accessor]) : ""
-                            }`}
+                            className={`data-table-td ${getColumnClasses(col.priority)} ${col.getClassName ? col.getClassName(row[col.accessor]) : ""}  ${col.className??""} ${col.break??""}`}
                           >
                             {col.isHtml ? 
                             (<p dangerouslySetInnerHTML={{ __html: valueStr }}/>) : 
@@ -277,9 +276,7 @@ export function DataTable<T extends object>({
                         <div key={String(col.accessor)} >
                           <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">{col.header}</label>
                           <p
-                            className={`text-sm font-mono text-gray-900 dark:text-white ${
-                                col.className ? col.className(row[col.accessor]) : ''
-                              }`}
+                            className={`text-sm font-mono text-gray-900 dark:text-white ${col.getClassName ? col.getClassName(row[col.accessor]) : ''}`}
                           >
                             {col.format ? col.format(row[col.accessor]) : String(row[col.accessor] ?? '')}
                           </p>
@@ -297,7 +294,7 @@ export function DataTable<T extends object>({
                           <div key={String(col.accessor)}>
                             {col.isHtml ?
                             (<p dangerouslySetInnerHTML={{ __html: valueStr }} />) :
-                            (<label  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${col.className ? col.className(row[col.accessor]) : ''}`}>{ valueStr }</label>)
+                            (<label  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${col.getClassName ? col.getClassName(row[col.accessor]) : ''}`}>{ valueStr }</label>)
                             }
                           </div>)
                       })}

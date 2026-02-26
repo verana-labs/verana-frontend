@@ -1,5 +1,49 @@
 # Changelog
 
+## [0.8.0](https://github.com/verana-labs/verana-frontend/compare/v0.7.0...v0.8.0) (2026-02-25)
+
+
+### Features
+
+* [My Ecosystem] Immediate loading ([#298](https://github.com/verana-labs/verana-frontend/issues/298)) ([21f59f4](https://github.com/verana-labs/verana-frontend/commit/21f59f4858ca65cffcd83cd553065ddbcc3b813d))
+* [Page Loading] remove loading message ([#301](https://github.com/verana-labs/verana-frontend/issues/301)) ([de5df1b](https://github.com/verana-labs/verana-frontend/commit/de5df1b4d132b72d045b31c96387d2de737ee68d))
+* [View Ecosystem] Modify layout to match the View Schema layout ([#296](https://github.com/verana-labs/verana-frontend/issues/296)) ([1b5f2aa](https://github.com/verana-labs/verana-frontend/commit/1b5f2aabffe964834a30e335abc6ccfa273f9075))
+* [View Schema] trust registry id propagation ([#299](https://github.com/verana-labs/verana-frontend/issues/299)) ([0e3bd1e](https://github.com/verana-labs/verana-frontend/commit/0e3bd1e7502665b6340881e11c0045ce501b5f34))
+* Dashboard fill in global metrics ([#287](https://github.com/verana-labs/verana-frontend/issues/287)) ([d7a6278](https://github.com/verana-labs/verana-frontend/commit/d7a627837dd752e7916fab92a5c488e0f18619ed)), closes [#274](https://github.com/verana-labs/verana-frontend/issues/274)
+
+## [0.7.0](https://github.com/verana-labs/verana-frontend/compare/v0.6.0...v0.7.0) (2026-02-20)
+
+
+### Features
+
+* [Schema] If schema is archived, show a tag "archived" on the right ([#289](https://github.com/verana-labs/verana-frontend/issues/289)) ([e78930d](https://github.com/verana-labs/verana-frontend/commit/e78930dc446be313765369f3441de16901e6ecab))
+* [tables, my ecosystem,  view ecosytem, unarchive schema] Related Issues:  [#210](https://github.com/verana-labs/verana-frontend/issues/210), [#258](https://github.com/verana-labs/verana-frontend/issues/258), [#259](https://github.com/verana-labs/verana-frontend/issues/259), [#260](https://github.com/verana-labs/verana-frontend/issues/260), [#263](https://github.com/verana-labs/verana-frontend/issues/263), [#264](https://github.com/verana-labs/verana-frontend/issues/264) ([#267](https://github.com/verana-labs/verana-frontend/issues/267)) ([86c9ca1](https://github.com/verana-labs/verana-frontend/commit/86c9ca1ec01f036188f0f3e8fda6cd1002445760))
+* Faucet devnet support, remove DID management, footer versions ([#266](https://github.com/verana-labs/verana-frontend/issues/266)) ([95e2f68](https://github.com/verana-labs/verana-frontend/commit/95e2f68d4301b010ba566afe8543c6b7f34e129a))
+
+
+### Bug Fixes
+
+* [Participants] When I revoke a root permission, it is properly revoked but permission state not updated [#237](https://github.com/verana-labs/verana-frontend/issues/237) ([#288](https://github.com/verana-labs/verana-frontend/issues/288)) ([ee60a52](https://github.com/verana-labs/verana-frontend/commit/ee60a52d50edd369c0495d797874b5641cdc116a))
+
+## [0.6.0](https://github.com/verana-labs/verana-frontend/compare/v0.5.1...v0.6.0) (2026-02-16)
+
+
+### Features
+
+* register Verana in WalletConnect Cloud / Reown with projectId and metadata ([#248](https://github.com/verana-labs/verana-frontend/issues/248)) ([74f1707](https://github.com/verana-labs/verana-frontend/commit/74f1707512aa4454cf8f94ffaaaef3b7e4c2f543)), closes [#247](https://github.com/verana-labs/verana-frontend/issues/247)
+
+
+### Bug Fixes
+
+* Update util.ts ([#255](https://github.com/verana-labs/verana-frontend/issues/255)) ([5b2a6bd](https://github.com/verana-labs/verana-frontend/commit/5b2a6bdfd74cc9f2203ee4d7d99f9142fe6994c8))
+
+## [0.5.1](https://github.com/verana-labs/verana-frontend/compare/v0.5.0...v0.5.1) (2026-02-14)
+
+
+### Bug Fixes
+
+* [Participants, Permission, Pending Tasks, Ecosystem] Related issues: [#159](https://github.com/verana-labs/verana-frontend/issues/159), [#230](https://github.com/verana-labs/verana-frontend/issues/230), [#231](https://github.com/verana-labs/verana-frontend/issues/231), [#232](https://github.com/verana-labs/verana-frontend/issues/232), [#233](https://github.com/verana-labs/verana-frontend/issues/233), [#234](https://github.com/verana-labs/verana-frontend/issues/234), [#235](https://github.com/verana-labs/verana-frontend/issues/235), [#237](https://github.com/verana-labs/verana-frontend/issues/237),  [#238](https://github.com/verana-labs/verana-frontend/issues/238), [#240](https://github.com/verana-labs/verana-frontend/issues/240), [#241](https://github.com/verana-labs/verana-frontend/issues/241), [#242](https://github.com/verana-labs/verana-frontend/issues/242), [#244](https://github.com/verana-labs/verana-frontend/issues/244), [#245](https://github.com/verana-labs/verana-frontend/issues/245), [#246](https://github.com/verana-labs/verana-frontend/issues/246) ([#250](https://github.com/verana-labs/verana-frontend/issues/250)) ([57cc98a](https://github.com/verana-labs/verana-frontend/commit/57cc98a5f668e804caf865b7a73d0681e460a333))
+
 ## [0.5.0](https://github.com/verana-labs/verana-frontend/compare/v0.4.0...v0.5.0) (2026-02-12)
 
 

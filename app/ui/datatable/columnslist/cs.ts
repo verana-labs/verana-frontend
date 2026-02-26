@@ -36,9 +36,9 @@ const formatNumber = (value: unknown): string => {
 };
 
 export const columnsCsList: Column<CsList>[] = [
-  { header: t("datatable.cs.header.id"), accessor: "id" },
-  { header: t("datatable.cs.header.title"), accessor: "title" },
-  { header: t("datatable.cs.header.desc"), accessor: "description", priority: 4 },
+  { header: t("datatable.cs.header.id"), accessor: "id", className: "font-medium" },
+  { header: t("datatable.cs.header.title"), accessor: "title", break: "break-words" },
+  { header: t("datatable.cs.header.desc"), accessor: "description", priority: 4, break: "break-words", className: "text-neutral-70 dark:text-neutral-70" },
   { header: t("datatable.cs.header.participants"), accessor: "participants", format: formatNumber },
   { header: t("datatable.cs.header.issuedCredentials"), accessor: "issuedCredentials", format: formatNumber },
   { header: t("datatable.cs.header.verifiedCredentials"), accessor: "verifiedCredentials", format: formatNumber },

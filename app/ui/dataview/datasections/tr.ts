@@ -1,6 +1,7 @@
 import { Section } from "@/ui/dataview/types";
 import { CsData } from "./cs";
 import { languageOptions } from "./gfd";
+import { faBoxArchive, faEdit } from "@fortawesome/free-solid-svg-icons";
 
 const t = (key: string) => ({ key });
 
@@ -35,15 +36,77 @@ export interface TrData {
   last_version?: number;
   csList?: CsData[];
   participants?: number;
+  title?: string;
+  description?: string;
+  updateTrustRegistry?: string; // action type
+  archiveTrustRegistry?: string; // action type
+  unarchiveTrustRegistry?: string; // action type
 }
 
 // Sections configuration for TrData
 export const trSections: Section<TrData>[] = [
   {
     name: t("dataview.tr.sections.basicInformation"),
-    // icon: ShieldCheckIcon,
     type: "basic",
-    sectionBorder: true,
+    classFormEdit: "grid grid-cols-1 md:grid-cols-2 gap-6 mb-6", //lg:grid-cols-3
+    noEdit: true,
+    fields: [
+      { name: "id", label: t("dataview.tr.fields.id"), type: "data", show: "view", update: false, id: true },
+      {
+        name: "did",
+        label: t("dataview.tr.fields.did"),
+        type: "data",
+        show: "none",
+        required: true,
+        update: true,
+        placeholder: "did:method:identifier",
+        validation: { type: "DID" },
+      },
+      {
+        name: "aka",
+        label: t("dataview.tr.fields.aka"),
+        type: "data",
+        show: "none",
+        required: true,
+        update: true,
+        validation: { type: "URL" },
+      },
+      { name: "controller", label: t("dataview.tr.fields.controller"), type: "data", show: "view", update: false },
+      {
+        name: "language",
+        label: t("dataview.tr.fields.language"),
+        type: "data",
+        inputType: "select",
+        options: languageOptions,
+        show: "view",
+        required: false,
+        update: false,
+      },
+      {
+        name: "docUrl",
+        label: t("dataview.tr.fields.docUrl"),
+        type: "data",
+        show: "none",
+        required: true,
+        update: false,
+        validation: { type: "URL" },
+      },
+      { name: "deposit", label: t("dataview.tr.fields.deposit"), type: "data", show: "view" },
+      { name: "role", label: t("dataview.tr.fields.role"), type: "data", show: "none" },
+      { name: "created", label: t("dataview.tr.fields.created"), type: "data", show: "none" },
+      { name: "modified", label: t("dataview.tr.fields.modified"), type: "data", show: "none" },
+      { name: "active_version", label: t("dataview.tr.fields.active_version"), type: "data", show: "view" },
+      { name: "schemas", label: t("dataview.tr.fields.schemas"), type: "data", show: "none" },
+      { name: "archiveTrustRegistry", label: t("dataview.tr.actions.archiveTrustRegistry"), type: "action", icon: faBoxArchive, iconColorClass: "bg-gray-600 text-white hover:bg-gray-700" },
+      { name: "unarchiveTrustRegistry", label: t("dataview.tr.actions.unarchiveTrustRegistry"), type: "action", icon: faBoxArchive, iconColorClass: "bg-green-600 text-white hover:bg-green-700" },
+    ],
+  },
+  {
+    name: t("dataview.section.mutable"),
+    nameCreate: t("dataview.tr.sections.basicInformation"),
+    type: "basic",
+    classFormEdit: "grid grid-cols-1 md:grid-cols-2 gap-6 mb-6", //lg:grid-cols-3
+    classFormCreate: "",
     fields: [
       { name: "id", label: t("dataview.tr.fields.id"), type: "data", show: "none", update: false, id: true },
       {
@@ -65,14 +128,14 @@ export const trSections: Section<TrData>[] = [
         update: true,
         validation: { type: "URL" },
       },
-      { name: "controller", label: t("dataview.tr.fields.controller"), type: "data", show: "view", update: false },
+      { name: "controller", label: t("dataview.tr.fields.controller"), type: "data", show: "none", update: false },
       {
         name: "language",
         label: t("dataview.tr.fields.language"),
         type: "data",
         inputType: "select",
         options: languageOptions,
-        show: "create view",
+        show: "create",
         required: false,
         update: false,
       },
@@ -80,41 +143,14 @@ export const trSections: Section<TrData>[] = [
         name: "docUrl",
         label: t("dataview.tr.fields.docUrl"),
         type: "data",
-        show: "create view",
+        show: "create",
         required: true,
         update: false,
         validation: { type: "URL" },
       },
-      { name: "deposit", label: t("dataview.tr.fields.deposit"), type: "data", show: "view" },
-      { name: "role", label: t("dataview.tr.fields.role"), type: "data", show: "none" },
-      { name: "created", label: t("dataview.tr.fields.created"), type: "data", show: "none" },
-      { name: "modified", label: t("dataview.tr.fields.modified"), type: "data", show: "none" },
-      { name: "active_version", label: t("dataview.tr.fields.active_version"), type: "data", show: "view" },
-      { name: "schemas", label: t("dataview.tr.fields.schemas"), type: "data", show: "none" },
+      { name: "updateTrustRegistry", label: t("dataview.tr.actions.updateTrustRegistry"), type: "action", icon: faEdit, isEditButton: true },
     ],
   },
-  // {
-  //   name: t("dataview.tr.sections.governanceFrameworkDocuments"),
-  //   // icon: ListBulletIcon,
-  //   type: "advanced",
-  //   fields: [
-  //     { name: "docs", label: t("dataview.tr.fields.docs"), type: "list", objectData: "string" },
-  //     { name: "addGovernanceFrameworkDocument", label: t("dataview.tr.actions.addGovernanceFrameworkDocument"), type: "action" },
-  //     {
-  //       name: "increaseActiveGovernanceFrameworkVersion",
-  //       label: t("dataview.tr.actions.increaseActiveGovernanceFrameworkVersion"),
-  //       type: "action",
-  //     },
-  //   ],
-  // },
-  // {
-  //   name: t("dataview.tr.sections.credentialSchemas"),
-  //   // icon: IdentificationIcon,
-  //   type: "advanced",
-  //   fields: [
-  //     { name: "csList", label: t("dataview.tr.fields.csList"), type: "list", objectData: CsDataToken, objectSections: csSections },
-  //   ],
-  // },
 ];
 
 

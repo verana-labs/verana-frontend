@@ -48,6 +48,10 @@ export const MSG_TYPE_CONFIG_TR = {
     typeUrl: '/verana.tr.v1.MsgArchiveTrustRegistry',
     txLabel: 'MsgArchiveTrustRegistry',
   },
+  MsgUnarchiveTrustRegistry: {
+    typeUrl: '/verana.tr.v1.MsgArchiveTrustRegistry',
+    txLabel: 'MsgUnarchiveTrustRegistry',
+  },
   MsgAddGovernanceFrameworkDocument: {
     typeUrl: '/verana.tr.v1.MsgAddGovernanceFrameworkDocument',
     txLabel: 'MsgAddGovernanceFrameworkDocument',
@@ -81,6 +85,11 @@ type ActionTRParams =
       id: string | number;
     }
   | {
+      msgType: 'MsgUnarchiveTrustRegistry';
+      creator: string;
+      id: string | number;
+    }
+  | {
       msgType: 'MsgAddGovernanceFrameworkDocument';
       creator: string;
       id: string | number;
@@ -110,8 +119,8 @@ export function useActionTR(  onCancel?: () => void,
 
   // Handler for Succes: refresh and collapses/hides the action UI
   const handleSuccess = () => {
+    console.info('handleSuccess useActionTR', onRefresh);
     onRefresh?.();
-    console.info('handleSuccess useActionTR');
     setTimeout( () => { onCancel?.() }, 1000);
   };
 
@@ -202,6 +211,14 @@ export function useActionTR(  onCancel?: () => void,
           creator: address,
           id: Long.fromString(String(params.id)),
           archive: true,
+        });
+        break;
+      case 'MsgUnarchiveTrustRegistry':
+        typeUrl = MSG_TYPE_CONFIG_TR.MsgArchiveTrustRegistry.typeUrl;
+        value = MsgArchiveTrustRegistry.fromPartial({
+          creator: address,
+          id: Long.fromString(String(params.id)),
+          archive: false,
         });
         break;
       case 'MsgAddGovernanceFrameworkDocument':

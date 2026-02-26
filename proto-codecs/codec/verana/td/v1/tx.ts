@@ -53,6 +53,23 @@ export interface MsgReclaimTrustDepositResponse {
   claimedAmount: Long;
 }
 
+/**
+ * MsgSlashTrustDeposit defines the message for slashing an account's trust deposit
+ * This can only be executed by the governance module
+ */
+export interface MsgSlashTrustDeposit {
+  /** authority is the address that controls the module (defaults to x/gov unless overwritten). */
+  authority: string;
+  /** account is the address of the account whose trust deposit will be slashed */
+  account: string;
+  /** amount is the amount to slash (in base denom) */
+  amount: string;
+}
+
+/** MsgSlashTrustDepositResponse defines the response for MsgSlashTrustDeposit */
+export interface MsgSlashTrustDepositResponse {
+}
+
 export interface MsgRepaySlashedTrustDeposit {
   creator: string;
   account: string;
@@ -457,6 +474,138 @@ export const MsgReclaimTrustDepositResponse = {
   },
 };
 
+function createBaseMsgSlashTrustDeposit(): MsgSlashTrustDeposit {
+  return { authority: "", account: "", amount: "" };
+}
+
+export const MsgSlashTrustDeposit = {
+  encode(message: MsgSlashTrustDeposit, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.authority !== "") {
+      writer.uint32(10).string(message.authority);
+    }
+    if (message.account !== "") {
+      writer.uint32(18).string(message.account);
+    }
+    if (message.amount !== "") {
+      writer.uint32(26).string(message.amount);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): MsgSlashTrustDeposit {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgSlashTrustDeposit();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.authority = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.account = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.amount = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgSlashTrustDeposit {
+    return {
+      authority: isSet(object.authority) ? globalThis.String(object.authority) : "",
+      account: isSet(object.account) ? globalThis.String(object.account) : "",
+      amount: isSet(object.amount) ? globalThis.String(object.amount) : "",
+    };
+  },
+
+  toJSON(message: MsgSlashTrustDeposit): unknown {
+    const obj: any = {};
+    if (message.authority !== "") {
+      obj.authority = message.authority;
+    }
+    if (message.account !== "") {
+      obj.account = message.account;
+    }
+    if (message.amount !== "") {
+      obj.amount = message.amount;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgSlashTrustDeposit>, I>>(base?: I): MsgSlashTrustDeposit {
+    return MsgSlashTrustDeposit.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgSlashTrustDeposit>, I>>(object: I): MsgSlashTrustDeposit {
+    const message = createBaseMsgSlashTrustDeposit();
+    message.authority = object.authority ?? "";
+    message.account = object.account ?? "";
+    message.amount = object.amount ?? "";
+    return message;
+  },
+};
+
+function createBaseMsgSlashTrustDepositResponse(): MsgSlashTrustDepositResponse {
+  return {};
+}
+
+export const MsgSlashTrustDepositResponse = {
+  encode(_: MsgSlashTrustDepositResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): MsgSlashTrustDepositResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgSlashTrustDepositResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): MsgSlashTrustDepositResponse {
+    return {};
+  },
+
+  toJSON(_: MsgSlashTrustDepositResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgSlashTrustDepositResponse>, I>>(base?: I): MsgSlashTrustDepositResponse {
+    return MsgSlashTrustDepositResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgSlashTrustDepositResponse>, I>>(_: I): MsgSlashTrustDepositResponse {
+    const message = createBaseMsgSlashTrustDepositResponse();
+    return message;
+  },
+};
+
 function createBaseMsgRepaySlashedTrustDeposit(): MsgRepaySlashedTrustDeposit {
   return { creator: "", account: "", amount: Long.UZERO };
 }
@@ -604,7 +753,8 @@ export interface Msg {
   UpdateParams(request: MsgUpdateParams): Promise<MsgUpdateParamsResponse>;
   ReclaimTrustDepositYield(request: MsgReclaimTrustDepositYield): Promise<MsgReclaimTrustDepositYieldResponse>;
   ReclaimTrustDeposit(request: MsgReclaimTrustDeposit): Promise<MsgReclaimTrustDepositResponse>;
-  /** rpc SlashTrustDeposit(MsgSlashTrustDeposit) returns (MsgSlashTrustDepositResponse); */
+  /** SlashTrustDeposit defines a governance operation to slash an account's trust deposit */
+  SlashTrustDeposit(request: MsgSlashTrustDeposit): Promise<MsgSlashTrustDepositResponse>;
   RepaySlashedTrustDeposit(request: MsgRepaySlashedTrustDeposit): Promise<MsgRepaySlashedTrustDepositResponse>;
 }
 
@@ -618,6 +768,7 @@ export class MsgClientImpl implements Msg {
     this.UpdateParams = this.UpdateParams.bind(this);
     this.ReclaimTrustDepositYield = this.ReclaimTrustDepositYield.bind(this);
     this.ReclaimTrustDeposit = this.ReclaimTrustDeposit.bind(this);
+    this.SlashTrustDeposit = this.SlashTrustDeposit.bind(this);
     this.RepaySlashedTrustDeposit = this.RepaySlashedTrustDeposit.bind(this);
   }
   UpdateParams(request: MsgUpdateParams): Promise<MsgUpdateParamsResponse> {
@@ -636,6 +787,12 @@ export class MsgClientImpl implements Msg {
     const data = MsgReclaimTrustDeposit.encode(request).finish();
     const promise = this.rpc.request(this.service, "ReclaimTrustDeposit", data);
     return promise.then((data) => MsgReclaimTrustDepositResponse.decode(_m0.Reader.create(data)));
+  }
+
+  SlashTrustDeposit(request: MsgSlashTrustDeposit): Promise<MsgSlashTrustDepositResponse> {
+    const data = MsgSlashTrustDeposit.encode(request).finish();
+    const promise = this.rpc.request(this.service, "SlashTrustDeposit", data);
+    return promise.then((data) => MsgSlashTrustDepositResponse.decode(_m0.Reader.create(data)));
   }
 
   RepaySlashedTrustDeposit(request: MsgRepaySlashedTrustDeposit): Promise<MsgRepaySlashedTrustDepositResponse> {

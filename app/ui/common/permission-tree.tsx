@@ -7,6 +7,7 @@ import {
   faChartColumn,
   faChevronRight,
   faCoins,
+  faHandshake,
   faPlus,
   faScaleBalanced,
 } from "@fortawesome/free-solid-svg-icons";
@@ -62,6 +63,8 @@ export type TreeNode = {
   roleColorClass?: string;
   permission?: Permission;
   children?: TreeNode[];
+  validationProcessLabel?: string;
+  validationProcessColor?: string;
 };
 
 /** ------------ Helpers ------------ */
@@ -75,15 +78,12 @@ function findNodeAndPath(nodes: TreeNode[], id: string): { node?: TreeNode; path
   return { node: undefined, path: [] };
 }
 
-const ARCHIVED_PERM_STATES = ["REPAID", "SLASHED"];
-
 function Tree({
   type,
   nodes,
   showWeight,
   showBusiness,
   showStats,
-  showArchived,
   selectedId,
   onSelect,
   expanded,
@@ -96,7 +96,6 @@ function Tree({
   showWeight: boolean;
   showBusiness: boolean;
   showStats: boolean;
-  showArchived: boolean;
   selectedId?: string;
   onSelect: (id: string) => void;
   expanded: Record<string, boolean>;
@@ -105,20 +104,16 @@ function Tree({
   hrefJoin?: string;
 }) {
 
-  const filteredNodes = showArchived
-    ? nodes
-    : nodes.filter(node => node.group || !ARCHIVED_PERM_STATES.includes(node.permission?.perm_state ?? ''));
-
   return (
     <div className="space-y-1">
-      {filteredNodes.map((node) => {
+      {nodes.map((node, idx) => {
         const hasChildren = !!node.children?.length;
         const isExpanded = expanded[node.nodeId] ?? false;
         const isSelected = selectedId === node.nodeId;
         const {labelVpState, classVpState} = vpStateColor(node.permission?.vp_state as VpState, node.permission?.vp_exp as string, node.permission?.expire_soon ?? false);
         const {labelPermState, classPermState} = permStateBadgeClass(node.permission?.perm_state as PermState, node.permission?.expire_soon ?? false);
         return (
-          <div key={node.nodeId}>
+          <div key={`${node.nodeId}-${idx}`}>
             <div
               className={[
                 "rounded-lg p-2 transition-all cursor-pointer",
@@ -126,11 +121,11 @@ function Tree({
                 isSelected ? "bg-primary-600/10" : "",
               ].join(" ")}
               style={{ marginLeft: depth * 24 }}
-              onClick={() => onSelect(node.nodeId)}
+              onClick={() => !node.group && onSelect(node.nodeId)}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  {/* {hasChildren ? ( */}
+                  {hasChildren || node.group ? (
                     <button
                       type="button"
                       onClick={(e) => {
@@ -145,9 +140,9 @@ function Tree({
                         className={`transition-transform ${isExpanded ? "rotate-90" : ""}`}
                       />
                     </button>
-                  {/* ) : (
+                  ) : (
                     <div className="w-4" />
-                  )} */}
+                  )}
 
                   <button
                     type="button"
@@ -217,9 +212,13 @@ function Tree({
                     href={hrefJoin??""}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className= {`text-xs ${node.roleColorClass} hover:text-purple-600`}
+                    className= {`text-xs ${node.roleColorClass} hover:text-purple-600 flex items-center space-x-3`}
                   >
-                    {resolveTranslatable({key: "participants.btn.join"}, translate)}
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${node.validationProcessColor}`}>
+                      {node.validationProcessLabel}
+                    </span>
+                    <FontAwesomeIcon icon={faHandshake} className="mr-1" />
+                    {" "}{resolveTranslatable({key: "participants.btn.join"}, translate)}
                   </Link>
                 ) ) }
               </div>
@@ -233,7 +232,6 @@ function Tree({
                 showWeight={showWeight}
                 showBusiness={showBusiness}
                 showStats={showStats}
-                showArchived={showArchived}
                 selectedId={selectedId}
                 onSelect={onSelect}
                 expanded={expanded}
@@ -252,7 +250,6 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
   const [showWeight, setShowWeight] = useState(false);
   const [showBusiness, setShowBusiness] = useState(false);
   const [showStats, setShowStats] = useState(false);
-  const [showArchived, setShowArchived] = useState(false);
   const [addPermission, setAddPermission] = useState<boolean>(false);
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
@@ -264,7 +261,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
     const isOpening = !(expanded[id] ?? false);
     setExpanded((p) => ({ ...p, [id]: isOpening }));
     if (isOpening) {
-      const node = findNodeById(tree, id);
+      const node = findNodeById(treeState, id);
       const alreadyLoaded = (node?.children?.length ?? 0) > 0;
       if (!alreadyLoaded) {
         setNodeRequestParams?.(id, type, validatorId);
@@ -283,10 +280,12 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
     return undefined;
   }  
 
+  const [treeState, setTreeState] = useState<TreeNode[]>(tree);
+
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const { node: selectedNode, path } = useMemo(
-    () => (selectedId ? findNodeAndPath(tree, selectedId) : { node: undefined, path: [] }),
-    [tree, selectedId]
+    () => (selectedId ? findNodeAndPath(treeState, selectedId) : { node: undefined, path: [] }),
+    [treeState, selectedId]
   );
 
   // UX: expand
@@ -316,26 +315,46 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
       return next;
     });
   }, [tree]);
+
+  useEffect(() => {
+    setTreeState(tree);
+  }, [tree]);
+
+  function updateNodePermission(nodes: TreeNode[], nodeId: string, perm: Permission): TreeNode[] {
+    return nodes.map((n) => {
+      if (n.nodeId === nodeId) {
+        return { ...n, permission: perm };
+      }
+      if (n.children?.length) {
+        return { ...n, children: updateNodePermission(n.children, nodeId, perm) };
+      }
+      return n;
+    });
+  }
   
+  function refreshNode(perm: Permission): void { // update permission -> node -> treeState
+    setTreeState((prev) => updateNodePermission(prev, perm.id, perm));
+  }
+
   return (
     <>
       {/* Breadcrumbs */}
       { (type === "participants" && csTitle && trTitle) ?  (
       <section className="mb-6">
         <nav className="flex flex-wrap items-center text-sm" aria-label="Breadcrumb">
-          <a
+          <Link
             href={`/tr/${trId}`}
             className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
           >
             {shortenDID(trTitle)}
-          </a>
+          </Link>
           <FontAwesomeIcon icon={faChevronRight} className="mx-2 text-neutral-70 text-xs" />
-          <a
+          <Link
             href={`/tr/cs/${csId}`}
             className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
           >
             {csTitle}
-          </a>
+          </Link>
           <FontAwesomeIcon icon={faChevronRight} className="mx-2 text-neutral-70 text-xs" />
           <span className="text-gray-900 dark:text-white font-medium">{resolveTranslatable({key: "participants.title"}, translate)}</span>
         </nav>
@@ -380,15 +399,6 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
               />
               <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{resolveTranslatable({key: "participants.show.stats"}, translate)}</span>
             </label>
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-primary-600 border-neutral-20 rounded focus:ring-primary-500"
-                checked={showArchived}
-                onChange={(e) => setShowArchived(e.target.checked)}
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{resolveTranslatable({key: "participants.show.archived"}, translate)}</span>
-            </label>
           </div>
           ):null}
         </div>
@@ -396,12 +406,11 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
         <div className="space-y-1">
           <Tree
             type={type}
-            nodes={tree}
+            nodes={treeState}
             hrefJoin={hrefJoin}
             showWeight={showWeight}
             showBusiness={showBusiness}
             showStats={showStats}
-            showArchived={showArchived}
             selectedId={selectedId}
             onSelect={setSelectedId}
             expanded={expanded}
@@ -440,7 +449,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
       
       {/* Detail Card  */}
       {selectedNode ? (
-        <PermissionCard selectedNode={selectedNode} path={path} csTitle={csTitle??""} />
+        <PermissionCard selectedNode={selectedNode} path={path} csTitle={csTitle??""} onRefresh={(perm: Permission) => refreshNode(perm)}/>
       ) : null}
     </>
   );

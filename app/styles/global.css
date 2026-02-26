@@ -456,13 +456,11 @@
   }
 
   .archived-row {
-    text-decoration: line-through;
-    text-decoration-color: #763EF0;
-    text-decoration-thickness: 2px;
+    @apply line-through decoration-[#763EF0] decoration-2;
   }
 
   .data-table-td {
-    @apply px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white;
+    @apply px-6 py-4 text-sm text-gray-900 dark:text-white;
   }
 
   .data-table-list {

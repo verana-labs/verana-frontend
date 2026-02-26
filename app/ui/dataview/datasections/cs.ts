@@ -22,6 +22,7 @@ export interface CsData {
   jsonSchema: string;
   updateCredentialSchema?: string; // action type
   archiveCredentialSchema?: string; // action type
+  unarchiveCredentialSchema?: string; // action type
   state?: string;
   title?: string;
   description?: string;
@@ -40,7 +41,7 @@ export const csSections: Section<CsData>[] = [
   {
     name: t("dataview.cs.sections.main"),
     type: "basic",
-    classForm: "grid grid-cols-1 md:grid-cols-2 gap-6 mb-6", //lg:grid-cols-3
+    classFormEdit: "grid grid-cols-1 md:grid-cols-2 gap-6 mb-6", //lg:grid-cols-3
     noEdit: true,
     fields: [
         {
@@ -88,13 +89,14 @@ export const csSections: Section<CsData>[] = [
       { name: "creator", label: t("dataview.cs.fields.creator"), type: "data", show: "none" },
       { name: "trId", label: t("dataview.cs.fields.trId"), type: "data", show: "none" },
       { name: "archiveCredentialSchema", label: t("dataview.cs.actions.archiveCredentialSchema"), type: "action", icon: faBoxArchive, iconColorClass: "bg-gray-600 text-white hover:bg-gray-700" },
+      { name: "unarchiveCredentialSchema", label: t("dataview.cs.actions.unarchiveCredentialSchema"), type: "action", icon: faBoxArchive, iconColorClass: "bg-green-600 text-white hover:bg-green-700" },
     ],
   },
   {
-    name: "Mutable Configuration",//t("dataview.cs.sections.main"),
+    name: t("dataview.section.mutable"),
     nameCreate: t("dataview.cs.sections.main"),
     type: "basic",
-    classForm: "grid grid-cols-1 md:grid-cols-2 gap-6 mb-6", //lg:grid-cols-3
+    classFormEdit: "grid grid-cols-1 md:grid-cols-2 gap-6 mb-6", //lg:grid-cols-3
     fields: [
         {
         name: "id",
@@ -190,7 +192,6 @@ export const csSections: Section<CsData>[] = [
   {
     name: t("dataview.cs.fields.jsonSchema"),
     type: "basic",
-    // classForm: "grid grid-cols-1 md:grid-cols-2 gap-6 mb-6", //lg:grid-cols-3
     fields: [
       {
         name: "jsonSchema",

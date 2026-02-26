@@ -1,4 +1,4 @@
-import { shortenDID, shortenMiddle } from "@/util/util";
+import { formatVNAFromUVNA, shortenDID, shortenMiddle } from "@/util/util";
 import { Column, Filter } from "@/ui/datatable/types";
 import { type I18nValues, type Translatable } from "@/ui/dataview/types";
 
@@ -29,6 +29,7 @@ export interface TrList {
   weight?: number | null;
   issued?: number | null;
   verified?: number | null;
+  archived?: string;
 }
 
 export const trFilter: Filter<TrList>[] = [
@@ -42,14 +43,14 @@ const formatNumber = (value: unknown): string => {
 };
 
 export const columnsTrList: Column<TrList>[] = [
-  { header: t("datatable.tr.header.id"), accessor: "id"},
-  { header: t("datatable.tr.header.did"), accessor: "did", format: (value) => shortenDID(String(value)) },
-  { header: t("datatable.tr.header.controller"), accessor: "controller", format: (value) => shortenMiddle(String(value), 25), priority: 2 },
-  { header: t("datatable.tr.header.activeSchemas"), accessor: "active_schemas", format: formatNumber, priority: 3 },
-  { header: t("datatable.tr.header.participants"), accessor: "participants", format: formatNumber, priority: 3 },
-  { header: t("datatable.tr.header.trustDeposit"), accessor: "weight", format: formatNumber, priority: 4 },
-  { header: t("datatable.tr.header.issuedCredentials"), accessor: "issued", format: formatNumber, priority: 4 },
-  { header: t("datatable.tr.header.verifiedCredentials"), accessor: "verified", format: formatNumber, priority: 4 },
+  { header: t("datatable.tr.header.id"), accessor: "id", className: "font-medium"},
+  { header: t("datatable.tr.header.did"), accessor: "did", format: (value) => shortenDID(String(value)), break: "break-all" },
+  { header: t("datatable.tr.header.controller"), accessor: "controller", format: (value) => shortenMiddle(String(value), 25), priority: 5, break: "break-all" },
+  { header: t("datatable.tr.header.activeSchemas"), accessor: "active_schemas", format: formatNumber, priority: 4 },
+  { header: t("datatable.tr.header.participants"), accessor: "participants", format: formatNumber },
+  { header: t("datatable.tr.header.trustDeposit"), accessor: "weight", format: (value) => formatVNAFromUVNA(value as string) },
+  { header: t("datatable.tr.header.issuedCredentials"), accessor: "issued", format: formatNumber },
+  { header: t("datatable.tr.header.verifiedCredentials"), accessor: "verified", format: formatNumber },
 ];
 
 

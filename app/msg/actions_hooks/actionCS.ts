@@ -21,8 +21,7 @@ import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import { normalizeJsonSchema, validateJSONSchemaReturn } from '@/util/json_schema_util';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
-// import { sanitizeProtoMsg } from '../util/sanitizeProtoMsg';
-import { pickOptionalUInt32 } from '@/msg/util/aminoHelpers';
+import { pickOptionalUInt32 } from '@/msg/amino-converter/util/helpers';
 
 // Message type configuration (typeUrl + label for memo/notification)
 export const MSG_TYPE_CONFIG_CS = {
@@ -35,6 +34,10 @@ export const MSG_TYPE_CONFIG_CS = {
     txLabel: 'MsgUpdateCredentialSchema',
   },
   MsgArchiveCredentialSchema: {
+    typeUrl: '/verana.cs.v1.MsgArchiveCredentialSchema',
+    txLabel: 'MsgArchiveCredentialSchema',
+  },
+  MsgUnarchiveCredentialSchema: {
     typeUrl: '/verana.cs.v1.MsgArchiveCredentialSchema',
     txLabel: 'MsgArchiveCredentialSchema',
   },
@@ -66,6 +69,10 @@ type ActionCSParams =
   | {
       msgType: 'MsgArchiveCredentialSchema';
       id: string | number | Long;
+    }
+  | {
+      msgType: 'MsgUnarchiveCredentialSchema';
+      id: string | number | Long;
     };
 
 // Hook to execute Credential Schema transactions + notifications
@@ -82,8 +89,8 @@ export function useActionCS( onCancel?: () => void,
 
   // Handler for Succes: refresh and collapses/hides the action UI
   const handleSuccess = () => {
-    onRefresh?.();
     console.info('handleSuccess useActionCS');
+    onRefresh?.();
     setTimeout( () => { onCancel?.() }, 1000);
   };
 
@@ -190,6 +197,16 @@ export function useActionCS( onCancel?: () => void,
         break;
       }
 
+      case 'MsgUnarchiveCredentialSchema': {
+        typeUrl = MSG_TYPE_CONFIG_CS.MsgArchiveCredentialSchema.typeUrl;
+        value = MsgArchiveCredentialSchema.fromPartial({
+          creator: address,
+          id: Long.fromValue(params.id), // uint64
+          archive: false,
+        });
+        break;
+      }
+
       default:
         await notify(resolveTranslatable({key: "error.msg.invalid.msgtype"}, translate)??'', 'error');
         return;
@@ -197,7 +214,6 @@ export function useActionCS( onCancel?: () => void,
 
     // Show "in progress" notification
     let notifyPromise: Promise<void> = notify(
-      // MSG_INPROGRESS_ACTION_CS[params.msgType],
       MSG_INPROGRESS_ACTION_CS[params.msgType](),
       'inProgress',
       resolveTranslatable({key: 'notification.msg.inprogress.title'}, translate)
@@ -209,11 +225,7 @@ export function useActionCS( onCancel?: () => void,
     try {
 
       const msg: EncodeObject = { typeUrl, value };
-      // console.info(msg);
-      // const msgSanitized = sanitizeProtoMsg(msg);
-
       res = await sendTx({
-        // msgs: [msgSanitized],
         msgs: [msg],
         memo: MSG_TYPE_CONFIG_CS[params.msgType].txLabel
       });      

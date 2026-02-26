@@ -10,7 +10,8 @@ import { useCsData } from "@/hooks/useCredentialSchemaData";
 import { useVeranaChain } from "@/hooks/useVeranaChain";
 import { useChain } from "@cosmos-kit/react";
 import { useTrustRegistryData } from "@/hooks/useTrustRegistryData";
-import { authorityPaticipants, nodeChildRoles, roleColorClass } from "@/util/util";
+import { authorityPaticipants, nodeChildRoles, roleColorClass, roleJoinColorClass, roleLabel } from "@/util/util";
+import { Role } from "@/ui/common/role-card";
 
 export default function ParicipantsPage() {
   
@@ -40,7 +41,7 @@ export default function ParicipantsPage() {
     return roots;
   }
 
-  function toTreeNode(node: BuiltNode, typesToShow: string[]): TreeNode {
+  function toTreeNode(node: BuiltNode, typesToShow: {role: Role; label: string; validation: boolean}[]): TreeNode {
     const idsAddress = idsAddressRef.current;
     const idsPredecessor = idsPredecessorRef.current;
     let isGrantee = false;
@@ -76,24 +77,26 @@ export default function ParicipantsPage() {
     };
   }
 
-  function foldersByTypes(parentId: string, schemaId: string, types: string[]): TreeNode[] {
+  function foldersByTypes(parentId: string, schemaId: string, types: {role: Role; label: string; validation: boolean}[]): TreeNode[] {
     return types.map((t) => ({
-      nodeId: `group:${parentId}:${t}`,
-      name: t,
+      nodeId: `group:${parentId}:${t.role}`,
+      name: t.label,
+      validationProcessLabel: t.validation ? "validation process" : "open",
+      validationProcessColor: roleJoinColorClass(t.role),
       isGrantee: false,
       isValidator: false,
       group: true,
       schemaId,
       parentId,
-      type: t,
-      roleColorClass: roleColorClass(t),
+      type: t.role,
+      roleColorClass: roleColorClass(t.role),
       icon: faFolder,
-      iconColorClass: roleColorClass(t),
+      iconColorClass: roleColorClass(t.role),
       children: [],
     }));
   }
 
-  function buildPermissionTreeGroupedByType(perms: Permission[], typesToShow: string[]): TreeNode[] {
+  function buildPermissionTreeGroupedByType(perms: Permission[], typesToShow: {role: Role; label: string; validation: boolean}[]): TreeNode[] {
     const permissionTree = buildTreeByValidatorPermId(perms);
     return permissionTree.map((n) => toTreeNode(n, typesToShow));
   }

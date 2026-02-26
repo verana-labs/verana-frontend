@@ -58,6 +58,11 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     description: t("messages.MsgArchiveTrustRegistry.description"),
     cost: t("messages.MsgArchiveTrustRegistry.cost"),
   },
+  MsgUnarchiveTrustRegistry: {
+    label: t("messages.MsgUnarchiveTrustRegistry.label"),
+    description: t("messages.MsgUnarchiveTrustRegistry.description"),
+    cost: t("messages.MsgUnarchiveTrustRegistry.cost"),
+  },
   MsgAddGovernanceFrameworkDocument: {
     label: t("messages.MsgAddGovernanceFrameworkDocument.label"),
     description: t("messages.MsgAddGovernanceFrameworkDocument.description"),
@@ -83,6 +88,11 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     label: t("messages.MsgArchiveCredentialSchema.label"),
     description: t("messages.MsgArchiveCredentialSchema.description"),
     cost: t("messages.MsgArchiveCredentialSchema.cost"),
+  },
+  MsgUnarchiveCredentialSchema: {
+    label: t("messages.MsgUnarchiveCredentialSchema.label"),
+    description: t("messages.MsgUnarchiveCredentialSchema.description"),
+    cost: t("messages.MsgUnarchiveCredentialSchema.cost"),
   },
   MsgCancelPermissionVPLastRequest: {
     label: t("messages.MsgCancelPermissionVPLastRequest.label"),
@@ -152,7 +162,14 @@ export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
   MsgRepaySlashedTrustDeposit: {},
   MsgCreateTrustRegistry: {},
   MsgUpdateTrustRegistry: {},
-  MsgArchiveTrustRegistry: {},
+  MsgArchiveTrustRegistry: {
+    button: "bg-gray-600 hover:bg-gray-700",
+    icon: faBoxArchive
+  },
+  MsgUnarchiveTrustRegistry: {
+    button: "bg-green-600 hover:bg-green-700",
+    icon: faBoxArchive
+  },
   MsgAddGovernanceFrameworkDocument: {
     button: "",
     icon: faPlus,
@@ -165,6 +182,10 @@ export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
   MsgUpdateCredentialSchema: {},
   MsgArchiveCredentialSchema: {
     button: "bg-gray-600 hover:bg-gray-700",
+    icon: faBoxArchive
+  },
+  MsgUnarchiveCredentialSchema: {
+    button: "bg-green-600 hover:bg-green-700",
     icon: faBoxArchive
   },
   MsgCancelPermissionVPLastRequest: {

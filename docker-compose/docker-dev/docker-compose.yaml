@@ -19,6 +19,8 @@ services:
       - NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID=http://node1.devnet.verana.network:1317/verana/dd/v1
       - NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY=http://node1.devnet.verana.network:1317/verana/tr/v1
       - NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA=http://node1.devnet.verana.network:1317/verana/cs/v1
+      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_INDEXER=http://node1.devnet.verana.network:1317/verana/indexer/v1
+      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_METRICS=http://node1.devnet.verana.network:1317/verana/metrics/v1
       - NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE=true
     networks:
       - verana

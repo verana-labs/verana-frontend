@@ -11,7 +11,7 @@ import { resolveTranslatable } from "@/ui/dataview/types";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronLeft, faChevronRight, faCoins, faFileContract, faHandshake, faScaleBalanced, faShieldHalved } from "@fortawesome/free-solid-svg-icons";
+import { faChevronLeft, faChevronRight, faCoins, faFileContract, faScaleBalanced, faShieldHalved } from "@fortawesome/free-solid-svg-icons";
 import { formatVNA } from "@/util/util";
 import Link from "next/link";
 
@@ -135,12 +135,6 @@ export default function DiscoverJoinPage() {
         })();
         }
     }, [errorTrList, router, errorNotified]);
-
-    if (loading) return (
-        <p>
-            {resolveTranslatable({ key: "loading.trlist" }, translate) ?? "Loading Discover..."}
-        </p>
-    );
   
   return (
     <>
@@ -224,15 +218,7 @@ export default function DiscoverJoinPage() {
                   {resolveTranslatable({key: "discover.btn.view"}, translate)} 
                 </Link>
 
-                <Link
-                  href={`/join/${eco.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center px-4 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors text-sm font-medium"
-                >
-                  <FontAwesomeIcon className="mr-2" aria-hidden="true" icon={faHandshake} />
-                  {resolveTranslatable({key: "discover.btn.join"}, translate)}
-                </Link>
+
               </div>
             </div>
 
@@ -245,6 +231,7 @@ export default function DiscoverJoinPage() {
         )})}
       </section>
 
+      {filtered.length>0 ? (
       <section id="pagination" className="mt-8 flex justify-center">
         <nav className="inline-flex rounded-lg shadow-sm" aria-label="Pagination">
           <button
@@ -298,6 +285,7 @@ export default function DiscoverJoinPage() {
           </button>
         </nav>
       </section>
+      ) : null }
 
     </>
   );

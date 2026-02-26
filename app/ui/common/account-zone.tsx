@@ -92,7 +92,7 @@ export default function AccountZone() {
             {shortenMiddle(address, 13)}
           </p>
           <p className="text-xs text-neutral-70 dark:text-neutral-70">
-            {resolveTranslatable({key: copied ? 'Copied!': 'connected.title' }, translate)}
+            {resolveTranslatable({key: copied ? 'copied.label': 'connected.title' }, translate)}
           </p>
         </div>
 

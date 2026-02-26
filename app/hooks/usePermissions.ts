@@ -32,7 +32,7 @@ export function usePermissions(schema?: string, type?: string, validatorId?: str
     setError(null);
 
     const params = new URLSearchParams();
-    params.set('schema_id', schemaToUse); // incluido siempre
+    params.set('schema_id', schemaToUse);
     if (typeToUse) params.set('type', typeToUse);
     if (validatorIdToUse) params.set('validator_perm_id', validatorIdToUse);
     const url = `${getURL}/list?${params.toString()}`;

@@ -13,7 +13,7 @@ interface TitleAndButtonProps {
   icon?: IconDefinition;
   backLink?: boolean;
   type?: 'page' | 'view' | 'table';
-  titleFilter?: React.ReactNode;
+  checkFilter?: {show: boolean; changeFilter: (value: boolean) => void; label: string};
 }
 
 export default function TitleAndButton({
@@ -25,7 +25,7 @@ export default function TitleAndButton({
   icon,
   backLink,
   type,
-  titleFilter
+  checkFilter
 }: TitleAndButtonProps) {
   const router = useRouter();
   const handleClick = () => {
@@ -40,6 +40,7 @@ export default function TitleAndButton({
     <section id="back-nav" className="mb-6">
       {(buttonLabel || icon) && (
         <button
+          type="button"
           onClick={handleClick}
           className="inline-flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
         >
@@ -53,7 +54,12 @@ export default function TitleAndButton({
     <section id="page-header" className={ type === "table" ? "" : "mb-8"}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between">
             <div>
-                <h1 className={ type === "table" ? "data-table-title" : type === "view" ? "view-title" : "page-title"}>{title}</h1>
+                { type === "table" ? (
+                <h3 className="data-table-title">{title}</h3>
+                ):(
+                <h1 className={type === "view" ? "view-title" : "page-title"}>{title}</h1>
+                )}
+
                 {/* Help Section (if present) */}
                 {description && Array.isArray(description) && (
                   <>
@@ -68,7 +74,19 @@ export default function TitleAndButton({
             {}
             { !backLink && (
             <div className="mt-4 sm:mt-0 flex items-center space-x-6">
-              {titleFilter}
+              {checkFilter && (
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={checkFilter?.show}
+                  onChange={(e) => checkFilter?.changeFilter(e.target.checked)}
+                  className="w-4 h-4 text-primary-600 bg-white dark:bg-surface border-neutral-20 dark:border-neutral-70 rounded focus:ring-2 focus:ring-primary-500"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  {checkFilter?.label}
+                </span>
+              </label>
+              )}
               {/* Render button only if buttonLabel or Icon is provided */}
               {(buttonLabel || icon) && (
                 <button

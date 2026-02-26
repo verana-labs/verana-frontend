@@ -7,13 +7,16 @@ import { translate } from '@/i18n/dataview';
 import { communityLinks, configFooter } from '@/lib/dashlinks';
 import Link from 'next/link';
 import { useChainVersion } from '@/hooks/useChainVersion';
+import { useIndexerVersion } from '@/hooks/useIndexerVersion';
 
 export function Footer() {
-  const chainVersion = useChainVersion();
+  const networkVersion = useChainVersion();
+  const indexerVersion = useIndexerVersion();
+  const frontendVersion = process.env.NEXT_PUBLIC_APP_VERSION;
 
   return (
     <div className="flex-shrink-0 px-2 py-4 border-t border-neutral-20 dark:border-neutral-70">
-      {/* Logo & version */}
+      {/* Logo & versions */}
       <div className="flex items-center">
         <Image
           src={configFooter.img}
@@ -22,14 +25,17 @@ export function Footer() {
           height={24}
           className="w-6 h-6 mr-2"
         />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-            {resolveTranslatable({key: "footer.title"}, translate)}
-          </p>
-          <p className="text-xs text-neutral-70 dark:text-neutral-70">
-            {chainVersion ?? resolveTranslatable({key: "footer.version"}, translate)}
-          </p>
-        </div>
+        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+          {resolveTranslatable({key: "footer.title"}, translate)}
+        </p>
+      </div>
+      <div className="mt-1 grid grid-cols-2 text-xs text-neutral-70 dark:text-neutral-70">
+        <span>{resolveTranslatable({key: "footer.network"}, translate)}</span>
+        <span>{networkVersion ?? resolveTranslatable({key: "footer.version"}, translate)}</span>
+        <span>{resolveTranslatable({key: "footer.indexer"}, translate)}</span>
+        <span>{indexerVersion ?? resolveTranslatable({key: "footer.version"}, translate)}</span>
+        <span>{resolveTranslatable({key: "footer.frontend"}, translate)}</span>
+        <span>{frontendVersion ? `v${frontendVersion}` : resolveTranslatable({key: "footer.version"}, translate)}</span>
       </div>
 
       {/* Social Ícons */}

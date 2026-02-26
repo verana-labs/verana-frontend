@@ -2,20 +2,21 @@
 
 import PermissionTree, { TreeNode } from "@/ui/common/permission-tree";
 import { useEffect, useState } from "react";
-import { Permission } from "@/ui/dataview/datasections/perm";
-import { faCrown, faEye, faFolder } from "@fortawesome/free-solid-svg-icons";
-import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { Permission, TrustRegistriesPermission } from "@/ui/dataview/datasections/perm";
+import { faFolder } from "@fortawesome/free-solid-svg-icons";
 import { useVeranaChain } from "@/hooks/useVeranaChain";
 import { useChain } from "@cosmos-kit/react";
-import { usePermissionsForAddress } from "@/hooks/usePermissionsForAddress";
 import { authorityPaticipants, roleColorClass } from "@/util/util";
+import { usePendingTasksCtx, useUpdatePendingTasksCtx } from '@/providers/pending-tasks-provider-context';
 
 export default function PendingTasksPage() {
   const veranaChain = useVeranaChain();
   const { address } = useChain(veranaChain.chain_name);
 
-  const { permissionsList } = usePermissionsForAddress(address);
+  const permissionsList = usePendingTasksCtx();
+  const updatePermissionList = useUpdatePendingTasksCtx();
   const [permissionsTree, setPermissionsTree] = useState<TreeNode[]>([]);
+  const [refreshRoot, setRefreshRoot] = useState<boolean>(false);
 
   // Collect permission IDs granted to the current address
   const idsAddress = new Set<string>();
@@ -54,46 +55,43 @@ export default function PendingTasksPage() {
     };
   }
 
-  function groupPermissionsBySchema(perms: Permission[]) {
-    const buckets = new Map<string, Permission[]>();
-
-    for (const p of perms) {
-      const key = p.schema_id;
-      idsPredecessor.add(p.id);
-      const arr = buckets.get(key);
-      if (arr) arr.push(p);
-      else buckets.set(key, [p]);
-    }
-
-    const entries = Array.from(buckets.entries()).sort(([a], [b]) => a.localeCompare(b));
-
-    const tree: TreeNode[] = entries.map(([schemaId, list]) => {
-      const children = list.map(permissionToTreeNode);
-      const title = `Schema ${schemaId}`;
-
-      return {
-        nodeId: `schema:${schemaId}`,
-        name: `${title} (${list.length})`,
+  function buildTreeFromResponse(data: TrustRegistriesPermission[]): TreeNode[] {
+    return data.map((tr) => ({
+      nodeId: `tr:${tr.id}`,
+      name: `${tr.did} (${tr.pending_tasks})`,
+      group: true,
+      parentId: "root",
+      isGrantee: false,
+      isValidator: false,
+      roleColorClass: "text-purple-300",
+      icon: faFolder,
+      iconColorClass: "text-purple-300",
+      children: tr.credential_schemas.map((cs) => ({
+        nodeId: `cs:${cs.id}`,
+        name: `${cs.title} (${cs.pending_tasks})`,
+        group: true,
+        parentId: `tr:${tr.id}`,
         isGrantee: false,
         isValidator: false,
-        group: true,
-        schemaId,
-        parentId: "root",
-        type: "SCHEMA",
         roleColorClass: "text-purple-200",
         icon: faFolder,
         iconColorClass: "text-purple-200",
-        children,
-      };
-    });
-    
-    return tree;
+        children: cs.permissions.map((p) =>
+          permissionToTreeNode(p)
+        ),
+      })),
+    }));
   }
 
   useEffect(() => {
-    const tree = groupPermissionsBySchema(permissionsList);
+    const tree = buildTreeFromResponse(permissionsList);
     setPermissionsTree(tree);
   }, [permissionsList]);
   
-  return <PermissionTree tree={permissionsTree} type={"tasks"} />;
+  useEffect(() => {
+    if (refreshRoot) updatePermissionList();
+    setRefreshRoot(false);
+  }, [refreshRoot]);
+
+  return <PermissionTree tree={permissionsTree} type={"tasks"} refreshRoot={()=>setRefreshRoot(true)} />;
 }
