@@ -22,6 +22,7 @@ import { normalizeJsonSchema, validateJSONSchemaReturn } from '@/util/json_schem
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { pickOptionalUInt32 } from '@/msg/amino-converter/util/helpers';
+import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 
 // Message type configuration (typeUrl + label for memo/notification)
 export const MSG_TYPE_CONFIG_CS = {
@@ -127,7 +128,7 @@ export function useActionCS( onCancel?: () => void,
     return undefined;
   }
 
-  async function actionCS(params: ActionCSParams): Promise<DeliverTxResponse | void> {
+  async function actionCS(params: ActionCSParams, simulate: boolean = false ): Promise<DeliverTxResponse | SimulateResult |void> {
     if (!isWalletConnected || !address) {
       await notify(resolveTranslatable({key: "notification.msg.connectwallet"}, translate)??'', 'error');
       return;
@@ -213,26 +214,39 @@ export function useActionCS( onCancel?: () => void,
     }
 
     // Show "in progress" notification
-    let notifyPromise: Promise<void> = notify(
-      MSG_INPROGRESS_ACTION_CS[params.msgType](),
-      'inProgress',
-      resolveTranslatable({key: 'notification.msg.inprogress.title'}, translate)
-    );
+    let notifyPromise: Promise<void> = Promise.resolve();
+    if (!simulate) {
+      notifyPromise = notify(
+        MSG_INPROGRESS_ACTION_CS[params.msgType](),
+        'inProgress',
+        resolveTranslatable({ key: 'notification.msg.inprogress.title' }, translate)
+      );
+    }
 
-    let res: DeliverTxResponse;
     let success = false;
 
     try {
 
       const msg: EncodeObject = { typeUrl, value };
-      res = await sendTx({
-        msgs: [msg],
-        memo: MSG_TYPE_CONFIG_CS[params.msgType].txLabel
-      });      
 
-      if (res.code === 0) {
-        console.info("DeliverTxResponse: ", res);
-        if (params.msgType === 'MsgCreateCredentialSchema') id = extractCreatedCSId(res);        
+      const res = await sendTx({
+        msgs: [msg],
+        memo: MSG_TYPE_CONFIG_CS[params.msgType].txLabel,
+        simulate
+      });
+
+      if (simulate) {
+        if (!res || typeof res !== "object" || ("transactionHash" in res)) {
+          throw new Error("Expected SimulateResult but got tx response/empty result");
+        }
+        return res as SimulateResult;
+      }
+
+      const txRes = res as DeliverTxResponse;
+      
+      if (txRes.code === 0) {
+        console.info("DeliverTxResponse: ", txRes);
+        if (params.msgType === 'MsgCreateCredentialSchema') id = extractCreatedCSId(txRes);        
         if (id) sessionStorage.setItem('id_updated', id);
         success = true;
         notifyPromise = notify(
@@ -242,7 +256,7 @@ export function useActionCS( onCancel?: () => void,
         );
       } else {
         notifyPromise =  notify(
-          MSG_ERROR_ACTION_CS[params.msgType](id, res.code, res.rawLog) || `(${res.code}): ${res.rawLog}`,
+          MSG_ERROR_ACTION_CS[params.msgType](id, txRes.code, txRes.rawLog) || `(${txRes.code}): ${txRes.rawLog}`,
           'error',
           resolveTranslatable({key: 'notification.msg.failed.title'}, translate)
         );

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { ResolvedDataField, DataViewProps, isResolvedDataField, ResolvedField, visibleFieldsForMode, translateSections, resolveTranslatable } from '@/ui/dataview/types';
 import { getCostMessage, msgTypeStyle } from '@/msg/constants/msgTypeConfig';
 import { useCalculateFee } from '@/hooks/useCalculateFee';
@@ -17,11 +17,13 @@ import { translate } from '@/i18n/dataview';
 import { isJson } from '@/util/util';
 import JsonCodeBlock from './json-code-block';
 import ActionCard, { ActionCardProps } from './action-card';
+import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 
 type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & {
   data: T;
   messageType: MessageType;
   onSave: (newData: T) => void | Promise<void>;
+  onSimulate?: (newData: T) => SimulateResult | void | Promise<SimulateResult | void>;
   onCancel?: () => void;
   noForm?: boolean;
   isModal?: boolean;
@@ -40,6 +42,7 @@ export default function EditableDataView<T extends object>({
   messageType,
   id,
   onSave,
+  onSimulate,
   onCancel,
   noForm = false,
   isModal,
@@ -108,6 +111,13 @@ export default function EditableDataView<T extends object>({
   // }
   const visibleFields = visibleFieldsForMode(basicSection?.fields, action).filter(isResolvedDataField);
 
+  const ran = useRef(false);
+  useEffect(() => {
+    if (!noForm || ran.current) return;
+    ran.current = true;
+    handleSimulate();
+  }, [noForm, handleSimulate]);
+  
   useEffect(() => {
     // Calculate deposit and total required value
     const deposit = (messageType == 'MsgReclaimTrustDeposit') ? 0 : Number(value || 0);
@@ -168,6 +178,18 @@ export default function EditableDataView<T extends object>({
       await Promise.resolve(onSave(formData));
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  // Handles simulate action
+  async function handleSimulate() {
+    if (onSimulate){
+      try {
+        const res = await Promise.resolve(onSimulate(formData));
+        console.info("handleSimulate", res);
+      } finally {
+        setSubmitting(false);
+      }
     }
   }
 
@@ -330,7 +352,7 @@ export default function EditableDataView<T extends object>({
     }
 
   });
-
+  
   return (
     <div className={`bg-white dark:bg-surface ${withinView? "" : "rounded-xl border border-neutral-20 dark:border-neutral-70 p-6 space-y-4"}`}>
       { (basicSection?.name || basicSection?.nameCreate) && action == 'create' && (
