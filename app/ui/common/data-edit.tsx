@@ -3,13 +3,11 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { ResolvedDataField, DataViewProps, isResolvedDataField, ResolvedField, visibleFieldsForMode, translateSections, resolveTranslatable } from '@/ui/dataview/types';
 import { getCostMessage, msgTypeStyle } from '@/msg/constants/msgTypeConfig';
-import { useCalculateFee } from '@/hooks/useCalculateFee';
 import { useTrustDepositValue } from '@/hooks/useTrustDepositValue';
 import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData';
 import { useNotification } from '@/ui/common/notification-provider';
 import { useRouter } from 'next/navigation';
 import { getErrorMessage, isValidField } from '@/util/validations';
-// import { useTrustDepositParams } from '@/providers/trust-deposit-params-context';
 import { MessageType } from '@/msg/constants/types';
 import { resolveMsgCopy } from '@/msg/constants/resolveMsgTypeConfig';
 import clsx from "clsx"
@@ -76,7 +74,7 @@ export default function EditableDataView<T extends object>({
   }, []);
 
   // Get fee and amount in VNA
-  const { amountVNA } = useCalculateFee();
+  const [feeAmountVNA, setFeeAmountVNA] = useState<string>("0.9");
 
   // Get the trust deposit value for the message type
   const { value, errorTrustDepositValue } = useTrustDepositValue(messageType);
@@ -121,7 +119,7 @@ export default function EditableDataView<T extends object>({
   useEffect(() => {
     // Calculate deposit and total required value
     const deposit = (messageType == 'MsgReclaimTrustDeposit') ? 0 : Number(value || 0);
-    const feeAmount = Number(amountVNA || 0);
+    const feeAmount = Number(feeAmountVNA || 0);
     setTotalValue((deposit + feeAmount).toFixed(6));
     const availableBalance = accountData.balance ? Number(accountData.balance)/ 1_000_000 : 0;
     const availableReclaimable = (accountData.reclaimable) ? Number(accountData.reclaimable)/ 1_000_000 : 0;
@@ -137,7 +135,7 @@ export default function EditableDataView<T extends object>({
       (availableBalance >= feeAmount) &&
       ( ( availableReclaimable + availableBalance - feeAmount) >= deposit );
     setEnabledAction(hasEnoughBalance);
-  }, [value, amountVNA, messageType, accountData.balance, accountData.reclaimable, sections]);
+  }, [value, feeAmountVNA, messageType, accountData.balance, accountData.reclaimable, sections]);
   
   // Updates form state and manages error tracking on change
   function handleChange(fieldName: keyof T, value: unknown, field: ResolvedDataField<T>) {
@@ -187,6 +185,13 @@ export default function EditableDataView<T extends object>({
       try {
         const res = await Promise.resolve(onSimulate(formData));
         console.info("handleSimulate", res);
+        if (res){
+          setFeeAmountVNA(
+            String(
+              ((Number(res.amount?.[0]?.amount) || 900_000) / 1_000_000)
+            )
+          );
+        }
       } finally {
         setSubmitting(false);
       }

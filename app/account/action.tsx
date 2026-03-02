@@ -12,6 +12,7 @@ import { formatUSDfromUVNA } from '@/util/util';
 import { useTrustDepositParams } from '@/hooks/useTrustDepositParams';
 import { translate } from '@/i18n/dataview';
 import { resolveTranslatable } from '@/ui/dataview/types';
+import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 
 // Define TdActionPage props interface
 interface TdActionProps {
@@ -63,6 +64,19 @@ export default function TdActionPage({ action, data, onClose, onRefresh }: TdAct
     }
   }
 
+  // Simulate handler: called when the form is simulated
+  async function onSimulate(newData: TdData) {
+    switch (action) {
+      case 'MsgReclaimTrustDepositYield':
+        const res =  await actionTD({ msgType: 'MsgReclaimTrustDepositYield'}, true);
+        if (res && typeof res === "object" && !("transactionHash" in res)) {
+          return res as SimulateResult;
+        }
+      default :
+        return;
+    }
+  }
+
   return (
     <>
       {/* Editable form */}
@@ -72,6 +86,7 @@ export default function TdActionPage({ action, data, onClose, onRefresh }: TdAct
         messageType={action}     
         data={dataTD}
         onSave={onSave}
+        onSimulate={onSimulate}
         onCancel={onClose}
         noForm={action!=='MsgReclaimTrustDeposit'}
         actionCard={(action==='MsgReclaimTrustDepositYield') ? actionCardYield : undefined}
