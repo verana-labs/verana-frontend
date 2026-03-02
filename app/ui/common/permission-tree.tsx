@@ -288,7 +288,6 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
     [treeState, selectedId]
   );
 
-  // UX: auto-expand path to selected node
   useEffect(() => {
     if (!selectedId) return;
     const { path } = findNodeAndPath(tree, selectedId);
@@ -300,24 +299,12 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
     });
   }, [tree, selectedId]);
 
-  // Sync expanded state when tree changes
   useEffect(() => {
     setExpanded((prev) => {
-      if (type === "tasks") {
-        const next: Record<string, boolean> = {};
-        const walk = (arr: TreeNode[]) => {
-          for (const n of arr) {
-            if (n.group) next[n.nodeId] = prev[n.nodeId] ?? true;
-            if (n.children?.length) walk(n.children);
-          }
-        };
-        walk(tree);
-        return next;
-      }
       const next: Record<string, boolean> = {};
       const collect = (arr: TreeNode[]) => {
         for (const n of arr) {
-          if (prev[n.nodeId]) next[n.nodeId] = true;
+          if (prev[n.nodeId] ?? (type === "tasks" && n.group)) next[n.nodeId] = true;
           if (n.children?.length) collect(n.children);
         }
       };
