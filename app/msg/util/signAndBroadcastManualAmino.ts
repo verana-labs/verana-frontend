@@ -1,7 +1,7 @@
 'use client'
 
 import { EncodeObject, OfflineSigner as OfflineSignerAmino } from '@cosmjs/proto-signing';
-import { calculateFee, DeliverTxResponse, GasPrice, SigningStargateClient } from '@cosmjs/stargate';
+import { calculateFee, DeliverTxResponse, GasPrice, SigningStargateClient, StdFee } from '@cosmjs/stargate';
 import { veranaAmino, veranaRegistry} from '@/config/veranaChain.sign.client';
 import { MsgCreateCredentialSchema, MsgUpdateCredentialSchema } from 'proto-codecs/codec/verana/cs/v1/tx';
 import { toHex } from "@cosmjs/encoding";
@@ -15,7 +15,10 @@ type AminoSignOptions = {
   gasPrice: string;              // "0.3uvna"
   gasAdjustment?: number;        // e.g. 1.2 (20% safety buffer)
   memo?: string;                 // Optional memo
+  simulate?: boolean;            // NEW: default false
 };
+
+export type SimulateResult = StdFee;
 
 export async function signAndBroadcastManualAmino({
   rpcEndpoint,
@@ -25,7 +28,8 @@ export async function signAndBroadcastManualAmino({
   gasPrice,
   gasAdjustment = 1.5,
   memo = '',
-}: AminoSignOptions): Promise<DeliverTxResponse> {
+  simulate = false,
+}: AminoSignOptions): Promise<DeliverTxResponse | SimulateResult> {
 
   // const any = veranaRegistry.encodeAsAny(messages[0]);
   // debugCreateAny(any);
@@ -56,6 +60,9 @@ export async function signAndBroadcastManualAmino({
   
   const gasLimit = Math.ceil(simulated * gasAdjustment);
   const fee = calculateFee(gasLimit, GasPrice.fromString(gasPrice));
+
+  // If only simulating, return the computed fee before signing/broadcasting
+  if (simulate) return fee;
 
   // sign + broadcast (retry once on sequence mismatch) ----
   for (let attempt = 0; attempt < 2; attempt++) {

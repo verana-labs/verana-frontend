@@ -5,6 +5,7 @@ import { MessageType } from '@/msg/constants/types';
 import { MsgTypeCS } from '@/msg/constants/notificationMsgForMsgType';
 import { CsData, csSections } from '@/ui/dataview/datasections/cs';
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject';
+import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 
 // Define CsActionPage props interface
 interface CsActionProps {
@@ -28,6 +29,16 @@ export default function CsActionPage({ action, onClose, data, onRefresh }: CsAct
     await submitTx(msgType, data);
   }
 
+  // Generic simulate handler:
+  async function onSimulate(data: object): Promise<SimulateResult | void> {
+    if (!isNoForm()) return;
+    const res = await submitTx(msgType, data, true);
+    if (res && typeof res === "object" && !("transactionHash" in res)) {
+      return res as SimulateResult;
+    }
+    return;
+  }
+  
   function isNoForm() {
     switch (action) {
       case 'MsgUpdateCredentialSchema':
@@ -48,6 +59,7 @@ export default function CsActionPage({ action, onClose, data, onRefresh }: CsAct
         messageType={action as MessageType}     
         data={csData}
         onSave={onSave}
+        onSimulate={onSimulate}
         onCancel={onClose}
         noForm={isNoForm()} 
         withinView={action==='MsgUpdateCredentialSchema'}/>

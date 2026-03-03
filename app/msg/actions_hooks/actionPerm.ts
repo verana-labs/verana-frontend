@@ -32,6 +32,7 @@ import Long from 'long';
 import { translate } from '@/i18n/dataview';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { stripZerosUndefinedAndEmptyStrings } from '@/msg/util/signerUtil'
+import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 
 const toDate = (v?: string | Date) => (v ? (v instanceof Date ? v : new Date(v)) : undefined);
 
@@ -244,7 +245,7 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: () => void) {
     return undefined;
   }
 
-  async function actionPerm(params: ActionPermParams): Promise<DeliverTxResponse | void> {
+  async function actionPerm(params: ActionPermParams, simulate: boolean = false): Promise<DeliverTxResponse | SimulateResult | void> {
     if (!isWalletConnected || !address) {
       await notify(resolveTranslatable({ key: 'notification.msg.connectwallet' }, translate) ?? '', 'error');
       return;
@@ -402,32 +403,44 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: () => void) {
     inFlight.current = true;
 
     // Show in-progress notification
-    let notifyPromise: Promise<void> = notify(
-      MSG_INPROGRESS_ACTION_PERM[params.msgType](),
-      'inProgress',
-      resolveTranslatable({ key: 'notification.msg.inprogress.title' }, translate),
-    );
+    let notifyPromise: Promise<void> = Promise.resolve();
+    if (!simulate) {
+      notifyPromise = notify(
+        MSG_INPROGRESS_ACTION_PERM[params.msgType](),
+        'inProgress',
+        resolveTranslatable({ key: 'notification.msg.inprogress.title' }, translate),
+      );
+    }
 
-    let res: DeliverTxResponse;
     let success = false;
 
     try {
       value = stripZerosUndefinedAndEmptyStrings(value);
       const msg: EncodeObject = { typeUrl, value };
       console.info("msg", msg);
-      res = await sendTx({
+      const res = await sendTx({
         msgs: [msg],
         memo: MSG_TYPE_CONFIG_PERM[params.msgType].txLabel,
+        simulate
       });
 
-      if (res.code === 0) {
+      if (simulate) {
+        if (!res || typeof res !== "object" || ("transactionHash" in res)) {
+          throw new Error("Expected SimulateResult but got tx response/empty result");
+        }
+        return res as SimulateResult;
+      }
+
+      const txRes = res as DeliverTxResponse;
+
+      if (txRes.code === 0) {
         // Try to extract ID for create-like txs (or if you want it for others too)
         if (
           params.msgType === 'MsgStartPermissionVP' ||
           params.msgType === 'MsgCreateRootPermission' ||
           params.msgType === 'MsgCreatePermission'
         ) {
-          id = extractCreatedPermissionId(res);
+          id = extractCreatedPermissionId(txRes);
         }
 
         success = true;
@@ -438,7 +451,7 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: () => void) {
         );
       } else {
         notifyPromise = notify(
-          MSG_ERROR_ACTION_PERM[params.msgType](id, res.code, res.rawLog) || `(${res.code}): ${res.rawLog}`,
+          MSG_ERROR_ACTION_PERM[params.msgType](id, txRes.code, txRes.rawLog) || `(${txRes.code}): ${txRes.rawLog}`,
           'error',
           resolveTranslatable({ key: 'notification.msg.failed.title' }, translate),
         );

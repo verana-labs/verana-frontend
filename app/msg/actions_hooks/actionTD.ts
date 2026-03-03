@@ -19,6 +19,7 @@ import {
 } from '@/msg/constants/notificationMsgForMsgType';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
+import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 
 // Encapsulate typeUrl and memo label per trust-deposit message type.
 export const MSG_TYPE_CONFIG_TD = {
@@ -65,7 +66,7 @@ export function useActionTD(
     setActiveActionId?.();
   };
 
-  async function actionTD(params: ActionTDParams): Promise<DeliverTxResponse | void> {
+  async function actionTD(params: ActionTDParams, simulate: boolean = false): Promise<DeliverTxResponse | SimulateResult | void> {
     if (!isWalletConnected || !address) {
       await notify(resolveTranslatable({key: "notification.msg.connectwallet"}, translate)??'', 'error');
       return;
@@ -113,23 +114,35 @@ export function useActionTD(
         return;
     }
 
-    let notifyPromise: Promise<void> = notify(
-      MSG_INPROGRESS_ACTION_TD[params.msgType](),
-      'inProgress',
-      resolveTranslatable({key: 'notification.msg.inprogress.title'}, translate)
-    );
+    let notifyPromise: Promise<void> = Promise.resolve();
+    if (!simulate) {
+      notifyPromise = notify(
+        MSG_INPROGRESS_ACTION_TD[params.msgType](),
+        'inProgress',
+        resolveTranslatable({key: 'notification.msg.inprogress.title'}, translate)
+      );
+    }
 
-    let res: DeliverTxResponse | undefined;
     let success = false;
 
     try {
       const msg: EncodeObject = { typeUrl, value };
-      res = await sendTx({
+      const res = await sendTx({
         msgs: [msg],
         memo: MSG_TYPE_CONFIG_TD[params.msgType].txLabel,
+        simulate
       });
 
-      if (res.code === 0) {
+      if (simulate) {
+        if (!res || typeof res !== "object" || ("transactionHash" in res)) {
+          throw new Error("Expected SimulateResult but got tx response/empty result");
+        }
+        return res as SimulateResult;
+      }
+
+      const txRes = res as DeliverTxResponse;
+
+      if (txRes.code === 0) {
         success = true;
         notifyPromise = notify(
           MSG_SUCCESS_ACTION_TD[params.msgType](claimedLabel),
@@ -138,7 +151,7 @@ export function useActionTD(
         );
       } else {
         notifyPromise = notify(
-          MSG_ERROR_ACTION_TD[params.msgType](res.code, res.rawLog),
+          MSG_ERROR_ACTION_TD[params.msgType](txRes.code, txRes.rawLog),
           'error',
           resolveTranslatable({key: 'notification.msg.failed.title'}, translate)
         );
@@ -152,14 +165,12 @@ export function useActionTD(
     } finally {
       inFlight.current = false;
       if (notifyPromise) await notifyPromise;
-      if (success && res) {
+      if (success) {
         handleSuccess();
       } else if (!success) {
         handleFailure();
       }
     }
-
-    return res;
   }
 
   return actionTD;

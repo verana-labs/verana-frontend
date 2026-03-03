@@ -21,6 +21,7 @@ import {
 } from '@/msg/constants/notificationMsgForMsgType';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
+import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 
 // Map each DID message type to its typeUrl and a memo label for logging/telemetry.
 export const MSG_TYPE_CONFIG_DID = {
@@ -90,7 +91,7 @@ export function useActionDID(
     onClose?.();
   };
 
-  async function actionDID(params: ActionDIDParams): Promise<DeliverTxResponse | void> {
+  async function actionDID(params: ActionDIDParams, simulate: boolean = false): Promise<DeliverTxResponse | SimulateResult | void> {
     if (!isWalletConnected || !address) { 
       await notify(resolveTranslatable({key: "notification.msg.connectwallet"}, translate)??'', 'error');
       return;
@@ -160,23 +161,34 @@ export function useActionDID(
         return;
     }
 
-    let notifyPromise: Promise<void> = notify(
-      MSG_INPROGRESS_ACTION_DID[params.msgType](did),
-      'inProgress',
-      resolveTranslatable({key: 'notification.msg.inprogress.title'}, translate)
-    );
+    let notifyPromise: Promise<void> = Promise.resolve();
+    if (!simulate) {
+      notifyPromise = notify(
+        MSG_INPROGRESS_ACTION_DID[params.msgType](did),
+        'inProgress',
+        resolveTranslatable({key: 'notification.msg.inprogress.title'}, translate)
+      );
+    }
 
-    let res: DeliverTxResponse | undefined;
     let success = false;
 
     try {
       const msg: EncodeObject = { typeUrl, value };
-      res = await sendTx({
+      const res = await sendTx({
         msgs: [msg],
         memo: MSG_TYPE_CONFIG_DID[params.msgType].txLabel,
       });
 
-      if (res.code === 0) {
+      if (simulate) {
+        if (!res || typeof res !== "object" || ("transactionHash" in res)) {
+          throw new Error("Expected SimulateResult but got tx response/empty result");
+        }
+        return res as SimulateResult;
+      }
+
+      const txRes = res as DeliverTxResponse;
+
+      if (txRes.code === 0) {
         success = true;
         notifyPromise = notify(
           MSG_SUCCESS_ACTION_DID[params.msgType](did),
@@ -185,7 +197,7 @@ export function useActionDID(
         );
       } else {
         notifyPromise = notify(
-          MSG_ERROR_ACTION_DID[params.msgType](did, res.code, res.rawLog),
+          MSG_ERROR_ACTION_DID[params.msgType](did, txRes.code, txRes.rawLog),
           'error',
           resolveTranslatable({key: 'notification.msg.failed.title'}, translate)
         );
@@ -199,14 +211,12 @@ export function useActionDID(
     } finally {
       inFlight.current = false;
       if (notifyPromise) await notifyPromise;
-      if (success && res) {
+      if (success) {
         handleSuccess(params.msgType);
       } else if (!success) {
         handleFailure();
       }
     }
-
-    return res;
   }
 
   return actionDID;

@@ -5,6 +5,7 @@ import { MessageType } from '@/msg/constants/types';
 import { MsgTypeTR } from '@/msg/constants/notificationMsgForMsgType';
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject';
 import { TrData, trSections } from '@/ui/dataview/datasections/tr';
+import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 
 // Define TrActionPage props interface
 interface TrActionProps {
@@ -28,6 +29,16 @@ export default function TrActionPage({ action, onClose, data, onRefresh }: TrAct
     await submitTx(msgType, data);
   }
 
+  // Generic simulate handler:
+  async function onSimulate(data: object): Promise<SimulateResult | void> {
+    if (!isNoForm()) return;
+    const res = await submitTx(msgType, data, true);
+    if (res && typeof res === "object" && !("transactionHash" in res)) {
+      return res as SimulateResult;
+    }
+    return;
+  }
+
   function isNoForm() {
     switch (action) {
       case 'MsgUpdateTrustRegistry':
@@ -48,6 +59,7 @@ export default function TrActionPage({ action, onClose, data, onRefresh }: TrAct
         messageType={action as MessageType}     
         data={trData}
         onSave={onSave}
+        onSimulate={onSimulate}
         onCancel={onClose}
         noForm={isNoForm()} 
         withinView={action==='MsgUpdateTrustRegistry'}/>

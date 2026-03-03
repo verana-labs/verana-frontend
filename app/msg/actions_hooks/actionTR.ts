@@ -20,6 +20,7 @@ import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import Long from 'long';
 import { translate } from '@/i18n/dataview';
 import { resolveTranslatable } from '@/ui/dataview/types';
+import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 
 async function calculateSRIHash (docUrl: string | undefined): Promise<{ sri: string | undefined; error: string | undefined }> {
   if (!docUrl || !isValidUrl(docUrl)) return { sri: undefined, error: 'Invalid Document URL' };
@@ -163,7 +164,7 @@ export function useActionTR(  onCancel?: () => void,
     return undefined;
   }
 
-  async function actionTR(params: ActionTRParams): Promise<DeliverTxResponse | void> {
+  async function actionTR(params: ActionTRParams, simulate: boolean = false): Promise<DeliverTxResponse | SimulateResult | void> {
     if (!isWalletConnected || !address) {
       await notify(resolveTranslatable({key: "notification.msg.connectwallet"}, translate)??'', 'error');
       return;
@@ -253,24 +254,36 @@ export function useActionTR(  onCancel?: () => void,
 
     inFlight.current = true;
     // Show progress notification
-    let notifyPromise: Promise<void> = notify(
-      MSG_INPROGRESS_ACTION_TR[params.msgType](),
-      'inProgress',
-      resolveTranslatable({key: 'notification.msg.inprogress.title'}, translate)
-    );
+    let notifyPromise: Promise<void> = Promise.resolve();
+    if (!simulate) {
+      notifyPromise = notify(
+        MSG_INPROGRESS_ACTION_TR[params.msgType](),
+        'inProgress',
+        resolveTranslatable({key: 'notification.msg.inprogress.title'}, translate)
+      );
+    }
 
-    let res: DeliverTxResponse;
     let success = false;
 
     try {
       const msg: EncodeObject = { typeUrl, value };
-      res = await sendTx({
+      const res = await sendTx({
         msgs: [msg],
-        memo: MSG_TYPE_CONFIG_TR[params.msgType].txLabel
+        memo: MSG_TYPE_CONFIG_TR[params.msgType].txLabel,
+        simulate
       });      
 
-      if (res.code === 0) {
-        if (params.msgType === 'MsgCreateTrustRegistry') id = extractCreatedTRId(res);
+      if (simulate) {
+        if (!res || typeof res !== "object" || ("transactionHash" in res)) {
+          throw new Error("Expected SimulateResult but got tx response/empty result");
+        }
+        return res as SimulateResult;
+      }
+
+      const txRes = res as DeliverTxResponse;
+
+      if (txRes.code === 0) {
+        if (params.msgType === 'MsgCreateTrustRegistry') id = extractCreatedTRId(txRes);
         success = true;
         notifyPromise = notify(
           MSG_SUCCESS_ACTION_TR[params.msgType](),
@@ -279,7 +292,7 @@ export function useActionTR(  onCancel?: () => void,
         );
       } else {
         notifyPromise = notify(
-          MSG_ERROR_ACTION_TR[params.msgType](id, res.code, res.rawLog) || `(${res.code}): ${res.rawLog}`,
+          MSG_ERROR_ACTION_TR[params.msgType](id, txRes.code, txRes.rawLog) || `(${txRes.code}): ${txRes.rawLog}`,
           'error',
           resolveTranslatable({key: 'notification.msg.failed.title'}, translate)
         );
