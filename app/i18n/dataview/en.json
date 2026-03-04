@@ -565,6 +565,8 @@
 
   "messages.warning": "Warning",
   "messages.cancel": "Cancel",
+  "messages.lowbalance": "You’re Running Low on VNA. Your balance is {value} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted.",
+  "messages.balanceLessThanFee": "You’re Running Low on VNA. Your balance is {value} VNA and running this transaction requires {fee} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted.",
 
   "messages.MsgAddDID.label": "Add DID",
   "messages.MsgAddDID.description": "Enter the DID you would like to add to the DID Directory and select the number of registration years. Make sure your DID is resolvable and its DID Document complies with the Verifiable Trust Specification.",

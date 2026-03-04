@@ -149,6 +149,7 @@ export interface DataViewProps<T extends object> {
   viewTitleButton?: {icon: IconDefinition; buttonLabel: string; onClick: () => void;};
   generalBorder?: boolean;
   viewEditButton?: boolean;
+  activeActionField?: string;
 }
 
 /* Base field shared by all field types */

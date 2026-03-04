@@ -703,4 +703,7 @@
     @apply notify-icon text-blue-600;
   }
 
+  .lowBalanceLink {
+    @apply text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm cursor-pointer break-all;
+}
 }
