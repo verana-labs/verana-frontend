@@ -288,7 +288,6 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
     [treeState, selectedId]
   );
 
-  // UX: expand
   useEffect(() => {
     if (!selectedId) return;
     const { path } = findNodeAndPath(tree, selectedId);
@@ -305,7 +304,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
       const next: Record<string, boolean> = {};
       const collect = (arr: TreeNode[]) => {
         for (const n of arr) {
-          if (prev[n.nodeId]) next[n.nodeId] = true;
+          if (prev[n.nodeId] ?? (type === "tasks" && n.group)) next[n.nodeId] = true;
           if (n.children?.length) collect(n.children);
         }
       };
