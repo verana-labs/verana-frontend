@@ -16,7 +16,7 @@ export default function PendingTasksPage() {
   const permissionsList = usePendingTasksCtx();
   const updatePermissionList = useUpdatePendingTasksCtx();
   const [permissionsTree, setPermissionsTree] = useState<TreeNode[]>([]);
-  const [refreshRoot, setRefreshRoot] = useState<boolean>(false);
+  const [refreshRoot, setRefreshRoot] = useState<boolean>(true);
 
   // Collect permission IDs granted to the current address
   const idsAddress = new Set<string>();

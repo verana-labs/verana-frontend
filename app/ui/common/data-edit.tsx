@@ -392,7 +392,7 @@ export default function EditableDataView<T extends object>({
       {actionCard && <ActionCard {...actionCard} />}
 
       {!noForm && normalInputs.length > 0 && (
-        <div className={`space-y-2 ${(action=="create" && basicSection?.classFormCreate != undefined) ? basicSection?.classFormCreate : basicSection?.classFormEdit}`}>
+        <div className={`${(action=="create" && basicSection?.classFormCreate != undefined) ? basicSection?.classFormCreate : basicSection?.classFormEdit}`}>
             {normalInputs}
         </div>
       )}
