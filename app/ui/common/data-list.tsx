@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { isResolvedActionField, isResolvedStringListField, Section, translateSections, visibleFieldsForMode } from "@/ui/dataview/types";
-import IconLabelButton from './icon-label-button';
 import { msgTypeStyle } from '@/msg/constants/msgTypeConfig';
 import clsx from 'clsx';
 import { MessageType } from '@/msg/constants/types';
-import { renderActionComponent } from './data-view-typed';
-import { ModalAction } from './modal-action';
+import { ActionFieldProps } from '@/ui/common/data-view-typed';
+import ActionFieldButtonModal from '@/ui/common/action-field-button-modal';
 
 interface DataListProps<T extends object> {
   sectionsI18n: Section<T>[];
@@ -46,25 +45,10 @@ export function DataList<T extends object>({
                 const messageTypeStyle = msgTypeStyle[messageType as MessageType];
                 if (isResolvedActionField(field) && messageType !== undefined){
                   const isActive = activeActionId === String(field.name);
+                  const obj = { ...field, value: String(messageType), icon: messageTypeStyle.icon, iconColorClass: clsx("btn-action-confirm text-sm", messageTypeStyle.button)  };
                   return (
-                  <section key={`action-${String(field.name)}-${fieldIndex}`}>
-                  <IconLabelButton 
-                    label={field.label}
-                    icon={messageTypeStyle.icon}
-                    className={clsx(
-                      "btn-action-confirm text-sm", // base
-                      messageTypeStyle.button // specific
-                    )}
-                    onClick={() => setActiveActionId(isActive ? null : String(field.name))}
-                  />
-                  <ModalAction
-                    onClose={() => setActiveActionId(null)}
-                    titleKey={field.label}
-                    isActive={isActive}
-                  >
-                    {renderActionComponent(String(messageType), () => setActiveActionId(null), data, onRefresh?? undefined, onBack?? undefined )}
-                  </ModalAction>
-                  </section>
+                    <ActionFieldButtonModal isActive={isActive} data={data} field={obj as ActionFieldProps} key={`action-${String(field.name)}-${fieldIndex}`} 
+                      onRefresh={onRefresh?? undefined} onClickButton={() => setActiveActionId(String(field.name))} onClose={()=> setActiveActionId(null)}/>
                 )}
                 // For fields that don't match the condition, return null
                 return null;

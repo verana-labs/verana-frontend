@@ -5,6 +5,7 @@ import { MessageType } from '@/msg/constants/types';
 import { MsgTypeTR } from '@/msg/constants/notificationMsgForMsgType';
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject';
 import { TrData, trSections } from '@/ui/dataview/datasections/tr';
+import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 
 // Define TrActionPage props interface
 interface TrActionProps {
@@ -12,9 +13,10 @@ interface TrActionProps {
   data: object;
   onClose: () => void; // Collapse/hide action on cancel
   onRefresh?: () => void; // Refresh data
+  setModalHidden?: () => void; // Hidden/Visible modal
 }
 
-export default function TrActionPage({ action, onClose, data, onRefresh }: TrActionProps) {
+export default function TrActionPage({ action, onClose, data, onRefresh, setModalHidden }: TrActionProps) {
   const trData = data as TrData;
   const msgType = action as MessageType;
   const { submitTx } = useSubmitTxMsgTypeFromObject( onClose, onRefresh );
@@ -26,6 +28,16 @@ export default function TrActionPage({ action, onClose, data, onRefresh }: TrAct
    */
   async function onSave(data: object) {
     await submitTx(msgType, data);
+  }
+
+  // Generic simulate handler:
+  async function onSimulate(data: object): Promise<SimulateResult | void> {
+    if (!isNoForm()) return;
+    const res = await submitTx(msgType, data, true);
+    if (res && typeof res === "object" && !("transactionHash" in res)) {
+      return res as SimulateResult;
+    }
+    return;
   }
 
   function isNoForm() {
@@ -48,9 +60,12 @@ export default function TrActionPage({ action, onClose, data, onRefresh }: TrAct
         messageType={action as MessageType}     
         data={trData}
         onSave={onSave}
+        onSimulate={onSimulate}
         onCancel={onClose}
         noForm={isNoForm()} 
-        withinView={action==='MsgUpdateTrustRegistry'}/>
+        withinView={action==='MsgUpdateTrustRegistry'}
+        setModalHidden={setModalHidden}
+      />
     </>
   );
 

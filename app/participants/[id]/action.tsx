@@ -5,6 +5,7 @@ import { useActionPerm } from '@/msg/actions_hooks/actionPerm';
 import { Permission, PermissionData, getActionPermSections } from '@/ui/dataview/datasections/perm';
 import { MsgTypePERM } from '@/msg/constants/notificationMsgForMsgType';
 import { MessageType } from '@/msg/constants/types';
+import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 
 // Define PermActionPage props interface
 interface PermActionProps {
@@ -12,9 +13,10 @@ interface PermActionProps {
   data: object;
   onClose: () => void; // Collapse/hide action on cancel
   onRefresh?: () => void; // Refresh Permission data
+  setModalHidden?: () => void; // Hidden/Visible modal
 }
 
-export default function PermActionPage({ action, data, onClose, onRefresh }: PermActionProps) {
+export default function PermActionPage({ action, data, onClose, onRefresh, setModalHidden }: PermActionProps) {
   const permData = data as Permission;
   const actionPerm = useActionPerm(onClose, onRefresh);
 
@@ -81,6 +83,23 @@ export default function PermActionPage({ action, data, onClose, onRefresh }: Per
     }
   }
 
+  // Generic simulate handler:
+  async function onSimulate(data: object): Promise<SimulateResult | void> {
+    switch (action) {
+      case 'MsgRenewPermissionVP':
+      case 'MsgCancelPermissionVPLastRequest':
+      case 'MsgRevokePermission':
+      case 'MsgRepayPermissionSlashedTrustDeposit': 
+        const res =  await actionPerm({ msgType: action, creator: '', id: permData.id}, true);
+        if (res && typeof res === "object" && !("transactionHash" in res)) {
+          return res as SimulateResult;
+        }
+      default :
+        return;
+    }
+  }
+  
+
   function isNoForm() {
     switch (action) {
       case 'MsgRenewPermissionVP':
@@ -108,10 +127,17 @@ export default function PermActionPage({ action, data, onClose, onRefresh }: Per
         messageType={action as MessageType}     
         data={{}}
         onSave={onSave}
+        onSimulate={onSimulate}
         isModal={true}
         onCancel={onClose}
-        noForm={isNoForm()} />
+        noForm={isNoForm()} 
+        setModalHidden={setModalHidden}
+      />
     </>
   );
 
 }
+function submitTx(msgType: any, data: object, arg2: boolean) {
+  throw new Error('Function not implemented.');
+}
+

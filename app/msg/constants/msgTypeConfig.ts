@@ -141,7 +141,12 @@ export function getCostMessage(template: string, value: string | number, td?: st
   return template.replace('{value}', String(value)).replace('{td}', String(td));
 }
 
-// Utility function to fill {addBalance} {burnRate} in the description message
+// Utility function to fill {value} and {link} in the low balance message
+export function getLowBalanceMessage(template: string, value: string, fee?: string) {
+  return template.replace('{value}', value).replace('{fee}', String(fee));
+}
+
+// Utility function to fill {addBalance} and {burnRate} in the description message
 export function getDescriptionMessage(template: string, addBalance: string | number, burnRate: string | number) {
   return template.replace('{addBalance}', String(addBalance)).replace('{burnRate}', String(burnRate));
 }
