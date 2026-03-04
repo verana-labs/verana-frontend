@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, ReactNode } from 'react';
+import React, { useState, ReactNode, useRef, useEffect } from 'react';
 import { DataViewProps, isResolvedActionField, isResolvedDataField, ResolvedActionField, resolveTranslatable, visibleFieldsForMode } from '@/ui/dataview/types';
 import { isJson } from '@/util/util';
 import JsonCodeBlock from '@/ui/common/json-code-block';
@@ -8,12 +8,13 @@ import { translateSections } from '@/ui/dataview/types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown, faChevronUp, faEdit } from '@fortawesome/free-solid-svg-icons';
 import clsx from "clsx"
-import IconLabelButton from './icon-label-button';
-import { ActionFieldProps, renderActionComponent, renderActionFieldModalAndButton } from './data-view-typed';
-import CardView from './card-view';
-import TitleAndButton from './title-and-button';
-import ActionFieldButton from './action-field-button';
+import IconLabelButton from '@/ui/common/icon-label-button';
+import { ActionFieldProps, renderActionComponent } from '@/ui/common/data-view-typed';
+import CardView from '@/ui/common/card-view';
+import TitleAndButton from '@/ui/common/title-and-button';
+import ActionFieldButton from '@/ui/common/action-field-button';
 import { translate } from '@/i18n/dataview';
+import ActionFieldButtonModal from '@/ui/common/action-field-button-modal';
 
 export default function DataView<T extends object>({
   sectionsI18n,
@@ -24,16 +25,30 @@ export default function DataView<T extends object>({
   onBack,
   showViewTitle,
   viewTitleButton,
-  generalBorder
+  generalBorder,
+  activeActionField
 }: DataViewProps<T>) {
 
   const sections = translateSections(sectionsI18n);
-  const [activeActionId, setActiveActionId] = useState<string | null>(null);
   let jsonField: { label: string; value: unknown } | null = null;
   type ViewTitle = { title?: string; description?: string };
   const viewTitle = data as ViewTitle;
   const [showView, setShowView] = useState<boolean>(true);
 
+  const [activeActionId, setActiveActionId] = useState<string | null>(() => {
+    if (!activeActionField) return null;
+    for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
+      const section = sections[sectionIndex];
+      if (!section.fields?.length) continue;
+      const fields = visibleFieldsForMode(section.fields, "view");
+      const fieldIndex = fields.findIndex(
+        (f) => isResolvedActionField(f) && (f.name as string) === activeActionField
+      );
+      if (fieldIndex >= 0) return `${sectionIndex}-${fieldIndex}`;
+    }
+    return null;
+  });
+    
   // Helper to render the type action field
   function renderActionField(
     rowId: string,
@@ -174,7 +189,9 @@ export default function DataView<T extends object>({
                             field.isEditButton ?
                             <ActionFieldButton type='button' data={data} field={obj as ActionFieldProps} key={rowId} 
                               onRefresh={onRefresh} onClickButton={() => setShowView(false)} onClose={() => setShowView(true)} />
-                            : renderActionFieldModalAndButton(data, obj as ActionFieldProps, fieldIndex, isActive, ()=> setActiveActionId(rowId), ()=> setActiveActionId(null), onRefresh)
+                            : 
+                            <ActionFieldButtonModal isActive={isActive} data={data} field={obj as ActionFieldProps} key={rowId} 
+                              onRefresh={onRefresh} onClickButton={()=> setActiveActionId(rowId)} onClose={()=> setActiveActionId(null)}/>
                           );
                         }
 
@@ -211,8 +228,8 @@ export default function DataView<T extends object>({
                 const value = data[field.name];
                 if (!isResolvedActionField(field) || value == undefined ) return null;
                 const rowId = `${sectionIndex}-${fieldIndex}`;
-                const isActive = activeActionId === rowId;
-                return renderActionField(rowId, isActive, field, String(value), data);// id);
+                const isActive = (activeActionId === rowId);
+                return renderActionField(rowId, isActive, field, String(value), data);
               })}
             </div>
           )}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { GfdData, gfdSections } from '@/ui/dataview/datasections/gfd';
 import { TrData } from '@/ui/dataview/datasections/tr';
 import EditableDataView from '@/ui/common/data-edit';
@@ -14,9 +14,10 @@ interface GfdPageProps {
   data: object;
   onClose: () => void; // Collapse/hide action on cancel
   onRefresh?: () => void; // Refresh TR data
+  setModalHidden?: () => void; // Hidden/Visible modal
 }
 
-export default function GfdPage({ action, data, onClose, onRefresh }: GfdPageProps) {
+export default function GfdPage({ action, data, onClose, onRefresh, setModalHidden }: GfdPageProps) {
     
   const trData: TrData = data as TrData;
   // Compose initial data, including controller and docUrl if needed
@@ -82,7 +83,9 @@ export default function GfdPage({ action, data, onClose, onRefresh }: GfdPagePro
         onSave={onSave}
         onSimulate={onSimulate}
         onCancel={onClose}
-        noForm={action === "MsgIncreaseActiveGovernanceFrameworkVersion"} />
+        noForm={action === "MsgIncreaseActiveGovernanceFrameworkVersion"}
+        setModalHidden={setModalHidden}
+      />
     </>
   );
 }

@@ -1,18 +1,19 @@
 'use client';
 
-import { PermState, TreeNode } from "./permission-tree";
+import { PermState, TreeNode } from "@/ui/common/permission-tree";
 import { useEffect, useMemo, useState } from "react";
 import { Permission, permissionActionLifecycle, permissionActionSlashing, permissionActionValidationProcess, 
   permissionBusinessModels, permissionLifecycle, permissionMetaItems, permissionSlashing, permissionValidationProcess, VpState 
-} from "../dataview/datasections/perm";
-import PermissionAttribute from "./permission-atrribute";
+} from "@/ui/dataview/datasections/perm";
+import PermissionAttribute from "@/ui/common/permission-atrribute";
 import { usePermissionHistory } from "@/hooks/usePermissionHistory";
-import PermissionTimeline from "./permission-timeline";
+import PermissionTimeline from "@/ui/common/permission-timeline";
 import { permStateBadgeClass, roleBadgeClass, shortenDID, vpStateColor } from "@/util/util";
-import { ActionFieldProps, renderActionFieldModalAndButton } from "./data-view-typed";
+import { ActionFieldProps } from "@/ui/common/data-view-typed";
 import { translate } from "@/i18n/dataview";
-import { resolveTranslatable } from "../dataview/types";
+import { resolveTranslatable } from "@/ui/dataview/types";
 import { usePermission } from "@/hooks/usePermission";
+import ActionFieldButtonModal from "./action-field-button-modal";
 
 type PermissionCardProps = {
   selectedNode: TreeNode;
@@ -152,7 +153,8 @@ export default function PermissionCard({
           {permissionActionLifecycle
             .filter((action) => action.name && allowed.has(action.name))
             .map((action, idx) => 
-              renderActionFieldModalAndButton(selectedNode.permission ?? {}, action as ActionFieldProps, idx, activeActionId === String(action.name), () => setActiveActionId(activeActionId === String(action.name) ? null : String(action.name)), ()=> setActiveActionId(null), ()=> setIdUpdate(permissionId))
+              <ActionFieldButtonModal isActive={activeActionId === String(action.name)} data={selectedNode.permission ?? {}} field={action as ActionFieldProps} key={`${action.name}-${idx}`} 
+                onRefresh={()=> setIdUpdate(permissionId)} onClickButton={() => setActiveActionId(activeActionId === String(action.name) ? null : String(action.name))} onClose={()=> setActiveActionId(null)}/>
           )}
           </div>
         </div>
@@ -188,7 +190,8 @@ export default function PermissionCard({
           {permissionActionValidationProcess
             .filter((action) => action.name && allowed.has(action.name))
             .map((action, idx) => 
-              renderActionFieldModalAndButton(selectedNode.permission ?? {}, action as ActionFieldProps, idx, activeActionId === String(action.name), () => setActiveActionId(activeActionId === String(action.name) ? null : String(action.name)), ()=> setActiveActionId(null), ()=> setIdUpdate(permissionId))
+              <ActionFieldButtonModal isActive={activeActionId === String(action.name)} data={selectedNode.permission ?? {}} field={action as ActionFieldProps} key={`${action.name}-${idx}`} 
+                onRefresh={()=> setIdUpdate(permissionId)} onClickButton={() => setActiveActionId(activeActionId === String(action.name) ? null : String(action.name))} onClose={()=> setActiveActionId(null)}/>
           )}
           </div>
         </div>
@@ -239,7 +242,8 @@ export default function PermissionCard({
           {permissionActionSlashing
             .filter((action) => action.name && allowed.has(action.name))
             .map((action, idx) => 
-              renderActionFieldModalAndButton(selectedNode.permission ?? {}, action as ActionFieldProps, idx, activeActionId === String(action.name), () => setActiveActionId(activeActionId === String(action.name) ? null : String(action.name)), ()=> setActiveActionId(null), ()=> setIdUpdate(permissionId))
+              <ActionFieldButtonModal isActive={activeActionId === String(action.name)} data={selectedNode.permission ?? {}} field={action as ActionFieldProps} key={`${action.name}-${idx}`} 
+                onRefresh={()=> setIdUpdate(permissionId)} onClickButton={() => setActiveActionId(activeActionId === String(action.name) ? null : String(action.name))} onClose={()=> setActiveActionId(null)}/>
           )}
           </div>
         </div>

@@ -13,9 +13,10 @@ interface PermActionProps {
   data: object;
   onClose: () => void; // Collapse/hide action on cancel
   onRefresh?: () => void; // Refresh Permission data
+  setModalHidden?: () => void; // Hidden/Visible modal
 }
 
-export default function PermActionPage({ action, data, onClose, onRefresh }: PermActionProps) {
+export default function PermActionPage({ action, data, onClose, onRefresh, setModalHidden }: PermActionProps) {
   const permData = data as Permission;
   const actionPerm = useActionPerm(onClose, onRefresh);
 
@@ -129,7 +130,9 @@ export default function PermActionPage({ action, data, onClose, onRefresh }: Per
         onSimulate={onSimulate}
         isModal={true}
         onCancel={onClose}
-        noForm={isNoForm()} />
+        noForm={isNoForm()} 
+        setModalHidden={setModalHidden}
+      />
     </>
   );
 

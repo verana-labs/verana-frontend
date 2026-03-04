@@ -60,17 +60,7 @@ export function useCsData(id: string) {
       const resp = json as ResponseShape;
       const entry = resp.schema ?? (resp as RawSchema);
       
-      // Parse JSON schema safely
-      // let parsed: Record<string, unknown> = {};
-      // const rawJsonSchema = typeof entry.json_schema === 'string' ? entry.json_schema : '';
-      // try {
-      //   parsed = rawJsonSchema ? JSON.parse(rawJsonSchema) : {};
-      // } catch {
-      //   parsed = {};
-      // }
       const id = entry.id ?? '';
-      // const titleCandidate = (parsed.title as string | undefined) ?? `Schema (id: ${id})`;
-      // const descCandidate =  (parsed.description as string | undefined) ?? "";
 
       setData(
         {

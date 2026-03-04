@@ -10,6 +10,7 @@ import { veranaGasAdjustment, veranaGasPrice, veranaRegistry } from '@/config/ve
 import { useChain } from '@cosmos-kit/react';
 import { Chain } from '@chain-registry/types';
 import { env } from 'next-runtime-env';
+import { useCalculateFee } from '@/hooks/useCalculateFee';
 
 type SendTxParams = { msgs: EncodeObject[]; memo?: string; simulate?: boolean };
 
@@ -85,7 +86,12 @@ export function useSendTxDetectingMode(chain: Chain) {
           simulate
         });
       } catch (e) {
-        throw new Error(`Amino signing failed: ${e instanceof Error ? e.message : String(e)}`);
+        const error = new Error(`Amino signing failed: ${e instanceof Error ? e.message : String(e)}`);
+        if (simulate){
+          console.error("signAndBroadcastManualAmino", error);
+          return useCalculateFee().fee as SimulateResult;
+        } 
+        throw error;
       }
     }
 

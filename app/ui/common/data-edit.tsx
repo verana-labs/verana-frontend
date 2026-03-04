@@ -2,8 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { ResolvedDataField, DataViewProps, isResolvedDataField, ResolvedField, visibleFieldsForMode, translateSections, resolveTranslatable } from '@/ui/dataview/types';
-import { getCostMessage, msgTypeStyle } from '@/msg/constants/msgTypeConfig';
-import { useTrustDepositValue } from '@/hooks/useTrustDepositValue';
+import { getLowBalanceMessage, msgTypeStyle } from '@/msg/constants/msgTypeConfig';
 import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData';
 import { useNotification } from '@/ui/common/notification-provider';
 import { useRouter } from 'next/navigation';
@@ -13,9 +12,10 @@ import { resolveMsgCopy } from '@/msg/constants/resolveMsgTypeConfig';
 import clsx from "clsx"
 import { translate } from '@/i18n/dataview';
 import { isJson } from '@/util/util';
-import JsonCodeBlock from './json-code-block';
-import ActionCard, { ActionCardProps } from './action-card';
+import JsonCodeBlock from '@/ui/common/json-code-block';
+import ActionCard, { ActionCardProps } from '@/ui/common/action-card';
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
+import { env } from 'next-runtime-env';
 
 type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & {
   data: T;
@@ -27,6 +27,7 @@ type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & 
   isModal?: boolean;
   actionCard?: ActionCardProps;
   withinView?: boolean;
+  setModalHidden?: () => void;
 };
 
 type FieldValidationError = {
@@ -45,20 +46,19 @@ export default function EditableDataView<T extends object>({
   noForm = false,
   isModal,
   actionCard,
-  withinView
+  withinView,
+  setModalHidden
 }: EditableDataViewProps<T>) {
   const sections = translateSections(sectionsI18n);
   const [formData, setFormData] = useState<T>(data);
   const [errorFields, setErrorFields] = useState<FieldValidationError[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const uiMsgType = resolveMsgCopy(messageType);
-  // const trustDepositReclaimBurnRate = useTrustDepositParams().trustDepositReclaimBurnRate;
-  // const burnRate = (messageType == 'MsgReclaimTrustDeposit' ? Number(trustDepositReclaimBurnRate) : 0);
   const action = id? 'edit' : 'create';
   const [hasTriedSubmit, setHasTriedSubmit] = useState(false);
 
   // Enabled Action
-  const [enabledAction, setEnabledAction] = useState(false);
+  const [enabledAction, setEnabledAction] = useState(true);
 
   // Router, notification, and errorNotified
   const router = useRouter();
@@ -73,24 +73,19 @@ export default function EditableDataView<T extends object>({
     return true;
   }, []);
 
-  // Get fee and amount in VNA
-  const [feeAmountVNA, setFeeAmountVNA] = useState<string>("0.9");
-
-  // Get the trust deposit value for the message type
-  const { value, errorTrustDepositValue } = useTrustDepositValue(messageType);
+  // Container Global Variable LOW_BALANCE_WARN_UVNA
+  const LOW_BALANCE_WARN_UVNA = env('NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA') || process.env.NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA;
+  const [showMsgLowBalanceWarn, setShowMsgLowBalanceWarn] = useState<boolean | null>(null);
+  const lowBalanceTemplate = resolveTranslatable({key: 'messages.lowbalance'}, translate)?? "You’re Running Low on VNA. Your balance is {value} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted.";
+  const [feeAmount, setFeeAmount] = useState<number>(0);
+  const [showMsgBalanceLessThanFeeWarn, setShowMsgBalanceLessThanFeeWarn] = useState<boolean | null>(null);
+  const balanceLessThanFeeTemplate = resolveTranslatable({key: 'messages.balanceLessThanFee'}, translate)?? "You’re Running Low on VNA. Your balance is {value} VNA and running this transaction requires {fee} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted.";
 
   // Custom hook to fetch user's account/trust deposit data
   const { accountData, errorAccountData } = useTrustDepositAccountData();
 
-  // Show notification if there is an error fetching trust deposit value or account data
+  // Show notification if there is an error fetching account data
   useEffect(() => {
-    if (errorTrustDepositValue && !errorNotified) {
-      (async () => {
-        await notify(errorTrustDepositValue, 'error', 'Error fetching trust deposit cost');
-        setErrorNotified(true);
-        // router.push('/tr');
-      })();
-    }
     if (errorAccountData && !errorNotified) {
       (async () => {
         await notify(errorAccountData, 'error', 'Error fetching account balance');
@@ -98,11 +93,8 @@ export default function EditableDataView<T extends object>({
         // router.push('/tr');
       })();
     }
-  }, [errorAccountData, errorTrustDepositValue, router, errorNotified]);
+  }, [errorAccountData, router, errorNotified]);
   
-  // Local state to store the total required value for action (deposit + fee)
-  const [totalValue, setTotalValue] = useState<string>("0.00");
-
   const basicSection = sections.find( (section) => (!section.type || section.type === 'basic' ) && !section.noEdit);
   // if (!basicSection) {
   //   return null;
@@ -111,31 +103,54 @@ export default function EditableDataView<T extends object>({
 
   const ran = useRef(false);
   useEffect(() => {
-    if (!noForm || ran.current) return;
+    if (!noForm){
+      setModalHidden?.();
+      return;
+    } 
+    if (ran.current) return;
     ran.current = true;
     handleSimulate();
   }, [noForm, handleSimulate]);
+
+  useEffect(() => {
+    if (!noForm) return;
+    console.info({showMsgBalanceLessThanFeeWarn, showMsgLowBalanceWarn})
+    if (showMsgBalanceLessThanFeeWarn == null || showMsgLowBalanceWarn == null) return;
+    if (showMsgBalanceLessThanFeeWarn == false && showMsgLowBalanceWarn == false){
+      handleSave();
+      onCancel?.();
+    }
+    else {
+        setModalHidden?.();
+    }
+  }, [showMsgBalanceLessThanFeeWarn, showMsgLowBalanceWarn]);
   
   useEffect(() => {
-    // Calculate deposit and total required value
-    const deposit = (messageType == 'MsgReclaimTrustDeposit') ? 0 : Number(value || 0);
-    const feeAmount = Number(feeAmountVNA || 0);
-    setTotalValue((deposit + feeAmount).toFixed(6));
-    const availableBalance = accountData.balance ? Number(accountData.balance)/ 1_000_000 : 0;
-    const availableReclaimable = (accountData.reclaimable) ? Number(accountData.reclaimable)/ 1_000_000 : 0;
-    visibleFields.forEach(field => {
-      if (!isResolvedDataField(field)) return;
-      if (field.name !== 'claimedVNA') return;
-      field.validation = {
-        ...(field.validation ?? { type: 'Number' }),
-        lessThanOrEqual: availableReclaimable,
-      };
-    });
-    const hasEnoughBalance = 
-      (availableBalance >= feeAmount) &&
-      ( ( availableReclaimable + availableBalance - feeAmount) >= deposit );
-    setEnabledAction(hasEnoughBalance);
-  }, [value, feeAmountVNA, messageType, accountData.balance, accountData.reclaimable, sections]);
+    // Verified if user has equal or more than LOW_BALANCE_WARN_UVNA in its wallet 
+    const availableBalance = accountData.balance && Number(accountData.balance);
+    if (!availableBalance) return;
+    const hasLowBalance = (availableBalance <= Number(LOW_BALANCE_WARN_UVNA));
+    setShowMsgLowBalanceWarn(hasLowBalance);
+    // Set validation 'claimedVNA'
+    // const availableReclaimable = (accountData.reclaimable) ? Number(accountData.reclaimable)/ 1_000_000 : 0;
+    // visibleFields.forEach(field => {
+    //   if (!isResolvedDataField(field)) return;
+    //   if (field.name !== 'claimedVNA') return;
+    //   field.validation = {
+    //     ...(field.validation ?? { type: 'Number' }),
+    //     lessThanOrEqual: availableReclaimable,
+    //   };
+    // });
+  }, [accountData.balance, accountData.reclaimable]); //, sections]);
+
+  useEffect(() => {
+    // Verified if user has equal or more than Simulated Fee in its wallet
+    if (!noForm) return;
+    const availableBalance = accountData.balance && Number(accountData.balance);
+    if (!availableBalance || !feeAmount) return;
+    const hasBalanceLessThanFee = (availableBalance <= feeAmount);
+    setShowMsgBalanceLessThanFeeWarn(hasBalanceLessThanFee);
+  }, [feeAmount, accountData.balance]);
   
   // Updates form state and manages error tracking on change
   function handleChange(fieldName: keyof T, value: unknown, field: ResolvedDataField<T>) {
@@ -181,19 +196,17 @@ export default function EditableDataView<T extends object>({
 
   // Handles simulate action
   async function handleSimulate() {
+    if (messageType == "MsgReclaimTrustDepositYield") return;
     if (onSimulate){
       try {
+        setEnabledAction(false);
         const res = await Promise.resolve(onSimulate(formData));
-        console.info("handleSimulate", res);
-        if (res){
-          setFeeAmountVNA(
-            String(
-              ((Number(res.amount?.[0]?.amount) || 900_000) / 1_000_000)
-            )
-          );
-        }
+        if (res) setFeeAmount( Number(res.amount?.[0]?.amount) || 900_000 );
+      } catch (err) {
+          console.error("handleSimulate", err);
       } finally {
         setSubmitting(false);
+        setEnabledAction(true);
       }
     }
   }
@@ -389,16 +402,19 @@ export default function EditableDataView<T extends object>({
           textareaInputs
       }
 
-      {/* Cost Message */}
-      {(!actionCard || actionCard.available) && totalValue && (
-        <div className={clsx('bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4',
+      {/* Warning Cost Message */}
+      {(showMsgLowBalanceWarn || showMsgBalanceLessThanFeeWarn) && (
+        <div className={clsx('bg-red-50 dark:bg-red-900/20 rounded-lg p-4',
           actionCard && actionCard.available ? 'w-fit mx-auto text-center mb-6' : 'mb-4'
           )}
         >
+            <div className="flex">
+                <i className="text-red-600 dark:text-red-400 mt-0.5 mr-3" data-fa-i2svg=""><svg className="svg-inline--fa fa-triangle-exclamation" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="triangle-exclamation" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" data-fa-i2svg=""><path fill="currentColor" d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"></path></svg></i>
           <p
-            className="data-edit-form-description"
-            dangerouslySetInnerHTML={{ __html: getCostMessage(uiMsgType.cost, totalValue) }}
+            className="text-sm mt-1"
+            dangerouslySetInnerHTML={{ __html: getLowBalanceMessage( showMsgBalanceLessThanFeeWarn ? balanceLessThanFeeTemplate : lowBalanceTemplate, (Number(accountData.balance)/ 1_000_000).toString() ?? "1", (feeAmount / 1_000_000).toString()) }}
           /> 
+            </div>
         </div>
       )}
 

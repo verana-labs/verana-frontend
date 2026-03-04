@@ -13,9 +13,10 @@ interface CsActionProps {
   data: object;
   onClose: () => void; // Collapse/hide action on cancel
   onRefresh?: () => void; // Refresh data
+  setModalHidden?: () => void; // Hidden/Visible modal
 }
 
-export default function CsActionPage({ action, onClose, data, onRefresh }: CsActionProps) {
+export default function CsActionPage({ action, onClose, data, onRefresh, setModalHidden }: CsActionProps) {
   const csData = data as CsData;
   const msgType = action as MessageType;
   const { submitTx } = useSubmitTxMsgTypeFromObject( onClose, onRefresh );
@@ -62,7 +63,9 @@ export default function CsActionPage({ action, onClose, data, onRefresh }: CsAct
         onSimulate={onSimulate}
         onCancel={onClose}
         noForm={isNoForm()} 
-        withinView={action==='MsgUpdateCredentialSchema'}/>
+        withinView={action==='MsgUpdateCredentialSchema'}
+        setModalHidden={setModalHidden}
+      />
     </>
   );
 

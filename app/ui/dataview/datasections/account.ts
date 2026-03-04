@@ -47,27 +47,6 @@ export const accountSections: Section<AccountData>[] = [
       },
     ],
   },
-  // {
-  //   name: t("dataview.account.sections.trustDeposit"),
-  //   icon: BanknotesIcon,
-  //   fields: [
-  //     { name: "claimableInterests", label: t("dataview.account.fields.claimableInterests"), type: "data" },
-  //     { name: "reclaimable", label: t("dataview.account.fields.reclaimable"), type: "data" },
-  //     { name: "message", label: t("dataview.account.fields.message"), type: "data" },
-  //   ],
-  // },
-  // {
-  //   type: "help",
-  //   help: [
-  //     t("dataview.account.help.available"),
-  //     t("dataview.account.help.trustDeposit"),
-  //     t("dataview.account.help.claimableInterests"),
-  //     t("dataview.account.help.reclaimable"),
-  //   ],
-  //   name: t("dataview.account.sections.aboutBalances"),
-  //   icon: InformationCircleIcon,
-  //   fields: [],
-  // },
   {
     type: "actions",
     name: t("dataview.account.sections.accountActions"),
@@ -84,7 +63,6 @@ export const accountSections: Section<AccountData>[] = [
         iconClass: "bg-gradient-to-br from-orange-500 to-orange-700",
         iconColorClass: "text-white"
       },
-      // { name: "reclaimDeposit", label: t("dataview.account.actions.reclaimDeposit"), type: "action" }
     ],
   },
   {

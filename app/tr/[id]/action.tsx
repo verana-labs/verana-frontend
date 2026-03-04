@@ -13,9 +13,10 @@ interface TrActionProps {
   data: object;
   onClose: () => void; // Collapse/hide action on cancel
   onRefresh?: () => void; // Refresh data
+  setModalHidden?: () => void; // Hidden/Visible modal
 }
 
-export default function TrActionPage({ action, onClose, data, onRefresh }: TrActionProps) {
+export default function TrActionPage({ action, onClose, data, onRefresh, setModalHidden }: TrActionProps) {
   const trData = data as TrData;
   const msgType = action as MessageType;
   const { submitTx } = useSubmitTxMsgTypeFromObject( onClose, onRefresh );
@@ -62,7 +63,9 @@ export default function TrActionPage({ action, onClose, data, onRefresh }: TrAct
         onSimulate={onSimulate}
         onCancel={onClose}
         noForm={isNoForm()} 
-        withinView={action==='MsgUpdateTrustRegistry'}/>
+        withinView={action==='MsgUpdateTrustRegistry'}
+        setModalHidden={setModalHidden}
+      />
     </>
   );
 
