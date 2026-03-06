@@ -2,6 +2,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { PermissionAction } from "../dataview/datasections/perm";
 import { useEffect, useState } from "react";
 import { copyToClipboard } from "@/util/util";
+import { env } from 'next-runtime-env';
 import { translate } from "@/i18n/dataview";
 import { resolveTranslatable } from "../dataview/types";
 
@@ -31,9 +32,11 @@ export default function PermissionAttribute({ label, value, mono, actions }: Per
       case "service":
         window.open(service(value), "_blank");
         break;
-      case "explorer":
-        window.open(`https://explorer.testnet.verana.network/Verana%20Testnet/account/${value}`, "_blank");
+      case "explorer": {
+        const explorerUrl = env('NEXT_PUBLIC_VERANA_EXPLORER_URL') || process.env.NEXT_PUBLIC_VERANA_EXPLORER_URL;
+        if (explorerUrl) window.open(`${explorerUrl}/account/${value}`, "_blank");
         break;
+      }
       default:
         console.error("PermissionAction", action);
     }
