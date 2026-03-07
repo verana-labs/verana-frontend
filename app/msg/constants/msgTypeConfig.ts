@@ -133,6 +133,11 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     label: t("messages.MsgCreateRootPermission.label"),
     description: t("messages.MsgCreateRootPermission.description"),
     cost: t("messages.MsgCreateRootPermission.cost"), // {value}
+  },
+  MsgStartPermissionVP: {
+    label: t("messages.MsgStartPermissionVP.label"),
+    description: t("messages.MsgStartPermissionVP.description"),
+    cost: t("messages.MsgStartPermissionVP.cost"), // {value}
   }
 };
 
@@ -210,5 +215,6 @@ export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
   MsgRepayPermissionSlashedTrustDeposit: {
     button: "bg-green-600 hover:bg-green-700"
   },
-  MsgCreateRootPermission: {}
+  MsgCreateRootPermission: {},
+  MsgStartPermissionVP: {}
 }

@@ -186,8 +186,8 @@ export const MSG_ERROR_ACTION_CS: Record<
 /**
  * Success messages for Permission actions
  */
-export const MSG_SUCCESS_ACTION_PERM: Record<MsgTypePERM, () => string> = {
-  MsgStartPermissionVP: () => t('notification.MsgStartPermissionVP.success'),
+export const MSG_SUCCESS_ACTION_PERM: Record<MsgTypePERM, (id: string | number | undefined) => string> = {
+  MsgStartPermissionVP: (id) => t('notification.MsgStartPermissionVP.success', { id }),
   MsgRenewPermissionVP: () => t('notification.MsgRenewPermissionVP.success'),
   MsgSetPermissionVPToValidated: () => t('notification.MsgSetPermissionVPToValidated.success'),
   MsgCancelPermissionVPLastRequest: () => t('notification.MsgCancelPermissionVPLastRequest.success'),

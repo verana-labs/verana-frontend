@@ -20,6 +20,7 @@ import { resolveTranslatable } from "../dataview/types";
 import TitleAndButton from "./title-and-button";
 import { ModalAction } from "./modal-action";
 import { renderActionComponent } from "./data-view-typed";
+import AddJoinPage from "@/participants/add/page";
 
 type PermissionTreeProps = {
   tree: TreeNode[];
@@ -65,6 +66,7 @@ export type TreeNode = {
   children?: TreeNode[];
   validationProcessLabel?: string;
   validationProcessColor?: string;
+  enabledJoin?: boolean;
 };
 
 /** ------------ Helpers ------------ */
@@ -72,7 +74,7 @@ function findNodeAndPath(nodes: TreeNode[], id: string): { node?: TreeNode; path
   const queue: { n: TreeNode; path: TreeNode[] }[] = nodes.map((n) => ({ n, path: [n] }));
   while (queue.length) {
     const cur = queue.shift()!;
-    if (cur.n.nodeId === id) return { node: cur.n, path: cur.path };
+    if (String(cur.n.nodeId) === String(id)) return { node: cur.n, path: cur.path };
     for (const c of cur.n.children ?? []) queue.push({ n: c, path: [...cur.path, c] });
   }
   return { node: undefined, path: [] };
@@ -89,7 +91,7 @@ function Tree({
   expanded,
   onToggle,
   depth = 0,
-  hrefJoin,
+  onJoin,
 }: {
   type: "participants" | "tasks";
   nodes: TreeNode[];
@@ -100,8 +102,8 @@ function Tree({
   onSelect: (id: string) => void;
   expanded: Record<string, boolean>;
   onToggle: (id: string, type: string, validatorId: string) => void;
+  onJoin: (node: TreeNode) => void;
   depth?: number;
-  hrefJoin?: string;
 }) {
 
   return (
@@ -109,7 +111,7 @@ function Tree({
       {nodes.map((node, idx) => {
         const hasChildren = !!node.children?.length;
         const isExpanded = expanded[node.nodeId] ?? false;
-        const isSelected = selectedId === node.nodeId;
+        const isSelected = String(selectedId) === String(node.nodeId);
         const {labelVpState, classVpState} = vpStateColor(node.permission?.vp_state as VpState, node.permission?.vp_exp as string, node.permission?.expire_soon ?? false);
         const {labelPermState, classPermState} = permStateBadgeClass(node.permission?.perm_state as PermState, node.permission?.expire_soon ?? false);
         return (
@@ -208,18 +210,22 @@ function Tree({
                   ) : null}
                 </div>
                 ) : (
-                  <Link
-                    href={hrefJoin??""}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onJoin(node);
+                      onToggle(node.nodeId, node.type as string, node.parentId as string);
+                    }}
                     className= {`text-xs ${node.roleColorClass} hover:text-purple-600 flex items-center space-x-3`}
+                    disabled={!node.enabledJoin}
                   >
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${node.validationProcessColor}`}>
                       {node.validationProcessLabel}
                     </span>
                     <FontAwesomeIcon icon={faHandshake} className="mr-1" />
                     {" "}{resolveTranslatable({key: "participants.btn.join"}, translate)}
-                  </Link>
+                  </button>
                 ) ) }
               </div>
             </div>
@@ -228,7 +234,7 @@ function Tree({
               <Tree
                 type={type}
                 nodes={node.children!}
-                hrefJoin={hrefJoin}
+                onJoin={onJoin}
                 showWeight={showWeight}
                 showBusiness={showBusiness}
                 showStats={showStats}
@@ -251,6 +257,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
   const [showBusiness, setShowBusiness] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [addPermission, setAddPermission] = useState<boolean>(false);
+  const [join, setJoin] = useState<TreeNode | undefined>(undefined);
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     const first = tree?.[0]?.nodeId;
@@ -271,7 +278,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
 
   function findNodeById(nodes: TreeNode[], targetId: string): TreeNode | undefined {
     for (const n of nodes) {
-      if (n.nodeId === targetId) return n;
+      if (String(n.nodeId) === String(targetId)) return n;
       if (n.children?.length) {
         const found = findNodeById(n.children, targetId);
         if (found) return found;
@@ -321,7 +328,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
 
   function updateNodePermission(nodes: TreeNode[], nodeId: string, perm: Permission): TreeNode[] {
     return nodes.map((n) => {
-      if (n.nodeId === nodeId) {
+      if (String(n.nodeId) === String(nodeId)) {
         return { ...n, permission: perm };
       }
       if (n.children?.length) {
@@ -406,7 +413,10 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
           <Tree
             type={type}
             nodes={treeState}
-            hrefJoin={hrefJoin}
+            onJoin={(node) => {
+              setNodeRequestParams?.(undefined, undefined, undefined)
+              setJoin(node);
+            }}
             showWeight={showWeight}
             showBusiness={showBusiness}
             showStats={showStats}
@@ -446,6 +456,27 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
         </ModalAction>
       ) : null}
       
+      {join ? (
+        <ModalAction
+          onClose={() => setJoin(undefined)}
+          titleKey={`${resolveTranslatable({key: "join.title"}, translate)} - ${csTitle} - as an  ${join.name?.slice(0, -1)}`}
+          isActive={join !== undefined}
+          classModal={"relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-xl bg-white dark:bg-surface"}
+        >
+          <AddJoinPage 
+            trId={trId??""}
+            nodeJoin={join}
+            onCancel={() => setJoin(undefined)}
+            onRefresh={(id?: string ) => {
+              setNodeRequestParams?.(join.nodeId, join.type, join.parentId);
+              setTimeout(() => {
+                if (id) setSelectedId(String(id));
+              }, 1000);
+            }}
+          />
+        </ModalAction>
+      ) : null}
+
       {/* Detail Card  */}
       {selectedNode ? (
         <PermissionCard selectedNode={selectedNode} path={path} csTitle={csTitle??""} onRefresh={(perm: Permission) => refreshNode(perm)}/>

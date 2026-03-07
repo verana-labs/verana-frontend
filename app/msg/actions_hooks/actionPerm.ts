@@ -173,7 +173,7 @@ export type ActionPermParams =
 /**
  * Hook to execute Permission module transactions and show notifications
  */
-export function useActionPerm(onCancel?: () => void, onRefresh?: () => void) {
+export function useActionPerm(onCancel?: () => void, onRefresh?: (id?: string) => void) {
   const veranaChain = useVeranaChain();
   const { address, isWalletConnected } = useChain(veranaChain.chain_name);
 
@@ -182,8 +182,8 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: () => void) {
   const inFlight = useRef(false);
 
   /** Success handler: refresh and collapses/hides the action UI */
-  const handleSuccess = () => {
-    onRefresh?.();
+  const handleSuccess = (id: string | undefined) => {
+    onRefresh?.(id);
     console.info('handleSuccess useActionPerm');
     setTimeout(() => {
       onCancel?.();
@@ -445,7 +445,7 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: () => void) {
 
         success = true;
         notifyPromise = notify(
-          MSG_SUCCESS_ACTION_PERM[params.msgType](),
+          MSG_SUCCESS_ACTION_PERM[params.msgType](id),
           'success',
           resolveTranslatable({ key: 'notification.msg.successful.title' }, translate),
         );
@@ -468,7 +468,7 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: () => void) {
 
       // Refresh on success (or redirect for create-like flows)
       if (success) {
-          handleSuccess();
+          handleSuccess(id);
       }
     }
   }

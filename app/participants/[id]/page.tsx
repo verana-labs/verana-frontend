@@ -1,7 +1,7 @@
 'use client';
 
 import { usePermissions } from "@/hooks/usePermissions";
-import PermissionTree, {TreeNode } from "@/ui/common/permission-tree";
+import PermissionTree, {PermState, TreeNode } from "@/ui/common/permission-tree";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Permission } from '@/ui/dataview/datasections/perm';
@@ -73,11 +73,11 @@ export default function ParicipantsPage() {
       icon,
       iconColorClass,
       permission: node,
-      children: foldersByTypes(node.id, node.schema_id, typesToShow),
+      children: foldersByTypes(node.id, node.schema_id, typesToShow, node.perm_state)
     };
   }
 
-  function foldersByTypes(parentId: string, schemaId: string, types: {role: Role; label: string; validation: boolean}[]): TreeNode[] {
+  function foldersByTypes(parentId: string, schemaId: string, types: {role: Role; label: string; validation: boolean}[], parentPermState: string): TreeNode[] {
     return types.map((t) => ({
       nodeId: `group:${parentId}:${t.role}`,
       name: t.label,
@@ -93,6 +93,7 @@ export default function ParicipantsPage() {
       icon: faFolder,
       iconColorClass: roleColorClass(t.role),
       children: [],
+      enabledJoin: parentPermState as PermState === "ACTIVE"
     }));
   }
 

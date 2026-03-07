@@ -28,6 +28,7 @@
   "join.desc": "Follow the steps to join an ecosystem and start participating",
   "join.progress": "Progress",
   "join.btn.back": "Back",
+  "join.btn.cancel": "Cancel",
   "join.btn.continue": "Continue",
   "join.btn.join": "Join Ecosystem",
   "join.egf.title": "Ecosystem Governance Framework",
@@ -264,7 +265,7 @@
   "notification.MsgArchiveCredentialSchema.error": "Unable to archive Credential Schema {id}. {code}{msg}",
   "notification.MsgUnarchiveCredentialSchema.error": "Unable to unarchive Credential Schema {id}. {code}{msg}",
 
-  "notification.MsgStartPermissionVP.success": "Validation process started successfully",
+  "notification.MsgStartPermissionVP.success": "Validation process started successfully {id}",
   "notification.MsgRenewPermissionVP.success": "Validation process renewed successfully",
   "notification.MsgSetPermissionVPToValidated.success": "Permission was successfully validated",
   "notification.MsgCancelPermissionVPLastRequest.success": "Validation request was successfully cancelled",
@@ -668,6 +669,10 @@
   "messages.MsgCreateRootPermission.label" : "Confirm",
   "messages.MsgCreateRootPermission.description": "",
   "messages.MsgCreateRootPermission.cost": "Click confirm when you are ready. You'll need approx. {value} VNA to complete the transaction.",
+
+  "messages.MsgStartPermissionVP.label" : "Confirm & Start Validation Process",
+  "messages.MsgStartPermissionVP.description": "",
+  "messages.MsgStartPermissionVP.cost": "Added to the network transaction fees, you will need {value} VNA to execute this transaction, to pay validation fees and trust deposit.",
 
   "dashboardfooter.title": "Verana",
   "dashboardfooter.msg": "The open trust layer for the internet, enabling verifiable digital services and true digital sovereignty.",

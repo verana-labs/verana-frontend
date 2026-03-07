@@ -146,7 +146,7 @@ export const validTRAction = (action: string): action is MsgTypeTR =>
 
 // Define the valid actions for PERM
 export const validPermAction = (action: string): action is MsgTypePERM => 
-  ['MsgCancelPermissionVPLastRequest','MsgRenewPermissionVP','MsgSetPermissionVPToValidated', 
+  ['MsgCancelPermissionVPLastRequest','MsgRenewPermissionVP','MsgSetPermissionVPToValidated','MsgStartPermissionVP',
   'MsgExtendPermission','MsgRevokePermission','MsgSlashPermissionTrustDeposit','MsgRepayPermissionSlashedTrustDeposit',
   'MsgCreateRootPermission'].includes(action);
 
@@ -159,7 +159,7 @@ export function renderActionComponent(
   action: string,
   onClose: () => void,
   data: object,
-  onRefresh?: () => void,
+  onRefresh?: (id?: string) => void,
   onBack?: () => void,
   setModalHidden?: () => void
 ): ReactNode {

@@ -211,9 +211,10 @@ export function getActionPermSections(msgType: MsgType): Section<PermissionData>
           name: t("dataview.perm.sections.main"),
           type: "basic",
           fields: [
-            ...commonIdentityFields({includeCountry: true}),
-            ...commonCreateFields({ includeType: true, includeValidatorPermId: true})
-          ],
+            ...commonIdentityFields({includeCountry: false}),
+            ...commonCreateFields({ includeType: true, includeValidatorPermId: true}),
+            ...feeFields({ includeIssuance: true }),
+        ],
         },
       ];
 
@@ -223,7 +224,7 @@ export function getActionPermSections(msgType: MsgType): Section<PermissionData>
           name: t("dataview.perm.sections.main"),
           type: "basic",
           fields: [
-            ...commonIdentityFields({includeCountry: true}),
+            ...commonIdentityFields({includeCountry: false}),
             ...dateFields({ until: true }),
             ...feeFields({ includeIssuance: true }),
             {
