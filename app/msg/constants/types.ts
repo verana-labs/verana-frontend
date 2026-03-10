@@ -9,7 +9,7 @@ export type MessageType =
   | "MsgCreateCredentialSchema" | "MsgUpdateCredentialSchema" | "MsgArchiveCredentialSchema" | "MsgUnarchiveCredentialSchema"// CS
   | "MsgCancelPermissionVPLastRequest" | "MsgRenewPermissionVP" | "MsgSetPermissionVPToValidated" | "MsgStartPermissionVP" // VP PERM
   | "MsgExtendPermission" | "MsgRevokePermission" | "MsgSlashPermissionTrustDeposit" | "MsgRepayPermissionSlashedTrustDeposit" // PERM
-  | "MsgCreateRootPermission" ; // PERM
+  | "MsgCreateRootPermission" | "MsgCreatePermission" ; // PERM
 
 export interface MsgTypeInfoI18n {
   label: Translatable;

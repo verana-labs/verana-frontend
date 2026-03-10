@@ -55,7 +55,6 @@ export default function RequireConnectedWallet({ children }: { children: React.R
 
   // ---- STEP 5: Redirect if wallet is not connected (after initialization) ----
   useEffect(() => {
-    console.info({hydrated , onDashboard , initializing , redirected, status, hasStoredWallet , bootWindowOpen});
     if (!hydrated || onDashboard || initializing ) return; 
 
     // Only redirect if not connected and not already on dashboard

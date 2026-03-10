@@ -213,8 +213,35 @@ export function getActionPermSections(msgType: MsgType): Section<PermissionData>
           fields: [
             ...commonIdentityFields({includeCountry: false}),
             ...commonCreateFields({ includeType: true, includeValidatorPermId: true}),
-            ...feeFields({ includeIssuance: true }),
         ],
+        },
+      ];
+
+    case "MsgCreatePermission":
+      return [
+        {
+          name: t("dataview.perm.sections.main"),
+          type: "basic",
+          fields: [
+            ...commonIdentityFields({includeCountry: false}),
+            ...commonCreateFields({includeType: true}),
+            ...dateFields({ from: true, until: true }),
+            ...feeFields({ includeIssuance: false }),
+          ],
+        },
+      ];
+
+    case "MsgCreateRootPermission":
+      return [
+        {
+          // name: t("dataview.perm.sections.main"),
+          type: "basic",
+          fields: [
+            ...commonIdentityFields({includeCountry: false}),
+            ...commonCreateFields({includeType: false}),
+            ...dateFields({ from: true, until: true }),
+            ...feeFields({ includeIssuance: true }),
+          ],
         },
       ];
 
@@ -236,20 +263,6 @@ export function getActionPermSections(msgType: MsgType): Section<PermissionData>
               required: false,
               update: false,
             },
-          ],
-        },
-      ];
-
-    case "MsgCreateRootPermission":
-      return [
-        {
-          // name: t("dataview.perm.sections.main"),
-          type: "basic",
-          fields: [
-            ...commonIdentityFields({includeCountry: false}),
-            ...commonCreateFields({includeType: false}),
-            ...dateFields({ from: true, until: true }),
-            ...feeFields({ includeIssuance: true }),
           ],
         },
       ];
@@ -334,20 +347,6 @@ export function getActionPermSections(msgType: MsgType): Section<PermissionData>
         },
       ];
 
-    case "MsgCreatePermission":
-      return [
-        {
-          name: t("dataview.perm.sections.main"),
-          type: "basic",
-          fields: [
-            ...commonIdentityFields({includeCountry: false}),
-            ...commonCreateFields({includeType: true}),
-            ...dateFields({ from: true, until: true }),
-            ...feeFields({ includeIssuance: false }),
-          ],
-        },
-      ];
-
     default:
       return [];
   }
@@ -414,6 +413,7 @@ export interface Permission {
   issued: string;
   verified: string;
   expire_soon: boolean;
+  transaction_cost?: string;
 };
 export interface PermissionHistory {
   permission_id: string;

@@ -33,10 +33,8 @@ export function isValidSchemaIdPattern(schemaId: string): boolean {
 
 export function normalizeJsonSchema(jsonSchema: string): string {
   try {
-    // console.info('[json-schema] Original length', jsonSchema.length);
     const parsed = JSON.parse(jsonSchema);
     const normalized = JSON.stringify(parsed);
-    // console.info('[json-schema] Normalized length', normalized.length);
     return normalized;
   } catch {
     return jsonSchema;

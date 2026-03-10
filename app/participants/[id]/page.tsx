@@ -73,27 +73,29 @@ export default function ParicipantsPage() {
       icon,
       iconColorClass,
       permission: node,
-      children: foldersByTypes(node.id, node.schema_id, typesToShow, node.perm_state)
+      children: foldersByTypes(node, typesToShow)
     };
   }
 
-  function foldersByTypes(parentId: string, schemaId: string, types: {role: Role; label: string; validation: boolean}[], parentPermState: string): TreeNode[] {
+  function foldersByTypes(parent: Permission, types: {role: Role; label: string; validation: boolean}[]): TreeNode[] {
     return types.map((t) => ({
-      nodeId: `group:${parentId}:${t.role}`,
+      nodeId: `group:${parent.id}:${t.role}`,
       name: t.label,
+      validationProcessAction: t.validation ? (t.role == "HOLDER" && Number(parent.validation_fees) == 0 ? "LinkDID" : "MsgStartPermissionVP") : "MsgCreatePermission",
       validationProcessLabel: t.validation ? "validation process" : "open",
       validationProcessColor: roleJoinColorClass(t.role),
       isGrantee: false,
       isValidator: false,
       group: true,
       schemaId,
-      parentId,
+      parentId: parent.id,
       type: t.role,
       roleColorClass: roleColorClass(t.role),
       icon: faFolder,
       iconColorClass: roleColorClass(t.role),
       children: [],
-      enabledJoin: parentPermState as PermState === "ACTIVE"
+      permission: parent,
+      enabledJoin: parent.perm_state as PermState === "ACTIVE"
     }));
   }
 
@@ -147,7 +149,6 @@ export default function ParicipantsPage() {
       ? nodeChildRoles(csData.issuerPermManagementMode as string, csData.verifierPermManagementMode as string, type as string)
       : [];
     if (type === "ECOSYSTEM") {
-      console.info("useEffect", "ECOSYSTEM");
       idsAddressRef.current.clear();
       idsPredecessorRef.current.clear();
       const groupedTreeNodes = buildPermissionTreeGroupedByType(permissionsList, typesToShow);
@@ -160,7 +161,6 @@ export default function ParicipantsPage() {
       );
       // update nodo folder
       setPermissionsTree((prev) => setChildrenOnNodeId(prev, nodeUptade, newChildren));
-      console.info("add child nodes", permissionsList);
     }
   }, [permissionsList, address, csData?.issuerPermManagementMode, csData?.verifierPermManagementMode]);
 

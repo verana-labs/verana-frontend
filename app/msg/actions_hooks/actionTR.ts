@@ -120,7 +120,6 @@ export function useActionTR(  onCancel?: () => void,
 
   // Handler for Succes: refresh and collapses/hides the action UI
   const handleSuccess = () => {
-    console.info('handleSuccess useActionTR', onRefresh);
     onRefresh?.();
     setTimeout( () => { onCancel?.() }, 1000);
   };

@@ -148,7 +148,7 @@ export const validTRAction = (action: string): action is MsgTypeTR =>
 export const validPermAction = (action: string): action is MsgTypePERM => 
   ['MsgCancelPermissionVPLastRequest','MsgRenewPermissionVP','MsgSetPermissionVPToValidated','MsgStartPermissionVP',
   'MsgExtendPermission','MsgRevokePermission','MsgSlashPermissionTrustDeposit','MsgRepayPermissionSlashedTrustDeposit',
-  'MsgCreateRootPermission'].includes(action);
+  'MsgCreateRootPermission', 'MsgCreatePermission'].includes(action);
 
 // Define the valid actions for CS
 const validCSAction = (action: string): action is MsgTypeCS => 

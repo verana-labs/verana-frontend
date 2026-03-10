@@ -33,7 +33,6 @@ export default function DIDView({ id, selectDidData, onBack, showHeader = true, 
   const [refresh, setRefresh] = useState(false);
   useEffect(() => {
     if (!refresh) return;
-    console.info('useEffect DIDView');
     (async () => {
       await refetchDID();
       // await refetchAD();

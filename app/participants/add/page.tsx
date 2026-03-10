@@ -10,30 +10,15 @@ import { useEffect, useMemo, useState } from "react";
 import { TreeNode } from "@/ui/common/permission-tree";
 import ActionFieldButton from "@/ui/common/action-field-button";
 import { PermissionType } from "proto-codecs/codec/verana/perm/v1/types";
+import { useTrustDepositParams } from "@/providers/trust-deposit-params-context";
 
 type StepId = 1 | 2 ;
 
 type Step = {
   id: StepId;
   title: string;
-  shortTitle: string;
   description?: string;
 };
-
-const steps: Step[] = [
-  {
-    id: 1,
-    title: "Review & Accept Governance Framework",
-    description: "Review and accept the Ecosystem Governance Framework (EGF) before continuing",
-    shortTitle: "Accept EGF"
-  },
-  {
-    id: 2,
-    title: "Confirm & Submit",
-    description: "You must run a Validation Process (VP) to obtain a permission for this schema. Start the Validation Process by filling this form.",
-    shortTitle: "Confirm"
-  },
-];
 
 function permissionTypeFromString(type?: string): PermissionType {
   switch (type) {
@@ -66,7 +51,23 @@ type AddJoinPageProps = {
 }
 
 export default function AddJoinPage({ trId, nodeJoin, onCancel, onRefresh }: AddJoinPageProps) {
-  
+
+  const steps: Step[] = [
+    {
+      id: 1,
+      title: resolveTranslatable({key: "join.acceptegf.title"}, translate) ?? "Review & Accept Governance Framework",
+      description: resolveTranslatable({key: "join.acceptegf.description"}, translate) ?? "Review and accept the Ecosystem Governance Framework (EGF) before continuing",
+    },
+    {
+      id: 2,
+      title: resolveTranslatable({key: "join.createpermission.title"}, translate) ?? "Confirm & Submit",
+      description: nodeJoin.validationProcessAction == 'MsgCreatePermission' ? 
+        ( nodeJoin.type == "VERIFIER" ? resolveTranslatable({key: "join.createpermission.description.open.verifier"}, translate) ?? "As the schema is OPEN to new verifiers, you just need to self-create your VERIFIER permission by filling this form."
+          : resolveTranslatable({key: "join.createpermission.description.open.issuer"}, translate) ?? "As the schema is OPEN to new issuers, you just need to self-create your ISSUER permission by filling this form." )
+        : resolveTranslatable({key: "join.createpermission.description.vp"}, translate) ?? "You must run a Validation Process (VP) to obtain a permission for this schema. Start the Validation Process by filling this form."
+    },
+  ];
+
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [enabledContinue, setEnabledContinue] = useState(true);
   const currentStepObj = useMemo(() => {
@@ -80,11 +81,19 @@ export default function AddJoinPage({ trId, nodeJoin, onCancel, onRefresh }: Add
   const { dataTR, errorTRData } = useTrustRegistryData(trId);
   const router = useRouter();
 
-  const dataStartPermissionVP = {
+  // Total required value for action MsgStartPermissionVP or MsgCreatePermission (validation_fees + trust_deposit_rate)
+  const trustDepositRate = useTrustDepositParams().trustDepositRate;
+  const tdRate = Number(trustDepositRate) ?? 0;
+  const validationFees = Number(nodeJoin.permission?.validation_fees) ?? 0;
+  const transactionCost = (1 + tdRate) * validationFees;
+
+  const dataInitPermission = {
     type,
     validator_perm_id: selectedValidator,
-    // country: "US",
+    schema_id: nodeJoin.schemaId,
     did: "",
+    transaction_cost: (transactionCost > 0) ? String(transactionCost) : undefined
+    // country: "US",
   }
     
   const [errorNotified, setErrorNotified] = useState(false);
@@ -170,10 +179,10 @@ export default function AddJoinPage({ trId, nodeJoin, onCancel, onRefresh }: Add
         {currentStep === 2 ? (
           <ActionFieldButton 
             type='button'
-            data={dataStartPermissionVP} 
+            data={dataInitPermission} 
             field={{name: "joinEcosytem", 
               label: resolveTranslatable({key: "join.btn.join"}, translate)??"",
-              value: "MsgStartPermissionVP"}}
+              value: nodeJoin.validationProcessAction??''}}
             onClose={onCancel}
             onRefresh={onRefresh}
             isActive={true}

@@ -28,7 +28,6 @@ export default function AccountPage() {
   useEffect(() => {
     if (!refresh) return;
     (async () => {
-      console.info('useEffect AccountPage');
       await refetchAD();
       setRefresh(false);
     })();

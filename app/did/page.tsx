@@ -32,7 +32,6 @@ export default function DidPage() {
 
   useEffect(() => {
     if (!refresh) return;
-    console.info('useEffect DidPage');
     const fetchDIDs = async () => {
       try {
           if (!listUrl){

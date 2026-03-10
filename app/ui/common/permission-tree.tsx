@@ -21,6 +21,7 @@ import TitleAndButton from "./title-and-button";
 import { ModalAction } from "./modal-action";
 import { renderActionComponent } from "./data-view-typed";
 import AddJoinPage from "@/participants/add/page";
+import { service } from "./permission-atrribute";
 
 type PermissionTreeProps = {
   tree: TreeNode[];
@@ -66,6 +67,7 @@ export type TreeNode = {
   children?: TreeNode[];
   validationProcessLabel?: string;
   validationProcessColor?: string;
+  validationProcessAction?: 'MsgStartPermissionVP' | 'MsgCreatePermission' | 'LinkDID';
   enabledJoin?: boolean;
 };
 
@@ -168,7 +170,7 @@ function Tree({
                     {node.group ? node.name : shortenDID(node.permission?.did as string)}
                   </span>
 
-                  { type==="participants" && node.permission?.perm_state ? (
+                  { type==="participants" && !node.group && node.permission?.perm_state ? (
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${classPermState}`}>
                       {labelPermState}
                     </span>
@@ -210,22 +212,29 @@ function Tree({
                   ) : null}
                 </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onJoin(node);
-                      onToggle(node.nodeId, node.type as string, node.parentId as string);
-                    }}
-                    className= {`text-xs ${node.roleColorClass} hover:text-purple-600 flex items-center space-x-3`}
-                    disabled={!node.enabledJoin}
-                  >
+                  <div className= {`text-xs ${node.roleColorClass} flex items-center space-x-3`}>
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${node.validationProcessColor}`}>
                       {node.validationProcessLabel}
                     </span>
-                    <FontAwesomeIcon icon={faHandshake} className="mr-1" />
-                    {" "}{resolveTranslatable({key: "participants.btn.join"}, translate)}
-                  </button>
+                    {node.enabledJoin ? (
+                      <span
+                        className="hover:text-purple-600"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (node.validationProcessAction == 'LinkDID'){
+                            window.open(service(node.permission?.did??''), "_blank");
+                          }
+                          else {
+                            onJoin(node);
+                            onToggle(node.nodeId, node.type as string, node.parentId as string);
+                          }
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faHandshake} className="mr-1" />
+                        {` ${resolveTranslatable({ key: "participants.btn.join" }, translate)}`}
+                      </span>
+                    ) : null}
+                  </div>
                 ) ) }
               </div>
             </div>
