@@ -7,6 +7,7 @@ export type TrustDepositParams = {
   trustRegistryTrustDeposit: string | number | null;
   trustUnitPrice: string | number | null;
   trustDepositReclaimBurnRate: string | number | null;
+  trustDepositRate: string | number | null;
   credentialSchemaTrustDeposit: string | number | null;
 };
 
@@ -15,6 +16,7 @@ export const trustDepositParamsInitialState: TrustDepositParams = {
   trustRegistryTrustDeposit: null,
   trustUnitPrice: null,
   trustDepositReclaimBurnRate: null,
+  trustDepositRate: null,
   credentialSchemaTrustDeposit: null,
 };
 
@@ -51,6 +53,12 @@ const configs: ParamConfig[] = [
     responseKey: 'trust_deposit_reclaim_burn_rate',
     envKey: 'NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT',
     transform: value => (value == null ? null : Number(value) * 100),
+  },
+  {
+    key: 'trustDepositRate',
+    responseKey: 'trust_deposit_rate',
+    envKey: 'NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT',
+    transform: value => (value == null ? null : Number(value)),
   },
   {
     key: 'credentialSchemaTrustDeposit',

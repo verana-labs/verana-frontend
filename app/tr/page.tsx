@@ -31,7 +31,6 @@ export default function TrPage() {
   const [refresh, setRefresh] = useState<boolean>(false);
   useEffect(() => {
     if (!refresh) return;
-    console.info('useEffect TrPage');
     (async () => {
       await fetchTrList();
       setRefresh(false);

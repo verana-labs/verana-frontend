@@ -13,7 +13,10 @@ type SupportedMsgType =
   | 'MsgRenewDID'
   | 'MsgCreateTrustRegistry'
   | 'MsgReclaimTrustDeposit'
-  | 'MsgCreateCredentialSchema';
+  | 'MsgCreateCredentialSchema'
+  | 'MsgStartPermissionVP'
+  | 'MsgCreatePermission'
+  ;
 
 /** Runtime guard to narrow MessageType → SupportedMsgType */
 function isSupported(mt: MessageType): mt is SupportedMsgType {
@@ -23,6 +26,8 @@ function isSupported(mt: MessageType): mt is SupportedMsgType {
     'MsgCreateTrustRegistry',
     'MsgReclaimTrustDeposit',
     'MsgCreateCredentialSchema',
+    'MsgStartPermissionVP',
+    'MsgCreatePermission'
   ].includes(mt as string);
 }
 
@@ -33,6 +38,8 @@ const KEY_BY_TYPE = {
   MsgCreateTrustRegistry: 'trustRegistryTrustDeposit',
   MsgReclaimTrustDeposit: 'trustDepositReclaimBurnRate',
   MsgCreateCredentialSchema: 'credentialSchemaTrustDeposit',
+  MsgStartPermissionVP: 'trustDepositRate',
+  MsgCreatePermission: 'trustDepositRate',
 } as const satisfies Record<SupportedMsgType, keyof TrustDepositParams>;
 
 /** Convert any value to a finite number or null if invalid. */

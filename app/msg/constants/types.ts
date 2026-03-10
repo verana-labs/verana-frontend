@@ -7,9 +7,9 @@ export type MessageType =
   | "MsgCreateTrustRegistry" | "MsgUpdateTrustRegistry" | "MsgArchiveTrustRegistry" | "MsgUnarchiveTrustRegistry" // TR
   | "MsgAddGovernanceFrameworkDocument" | "MsgIncreaseActiveGovernanceFrameworkVersion" // TR
   | "MsgCreateCredentialSchema" | "MsgUpdateCredentialSchema" | "MsgArchiveCredentialSchema" | "MsgUnarchiveCredentialSchema"// CS
-  | "MsgCancelPermissionVPLastRequest" | "MsgRenewPermissionVP" | "MsgSetPermissionVPToValidated" // VP PERM
+  | "MsgCancelPermissionVPLastRequest" | "MsgRenewPermissionVP" | "MsgSetPermissionVPToValidated" | "MsgStartPermissionVP" // VP PERM
   | "MsgExtendPermission" | "MsgRevokePermission" | "MsgSlashPermissionTrustDeposit" | "MsgRepayPermissionSlashedTrustDeposit" // PERM
-  | "MsgCreateRootPermission" ; // PERM
+  | "MsgCreateRootPermission" | "MsgCreatePermission" ; // PERM
 
 export interface MsgTypeInfoI18n {
   label: Translatable;

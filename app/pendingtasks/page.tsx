@@ -18,27 +18,10 @@ export default function PendingTasksPage() {
   const [permissionsTree, setPermissionsTree] = useState<TreeNode[]>([]);
   const [refreshRoot, setRefreshRoot] = useState<boolean>(true);
 
-  // Collect permission IDs granted to the current address
-  const idsAddress = new Set<string>();
-  const idsPredecessor = new Set<string>();
-  
   function permissionToTreeNode(p: Permission): TreeNode {
-    let isGrantee = false;
-    let isValidator = false;
-    let isPredecessor = false;
-    if (address === p.grantee){
-      isGrantee = true;
-      idsAddress.add(p.id);
-    }
-    if (idsAddress.has(p.validator_perm_id)){
-      isValidator = true;
-      idsPredecessor.add(p.id);
-    }
-    if (idsPredecessor.has(p.validator_perm_id)){
-      isPredecessor = true;
-      idsPredecessor.add(p.id);
-    }
-
+    const isGrantee = (address === p.grantee);
+    const isValidator = true;
+    const isPredecessor = false;
     const {icon, iconColorClass } = authorityPaticipants(isGrantee, isValidator, isPredecessor);
     return {
       nodeId: p.id,

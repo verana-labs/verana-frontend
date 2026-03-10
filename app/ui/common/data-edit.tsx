@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { ResolvedDataField, DataViewProps, isResolvedDataField, ResolvedField, visibleFieldsForMode, translateSections, resolveTranslatable } from '@/ui/dataview/types';
-import { getLowBalanceMessage, msgTypeStyle } from '@/msg/constants/msgTypeConfig';
+import { getCostMessage, getLowBalanceMessage, msgTypeStyle } from '@/msg/constants/msgTypeConfig';
 import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData';
 import { useNotification } from '@/ui/common/notification-provider';
 import { useRouter } from 'next/navigation';
@@ -11,7 +11,7 @@ import { MessageType } from '@/msg/constants/types';
 import { resolveMsgCopy } from '@/msg/constants/resolveMsgTypeConfig';
 import clsx from "clsx"
 import { translate } from '@/i18n/dataview';
-import { isJson } from '@/util/util';
+import { formatVNAFromUVNA, isJson } from '@/util/util';
 import JsonCodeBlock from '@/ui/common/json-code-block';
 import ActionCard, { ActionCardProps } from '@/ui/common/action-card';
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
@@ -28,6 +28,7 @@ type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & 
   actionCard?: ActionCardProps;
   withinView?: boolean;
   setModalHidden?: () => void;
+  transactionCost?: string;
 };
 
 type FieldValidationError = {
@@ -47,7 +48,8 @@ export default function EditableDataView<T extends object>({
   isModal,
   actionCard,
   withinView,
-  setModalHidden
+  setModalHidden,
+  transactionCost
 }: EditableDataViewProps<T>) {
   const sections = translateSections(sectionsI18n);
   const [formData, setFormData] = useState<T>(data);
@@ -114,7 +116,6 @@ export default function EditableDataView<T extends object>({
 
   useEffect(() => {
     if (!noForm) return;
-    console.info({showMsgBalanceLessThanFeeWarn, showMsgLowBalanceWarn})
     if (showMsgBalanceLessThanFeeWarn == null || showMsgLowBalanceWarn == null) return;
     if (showMsgBalanceLessThanFeeWarn == false && showMsgLowBalanceWarn == false){
       handleSave();
@@ -401,6 +402,19 @@ export default function EditableDataView<T extends object>({
       {textareaInputs.length > 0 && 
           textareaInputs
       }
+
+      {/* Cost Message MsgStartPermissionVP | MsgCreatePermission */}
+      { transactionCost && (!actionCard || actionCard.available) && (
+        <div className={clsx('bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4',
+          actionCard && actionCard.available ? 'w-fit mx-auto text-center mb-6' : 'mb-4'
+          )}
+        >
+          <p
+            className="data-edit-form-description"
+            dangerouslySetInnerHTML={{ __html: getCostMessage(uiMsgType.cost, formatVNAFromUVNA(transactionCost)) }}
+          /> 
+        </div>
+      )}
 
       {/* Warning Cost Message */}
       {(showMsgLowBalanceWarn || showMsgBalanceLessThanFeeWarn) && (

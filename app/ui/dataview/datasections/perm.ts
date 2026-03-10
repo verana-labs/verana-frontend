@@ -211,30 +211,22 @@ export function getActionPermSections(msgType: MsgType): Section<PermissionData>
           name: t("dataview.perm.sections.main"),
           type: "basic",
           fields: [
-            ...commonIdentityFields({includeCountry: true}),
-            ...commonCreateFields({ includeType: true, includeValidatorPermId: true})
-          ],
+            ...commonIdentityFields({includeCountry: false}),
+            ...commonCreateFields({ includeType: true, includeValidatorPermId: true}),
+        ],
         },
       ];
 
-    case "MsgSetPermissionVPToValidated":
+    case "MsgCreatePermission":
       return [
         {
           name: t("dataview.perm.sections.main"),
           type: "basic",
           fields: [
-            ...commonIdentityFields({includeCountry: true}),
-            ...dateFields({ until: true }),
-            ...feeFields({ includeIssuance: true }),
-            {
-              name: "vpSummaryDigestSri",
-              label: t("dataview.perm.fields.vpSummaryDigestSri"),
-              type: "data",
-              inputType: "text",
-              show: "none",
-              required: false,
-              update: false,
-            },
+            ...commonIdentityFields({includeCountry: false}),
+            ...commonCreateFields({includeType: true}),
+            ...dateFields({ from: true, until: true }),
+            ...feeFields({ includeIssuance: false }),
           ],
         },
       ];
@@ -249,6 +241,28 @@ export function getActionPermSections(msgType: MsgType): Section<PermissionData>
             ...commonCreateFields({includeType: false}),
             ...dateFields({ from: true, until: true }),
             ...feeFields({ includeIssuance: true }),
+          ],
+        },
+      ];
+
+    case "MsgSetPermissionVPToValidated":
+      return [
+        {
+          name: t("dataview.perm.sections.main"),
+          type: "basic",
+          fields: [
+            ...commonIdentityFields({includeCountry: false}),
+            ...dateFields({ until: true }),
+            ...feeFields({ includeIssuance: true }),
+            {
+              name: "vpSummaryDigestSri",
+              label: t("dataview.perm.fields.vpSummaryDigestSri"),
+              type: "data",
+              inputType: "text",
+              show: "none",
+              required: false,
+              update: false,
+            },
           ],
         },
       ];
@@ -333,20 +347,6 @@ export function getActionPermSections(msgType: MsgType): Section<PermissionData>
         },
       ];
 
-    case "MsgCreatePermission":
-      return [
-        {
-          name: t("dataview.perm.sections.main"),
-          type: "basic",
-          fields: [
-            ...commonIdentityFields({includeCountry: false}),
-            ...commonCreateFields({includeType: true}),
-            ...dateFields({ from: true, until: true }),
-            ...feeFields({ includeIssuance: false }),
-          ],
-        },
-      ];
-
     default:
       return [];
   }
@@ -413,6 +413,7 @@ export interface Permission {
   issued: string;
   verified: string;
   expire_soon: boolean;
+  transaction_cost?: string;
 };
 export interface PermissionHistory {
   permission_id: string;

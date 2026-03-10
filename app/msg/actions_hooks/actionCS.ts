@@ -90,7 +90,6 @@ export function useActionCS( onCancel?: () => void,
 
   // Handler for Succes: refresh and collapses/hides the action UI
   const handleSuccess = () => {
-    console.info('handleSuccess useActionCS');
     onRefresh?.();
     setTimeout( () => { onCancel?.() }, 1000);
   };
@@ -245,7 +244,6 @@ export function useActionCS( onCancel?: () => void,
       const txRes = res as DeliverTxResponse;
       
       if (txRes.code === 0) {
-        console.info("DeliverTxResponse: ", txRes);
         if (params.msgType === 'MsgCreateCredentialSchema') id = extractCreatedCSId(txRes);        
         if (id) sessionStorage.setItem('id_updated', id);
         success = true;

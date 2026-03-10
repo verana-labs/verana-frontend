@@ -57,7 +57,6 @@ export function useActionTD(
   // Refresh caller state once the transaction succeeds.
   const handleSuccess = () => {
     setRefresh?.();
-    console.info('handleSuccess useActionCS');
     setTimeout( () => { setActiveActionId?.() }, 1000);
   };
 

@@ -78,7 +78,6 @@ export function useActionDID(
 
   // After a successful broadcast, push or refresh the relevant route depending on the action performed.
   const handleSuccess = (msgType: ActionDIDParams['msgType']) => {
-    console.info("handleSuccess useActionDID");
     onRefresh?.();
     setTimeout(()=>{ 
       if (msgType === "MsgRemoveDID") onBack?.();
