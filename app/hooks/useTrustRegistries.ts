@@ -11,7 +11,7 @@ import { useChain } from '@cosmos-kit/react';
 
 export function useTrustRegistries (all: boolean = false, onlyActive: boolean = true) {
   const veranaChain = useVeranaChain();
-  const { address, isWalletConnected, getStargateClient } = useChain(veranaChain.chain_name);
+  const { address } = useChain(veranaChain.chain_name);
 
   const getTrURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY;
 
@@ -21,7 +21,7 @@ export function useTrustRegistries (all: boolean = false, onlyActive: boolean = 
   
   const fetchTrList = async () => {
 
-    if (!address || !isWalletConnected || !getStargateClient || !getTrURL) {
+    if (!getTrURL || (!all && !address)) {
       setError(resolveTranslatable({key: "error.fetch.tr"}, translate)?? 'Missing address or endpoint URL');
       setLoading(false);
       return;
@@ -35,7 +35,7 @@ export function useTrustRegistries (all: boolean = false, onlyActive: boolean = 
 
       const params = new URLSearchParams();
       params.set('response_max_size', '1024');
-      if ( !all) params.set('participant', address);
+      if ( !all && address) params.set('participant', address);
       if ( onlyActive ) params.set('only_active', 'true');
       const urlTrList = `${getTrURL}/list?${params.toString()}`;
 

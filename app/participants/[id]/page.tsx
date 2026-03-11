@@ -16,7 +16,7 @@ import { Role } from "@/ui/common/role-card";
 export default function ParicipantsPage() {
   
   const veranaChain = useVeranaChain();
-  const { address } = useChain(veranaChain.chain_name);
+  const { address, isWalletConnected, connect } = useChain(veranaChain.chain_name);
   const idsAddressRef = useRef<Set<string>>(new Set());
   const idsPredecessorRef = useRef<Set<string>>(new Set());
   type BuiltNode = Permission & { children: BuiltNode[] };
@@ -81,7 +81,9 @@ export default function ParicipantsPage() {
     return types.map((t) => ({
       nodeId: `group:${parent.id}:${t.role}`,
       name: t.label,
-      validationProcessAction: t.validation ? (t.role == "HOLDER" && Number(parent.validation_fees) == 0 ? "LinkDID" : "MsgStartPermissionVP") : "MsgCreatePermission",
+      validationProcessAction: isWalletConnected ? 
+                                  t.validation ? (t.role == "HOLDER" && Number(parent.validation_fees) == 0 ? "LinkDID" : "MsgStartPermissionVP") : "MsgCreatePermission"
+                                  : "Connect",
       validationProcessLabel: t.validation ? "validation process" : "open",
       validationProcessColor: roleJoinColorClass(t.role),
       isGrantee: false,
@@ -179,10 +181,10 @@ export default function ParicipantsPage() {
     setRefreshRoot(false);
   }, [refreshRoot]);
 
-  return address ? (
+  return (
    <PermissionTree tree={permissionsTree} type={"participants"} csTitle={csData?.title??""} trTitle={dataTR?.did??""} csId={csData?.id as string} trId={csData?.trId as string}
-        isTrController={dataTR?.controller==address} setNodeRequestParams={setNodeRequestParams} refreshRoot={()=>setRefreshRoot(true)}/>
-  ) : null;
+        isTrController={dataTR?.controller==address} setNodeRequestParams={setNodeRequestParams} refreshRoot={()=>setRefreshRoot(true)} onConnect={connect}/>
+  );
 
 };
 
