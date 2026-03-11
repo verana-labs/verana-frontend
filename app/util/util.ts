@@ -303,14 +303,14 @@ export function nodeChildRoles(issuerPermManagementMode: string, verifierPermMan
       roles.add({role: "ISSUER_GRANTOR", label: resolveTranslatable({key: "permission.labelrole.issuergrantor"}, translate)??'Issuer Grantors', validation: true});
     } else {
       // OPEN o ECOSYSTEM
-      roles.add({role: "ISSUER", label: resolveTranslatable({key: "permission.labelrole.issuer"}, translate)??'Issuers', validation: false});
+      roles.add({role: "ISSUER", label: resolveTranslatable({key: "permission.labelrole.issuer"}, translate)??'Issuers', validation: issuerPermManagementMode === "ECOSYSTEM"});
     }
     // Verification roles
     if (verifierPermManagementMode === "GRANTOR_VALIDATION") {
       roles.add({role: "VERIFIER_GRANTOR", label: resolveTranslatable({key: "permission.labelrole.verifiergrantor"}, translate)??'Verifier Grantors', validation: true});
     } else {
       // OPEN o ECOSYSTEM
-      roles.add({role: "VERIFIER", label: resolveTranslatable({key: "permission.labelrole.verifier"}, translate)??'Verifiers', validation: false});
+      roles.add({role: "VERIFIER", label: resolveTranslatable({key: "permission.labelrole.verifier"}, translate)??'Verifiers', validation: verifierPermManagementMode === "ECOSYSTEM"});
     }
   }
   else if (role === "ISSUER_GRANTOR"){
