@@ -31,13 +31,13 @@ type PermissionTreeProps = {
   trTitle?: string;
   trId?: string;
   isTrController?: boolean;
-  hrefJoin?: string;
   setNodeRequestParams?:  (
     nodeId: string | undefined,
     type: string | undefined,
     validatorId: string | undefined
   ) => void;
   refreshRoot?: () => void;
+  onConnect?: () => void;
 };
 
 /** ------------ Types ------------ */
@@ -67,7 +67,7 @@ export type TreeNode = {
   children?: TreeNode[];
   validationProcessLabel?: string;
   validationProcessColor?: string;
-  validationProcessAction?: 'MsgStartPermissionVP' | 'MsgCreatePermission' | 'LinkDID';
+  validationProcessAction?: 'MsgStartPermissionVP' | 'MsgCreatePermission' | 'LinkDID' | 'Connect';
   enabledJoin?: boolean;
 };
 
@@ -94,6 +94,7 @@ function Tree({
   onToggle,
   depth = 0,
   onJoin,
+  onConnect
 }: {
   type: "participants" | "tasks";
   nodes: TreeNode[];
@@ -105,6 +106,7 @@ function Tree({
   expanded: Record<string, boolean>;
   onToggle: (id: string, type: string, validatorId: string) => void;
   onJoin: (node: TreeNode) => void;
+  onConnect?: () => void;
   depth?: number;
 }) {
 
@@ -221,13 +223,19 @@ function Tree({
                         className="hover:text-purple-600"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (node.validationProcessAction == 'LinkDID'){
-                            window.open(service(node.permission?.did??''), "_blank");
-                          }
-                          else {
-                            onJoin(node);
-                            onToggle(node.nodeId, node.type as string, node.parentId as string);
-                          }
+                          switch (node.validationProcessAction) {
+                            case 'LinkDID':
+                              window.open(service(node.permission?.did ?? ''), "_blank");
+                              break;
+                            case 'Connect':
+                              console.info(onConnect);
+                              onConnect?.();
+                              break;
+                            default:
+                              onJoin(node);
+                              onToggle(node.nodeId, node.type as string, node.parentId as string);
+                              break;
+                          }                          
                         }}
                       >
                         <FontAwesomeIcon icon={faHandshake} className="mr-1" />
@@ -251,6 +259,7 @@ function Tree({
                 onSelect={onSelect}
                 expanded={expanded}
                 onToggle={onToggle}
+                onConnect={onConnect}
                 depth={depth + 1}
               />
             ) : null}
@@ -261,7 +270,7 @@ function Tree({
   );
 }
 
-export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle, csId, trId, isTrController, setNodeRequestParams, refreshRoot }: PermissionTreeProps) {
+export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trId, isTrController, setNodeRequestParams, refreshRoot, onConnect }: PermissionTreeProps) {
   const [showWeight, setShowWeight] = useState(false);
   const [showBusiness, setShowBusiness] = useState(false);
   const [showStats, setShowStats] = useState(false);
@@ -431,6 +440,7 @@ export default function PermissionTree({ tree, type, hrefJoin, csTitle, trTitle,
             showStats={showStats}
             selectedId={selectedId}
             onSelect={setSelectedId}
+            onConnect={onConnect}
             expanded={expanded}
             onToggle={toggleNode}
           />

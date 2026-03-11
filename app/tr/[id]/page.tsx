@@ -60,7 +60,7 @@ export default function TRViewPage() {
   }, [csList]);
 
   useEffect(() => {
-    if (!dataTR || !address) return;
+    if (!dataTR) return;
     const computed = { ...dataTR }; // Clone, don't mutate
     computed.deposit = formatVNA(computed.deposit, 6);
     computed.language = langs.where('1', computed.language).name;
