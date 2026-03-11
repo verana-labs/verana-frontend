@@ -8,6 +8,7 @@ import { DashboardData } from '@/ui/dataview/datasections/dashboard';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { ApiErrorResponse } from '@/types/apiErrorResponse';
+import { formatVNAFromUVNA } from '@/util/util';
 
 type MetricsApiResponse = {
   participants: number;
@@ -101,7 +102,7 @@ export function useDashboardData() {
     walletPrettyName: wallet ? wallet.prettyName : null,
     ecosystems: metrics ? Number(metrics.active_trust_registries).toLocaleString() : null,
     schemas: metrics ? Number(metrics.active_schemas).toLocaleString() : null,
-    totalLockedTrustDeposit: metrics ? `${Number(metrics.weight).toLocaleString()} VNA` : null,
+    totalLockedTrustDeposit: metrics ? formatVNAFromUVNA(String(metrics.weight)) : null,
     issuedCredentials: metrics ? Number(metrics.issued).toLocaleString() : null,
     verifiedCredentials: metrics ? Number(metrics.verified).toLocaleString() : null,
   };
