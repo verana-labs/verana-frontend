@@ -7,17 +7,14 @@ import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObje
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import EditableDataView from './data-edit';
-import DataView from './data-view-columns';
+import EditableDataView from '@/ui/common/data-edit';
+import DataView from '@/ui/common/data-view-columns';
 import { MsgTypeCS, MsgTypeDID, MsgTypePERM, MsgTypeTD, MsgTypeTR } from '@/msg/constants/notificationMsgForMsgType';
 import GfdPage from '@/tr/[id]/gfd';
 import DidActionPage from '@/did/[id]/action';
 import TdActionPage from '@/account/action';
-import GetVNATokens from './get-vna';
+import GetVNATokens from '@/ui/common/get-vna';
 import PermActionPage from '@/participants/[id]/action';
-import IconLabelButton from './icon-label-button';
-import clsx from 'clsx';
-import { ModalAction } from './modal-action';
 import CsActionPage from '@/tr/cs/[id]/action';
 import TrActionPage from '@/tr/[id]/action';
 
@@ -149,9 +146,9 @@ export const validTRAction = (action: string): action is MsgTypeTR =>
 
 // Define the valid actions for PERM
 export const validPermAction = (action: string): action is MsgTypePERM => 
-  ['MsgCancelPermissionVPLastRequest','MsgRenewPermissionVP','MsgSetPermissionVPToValidated', 
+  ['MsgCancelPermissionVPLastRequest','MsgRenewPermissionVP','MsgSetPermissionVPToValidated','MsgStartPermissionVP',
   'MsgExtendPermission','MsgRevokePermission','MsgSlashPermissionTrustDeposit','MsgRepayPermissionSlashedTrustDeposit',
-  'MsgCreateRootPermission'].includes(action);
+  'MsgCreateRootPermission', 'MsgCreatePermission'].includes(action);
 
 // Define the valid actions for CS
 const validCSAction = (action: string): action is MsgTypeCS => 
@@ -162,8 +159,9 @@ export function renderActionComponent(
   action: string,
   onClose: () => void,
   data: object,
-  onRefresh?: () => void,
-  onBack?: () => void
+  onRefresh?: (id?: string) => void,
+  onBack?: () => void,
+  setModalHidden?: () => void
 ): ReactNode {
   if (validDIDAction(action)) {
     return <DidActionPage action={action} data={data} onClose={onClose} onRefresh={onRefresh} onBack={onBack}/>;
@@ -175,16 +173,16 @@ export function renderActionComponent(
     return <TdActionPage action={action} data={data} onClose={onClose} onRefresh={onRefresh}/>;
   }
   if (validGFDAction(action)) {
-    return <GfdPage action={action} data={data} onClose={onClose} onRefresh={onRefresh}/>;
+    return <GfdPage action={action} data={data} onClose={onClose} onRefresh={onRefresh} setModalHidden={setModalHidden}/>;
   }
   if (validPermAction(action)) {
-    return <PermActionPage action={action} data={data} onClose={onClose} onRefresh={onRefresh}/>;
+    return <PermActionPage action={action} data={data} onClose={onClose} onRefresh={onRefresh} setModalHidden={setModalHidden}/>;
   }
   if (validCSAction(action)) {
-    return <CsActionPage action={action} data={data} onClose={onClose} onRefresh={onRefresh}/>;
+    return <CsActionPage action={action} data={data} onClose={onClose} onRefresh={onRefresh} setModalHidden={setModalHidden}/>;
   }
   if (validTRAction(action)) {
-    return <TrActionPage action={action} data={data} onClose={onClose} onRefresh={onRefresh}/>;
+    return <TrActionPage action={action} data={data} onClose={onClose} onRefresh={onRefresh} setModalHidden={setModalHidden}/>;
   }
   return null;
 }
@@ -199,44 +197,3 @@ export interface ActionFieldProps {
   iconClass?: string;
   isWarning?: boolean;
 }
-
-// Helper to render the correct action field: Button & Modal
-export function renderActionFieldModalAndButton(
-  data: object,
-  action: ActionFieldProps,
-  idx: number,
-  isActive: boolean,
-  onClickButton: () => void,
-  onClose: () => void,
-  onRefresh?: () => void
-  ) {
-    return (
-      <section key={`action-${String(action.name)}-${idx}`}>
-        <IconLabelButton
-          label={action.label}
-          icon={action.icon}
-          className={clsx(
-            "btn-action-confirm text-sm", // base
-            action.iconColorClass // specific
-          )}
-          onClick={onClickButton}
-        />
-
-        {action.value ? (
-          <ModalAction
-            onClose={onClose}
-            titleKey={action.label}
-            isActive={isActive}
-          >
-            {renderActionComponent(
-              action.value,
-              onClose,
-              data,
-              onRefresh,
-              undefined
-            )}
-          </ModalAction>
-        ) : null}
-      </section>
-    );
-  }

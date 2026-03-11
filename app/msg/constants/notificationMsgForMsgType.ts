@@ -186,18 +186,18 @@ export const MSG_ERROR_ACTION_CS: Record<
 /**
  * Success messages for Permission actions
  */
-export const MSG_SUCCESS_ACTION_PERM: Record<MsgTypePERM, () => string> = {
-  MsgStartPermissionVP: () => t('notification.MsgStartPermissionVP.success'),
+export const MSG_SUCCESS_ACTION_PERM: Record<MsgTypePERM, (id: string | number | undefined) => string> = {
+  MsgStartPermissionVP: (id) => t('notification.MsgStartPermissionVP.success', { id }),
   MsgRenewPermissionVP: () => t('notification.MsgRenewPermissionVP.success'),
   MsgSetPermissionVPToValidated: () => t('notification.MsgSetPermissionVPToValidated.success'),
   MsgCancelPermissionVPLastRequest: () => t('notification.MsgCancelPermissionVPLastRequest.success'),
-  MsgCreateRootPermission: () => t('notification.MsgCreateRootPermission.success'),
+  MsgCreateRootPermission: (id) => t('notification.MsgCreateRootPermission.success', { id }),
   MsgExtendPermission: () => t('notification.MsgExtendPermission.success'),
   MsgRevokePermission: () => t('notification.MsgRevokePermission.success'),
   MsgCreateOrUpdatePermissionSession: () => t('notification.MsgCreateOrUpdatePermissionSession.success'),
   MsgSlashPermissionTrustDeposit: () => t('notification.MsgSlashPermissionTrustDeposit.success'),
   MsgRepayPermissionSlashedTrustDeposit: () => t('notification.MsgRepayPermissionSlashedTrustDeposit.success'),
-  MsgCreatePermission: () => t('notification.MsgCreatePermission.success'),
+  MsgCreatePermission: (id) => t('notification.MsgCreatePermission.success', { id }),
 };
 
 /**

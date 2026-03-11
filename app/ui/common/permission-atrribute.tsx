@@ -12,6 +12,18 @@ type PermissionAttributeProps = {
   actions?: PermissionAction[];
 };
 
+// Service action: only for did:web or did:webvh.
+// Extracts the domain (last part after the last ":") and redirects to https://{domain}
+export function service(did: string): string | undefined {
+  if (!did) return undefined;
+  const isWeb = did.startsWith("did:web:");
+  const isWebvh = did.startsWith("did:webvh:");
+  if (!isWeb && !isWebvh) return undefined;
+  const domain = did.split(":").pop();
+  if (!domain) return undefined;
+  return `https://${domain}`;
+}
+
 export default function PermissionAttribute({ label, value, mono, actions }: PermissionAttributeProps) {
 
   const [changeLabel, setChangeLabel] = useState(false);
@@ -38,18 +50,6 @@ export default function PermissionAttribute({ label, value, mono, actions }: Per
         console.error("PermissionAction", action);
     }
   };
-
-  // Service action: only for did:web or did:webvh.
-  // Extracts the domain (last part after the last ":") and redirects to https://{domain}
-  function service(did: string): string | undefined {
-    if (!did) return undefined;
-    const isWeb = did.startsWith("did:web:");
-    const isWebvh = did.startsWith("did:webvh:");
-    if (!isWeb && !isWebvh) return undefined;
-    const domain = did.split(":").pop();
-    if (!domain) return undefined;
-    return `https://${domain}`;
-  }
 
   return (
     <div>

@@ -133,6 +133,16 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     label: t("messages.MsgCreateRootPermission.label"),
     description: t("messages.MsgCreateRootPermission.description"),
     cost: t("messages.MsgCreateRootPermission.cost"), // {value}
+  },
+  MsgStartPermissionVP: {
+    label: t("messages.MsgStartPermissionVP.label"),
+    description: t("messages.MsgStartPermissionVP.description"),
+    cost: t("messages.MsgStartPermissionVP.cost"), // {value}
+  },
+  MsgCreatePermission: {
+    label: t("messages.MsgCreatePermission.label"),
+    description: t("messages.MsgCreatePermission.description"),
+    cost: t("messages.MsgCreatePermission.cost"), // {value}
   }
 };
 
@@ -141,7 +151,12 @@ export function getCostMessage(template: string, value: string | number, td?: st
   return template.replace('{value}', String(value)).replace('{td}', String(td));
 }
 
-// Utility function to fill {addBalance} {burnRate} in the description message
+// Utility function to fill {value} and {link} in the low balance message
+export function getLowBalanceMessage(template: string, value: string, fee?: string) {
+  return template.replace('{value}', value).replace('{fee}', String(fee));
+}
+
+// Utility function to fill {addBalance} and {burnRate} in the description message
 export function getDescriptionMessage(template: string, addBalance: string | number, burnRate: string | number) {
   return template.replace('{addBalance}', String(addBalance)).replace('{burnRate}', String(burnRate));
 }
@@ -205,5 +220,7 @@ export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
   MsgRepayPermissionSlashedTrustDeposit: {
     button: "bg-green-600 hover:bg-green-700"
   },
-  MsgCreateRootPermission: {}
+  MsgCreateRootPermission: {},
+  MsgCreatePermission: {},
+  MsgStartPermissionVP: {}
 }

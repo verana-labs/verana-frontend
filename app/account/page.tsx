@@ -6,12 +6,16 @@ import { formatNetwork, formatVNA } from '@/util/util';
 import TitleAndButton from '@/ui/common/title-and-button';
 import { useNotification } from '@/ui/common/notification-provider';
 import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { AccountData, accountSections } from '@/ui/dataview/datasections/account';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 
 export default function AccountPage() {
+  const searchParams = useSearchParams();
+  // Only pre-open the "getVNA" action if the URL includes ?getVNA=true
+  const openGetVNA = searchParams.get("getVNA") === "true";
+
   // Custom hook to fetch account/trust deposit data
   const { accountData, errorAccountData, refetch: refetchAD } = useTrustDepositAccountData();
   const router = useRouter();
@@ -24,7 +28,6 @@ export default function AccountPage() {
   useEffect(() => {
     if (!refresh) return;
     (async () => {
-      console.info('useEffect AccountPage');
       await refetchAD();
       setRefresh(false);
     })();
@@ -107,6 +110,7 @@ export default function AccountPage() {
         sectionsI18n={accountSections}
         data={data}
         onRefresh={() => setRefresh(true)}
+        activeActionField={openGetVNA ? "getVNA" : undefined}
       />
     </>
   );

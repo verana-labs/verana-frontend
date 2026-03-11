@@ -52,7 +52,6 @@ export default function CSViewPage() {
   const [refresh, setRefresh] = useState<boolean>(false);
   useEffect(() => {
     if (!refresh) return;
-    console.info('useEffect CSViewPage');
     (async () => {
       await refetchCS();
       setRefresh(false);

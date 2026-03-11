@@ -51,6 +51,8 @@ spec:
           value: "${NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE}"
         - name: NEXT_PUBLIC_SESSION_LIFETIME_SECONDS
           value: "${NEXT_PUBLIC_SESSION_LIFETIME_SECONDS}"
+        - name: NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA
+          value: "${NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA}"
         ports:
         - containerPort: 3000
         resources:

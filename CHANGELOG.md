@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.9.0](https://github.com/verana-labs/verana-frontend/compare/v0.8.0...v0.9.0) (2026-03-04)
+
+
+### Features
+
+* [Pending Tasks] Bubble with pending task number and preload ([#303](https://github.com/verana-labs/verana-frontend/issues/303)) ([471f962](https://github.com/verana-labs/verana-frontend/commit/471f962c94651e7288fa6b4ee015796491c0778d))
+* [Pending Tasks] Expand all directories by default ([#302](https://github.com/verana-labs/verana-frontend/issues/302)) ([b9421e6](https://github.com/verana-labs/verana-frontend/commit/b9421e6af284f079abfdfd03f534b4109a3732d9))
+* [Transactions] Simplification of messages and modal windows. ([#309](https://github.com/verana-labs/verana-frontend/issues/309)) ([3f215a1](https://github.com/verana-labs/verana-frontend/commit/3f215a167ac7a7aebbabf97d71d16d5ba4a6a910))
+* [Tx Fee Msg] Displays an approximate value to the real transaction fee. ([#308](https://github.com/verana-labs/verana-frontend/issues/308)) ([5961631](https://github.com/verana-labs/verana-frontend/commit/59616313c0b319ef779f89476139ad724db38e82))
+
+
+### Bug Fixes
+
+* [Ecosystem] Alignment problem when editing mutable configuration ([#310](https://github.com/verana-labs/verana-frontend/issues/310)) ([20671f6](https://github.com/verana-labs/verana-frontend/commit/20671f648a765651489232b32857414390341d89))
+
 ## [0.8.0](https://github.com/verana-labs/verana-frontend/compare/v0.7.0...v0.8.0) (2026-02-25)
 
 

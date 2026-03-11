@@ -5,16 +5,18 @@ import { useActionPerm } from '@/msg/actions_hooks/actionPerm';
 import { Permission, PermissionData, getActionPermSections } from '@/ui/dataview/datasections/perm';
 import { MsgTypePERM } from '@/msg/constants/notificationMsgForMsgType';
 import { MessageType } from '@/msg/constants/types';
+import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 
 // Define PermActionPage props interface
 interface PermActionProps {
   action: MsgTypePERM;  // Action type to perform
   data: object;
   onClose: () => void; // Collapse/hide action on cancel
-  onRefresh?: () => void; // Refresh Permission data
+  onRefresh?: (id?: string) => void; // Refresh Permission data
+  setModalHidden?: () => void; // Hidden/Visible modal
 }
 
-export default function PermActionPage({ action, data, onClose, onRefresh }: PermActionProps) {
+export default function PermActionPage({ action, data, onClose, onRefresh, setModalHidden }: PermActionProps) {
   const permData = data as Permission;
   const actionPerm = useActionPerm(onClose, onRefresh);
 
@@ -33,6 +35,7 @@ export default function PermActionPage({ action, data, onClose, onRefresh }: Per
           id: permData.id
         });
         break;
+
       case 'MsgSetPermissionVPToValidated':
         await actionPerm({
           msgType: 'MsgSetPermissionVPToValidated',
@@ -46,6 +49,7 @@ export default function PermActionPage({ action, data, onClose, onRefresh }: Per
           vpSummaryDigestSri: newData.vpSummaryDigestSri?? ''
         });
         break;
+
       case 'MsgExtendPermission':
         await actionPerm({
           msgType: 'MsgExtendPermission',
@@ -54,6 +58,7 @@ export default function PermActionPage({ action, data, onClose, onRefresh }: Per
           effectiveUntil: newData.effectiveUntil,
         });
         break;
+
       case 'MsgSlashPermissionTrustDeposit':
         await actionPerm({
           msgType: 'MsgSlashPermissionTrustDeposit',
@@ -62,6 +67,7 @@ export default function PermActionPage({ action, data, onClose, onRefresh }: Per
           amount: newData.amount??0
         });
         break;
+
       case 'MsgCreateRootPermission':
         await actionPerm({
           msgType: 'MsgCreateRootPermission',
@@ -76,8 +82,51 @@ export default function PermActionPage({ action, data, onClose, onRefresh }: Per
           verificationFees: newData.verificationFees?? 0,
         });
         break;
+
+      case 'MsgStartPermissionVP':
+        await actionPerm({
+          msgType: 'MsgStartPermissionVP',
+          creator: "",
+          type: Number(permData.type),
+          validatorPermId: permData.validator_perm_id,
+          did: newData.did as string,
+          country: newData.country as string,
+        });
+        break;
+
+      case 'MsgCreatePermission':
+        await actionPerm({
+          msgType: 'MsgCreatePermission',
+          creator: "",
+          schemaId: permData.schema_id,
+          type: Number(permData.type),
+          did: newData.did as string,
+          country: newData.country as string,
+          effectiveFrom: newData.effectiveFrom,
+          effectiveUntil: newData.effectiveUntil,
+          validationFees: newData.validationFees?? 0,
+          verificationFees: newData.verificationFees?? 0,
+        });
+        break;
+
       default:
         break;
+    }
+  }
+
+  // Generic simulate handler:
+  async function onSimulate(data: object): Promise<SimulateResult | void> {
+    switch (action) {
+      case 'MsgRenewPermissionVP':
+      case 'MsgCancelPermissionVPLastRequest':
+      case 'MsgRevokePermission':
+      case 'MsgRepayPermissionSlashedTrustDeposit': 
+        const res =  await actionPerm({ msgType: action, creator: '', id: permData.id}, true);
+        if (res && typeof res === "object" && !("transactionHash" in res)) {
+          return res as SimulateResult;
+        }
+      default :
+        return;
     }
   }
 
@@ -92,6 +141,8 @@ export default function PermActionPage({ action, data, onClose, onRefresh }: Per
       case 'MsgExtendPermission':
       case 'MsgSlashPermissionTrustDeposit':
       case 'MsgCreateRootPermission':
+      case 'MsgStartPermissionVP':
+      case 'MsgCreatePermission':
         return false;
       default:
         return true;
@@ -99,6 +150,7 @@ export default function PermActionPage({ action, data, onClose, onRefresh }: Per
   }
   
   const sectionPermission = getActionPermSections(action);
+
   return (
     <>
       {/* Editable form */}
@@ -108,9 +160,13 @@ export default function PermActionPage({ action, data, onClose, onRefresh }: Per
         messageType={action as MessageType}     
         data={{}}
         onSave={onSave}
+        onSimulate={onSimulate}
         isModal={true}
         onCancel={onClose}
-        noForm={isNoForm()} />
+        noForm={isNoForm()} 
+        setModalHidden={setModalHidden}
+        transactionCost={permData.transaction_cost}
+      />
     </>
   );
 

@@ -10,6 +10,7 @@ interface ModalActionProps {
   children: React.ReactNode;
   isActive: boolean;
   classModal?: string;
+  modalHidden?: boolean;
 }
 
 export const ModalAction: React.FC<ModalActionProps> = ({
@@ -17,13 +18,14 @@ export const ModalAction: React.FC<ModalActionProps> = ({
   onClose,
   children,
   isActive,
-  classModal
+  classModal,
+  modalHidden
 }) => {
   if (!isActive) return null;
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div className={`${modalHidden?'hidden':''} fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50`}>
       <div className={classModal ?? "relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-xl bg-white dark:bg-surface"}>
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{resolveTranslatable({ key: titleKey }, translate)}</h3>
                 <button
                     onClick={onClose}

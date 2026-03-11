@@ -22,24 +22,6 @@ import { useActionPerm } from "@/msg/actions_hooks/actionPerm";
 import { PermissionType } from "proto-codecs/codec/verana/perm/v1/types";
 import { rolesSchema } from "@/util/util";
 
-// function requiresValidation(schema: CsList, role: Role): boolean {
-//   const issuanceRoles: Role[] = ["ISSUER_GRANTOR", "ISSUER", "HOLDER"];
-//   const verificationRoles: Role[] = ["VERIFIER_GRANTOR", "VERIFIER"];
-
-//   const isIssuanceRole = issuanceRoles.includes(role);
-//   const isVerificationRole = verificationRoles.includes(role);
-
-//   if (isIssuanceRole) {
-//     return schema.issuerPermManagementMode !== "OPEN";
-//   }
-
-//   if (isVerificationRole) {
-//     return schema.verifierPermManagementMode !== "OPEN";
-//   }
-
-//   return false;
-// }
-
 function validatorRole(schema: CsList, role: Role)  : Role {
   switch (role) {
     case "ISSUER":
@@ -176,10 +158,6 @@ export default function JoinEcosystemWizard() {
         did,
       });      
   }
-
-  // useEffect(() => {
-  //   console.info("permissionsList", permissionsList);
-  // }, [permissionsList]);
   
   const [errorNotified, setErrorNotified] = useState(false);
   // Notification context for showing error messages
@@ -227,7 +205,6 @@ export default function JoinEcosystemWizard() {
     }
 
     setCurrentStep((prev) => prev + 1);
-    // document.getElementById("app-scroll")?.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   useEffect(() => {
@@ -255,8 +232,6 @@ export default function JoinEcosystemWizard() {
       return;
     }
     onSendActionPerm();
-    // setCurrentStep((prev) => prev + 1);
-    // window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   return (

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getNavLinks } from '@/lib/navlinks';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
@@ -22,7 +22,8 @@ export default function NavLinks() {
   };
 
   const tasks = usePendingTasksCtx();
-  const links = getNavLinks(tasks.length);
+  const totalPendingTasks = tasks.reduce((acc, item) => acc + item.pending_tasks, 0);
+  const links = getNavLinks(totalPendingTasks);
 
   return (
     <nav className="mt-5 flex-1 px-2 space-y-1">

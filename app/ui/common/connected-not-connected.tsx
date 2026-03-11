@@ -45,7 +45,7 @@ export default function Connected({ isConnected, wallet }: ConnectedProps) {
         />
       ) : (
         <div className="wallet-cta">
-          <Wallet isNavBar={false}/>
+          <Wallet/>
         </div>
       )
     }

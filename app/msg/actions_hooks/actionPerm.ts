@@ -32,6 +32,7 @@ import Long from 'long';
 import { translate } from '@/i18n/dataview';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { stripZerosUndefinedAndEmptyStrings } from '@/msg/util/signerUtil'
+import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 
 const toDate = (v?: string | Date) => (v ? (v instanceof Date ? v : new Date(v)) : undefined);
 
@@ -92,6 +93,30 @@ export type ActionPermParams =
       country: string;
       did?: string;
     }
+| {
+      msgType: 'MsgCreatePermission';
+      creator: string;
+      schemaId: string | number;
+      type: PermissionType | number;
+      did: string;
+      country: string;
+      effectiveFrom?: string | Date;
+      effectiveUntil?: string | Date;
+      validationFees: string | number;
+      verificationFees: string | number;
+    }
+| {
+      msgType: 'MsgCreateRootPermission';
+      creator: string;
+      schemaId: string | number;
+      did: string;
+      country: string;
+      effectiveFrom?: string | Date;
+      effectiveUntil?: string | Date;
+      validationFees: string | number;
+      issuanceFees: string | number;
+      verificationFees: string | number;
+    }
   | {
       msgType: 'MsgRenewPermissionVP';
       creator: string;
@@ -112,18 +137,6 @@ export type ActionPermParams =
       msgType: 'MsgCancelPermissionVPLastRequest';
       creator: string;
       id: string | number;
-    }
-  | {
-      msgType: 'MsgCreateRootPermission';
-      creator: string;
-      schemaId: string | number;
-      did: string;
-      country: string;
-      effectiveFrom?: string | Date;
-      effectiveUntil?: string | Date;
-      validationFees: string | number;
-      issuanceFees: string | number;
-      verificationFees: string | number;
     }
   | {
       msgType: 'MsgExtendPermission';
@@ -155,24 +168,12 @@ export type ActionPermParams =
       msgType: 'MsgRepayPermissionSlashedTrustDeposit';
       creator: string;
       id: string | number;
-    }
-  | {
-      msgType: 'MsgCreatePermission';
-      creator: string;
-      schemaId: string | number;
-      type: PermissionType | number;
-      did: string;
-      country: string;
-      effectiveFrom?: string | Date;
-      effectiveUntil?: string | Date;
-      validationFees: string | number;
-      verificationFees: string | number;
     };
 
 /**
  * Hook to execute Permission module transactions and show notifications
  */
-export function useActionPerm(onCancel?: () => void, onRefresh?: () => void) {
+export function useActionPerm(onCancel?: () => void, onRefresh?: (id?: string) => void) {
   const veranaChain = useVeranaChain();
   const { address, isWalletConnected } = useChain(veranaChain.chain_name);
 
@@ -181,9 +182,8 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: () => void) {
   const inFlight = useRef(false);
 
   /** Success handler: refresh and collapses/hides the action UI */
-  const handleSuccess = () => {
-    onRefresh?.();
-    console.info('handleSuccess useActionPerm');
+  const handleSuccess = (id: string | undefined) => {
+    onRefresh?.(id);
     setTimeout(() => {
       onCancel?.();
     }, 1000);
@@ -244,7 +244,7 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: () => void) {
     return undefined;
   }
 
-  async function actionPerm(params: ActionPermParams): Promise<DeliverTxResponse | void> {
+  async function actionPerm(params: ActionPermParams, simulate: boolean = false): Promise<DeliverTxResponse | SimulateResult | void> {
     if (!isWalletConnected || !address) {
       await notify(resolveTranslatable({ key: 'notification.msg.connectwallet' }, translate) ?? '', 'error');
       return;
@@ -288,6 +288,36 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: () => void) {
         });
         break;
 
+      case 'MsgCreatePermission':
+        typeUrl = MSG_TYPE_CONFIG_PERM.MsgCreatePermission.typeUrl;
+        value = MsgCreatePermission.fromPartial({
+          creator: address,
+          schemaId: Long.fromValue(params.schemaId),
+          type: params.type,
+          did: params.did,
+          country: params.country,
+          effectiveFrom: toDate(params.effectiveFrom),
+          effectiveUntil: toDate(params.effectiveUntil),
+          verificationFees: Long.fromString(String(params.verificationFees)),
+          validationFees: Long.fromString(String(params.validationFees)),
+        });
+        break;
+
+      case 'MsgCreateRootPermission':
+        typeUrl = MSG_TYPE_CONFIG_PERM.MsgCreateRootPermission.typeUrl;
+        value = MsgCreateRootPermission.fromPartial({
+          creator: address,
+          schemaId: Long.fromValue(params.schemaId),
+          did: params.did,
+          country: params.country,
+          effectiveFrom: toDate(params.effectiveFrom),
+          effectiveUntil: toDate(params.effectiveUntil),
+          validationFees: Long.fromValue(params.validationFees),
+          issuanceFees: Long.fromValue(params.issuanceFees),
+          verificationFees: Long.fromValue(params.verificationFees),
+        });
+        break;
+
       case 'MsgRenewPermissionVP':
         typeUrl = MSG_TYPE_CONFIG_PERM.MsgRenewPermissionVP.typeUrl;
         value = MsgRenewPermissionVP.fromPartial({
@@ -315,21 +345,6 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: () => void) {
         value = MsgCancelPermissionVPLastRequest.fromPartial({
           creator: address,
           id: Long.fromString(String(params.id)),
-        });
-        break;
-
-      case 'MsgCreateRootPermission':
-        typeUrl = MSG_TYPE_CONFIG_PERM.MsgCreateRootPermission.typeUrl;
-        value = MsgCreateRootPermission.fromPartial({
-          creator: address,
-          schemaId: Long.fromValue(params.schemaId),
-          did: params.did,
-          country: params.country,
-          effectiveFrom: toDate(params.effectiveFrom),
-          effectiveUntil: toDate(params.effectiveUntil),
-          validationFees: Long.fromValue(params.validationFees),
-          issuanceFees: Long.fromValue(params.issuanceFees),
-          verificationFees: Long.fromValue(params.verificationFees),
         });
         break;
 
@@ -379,21 +394,6 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: () => void) {
         });
         break;
 
-      case 'MsgCreatePermission':
-        typeUrl = MSG_TYPE_CONFIG_PERM.MsgCreatePermission.typeUrl;
-        value = MsgCreatePermission.fromPartial({
-          creator: address,
-          schemaId: Long.fromString(String(params.schemaId)),
-          type: params.type,
-          did: params.did,
-          country: params.country,
-          effectiveFrom: toDate(params.effectiveFrom),
-          effectiveUntil: toDate(params.effectiveUntil),
-          verificationFees: Long.fromString(String(params.verificationFees)),
-          validationFees: Long.fromString(String(params.validationFees)),
-        });
-        break;
-
       default:
         await notify(resolveTranslatable({ key: 'error.msg.invalid.msgtype' }, translate) ?? '', 'error');
         return;
@@ -402,43 +402,54 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: () => void) {
     inFlight.current = true;
 
     // Show in-progress notification
-    let notifyPromise: Promise<void> = notify(
-      MSG_INPROGRESS_ACTION_PERM[params.msgType](),
-      'inProgress',
-      resolveTranslatable({ key: 'notification.msg.inprogress.title' }, translate),
-    );
+    let notifyPromise: Promise<void> = Promise.resolve();
+    if (!simulate) {
+      notifyPromise = notify(
+        MSG_INPROGRESS_ACTION_PERM[params.msgType](),
+        'inProgress',
+        resolveTranslatable({ key: 'notification.msg.inprogress.title' }, translate),
+      );
+    }
 
-    let res: DeliverTxResponse;
     let success = false;
 
     try {
       value = stripZerosUndefinedAndEmptyStrings(value);
       const msg: EncodeObject = { typeUrl, value };
-      console.info("msg", msg);
-      res = await sendTx({
+      const res = await sendTx({
         msgs: [msg],
         memo: MSG_TYPE_CONFIG_PERM[params.msgType].txLabel,
+        simulate
       });
 
-      if (res.code === 0) {
+      if (simulate) {
+        if (!res || typeof res !== "object" || ("transactionHash" in res)) {
+          throw new Error("Expected SimulateResult but got tx response/empty result");
+        }
+        return res as SimulateResult;
+      }
+
+      const txRes = res as DeliverTxResponse;
+
+      if (txRes.code === 0) {
         // Try to extract ID for create-like txs (or if you want it for others too)
         if (
           params.msgType === 'MsgStartPermissionVP' ||
           params.msgType === 'MsgCreateRootPermission' ||
           params.msgType === 'MsgCreatePermission'
         ) {
-          id = extractCreatedPermissionId(res);
+          id = extractCreatedPermissionId(txRes);
         }
 
         success = true;
         notifyPromise = notify(
-          MSG_SUCCESS_ACTION_PERM[params.msgType](),
+          MSG_SUCCESS_ACTION_PERM[params.msgType](id),
           'success',
           resolveTranslatable({ key: 'notification.msg.successful.title' }, translate),
         );
       } else {
         notifyPromise = notify(
-          MSG_ERROR_ACTION_PERM[params.msgType](id, res.code, res.rawLog) || `(${res.code}): ${res.rawLog}`,
+          MSG_ERROR_ACTION_PERM[params.msgType](id, txRes.code, txRes.rawLog) || `(${txRes.code}): ${txRes.rawLog}`,
           'error',
           resolveTranslatable({ key: 'notification.msg.failed.title' }, translate),
         );
@@ -455,7 +466,7 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: () => void) {
 
       // Refresh on success (or redirect for create-like flows)
       if (success) {
-          handleSuccess();
+          handleSuccess(id);
       }
     }
   }

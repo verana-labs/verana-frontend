@@ -5,17 +5,20 @@ import { DeliverTxResponse } from '@cosmjs/stargate';
 import type { EncodeObject } from '@cosmjs/proto-signing';
 import { isDirectSigner, isAminoOnlySigner } from '@/msg/util/signerUtil';
 import { signAndBroadcastManualDirect } from '@/msg/util/signAndBroadcastManualDirect';
-import { signAndBroadcastManualAmino } from '@/msg/util//signAndBroadcastManualAmino';
+import { signAndBroadcastManualAmino, SimulateResult } from '@/msg/util//signAndBroadcastManualAmino';
 import { veranaGasAdjustment, veranaGasPrice, veranaRegistry } from '@/config/veranaChain.sign.client';
 import { useChain } from '@cosmos-kit/react';
 import { Chain } from '@chain-registry/types';
 import { env } from 'next-runtime-env';
+import { useCalculateFee } from '@/hooks/useCalculateFee';
+
+type SendTxParams = { msgs: EncodeObject[]; memo?: string; simulate?: boolean };
 
 export function useSendTxDetectingMode(chain: Chain) {
   const { address, getOfflineSignerDirect, getOfflineSignerAmino, getRpcEndpoint, isWalletConnected } = useChain(chain.chain_name);
 
-  return useCallback(async (params: { msgs: EncodeObject[]; memo?: string }): Promise<DeliverTxResponse> => {
-    const { msgs, memo = '' } = params;
+  return useCallback(async (params: SendTxParams): Promise<DeliverTxResponse | SimulateResult> => {
+    const { msgs, memo = '',  simulate = false} = params;
     const safeMemo = typeof memo === 'string' ? memo : String(memo ?? '');
 
     if (!isWalletConnected || !address) {
@@ -80,9 +83,15 @@ export function useSendTxDetectingMode(chain: Chain) {
           gasPrice: veranaGasPrice,
           gasAdjustment: veranaGasAdjustment,
           memo: safeMemo,
+          simulate
         });
       } catch (e) {
-        throw new Error(`Amino signing failed: ${e instanceof Error ? e.message : String(e)}`);
+        const error = new Error(`Amino signing failed: ${e instanceof Error ? e.message : String(e)}`);
+        if (simulate){
+          console.error("signAndBroadcastManualAmino", error);
+          return useCalculateFee().fee as SimulateResult;
+        } 
+        throw error;
       }
     }
 

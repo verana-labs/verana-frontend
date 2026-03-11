@@ -13,7 +13,6 @@ export default function PermissionTimeline({
   permissionHistory: PermissionHistory;
 }) {
     const { label, icon, iconClass } = getTimelineStyle (permissionHistory.event_type);
-    console.log("permissionHistory", permissionHistory);
   return (
     <div className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
       <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${iconClass}`}>

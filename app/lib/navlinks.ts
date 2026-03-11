@@ -34,3 +34,17 @@ export function getNavLinks(pendingCount?: number) : NavLink[]{
     { name: resolveTranslatable({key: "task.title"}, translate)??'Pending Tasks', href: '/pendingtasks', icon: faTasks, className: 'bg-red-500', count: pendingCount }
   ];
 }
+
+const offlineRoutesAllowed: (string | RegExp)[] = [
+  '/dashboard',
+  '/discover',
+  /^\/tr\/[^/]+$/,
+  /^\/tr\/cs\/[^/]+$/,
+  /^\/participants\/[^/]+$/,
+];
+
+export function allowedOffline(pathname: string): boolean {
+  return offlineRoutesAllowed.some((route) =>
+    typeof route === 'string' ? route === pathname : route.test(pathname)
+  );
+}

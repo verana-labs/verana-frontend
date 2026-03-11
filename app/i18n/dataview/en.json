@@ -28,8 +28,15 @@
   "join.desc": "Follow the steps to join an ecosystem and start participating",
   "join.progress": "Progress",
   "join.btn.back": "Back",
+  "join.btn.cancel": "Cancel",
   "join.btn.continue": "Continue",
   "join.btn.join": "Join Ecosystem",
+  "join.acceptegf.title": "Review & Accept Governance Framework",
+  "join.acceptegf.description": "Review and accept the Ecosystem Governance Framework (EGF) before continuing",
+  "join.createpermission.title": "Confirm & Submit",
+  "join.createpermission.description.vp": "You must run a Validation Process (VP) to obtain a permission for this schema. Start the Validation Process by filling this form.",
+  "join.createpermission.description.open.issuer": "As the schema is OPEN to new issuers, you just need to self-create your ISSUER permission by filling this form.",
+  "join.createpermission.description.open.verifier": "As the schema is OPEN to new verifiers, you just need to self-create your VERIFIER permission by filling this form.",
   "join.egf.title": "Ecosystem Governance Framework",
   "join.egf.keypoints": "All participants must maintain valid professional licenses and certifications\nCredential schemas must comply with healthcare data protection regulations (HIPAA, GDPR)\nAnnual audits required for all issuer and verifier participants\nMinimum trust deposit of 100 VNA required for issuer roles\nDispute resolution process through ecosystem governance committee",
   "join.egf.verifiedtext": "The integrity of this Ecosystem Governance Framework has been verified.",
@@ -264,7 +271,7 @@
   "notification.MsgArchiveCredentialSchema.error": "Unable to archive Credential Schema {id}. {code}{msg}",
   "notification.MsgUnarchiveCredentialSchema.error": "Unable to unarchive Credential Schema {id}. {code}{msg}",
 
-  "notification.MsgStartPermissionVP.success": "Validation process started successfully",
+  "notification.MsgStartPermissionVP.success": "Validation process started successfully {id}",
   "notification.MsgRenewPermissionVP.success": "Validation process renewed successfully",
   "notification.MsgSetPermissionVPToValidated.success": "Permission was successfully validated",
   "notification.MsgCancelPermissionVPLastRequest.success": "Validation request was successfully cancelled",
@@ -565,6 +572,8 @@
 
   "messages.warning": "Warning",
   "messages.cancel": "Cancel",
+  "messages.lowbalance": "You’re Running Low on VNA. Your balance is {value} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted.",
+  "messages.balanceLessThanFee": "You’re Running Low on VNA. Your balance is {value} VNA and running this transaction requires {fee} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted.",
 
   "messages.MsgAddDID.label": "Add DID",
   "messages.MsgAddDID.description": "Enter the DID you would like to add to the DID Directory and select the number of registration years. Make sure your DID is resolvable and its DID Document complies with the Verifiable Trust Specification.",
@@ -665,7 +674,15 @@
 
   "messages.MsgCreateRootPermission.label" : "Confirm",
   "messages.MsgCreateRootPermission.description": "",
-  "messages.MsgCreateRootPermission.cost": "Click confirm when you are ready. You'll need approx. {value} VNA to complete the transaction.",
+  "messages.MsgCreateRootPermission.cost": "Click confirm when you are ready. You'll need approx. {value} to complete the transaction.",
+
+  "messages.MsgStartPermissionVP.label" : "Confirm & Start Validation Process",
+  "messages.MsgStartPermissionVP.description": "",
+  "messages.MsgStartPermissionVP.cost": "Added to the network transaction fees, you will need {value} to execute this transaction, to pay validation fees and trust deposit.",
+
+  "messages.MsgCreatePermission.label" : "Confirm & Self Create Permission",
+  "messages.MsgCreatePermission.description": "",
+  "messages.MsgCreatePermission.cost": "Added to the network transaction fees, you will need {value} to execute this transaction, to pay validation fees and trust deposit.",
 
   "dashboardfooter.title": "Verana",
   "dashboardfooter.msg": "The open trust layer for the internet, enabling verifiable digital services and true digital sovereignty.",

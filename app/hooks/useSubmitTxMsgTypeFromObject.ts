@@ -58,11 +58,13 @@ const requiredFieldsByMsgType: Record<MessageType, readonly string[]> = {
   MsgRevokePermission: [],
   MsgSlashPermissionTrustDeposit: [],
   MsgRepayPermissionSlashedTrustDeposit: [],
-  MsgCreateRootPermission: []
+  MsgCreateRootPermission: [],
+  MsgStartPermissionVP: [],
+  MsgCreatePermission: [],
 };
 
 // Generic type for an action handler
-type ActionHandler = (payload: Record<string, unknown>) => Promise<unknown> | unknown;
+type ActionHandler = (payload: Record<string, unknown>, simulate: boolean) => Promise<unknown> | unknown;
 
 // Simple type guard to validate that a value is an object
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -97,7 +99,7 @@ export function useSubmitTxMsgTypeFromObject( onCancel?: () => void,
       throw new Error(`Unsupported MsgType: ${msgType}`);
     };
 
-    async function submitTx(msgType: MessageType, raw: unknown) {
+    async function submitTx(msgType: MessageType, raw: unknown, simulate: boolean = false) {
       if (!isRecord(raw)) throw new Error("Payload must be an object");
       const action = selectActionFor(msgType);
       const keys = requiredFieldsByMsgType[msgType] ?? [];
@@ -107,7 +109,7 @@ export function useSubmitTxMsgTypeFromObject( onCancel?: () => void,
 
       for (const k of keys) payload[k] = src[k];
 
-      return action(payload);
+      return action(payload, simulate);
     }
   return { submitTx };
 }

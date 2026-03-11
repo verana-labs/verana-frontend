@@ -29,6 +29,8 @@ export function usePermissions(schema?: string, type?: string, validatorId?: str
       return;
     }
 
+    if (typeToUse == undefined && validatorIdToUse == undefined) return;
+
     setError(null);
 
     const params = new URLSearchParams();
