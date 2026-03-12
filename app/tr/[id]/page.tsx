@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { GfdData, gfdSections, htmlGfd, TrData, trSections } from '@/ui/dataview/datasections/tr';
+import { getLabelByValue } from '@/ui/dataview/datasections/gfd';
 import DataView from '@/ui/common/data-view-columns';
 import TitleAndButton from '@/ui/common/title-and-button';
 import EditableDataView from '@/ui/common/data-edit';
@@ -12,7 +13,6 @@ import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useTrustRegistryData } from '@/hooks/useTrustRegistryData';
 import { useCSList } from '@/hooks/useCredentialSchemas';
 import { formatDate, formatVNA } from '@/util/util';
-import langs from 'langs';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
@@ -63,7 +63,7 @@ export default function TRViewPage() {
     if (!dataTR) return;
     const computed = { ...dataTR }; // Clone, don't mutate
     computed.deposit = formatVNA(computed.deposit, 6);
-    computed.language = langs.where('1', computed.language).name;
+    computed.language = getLabelByValue(computed.language);
     
     let lastVersion = computed.active_version?? 1;
     computed.docs = (computed.versions ?? [])
@@ -90,7 +90,7 @@ export default function TRViewPage() {
             }
             state= 'inactive';
           }
-          const text = htmlGfd(String(version.version), doc.url, doc.language, state, strState);
+          const text = htmlGfd(String(version.version), doc.url, getLabelByValue(doc.language), state, strState);
           lastVersion = version.version > lastVersion ? version.version : lastVersion;
           return text;
         })
