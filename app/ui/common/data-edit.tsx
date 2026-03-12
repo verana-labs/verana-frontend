@@ -13,6 +13,7 @@ import clsx from "clsx"
 import { translate } from '@/i18n/dataview';
 import { formatVNAFromUVNA, isJson } from '@/util/util';
 import JsonCodeBlock from '@/ui/common/json-code-block';
+import { LanguageCombobox } from '@/ui/common/language-combobox';
 import ActionCard, { ActionCardProps } from '@/ui/common/action-card';
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 import { env } from 'next-runtime-env';
@@ -298,6 +299,15 @@ export default function EditableDataView<T extends object>({
             </option>
           ))}
         </select>
+      );
+    } else if (field.inputType === 'combobox') {
+      inputEl = (
+        <LanguageCombobox
+          value={String(value ?? '')}
+          onChange={(val) => handleChange(field.name as keyof T, val, field)}
+          disabled={isDisabled}
+          className={showError ? 'border-red-500' : ''}
+        />
       );
     } else if (field.inputType === 'number') {
       inputEl = (

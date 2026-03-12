@@ -259,9 +259,6 @@
   "dataview.gfd.fields.creator": "Controlador",
   "dataview.gfd.fields.docLanguage": "Idioma del Marco de Gobernanza",
   "dataview.gfd.fields.docUrl": "URL del Documento del Marco de Gobernanza",
-  "dataview.gfd.fields.language.option.en": "Inglés",
-  "dataview.gfd.fields.language.option.es": "Español",
-  "dataview.gfd.fields.language.option.fr": "Francés",
 
   "dataview.cs.sections.main": "Información",
   "dataview.cs.managementMode.OPEN": "ABIERTO",

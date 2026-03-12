@@ -1,4 +1,5 @@
 import { ShieldCheckIcon } from "@heroicons/react/24/outline";
+import langs from 'langs';
 
 import { Section } from "@/ui/dataview/types";
 
@@ -13,14 +14,27 @@ export interface GfdData {
   version?: number;
 }
 
-export const languageOptions = [
-  { value: "en", label: t("dataview.gfd.fields.language.option.en") },
-  { value: "es", label: t("dataview.gfd.fields.language.option.es") },
-  { value: "fr", label: t("dataview.gfd.fields.language.option.fr") },
-];
+export type LanguageOption = { value: string; label: string; pinned?: boolean };
 
-export function getLabelByValue(value?: string) {
-  return languageOptions.find((o) => o.value === value)?.label ?? "";
+const PINNED_CODES = new Set(['en', 'es', 'fr', 'pt', 'zh', 'ar']);
+
+const allSorted: LanguageOption[] = langs.all()
+  .filter((l: { "1": string }) => l["1"])
+  .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name))
+  .map((l: { "1": string; local: string; name: string }) => ({
+    value: l["1"],
+    label: `${l.local} — ${l.name} (${l["1"]})`,
+  }));
+
+export const languageOptions: LanguageOption[] = allSorted
+  .map((o) => ({ ...o, pinned: PINNED_CODES.has(o.value)}))
+  .sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned));
+
+export function getLabelByValue(value?: string): string {
+  if (!value) return "";
+  const lang = langs.where('1', value);
+  if (!lang) return value;
+  return `${lang.local} — ${lang.name} (${lang["1"]})`;
 }
 
 // Sections configuration for GfdData
@@ -35,8 +49,7 @@ export const gfdSections: Section<GfdData>[] = [
         name: "docLanguage",
         label: t("dataview.gfd.fields.docLanguage"),
         type: "data",
-        inputType: "select",
-        options: languageOptions,
+        inputType: "combobox",
         show: "create",
         required: true,
         update: true,

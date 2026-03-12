@@ -189,7 +189,7 @@ type ActionField<T> = BaseField & {
 export type DataField<T> = BaseField & {
   type: "data";
   name: keyof T;
-  inputType?: 'text' | 'number' | 'textarea' | 'select' | 'date';
+  inputType?: 'text' | 'number' | 'textarea' | 'select' | 'combobox' | 'date';
   options?: { value: string | number; label: Translatable }[]; // (inputType === 'select');
   placeholder?: Translatable;
   validation?: FieldValidation;
