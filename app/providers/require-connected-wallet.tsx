@@ -6,13 +6,14 @@ import { useRouter, usePathname } from "next/navigation";
 import { useVeranaChain } from "@/hooks/useVeranaChain";
 import { resolveTranslatable } from "@/ui/dataview/types";
 import { translate } from "@/i18n/dataview";
+import { allowedOffline } from "@/lib/navlinks";
 
 export default function RequireConnectedWallet({ children }: { children: React.ReactNode }) {
   const { chain_name } = useVeranaChain();
   const { status } = useChain(chain_name);
   const router = useRouter();
   const pathname = usePathname();
-  const onDashboard = pathname === "/dashboard";
+  const enabledOffline = allowedOffline(pathname);
 
   const [hydrated, setHydrated] = useState(false);
   const [hasStoredWallet, setHasStoredWallet] = useState(false);
@@ -55,21 +56,21 @@ export default function RequireConnectedWallet({ children }: { children: React.R
 
   // ---- STEP 5: Redirect if wallet is not connected (after initialization) ----
   useEffect(() => {
-    if (!hydrated || onDashboard || initializing ) return; 
+    if (!hydrated || enabledOffline || initializing ) return; 
 
     // Only redirect if not connected and not already on dashboard
     if (status !== "Connected" && pathname !== "/dashboard") {
       redirected.current = true;
       router.replace("/dashboard");
     }
-  }, [hydrated, initializing, onDashboard, status, pathname, router]);
+  }, [hydrated, initializing, enabledOffline, status, pathname, router]);
 
   // ---- STEP 6: Render phase ----
   // Wait for hydration before rendering anything
   if (!hydrated) return null;
 
   // If not on dashboard and still initializing or disconnected, show loading UI
-  if (!onDashboard && (initializing || status !== "Connected")) {
+  if (!enabledOffline && (initializing || status !== "Connected")) {
     return (
       <div className="flex justify-center items-center h-screen">
         {resolveTranslatable({key: 'wallet.connecting'}, translate)}

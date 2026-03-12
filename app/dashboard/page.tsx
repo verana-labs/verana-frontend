@@ -56,7 +56,7 @@ export default function Page() {
               <div className="flex-shrink-0">
                   <div className="inline-flex items-center px-8 py-4 bg-white text-primary-700 text-lg font-semibold rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-600">
                     <FontAwesomeIcon icon={faWallet} />
-                    <Wallet isNavBar={false}/>
+                    <Wallet/>
                   </div>
               </div>
             </div>
