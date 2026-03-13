@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { TreeNode } from "@/ui/common/permission-tree";
 import ActionFieldButton from "@/ui/common/action-field-button";
-import { PermissionType } from "proto-codecs/codec/verana/perm/v1/types";
+import { PermissionType } from "@verana-labs/verana-types/codec/verana/perm/v1/types";
 import { useTrustDepositParams } from "@/providers/trust-deposit-params-context";
 
 type StepId = 1 | 2 ;

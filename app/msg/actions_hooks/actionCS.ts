@@ -6,7 +6,8 @@ import {
   MsgCreateCredentialSchema,
   MsgUpdateCredentialSchema,
   MsgArchiveCredentialSchema,
-} from 'proto-codecs/codec/verana/cs/v1/tx';
+} from '@verana-labs/verana-types/codec/verana/cs/v1/tx';
+import { pickOptionalUInt32 } from '@verana-labs/verana-types';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
 import { useNotification } from '@/ui/common/notification-provider';
@@ -21,7 +22,6 @@ import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import { normalizeJsonSchema, validateJSONSchemaReturn } from '@/util/json_schema_util';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
-import { pickOptionalUInt32 } from '@/msg/amino-converter/util/helpers';
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 
 // Message type configuration (typeUrl + label for memo/notification)

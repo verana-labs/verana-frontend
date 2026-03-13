@@ -8,7 +8,7 @@ import { EncodeObject } from '@cosmjs/proto-signing';
 import {
   MsgReclaimTrustDeposit,
   MsgReclaimTrustDepositYield,
-} from 'proto-codecs/codec/verana/td/v1/tx';
+} from '@verana-labs/verana-types/codec/verana/td/v1/tx';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useNotification } from '@/ui/common/notification-provider';
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
