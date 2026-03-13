@@ -409,6 +409,7 @@ export interface Permission {
   perm_state: string;
   grantee_available_actions: string[];
   validator_available_actions: string[];
+  participants: string;
   weight: string;
   issued: string;
   verified: string;
@@ -442,13 +443,17 @@ type PermissionItem = {
   mono?: boolean;
   extraActions?: PermissionAction[];
   format?: (v: Permission[PermissionKey]) => ReactNode;
+  hiddenZero?: boolean;
 };
+
+export const permissionSlashing: PermissionItem[] = [
+  { label: resolveTranslatable({key: "permissioncard.slashing.slasheddeposit"}, translate)?? "Slashed Deposit", attr: "slashed_deposit", format: (value) => formatVNAFromUVNA(String(value)), mono: true, hiddenZero: true },
+  { label: resolveTranslatable({key: "permissioncard.slashing.repaiddeposit"}, translate)?? "Repaid Deposit", attr: "repaid_deposit", format: (value) => formatVNAFromUVNA(String(value)), mono: true, hiddenZero: true },
+];
 
 export const permissionMetaItems: PermissionItem[] = [
   {
-    label: "DID",
-    attr: "did",
-    mono: true,
+    label: "DID", attr: "did", mono: true,
     extraActions: [
       { icon: faCopy, label: resolveTranslatable({key: "permissioncard.action.copy"}, translate)?? "copy", value: "copy" },
       // { icon: faEye, label: resolveTranslatable({key: "permissioncard.action.visualizer"}, translate)?? "visualizer", value: "visualizer" },
@@ -456,9 +461,7 @@ export const permissionMetaItems: PermissionItem[] = [
     ],
   },
   {
-    label: "Grantee",
-    attr: "grantee",
-    mono: true,
+    label: "Grantee", attr: "grantee", mono: true,
     extraActions: [
       { icon: faCopy, label: resolveTranslatable({key: "permissioncard.action.copy"}, translate)?? "copy", value: "copy" },
       // { icon: faEye, label: resolveTranslatable({key: "permissioncard.action.visualizer"}, translate)?? "visualizer", value: "visualizer" },
@@ -466,16 +469,16 @@ export const permissionMetaItems: PermissionItem[] = [
     ],
   },
   {
-    label: "ID",
-    attr: "id",
-    mono: true,
+    label: "ID", attr: "id", mono: true,
     extraActions: [
       { icon: faCopy, label: resolveTranslatable({key: "permissioncard.action.copy"}, translate)?? "copy", value: "copy" },
       // { icon: faEye, label: resolveTranslatable({key: "permissioncard.action.visualizer"}, translate)?? "visualizer", value: "visualizer" },
     ],
   },
   { label: resolveTranslatable({key: "permissioncard.meta.deposit"}, translate)?? "Deposit", attr: "deposit", mono: true, format: (value) => formatVNAFromUVNA(String(value)) },
-  { label: resolveTranslatable({key: "permissioncard.meta.country"}, translate)?? "Country", attr: "country" },
+  ... permissionSlashing, 
+  { label: resolveTranslatable({key: "permissioncard.meta.participants"}, translate)?? "Participants", attr: "participants", hiddenZero: true },
+  { label: resolveTranslatable({key: "permissioncard.meta.weight"}, translate)?? "weight", attr: "weight", format: (value) => formatVNAFromUVNA(String(value))},
   { label: resolveTranslatable({key: "permissioncard.meta.issued"}, translate)?? "Issued Credentials", attr: "issued" },
   { label: resolveTranslatable({key: "permissioncard.meta.verified"}, translate)?? "Verified Credentials", attr: "verified" },
 ];
@@ -489,6 +492,22 @@ export const permissionLifecycle: PermissionItem[] = [
   { label: resolveTranslatable({key: "permissioncard.lifecycle.modifiedby"}, translate)?? "Modified By", attr: "modified_by", mono: true },
   { label: resolveTranslatable({key: "permissioncard.lifecycle.extended"}, translate)?? "Extended", attr: "extended", format: (value) => formatDate(value as string) },
   { label: resolveTranslatable({key: "permissioncard.lifecycle.extendedby"}, translate)?? "Extended By", attr: "extended_by", mono: true },
+  { label: resolveTranslatable({key: "permissioncard.lifecycle.revoked"}, translate)?? "Revoked", attr: "revoked", format: (value) => formatDate(value as string) },
+  { label: resolveTranslatable({key: "permissioncard.lifecycle.revokedby"}, translate)?? "Revoked By", attr: "revoked_by", mono: true},
+  { label: resolveTranslatable({key: "permissioncard.lifecycle.slashed"}, translate)?? "Slashed", attr: "slashed", format: (value) => formatDate(value as string) },
+  { label: resolveTranslatable({key: "permissioncard.lifecycle.slashedby"}, translate)?? "Slashed By", attr: "slashed_by", mono: true },
+  { label: resolveTranslatable({key: "permissioncard.lifecycle.repaid"}, translate)?? "Repaid", attr: "repaid", format: (value) => formatDate(value as string) },
+  { label: resolveTranslatable({key: "permissioncard.lifecycle.repaidby"}, translate)?? "Repaid By", attr: "repaid_by", mono: true },
+];
+export const permissionActionSlashing: PermissionAction[] = [
+  { name: "PERM_SLASH", value: "MsgSlashPermissionTrustDeposit",
+    icon: faTriangleExclamation, label: resolveTranslatable({key: "permissioncard.slashing.action.permslash"}, translate)?? "Slash Deposit",
+    iconColorClass: "bg-red-600 hover:bg-red-700"
+  },
+  { name: "PERM_REPAY", value: "MsgRepayPermissionSlashedTrustDeposit",
+    icon: faHandHoldingDollar, label: resolveTranslatable({key: "permissioncard.slashing.action.permrepay"}, translate)?? "Repay Slashed Deposit",
+    iconColorClass: "bg-green-600 hover:bg-green-700"
+  },
 ];
 
 export const permissionActionLifecycle: PermissionAction[] = [
@@ -496,16 +515,17 @@ export const permissionActionLifecycle: PermissionAction[] = [
     icon: faClockRotateLeft, label: resolveTranslatable({key: "permissioncard.lifecycle.action.permextend"}, translate)?? "Extend Permission"},
   { name: "PERM_REVOKE", value: "MsgRevokePermission",
     icon: faBan, label: resolveTranslatable({key: "permissioncard.lifecycle.action.permrevoke"}, translate)?? "Revoke Permission",
-    iconColorClass: "bg-red-600 hover:bg-red-700"}
+    iconColorClass: "bg-red-600 hover:bg-red-700"},
+  ... permissionActionSlashing  
 ];
 
 export const permissionValidationProcess: PermissionItem[] = [
-  { label: resolveTranslatable({key: "permissioncard.validationprocess.vpexp"}, translate)?? "VP Expiration", attr: "vp_exp", format: (value) => formatDate(value as string) },
   { label: resolveTranslatable({key: "permissioncard.validationprocess.vplaststatechange"}, translate)?? "VP Last State Change", attr: "vp_last_state_change"},
-  { label: resolveTranslatable({key: "permissioncard.validationprocess.vpvalidatordeposit"}, translate)?? "VP Validator Deposit", attr: "vp_validator_deposit", format: (value) => formatVNAFromUVNA(String(value)), mono: true },
   { label: resolveTranslatable({key: "permissioncard.validationprocess.vpcurrentfees"}, translate)?? "VP Current Fees", attr: "vp_current_fees", format: (value) => formatVNAFromUVNA(String(value)), mono: true },
   { label: resolveTranslatable({key: "permissioncard.validationprocess.vpcurrentdeposit"}, translate)?? "VP Current Deposit", attr: "vp_current_deposit", format: (value) => formatVNAFromUVNA(String(value)), mono: true },
   { label: resolveTranslatable({key: "permissioncard.validationprocess.vpsummarydigestsri"}, translate)?? "VP Summary Digest", attr: "vp_summary_digest_sri", mono: true },
+  { label: resolveTranslatable({key: "permissioncard.validationprocess.vpexp"}, translate)?? "VP Expiration", attr: "vp_exp", format: (value) => formatDate(value as string) },
+  { label: resolveTranslatable({key: "permissioncard.validationprocess.vpvalidatordeposit"}, translate)?? "VP Validator Deposit", attr: "vp_validator_deposit", format: (value) => formatVNAFromUVNA(String(value)), mono: true },
 ];
 
 export const permissionActionValidationProcess: PermissionAction[] = [
@@ -526,22 +546,6 @@ export const permissionBusinessModels: PermissionItem[] = [
   { label: resolveTranslatable({key: "permissioncard.businessmodels.validationfees"}, translate)?? "Validation Fees", attr: "validation_fees", format: (value) => formatVNAFromUVNA(String(value)), mono: true },
   { label: resolveTranslatable({key: "permissioncard.businessmodels.issuancefees"}, translate)?? "Issuance Fees", attr: "issuance_fees", format: (value) => formatVNAFromUVNA(String(value)), mono: true },
   { label: resolveTranslatable({key: "permissioncard.businessmodels.verificationfees"}, translate)?? "Verification Fees", attr: "verification_fees", format: (value) => formatVNAFromUVNA(String(value)), mono: true },
-];
-
-export const permissionSlashing: PermissionItem[] = [
-  { label: resolveTranslatable({key: "permissioncard.slashing.slasheddeposit"}, translate)?? "Slashed Deposit", attr: "slashed_deposit", format: (value) => formatVNAFromUVNA(String(value)), mono: true },
-  { label: resolveTranslatable({key: "permissioncard.slashing.repaiddeposit"}, translate)?? "Repaid Deposit", attr: "repaid_deposit", format: (value) => formatVNAFromUVNA(String(value)), mono: true },
-];
-
-export const permissionActionSlashing: PermissionAction[] = [
-  { name: "PERM_SLASH", value: "MsgSlashPermissionTrustDeposit",
-    icon: faTriangleExclamation, label: resolveTranslatable({key: "permissioncard.slashing.action.permslash"}, translate)?? "Slash Deposit",
-    iconColorClass: "bg-red-600 hover:bg-red-700"
-  },
-  { name: "PERM_REPAY", value: "MsgRepayPermissionSlashedTrustDeposit",
-    icon: faHandHoldingDollar, label: resolveTranslatable({key: "permissioncard.slashing.action.permrepay"}, translate)?? "Repay Slashed Deposit",
-    iconColorClass: "bg-green-600 hover:bg-green-700"
-  },
 ];
 
 /**
@@ -598,6 +602,7 @@ export interface TrustRegistriesPermission {
       grantee_available_actions: string[];
       validator_available_actions: string[];
       weight: string;
+      participants: string;
       issued: string;
       verified: string;
       expire_soon: boolean;
