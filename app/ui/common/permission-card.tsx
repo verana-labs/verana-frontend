@@ -59,13 +59,21 @@ export default function PermissionCard({
   const [activeActionId, setActiveActionId] = useState<string | null>(null);
 
   const [idUpdate, setIdUpdate] = useState<string|undefined>(undefined);
-  const{ permission } = usePermission(idUpdate);
+  const{ permission, refetch } = usePermission(idUpdate);
 
   useEffect(() => {
-    if (permission){
+    if (!permission || !selectedNode.permission) return;
+    console.info({old: selectedNode.permission.modified, new: permission.modified});
+    const permissionsAreEqual = selectedNode.permission.modified == permission.modified;
+    if (!permissionsAreEqual) {
       selectedNode.permission = permission;
       onRefresh?.(permission);
+      return;
     }
+    const timeout = setTimeout(() => {
+      refetch?.();
+    }, 5000);
+    return () => clearTimeout(timeout);
   }, [permission]);
 
   return (
@@ -82,7 +90,7 @@ export default function PermissionCard({
               {selectedNode.permission.type}
             </span>
 
-            { selectedNode.permission.perm_state ? (
+            { classPermState && labelPermState ? (
               <span
                 className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${classPermState}`}
               >
@@ -90,7 +98,7 @@ export default function PermissionCard({
               </span>
             ) : null}
 
-            { selectedNode.permission?.vp_state ? (
+            { classVpState && labelVpState ? (
               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${classVpState}`}>
                 {labelVpState}
               </span>
@@ -114,7 +122,7 @@ export default function PermissionCard({
           {permissionMetaItems.map((item) => {
             const raw = selectedNode.permission?.[item.attr];
             if (raw == null) return null;
-
+            if (item.hiddenZero && Number(raw) == 0) return null;
             return (
               <PermissionAttribute
                 key={item.attr}
@@ -133,10 +141,14 @@ export default function PermissionCard({
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{resolveTranslatable({key: "permissioncard.lifecycle.title"}, translate)}</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          {permissionLifecycle.map((item) => {
+          {permissionLifecycle.map((item , idx, arr) => {
             const raw = selectedNode.permission?.[item.attr];
-            if (raw == null) return null;
-
+            if (raw == null){
+              const isSecondInRow = idx % 2 === 1;
+              const prevRaw = idx > 0 ? selectedNode.permission?.[arr[idx - 1].attr] : null;
+              const prevRendered = prevRaw != null;
+              return isSecondInRow && prevRendered ? <div key={item.attr}/> : null;
+            }
             return (
               <PermissionAttribute
                 key={item.attr}
@@ -220,7 +232,7 @@ export default function PermissionCard({
         </div>
 
         {/* Slashing */}
-        <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
+        {/* <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{resolveTranslatable({key: "permissioncard.slashing.title"}, translate)}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           {permissionSlashing.map((item) => {
@@ -246,7 +258,7 @@ export default function PermissionCard({
                 onRefresh={()=> setIdUpdate(permissionId)} onClickButton={() => setActiveActionId(activeActionId === String(action.name) ? null : String(action.name))} onClose={()=> setActiveActionId(null)}/>
           )}
           </div>
-        </div>
+        </div> */}
 
         {/* Activity Timeline */}
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">

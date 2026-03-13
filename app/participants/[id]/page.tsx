@@ -10,7 +10,7 @@ import { useCsData } from "@/hooks/useCredentialSchemaData";
 import { useVeranaChain } from "@/hooks/useVeranaChain";
 import { useChain } from "@cosmos-kit/react";
 import { useTrustRegistryData } from "@/hooks/useTrustRegistryData";
-import { authorityPaticipants, nodeChildRoles, roleColorClass, roleJoinColorClass, roleLabel } from "@/util/util";
+import { authorityPaticipants, nodeChildRoles, roleColorClass, roleJoinColorClass } from "@/util/util";
 import { Role } from "@/ui/common/role-card";
 
 export default function ParicipantsPage() {
@@ -164,7 +164,7 @@ export default function ParicipantsPage() {
       // update nodo folder
       setPermissionsTree((prev) => setChildrenOnNodeId(prev, nodeUptade, newChildren));
     }
-  }, [permissionsList, address, csData?.issuerPermManagementMode, csData?.verifierPermManagementMode]);
+  }, [permissionsList, address, isWalletConnected, csData?.issuerPermManagementMode, csData?.verifierPermManagementMode]);
 
   useEffect(() => {
     refetch();
@@ -181,9 +181,13 @@ export default function ParicipantsPage() {
     setRefreshRoot(false);
   }, [refreshRoot]);
 
+  useEffect(() => {
+    setRefreshRoot(true);
+  }, [isWalletConnected, address]);
+
   return (
    <PermissionTree tree={permissionsTree} type={"participants"} csTitle={csData?.title??""} trTitle={dataTR?.did??""} csId={csData?.id as string} trId={csData?.trId as string}
-        isTrController={dataTR?.controller==address} setNodeRequestParams={setNodeRequestParams} refreshRoot={()=>setRefreshRoot(true)} onConnect={connect}/>
+        isTrController={dataTR?.controller==address} setNodeRequestParams={setNodeRequestParams} refreshRoot={()=>setRefreshRoot(true)} onConnect={!isWalletConnected? connect : undefined}/>
   );
 
 };
