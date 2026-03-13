@@ -59,9 +59,6 @@ export default function EditableDataView<T extends object>({
   const action = id? 'edit' : 'create';
   const [hasTriedSubmit, setHasTriedSubmit] = useState(false);
 
-  // Enabled Action
-  const [enabledAction, setEnabledAction] = useState(true);
-
   // Router, notification, and errorNotified
   const router = useRouter();
   const { notify } = useNotification();
@@ -166,27 +163,31 @@ export default function EditableDataView<T extends object>({
     });
   }
 
-  // Computes if any required fields are currently invalid
-  const hasInvalidRequired = useMemo(() => {
-    const missing = new Set(errorFields);
-    visibleFields
-      .filter(isResolvedDataField)
-      .forEach(field => {
-        if (field.update === false) return;
-        const value = formData[field.name as keyof T];
-        if (!validatedRequiredField(field, value)) {
-          missing.add({key: String(field.name)});
-        }
-      });
-    return missing.size > 0;
-  // }, [formData, errorFields]);
-  }, [visibleFields, formData, errorFields, validatedRequiredField]);
+  function hasInvalidRequiredFields(): boolean {
+    const requiredErrors = new Map<string, FieldValidationError>();
+    for (const field of visibleFields) {
+      const typedField = field as ResolvedDataField<T>;
+      const value = formData[field.name as keyof T];
+      if (!validatedRequiredField(typedField, value)) {
+        const key = String(field.name);
+        requiredErrors.set(key, {
+          key,
+          errorMessage: 'Required',
+        });
+      }
+    }
+    setErrorFields(prev => {
+      const nonRequiredErrors = prev.filter(err => !requiredErrors.has(err.key));
+      return [...nonRequiredErrors, ...Array.from(requiredErrors.values())];
+    });
+    return requiredErrors.size > 0;
+  }
 
   // Handles save action; disables buttons while saving and prevents double submission
   async function handleSave() {
+    console.info("handleSave", {submitting, hasInvalidRequiredFields: hasInvalidRequiredFields(), hasInvalidData: hasInvalidData()});
     setHasTriedSubmit(true);
-    if (hasInvalidRequired || submitting) return;
-    if (hasInvalidData()) return;
+    if (submitting || hasInvalidRequiredFields() || hasInvalidData()) return;
     setSubmitting(true);
     try {
       await Promise.resolve(onSave(formData));
@@ -200,14 +201,13 @@ export default function EditableDataView<T extends object>({
     if (messageType == "MsgReclaimTrustDepositYield") return;
     if (onSimulate){
       try {
-        setEnabledAction(false);
+        setSubmitting(true);
         const res = await Promise.resolve(onSimulate(formData));
         if (res) setFeeAmount( Number(res.amount?.[0]?.amount) || 900_000 );
       } catch (err) {
           console.error("handleSimulate", err);
       } finally {
         setSubmitting(false);
-        setEnabledAction(true);
       }
     }
   }
@@ -216,7 +216,6 @@ export default function EditableDataView<T extends object>({
   function hasInvalidData(): boolean {
     const invalid = new Map<string, string>();
     for (const field of visibleFields) {
-      if (field.update === false) continue;
       const typedField = field as ResolvedDataField<T>;
       const value = formData[field.name as keyof T];
       if (!isValidField(typedField, value)) {
@@ -470,7 +469,7 @@ export default function EditableDataView<T extends object>({
             msgTypeStyle[messageType].button // specific
           )}
           onClick={handleSave}
-          disabled={!enabledAction || hasInvalidRequired || submitting}
+          disabled={submitting}
         >
           {uiMsgType.label}
         </button>
