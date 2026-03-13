@@ -340,8 +340,29 @@ export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trI
     });
   }, [tree]);
 
+  function mergeTree(prev: TreeNode[], next: TreeNode[]): TreeNode[] {
+    const prevMap = new Map(prev.map((n) => [n.nodeId, n]));
+    return next.map((n) => {
+      const prevNode = prevMap.get(n.nodeId);
+      if (n.group) {
+        return {
+          ...n,
+          children: n.children ?? [],
+        };
+      }
+      return {
+        ...prevNode,
+        ...n,
+        children:
+          n.children && n.children.length > 0
+            ? mergeTree(prevNode?.children ?? [], n.children)
+            : (prevNode?.children ?? []),
+      };
+    });
+  }
+
   useEffect(() => {
-    setTreeState(tree);
+    setTreeState((prev) => mergeTree(prev, tree));
   }, [tree]);
 
   function updateNodePermission(nodes: TreeNode[], nodeId: string, perm: Permission): TreeNode[] {
