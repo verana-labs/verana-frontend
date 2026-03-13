@@ -3596,6 +3596,14 @@
   resolved "https://registry.npmjs.org/@vanilla-extract/recipes/-/recipes-0.5.7.tgz"
   integrity sha512-Fvr+htdyb6LVUu+PhH61UFPhwkjgDEk8L4Zq9oIdte42sntpKrgFy90MyTRtGwjVALmrJ0pwRUVr8UoByYeW8A==
 
+"@verana-labs/verana-types@0.9.5-pr-268.1":
+  version "0.9.5-pr-268.1"
+  resolved "https://registry.yarnpkg.com/@verana-labs/verana-types/-/verana-types-0.9.5-pr-268.1.tgz#333868783c171ed42a4fe608b9a1dd866ad6e925"
+  integrity sha512-t4+y+RxwcMn+M3e0YKT3CNP3Usrn+ADgitfGMLDmIQaG/X3ZRj662OMLd4uDNZkFdg3wS2f0JriY+TwYK/yaeg==
+  dependencies:
+    long "5.3.2"
+    protobufjs "7.2.6"
+
 "@walletconnect/core@2.21.5":
   version "2.21.5"
   resolved "https://registry.npmjs.org/@walletconnect/core/-/core-2.21.5.tgz"
@@ -7188,10 +7196,10 @@ propagate@^2.0.0:
   resolved "https://registry.npmjs.org/propagate/-/propagate-2.0.1.tgz"
   integrity sha512-vGrhOavPSTz4QVNuBNdcNXePNdNMaO1xj9yBeH1ScQPjk/rhg9sSlCXPhMkFuaNNW/syTvYqsnbIJxMBfRbbag==
 
-protobufjs@^6.11.2:
-  version "6.11.4"
-  resolved "https://registry.npmjs.org/protobufjs/-/protobufjs-6.11.4.tgz"
-  integrity sha512-5kQWPaJHi1WoCpjTGszzQ32PG2F4+wRY6BmAT4Vfw56Q2FZ4YZzK20xUYQH4YkfehY1e6QSICrJquM6xXZNcrw==
+protobufjs@7.2.6:
+  version "7.2.6"
+  resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-7.2.6.tgz#4a0ccd79eb292717aacf07530a07e0ed20278215"
+  integrity sha512-dgJaEDDL6x8ASUZ1YqWciTRrdOuYNzoOf27oHNfdyvKqHr5i0FV7FSLU+aIeFjyFgVxrpTOtQUi0BLLBymZaBw==
   dependencies:
     "@protobufjs/aspromise" "^1.1.2"
     "@protobufjs/base64" "^1.1.2"
@@ -7203,11 +7211,10 @@ protobufjs@^6.11.2:
     "@protobufjs/path" "^1.1.2"
     "@protobufjs/pool" "^1.1.0"
     "@protobufjs/utf8" "^1.1.0"
-    "@types/long" "^4.0.1"
     "@types/node" ">=13.7.0"
-    long "^4.0.0"
+    long "^5.0.0"
 
-protobufjs@^6.8.8:
+protobufjs@^6.11.2, protobufjs@^6.8.8, protobufjs@~6.11.2:
   version "6.11.4"
   resolved "https://registry.npmjs.org/protobufjs/-/protobufjs-6.11.4.tgz"
   integrity sha512-5kQWPaJHi1WoCpjTGszzQ32PG2F4+wRY6BmAT4Vfw56Q2FZ4YZzK20xUYQH4YkfehY1e6QSICrJquM6xXZNcrw==

@@ -3,7 +3,7 @@
 import { EncodeObject, OfflineSigner as OfflineSignerAmino } from '@cosmjs/proto-signing';
 import { calculateFee, DeliverTxResponse, GasPrice, SigningStargateClient, StdFee } from '@cosmjs/stargate';
 import { veranaAmino, veranaRegistry} from '@/config/veranaChain.sign.client';
-import { MsgCreateCredentialSchema, MsgUpdateCredentialSchema } from 'proto-codecs/codec/verana/cs/v1/tx';
+import { MsgCreateCredentialSchema, MsgUpdateCredentialSchema } from '@verana-labs/verana-types/codec/verana/cs/v1/tx';
 import { toHex } from "@cosmjs/encoding";
 import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 
