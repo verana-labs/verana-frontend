@@ -1,6 +1,5 @@
 import { Section } from "@/ui/dataview/types";
 import { CsData } from "./cs";
-import { languageOptions } from "./gfd";
 import { faBoxArchive, faEdit } from "@fortawesome/free-solid-svg-icons";
 
 const t = (key: string) => ({ key });
@@ -76,8 +75,7 @@ export const trSections: Section<TrData>[] = [
         name: "language",
         label: t("dataview.tr.fields.language"),
         type: "data",
-        inputType: "select",
-        options: languageOptions,
+        inputType: "combobox",
         show: "view",
         required: false,
         update: false,
@@ -133,8 +131,7 @@ export const trSections: Section<TrData>[] = [
         name: "language",
         label: t("dataview.tr.fields.language"),
         type: "data",
-        inputType: "select",
-        options: languageOptions,
+        inputType: "combobox",
         show: "create",
         required: false,
         update: false,
