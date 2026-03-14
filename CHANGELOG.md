@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.10.0](https://github.com/verana-labs/verana-frontend/compare/v0.9.0...v0.10.0) (2026-03-14)
+
+
+### Features
+
+* [Permission] Improvements & adjustments ([#328](https://github.com/verana-labs/verana-frontend/issues/328)) ([26e6d3c](https://github.com/verana-labs/verana-frontend/commit/26e6d3cc7725349d65a91858e3f7e39063639af8))
+* [Permission] Join Ecosystem ([#312](https://github.com/verana-labs/verana-frontend/issues/312)) ([bef3ade](https://github.com/verana-labs/verana-frontend/commit/bef3ade2458b08f8c51c949840d691c22ddc0652))
+* [User not Connected] Available actions ([#316](https://github.com/verana-labs/verana-frontend/issues/316)) ([c35a9b2](https://github.com/verana-labs/verana-frontend/commit/c35a9b2e6d8165c95d9b99e7a5f0ba139461cf63))
+* [View Schema] JCS canonization for schema normalization ([#284](https://github.com/verana-labs/verana-frontend/issues/284)) ([#315](https://github.com/verana-labs/verana-frontend/issues/315)) ([552c680](https://github.com/verana-labs/verana-frontend/commit/552c68069108aa2fb387b7dd434e55090447249b))
+
+
+### Bug Fixes
+
+* [Participants] Creating a new permission must show the permission when transaction finishes ([#325](https://github.com/verana-labs/verana-frontend/issues/325)) ([5f3c6e1](https://github.com/verana-labs/verana-frontend/commit/5f3c6e1ecae0e40224ec818dca17be6c09c0dabc))
+* [Participants] Issue when showing issuance mode ([#321](https://github.com/verana-labs/verana-frontend/issues/321)) ([a5fdab3](https://github.com/verana-labs/verana-frontend/commit/a5fdab3f939d71066f90e903cba3df00be0e37c8))
+* update totalLockedTrustDeposit calculation in useDashboardData hook ([#314](https://github.com/verana-labs/verana-frontend/issues/314)) ([67400f6](https://github.com/verana-labs/verana-frontend/commit/67400f6a104c11bf2c41f66b6229ee00992ac1dc)), closes [#274](https://github.com/verana-labs/verana-frontend/issues/274)
+
 ## [0.9.0](https://github.com/verana-labs/verana-frontend/compare/v0.8.0...v0.9.0) (2026-03-04)
 
 
