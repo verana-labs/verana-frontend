@@ -14,6 +14,7 @@ import { shortenMiddle } from "@/util/util";
 import IconLabelButton from "@/ui/common/icon-label-button";
 import { JSX, useEffect, useState } from "react";
 import { useVeranaChain } from "@/hooks/useVeranaChain";
+import { env } from 'next-runtime-env';
 import { translate } from "@/i18n/dataview";
 import { resolveTranslatable } from "@/ui/dataview/types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -22,6 +23,7 @@ import { faCheck, faQrcode, faRightFromBracket, faUpRightFromSquare, faWallet, f
 export default function AccountZone() {
   
   const veranaChain = useVeranaChain();
+  const explorerUrl = env('NEXT_PUBLIC_VERANA_EXPLORER_URL') || process.env.NEXT_PUBLIC_VERANA_EXPLORER_URL;
 
   const {
     status,
@@ -106,7 +108,7 @@ export default function AccountZone() {
           <IconLabelButton
             icon={faUpRightFromSquare}
             title={resolveTranslatable({key: 'navbar.mintscan.title'}, translate)}
-            onClick={() => window.open(`https://explorer.testnet.verana.network/Verana%20Testnet/account/${address}`, "_blank")}
+            onClick={() => explorerUrl && window.open(`${explorerUrl}/account/${address}`, "_blank")}
             className='navbar-icon'
           />
           <IconLabelButton
