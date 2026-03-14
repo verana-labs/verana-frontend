@@ -1,4 +1,5 @@
 import { env } from 'next-runtime-env';
+import canonicalize from 'canonicalize';
 
 const CHAIN_ID = env('NEXT_PUBLIC_VERANA_CHAIN_ID') || process.env.NEXT_PUBLIC_VERANA_CHAIN_ID;
 // export const SCHEMA_ID_PREFIX = CHAIN_ID
@@ -34,7 +35,7 @@ export function isValidSchemaIdPattern(schemaId: string): boolean {
 export function normalizeJsonSchema(jsonSchema: string): string {
   try {
     const parsed = JSON.parse(jsonSchema);
-    const normalized = JSON.stringify(parsed);
+    const normalized = canonicalize(parsed)!;
     return normalized;
   } catch {
     return jsonSchema;
