@@ -299,7 +299,7 @@ export default function EditableDataView<T extends object>({
           ))}
         </select>
       );
-    } else if (field.inputType === 'combobox') {
+    } else if (field.inputType === 'languageSelector') {
       inputEl = (
         <LanguageCombobox
           value={String(value ?? '')}

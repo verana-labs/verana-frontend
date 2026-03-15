@@ -49,7 +49,7 @@ export const gfdSections: Section<GfdData>[] = [
         name: "docLanguage",
         label: t("dataview.gfd.fields.docLanguage"),
         type: "data",
-        inputType: "combobox",
+        inputType: "languageSelector",
         show: "create",
         required: true,
         update: true,
