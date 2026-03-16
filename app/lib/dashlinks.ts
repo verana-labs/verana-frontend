@@ -52,6 +52,7 @@ const communityLinks : DashLink[] = [
 ];
 
 const configFooter = {
+  href: '/dashboard',
   title: resolveTranslatable({key: "dashboardfooter.title"}, translate),
   msg: resolveTranslatable({key: "dashboardfooter.msg"}, translate),
   img: 'https://verana.io/logo.svg',
