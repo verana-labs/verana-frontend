@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import {
@@ -22,6 +22,7 @@ import { ModalAction } from "./modal-action";
 import { renderActionComponent } from "./data-view-typed";
 import AddJoinPage from "@/participants/add/page";
 import { service } from "./permission-atrribute";
+import { usePathname, useSearchParams } from "next/navigation";
 
 type PermissionTreeProps = {
   tree: TreeNode[];
@@ -122,12 +123,11 @@ function Tree({
           <div key={`${node.nodeId}-${idx}`}>
             <div
               className={[
-                "rounded-lg p-2 transition-all cursor-pointer",
+                "rounded-lg p-2 transition-all",
                 "hover:bg-primary-600/5",
                 isSelected ? "bg-primary-600/10" : "",
               ].join(" ")}
               style={{ marginLeft: depth * 24 }}
-              onClick={() => !node.group && onSelect(node.nodeId)}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -152,12 +152,7 @@ function Tree({
 
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (hasChildren) onToggle(node.nodeId, node.type as string, node.parentId as string);
-                      else onSelect(node.nodeId);
-                    }}
-                    aria-label="Toggle"
+                    className="cursor-default"
                     aria-expanded={hasChildren ? isExpanded : undefined}
                   >
                     <FontAwesomeIcon icon={node.icon} className={node.iconColorClass}/>
@@ -166,8 +161,12 @@ function Tree({
                   <span
                     className={[
                       "text-sm font-medium",
-                      node.group ? "text-gray-700 dark:text-gray-300" : "text-gray-900 dark:text-white",
+                      node.group ? "text-gray-700 dark:text-gray-300" : "text-gray-900 dark:text-white cursor-pointer",
                     ].join(" ")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      !node.group && onSelect(node.nodeId)
+                    }}
                   >
                     {node.group ? node.name : shortenDID(node.permission?.did as string)}
                   </span>
@@ -220,7 +219,7 @@ function Tree({
                     </span>
                     {node.enabledJoin ? (
                       <span
-                        className="hover:text-purple-600"
+                        className="hover:text-purple-600 cursor-pointer"
                         onClick={(e) => {
                           e.stopPropagation();
                           switch (node.validationProcessAction) {
@@ -276,6 +275,7 @@ export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trI
   const [showStats, setShowStats] = useState(false);
   const [addPermission, setAddPermission] = useState<boolean>(false);
   const [join, setJoin] = useState<TreeNode | undefined>(undefined);
+  const permissionCardRef = useRef<HTMLDivElement | null>(null);
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     const first = tree?.[0]?.nodeId;
@@ -307,7 +307,16 @@ export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trI
 
   const [treeState, setTreeState] = useState<TreeNode[]>(tree);
 
-  const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
+  // const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const selectedId = searchParams.get('permission') ?? undefined; 
+  function handleSelect(id: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('permission', id);
+    window.history.pushState(null, '', `${pathname}?${params.toString()}`);
+  }
+
   const { node: selectedNode, path } = useMemo(
     () => (selectedId ? findNodeAndPath(treeState, selectedId) : { node: undefined, path: [] }),
     [treeState, selectedId]
@@ -315,11 +324,25 @@ export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trI
 
   useEffect(() => {
     if (!selectedId) return;
+    console.info({selectedId, selectedNode});
+    permissionCardRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [selectedId]);
+
+  useEffect(() => {
+    if (!selectedId) return;
     const { path } = findNodeAndPath(tree, selectedId);
     if (!path.length) return;
+
+    const parentPath = path.slice(0, -1);
+    if (!parentPath.length) return;
     setExpanded((prev) => {
+      const parent = parentPath[parentPath.length - 1];
+      if (prev[parent.nodeId]) return prev;
       const next = { ...prev };
-      for (const p of path) next[p.nodeId] = true;
+      for (const p of parentPath) next[p.nodeId] = true;
       return next;
     });
   }, [tree, selectedId]);
@@ -460,7 +483,7 @@ export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trI
             showBusiness={showBusiness}
             showStats={showStats}
             selectedId={selectedId}
-            onSelect={setSelectedId}
+            onSelect={handleSelect}
             onConnect={onConnect}
             expanded={expanded}
             onToggle={toggleNode}
@@ -510,7 +533,7 @@ export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trI
             onRefresh={(id?: string ) => {
               setNodeRequestParams?.(join.nodeId, join.type, join.parentId);
               setTimeout(() => {
-                if (id) setSelectedId(String(id));
+                if (id) handleSelect(String(id));
               }, 1000);
             }}
           />
@@ -519,7 +542,9 @@ export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trI
 
       {/* Detail Card  */}
       {selectedNode ? (
-        <PermissionCard selectedNode={selectedNode} path={path} csTitle={csTitle??""} onRefresh={(perm: Permission) => refreshNode(perm)}/>
+        <div ref={permissionCardRef}>
+          <PermissionCard selectedNode={selectedNode} path={path} csTitle={csTitle??""} onRefresh={(perm: Permission) => refreshNode(perm)}/>
+        </div>
       ) : null}
     </>
   );
