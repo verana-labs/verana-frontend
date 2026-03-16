@@ -8,7 +8,7 @@ import {
   MsgArchiveTrustRegistry,
   MsgAddGovernanceFrameworkDocument,
   MsgIncreaseActiveGovernanceFrameworkVersion
-} from 'proto-codecs/codec/verana/tr/v1/tx';
+} from '@verana-labs/verana-types/codec/verana/tr/v1/tx';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
 import { useRouter } from 'next/navigation';
