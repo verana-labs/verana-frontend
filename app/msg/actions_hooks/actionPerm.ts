@@ -14,9 +14,9 @@ import {
   MsgSlashPermissionTrustDeposit,
   MsgRepayPermissionSlashedTrustDeposit,
   MsgCreatePermission,
-} from 'proto-codecs/codec/verana/perm/v1/tx';
+} from '@codec-proto/verana/perm/v1/tx';
 
-import { PermissionType } from 'proto-codecs/codec/verana/perm/v1/types';
+import { PermissionType } from '@codec-proto/verana/perm/v1/types';
 
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';

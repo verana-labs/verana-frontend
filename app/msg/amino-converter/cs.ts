@@ -4,7 +4,7 @@ import {
   MsgCreateCredentialSchema,
   MsgUpdateCredentialSchema,
   MsgArchiveCredentialSchema,
-} from 'proto-codecs/codec/verana/cs/v1/tx';
+} from '@codec-proto/verana/cs/v1/tx';
 import { u64ToStr, strToU64, u32ToAmino, fromOptU32Amino, toOptU32Amino, clean } from '@/msg/amino-converter/util/helpers';
 
 /**

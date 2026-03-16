@@ -12,7 +12,7 @@ import {
   MsgSlashPermissionTrustDeposit,
   MsgRepayPermissionSlashedTrustDeposit,
   MsgCreatePermission,
-} from 'proto-codecs/codec/verana/perm/v1/tx';
+} from '@codec-proto/verana/perm/v1/tx';
 
 import { strToU64, u64ToStr, dateToIsoAmino, isoToDate } from '@/msg/amino-converter/util/helpers';
 

@@ -5,7 +5,7 @@ import {
   MsgReclaimTrustDepositYield,
   MsgReclaimTrustDeposit,
   MsgRepaySlashedTrustDeposit,
-} from 'proto-codecs/codec/verana/td/v1/tx'
+} from '@codec-proto/verana/td/v1/tx'
 import { strToU64, u64ToStr } from '@/msg/amino-converter/util/helpers';
     
 /**

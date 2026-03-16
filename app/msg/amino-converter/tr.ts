@@ -6,7 +6,7 @@ import {
   MsgIncreaseActiveGovernanceFrameworkVersion,
   MsgUpdateTrustRegistry,
   MsgArchiveTrustRegistry,
-} from 'proto-codecs/codec/verana/tr/v1/tx'
+} from '@codec-proto/verana/tr/v1/tx'
 import { strToU64, u64ToStr } from '@/msg/amino-converter/util/helpers';
 
 /**

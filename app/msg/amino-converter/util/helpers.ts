@@ -7,7 +7,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import Long from 'long';
-import type { OptionalUInt32 } from 'proto-codecs/codec/verana/cs/v1/tx';
+import type { OptionalUInt32 } from '@codec-proto/verana/cs/v1/tx';
 
 /** Removes undefined fields from an object to keep payloads clean. */
 export const clean = <T extends Record<string, any>>(o: T): T => {
