@@ -19,7 +19,7 @@ import { isValidDID } from "@/util/validations";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRight, faQrcode } from "@fortawesome/free-solid-svg-icons";
 import { useActionPerm } from "@/msg/actions_hooks/actionPerm";
-import { PermissionType } from "proto-codecs/codec/verana/perm/v1/types";
+import { PermissionType } from "@codec-proto/verana/perm/v1/types";
 import { rolesSchema } from "@/util/util";
 
 function validatorRole(schema: CsList, role: Role)  : Role {

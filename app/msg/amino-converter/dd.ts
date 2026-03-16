@@ -1,7 +1,7 @@
 'use client';
 
 import { AminoConverter } from '@cosmjs/stargate'
-import { MsgAddDID, MsgRenewDID, MsgTouchDID, MsgRemoveDID } from 'proto-codecs/codec/verana/dd/v1/tx'
+import { MsgAddDID, MsgRenewDID, MsgTouchDID, MsgRemoveDID } from '@codec-proto/verana/dd/v1/tx'
 
 /**
  * Amino converter for MsgAddDID
