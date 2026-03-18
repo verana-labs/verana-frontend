@@ -9,6 +9,7 @@ import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { ApiErrorResponse } from '@/types/apiErrorResponse';
 import { formatVNAFromUVNA } from '@/util/util';
+import { useIndexerEvents } from '@/providers/indexer-events-provider';
 
 type MetricsApiResponse = {
   participants: number;
@@ -30,8 +31,7 @@ type MetricsApiResponse = {
 export function useDashboardData() {
   const veranaChain = useVeranaChain();
   const chainName = veranaChain.chain_name;
-  const chainId = veranaChain.chain_id;
-  const { getStargateClient, status, isWalletConnected, address, wallet } = useChain(chainName);
+  const { isWalletConnected } = useChain(chainName);
 
   const getURL =
     env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_METRICS') ||
@@ -74,32 +74,16 @@ export function useDashboardData() {
     fetchMetrics();
   }, []);
 
-  // Poll block height every 5s when wallet connected
+  // Block height from indexer ws
+  const { latestProcessedHeight } = useIndexerEvents();
   useEffect(() => {
-    if (!isWalletConnected) {
-      setBlockHeight("");
-      return;
-    }
-    const fetchHeight = async () => {
-      if (getStargateClient) {
-        const client = await getStargateClient();
-        const block = await client.getBlock();
-        setBlockHeight(String(block.header.height.toLocaleString(undefined)));
-      }
-    };
-    fetchHeight();
-    const interval = setInterval(fetchHeight, 5000);
-    return () => clearInterval(interval);
-  }, [getStargateClient, isWalletConnected]);
+    setBlockHeight(String(latestProcessedHeight.toLocaleString(undefined)));
+  }, [latestProcessedHeight]);
 
   // Derive dashboardData from independent state slices
   const dashboardData: DashboardData = {
-    chainName: isWalletConnected ? `${chainName} (${chainId})` : null,
     blockHeight,
-    status,
     isWalletConnected: String(isWalletConnected),
-    address: address ? String(address) : null,
-    walletPrettyName: wallet ? wallet.prettyName : null,
     ecosystems: metrics ? Number(metrics.active_trust_registries).toLocaleString() : null,
     schemas: metrics ? Number(metrics.active_schemas).toLocaleString() : null,
     totalLockedTrustDeposit: metrics ? formatVNAFromUVNA(String(metrics.weight)) : null,

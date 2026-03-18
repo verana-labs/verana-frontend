@@ -54,6 +54,7 @@ Defined under `env` with devnet reference values; override per environment:
 - `NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE`
 - `NEXT_PUBLIC_SESSION_LIFETIME_SECONDS`
 - `NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA`
+- 'NEXT_PUBLIC_VERANA_WEBSOCKET'
 
 ### Quick examples
 

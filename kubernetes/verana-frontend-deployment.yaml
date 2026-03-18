@@ -53,6 +53,8 @@ spec:
           value: "${NEXT_PUBLIC_SESSION_LIFETIME_SECONDS}"
         - name: NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA
           value: "${NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA}"
+        - name: NEXT_PUBLIC_VERANA_WEBSOCKET
+          value: "${NEXT_PUBLIC_VERANA_WEBSOCKET}"
         ports:
         - containerPort: 3000
         resources:

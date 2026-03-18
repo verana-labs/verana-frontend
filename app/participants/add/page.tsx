@@ -3,13 +3,12 @@
 import { useTrustRegistryData } from "@/hooks/useTrustRegistryData";
 import { translate } from "@/i18n/dataview";
 import EgfCard from "@/ui/common/egf-card";
-import { useNotification } from "@/ui/common/notification-provider";
+import { useNotification } from "@/providers/notification-provider";
 import { resolveTranslatable } from "@/ui/dataview/types";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { TreeNode } from "@/ui/common/permission-tree";
 import ActionFieldButton from "@/ui/common/action-field-button";
-import { PermissionType } from "@codec-proto/verana/perm/v1/types";
 import { useTrustDepositParams } from "@/providers/trust-deposit-params-context";
 
 type StepId = 1 | 2 ;
@@ -19,25 +18,6 @@ type Step = {
   title: string;
   description?: string;
 };
-
-function permissionTypeFromString(type?: string): PermissionType {
-  switch (type) {
-    case "ISSUER":
-      return PermissionType.ISSUER;
-    case "VERIFIER":
-      return PermissionType.VERIFIER;
-    case "ISSUER_GRANTOR":
-      return PermissionType.ISSUER_GRANTOR;
-    case "VERIFIER_GRANTOR":
-      return PermissionType.VERIFIER_GRANTOR;
-    case "ECOSYSTEM":
-      return PermissionType.ECOSYSTEM;
-    case "HOLDER":
-      return PermissionType.HOLDER;
-    default:
-      return PermissionType.UNSPECIFIED;
-  }
-}
 
 function cn(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(" ");
@@ -75,7 +55,7 @@ export default function AddJoinPage({ trId, nodeJoin, onCancel, onRefresh }: Add
   }, [currentStep]);
 
   const [acceptEgf, setAcceptEgf] = useState(false);
-  const type = permissionTypeFromString(nodeJoin.type);
+  const type = nodeJoin.type;
   const selectedValidator = nodeJoin.parentId?? "0";
  
   const { dataTR, errorTRData } = useTrustRegistryData(trId);

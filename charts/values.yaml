@@ -41,6 +41,7 @@ env:
   NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE: "false"
   NEXT_PUBLIC_SESSION_LIFETIME_SECONDS: "86400"
   NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA: "1000000"
+  NEXT_PUBLIC_VERANA_WEBSOCKET=wss://idx.testnet.verana.network/verana/indexer/v1/events
 
 # Additional env variables if needed (list of {name, value})
 extraEnv: []
