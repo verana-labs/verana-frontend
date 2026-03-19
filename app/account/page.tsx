@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import DataView from '@/ui/common/data-view-columns';
 import { formatNetwork, formatVNA } from '@/util/util';
 import TitleAndButton from '@/ui/common/title-and-button';
-import { useNotification } from '@/ui/common/notification-provider';
+import { useNotification } from '@/providers/notification-provider';
 import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AccountData, accountSections } from '@/ui/dataview/datasections/account';

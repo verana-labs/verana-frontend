@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { DashboardData, dashboardSections } from "@/ui/dataview/datasections/dashboard";
 import DataView from "@/ui/common/data-view-columns";
 import { useDashboardData } from "@/hooks/useDashboardData";
-import { useNotification } from "@/ui/common/notification-provider";
+import { useNotification } from "@/providers/notification-provider";
 import TitleAndButton from "@/ui/common/title-and-button";
 import { resolveTranslatable } from "@/ui/dataview/types";
 import { translate } from "@/i18n/dataview";

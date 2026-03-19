@@ -4,7 +4,7 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { ResolvedDataField, DataViewProps, isResolvedDataField, ResolvedField, visibleFieldsForMode, translateSections, resolveTranslatable } from '@/ui/dataview/types';
 import { getCostMessage, getLowBalanceMessage, msgTypeStyle } from '@/msg/constants/msgTypeConfig';
 import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData';
-import { useNotification } from '@/ui/common/notification-provider';
+import { useNotification } from '@/providers/notification-provider';
 import { useRouter } from 'next/navigation';
 import { getErrorMessage, isValidField } from '@/util/validations';
 import { MessageType } from '@/msg/constants/types';
@@ -186,7 +186,6 @@ export default function EditableDataView<T extends object>({
 
   // Handles save action; disables buttons while saving and prevents double submission
   async function handleSave() {
-    console.info("handleSave", {submitting, hasInvalidRequiredFields: hasInvalidRequiredFields(), hasInvalidData: hasInvalidData()});
     setHasTriedSubmit(true);
     if (submitting || hasInvalidRequiredFields() || hasInvalidData()) return;
     setSubmitting(true);

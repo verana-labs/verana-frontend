@@ -87,7 +87,7 @@ export default function PermActionPage({ action, data, onClose, onRefresh, setMo
         await actionPerm({
           msgType: 'MsgStartPermissionVP',
           creator: "",
-          type: Number(permData.type),
+          type: permData.type,
           validatorPermId: permData.validator_perm_id,
           did: newData.did as string,
           country: newData.country as string,
@@ -99,7 +99,7 @@ export default function PermActionPage({ action, data, onClose, onRefresh, setMo
           msgType: 'MsgCreatePermission',
           creator: "",
           schemaId: permData.schema_id,
-          type: Number(permData.type),
+          type: permData.type,
           did: newData.did as string,
           country: newData.country as string,
           effectiveFrom: newData.effectiveFrom,
@@ -149,7 +149,7 @@ export default function PermActionPage({ action, data, onClose, onRefresh, setMo
     }
   }
   
-  const sectionPermission = getActionPermSections(action);
+  const sectionPermission = getActionPermSections(action, ["VERIFIER", "HOLDER"].includes(permData.type));
 
   return (
     <>

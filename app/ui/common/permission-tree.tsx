@@ -227,7 +227,6 @@ function Tree({
                               window.open(service(node.permission?.did ?? ''), "_blank");
                               break;
                             case 'Connect':
-                              console.info(onConnect);
                               onConnect?.();
                               break;
                             default:
@@ -324,7 +323,6 @@ export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trI
 
   useEffect(() => {
     if (!selectedId) return;
-    console.info({selectedId, selectedNode});
     permissionCardRef.current?.scrollIntoView({
       behavior: "smooth",
       block: "start",

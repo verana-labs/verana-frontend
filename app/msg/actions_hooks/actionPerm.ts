@@ -15,12 +15,10 @@ import {
   MsgRepayPermissionSlashedTrustDeposit,
   MsgCreatePermission,
 } from '@codec-proto/verana/perm/v1/tx';
-
 import { PermissionType } from '@codec-proto/verana/perm/v1/types';
-
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
-import { useNotification } from '@/ui/common/notification-provider';
+import { useNotification } from '@/providers/notification-provider';
 import {
   MSG_ERROR_ACTION_PERM,
   MSG_INPROGRESS_ACTION_PERM,
@@ -31,8 +29,9 @@ import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import Long from 'long';
 import { translate } from '@/i18n/dataview';
 import { resolveTranslatable } from '@/ui/dataview/types';
-import { stripZerosUndefinedAndEmptyStrings } from '@/msg/util/signerUtil'
+import { extractTxHeight, stripZerosUndefinedAndEmptyStrings } from '@/msg/util/signerUtil'
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
+import { useIndexerEvents } from "@/providers/indexer-events-provider";
 
 const toDate = (v?: string | Date) => (v ? (v instanceof Date ? v : new Date(v)) : undefined);
 
@@ -88,7 +87,7 @@ export type ActionPermParams =
   | {
       msgType: 'MsgStartPermissionVP';
       creator: string;
-      type: PermissionType | number;
+      type: string;
       validatorPermId: string | number;
       country: string;
       did?: string;
@@ -97,7 +96,7 @@ export type ActionPermParams =
       msgType: 'MsgCreatePermission';
       creator: string;
       schemaId: string | number;
-      type: PermissionType | number;
+      type: string;
       did: string;
       country: string;
       effectiveFrom?: string | Date;
@@ -180,9 +179,21 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: (id?: string) =
   const { notify } = useNotification();
   const sendTx = useSendTxDetectingMode(veranaChain);
   const inFlight = useRef(false);
+  
+  const { waitForBlock } = useIndexerEvents();
+  const txHeight = useRef<number | undefined>(undefined);
 
   /** Success handler: refresh and collapses/hides the action UI */
-  const handleSuccess = (id: string | undefined) => {
+  const handleSuccess = async (id: string | undefined) => {
+    if (txHeight.current == undefined) {
+      console.error("txHeight.current is null");
+      return;
+    }
+    try {
+      await waitForBlock(txHeight.current, 10000);
+    } catch (error) {
+      console.warn("Indexer did not catch up in time, refreshing anyway", error);
+    }
     onRefresh?.(id);
     setTimeout(() => {
       onCancel?.();
@@ -281,7 +292,7 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: (id?: string) =
         typeUrl = MSG_TYPE_CONFIG_PERM.MsgStartPermissionVP.typeUrl;
         value = MsgStartPermissionVP.fromPartial({
           creator: address,
-          type: params.type, 
+          type: permissionTypeFromString(params.type),
           validatorPermId: Long.fromString(String(params.validatorPermId)),
           country: params.country,
           did: params.did ?? '',
@@ -293,7 +304,7 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: (id?: string) =
         value = MsgCreatePermission.fromPartial({
           creator: address,
           schemaId: Long.fromValue(params.schemaId),
-          type: params.type,
+          type: permissionTypeFromString(params.type),
           did: params.did,
           country: params.country,
           effectiveFrom: toDate(params.effectiveFrom),
@@ -432,6 +443,7 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: (id?: string) =
       const txRes = res as DeliverTxResponse;
 
       if (txRes.code === 0) {
+        txHeight.current = extractTxHeight(txRes);
         // Try to extract ID for create-like txs (or if you want it for others too)
         if (
           params.msgType === 'MsgStartPermissionVP' ||
@@ -472,4 +484,23 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: (id?: string) =
   }
 
   return actionPerm;
+}
+
+function permissionTypeFromString(type?: string): PermissionType {
+  switch (type) {
+    case "ISSUER":
+      return PermissionType.ISSUER;
+    case "VERIFIER":
+      return PermissionType.VERIFIER;
+    case "ISSUER_GRANTOR":
+      return PermissionType.ISSUER_GRANTOR;
+    case "VERIFIER_GRANTOR":
+      return PermissionType.VERIFIER_GRANTOR;
+    case "ECOSYSTEM":
+      return PermissionType.ECOSYSTEM;
+    case "HOLDER":
+      return PermissionType.HOLDER;
+    default:
+      return PermissionType.UNSPECIFIED;
+  }
 }

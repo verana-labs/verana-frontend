@@ -7,7 +7,7 @@ import { translate } from "@/i18n/dataview";
 import CsCard from "@/ui/common/cs-card";
 import EcosystemCard from "@/ui/common/ecosystem-card";
 import EgfCard from "@/ui/common/egf-card";
-import { useNotification } from "@/ui/common/notification-provider";
+import { useNotification } from "@/providers/notification-provider";
 import RoleCard, { Role } from "@/ui/common/role-card";
 import { CsList } from "@/ui/datatable/columnslist/cs";
 import { resolveTranslatable } from "@/ui/dataview/types";
@@ -19,7 +19,6 @@ import { isValidDID } from "@/util/validations";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRight, faQrcode } from "@fortawesome/free-solid-svg-icons";
 import { useActionPerm } from "@/msg/actions_hooks/actionPerm";
-import { PermissionType } from "@codec-proto/verana/perm/v1/types";
 import { rolesSchema } from "@/util/util";
 
 function validatorRole(schema: CsList, role: Role)  : Role {
@@ -86,25 +85,6 @@ const steps: Step[] = [
   },
 ];
 
-function permissionTypeFromString(type?: string): PermissionType {
-  switch (type) {
-    case "ISSUER":
-      return PermissionType.ISSUER;
-    case "VERIFIER":
-      return PermissionType.VERIFIER;
-    case "ISSUER_GRANTOR":
-      return PermissionType.ISSUER_GRANTOR;
-    case "VERIFIER_GRANTOR":
-      return PermissionType.VERIFIER_GRANTOR;
-    case "ECOSYSTEM":
-      return PermissionType.ECOSYSTEM;
-    case "HOLDER":
-      return PermissionType.HOLDER;
-    default:
-      return PermissionType.UNSPECIFIED;
-  }
-}
-
 function cn(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(" ");
 }
@@ -145,7 +125,7 @@ export default function JoinEcosystemWizard() {
   async function onSendActionPerm() {
       // Broadcast MsgCreateTrustRegistry transaction with user input
       const msgType = 'MsgStartPermissionVP';
-      const type = permissionTypeFromString(selectedRole?? "");
+      const type = selectedRole??"";
       const validatorPermId = selectedValidator?.id ?? 0;
       const did= serviceDid;
 

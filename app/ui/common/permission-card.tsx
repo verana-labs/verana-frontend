@@ -2,8 +2,8 @@
 
 import { PermState, TreeNode } from "@/ui/common/permission-tree";
 import { useEffect, useMemo, useState } from "react";
-import { Permission, permissionActionLifecycle, permissionActionSlashing, permissionActionValidationProcess, 
-  permissionBusinessModels, permissionLifecycle, permissionMetaItems, permissionSlashing, permissionValidationProcess, VpState 
+import { Permission, permissionActionLifecycle, permissionActionValidationProcess, 
+  permissionBusinessModels, permissionLifecycle, permissionMetaItems, permissionValidationProcess, VpState 
 } from "@/ui/dataview/datasections/perm";
 import PermissionAttribute from "@/ui/common/permission-atrribute";
 import { usePermissionHistory } from "@/hooks/usePermissionHistory";
@@ -143,7 +143,7 @@ export default function PermissionCard({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           {permissionLifecycle.map((item , idx, arr) => {
             const raw = selectedNode.permission?.[item.attr];
-            if (raw == null){
+            if (raw == null || raw == undefined || raw == ''){
               const isSecondInRow = idx % 2 === 1;
               const prevRaw = idx > 0 ? selectedNode.permission?.[arr[idx - 1].attr] : null;
               const prevRendered = prevRaw != null;

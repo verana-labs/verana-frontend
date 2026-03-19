@@ -10,7 +10,7 @@ import {
   MsgReclaimTrustDepositYield,
 } from '@codec-proto/verana/td/v1/tx';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
-import { useNotification } from '@/ui/common/notification-provider';
+import { useNotification } from '@/providers/notification-provider';
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import {
   MSG_ERROR_ACTION_TD,
@@ -20,6 +20,8 @@ import {
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
+import { useIndexerEvents } from "@/providers/indexer-events-provider";
+import { extractTxHeight } from '@/msg/util/signerUtil'
 
 // Encapsulate typeUrl and memo label per trust-deposit message type.
 export const MSG_TYPE_CONFIG_TD = {
@@ -54,8 +56,20 @@ export function useActionTD(
   const sendTx = useSendTxDetectingMode(veranaChain);
   const inFlight = useRef(false);
 
+  const { waitForBlock } = useIndexerEvents();
+  const txHeight = useRef<number | undefined>(undefined);
+
   // Refresh caller state once the transaction succeeds.
-  const handleSuccess = () => {
+  const handleSuccess = async () => {
+    if (txHeight.current == undefined) {
+      console.error("txHeight.current is null");
+      return;
+    }
+    try {
+      await waitForBlock(txHeight.current, 10000);
+    } catch (error) {
+      console.warn("Indexer did not catch up in time, refreshing anyway", error);
+    }
     setRefresh?.();
     setTimeout( () => { setActiveActionId?.() }, 1000);
   };
@@ -142,6 +156,7 @@ export function useActionTD(
       const txRes = res as DeliverTxResponse;
 
       if (txRes.code === 0) {
+        txHeight.current = extractTxHeight(txRes);
         success = true;
         notifyPromise = notify(
           MSG_SUCCESS_ACTION_TD[params.msgType](claimedLabel),

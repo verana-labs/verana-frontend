@@ -5,12 +5,8 @@ const t = (key: string) => ({ key });
 
 //Dashboard data
 export interface DashboardData {
-  chainName: string | null;
   blockHeight: string | null;
-  status: string | null;
   isWalletConnected: string | null;
-  address: string | null;
-  walletPrettyName: string | null;
   ecosystems: string | null;
   schemas: string | null;
   totalLockedTrustDeposit: string | null;
@@ -25,11 +21,6 @@ export const dashboardSections: Section<DashboardData>[] = [
     cardView: true,
     classFormEdit: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6",
     fields: [
-      // { name: "chainName", label: t("dataview.dashboard.fields.chainName"), type: "data" },
-      // { name: "status", label: t("dataview.dashboard.fields.status"), type: "data" },
-      // { name: "isWalletConnected", label: t("dataview.dashboard.fields.isWalletConnected"), type: "data" },
-      // { name: "address", label: t("dataview.dashboard.fields.address"), type: "data" },
-      // { name: "walletPrettyName", label: t("dataview.dashboard.fields.walletPrettyName"), type: "data" },
       { name: "blockHeight", label: t("dataview.dashboard.fields.blockHeight"), type: "data",
         icon: faCubes,
         iconClass: "bg-blue-100 dark:bg-blue-900/20",
