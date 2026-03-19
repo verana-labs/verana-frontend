@@ -22,6 +22,7 @@ import { faCheck, faQrcode, faRightFromBracket, faUpRightFromSquare, faWallet, f
 export default function AccountZone() {
   
   const veranaChain = useVeranaChain();
+  const explorerUrl = veranaChain.explorers?.[0]?.url;
 
   const {
     status,
@@ -106,7 +107,7 @@ export default function AccountZone() {
           <IconLabelButton
             icon={faUpRightFromSquare}
             title={resolveTranslatable({key: 'navbar.mintscan.title'}, translate)}
-            onClick={() => window.open(`https://explorer.testnet.verana.network/Verana%20Testnet/account/${address}`, "_blank")}
+            onClick={() => explorerUrl && window.open(`${explorerUrl}/account/${address}`, "_blank")}
             className='navbar-icon'
           />
           <IconLabelButton

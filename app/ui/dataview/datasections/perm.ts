@@ -203,7 +203,7 @@ type MsgType = ActionPermParams["msgType"];
 
 /* ---------- Sections factory by msgType ---------- */
 
-export function getActionPermSections(msgType: MsgType): Section<PermissionData>[] {
+export function getActionPermSections(msgType: MsgType, excludeFees: boolean = false): Section<PermissionData>[] {
   switch (msgType) {
     case "MsgStartPermissionVP":
       return [
@@ -226,7 +226,7 @@ export function getActionPermSections(msgType: MsgType): Section<PermissionData>
             ...commonIdentityFields({includeCountry: false}),
             ...commonCreateFields({includeType: true}),
             ...dateFields({ from: true, until: true }),
-            ...feeFields({ includeIssuance: false }),
+            ...( excludeFees ? [] : feeFields({ includeIssuance: false }) )
           ],
         },
       ];
@@ -253,7 +253,7 @@ export function getActionPermSections(msgType: MsgType): Section<PermissionData>
           fields: [
             ...commonIdentityFields({includeCountry: false}),
             ...dateFields({ until: true }),
-            ...feeFields({ includeIssuance: true }),
+            ...( excludeFees ? [] : feeFields({ includeIssuance: true }) ),
             {
               name: "vpSummaryDigestSri",
               label: t("dataview.perm.fields.vpSummaryDigestSri"),

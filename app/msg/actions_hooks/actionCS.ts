@@ -9,7 +9,7 @@ import {
 } from '@codec-proto/verana/cs/v1/tx';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
-import { useNotification } from '@/ui/common/notification-provider';
+import { useNotification } from '@/providers/notification-provider';
 import {
   MSG_ERROR_ACTION_CS,
   MSG_INPROGRESS_ACTION_CS,
@@ -23,6 +23,8 @@ import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { pickOptionalUInt32 } from '@amino-converter/util/helpers';
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
+import { useIndexerEvents } from "@/providers/indexer-events-provider";
+import { extractTxHeight } from '@/msg/util/signerUtil'
 
 // Message type configuration (typeUrl + label for memo/notification)
 export const MSG_TYPE_CONFIG_CS = {
@@ -88,8 +90,20 @@ export function useActionCS( onCancel?: () => void,
   // Prevents parallel broadcasts with the same account (avoids sequence mismatch errors)
   const inFlight = useRef(false);
 
+  const { waitForBlock } = useIndexerEvents();
+  const txHeight = useRef<number | undefined>(undefined);
+
   // Handler for Succes: refresh and collapses/hides the action UI
-  const handleSuccess = () => {
+  const handleSuccess = async () => {
+    if (txHeight.current == undefined) {
+      console.error("txHeight.current is null");
+      return;
+    }
+    try {
+      await waitForBlock(txHeight.current, 10000);
+    } catch (error) {
+      console.warn("Indexer did not catch up in time, refreshing anyway", error);
+    }
     onRefresh?.();
     setTimeout( () => { onCancel?.() }, 1000);
   };
@@ -244,6 +258,7 @@ export function useActionCS( onCancel?: () => void,
       const txRes = res as DeliverTxResponse;
       
       if (txRes.code === 0) {
+        txHeight.current = extractTxHeight(txRes);
         if (params.msgType === 'MsgCreateCredentialSchema') id = extractCreatedCSId(txRes);        
         if (id) sessionStorage.setItem('id_updated', id);
         success = true;

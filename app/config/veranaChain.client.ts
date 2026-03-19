@@ -13,7 +13,7 @@ export const veranaChainEnv = {
 
     },
   status: 'live',
-  network_type: 'testnet',
+  network_type: process.env.NEXT_PUBLIC_VERANA_CHAIN_ID?.includes('devnet') ? 'devnet' : 'testnet',
   bech32_prefix: "verana",
   slip44:  118,
   key_algos: ['secp256k1'],
@@ -36,15 +36,15 @@ export const veranaChainEnv = {
   explorers: [
     {
       kind: 'Verana Explorer',
-      url: 'https://explorer.testnet.verana.network',
-      tx_page: 'https://explorer.mychain.org/tx/${txHash}',
-    },  
- ],
+      url: process.env.NEXT_PUBLIC_VERANA_EXPLORER_URL || '',
+      tx_page: `${process.env.NEXT_PUBLIC_VERANA_EXPLORER_URL || ''}/tx/\${txHash}`,
+    },
+  ],
 
 };
 
 export const veranaAssets: Asset = {
-    description: "The native staking and governance token of the Verana testnet.",
+    description: "The native staking and governance token of the Verana network.",
     type_asset: 'sdk.coin',
     base: 'uvna',
     name: 'Verana Token',
