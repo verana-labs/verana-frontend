@@ -14,6 +14,12 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
   const customChains = [veranaChain];
   const assetLists = [{ chain_name: veranaChain.chain_name, assets: [veranaAssets] }];
   const duration = Number(env('NEXT_PUBLIC_SESSION_LIFETIME_SECONDS') || process.env.NEXT_PUBLIC_SESSION_LIFETIME_SECONDS) * 1000;
+  const projectId = process.env.NEXT_PUBLIC_VERANA_CHAIN_PROVIDER_PROJECT_ID!;
+  const relayUrl = process.env.NEXT_PUBLIC_VERANA_CHAIN_PROVIDER_RELAY_URL!;
+  const name = process.env.NEXT_PUBLIC_VERANA_CHAIN_PROVIDER_METADATA_NAME!;
+  const description = process.env.NEXT_PUBLIC_VERANA_CHAIN_PROVIDER_METADATA_DESCRIPTION!;
+  const url = process.env.NEXT_PUBLIC_VERANA_CHAIN_PROVIDER_METADATA_URL!;
+  const icons = [process.env.NEXT_PUBLIC_VERANA_CHAIN_PROVIDER_METADATA_ICONS!];
 
   return (
       <ChainProvider
@@ -24,13 +30,13 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
           wallets={wallets}
           walletConnectOptions={{
             signClient: {
-              projectId: 'e09f8de2a0b30d2e2ee9d061afb2667b',
-              relayUrl: "wss://relay.walletconnect.org",
+              projectId,
+              relayUrl,
               metadata: {
-                name: 'Verana',
-                description: 'Verana dashboard for managing and joining digital trust Ecosystems.',
-                url: 'https://verana.io',
-                icons: ['https://verana.io/logo.svg'],
+                name,
+                description,
+                url,
+                icons,
               },
             },
           }}
