@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.11.0](https://github.com/verana-labs/verana-frontend/compare/v0.10.0...v0.11.0) (2026-03-20)
+
+
+### Features
+
+* [Verana Chain Provider] Update walletConnectOptions in ChainProvider ([#337](https://github.com/verana-labs/verana-frontend/issues/337)) ([1d9e2f6](https://github.com/verana-labs/verana-frontend/commit/1d9e2f6ef4282eb0254ea0bd9d4bbc842ebd1fc0))
+
+
+### Bug Fixes
+
+* [Join] Responsive Issue ([#335](https://github.com/verana-labs/verana-frontend/issues/335)) ([fb42b58](https://github.com/verana-labs/verana-frontend/commit/fb42b580de14ba8139357ce566a77841a95ad839))
+
 ## [0.10.0](https://github.com/verana-labs/verana-frontend/compare/v0.9.0...v0.10.0) (2026-03-19)
 
 
