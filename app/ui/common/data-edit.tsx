@@ -245,7 +245,7 @@ export default function EditableDataView<T extends object>({
   visibleFields.forEach((field) => {
     const typedField = field as ResolvedDataField<T>;
     const value = formData[field.name as keyof T];
-    const isDisabled = (action === 'edit' && field.update === false);
+    const isDisabled = field.disabled || (action === 'edit' && field.update === false);
     const key = String(field.name);
     const fieldError = errorFields.find(err => err.key === key);
     const showError = hasTriedSubmit && (Boolean(fieldError)

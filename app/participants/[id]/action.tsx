@@ -12,7 +12,7 @@ interface PermActionProps {
   action: MsgTypePERM;  // Action type to perform
   data: object;
   onClose: () => void; // Collapse/hide action on cancel
-  onRefresh?: (id?: string) => void; // Refresh Permission data
+  onRefresh?: (id?: string, txHeight?: number) => void; // Refresh Permission data
   setModalHidden?: () => void; // Hidden/Visible modal
 }
 

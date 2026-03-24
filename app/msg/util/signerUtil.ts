@@ -83,3 +83,21 @@ export function extractTxHeight(res: DeliverTxResponse): number | undefined {
   if (direct !== undefined) return direct;
   return undefined;
 }
+
+// Handler for Succes: refresh and collapses/hides the action UI
+export function handleSuccess ( onCancel?: () => void, 
+                                onRefresh?: (id?: string, txHeight?: number)  => void,
+                                id?: string, txHeight?: number )
+{
+  if (txHeight == undefined) {
+    console.error("txHeight is null");
+    return;
+  }
+  onRefresh?.(id, txHeight);
+  setTimeout( () => { onCancel?.() }, 500);
+};
+
+export type RefreshState = {
+  id?: string;
+  txHeight?: number;
+};

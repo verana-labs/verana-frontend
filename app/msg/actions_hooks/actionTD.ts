@@ -20,8 +20,7 @@ import {
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
-import { useIndexerEvents } from "@/providers/indexer-events-provider";
-import { extractTxHeight } from '@/msg/util/signerUtil'
+import { extractTxHeight, handleSuccess } from '@/msg/util/signerUtil'
 
 // Encapsulate typeUrl and memo label per trust-deposit message type.
 export const MSG_TYPE_CONFIG_TD = {
@@ -46,37 +45,19 @@ type ActionTDParams =
     };
 
 // Build an executor for trust-deposit actions, handling wallet checks and UI refresh triggers.
-export function useActionTD(
-  setActiveActionId?: () => void,
-  setRefresh?: () => void
-) {
+export function useActionTD( onCancel?: () => void,
+                             onRefresh?: (id?: string, txHeight?: number) => void) {
   const veranaChain = useVeranaChain();
   const { address, isWalletConnected } = useChain(veranaChain.chain_name);
   const { notify } = useNotification();
   const sendTx = useSendTxDetectingMode(veranaChain);
   const inFlight = useRef(false);
 
-  const { waitForBlock } = useIndexerEvents();
   const txHeight = useRef<number | undefined>(undefined);
-
-  // Refresh caller state once the transaction succeeds.
-  const handleSuccess = async () => {
-    if (txHeight.current == undefined) {
-      console.error("txHeight.current is null");
-      return;
-    }
-    try {
-      await waitForBlock(txHeight.current, 10000);
-    } catch (error) {
-      console.warn("Indexer did not catch up in time, refreshing anyway", error);
-    }
-    setRefresh?.();
-    setTimeout( () => { setActiveActionId?.() }, 1000);
-  };
 
   // Close the action UI when something goes wrong.
   const handleFailure = () => {
-    setActiveActionId?.();
+    onCancel?.();
   };
 
   async function actionTD(params: ActionTDParams, simulate: boolean = false): Promise<DeliverTxResponse | SimulateResult | void> {
@@ -180,7 +161,7 @@ export function useActionTD(
       inFlight.current = false;
       if (notifyPromise) await notifyPromise;
       if (success) {
-        handleSuccess();
+        handleSuccess(onCancel, onRefresh, undefined, txHeight.current);
       } else if (!success) {
         handleFailure();
       }

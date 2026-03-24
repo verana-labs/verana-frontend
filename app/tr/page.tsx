@@ -90,7 +90,7 @@ export default function TrPage() {
           onCancel={() => setAddTR(false)}
           onRefresh={() => {
             setRefresh(true);
-            setTimeout( () => setAddTR(false), 1000);
+            setAddTR(false);
           }}
         />
       </ModalAction>

@@ -21,8 +21,7 @@ import Long from 'long';
 import { translate } from '@/i18n/dataview';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
-import { useIndexerEvents } from "@/providers/indexer-events-provider";
-import { extractTxHeight } from '@/msg/util/signerUtil'
+import { extractTxHeight, handleSuccess } from '@/msg/util/signerUtil'
 
 async function calculateSRIHash (docUrl: string | undefined): Promise<{ sri: string | undefined; error: string | undefined }> {
   if (!docUrl || !isValidUrl(docUrl)) return { sri: undefined, error: 'Invalid Document URL' };
@@ -107,8 +106,8 @@ type ActionTRParams =
     };
 
 // Hook to execute Trust Registry transactions and show notifications
-export function useActionTR(  onCancel?: () => void,
-                              onRefresh?: () => void) {
+export function useActionTR( onCancel?: () => void,
+                             onRefresh?: (id?: string, txHeight?: number) => void) {
   const veranaChain = useVeranaChain();
   const {
     address,
@@ -120,23 +119,7 @@ export function useActionTR(  onCancel?: () => void,
   const sendTx = useSendTxDetectingMode(veranaChain);
   const inFlight = useRef(false);
 
-  const { waitForBlock } = useIndexerEvents();
   const txHeight = useRef<number | undefined>(undefined);
-
-  // Handler for Succes: refresh and collapses/hides the action UI
-  const handleSuccess = async () => {
-    if (txHeight.current == undefined) {
-      console.error("txHeight.current is null");
-      return;
-    }
-    try {
-      await waitForBlock(txHeight.current, 10000);
-    } catch (error) {
-      console.warn("Indexer did not catch up in time, refreshing anyway", error);
-    }
-    onRefresh?.();
-    setTimeout( () => { onCancel?.() }, 1000);
-  };
 
   /**
    * Extracts the created Trust Registry ID from a DeliverTxResponse.
@@ -326,7 +309,9 @@ export function useActionTR(  onCancel?: () => void,
           const trUrl = `/tr/${id?? ''}`;
           router.push(trUrl);
         }
-        else handleSuccess();
+        else {
+          handleSuccess(onCancel, onRefresh, id, txHeight.current);
+        }
       }
     }
   }

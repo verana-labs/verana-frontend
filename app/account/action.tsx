@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import EditableDataView from '@/ui/common/data-edit';
 import { TdData, tdSections } from '@/ui/dataview/datasections/td';
 import { useActionTD } from '@/msg/actions_hooks/actionTD';
@@ -19,7 +19,7 @@ interface TdActionProps {
   action: MsgTypeTD;  // Action type to perform
   data: object;
   onClose: () => void; // Collapse/hide action on cancel
-  onRefresh?:  () => void; // Refresh TD data
+  onRefresh?:  (id?: string, txHeight?: number) => void; // Refresh TD data
 }
 
 export default function TdActionPage({ action, data, onClose, onRefresh }: TdActionProps) {

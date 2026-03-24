@@ -1,6 +1,6 @@
 'use client';
 
-import { PermState, TreeNode } from "@/ui/common/permission-tree";
+import { PermState, RefreshState, TreeNode } from "@/ui/common/permission-tree";
 import { useEffect, useMemo, useState } from "react";
 import { Permission, permissionActionLifecycle, permissionActionValidationProcess, 
   permissionBusinessModels, permissionLifecycle, permissionMetaItems, permissionValidationProcess, VpState 
@@ -14,6 +14,7 @@ import { translate } from "@/i18n/dataview";
 import { resolveTranslatable } from "@/ui/dataview/types";
 import { usePermission } from "@/hooks/usePermission";
 import ActionFieldButtonModal from "./action-field-button-modal";
+import { useIndexerEvents } from "@/providers/indexer-events-provider";
 
 type PermissionCardProps = {
   selectedNode: TreeNode;
@@ -59,21 +60,26 @@ export default function PermissionCard({
   const [activeActionId, setActiveActionId] = useState<string | null>(null);
 
   const [idUpdate, setIdUpdate] = useState<string|undefined>(undefined);
-  const{ permission, refetch } = usePermission(idUpdate);
+  const{ permission } = usePermission(idUpdate);
+  const [refreshState, setRefreshState] = useState<RefreshState>({});
+  const { latestProcessedHeight } = useIndexerEvents();
+  
+  useEffect(() => {
+    if (refreshState.txHeight == null) return;
+    console.info("PermissionCard", {txHeight: refreshState.txHeight, latestProcessedHeight, 'ss.mmm': new Date().toISOString().slice(17, 23)});
+    if (latestProcessedHeight < refreshState.txHeight) return;
+    setIdUpdate(permissionId);
+    setRefreshState({});
+  }, [refreshState.txHeight, latestProcessedHeight]);
 
   useEffect(() => {
     if (!permission || !selectedNode.permission) return;
-    console.info({old: selectedNode.permission.modified, new: permission.modified});
     const permissionsAreEqual = selectedNode.permission.modified == permission.modified;
     if (!permissionsAreEqual) {
       selectedNode.permission = permission;
       onRefresh?.(permission);
       return;
     }
-    const timeout = setTimeout(() => {
-      refetch?.();
-    }, 5000);
-    return () => clearTimeout(timeout);
   }, [permission]);
 
   return (
@@ -166,7 +172,7 @@ export default function PermissionCard({
             .filter((action) => action.name && allowed.has(action.name))
             .map((action, idx) => 
               <ActionFieldButtonModal isActive={activeActionId === String(action.name)} data={selectedNode.permission ?? {}} field={action as ActionFieldProps} key={`${action.name}-${idx}`} 
-                onRefresh={()=> setIdUpdate(permissionId)} onClickButton={() => setActiveActionId(activeActionId === String(action.name) ? null : String(action.name))} onClose={()=> setActiveActionId(null)}/>
+                onRefresh={(id?: string, txHeight?: number) => setRefreshState({joinNode: undefined, id, txHeight})} onClickButton={() => setActiveActionId(activeActionId === String(action.name) ? null : String(action.name))} onClose={()=> setActiveActionId(null)}/>
           )}
           </div>
         </div>
@@ -203,7 +209,7 @@ export default function PermissionCard({
             .filter((action) => action.name && allowed.has(action.name))
             .map((action, idx) => 
               <ActionFieldButtonModal isActive={activeActionId === String(action.name)} data={selectedNode.permission ?? {}} field={action as ActionFieldProps} key={`${action.name}-${idx}`} 
-                onRefresh={()=> setIdUpdate(permissionId)} onClickButton={() => setActiveActionId(activeActionId === String(action.name) ? null : String(action.name))} onClose={()=> setActiveActionId(null)}/>
+                onRefresh={(id?: string, txHeight?: number) => setRefreshState({joinNode: undefined, id, txHeight})} onClickButton={() => setActiveActionId(activeActionId === String(action.name) ? null : String(action.name))} onClose={()=> setActiveActionId(null)}/>
           )}
           </div>
         </div>
@@ -230,35 +236,6 @@ export default function PermissionCard({
           )}
           </div>
         </div>
-
-        {/* Slashing */}
-        {/* <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{resolveTranslatable({key: "permissioncard.slashing.title"}, translate)}</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          {permissionSlashing.map((item) => {
-            const raw = selectedNode.permission?.[item.attr];
-            if (raw == null) return null;
-
-            return (
-              <PermissionAttribute
-                key={item.attr}
-                label={item.label}
-                value={item.format? item.format(toMetaValue(raw)) as string : toMetaValue(raw)}
-                mono={item.mono}
-                actions={item.extraActions}
-              />
-            )}
-          )}
-          </div>
-          <div className="flex flex-wrap gap-3 mt-4">
-          {permissionActionSlashing
-            .filter((action) => action.name && allowed.has(action.name))
-            .map((action, idx) => 
-              <ActionFieldButtonModal isActive={activeActionId === String(action.name)} data={selectedNode.permission ?? {}} field={action as ActionFieldProps} key={`${action.name}-${idx}`} 
-                onRefresh={()=> setIdUpdate(permissionId)} onClickButton={() => setActiveActionId(activeActionId === String(action.name) ? null : String(action.name))} onClose={()=> setActiveActionId(null)}/>
-          )}
-          </div>
-        </div> */}
 
         {/* Activity Timeline */}
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">

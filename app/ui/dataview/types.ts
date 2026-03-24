@@ -141,7 +141,7 @@ export interface DataViewProps<T extends object> {
   data: T;
   id?: string;
   onEdit?: () => void;
-  onRefresh?: () => void;
+  onRefresh?: (id?: string, txHeight?: number) => void;
   onBack?:() => void;
   showViewTitle?: boolean;
   viewTitle?: string;
@@ -159,6 +159,7 @@ type BaseField = {
   show?: string; //'view' | 'edit' | 'all' | 'none' | 'create';
   required?: boolean;
   update?: boolean;
+  disabled?: boolean;
   id?: boolean;
   icon?: any;
   iconClass?: string;
