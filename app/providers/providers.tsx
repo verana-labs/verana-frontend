@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import RequireConnectedWallet from '@/providers/require-connected-wallet';
 import { NotificationProvider } from '@/providers/notification-provider';
 import { ThemeProvider } from 'next-themes';
-import { PendingTasksProvider } from "@/providers/pending-tasks-provider-context";
+import { RestQueryProvider } from "@/providers/api-rest-query-provider-context";
 import { IndexerEventsProvider } from "@/providers/indexer-events-provider";
 
 const VeranaChainProvider = dynamic(
@@ -25,9 +25,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           <IndexerEventsProvider>
             <RequireConnectedWallet>
                 <NotificationProvider>
-                  <PendingTasksProvider>
+                  <RestQueryProvider>
                     {children}   
-                  </PendingTasksProvider>
+                  </RestQueryProvider>
                 </NotificationProvider>
             </RequireConnectedWallet>
           </IndexerEventsProvider>
