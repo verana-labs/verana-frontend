@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/verana-labs/verana-frontend/compare/v0.11.0...v0.11.1) (2026-03-24)
+
+
+### Bug Fixes
+
+* correct YAML syntax for NEXT_PUBLIC_VERANA_WEBSOCKET in values.yaml ([#341](https://github.com/verana-labs/verana-frontend/issues/341)) ([c25feb5](https://github.com/verana-labs/verana-frontend/commit/c25feb54db13f83d8578a496d38b283eb29cdeb0))
+
 ## [0.11.0](https://github.com/verana-labs/verana-frontend/compare/v0.10.0...v0.11.0) (2026-03-24)
 
 
