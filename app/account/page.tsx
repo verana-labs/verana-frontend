@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import DataView from '@/ui/common/data-view-columns';
 import { formatNetwork, formatVNA } from '@/util/util';
 import TitleAndButton from '@/ui/common/title-and-button';
@@ -10,6 +10,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { AccountData, accountSections } from '@/ui/dataview/datasections/account';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
+import { RefreshState } from '@/msg/util/signerUtil';
+import { useIndexerEvents } from '@/providers/indexer-events-provider';
 
 export default function AccountPage() {
   const searchParams = useSearchParams();
@@ -24,14 +26,18 @@ export default function AccountPage() {
   const { notify } = useNotification();
 
   // Refresh account/trust deposit data
-  const [refresh, setRefresh] = useState<boolean>(false);
+  const [ refreshState, setRefreshState ] = useState<RefreshState>({});
+  const { latestProcessedHeight } = useIndexerEvents();
+  
   useEffect(() => {
-    if (!refresh) return;
+    if (refreshState.txHeight == null) return;
+    console.info("AccountPage", {txHeight: refreshState.txHeight, latestProcessedHeight, 'ss.mmm': new Date().toISOString().slice(17, 23)});
+    if (latestProcessedHeight < refreshState.txHeight) return;
     (async () => {
       await refetchAD();
-      setRefresh(false);
+      setRefreshState({});
     })();
-  }, [refresh]);
+  }, [refreshState.txHeight, latestProcessedHeight]);
 
   // State for processed account data to display in DataView
   const [data, setData] = useState<AccountData>({
@@ -109,7 +115,9 @@ export default function AccountPage() {
       <DataView<AccountData>
         sectionsI18n={accountSections}
         data={data}
-        onRefresh={() => setRefresh(true)}
+        onRefresh={(id?: string, txHeight?: number) => {
+                    setRefreshState({id, txHeight});
+                  }}
         activeActionField={openGetVNA ? "getVNA" : undefined}
       />
     </>

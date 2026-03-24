@@ -12,7 +12,7 @@ interface DataListProps<T extends object> {
   sectionsI18n: Section<T>[];
   data: T;
   listTitle?: string;
-  onRefresh?: () => void;
+  onRefresh?: (id?: string, txHeight?: number) => void;
   onBack?: () => void;
 }
 

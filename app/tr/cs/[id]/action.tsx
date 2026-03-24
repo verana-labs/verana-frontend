@@ -12,7 +12,7 @@ interface CsActionProps {
   action: MsgTypeCS;  // Action type to perform
   data: object;
   onClose: () => void; // Collapse/hide action on cancel
-  onRefresh?: () => void; // Refresh data
+  onRefresh?: (id?: string, txHeight?: number) => void; // Refresh data
   setModalHidden?: () => void; // Hidden/Visible modal
 }
 

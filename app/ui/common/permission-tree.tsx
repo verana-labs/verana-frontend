@@ -23,6 +23,7 @@ import { renderActionComponent } from "./data-view-typed";
 import AddJoinPage from "@/participants/add/page";
 import { service } from "./permission-atrribute";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useIndexerEvents } from "@/providers/indexer-events-provider";
 
 type PermissionTreeProps = {
   tree: TreeNode[];
@@ -72,8 +73,14 @@ export type TreeNode = {
   enabledJoin?: boolean;
 };
 
+export type RefreshState = {
+  joinNode?: TreeNode;
+  id?: string;
+  txHeight?: number;
+};
+
 /** ------------ Helpers ------------ */
-function findNodeAndPath(nodes: TreeNode[], id: string): { node?: TreeNode; path: TreeNode[] } {
+const findNodeAndPath = (nodes: TreeNode[], id: string): { node?: TreeNode; path: TreeNode[] } => {
   const queue: { n: TreeNode; path: TreeNode[] }[] = nodes.map((n) => ({ n, path: [n] }));
   while (queue.length) {
     const cur = queue.shift()!;
@@ -275,11 +282,25 @@ export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trI
   const [addPermission, setAddPermission] = useState<boolean>(false);
   const [join, setJoin] = useState<TreeNode | undefined>(undefined);
   const permissionCardRef = useRef<HTMLDivElement | null>(null);
+  const [treeState, setTreeState] = useState<TreeNode[]>(tree);
+  const [refreshState, setRefreshState] = useState<RefreshState>({});
+  const { latestProcessedHeight } = useIndexerEvents();
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     const first = tree?.[0]?.nodeId;
     return first ? { [first]: true } : {};
   });
+
+  const findNodeById = (nodes: TreeNode[], targetId: string): TreeNode | undefined => {
+    for (const n of nodes) {
+      if (String(n.nodeId) === String(targetId)) return n;
+      if (n.children?.length) {
+        const found = findNodeById(n.children, targetId);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  };  
 
   const toggleNode = (id: string, type: string, validatorId: string) => {
     const isOpening = !(expanded[id] ?? false);
@@ -293,33 +314,69 @@ export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trI
     }
   };
 
-  function findNodeById(nodes: TreeNode[], targetId: string): TreeNode | undefined {
-    for (const n of nodes) {
-      if (String(n.nodeId) === String(targetId)) return n;
-      if (n.children?.length) {
-        const found = findNodeById(n.children, targetId);
-        if (found) return found;
-      }
-    }
-    return undefined;
-  }  
-
-  const [treeState, setTreeState] = useState<TreeNode[]>(tree);
-
-  // const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const selectedId = searchParams.get('permission') ?? undefined; 
-  function handleSelect(id: string) {
+
+  const handleSelect = (id: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set('permission', id);
-    window.history.pushState(null, '', `${pathname}?${params.toString()}`);
-  }
+    params.set("permission", id);
+    window.history.pushState(null, "", `${pathname}?${params.toString()}`);
+  };  
 
   const { node: selectedNode, path } = useMemo(
     () => (selectedId ? findNodeAndPath(treeState, selectedId) : { node: undefined, path: [] }),
     [treeState, selectedId]
   );
+
+  const mergeTree = (prev: TreeNode[], next: TreeNode[]): TreeNode[] => {
+    const prevMap = new Map(prev.map((n) => [n.nodeId, n]));
+    return next.map((n) => {
+      const prevNode = prevMap.get(n.nodeId);
+      if (n.group) {
+        return {
+          ...n,
+          children: n.children ?? [],
+        };
+      }
+      return {
+        ...prevNode,
+        ...n,
+        children:
+          n.children && n.children.length > 0
+            ? mergeTree(prevNode?.children ?? [], n.children)
+            : prevNode?.children ?? [],
+      };
+    });
+  };
+
+  const updateNodePermission = (nodes: TreeNode[], nodeId: string, perm: Permission): TreeNode[] => {
+    return nodes.map((n) => {
+      if (String(n.nodeId) === String(nodeId)) {
+        return { ...n, permission: perm };
+      }
+      if (n.children?.length) {
+        return { ...n, children: updateNodePermission(n.children, nodeId, perm) };
+      }
+      return n;
+    });
+  };  
+
+  const refreshNode = (perm: Permission): void => { // update permission -> node -> treeState
+    setTreeState((prev) => updateNodePermission(prev, perm.id, perm));
+  }
+
+  useEffect(() => {
+    if (!refreshState.joinNode || refreshState.txHeight == null) return;
+    console.info("PermissionTree", {txHeight: refreshState.txHeight, latestProcessedHeight, 'ss.mmm': new Date().toISOString().slice(17, 23)});
+    if (latestProcessedHeight < refreshState.txHeight) return;
+    setNodeRequestParams?.(refreshState.joinNode.nodeId, refreshState.joinNode.type, refreshState.joinNode.parentId);
+    const timeoutId = setTimeout(() => {
+      if (refreshState.id) handleSelect(String(refreshState.id));
+      setRefreshState({});
+    }, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [refreshState.txHeight, latestProcessedHeight]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -361,46 +418,9 @@ export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trI
     });
   }, [tree]);
 
-  function mergeTree(prev: TreeNode[], next: TreeNode[]): TreeNode[] {
-    const prevMap = new Map(prev.map((n) => [n.nodeId, n]));
-    return next.map((n) => {
-      const prevNode = prevMap.get(n.nodeId);
-      if (n.group) {
-        return {
-          ...n,
-          children: n.children ?? [],
-        };
-      }
-      return {
-        ...prevNode,
-        ...n,
-        children:
-          n.children && n.children.length > 0
-            ? mergeTree(prevNode?.children ?? [], n.children)
-            : (prevNode?.children ?? []),
-      };
-    });
-  }
-
   useEffect(() => {
     setTreeState((prev) => mergeTree(prev, tree));
   }, [tree]);
-
-  function updateNodePermission(nodes: TreeNode[], nodeId: string, perm: Permission): TreeNode[] {
-    return nodes.map((n) => {
-      if (String(n.nodeId) === String(nodeId)) {
-        return { ...n, permission: perm };
-      }
-      if (n.children?.length) {
-        return { ...n, children: updateNodePermission(n.children, nodeId, perm) };
-      }
-      return n;
-    });
-  }
-  
-  function refreshNode(perm: Permission): void { // update permission -> node -> treeState
-    setTreeState((prev) => updateNodePermission(prev, perm.id, perm));
-  }
 
   return (
     <>
@@ -528,12 +548,7 @@ export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trI
             trId={trId??""}
             nodeJoin={join}
             onCancel={() => setJoin(undefined)}
-            onRefresh={(id?: string ) => {
-              setNodeRequestParams?.(join.nodeId, join.type, join.parentId);
-              setTimeout(() => {
-                if (id) handleSelect(String(id));
-              }, 1000);
-            }}
+            onRefresh={(id?: string, txHeight?: number) => setRefreshState({joinNode: join, id, txHeight})}
           />
         </ModalAction>
       ) : null}

@@ -13,7 +13,7 @@ interface GfdPageProps {
   action: MsgTypeTR;  // Action type to perform
   data: object;
   onClose: () => void; // Collapse/hide action on cancel
-  onRefresh?: () => void; // Refresh TR data
+  onRefresh?: (id?: string, txHeight?: number) => void; // Refresh TR data
   setModalHidden?: () => void; // Hidden/Visible modal
 }
 

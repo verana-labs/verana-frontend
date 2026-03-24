@@ -10,7 +10,7 @@ import { resolveTranslatable } from '@/ui/dataview/types';
 type AddCsPageProps = {
   trId: number;
   onCancel: () => void;
-  onRefresh: () => void;
+  onRefresh: (id?: string, txHeight?: number) => void;
 }
 
 export default function AddCsPage({ trId, onCancel, onRefresh }: AddCsPageProps) {

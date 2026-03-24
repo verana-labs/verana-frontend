@@ -13,7 +13,7 @@ type ActionFieldButtonProps = {
     type?: 'button' | 'extend';
     onClickButton?: () => void;
     onClose?: () => void;
-    onRefresh?: (id?: string) => void;
+    onRefresh?: (id?: string, txHeight?: number) => void;
     isActive?: boolean;
 };
 

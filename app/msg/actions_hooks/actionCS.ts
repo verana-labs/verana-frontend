@@ -23,8 +23,7 @@ import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { pickOptionalUInt32 } from '@amino-converter/util/helpers';
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
-import { useIndexerEvents } from "@/providers/indexer-events-provider";
-import { extractTxHeight } from '@/msg/util/signerUtil'
+import { extractTxHeight, handleSuccess } from '@/msg/util/signerUtil'
 
 // Message type configuration (typeUrl + label for memo/notification)
 export const MSG_TYPE_CONFIG_CS = {
@@ -80,7 +79,7 @@ type ActionCSParams =
 
 // Hook to execute Credential Schema transactions + notifications
 export function useActionCS( onCancel?: () => void,
-                             onRefresh?: () => void) {
+                             onRefresh?: (id?: string, txHeight?: number) => void) {
   const veranaChain = useVeranaChain();
   const { address, isWalletConnected } = useChain(veranaChain.chain_name);
 
@@ -90,23 +89,7 @@ export function useActionCS( onCancel?: () => void,
   // Prevents parallel broadcasts with the same account (avoids sequence mismatch errors)
   const inFlight = useRef(false);
 
-  const { waitForBlock } = useIndexerEvents();
   const txHeight = useRef<number | undefined>(undefined);
-
-  // Handler for Succes: refresh and collapses/hides the action UI
-  const handleSuccess = async () => {
-    if (txHeight.current == undefined) {
-      console.error("txHeight.current is null");
-      return;
-    }
-    try {
-      await waitForBlock(txHeight.current, 10000);
-    } catch (error) {
-      console.warn("Indexer did not catch up in time, refreshing anyway", error);
-    }
-    onRefresh?.();
-    setTimeout( () => { onCancel?.() }, 1000);
-  };
 
   /**
    * Helper to extract the created credential schema ID from DeliverTxResponse.
@@ -286,7 +269,7 @@ export function useActionCS( onCancel?: () => void,
       if (notifyPromise) await notifyPromise;
       // Refresh on success or fallback
       if (success) {
-        handleSuccess();
+        handleSuccess(onCancel, onRefresh, id, txHeight.current);
       }
     }
   }

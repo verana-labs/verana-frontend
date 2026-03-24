@@ -44,7 +44,7 @@ export const gfdSections: Section<GfdData>[] = [
     icon: ShieldCheckIcon,
     type: "basic",
     fields: [
-      { name: "creator", label: t("dataview.gfd.fields.creator"), type: "data", show: "create", update: false },
+      { name: "creator", label: t("dataview.gfd.fields.creator"), type: "data", show: "create", update: false, disabled: true },
       {
         name: "docLanguage",
         label: t("dataview.gfd.fields.docLanguage"),

@@ -29,9 +29,8 @@ import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import Long from 'long';
 import { translate } from '@/i18n/dataview';
 import { resolveTranslatable } from '@/ui/dataview/types';
-import { extractTxHeight, stripZerosUndefinedAndEmptyStrings } from '@/msg/util/signerUtil'
+import { extractTxHeight, handleSuccess, stripZerosUndefinedAndEmptyStrings } from '@/msg/util/signerUtil'
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
-import { useIndexerEvents } from "@/providers/indexer-events-provider";
 
 const toDate = (v?: string | Date) => (v ? (v instanceof Date ? v : new Date(v)) : undefined);
 
@@ -172,7 +171,8 @@ export type ActionPermParams =
 /**
  * Hook to execute Permission module transactions and show notifications
  */
-export function useActionPerm(onCancel?: () => void, onRefresh?: (id?: string) => void) {
+export function useActionPerm( onCancel?: () => void,
+                               onRefresh?: (id?: string, txHeight?: number) => void) {
   const veranaChain = useVeranaChain();
   const { address, isWalletConnected } = useChain(veranaChain.chain_name);
 
@@ -180,25 +180,7 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: (id?: string) =
   const sendTx = useSendTxDetectingMode(veranaChain);
   const inFlight = useRef(false);
   
-  const { waitForBlock } = useIndexerEvents();
   const txHeight = useRef<number | undefined>(undefined);
-
-  /** Success handler: refresh and collapses/hides the action UI */
-  const handleSuccess = async (id: string | undefined) => {
-    if (txHeight.current == undefined) {
-      console.error("txHeight.current is null");
-      return;
-    }
-    try {
-      await waitForBlock(txHeight.current, 10000);
-    } catch (error) {
-      console.warn("Indexer did not catch up in time, refreshing anyway", error);
-    }
-    onRefresh?.(id);
-    setTimeout(() => {
-      onCancel?.();
-    }, 1000);
-  };
 
   /**
    * Extracts a created permission ID from a DeliverTxResponse.
@@ -478,7 +460,7 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: (id?: string) =
 
       // Refresh on success (or redirect for create-like flows)
       if (success) {
-          handleSuccess(id);
+          handleSuccess(onCancel, onRefresh, id, txHeight.current);
       }
     }
   }
