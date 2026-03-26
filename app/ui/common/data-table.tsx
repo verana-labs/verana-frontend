@@ -42,7 +42,6 @@ export function DataTable<T extends object>({
 }: DataTableProps<T>) {
   const columns = translateColumns(columnsI18n);
   const filter = translateFilter(filterI18n);
-  if (loading) return <DataTableSkeleton rows={initialPageSize} columns={columns.length}/>;
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = initialPageSize;
   const [filters, setFilters] = useState<Record<string, string | boolean>>({});
@@ -81,6 +80,7 @@ export function DataTable<T extends object>({
       return 0;
     });
   }, [filteredData, sortColumn, sortDirection]);
+  if (loading) return <DataTableSkeleton rows={initialPageSize} columns={columns.length}/>;
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(sortedData.length / pageSize));

@@ -32,7 +32,6 @@ export default function DataView<T extends object>({
 }: DataViewProps<T>) {
 
   const sections = translateSections(sectionsI18n);
-  if (loading) return <DataViewSkeleton sections={sections} />;
   let jsonField: { label: string; value: unknown } | null = null;
   type ViewTitle = { title?: string; description?: string };
   const viewTitle = data as ViewTitle;
@@ -51,6 +50,7 @@ export default function DataView<T extends object>({
     }
     return null;
   });
+  if (loading) return <DataViewSkeleton sections={sections} />;
     
   // Helper to render the type action field
   function renderActionField(
