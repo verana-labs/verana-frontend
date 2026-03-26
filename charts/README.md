@@ -21,8 +21,6 @@ This chart deploys the Verana frontend (Next.js) as a Deployment with a Service,
 | --- | --- | --- |
 | `name` | Application name/labels | `verana-frontend` |
 | `replicas` | Deployment replicas | `1` |
-| `image.tag` | Image tag | `{{ .Chart.Version }}` |
-| `image.pullPolicy` | Image pull policy | `IfNotPresent` |
 | `service.type` | Service type | `ClusterIP` |
 | `service.port` | Service port | `3000` |
 | `service.targetPort` | Container port | `3000` |
