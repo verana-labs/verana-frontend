@@ -11,7 +11,6 @@ export default function DataTableSkeleton({
 }: DataTableSkeletonProps) {
   return (
     <div className="skeleton-card">
-      {/* Header */}
       {showHeader && (
         <div className="flex justify-between items-center mb-6">
           <div className="skeleton-title w-1/4" />
@@ -19,7 +18,6 @@ export default function DataTableSkeleton({
         </div>
       )}
 
-      {/* Table */}
       <div className="space-y-3">
         {[...Array(rows)].map((_, i) => (
           <div
@@ -27,7 +25,6 @@ export default function DataTableSkeleton({
             className="flex items-center justify-between gap-4 py-3 border-b border-gray-100 dark:border-gray-800"
           >
             {[...Array(columns)].map((_, j) => {
-              // última columna tipo badge / action
               if (j === columns - 1) {
                 return (
                   <div

@@ -20,12 +20,10 @@ export default function DataViewSkeleton<T>({
               ${section.sectionBorder ? "border rounded-xl p-4" : ""}
             `}
           >
-            {/* Title */}
             {section.name && (
               <div className="skeleton-title mb-6 w-1/4" />
             )}
 
-            {/* ACTIONS */}
             {isActions ? (
               <div className="flex flex-wrap gap-4">
                 {section.fields?.map((_, j) => (
@@ -36,7 +34,6 @@ export default function DataViewSkeleton<T>({
                 ))}
               </div>
             ) : (
-              /* DATA */
               <div
                 className={`
                   ${
@@ -58,10 +55,8 @@ export default function DataViewSkeleton<T>({
                         }
                       `}
                     >
-                      {/* LABEL */}
                       <div className="skeleton-text-sm w-1/3 mb-2" />
 
-                      {/* VALUE */}
                       <div
                         className={`
                           ${
@@ -73,7 +68,6 @@ export default function DataViewSkeleton<T>({
                         `}
                       />
 
-                      {/* EXTRA (solo en no-cards) */}
                       {!section.cardView && !section.largeTexts && (
                         <div className="skeleton-text-sm w-1/2" />
                       )}
