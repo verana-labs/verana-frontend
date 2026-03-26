@@ -9,47 +9,36 @@ export default function DataTableSkeleton({
   columns = 4,
   showHeader = true,
 }: DataTableSkeletonProps) {
+  const colWidth = (j: number) =>
+    j === 0 ? "w-1/4" : j === 1 ? "w-1/3" : "w-1/5";
+
+  const base = "bg-gray-200 dark:bg-gray-700 animate-pulse rounded";
+
   return (
     <div className="skeleton-card">
       {showHeader && (
         <div className="flex justify-between items-center mb-6">
           <div className="skeleton-title w-1/4" />
-          <div className="h-10 w-28 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse" />
+          <div className={`${base} h-10 w-28`} />
         </div>
       )}
 
       <div className="space-y-3">
-        {[...Array(rows)].map((_, i) => (
+        {Array.from({ length: rows }).map((_, i) => (
           <div
             key={i}
-            className="flex items-center justify-between gap-4 py-3 border-b border-gray-100 dark:border-gray-800"
+            className="flex items-center gap-4 py-3 border-b border-gray-100 dark:border-gray-800"
           >
-            {[...Array(columns)].map((_, j) => {
-              if (j === columns - 1) {
-                return (
-                  <div
-                    key={j}
-                    className="h-6 w-16 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse"
-                  />
-                );
-              }
-
-              return (
-                <div
-                  key={j}
-                  className={`
-                    h-4 rounded bg-gray-200 dark:bg-gray-700 animate-pulse
-                    ${
-                      j === 0
-                        ? "w-1/4"
-                        : j === 1
-                        ? "w-1/3"
-                        : "w-1/5"
-                    }
-                  `}
-                />
-              );
-            })}
+            {Array.from({ length: columns }).map((_, j) => (
+              <div
+                key={j}
+                className={
+                  j === columns - 1
+                    ? `${base} h-6 w-16 rounded-full`
+                    : `${base} h-4 ${colWidth(j)}`
+                }
+              />
+            ))}
           </div>
         ))}
       </div>
