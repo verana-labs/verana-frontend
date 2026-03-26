@@ -1,7 +1,7 @@
 'use client'
 
 import { fromBase64 } from '@cosmjs/encoding';
-import { MsgArchiveCredentialSchema, MsgCreateCredentialSchema, MsgUpdateCredentialSchema } from '@codec-proto/verana/cs/v1/tx';
+import { createVeranaRegistry } from '@verana-labs/verana-types';
 import {
   EncodeObject,
   Registry,
@@ -14,32 +14,9 @@ import { encodeSecp256k1Pubkey } from '@cosmjs/amino';
 import { calculateFee, DeliverTxResponse, GasPrice, SigningStargateClient } from '@cosmjs/stargate';
 import { TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 import Long from 'long';
-import { MsgAddDID, MsgRemoveDID, MsgRenewDID, MsgTouchDID } from '@codec-proto/verana/dd/v1/tx';
-import { MsgReclaimTrustDeposit, MsgRepaySlashedTrustDeposit } from '@codec-proto/verana/td/v1/tx';
-import { MsgAddGovernanceFrameworkDocument, MsgArchiveTrustRegistry, MsgCreateTrustRegistry, MsgIncreaseActiveGovernanceFrameworkVersion, MsgUpdateTrustRegistry } from '@codec-proto/verana/tr/v1/tx';
 
-// Register your custom protobuf message types in a Registry
 export function makeRegistry(): Registry {
-  const registry = new Registry();
-    // verana.dd.v1
-    registry.register('/verana.dd.v1.MsgAddDID', MsgAddDID);
-    registry.register('/verana.dd.v1.MsgRenewDID', MsgRenewDID);
-    registry.register('/verana.dd.v1.MsgTouchDID', MsgTouchDID);
-    registry.register('/verana.dd.v1.MsgRemoveDID', MsgRemoveDID);
-    // verana.td.v1
-    registry.register('/verana.td.v1.MsgReclaimTrustDeposit', MsgReclaimTrustDeposit);
-    registry.register('/verana.td.v1.MsgRepaySlashedTrustDeposit', MsgRepaySlashedTrustDeposit);
-    // verana.tr.v1
-    registry.register('/verana.tr.v1.MsgCreateTrustRegistry', MsgCreateTrustRegistry);
-    registry.register('/verana.tr.v1.MsgUpdateTrustRegistry', MsgUpdateTrustRegistry);
-    registry.register('/verana.tr.v1.MsgArchiveTrustRegistry', MsgArchiveTrustRegistry);
-    registry.register('/verana.tr.v1.MsgAddGovernanceFrameworkDocument', MsgAddGovernanceFrameworkDocument);
-    registry.register('/verana.tr.v1.MsgIncreaseActiveGovernanceFrameworkVersion', MsgIncreaseActiveGovernanceFrameworkVersion);
-    // verana.cs.v1
-    registry.register('/verana.cs.v1.MsgCreateCredentialSchema', MsgCreateCredentialSchema);
-    registry.register('/verana.cs.v1.MsgUpdateCredentialSchema', MsgUpdateCredentialSchema);
-    registry.register('/verana.cs.v1.MsgArchiveCredentialSchema', MsgArchiveCredentialSchema);
-    return registry;
+  return createVeranaRegistry();
 }
 
 type ManualSignOptions = {

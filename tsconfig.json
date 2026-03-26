@@ -27,8 +27,6 @@
       "@/*": ["app/*"],
       "@codec-proto/*": ["node_modules/@verana-labs/verana-types/dist/codec/*"], //@verana-labs/verana-types 
       "@amino-converter/*": ["node_modules/@verana-labs/verana-types/dist/amino-converter/*"] //@verana-labs/verana-types
-      // "@codec-proto/*": ["proto-codecs/codec/*"], // local
-      // "@amino-converter/*": ["app/msg/amino-converter/*"] // local
     }
   },
   "include": [
@@ -39,6 +37,7 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "verana-blockchain"
   ]
 }
