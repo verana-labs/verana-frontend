@@ -9,6 +9,7 @@ import { resolveTranslatable } from '@/ui/dataview/types';
 import DIDView from '@/did/[id]/view';
 import { DidData } from '@/ui//dataview/datasections/did';
 import TitleAndButton from '@/ui/common/title-and-button';
+import DataTableSkeleton from './data-table-skeleton';
 
 // Returns Tailwind classes for hiding by breakpoint
 function getColumnClasses(priority?: number) {
@@ -36,7 +37,8 @@ export function DataTable<T extends object>({
   onAdd,
   detailTitle,
   onRefresh,
-  checkFilter
+  checkFilter,
+  loading
 }: DataTableProps<T>) {
   const columns = translateColumns(columnsI18n);
   const filter = translateFilter(filterI18n);
@@ -78,6 +80,7 @@ export function DataTable<T extends object>({
       return 0;
     });
   }, [filteredData, sortColumn, sortDirection]);
+  if (loading) return <DataTableSkeleton rows={initialPageSize} columns={columns.length}/>;
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(sortedData.length / pageSize));
