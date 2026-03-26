@@ -81,11 +81,11 @@ export default function CSViewPage() {
             <span className="text-gray-900 dark:text-white font-medium">{csData?.title}</span>
           </nav>
         ) : (
-          <div className="flex items-center gap-2">
+          <nav className="flex flex-wrap items-center text-sm" aria-label="Breadcrumb">
             <div className="skeleton h-4 w-40" />
-            <div className="skeleton h-3 w-3" />
+            <div className="mx-2 skeleton h-3 w-3" />
             <div className="skeleton h-4 w-28" />
-          </div>
+          </nav>
         )}
       </section>
 
