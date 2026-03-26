@@ -17,7 +17,7 @@ import DashboardFooter from "@/ui/common/dashboard-footer";
 
 export default function Page() {
 
-  const { dashboardData, errorDashboardData, isWalletConnected } = useDashboardData();
+  const { dashboardData, loading, errorDashboardData, isWalletConnected } = useDashboardData();
   const [errorNotified, setErrorNotified] = useState(false);
   const { notify } = useNotification();
 
@@ -41,6 +41,7 @@ export default function Page() {
           sectionsI18n={dashboardSections}
           data={dashboardData}
           id=""
+          loading={loading}
       />
 
       {/* Wallet Connection CTA */}

@@ -69,16 +69,24 @@ export default function CSViewPage() {
     <>
       {/* Breadcrumbs */}
       <section className="mb-6">
-        <nav className="flex flex-wrap items-center text-sm" aria-label="Breadcrumb">
-          <Link
-            href={`/tr/${trId}`}
-            className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
-          >
-            {dataTR && shortenDID(dataTR.did as string)}
-          </Link>
-          <FontAwesomeIcon icon={faChevronRight} className="mx-2 text-neutral-70 text-xs" />
-          <span className="text-gray-900 dark:text-white font-medium">{csData?.title}</span>
-        </nav>
+        {dataTR ? (
+          <nav className="flex flex-wrap items-center text-sm" aria-label="Breadcrumb">
+            <Link
+              href={`/tr/${trId}`}
+              className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+            >
+              {shortenDID(dataTR.did as string)}
+            </Link>
+            <FontAwesomeIcon icon={faChevronRight} className="mx-2 text-neutral-70 text-xs" />
+            <span className="text-gray-900 dark:text-white font-medium">{csData?.title}</span>
+          </nav>
+        ) : (
+          <div className="flex items-center gap-2">
+            <div className="skeleton h-4 w-40" />
+            <div className="skeleton h-3 w-3" />
+            <div className="skeleton h-4 w-28" />
+          </div>
+        )}
       </section>
 
       {/* Back Navigation & Back Navigation */}
@@ -106,7 +114,19 @@ export default function CSViewPage() {
         <div className="error-pane">
           {errorCS || (resolveTranslatable({ key: 'error.cs.notfound' }, translate) ?? 'Credential Schema not found')}
         </div>
-      ) : null }      
+      ) : (
+        <div className="skeleton-card">
+          <div className="skeleton-title mb-6 w-1/4" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <div className="skeleton-text-sm w-1/3" />
+                <div className="skeleton-text w-2/3" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) }
     </>
   );
 }

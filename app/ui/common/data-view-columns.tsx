@@ -15,6 +15,7 @@ import TitleAndButton from '@/ui/common/title-and-button';
 import ActionFieldButton from '@/ui/common/action-field-button';
 import { translate } from '@/i18n/dataview';
 import ActionFieldButtonModal from '@/ui/common/action-field-button-modal';
+import DataViewSkeleton from './data-view-skeleton';
 
 export default function DataView<T extends object>({
   sectionsI18n,
@@ -26,10 +27,12 @@ export default function DataView<T extends object>({
   showViewTitle,
   viewTitleButton,
   generalBorder,
-  activeActionField
+  activeActionField,
+  loading
 }: DataViewProps<T>) {
 
   const sections = translateSections(sectionsI18n);
+  if (loading) return <DataViewSkeleton sections={sections} />;
   let jsonField: { label: string; value: unknown } | null = null;
   type ViewTitle = { title?: string; description?: string };
   const viewTitle = data as ViewTitle;

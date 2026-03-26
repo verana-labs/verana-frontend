@@ -17,7 +17,7 @@ export default function TrPage() {
   const router = useRouter();
   const [ showArchived, setShowArchived ] = useState(false);
   const [ trListAll, setTrListAll ] = useState(false);
-  const { trList, errorTrList, refetch: fetchTrList } = useTrustRegistries(false, !showArchived);
+  const { trList, loading, errorTrList, refetch: fetchTrList } = useTrustRegistries(false, !showArchived);
   const [errorNotified, setErrorNotified] = useState(false);
   // Notification context for showing error messages
   const { notify } = useNotification();
@@ -78,6 +78,7 @@ export default function TrPage() {
           changeFilter: setShowArchived,
           label: resolveTranslatable({ key: "datatable.tr.filter.showArchived" }, translate)??'Show Archived',
         }}
+        loading={loading}
       />
       {/* render modal add Trust Registry*/}
       {addTR && (

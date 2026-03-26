@@ -83,6 +83,7 @@ export default function DidPage() {
         showDetailModal={true}
         detailTitle={resolveTranslatable({key: "datatable.did.detail"}, translate)}
         onRefresh={() => setRefresh(true)}
+        loading={loading}
       />
       {/* render modal */}
       {addEntity && (

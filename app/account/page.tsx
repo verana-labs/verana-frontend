@@ -19,7 +19,7 @@ export default function AccountPage() {
   const openGetVNA = searchParams.get("getVNA") === "true";
 
   // Custom hook to fetch account/trust deposit data
-  const { accountData, errorAccountData, refetch: refetchAD } = useTrustDepositAccountData();
+  const { accountData, loading, errorAccountData, refetch: refetchAD } = useTrustDepositAccountData();
   const router = useRouter();
   const [errorNotified, setErrorNotified] = useState(false);
   // Notification context for showing error messages
@@ -119,6 +119,7 @@ export default function AccountPage() {
                     setRefreshState({id, txHeight});
                   }}
         activeActionField={openGetVNA ? "getVNA" : undefined}
+        loading={loading}
       />
     </>
   );

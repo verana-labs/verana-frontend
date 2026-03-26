@@ -150,6 +150,7 @@ export interface DataViewProps<T extends object> {
   generalBorder?: boolean;
   viewEditButton?: boolean;
   activeActionField?: string;
+  loading?: boolean;
 }
 
 /* Base field shared by all field types */
