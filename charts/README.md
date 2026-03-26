@@ -21,8 +21,6 @@ This chart deploys the Verana frontend (Next.js) as a Deployment with a Service,
 | --- | --- | --- |
 | `name` | Application name/labels | `verana-frontend` |
 | `replicas` | Deployment replicas | `1` |
-| `image.tag` | Image tag | `{{ .Chart.Version }}` |
-| `image.pullPolicy` | Image pull policy | `IfNotPresent` |
 | `service.type` | Service type | `ClusterIP` |
 | `service.port` | Service port | `3000` |
 | `service.targetPort` | Container port | `3000` |
@@ -54,6 +52,7 @@ Defined under `env` with devnet reference values; override per environment:
 - `NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE`
 - `NEXT_PUBLIC_SESSION_LIFETIME_SECONDS`
 - `NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA`
+- 'NEXT_PUBLIC_VERANA_WEBSOCKET'
 
 ### Quick examples
 

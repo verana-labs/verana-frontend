@@ -14,13 +14,11 @@ import {
   MsgSlashPermissionTrustDeposit,
   MsgRepayPermissionSlashedTrustDeposit,
   MsgCreatePermission,
-} from '@verana-labs/verana-types/codec/verana/perm/v1/tx';
-
-import { PermissionType } from '@verana-labs/verana-types/codec/verana/perm/v1/types';
-
+} from '@codec-proto/verana/perm/v1/tx';
+import { PermissionType } from '@codec-proto/verana/perm/v1/types';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
-import { useNotification } from '@/ui/common/notification-provider';
+import { useNotification } from '@/providers/notification-provider';
 import {
   MSG_ERROR_ACTION_PERM,
   MSG_INPROGRESS_ACTION_PERM,
@@ -31,7 +29,7 @@ import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import Long from 'long';
 import { translate } from '@/i18n/dataview';
 import { resolveTranslatable } from '@/ui/dataview/types';
-import { stripZerosUndefinedAndEmptyStrings } from '@/msg/util/signerUtil'
+import { extractTxHeight, handleSuccess, stripZerosUndefinedAndEmptyStrings } from '@/msg/util/signerUtil'
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 
 const toDate = (v?: string | Date) => (v ? (v instanceof Date ? v : new Date(v)) : undefined);
@@ -88,7 +86,7 @@ export type ActionPermParams =
   | {
       msgType: 'MsgStartPermissionVP';
       creator: string;
-      type: PermissionType | number;
+      type: string;
       validatorPermId: string | number;
       country: string;
       did?: string;
@@ -97,7 +95,7 @@ export type ActionPermParams =
       msgType: 'MsgCreatePermission';
       creator: string;
       schemaId: string | number;
-      type: PermissionType | number;
+      type: string;
       did: string;
       country: string;
       effectiveFrom?: string | Date;
@@ -173,21 +171,16 @@ export type ActionPermParams =
 /**
  * Hook to execute Permission module transactions and show notifications
  */
-export function useActionPerm(onCancel?: () => void, onRefresh?: (id?: string) => void) {
+export function useActionPerm( onCancel?: () => void,
+                               onRefresh?: (id?: string, txHeight?: number) => void) {
   const veranaChain = useVeranaChain();
   const { address, isWalletConnected } = useChain(veranaChain.chain_name);
 
   const { notify } = useNotification();
   const sendTx = useSendTxDetectingMode(veranaChain);
   const inFlight = useRef(false);
-
-  /** Success handler: refresh and collapses/hides the action UI */
-  const handleSuccess = (id: string | undefined) => {
-    onRefresh?.(id);
-    setTimeout(() => {
-      onCancel?.();
-    }, 1000);
-  };
+  
+  const txHeight = useRef<number | undefined>(undefined);
 
   /**
    * Extracts a created permission ID from a DeliverTxResponse.
@@ -281,7 +274,7 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: (id?: string) =
         typeUrl = MSG_TYPE_CONFIG_PERM.MsgStartPermissionVP.typeUrl;
         value = MsgStartPermissionVP.fromPartial({
           creator: address,
-          type: params.type, 
+          type: permissionTypeFromString(params.type),
           validatorPermId: Long.fromString(String(params.validatorPermId)),
           country: params.country,
           did: params.did ?? '',
@@ -293,7 +286,7 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: (id?: string) =
         value = MsgCreatePermission.fromPartial({
           creator: address,
           schemaId: Long.fromValue(params.schemaId),
-          type: params.type,
+          type: permissionTypeFromString(params.type),
           did: params.did,
           country: params.country,
           effectiveFrom: toDate(params.effectiveFrom),
@@ -432,6 +425,7 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: (id?: string) =
       const txRes = res as DeliverTxResponse;
 
       if (txRes.code === 0) {
+        txHeight.current = extractTxHeight(txRes);
         // Try to extract ID for create-like txs (or if you want it for others too)
         if (
           params.msgType === 'MsgStartPermissionVP' ||
@@ -466,10 +460,29 @@ export function useActionPerm(onCancel?: () => void, onRefresh?: (id?: string) =
 
       // Refresh on success (or redirect for create-like flows)
       if (success) {
-          handleSuccess(id);
+          handleSuccess(onCancel, onRefresh, id, txHeight.current);
       }
     }
   }
 
   return actionPerm;
+}
+
+function permissionTypeFromString(type?: string): PermissionType {
+  switch (type) {
+    case "ISSUER":
+      return PermissionType.ISSUER;
+    case "VERIFIER":
+      return PermissionType.VERIFIER;
+    case "ISSUER_GRANTOR":
+      return PermissionType.ISSUER_GRANTOR;
+    case "VERIFIER_GRANTOR":
+      return PermissionType.VERIFIER_GRANTOR;
+    case "ECOSYSTEM":
+      return PermissionType.ECOSYSTEM;
+    case "HOLDER":
+      return PermissionType.HOLDER;
+    default:
+      return PermissionType.UNSPECIFIED;
+  }
 }

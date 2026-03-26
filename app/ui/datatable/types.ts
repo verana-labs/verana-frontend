@@ -60,8 +60,9 @@ export interface DataTableProps<T extends object> {
   addTitle?: string;
   onAdd?: () => void;
   detailTitle?: string;
-  onRefresh?: () => void;
+  onRefresh?: (id?: string, txHeight?: number) => void;
   checkFilter?: {show: boolean; changeFilter: (value: boolean) => void; label: string};
+  loading?: boolean;
 }
 
 // Helper: translate columns

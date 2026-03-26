@@ -6,11 +6,10 @@ import {
   MsgCreateCredentialSchema,
   MsgUpdateCredentialSchema,
   MsgArchiveCredentialSchema,
-} from '@verana-labs/verana-types/codec/verana/cs/v1/tx';
-import { pickOptionalUInt32 } from '@verana-labs/verana-types';
+} from '@codec-proto/verana/cs/v1/tx';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
-import { useNotification } from '@/ui/common/notification-provider';
+import { useNotification } from '@/providers/notification-provider';
 import {
   MSG_ERROR_ACTION_CS,
   MSG_INPROGRESS_ACTION_CS,
@@ -22,7 +21,9 @@ import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import { normalizeJsonSchema, validateJSONSchemaReturn } from '@/util/json_schema_util';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
+import { pickOptionalUInt32 } from '@amino-converter/util/helpers';
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
+import { extractTxHeight, handleSuccess } from '@/msg/util/signerUtil'
 
 // Message type configuration (typeUrl + label for memo/notification)
 export const MSG_TYPE_CONFIG_CS = {
@@ -78,7 +79,7 @@ type ActionCSParams =
 
 // Hook to execute Credential Schema transactions + notifications
 export function useActionCS( onCancel?: () => void,
-                             onRefresh?: () => void) {
+                             onRefresh?: (id?: string, txHeight?: number) => void) {
   const veranaChain = useVeranaChain();
   const { address, isWalletConnected } = useChain(veranaChain.chain_name);
 
@@ -88,11 +89,7 @@ export function useActionCS( onCancel?: () => void,
   // Prevents parallel broadcasts with the same account (avoids sequence mismatch errors)
   const inFlight = useRef(false);
 
-  // Handler for Succes: refresh and collapses/hides the action UI
-  const handleSuccess = () => {
-    onRefresh?.();
-    setTimeout( () => { onCancel?.() }, 1000);
-  };
+  const txHeight = useRef<number | undefined>(undefined);
 
   /**
    * Helper to extract the created credential schema ID from DeliverTxResponse.
@@ -244,6 +241,7 @@ export function useActionCS( onCancel?: () => void,
       const txRes = res as DeliverTxResponse;
       
       if (txRes.code === 0) {
+        txHeight.current = extractTxHeight(txRes);
         if (params.msgType === 'MsgCreateCredentialSchema') id = extractCreatedCSId(txRes);        
         if (id) sessionStorage.setItem('id_updated', id);
         success = true;
@@ -271,7 +269,7 @@ export function useActionCS( onCancel?: () => void,
       if (notifyPromise) await notifyPromise;
       // Refresh on success or fallback
       if (success) {
-        handleSuccess();
+        handleSuccess(onCancel, onRefresh, id, txHeight.current);
       }
     }
   }

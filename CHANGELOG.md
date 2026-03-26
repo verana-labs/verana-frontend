@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.11.1](https://github.com/verana-labs/verana-frontend/compare/v0.11.0...v0.11.1) (2026-03-24)
+
+
+### Bug Fixes
+
+* correct YAML syntax for NEXT_PUBLIC_VERANA_WEBSOCKET in values.yaml ([#341](https://github.com/verana-labs/verana-frontend/issues/341)) ([c25feb5](https://github.com/verana-labs/verana-frontend/commit/c25feb54db13f83d8578a496d38b283eb29cdeb0))
+
+## [0.11.0](https://github.com/verana-labs/verana-frontend/compare/v0.10.0...v0.11.0) (2026-03-24)
+
+
+### Features
+
+* [Verana Chain Provider] Update walletConnectOptions in ChainProvider ([#337](https://github.com/verana-labs/verana-frontend/issues/337)) ([1d9e2f6](https://github.com/verana-labs/verana-frontend/commit/1d9e2f6ef4282eb0254ea0bd9d4bbc842ebd1fc0))
+* Simplifying websocket event listener ([#339](https://github.com/verana-labs/verana-frontend/issues/339)) ([6a1ba34](https://github.com/verana-labs/verana-frontend/commit/6a1ba349acc043eb023ddc4c00895f5f2489490a))
+
+
+### Bug Fixes
+
+* [Join] Responsive Issue ([#335](https://github.com/verana-labs/verana-frontend/issues/335)) ([fb42b58](https://github.com/verana-labs/verana-frontend/commit/fb42b580de14ba8139357ce566a77841a95ad839))
+
+## [0.10.0](https://github.com/verana-labs/verana-frontend/compare/v0.9.0...v0.10.0) (2026-03-19)
+
+
+### Features
+
+* [Permission] Improvements & adjustments ([#328](https://github.com/verana-labs/verana-frontend/issues/328)) ([26e6d3c](https://github.com/verana-labs/verana-frontend/commit/26e6d3cc7725349d65a91858e3f7e39063639af8))
+* [Permission] Join Ecosystem ([#312](https://github.com/verana-labs/verana-frontend/issues/312)) ([bef3ade](https://github.com/verana-labs/verana-frontend/commit/bef3ade2458b08f8c51c949840d691c22ddc0652))
+* [User not Connected] Available actions ([#316](https://github.com/verana-labs/verana-frontend/issues/316)) ([c35a9b2](https://github.com/verana-labs/verana-frontend/commit/c35a9b2e6d8165c95d9b99e7a5f0ba139461cf63))
+* [View Schema] JCS canonization for schema normalization ([#284](https://github.com/verana-labs/verana-frontend/issues/284)) ([#315](https://github.com/verana-labs/verana-frontend/issues/315)) ([552c680](https://github.com/verana-labs/verana-frontend/commit/552c68069108aa2fb387b7dd434e55090447249b))
+* [Websocket] Use the event listener for getting block ready events ([#334](https://github.com/verana-labs/verana-frontend/issues/334)) ([51eb66d](https://github.com/verana-labs/verana-frontend/commit/51eb66d34ac1d0620d4559b8fd9eb09a2fbf2442))
+* Add dashboard link to logo in navbar ([#329](https://github.com/verana-labs/verana-frontend/issues/329)) ([1e043e3](https://github.com/verana-labs/verana-frontend/commit/1e043e326bf5d692baf1a1cf60381e49df68422c))
+* Make explorer URL configurable per environment ([#311](https://github.com/verana-labs/verana-frontend/issues/311)) ([dd85dc1](https://github.com/verana-labs/verana-frontend/commit/dd85dc11977cc9fd1ff9c07e4ef22a3518afe97b))
+* replace hardcoded language selector with full BCP 47 support ([#286](https://github.com/verana-labs/verana-frontend/issues/286)) ([#326](https://github.com/verana-labs/verana-frontend/issues/326)) ([94f8199](https://github.com/verana-labs/verana-frontend/commit/94f8199eaedead1ab57845d727061a3efb372453))
+* Use verana-types library ([#330](https://github.com/verana-labs/verana-frontend/issues/330)) ([a31a312](https://github.com/verana-labs/verana-frontend/commit/a31a3120a65d7a6655f4c3ddaa47a4fe5e593b72))
+
+
+### Bug Fixes
+
+* [Participants] Creating a new permission must show the permission when transaction finishes ([#325](https://github.com/verana-labs/verana-frontend/issues/325)) ([5f3c6e1](https://github.com/verana-labs/verana-frontend/commit/5f3c6e1ecae0e40224ec818dca17be6c09c0dabc))
+* [Participants] Inconsistency in tree behavior ([#332](https://github.com/verana-labs/verana-frontend/issues/332)) ([b866a09](https://github.com/verana-labs/verana-frontend/commit/b866a09f9be45428103f0d1311246bf44e1b7b6c))
+* [Participants] Issue when showing issuance mode ([#321](https://github.com/verana-labs/verana-frontend/issues/321)) ([a5fdab3](https://github.com/verana-labs/verana-frontend/commit/a5fdab3f939d71066f90e903cba3df00be0e37c8))
+* update totalLockedTrustDeposit calculation in useDashboardData hook ([#314](https://github.com/verana-labs/verana-frontend/issues/314)) ([67400f6](https://github.com/verana-labs/verana-frontend/commit/67400f6a104c11bf2c41f66b6229ee00992ac1dc)), closes [#274](https://github.com/verana-labs/verana-frontend/issues/274)
+
 ## [0.9.0](https://github.com/verana-labs/verana-frontend/compare/v0.8.0...v0.9.0) (2026-03-04)
 
 

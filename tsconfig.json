@@ -11,7 +11,6 @@
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
     "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
@@ -25,9 +24,11 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "app/*"
-      ]
+      "@/*": ["app/*"],
+      "@codec-proto/*": ["node_modules/@verana-labs/verana-types/dist/codec/*"], //@verana-labs/verana-types 
+      "@amino-converter/*": ["node_modules/@verana-labs/verana-types/dist/amino-converter/*"] //@verana-labs/verana-types
+      // "@codec-proto/*": ["proto-codecs/codec/*"], // local
+      // "@amino-converter/*": ["app/msg/amino-converter/*"] // local
     }
   },
   "include": [
@@ -35,8 +36,6 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "app/lib/placeholder-data.ts",
-    "scripts/seed.js",
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [

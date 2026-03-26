@@ -9,10 +9,10 @@ import { useActionTR } from '@/msg/actions_hooks/actionTR';
 
 type AddTrPageProps = {
   onCancel: () => void;
-  onRefresh: () => void;
+  onRefresh: (id?: string, txHeight?: number) => void;
 }
 
-export default function AddTrPage({ onCancel }: AddTrPageProps) {
+export default function AddTrPage({ onCancel, onRefresh }: AddTrPageProps) {
   // Load chain info
   const veranaChain = useVeranaChain();
   const { address } = useChain(veranaChain.chain_name);
@@ -28,7 +28,7 @@ export default function AddTrPage({ onCancel }: AddTrPageProps) {
     docUrl: ''
   });
 
-  const actionTR = useActionTR();
+  const actionTR = useActionTR(onCancel, onRefresh);
 
   // Save handler: called when the form is submitted
   async function onSave(newData: TrData) {

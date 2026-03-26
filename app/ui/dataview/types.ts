@@ -141,7 +141,7 @@ export interface DataViewProps<T extends object> {
   data: T;
   id?: string;
   onEdit?: () => void;
-  onRefresh?: () => void;
+  onRefresh?: (id?: string, txHeight?: number) => void;
   onBack?:() => void;
   showViewTitle?: boolean;
   viewTitle?: string;
@@ -150,6 +150,7 @@ export interface DataViewProps<T extends object> {
   generalBorder?: boolean;
   viewEditButton?: boolean;
   activeActionField?: string;
+  loading?: boolean;
 }
 
 /* Base field shared by all field types */
@@ -159,6 +160,7 @@ type BaseField = {
   show?: string; //'view' | 'edit' | 'all' | 'none' | 'create';
   required?: boolean;
   update?: boolean;
+  disabled?: boolean;
   id?: boolean;
   icon?: any;
   iconClass?: string;
@@ -189,7 +191,7 @@ type ActionField<T> = BaseField & {
 export type DataField<T> = BaseField & {
   type: "data";
   name: keyof T;
-  inputType?: 'text' | 'number' | 'textarea' | 'select' | 'date';
+  inputType?: 'text' | 'number' | 'textarea' | 'select' | 'languageSelector' | 'date';
   options?: { value: string | number; label: Translatable }[]; // (inputType === 'select');
   placeholder?: Translatable;
   validation?: FieldValidation;

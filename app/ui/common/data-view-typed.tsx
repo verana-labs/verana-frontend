@@ -27,7 +27,7 @@ export default function DataViewTyped<I extends object>(props: {
   edit?: boolean;
   getTitle?: (item: I) => React.ReactNode;
   onActiveActionId?:  () => void;
-  onRefresh?:  () => void;
+  onRefresh?:  (id?: string, txHeight?: number) => void;
 }) {
   
   const { objectData, sections, data, id, edit, getTitle, onRefresh } = props;
@@ -49,7 +49,7 @@ export default function DataViewTyped<I extends object>(props: {
   const contentId = id ? `${id}-dv-content` : `dv-content-${reactId}`;
   const [editing, setEditing] = useState(id? false: true);
   const msgType = getMsgTypeFor(objectData.typeName as DataType, id? "update" : "create");
-  const { submitTx } = useSubmitTxMsgTypeFromObject( id ? () => setEditing(false) : () => setExpanded(false), () => onRefresh );
+  const { submitTx } = useSubmitTxMsgTypeFromObject( id ? () => setEditing(false) : () => setExpanded(false), (id?: string, txHeight?: number) => onRefresh );
 
   /**
    * Generic save handler:
@@ -111,7 +111,7 @@ export function renderObjectList<I extends object>(args: {
   columnsCount?: number;
   edit?: boolean;
   getId?: (item: I, idx: number) => string | number | undefined;
-  onRefresh?:  () => void;
+  onRefresh?:  (id?: string, txHeight?: number) => void;
 }) {
   const { objectData, sections, items, edit, getId, onRefresh } = args;
   return items.map((item, idx) => (
@@ -159,7 +159,7 @@ export function renderActionComponent(
   action: string,
   onClose: () => void,
   data: object,
-  onRefresh?: (id?: string) => void,
+  onRefresh?: (id?: string, txHeight?: number) => void,
   onBack?: () => void,
   setModalHidden?: () => void
 ): ReactNode {

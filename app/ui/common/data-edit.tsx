@@ -4,7 +4,7 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { ResolvedDataField, DataViewProps, isResolvedDataField, ResolvedField, visibleFieldsForMode, translateSections, resolveTranslatable } from '@/ui/dataview/types';
 import { getCostMessage, getLowBalanceMessage, msgTypeStyle } from '@/msg/constants/msgTypeConfig';
 import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData';
-import { useNotification } from '@/ui/common/notification-provider';
+import { useNotification } from '@/providers/notification-provider';
 import { useRouter } from 'next/navigation';
 import { getErrorMessage, isValidField } from '@/util/validations';
 import { MessageType } from '@/msg/constants/types';
@@ -13,6 +13,7 @@ import clsx from "clsx"
 import { translate } from '@/i18n/dataview';
 import { formatVNAFromUVNA, isJson } from '@/util/util';
 import JsonCodeBlock from '@/ui/common/json-code-block';
+import { LanguageCombobox } from '@/ui/common/language-combobox';
 import ActionCard, { ActionCardProps } from '@/ui/common/action-card';
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 import { env } from 'next-runtime-env';
@@ -185,7 +186,6 @@ export default function EditableDataView<T extends object>({
 
   // Handles save action; disables buttons while saving and prevents double submission
   async function handleSave() {
-    console.info("handleSave", {submitting, hasInvalidRequiredFields: hasInvalidRequiredFields(), hasInvalidData: hasInvalidData()});
     setHasTriedSubmit(true);
     if (submitting || hasInvalidRequiredFields() || hasInvalidData()) return;
     setSubmitting(true);
@@ -245,7 +245,7 @@ export default function EditableDataView<T extends object>({
   visibleFields.forEach((field) => {
     const typedField = field as ResolvedDataField<T>;
     const value = formData[field.name as keyof T];
-    const isDisabled = (action === 'edit' && field.update === false);
+    const isDisabled = field.disabled || (action === 'edit' && field.update === false);
     const key = String(field.name);
     const fieldError = errorFields.find(err => err.key === key);
     const showError = hasTriedSubmit && (Boolean(fieldError)
@@ -297,6 +297,15 @@ export default function EditableDataView<T extends object>({
             </option>
           ))}
         </select>
+      );
+    } else if (field.inputType === 'languageSelector') {
+      inputEl = (
+        <LanguageCombobox
+          value={String(value ?? '')}
+          onChange={(val) => handleChange(field.name as keyof T, val, field)}
+          disabled={isDisabled}
+          className={showError ? 'border-red-500' : ''}
+        />
       );
     } else if (field.inputType === 'number') {
       inputEl = (

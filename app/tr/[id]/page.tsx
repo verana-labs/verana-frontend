@@ -3,16 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { GfdData, gfdSections, htmlGfd, TrData, trSections } from '@/ui/dataview/datasections/tr';
+import { getLabelByValue } from '@/ui/dataview/datasections/gfd';
 import DataView from '@/ui/common/data-view-columns';
 import TitleAndButton from '@/ui/common/title-and-button';
-import EditableDataView from '@/ui/common/data-edit';
-import { useActionTR } from '@/msg/actions_hooks/actionTR';
 import { useChain } from '@cosmos-kit/react';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useTrustRegistryData } from '@/hooks/useTrustRegistryData';
 import { useCSList } from '@/hooks/useCredentialSchemas';
 import { formatDate, formatVNA } from '@/util/util';
-import langs from 'langs';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
@@ -22,37 +20,45 @@ import { DataList } from '@/ui/common/data-list';
 import { ModalAction } from '@/ui/common/modal-action';
 import { useRouter } from 'next/navigation';
 import AddCsPage from '../cs/add/add';
+import { RefreshState } from '@/msg/util/signerUtil';
+import { useIndexerEvents } from '@/providers/indexer-events-provider';
 
 export default function TRViewPage() {
   const params = useParams();
   const id = params?.id as string;
   const [data, setData] = useState<TrData | null>(null);
-  const [editing, setEditing] = useState(false);
   const router = useRouter();
-
-  const actionTR = useActionTR(); 
 
   const veranaChain = useVeranaChain();
   const { address } = useChain(veranaChain.chain_name);
   const [ showArchived, setShowArchived ] = useState(false);
   const { csList, refetch: refetchCSList } = useCSList (id, false, !showArchived);
-  const { dataTR, loading, errorTRData, refetch: refetchTR } = useTrustRegistryData(id);
+  const { dataTR, errorTRData, refetch: refetchTR } = useTrustRegistryData(id);
   const [ addCS, setAddCS ] = useState<boolean>(false);
   const [ csListAll, setCsListAll ] = useState<boolean>(false);
 
   // Refresh data TR
-  const [refresh, setRefresh] = useState<string | null>(null);
+  const [ refresh, setRefresh ] = useState<string | null>(null);
+  const [ refreshState, setRefreshState ] = useState<RefreshState>({});
+  const { latestProcessedHeight } = useIndexerEvents();
+  
   useEffect(() => {
-    if (!refresh) return;
+    if (refreshState.txHeight == null || refresh == null) return;
+    console.info("TrViewPage", {txHeight: refreshState.txHeight, latestProcessedHeight, 'ss.mmm': new Date().toISOString().slice(17, 23)});
+    if (latestProcessedHeight < refreshState.txHeight) return;
     (async () => {
       if (refresh === 'actionTR') await refetchTR();
       if (refresh === 'actionCS') await refetchCSList();
+      setRefreshState({});
       setRefresh(null);
     })();
-  }, [refresh]);
+  }, [refreshState.txHeight, latestProcessedHeight, refresh]);
 
   useEffect(() => {
-    if ( showArchived && !csListAll ) setRefresh("actionCS");
+    if ( showArchived && !csListAll ){
+      setRefresh("actionCS");
+      setRefreshState({txHeight: 1});
+    } 
   }, [showArchived]);
 
   useEffect(() => {
@@ -63,7 +69,7 @@ export default function TRViewPage() {
     if (!dataTR) return;
     const computed = { ...dataTR }; // Clone, don't mutate
     computed.deposit = formatVNA(computed.deposit, 6);
-    computed.language = langs.where('1', computed.language).name;
+    computed.language = getLabelByValue(computed.language);
     
     let lastVersion = computed.active_version?? 1;
     computed.docs = (computed.versions ?? [])
@@ -90,7 +96,7 @@ export default function TRViewPage() {
             }
             state= 'inactive';
           }
-          const text = htmlGfd(String(version.version), doc.url, doc.language, state, strState);
+          const text = htmlGfd(String(version.version), doc.url, getLabelByValue(doc.language), state, strState);
           lastVersion = version.version > lastVersion ? version.version : lastVersion;
           return text;
         })
@@ -114,28 +120,6 @@ export default function TRViewPage() {
     setData(computed);
   }, [dataTR, address]);
 
-  async function onSave(newData: TrData) {
-    const cleaned = {
-      ...newData,
-      did: newData.did || '',
-      aka: newData.aka || '',
-      language: newData.language || '',
-      id: newData.id || '',
-      controller: newData.controller || '',
-    };
-
-    await actionTR({
-      msgType: 'MsgUpdateTrustRegistry',
-      creator: cleaned.controller,
-      id: cleaned.id,
-      did: cleaned.did,
-      aka: cleaned.aka,
-    });
-
-    setData(cleaned);
-    setEditing(false);
-  }
-
   return (
     <>
       {/* Back Navigation & Back Navigation */}
@@ -152,32 +136,28 @@ export default function TRViewPage() {
       <>
 
       {/* Basic Information Section */}
-      {editing ? (
-      <EditableDataView<TrData>
-        sectionsI18n={trSections}
-        data={data}
-        messageType={'MsgUpdateTrustRegistry'}
-        id={data.id}
-        onSave={ onSave }
-        onCancel={() => setEditing(false)}  />
-      ) : (
       <DataView<TrData> 
         sectionsI18n={trSections}
         data={data}
         id={data.id}
         viewEditButton={false}
-        onEdit={ data.controller === address ? () => setEditing(true) : undefined } 
-        onRefresh={() => setRefresh("actionTR")}
+        onRefresh={(id?: string, txHeight?: number) => {
+                    setRefreshState({id, txHeight});
+                    setRefresh("actionTR");
+                  }}
         showViewTitle={true}
         generalBorder={true}
       />
-      )}
+
       {/* EGF Documents Section */}
       <DataList<GfdData>
         sectionsI18n={gfdSections}
         data={data as GfdData}
         listTitle={resolveTranslatable({key: "datalist.egf.title"}, translate)}
-        onRefresh={() => setRefresh('actionTR')}
+        onRefresh={(id?: string, txHeight?: number) => {
+                    setRefreshState({id, txHeight});
+                    setRefresh("actionTR");
+                  }}
       />
 
       {/* Credential Schemas Section */}
@@ -209,10 +189,11 @@ export default function TRViewPage() {
       >
         <AddCsPage
             onCancel={() => setAddCS(false)}
-            onRefresh={() => {
-              setRefresh('actionCS');
-              setTimeout( () => setAddCS(false), 1000);
-            }} 
+            onRefresh={(id?: string, txHeight?: number) => {
+                        setRefreshState({id, txHeight});
+                        setRefresh("actionCS");
+                        setAddCS(false);
+                      }}
             trId={Number(id)}
         />
       </ModalAction>
@@ -223,7 +204,31 @@ export default function TRViewPage() {
         <div className="error-pane">
           {errorTRData || (resolveTranslatable({key: "error.tr.notfound"}, translate)?? 'Trust Registry not found')}
         </div>
-      ) : null }      
+      ) : (
+        <div className="space-y-6">
+          <div className="skeleton-card">
+            <div className="skeleton-title mb-6 w-1/4" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="skeleton-text-sm w-1/3" />
+                  <div className="skeleton-text w-2/3" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="skeleton-card">
+            <div className="skeleton-title mb-4 w-1/4" />
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="skeleton-row border-b border-gray-100 dark:border-gray-800">
+                <div className="skeleton-text w-1/4" />
+                <div className="skeleton-text w-1/3" />
+                <div className="skeleton-badge" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) }
       
     </>
   );

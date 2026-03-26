@@ -10,9 +10,9 @@ import {
   MsgRenewDID,
   MsgTouchDID,
   MsgRemoveDID,
-} from '@verana-labs/verana-types/codec/verana/dd/v1/tx';
+} from '@codec-proto/verana/dd/v1/tx';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
-import { useNotification } from '@/ui/common/notification-provider';
+import { useNotification } from '@/providers/notification-provider';
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import {
   MSG_ERROR_ACTION_DID,

@@ -4,7 +4,7 @@ import { useCSList } from "@/hooks/useCredentialSchemas";
 import { useTrustRegistries } from "@/hooks/useTrustRegistries";
 import { translate } from "@/i18n/dataview";
 import CsCard from "@/ui/common/cs-card";
-import { useNotification } from "@/ui/common/notification-provider";
+import { useNotification } from "@/providers/notification-provider";
 import TitleAndButton from "@/ui/common/title-and-button";
 import { CsList } from "@/ui/datatable/columnslist/cs";
 import { resolveTranslatable } from "@/ui/dataview/types";
@@ -14,29 +14,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronLeft, faChevronRight, faCoins, faFileContract, faScaleBalanced, faShieldHalved } from "@fortawesome/free-solid-svg-icons";
 import { formatVNA } from "@/util/util";
 import Link from "next/link";
-
-// function roleClasses(role: string): string {
-//   switch (role) {
-//     case "ISSUER":
-//       return "bg-green-100 text-green-800";
-//     case "VERIFIER":
-//       return "bg-orange-100 text-orange-800";
-//     case "HOLDER":
-//       return "bg-pink-100 text-pink-800";
-//     case "ECOSYSTEM":
-//       return "bg-purple-100 text-purple-800";
-//     case "GRANTOR":
-//       return "bg-slate-100 text-slate-800";
-//     case "ISSUER_GRANTOR":
-//       return "bg-blue-100 text-blue-800";
-//     case "VERIFIER_GRANTOR":
-//       return "bg-slate-100 text-slate-800";
-//     case "OPEN":
-//       return "bg-green-100 text-green-800";
-//     default:
-//       return "bg-gray-100 text-gray-800";
-//   }
-// }
 
 export default function DiscoverJoinPage() {
 
@@ -169,7 +146,16 @@ export default function DiscoverJoinPage() {
       </section>
 
       <section id="ecosystem-list" className="space-y-6">
-        {paginated.map((eco, idx) => {
+        {loading ? [...Array(3)].map((_, i) => (
+          <div key={i} className="skeleton-card rounded-xl border border-neutral-20 dark:border-neutral-70">
+            <div className="skeleton-title mb-2 w-1/2" />
+            <div className="skeleton-text w-1/3 mb-6" />
+            <div className="space-y-4">
+              <div className="skeleton-block h-16 rounded-lg" />
+              <div className="skeleton-block h-16 rounded-lg" />
+            </div>
+          </div>
+        )) : paginated.map((eco, idx) => {
           const egfUrl = eco.versions?.find((x) => x.version === eco.active_version)?.documents?.[0]?.url;
         return (
           <div

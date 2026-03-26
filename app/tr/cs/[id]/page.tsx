@@ -4,33 +4,25 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DataView from '@/ui/common/data-view-columns';
 import TitleAndButton from '@/ui/common/title-and-button';
-import EditableDataView from '@/ui/common/data-edit';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { faChevronRight, faSitemap } from '@fortawesome/free-solid-svg-icons';
 import { useCsData } from '@/hooks/useCredentialSchemaData';
 import { CsData, csSections } from '@/ui/dataview/datasections/cs';
-import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject';
-import { DataType, getMsgTypeFor } from '@/msg/constants/msgTypeForDataType';
 import { useChain } from '@cosmos-kit/react';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useTrustRegistryData } from '@/hooks/useTrustRegistryData';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { shortenDID } from '@/util/util';
 import Link from 'next/link';
+import { RefreshState } from '@/msg/util/signerUtil';
+import { useIndexerEvents } from '@/providers/indexer-events-provider';
 
 export default function CSViewPage() {
   const params = useParams();
   const id = params?.id as string;
-
   const [data, setData] = useState<CsData | null>(null);
-  const [editing, setEditing] = useState(false);
-
-  const msgType = getMsgTypeFor("CsData" as DataType, "update");
-  const { submitTx } = useSubmitTxMsgTypeFromObject( () => setEditing(false), () => setRefresh(true) );
-  
   const router = useRouter();
-  
   const veranaChain = useVeranaChain();
   const { address } = useChain(veranaChain.chain_name);
   const [ trController, setTrController ] = useState<boolean>(false);
@@ -48,15 +40,19 @@ export default function CSViewPage() {
     setTrController(dataTR?.controller === address);
   }, [dataTR, address]);
 
-  // Refresh data TR
-  const [refresh, setRefresh] = useState<boolean>(false);
+  // Refresh data CS
+  const [ refreshState, setRefreshState ] = useState<RefreshState>({});
+  const { latestProcessedHeight } = useIndexerEvents();
+  
   useEffect(() => {
-    if (!refresh) return;
+    if (refreshState.txHeight == null) return;
+    console.info("CSViewPage", {txHeight: refreshState.txHeight, latestProcessedHeight, 'ss.mmm': new Date().toISOString().slice(17, 23)});
+    if (latestProcessedHeight < refreshState.txHeight) return;
     (async () => {
       await refetchCS();
-      setRefresh(false);
+      setRefreshState({});
     })();
-  }, [refresh]);
+  }, [refreshState.txHeight, latestProcessedHeight]);
 
   useEffect(() => {
     if (!csData) return;
@@ -69,71 +65,68 @@ export default function CSViewPage() {
     if (trId == "") setTrId(csData.trId as string);
   }, [csData, trController]);
 
-  /**
-   * Generic save handler:
-   * - Receives msgType and a generic data object
-   * - Directly forwards both to submitTx
-   */
-  async function onSave(data: object) {
-    await submitTx(msgType, data);
-    setEditing(false);
-  }
-
   return (
     <>
       {/* Breadcrumbs */}
       <section className="mb-6">
-        <nav className="flex flex-wrap items-center text-sm" aria-label="Breadcrumb">
-          <Link
-            href={`/tr/${trId}`}
-            className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
-          >
-            {dataTR && shortenDID(dataTR.did as string)}
-          </Link>
-          <FontAwesomeIcon icon={faChevronRight} className="mx-2 text-neutral-70 text-xs" />
-          <span className="text-gray-900 dark:text-white font-medium">{csData?.title}</span>
-        </nav>
+        {dataTR ? (
+          <nav className="flex flex-wrap items-center text-sm" aria-label="Breadcrumb">
+            <Link
+              href={`/tr/${trId}`}
+              className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+            >
+              {shortenDID(dataTR.did as string)}
+            </Link>
+            <FontAwesomeIcon icon={faChevronRight} className="mx-2 text-neutral-70 text-xs" />
+            <span className="text-gray-900 dark:text-white font-medium">{csData?.title}</span>
+          </nav>
+        ) : (
+          <nav className="flex flex-wrap items-center text-sm" aria-label="Breadcrumb">
+            <div className="skeleton h-4 w-40" />
+            <div className="mx-2 skeleton h-3 w-3" />
+            <div className="skeleton h-4 w-28" />
+          </nav>
+        )}
       </section>
 
       {/* Back Navigation & Back Navigation */}
       <TitleAndButton
         title= {resolveTranslatable({key: "dataview.cs.title"}, translate) ?? "Credential Schema"}
         description={[resolveTranslatable({key: "dataview.cs.description"}, translate)??""]}
-        // buttonLabel={resolveTranslatable({key: "button.cs.back"}, translate)}
-        // to={`/tr/${encodeURIComponent(data.trId)}`}
-        // icon={faArrowLeft}
-        // backLink= {true}
       />
       {data ? (
         <>
         {/* Basic Information Section */}
-        {editing ? (
-        <EditableDataView<CsData>
-          sectionsI18n={csSections}
-          data={data}
-          messageType={msgType}
-          id={id}
-          onSave={ onSave }
-          onCancel={() => setEditing(false)}  />
-        ) : (
         <DataView<CsData> 
           sectionsI18n={csSections}
           data={data}
           id={id}
           viewEditButton={false}
-          onEdit={ trController? () => setEditing(true) : undefined } 
-          onRefresh={()=>setRefresh(true)}
+          onRefresh={(id?: string, txHeight?: number) => {
+                      setRefreshState({id, txHeight});
+                    }}
           showViewTitle={true}
           generalBorder={true}
           viewTitleButton={ {icon: faSitemap, buttonLabel: resolveTranslatable({key: "participants.title"}, translate)??"participants", onClick: () => router.push(`/participants/${data.id}`)} }
         />
-        )}
         </>
       ) : errorCS ? (
         <div className="error-pane">
           {errorCS || (resolveTranslatable({ key: 'error.cs.notfound' }, translate) ?? 'Credential Schema not found')}
         </div>
-      ) : null }      
+      ) : (
+        <div className="skeleton-card">
+          <div className="skeleton-title mb-6 w-1/4" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <div className="skeleton-text-sm w-1/3" />
+                <div className="skeleton-text w-2/3" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) }
     </>
   );
 }

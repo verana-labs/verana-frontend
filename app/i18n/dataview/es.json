@@ -62,6 +62,7 @@
   "featuredservices.available": "Disponible ahora",
   "featuredservices.connectrequired": "Es necesario conectar la billetera",
 
+  "navbar.logo.alt": "Veranito Logo",
   "navbar.settings.title": "Configuración",
   "navbar.qr.title": "Código QR de la Dirección",
   "navbar.addresscopy.title": "Copiar Dirección",
@@ -259,9 +260,6 @@
   "dataview.gfd.fields.creator": "Controlador",
   "dataview.gfd.fields.docLanguage": "Idioma del Marco de Gobernanza",
   "dataview.gfd.fields.docUrl": "URL del Documento del Marco de Gobernanza",
-  "dataview.gfd.fields.language.option.en": "Inglés",
-  "dataview.gfd.fields.language.option.es": "Español",
-  "dataview.gfd.fields.language.option.fr": "Francés",
 
   "dataview.cs.sections.main": "Información",
   "dataview.cs.managementMode.OPEN": "ABIERTO",

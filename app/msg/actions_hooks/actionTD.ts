@@ -8,9 +8,9 @@ import { EncodeObject } from '@cosmjs/proto-signing';
 import {
   MsgReclaimTrustDeposit,
   MsgReclaimTrustDepositYield,
-} from '@verana-labs/verana-types/codec/verana/td/v1/tx';
+} from '@codec-proto/verana/td/v1/tx';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
-import { useNotification } from '@/ui/common/notification-provider';
+import { useNotification } from '@/providers/notification-provider';
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import {
   MSG_ERROR_ACTION_TD,
@@ -20,6 +20,7 @@ import {
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
+import { extractTxHeight, handleSuccess } from '@/msg/util/signerUtil'
 
 // Encapsulate typeUrl and memo label per trust-deposit message type.
 export const MSG_TYPE_CONFIG_TD = {
@@ -44,25 +45,19 @@ type ActionTDParams =
     };
 
 // Build an executor for trust-deposit actions, handling wallet checks and UI refresh triggers.
-export function useActionTD(
-  setActiveActionId?: () => void,
-  setRefresh?: () => void
-) {
+export function useActionTD( onCancel?: () => void,
+                             onRefresh?: (id?: string, txHeight?: number) => void) {
   const veranaChain = useVeranaChain();
   const { address, isWalletConnected } = useChain(veranaChain.chain_name);
   const { notify } = useNotification();
   const sendTx = useSendTxDetectingMode(veranaChain);
   const inFlight = useRef(false);
 
-  // Refresh caller state once the transaction succeeds.
-  const handleSuccess = () => {
-    setRefresh?.();
-    setTimeout( () => { setActiveActionId?.() }, 1000);
-  };
+  const txHeight = useRef<number | undefined>(undefined);
 
   // Close the action UI when something goes wrong.
   const handleFailure = () => {
-    setActiveActionId?.();
+    onCancel?.();
   };
 
   async function actionTD(params: ActionTDParams, simulate: boolean = false): Promise<DeliverTxResponse | SimulateResult | void> {
@@ -142,6 +137,7 @@ export function useActionTD(
       const txRes = res as DeliverTxResponse;
 
       if (txRes.code === 0) {
+        txHeight.current = extractTxHeight(txRes);
         success = true;
         notifyPromise = notify(
           MSG_SUCCESS_ACTION_TD[params.msgType](claimedLabel),
@@ -165,7 +161,7 @@ export function useActionTD(
       inFlight.current = false;
       if (notifyPromise) await notifyPromise;
       if (success) {
-        handleSuccess();
+        handleSuccess(onCancel, onRefresh, undefined, txHeight.current);
       } else if (!success) {
         handleFailure();
       }

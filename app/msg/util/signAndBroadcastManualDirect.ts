@@ -1,7 +1,6 @@
 'use client'
 
 import { fromBase64 } from '@cosmjs/encoding';
-import { MsgArchiveCredentialSchema, MsgCreateCredentialSchema, MsgUpdateCredentialSchema } from '@verana-labs/verana-types/codec/verana/cs/v1/tx';
 import { createVeranaRegistry } from '@verana-labs/verana-types';
 import {
   EncodeObject,

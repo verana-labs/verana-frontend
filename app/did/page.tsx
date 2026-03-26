@@ -5,7 +5,7 @@ import { DataTable } from '@/ui/common/data-table';
 import { useRouter } from 'next/navigation';
 import TitleAndButton from '@/ui/common/title-and-button';
 import { env } from 'next-runtime-env';
-import { useNotification } from '@/ui/common/notification-provider';
+import { useNotification } from '@/providers/notification-provider';
 import { columnsDidList, description, didFilter, DidList } from '@/ui/datatable/columnslist/did';
 import { useChain } from '@cosmos-kit/react';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
@@ -83,6 +83,7 @@ export default function DidPage() {
         showDetailModal={true}
         detailTitle={resolveTranslatable({key: "datatable.did.detail"}, translate)}
         onRefresh={() => setRefresh(true)}
+        loading={loading}
       />
       {/* render modal */}
       {addEntity && (

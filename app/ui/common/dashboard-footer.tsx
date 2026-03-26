@@ -2,6 +2,7 @@ import { communityLinks, configFooter, footLinks, veranaLinks } from "@/lib/dash
 import { faCopyright } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
+import { translate } from "@/i18n/dataview";
 
 export default function DashboardFooter () {
     return (
@@ -9,7 +10,7 @@ export default function DashboardFooter () {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-2">
                   <div className="flex items-center space-x-3 mb-4">
-                      <img src={configFooter.img} alt="Veranito Logo" className="w-8 h-8"/>
+                      <img src={configFooter.img} alt={translate("navbar.logo.alt")} className="w-8 h-8"/>
                       <span className="text-xl font-bold text-gray-900 dark:text-white">{configFooter.title}</span>
                   </div>
                   <p className="text-gray-600 dark:text-gray-400 mb-4 max-w-md">

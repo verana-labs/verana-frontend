@@ -11,7 +11,7 @@ type ActionFieldButtonModalProps = {
   field: ActionFieldProps;
   onClickButton?: () => void;
   onClose: () => void;
-  onRefresh?: () => void;
+  onRefresh?: (id?: string, txHeight?: number) => void;
   isActive: boolean
 };
 

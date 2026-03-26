@@ -1,6 +1,7 @@
 'use client'
 
 import type { OfflineSigner, OfflineDirectSigner } from '@cosmjs/proto-signing';
+import { DeliverTxResponse } from '@cosmjs/stargate';
 
 // Type guard: detects if signer exposes signDirect
 export function isDirectSigner(signer: unknown): signer is OfflineDirectSigner {
@@ -69,3 +70,34 @@ export function stripZerosUndefinedAndEmptyStrings<T>(input: T): T {
 
   return (clean(input) ?? {}) as T;
 }
+
+export function extractTxHeight(res: DeliverTxResponse): number | undefined {
+  const tryParse = (value: unknown): number | undefined => {
+    if (value == null) return undefined;
+    const parsed =
+      typeof value === "number" ? value : Number(String(value).trim());
+    return Number.isFinite(parsed) ? parsed : undefined;
+  };
+  // 1) Direct height from DeliverTxResponse
+  const direct = tryParse(res?.height);
+  if (direct !== undefined) return direct;
+  return undefined;
+}
+
+// Handler for Succes: refresh and collapses/hides the action UI
+export function handleSuccess ( onCancel?: () => void, 
+                                onRefresh?: (id?: string, txHeight?: number)  => void,
+                                id?: string, txHeight?: number )
+{
+  if (txHeight == undefined) {
+    console.error("txHeight is null");
+    return;
+  }
+  onRefresh?.(id, txHeight);
+  setTimeout( () => { onCancel?.() }, 500);
+};
+
+export type RefreshState = {
+  id?: string;
+  txHeight?: number;
+};

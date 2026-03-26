@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { DataTable } from '@/ui/common/data-table';
 import { useRouter } from 'next/navigation';
 import TitleAndButton from '@/ui/common/title-and-button';
-import { useNotification } from '@/ui/common/notification-provider';
+import { useNotification } from '@/providers/notification-provider';
 import { columnsTrList, description, trFilter } from '@/ui/datatable/columnslist/tr';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
@@ -17,7 +17,7 @@ export default function TrPage() {
   const router = useRouter();
   const [ showArchived, setShowArchived ] = useState(false);
   const [ trListAll, setTrListAll ] = useState(false);
-  const { trList, errorTrList, refetch: fetchTrList } = useTrustRegistries(false, !showArchived);
+  const { trList, loading, errorTrList, refetch: fetchTrList } = useTrustRegistries(false, !showArchived);
   const [errorNotified, setErrorNotified] = useState(false);
   // Notification context for showing error messages
   const { notify } = useNotification();
@@ -78,6 +78,7 @@ export default function TrPage() {
           changeFilter: setShowArchived,
           label: resolveTranslatable({ key: "datatable.tr.filter.showArchived" }, translate)??'Show Archived',
         }}
+        loading={loading}
       />
       {/* render modal add Trust Registry*/}
       {addTR && (
@@ -90,7 +91,7 @@ export default function TrPage() {
           onCancel={() => setAddTR(false)}
           onRefresh={() => {
             setRefresh(true);
-            setTimeout( () => setAddTR(false), 1000);
+            setAddTR(false);
           }}
         />
       </ModalAction>

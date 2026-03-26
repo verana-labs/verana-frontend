@@ -2,6 +2,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { PermissionAction } from "../dataview/datasections/perm";
 import { useEffect, useState } from "react";
 import { copyToClipboard } from "@/util/util";
+import { useVeranaChain } from "@/hooks/useVeranaChain";
 import { translate } from "@/i18n/dataview";
 import { resolveTranslatable } from "../dataview/types";
 
@@ -26,6 +27,7 @@ export function service(did: string): string | undefined {
 
 export default function PermissionAttribute({ label, value, mono, actions }: PermissionAttributeProps) {
 
+  const veranaChain = useVeranaChain();
   const [changeLabel, setChangeLabel] = useState(false);
   useEffect(() => {
     if (!changeLabel) return;
@@ -43,9 +45,11 @@ export default function PermissionAttribute({ label, value, mono, actions }: Per
       case "service":
         window.open(service(value), "_blank");
         break;
-      case "explorer":
-        window.open(`https://explorer.testnet.verana.network/Verana%20Testnet/account/${value}`, "_blank");
+      case "explorer": {
+        const explorerUrl = veranaChain.explorers?.[0]?.url;
+        if (explorerUrl) window.open(`${explorerUrl}/account/${value}`, "_blank");
         break;
+      }
       default:
         console.error("PermissionAction", action);
     }

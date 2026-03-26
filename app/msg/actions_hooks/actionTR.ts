@@ -8,11 +8,11 @@ import {
   MsgArchiveTrustRegistry,
   MsgAddGovernanceFrameworkDocument,
   MsgIncreaseActiveGovernanceFrameworkVersion
-} from '@verana-labs/verana-types/codec/verana/tr/v1/tx';
+} from '@codec-proto/verana/tr/v1/tx';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
 import { useRouter } from 'next/navigation';
-import { useNotification } from '@/ui/common/notification-provider';
+import { useNotification } from '@/providers/notification-provider';
 import { MSG_ERROR_ACTION_TR, MSG_INPROGRESS_ACTION_TR, MSG_SUCCESS_ACTION_TR } from '@/msg/constants/notificationMsgForMsgType';
 import { isValidUrl } from '@/util/validations';
 import { EncodeObject } from '@cosmjs/proto-signing';
@@ -21,6 +21,7 @@ import Long from 'long';
 import { translate } from '@/i18n/dataview';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
+import { extractTxHeight, handleSuccess } from '@/msg/util/signerUtil'
 
 async function calculateSRIHash (docUrl: string | undefined): Promise<{ sri: string | undefined; error: string | undefined }> {
   if (!docUrl || !isValidUrl(docUrl)) return { sri: undefined, error: 'Invalid Document URL' };
@@ -105,8 +106,8 @@ type ActionTRParams =
     };
 
 // Hook to execute Trust Registry transactions and show notifications
-export function useActionTR(  onCancel?: () => void,
-                              onRefresh?: () => void) {
+export function useActionTR( onCancel?: () => void,
+                             onRefresh?: (id?: string, txHeight?: number) => void) {
   const veranaChain = useVeranaChain();
   const {
     address,
@@ -118,11 +119,7 @@ export function useActionTR(  onCancel?: () => void,
   const sendTx = useSendTxDetectingMode(veranaChain);
   const inFlight = useRef(false);
 
-  // Handler for Succes: refresh and collapses/hides the action UI
-  const handleSuccess = () => {
-    onRefresh?.();
-    setTimeout( () => { onCancel?.() }, 1000);
-  };
+  const txHeight = useRef<number | undefined>(undefined);
 
   /**
    * Extracts the created Trust Registry ID from a DeliverTxResponse.
@@ -282,6 +279,7 @@ export function useActionTR(  onCancel?: () => void,
       const txRes = res as DeliverTxResponse;
 
       if (txRes.code === 0) {
+        txHeight.current = extractTxHeight(txRes);
         if (params.msgType === 'MsgCreateTrustRegistry') id = extractCreatedTRId(txRes);
         success = true;
         notifyPromise = notify(
@@ -311,7 +309,9 @@ export function useActionTR(  onCancel?: () => void,
           const trUrl = `/tr/${id?? ''}`;
           router.push(trUrl);
         }
-        else handleSuccess();
+        else {
+          handleSuccess(onCancel, onRefresh, id, txHeight.current);
+        }
       }
     }
   }

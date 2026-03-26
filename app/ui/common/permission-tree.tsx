@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import {
@@ -22,6 +22,8 @@ import { ModalAction } from "./modal-action";
 import { renderActionComponent } from "./data-view-typed";
 import AddJoinPage from "@/participants/add/page";
 import { service } from "./permission-atrribute";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useIndexerEvents } from "@/providers/indexer-events-provider";
 
 type PermissionTreeProps = {
   tree: TreeNode[];
@@ -71,8 +73,14 @@ export type TreeNode = {
   enabledJoin?: boolean;
 };
 
+export type RefreshState = {
+  joinNode?: TreeNode;
+  id?: string;
+  txHeight?: number;
+};
+
 /** ------------ Helpers ------------ */
-function findNodeAndPath(nodes: TreeNode[], id: string): { node?: TreeNode; path: TreeNode[] } {
+const findNodeAndPath = (nodes: TreeNode[], id: string): { node?: TreeNode; path: TreeNode[] } => {
   const queue: { n: TreeNode; path: TreeNode[] }[] = nodes.map((n) => ({ n, path: [n] }));
   while (queue.length) {
     const cur = queue.shift()!;
@@ -122,12 +130,11 @@ function Tree({
           <div key={`${node.nodeId}-${idx}`}>
             <div
               className={[
-                "rounded-lg p-2 transition-all cursor-pointer",
+                "rounded-lg p-2 transition-all",
                 "hover:bg-primary-600/5",
                 isSelected ? "bg-primary-600/10" : "",
               ].join(" ")}
               style={{ marginLeft: depth * 24 }}
-              onClick={() => !node.group && onSelect(node.nodeId)}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -152,12 +159,7 @@ function Tree({
 
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (hasChildren) onToggle(node.nodeId, node.type as string, node.parentId as string);
-                      else onSelect(node.nodeId);
-                    }}
-                    aria-label="Toggle"
+                    className="cursor-default"
                     aria-expanded={hasChildren ? isExpanded : undefined}
                   >
                     <FontAwesomeIcon icon={node.icon} className={node.iconColorClass}/>
@@ -166,8 +168,12 @@ function Tree({
                   <span
                     className={[
                       "text-sm font-medium",
-                      node.group ? "text-gray-700 dark:text-gray-300" : "text-gray-900 dark:text-white",
+                      node.group ? "text-gray-700 dark:text-gray-300" : "text-gray-900 dark:text-white cursor-pointer",
                     ].join(" ")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      !node.group && onSelect(node.nodeId)
+                    }}
                   >
                     {node.group ? node.name : shortenDID(node.permission?.did as string)}
                   </span>
@@ -220,7 +226,7 @@ function Tree({
                     </span>
                     {node.enabledJoin ? (
                       <span
-                        className="hover:text-purple-600"
+                        className="hover:text-purple-600 cursor-pointer"
                         onClick={(e) => {
                           e.stopPropagation();
                           switch (node.validationProcessAction) {
@@ -228,7 +234,6 @@ function Tree({
                               window.open(service(node.permission?.did ?? ''), "_blank");
                               break;
                             case 'Connect':
-                              console.info(onConnect);
                               onConnect?.();
                               break;
                             default:
@@ -276,11 +281,26 @@ export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trI
   const [showStats, setShowStats] = useState(false);
   const [addPermission, setAddPermission] = useState<boolean>(false);
   const [join, setJoin] = useState<TreeNode | undefined>(undefined);
+  const permissionCardRef = useRef<HTMLDivElement | null>(null);
+  const [treeState, setTreeState] = useState<TreeNode[]>(tree);
+  const [refreshState, setRefreshState] = useState<RefreshState>({});
+  const { latestProcessedHeight } = useIndexerEvents();
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     const first = tree?.[0]?.nodeId;
     return first ? { [first]: true } : {};
   });
+
+  const findNodeById = (nodes: TreeNode[], targetId: string): TreeNode | undefined => {
+    for (const n of nodes) {
+      if (String(n.nodeId) === String(targetId)) return n;
+      if (n.children?.length) {
+        const found = findNodeById(n.children, targetId);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  };  
 
   const toggleNode = (id: string, type: string, validatorId: string) => {
     const isOpening = !(expanded[id] ?? false);
@@ -294,32 +314,90 @@ export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trI
     }
   };
 
-  function findNodeById(nodes: TreeNode[], targetId: string): TreeNode | undefined {
-    for (const n of nodes) {
-      if (String(n.nodeId) === String(targetId)) return n;
-      if (n.children?.length) {
-        const found = findNodeById(n.children, targetId);
-        if (found) return found;
-      }
-    }
-    return undefined;
-  }  
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const selectedId = searchParams.get('permission') ?? undefined; 
 
-  const [treeState, setTreeState] = useState<TreeNode[]>(tree);
+  const handleSelect = (id: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("permission", id);
+    window.history.pushState(null, "", `${pathname}?${params.toString()}`);
+  };  
 
-  const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const { node: selectedNode, path } = useMemo(
     () => (selectedId ? findNodeAndPath(treeState, selectedId) : { node: undefined, path: [] }),
     [treeState, selectedId]
   );
 
+  const mergeTree = (prev: TreeNode[], next: TreeNode[]): TreeNode[] => {
+    const prevMap = new Map(prev.map((n) => [n.nodeId, n]));
+    return next.map((n) => {
+      const prevNode = prevMap.get(n.nodeId);
+      if (n.group) {
+        return {
+          ...n,
+          children: n.children ?? [],
+        };
+      }
+      return {
+        ...prevNode,
+        ...n,
+        children:
+          n.children && n.children.length > 0
+            ? mergeTree(prevNode?.children ?? [], n.children)
+            : prevNode?.children ?? [],
+      };
+    });
+  };
+
+  const updateNodePermission = (nodes: TreeNode[], nodeId: string, perm: Permission): TreeNode[] => {
+    return nodes.map((n) => {
+      if (String(n.nodeId) === String(nodeId)) {
+        return { ...n, permission: perm };
+      }
+      if (n.children?.length) {
+        return { ...n, children: updateNodePermission(n.children, nodeId, perm) };
+      }
+      return n;
+    });
+  };  
+
+  const refreshNode = (perm: Permission): void => { // update permission -> node -> treeState
+    setTreeState((prev) => updateNodePermission(prev, perm.id, perm));
+  }
+
+  useEffect(() => {
+    if (!refreshState.joinNode || refreshState.txHeight == null) return;
+    console.info("PermissionTree", {txHeight: refreshState.txHeight, latestProcessedHeight, 'ss.mmm': new Date().toISOString().slice(17, 23)});
+    if (latestProcessedHeight < refreshState.txHeight) return;
+    setNodeRequestParams?.(refreshState.joinNode.nodeId, refreshState.joinNode.type, refreshState.joinNode.parentId);
+    const timeoutId = setTimeout(() => {
+      if (refreshState.id) handleSelect(String(refreshState.id));
+      setRefreshState({});
+    }, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [refreshState.txHeight, latestProcessedHeight]);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    permissionCardRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [selectedId]);
+
   useEffect(() => {
     if (!selectedId) return;
     const { path } = findNodeAndPath(tree, selectedId);
     if (!path.length) return;
+
+    const parentPath = path.slice(0, -1);
+    if (!parentPath.length) return;
     setExpanded((prev) => {
+      const parent = parentPath[parentPath.length - 1];
+      if (prev[parent.nodeId]) return prev;
       const next = { ...prev };
-      for (const p of path) next[p.nodeId] = true;
+      for (const p of parentPath) next[p.nodeId] = true;
       return next;
     });
   }, [tree, selectedId]);
@@ -340,46 +418,9 @@ export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trI
     });
   }, [tree]);
 
-  function mergeTree(prev: TreeNode[], next: TreeNode[]): TreeNode[] {
-    const prevMap = new Map(prev.map((n) => [n.nodeId, n]));
-    return next.map((n) => {
-      const prevNode = prevMap.get(n.nodeId);
-      if (n.group) {
-        return {
-          ...n,
-          children: n.children ?? [],
-        };
-      }
-      return {
-        ...prevNode,
-        ...n,
-        children:
-          n.children && n.children.length > 0
-            ? mergeTree(prevNode?.children ?? [], n.children)
-            : (prevNode?.children ?? []),
-      };
-    });
-  }
-
   useEffect(() => {
     setTreeState((prev) => mergeTree(prev, tree));
   }, [tree]);
-
-  function updateNodePermission(nodes: TreeNode[], nodeId: string, perm: Permission): TreeNode[] {
-    return nodes.map((n) => {
-      if (String(n.nodeId) === String(nodeId)) {
-        return { ...n, permission: perm };
-      }
-      if (n.children?.length) {
-        return { ...n, children: updateNodePermission(n.children, nodeId, perm) };
-      }
-      return n;
-    });
-  }
-  
-  function refreshNode(perm: Permission): void { // update permission -> node -> treeState
-    setTreeState((prev) => updateNodePermission(prev, perm.id, perm));
-  }
 
   return (
     <>
@@ -460,7 +501,7 @@ export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trI
             showBusiness={showBusiness}
             showStats={showStats}
             selectedId={selectedId}
-            onSelect={setSelectedId}
+            onSelect={handleSelect}
             onConnect={onConnect}
             expanded={expanded}
             onToggle={toggleNode}
@@ -507,19 +548,16 @@ export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trI
             trId={trId??""}
             nodeJoin={join}
             onCancel={() => setJoin(undefined)}
-            onRefresh={(id?: string ) => {
-              setNodeRequestParams?.(join.nodeId, join.type, join.parentId);
-              setTimeout(() => {
-                if (id) setSelectedId(String(id));
-              }, 1000);
-            }}
+            onRefresh={(id?: string, txHeight?: number) => setRefreshState({joinNode: join, id, txHeight})}
           />
         </ModalAction>
       ) : null}
 
       {/* Detail Card  */}
       {selectedNode ? (
-        <PermissionCard selectedNode={selectedNode} path={path} csTitle={csTitle??""} onRefresh={(perm: Permission) => refreshNode(perm)}/>
+        <div ref={permissionCardRef}>
+          <PermissionCard selectedNode={selectedNode} path={path} csTitle={csTitle??""} onRefresh={(perm: Permission) => refreshNode(perm)}/>
+        </div>
       ) : null}
     </>
   );

@@ -170,6 +170,7 @@
   "featuredservices.available": "Available now",
   "featuredservices.connectrequired": "Connect wallet required",
 
+  "navbar.logo.alt": "Veranito Logo",
   "navbar.settings.title": "Settings",
   "navbar.qr.title": "Address QR Code",
   "navbar.addresscopy.title": "Copy Address",
@@ -415,9 +416,6 @@
   "dataview.gfd.fields.creator": "Controller",
   "dataview.gfd.fields.docLanguage": "Governance Framework Language",
   "dataview.gfd.fields.docUrl": "Governance Framework Document URL",
-  "dataview.gfd.fields.language.option.en": "English",
-  "dataview.gfd.fields.language.option.es": "Spanish",
-  "dataview.gfd.fields.language.option.fr": "French",
 
   "dataview.cs.title": "Credential Schema",
   "dataview.cs.description": "View and manage this Credential Schema",

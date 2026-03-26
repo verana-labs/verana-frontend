@@ -10,7 +10,8 @@ replicas: 1
 # Image configuration
 image:
   pullPolicy: IfNotPresent
-  tag: "{{ .Chart.Version }}" # Kept aligned with chart version for consistency
+  repository: ""
+  tag: ""
 
 # Service configuration
 service:
@@ -37,10 +38,12 @@ env:
   NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM: "https://idx.testnet.verana.network/verana/perm/v1"
   NEXT_PUBLIC_VERANA_REST_ENDPOINT_INDEXER: "https://idx.testnet.verana.network/verana/indexer/v1"
   NEXT_PUBLIC_VERANA_REST_ENDPOINT_METRICS: "https://idx.testnet.verana.network/verana/metrics/v1"
+  NEXT_PUBLIC_VERANA_EXPLORER_URL: "https://explorer.testnet.verana.network/Verana%20Testnet"
   NEXT_PUBLIC_VERANA_TOPUP_VS: "did:web:faucet-vs.testnet.verana.network"
   NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE: "false"
   NEXT_PUBLIC_SESSION_LIFETIME_SECONDS: "86400"
   NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA: "1000000"
+  NEXT_PUBLIC_VERANA_WEBSOCKET: "wss://idx.testnet.verana.network/verana/indexer/v1/events"
 
 # Additional env variables if needed (list of {name, value})
 extraEnv: []
