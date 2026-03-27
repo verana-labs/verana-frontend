@@ -93,6 +93,43 @@
     @apply min-h-screen bg-light-bg dark:bg-dark-bg;
   }
 
+  /* ---------- Skeleton / placeholder loading ---------- */
+  .skeleton {
+    @apply animate-pulse bg-gray-200 dark:bg-gray-700 rounded;
+  }
+
+  .skeleton-text {
+    @apply skeleton h-4 w-full;
+  }
+
+  .skeleton-text-sm {
+    @apply skeleton h-3 w-full;
+  }
+
+  .skeleton-title {
+    @apply skeleton h-7 w-1/2;
+  }
+
+  .skeleton-block {
+    @apply skeleton w-full;
+  }
+
+  .skeleton-btn {
+    @apply skeleton h-9 w-24 rounded-lg;
+  }
+
+  .skeleton-badge {
+    @apply skeleton h-5 w-16 rounded-full;
+  }
+
+  .skeleton-card {
+    @apply p-4 rounded-2xl bg-light-bg dark:bg-dark-bg shadow space-y-3;
+  }
+
+  .skeleton-row {
+    @apply flex items-center gap-4 px-6 py-4;
+  }
+
   /* ---------- Dashboard: connected card ---------- */
   .dash-card {
     @apply min-w-full py-16 rounded-2xl shadow-lg

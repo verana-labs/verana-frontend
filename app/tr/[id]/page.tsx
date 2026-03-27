@@ -204,7 +204,31 @@ export default function TRViewPage() {
         <div className="error-pane">
           {errorTRData || (resolveTranslatable({key: "error.tr.notfound"}, translate)?? 'Trust Registry not found')}
         </div>
-      ) : null }      
+      ) : (
+        <div className="space-y-6">
+          <div className="skeleton-card">
+            <div className="skeleton-title mb-6 w-1/4" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="skeleton-text-sm w-1/3" />
+                  <div className="skeleton-text w-2/3" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="skeleton-card">
+            <div className="skeleton-title mb-4 w-1/4" />
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="skeleton-row border-b border-gray-100 dark:border-gray-800">
+                <div className="skeleton-text w-1/4" />
+                <div className="skeleton-text w-1/3" />
+                <div className="skeleton-badge" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) }
       
     </>
   );

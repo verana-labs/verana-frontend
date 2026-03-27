@@ -114,6 +114,16 @@ export default function DiscoverJoinPage() {
 
       <section id="ecosystem-list" className="space-y-6">
         {paginated?.map((eco, idx) => {
+        {loading ? [...Array(3)].map((_, i) => (
+          <div key={i} className="skeleton-card rounded-xl border border-neutral-20 dark:border-neutral-70">
+            <div className="skeleton-title mb-2 w-1/2" />
+            <div className="skeleton-text w-1/3 mb-6" />
+            <div className="space-y-4">
+              <div className="skeleton-block h-16 rounded-lg" />
+              <div className="skeleton-block h-16 rounded-lg" />
+            </div>
+          </div>
+        )) : paginated.map((eco, idx) => {
           const egfUrl = eco.versions?.find((x) => x.version === eco.active_version)?.documents?.[0]?.url;
         return (
           <div
