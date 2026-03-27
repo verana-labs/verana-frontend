@@ -62,6 +62,10 @@ export interface DataTableProps<T extends object> {
   detailTitle?: string;
   onRefresh?: (id?: string, txHeight?: number) => void;
   checkFilter?: {show: boolean; changeFilter: (value: boolean) => void; label: string};
+  currentFilters?: {
+    filters: Record<string, string | boolean>;
+    setFilters: React.Dispatch<React.SetStateAction<Record<string, string | boolean>>>;
+  };
 }
 
 // Helper: translate columns

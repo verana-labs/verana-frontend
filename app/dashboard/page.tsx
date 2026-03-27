@@ -1,10 +1,7 @@
 'use client'
 
-import { useEffect, useState } from "react";
 import { DashboardData, dashboardSections } from "@/ui/dataview/datasections/dashboard";
 import DataView from "@/ui/common/data-view-columns";
-import { useDashboardData } from "@/hooks/useDashboardData";
-import { useNotification } from "@/providers/notification-provider";
 import TitleAndButton from "@/ui/common/title-and-button";
 import { resolveTranslatable } from "@/ui/dataview/types";
 import { translate } from "@/i18n/dataview";
@@ -14,22 +11,39 @@ import { faWallet } from "@fortawesome/free-solid-svg-icons";
 import FeaturedServices from "@/ui/common/featured-services";
 import GettingStarted from "@/ui/common/getting-started";
 import DashboardFooter from "@/ui/common/dashboard-footer";
+import { useDashboardCtx } from "@/providers/api-rest-query-provider-context";
+import { useEffect, useState } from "react";
+import { useIndexerEvents } from "@/providers/indexer-events-provider";
+import { useVeranaChain } from "@/hooks/useVeranaChain";
+import { useChain } from "@cosmos-kit/react";
 
 export default function Page() {
+  const veranaChain = useVeranaChain();
+  const chainName = veranaChain.chain_name;
+  const { isWalletConnected } = useChain(chainName);
 
-  const { dashboardData, errorDashboardData, isWalletConnected } = useDashboardData();
-  const [errorNotified, setErrorNotified] = useState(false);
-  const { notify } = useNotification();
+  // Block height from indexer ws
+  const { latestProcessedHeight } = useIndexerEvents();
+  const dashboardCtx = useDashboardCtx();
+  const [dashboardData, setDashboardData] = useState<DashboardData>({});
+
+  const [ refresh, setRefresh ] = useState<boolean>(true);
 
   useEffect(() => {
-    if (errorDashboardData && !errorNotified) {
-      (async () => {
-        await notify(errorDashboardData, 'error', resolveTranslatable({key: "error.fetch.metrics.title"}, translate));
-        setErrorNotified(true);
-      })();
-    }
-  }, [errorDashboardData, errorNotified]);
+    setDashboardData((prev) => ({
+      ...dashboardCtx.dashboardData,
+      blockHeight: latestProcessedHeight,
+    }));
+  }, [latestProcessedHeight, dashboardCtx.dashboardData]);
 
+  useEffect(() => {
+    if (!refresh) return;
+    (async () => {
+      await dashboardCtx.refetch();
+      setRefresh(false);
+    })();
+  }, [refresh]);
+  
   return (
     <>
       <TitleAndButton

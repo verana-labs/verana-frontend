@@ -49,9 +49,9 @@ export function useCSList(trId?: string, all: boolean = true, onlyActive: boolea
 
     // Reset state when inputs change
     setError(null);
-    // setCsList([]);
 
     const params = new URLSearchParams();
+    params.set('response_max_size', '1024');
     if ( trId != undefined && !all) params.set('tr_id', trId);
     if ( onlyActive ) params.set('only_active', 'true');
     const url = `${getURL}/list?${params.toString()}`;

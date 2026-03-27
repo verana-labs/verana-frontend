@@ -1,6 +1,7 @@
-import { formatVNAFromUVNA, shortenDID, shortenMiddle } from "@/util/util";
+import { formatNumber, formatVNAFromUVNA, shortenDID, shortenMiddle } from "@/util/util";
 import { Column, Filter } from "@/ui/datatable/types";
 import { type I18nValues, type Translatable } from "@/ui/dataview/types";
+import { CsList } from "@/ui/datatable/columnslist/cs";
 
 const t = (key: string, values?: I18nValues) => ({ key, values });
 
@@ -30,27 +31,22 @@ export interface TrList {
   issued?: number | null;
   verified?: number | null;
   archived?: string;
+  csList?: CsList[];
 }
 
 export const trFilter: Filter<TrList>[] = [
   {label: t("datatable.tr.filter.did_aka.label"), columns: ["did", "aka"], inputType: "text", placeholder:  t("datatable.tr.filter.did_aka.placeholder")}
 ];
 
-const formatNumber = (value: unknown): string => {
-  if (value === null || value === undefined) return "0";
-  const num = Number(value);
-  return isNaN(num) ? "0" : String(num);
-};
-
 export const columnsTrList: Column<TrList>[] = [
   { header: t("datatable.tr.header.id"), accessor: "id", className: "font-medium"},
   { header: t("datatable.tr.header.did"), accessor: "did", format: (value) => shortenDID(String(value)), break: "break-all" },
   { header: t("datatable.tr.header.controller"), accessor: "controller", format: (value) => shortenMiddle(String(value), 25), priority: 5, break: "break-all" },
-  { header: t("datatable.tr.header.activeSchemas"), accessor: "active_schemas", format: formatNumber, priority: 4 },
-  { header: t("datatable.tr.header.participants"), accessor: "participants", format: formatNumber },
+  { header: t("datatable.tr.header.activeSchemas"), accessor: "active_schemas", format: (value) => formatNumber(value, true), priority: 4 },
+  { header: t("datatable.tr.header.participants"), accessor: "participants", format: (value) => formatNumber(value, true) },
   { header: t("datatable.tr.header.trustDeposit"), accessor: "weight", format: (value) => formatVNAFromUVNA(value as string) },
-  { header: t("datatable.tr.header.issuedCredentials"), accessor: "issued", format: formatNumber },
-  { header: t("datatable.tr.header.verifiedCredentials"), accessor: "verified", format: formatNumber },
+  { header: t("datatable.tr.header.issuedCredentials"), accessor: "issued", format: (value) => formatNumber(value, true) },
+  { header: t("datatable.tr.header.verifiedCredentials"), accessor: "verified", format: (value) => formatNumber(value, true) },
 ];
 
 

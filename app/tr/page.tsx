@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { DataTable } from '@/ui/common/data-table';
 import { useRouter } from 'next/navigation';
 import TitleAndButton from '@/ui/common/title-and-button';
-import { useNotification } from '@/providers/notification-provider';
 import { columnsTrList, description, trFilter } from '@/ui/datatable/columnslist/tr';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
@@ -15,12 +14,10 @@ import { useEcosytemsCtx } from '@/providers/api-rest-query-provider-context';
 
 export default function TrPage() {
   const router = useRouter();
-  const [ showArchived, setShowArchived ] = useState(false);
-  const [ trListAll, setTrListAll ] = useState(false);
-  
   const ecosystemsCtx = useEcosytemsCtx();
-  
-  // const { trList, errorTrList, refetch: fetchTrList } = useTrustRegistries(false, !showArchived);
+  const [ showArchived, setShowArchived ] = useState(!ecosystemsCtx.onlyActiveEcosystem);
+  const [ trListAll, setTrListAll ] = useState(false);
+    
   const [ addTR, setAddTR ] = useState<boolean>(false);
   
   useEffect(() => {
@@ -28,7 +25,7 @@ export default function TrPage() {
   }, [ecosystemsCtx.ecosystemsList]);
   
   // Refresh trList
-  const [refresh, setRefresh] = useState<boolean>(false);
+  const [refresh, setRefresh] = useState<boolean>(true);
   useEffect(() => {
     if (!refresh) return;
     (async () => {
@@ -39,6 +36,7 @@ export default function TrPage() {
 
   // Refresh trList for showArchived change
   useEffect(() => {
+    ecosystemsCtx.setOnlyActiveEcosystem(!showArchived);
     if ( showArchived && !trListAll ) setRefresh(true);
   }, [showArchived]);
   
@@ -66,6 +64,10 @@ export default function TrPage() {
           changeFilter: setShowArchived,
           label: resolveTranslatable({ key: "datatable.tr.filter.showArchived" }, translate)??'Show Archived',
         }}
+        currentFilters={{
+          filters: ecosystemsCtx.ecosystemFilters,
+          setFilters: ecosystemsCtx.setEcosystemFilters,
+        }}        
       />
       {/* render modal add Trust Registry*/}
       {addTR && (
