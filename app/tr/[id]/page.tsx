@@ -26,7 +26,7 @@ import { useIndexerEvents } from '@/providers/indexer-events-provider';
 export default function TRViewPage() {
   const params = useParams();
   const id = params?.id as string;
-  const [data, setData] = useState<TrData | null>(null);
+  const [ data, setData ] = useState<TrData | null>(null);
   const router = useRouter();
 
   const veranaChain = useVeranaChain();

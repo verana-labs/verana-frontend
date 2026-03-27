@@ -66,6 +66,7 @@ export interface DataTableProps<T extends object> {
     filters: Record<string, string | boolean>;
     setFilters: React.Dispatch<React.SetStateAction<Record<string, string | boolean>>>;
   };
+  loading?: boolean;
 }
 
 // Helper: translate columns

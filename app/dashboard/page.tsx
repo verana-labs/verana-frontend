@@ -55,7 +55,7 @@ export default function Page() {
           sectionsI18n={dashboardSections}
           data={dashboardData}
           id=""
-          loading={loading}
+          loading={false}
       />
 
       {/* Wallet Connection CTA */}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { DataTableProps, translateColumns, translateFilter } from '@/ui/datatable/types';
 import { translate } from '@/i18n/dataview';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -38,7 +38,7 @@ export function DataTable<T extends object>({
   detailTitle,
   onRefresh,
   checkFilter,
-  currentFilters
+  currentFilters,
   loading
 }: DataTableProps<T>) {
   const columns = translateColumns(columnsI18n);

@@ -17,6 +17,7 @@ export default function DiscoverJoinPage() {
 
     const discoverCtx = useDiscoverCtx();
     const [ ecosystems, setEcosystems ] = useState<TrList[]>();
+    const loading = false;
 
     const csByTrId = useMemo(() => {
       const map = new Map<string, CsList[]>();
@@ -113,7 +114,6 @@ export default function DiscoverJoinPage() {
       </section>
 
       <section id="ecosystem-list" className="space-y-6">
-        {paginated?.map((eco, idx) => {
         {loading ? [...Array(3)].map((_, i) => (
           <div key={i} className="skeleton-card rounded-xl border border-neutral-20 dark:border-neutral-70">
             <div className="skeleton-title mb-2 w-1/2" />
@@ -123,7 +123,7 @@ export default function DiscoverJoinPage() {
               <div className="skeleton-block h-16 rounded-lg" />
             </div>
           </div>
-        )) : paginated.map((eco, idx) => {
+        )) : paginated?.map((eco, idx) => {
           const egfUrl = eco.versions?.find((x) => x.version === eco.active_version)?.documents?.[0]?.url;
         return (
           <div
@@ -198,55 +198,54 @@ export default function DiscoverJoinPage() {
             <FontAwesomeIcon icon={faChevronLeft}/>
           </button>
 
-{(() => {
-  if (totalPages == null) return null;
+          {(() => {
+            if (totalPages == null) return null;
+            const maxVisible = 6;
+            const pages: (number | 'ellipsis')[] = [];
 
-  const maxVisible = 6;
-  const pages: (number | 'ellipsis')[] = [];
+            if (totalPages <= maxVisible) {
+              for (let i = 1; i <= totalPages; i++) pages.push(i);
+            } else {
+              if (page <= 3) {
+                pages.push(1, 2, 3, 4, 5, 'ellipsis', totalPages);
+              } else if (page >= totalPages - 2) {
+                pages.push(1, 'ellipsis', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+              } else {
+                pages.push(1, 'ellipsis', page - 1, page, page + 1, 'ellipsis', totalPages);
+              }
+            }
 
-  if (totalPages <= maxVisible) {
-    for (let i = 1; i <= totalPages; i++) pages.push(i);
-  } else {
-    if (page <= 3) {
-      pages.push(1, 2, 3, 4, 5, 'ellipsis', totalPages);
-    } else if (page >= totalPages - 2) {
-      pages.push(1, 'ellipsis', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
-    } else {
-      pages.push(1, 'ellipsis', page - 1, page, page + 1, 'ellipsis', totalPages);
-    }
-  }
+            return pages.map((item, idx) => {
+              if (item === 'ellipsis') {
+                return (
+                  <span
+                    key={`ellipsis-${idx}`}
+                    className="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400"
+                  >
+                    ...
+                  </span>
+                );
+              }
 
-  return pages.map((item, idx) => {
-    if (item === 'ellipsis') {
-      return (
-        <span
-          key={`ellipsis-${idx}`}
-          className="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400"
-        >
-          ...
-        </span>
-      );
-    }
+              const isActive = item === page;
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setPage(item)}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={
+                    isActive
+                      ? 'px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-primary-600'
+                      : 'px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }
+                >
+                  {item}
+                </button>
+              );
+            });
+          })()}
 
-    const isActive = item === page;
-
-    return (
-      <button
-        key={item}
-        type="button"
-        onClick={() => setPage(item)}
-        aria-current={isActive ? 'page' : undefined}
-        className={
-          isActive
-            ? 'px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-primary-600'
-            : 'px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 hover:bg-gray-50 dark:hover:bg-gray-800'
-        }
-      >
-        {item}
-      </button>
-    );
-  });
-})()}
           <button
             type="button"
             disabled={totalPages == null || page === totalPages}

@@ -76,7 +76,7 @@ export default function AccountPage() {
                     setRefreshState({id, txHeight});
                   }}
         activeActionField={openGetVNA ? "getVNA" : undefined}
-        loading={loading}
+        loading={false}
       />
       )}
     </>
