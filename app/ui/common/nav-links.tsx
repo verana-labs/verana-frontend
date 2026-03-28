@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { getNavLinks } from '@/lib/navlinks';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
-import { usePendingTasksCtx } from '@/providers/pending-tasks-provider-context';
+import { usePendingTasksCtx } from '@/providers/api-rest-query-provider-context';
 
 export default function NavLinks() {
   const veranaChain = useVeranaChain();
@@ -21,8 +21,8 @@ export default function NavLinks() {
     setOpenIndex(openIndex === idx ? null : idx);
   };
 
-  const tasks = usePendingTasksCtx();
-  const totalPendingTasks = tasks.reduce((acc, item) => acc + item.pending_tasks, 0);
+  const pendingTasksCtx = usePendingTasksCtx();
+  const totalPendingTasks = pendingTasksCtx.permissionsList.reduce((acc, item) => acc + item.pending_tasks, 0);
   const links = getNavLinks(totalPendingTasks);
 
   return (

@@ -7,14 +7,13 @@ import { faFolder } from "@fortawesome/free-solid-svg-icons";
 import { useVeranaChain } from "@/hooks/useVeranaChain";
 import { useChain } from "@cosmos-kit/react";
 import { authorityPaticipants, roleColorClass } from "@/util/util";
-import { usePendingTasksCtx, useUpdatePendingTasksCtx } from '@/providers/pending-tasks-provider-context';
+import { usePendingTasksCtx } from '@/providers/api-rest-query-provider-context';
 
 export default function PendingTasksPage() {
   const veranaChain = useVeranaChain();
   const { address } = useChain(veranaChain.chain_name);
 
-  const permissionsList = usePendingTasksCtx();
-  const updatePermissionList = useUpdatePendingTasksCtx();
+  const pendingTasksCtx = usePendingTasksCtx();
   const [permissionsTree, setPermissionsTree] = useState<TreeNode[]>([]);
   const [refreshRoot, setRefreshRoot] = useState<boolean>(true);
 
@@ -67,12 +66,12 @@ export default function PendingTasksPage() {
   }
 
   useEffect(() => {
-    const tree = buildTreeFromResponse(permissionsList);
+    const tree = buildTreeFromResponse(pendingTasksCtx.permissionsList);
     setPermissionsTree(tree);
-  }, [permissionsList]);
+  }, [pendingTasksCtx.permissionsList]);
   
   useEffect(() => {
-    if (refreshRoot) updatePermissionList();
+    if (refreshRoot) pendingTasksCtx.refetch();
     setRefreshRoot(false);
   }, [refreshRoot]);
 

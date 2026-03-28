@@ -8,6 +8,14 @@ import { resolveTranslatable } from "@/ui/dataview/types";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { faCrown, faEye } from "@fortawesome/free-solid-svg-icons";
 
+export function formatNumber (value: unknown, defaultZero: boolean = false, withSeparators: boolean = false): string {
+  if (value === null || value === undefined) return "0";
+  const num = Number(value);
+  return isNaN(num) ? defaultZero ? "0" : "isNan"
+                    : withSeparators ? num.toLocaleString() : String(num);
+}
+
+
 export function formatVNA (amount: string | null, decimals?: number) : string {
     if (!amount) return ''
     decimals = decimals?? 6;

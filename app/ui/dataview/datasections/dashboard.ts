@@ -1,17 +1,17 @@
 import { Section } from "@/ui/dataview/types";
+import { formatNumber, formatVNAFromUVNA } from "@/util/util";
 import { faCertificate, faCheck, faCoins, faCubes, faFileLines, faShieldHalved } from "@fortawesome/free-solid-svg-icons";
 
 const t = (key: string) => ({ key });
 
 //Dashboard data
 export interface DashboardData {
-  blockHeight: string | null;
-  isWalletConnected: string | null;
-  ecosystems: string | null;
-  schemas: string | null;
-  totalLockedTrustDeposit: string | null;
-  issuedCredentials: string | null;
-  verifiedCredentials: string | null;
+  blockHeight?: number | null;
+  ecosystems?: number | null;
+  schemas?: number | null;
+  totalLockedTrustDeposit?: number | null;
+  issuedCredentials?: number | null;
+  verifiedCredentials?: number | null;
 }
 
 // Sections configuration for DashboardData
@@ -24,32 +24,38 @@ export const dashboardSections: Section<DashboardData>[] = [
       { name: "blockHeight", label: t("dataview.dashboard.fields.blockHeight"), type: "data",
         icon: faCubes,
         iconClass: "bg-blue-100 dark:bg-blue-900/20",
-        iconColorClass: "text-blue-600 dark:text-blue-400 text-xl"
+        iconColorClass: "text-blue-600 dark:text-blue-400 text-xl",
+        format: (value) => formatNumber(String(value), true, true)
       },
       { name: "ecosystems", label: t("dataview.dashboard.fields.ecosystems"), type: "data",
         icon: faShieldHalved,
         iconClass: "bg-purple-100 dark:bg-purple-900/20",
-        iconColorClass: "text-purple-600 dark:text-purple-400 text-xl"
+        iconColorClass: "text-purple-600 dark:text-purple-400 text-xl",
+        format: (value) => formatNumber(String(value), true, true)
       },
       { name: "schemas", label: t("dataview.dashboard.fields.schemas"), type: "data",
         icon: faFileLines,
         iconClass: "bg-slate-100 dark:bg-slate-900/20",
-        iconColorClass: "text-slate-600 dark:text-slate-400 text-xl"
+        iconColorClass: "text-slate-600 dark:text-slate-400 text-xl",
+        format: (value) => formatNumber(String(value), true, true)
       },
       { name: "totalLockedTrustDeposit", label: t("dataview.dashboard.fields.totalLockedTrustDeposit"), type: "data",
         icon: faCoins,
         iconClass: "bg-yellow-100 dark:bg-yellow-900/20",
-        iconColorClass: "text-yellow-600 dark:text-yellow-400 text-xl"
+        iconColorClass: "text-yellow-600 dark:text-yellow-400 text-xl",
+        format: (value) => formatVNAFromUVNA(String(value))
       },
       { name: "issuedCredentials", label: t("dataview.dashboard.fields.issuedCredentials"), type: "data",
         icon: faCertificate,
         iconClass: "bg-green-100 dark:bg-green-900/20",
-        iconColorClass: "text-green-600 dark:text-green-400 text-xl"
+        iconColorClass: "text-green-600 dark:text-green-400 text-xl",
+        format: (value) => formatNumber(String(value), true, true)
       },
       { name: "verifiedCredentials", label: t("dataview.dashboard.fields.verifiedCredentials"), type: "data",
         icon: faCheck,
         iconClass: "bg-orange-100 dark:bg-orange-900/20",
-        iconColorClass: "text-orange-600 dark:text-orange-400 text-xl"
+        iconColorClass: "text-orange-600 dark:text-orange-400 text-xl",
+        format: (value) => formatNumber(String(value), true, true)
       },
    ],
   },

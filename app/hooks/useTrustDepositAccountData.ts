@@ -8,7 +8,7 @@ import { resolveTranslatable } from "@/ui/dataview/types";
 import { translate } from "@/i18n/dataview";
 import { ApiErrorResponse } from "@/types/apiErrorResponse";
 
-type TrustDepositAccountData = {
+export type TrustDepositAccountData = {
   address: string | null;
   balance: string | null;
   totalTrustDeposit: string | null;
@@ -107,7 +107,7 @@ export function useTrustDepositAccountData(
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [address]);
 
   return {
     accountData,

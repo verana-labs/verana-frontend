@@ -1,116 +1,93 @@
 'use client'
 
-import { useCSList } from "@/hooks/useCredentialSchemas";
-import { useTrustRegistries } from "@/hooks/useTrustRegistries";
 import { translate } from "@/i18n/dataview";
 import CsCard from "@/ui/common/cs-card";
-import { useNotification } from "@/providers/notification-provider";
 import TitleAndButton from "@/ui/common/title-and-button";
 import { CsList } from "@/ui/datatable/columnslist/cs";
 import { resolveTranslatable } from "@/ui/dataview/types";
-import { useRouter } from "next/navigation";
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronLeft, faChevronRight, faCoins, faFileContract, faScaleBalanced, faShieldHalved } from "@fortawesome/free-solid-svg-icons";
 import { formatVNA } from "@/util/util";
 import Link from "next/link";
+import { useDiscoverCtx } from "@/providers/api-rest-query-provider-context";
+import { TrList } from "@/ui/datatable/columnslist/tr";
 
 export default function DiscoverJoinPage() {
 
-    const router = useRouter();
-    const { trList, loading, errorTrList, refetch: fetchTrList } = useTrustRegistries(true);
-    const { csList } = useCSList (undefined, true);
-    const [errorNotified, setErrorNotified] = useState(false);
-    // Notification context for showing error messages
-    const { notify } = useNotification();
+    const discoverCtx = useDiscoverCtx();
+    const [ ecosystems, setEcosystems ] = useState<TrList[]>();
+    const loading = false;
 
     const csByTrId = useMemo(() => {
-        const map = new Map<string, CsList[]>();
-        if (!csList) return map;
-        for (const cs of csList) {
-            const key = cs.trId;
-            const arr = map.get(key);
-            if (arr) arr.push(cs);
-            else map.set(key, [cs]);
-        }
-        return map;
-    }, [csList]);
+      const map = new Map<string, CsList[]>();
+      if (!discoverCtx.csList) return map;
+      for (const cs of discoverCtx.csList) {
+          const key = cs.trId;
+          const arr = map.get(key);
+          if (arr) arr.push(cs);
+          else map.set(key, [cs]);
+      }
+      return map;
+    }, [discoverCtx.csList]);
 
-    const ecosystems = useMemo(() => {
-        if (!trList) return [];
-        return trList.map((tr) => ({
-            ...tr,
-            csList: csByTrId.get(tr.id) ?? [],
+    useEffect(() => {
+      if (!discoverCtx.discoverList) {
+        setEcosystems([]);
+        return;
+      }
+      setEcosystems(
+        discoverCtx.discoverList.map((tr) => ({
+          ...tr,
+          csList: csByTrId.get(String(tr.id)) ?? []
         }))
-        .sort((a, b) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const da = Number((a as any).deposit ?? (a as any).trustDeposit ?? 0); 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const db = Number((b as any).deposit ?? (b as any).trustDeposit ?? 0); 
-          return db - da; // desc
-        });
-    }, [trList, csByTrId]);
+      );
+    }, [discoverCtx.discoverList, csByTrId]);
 
-    const [search, setSearch] = useState("");
+    const [search, setSearch] = useState(discoverCtx.discoverSearch);
 
     const filtered = useMemo(() => {
       const term = search.trim().toLowerCase(); 
       if (!term) return ecosystems;
-      return ecosystems.filter((e) => e.did?.toLowerCase().includes(term));
+      return ecosystems?.filter((e) => e.did?.toLowerCase().includes(term));
     }, [search, ecosystems]);
 
-    const onFilter = () => {
-    };
-
-    const onKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-      if (e.key === "Enter") onFilter();
-    };
-
     const PAGE_SIZE = 5;
-    const [page, setPage] = useState(1);
+    const [page, setPage] = useState(discoverCtx.discoverPage);
 
     const totalPages = useMemo(() => {
-      return Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-    }, [filtered.length]);
+      if (!filtered) return undefined;
+      return Math.max(1, Math.ceil((filtered?.length ?? 0) / PAGE_SIZE));
+    }, [filtered]);
 
     useEffect(() => {
+      if (totalPages == null) return;
       setPage((p) => Math.min(Math.max(1, p), totalPages));
     }, [totalPages]);
 
     const paginated = useMemo(() => {
       const start = (page - 1) * PAGE_SIZE;
-      return filtered.slice(start, start + PAGE_SIZE);
+      return filtered?.slice(start, start + PAGE_SIZE);
     }, [filtered, page]);
 
     useEffect(() => {
-      setPage(1);
+      discoverCtx.setDiscoverSearch(search);
     }, [search]);
 
     useEffect(() => {
+      discoverCtx.setDiscoverPage(page);
       document.getElementById("app-scroll")?.scrollTo({ top: 0, behavior: "smooth" });
     }, [page]);
 
-    // Refresh trList
-    const [refresh, setRefresh] = useState<boolean>(false);
+    // Refresh trList and csList
+    const [refresh, setRefresh] = useState<boolean>(true);
     useEffect(() => {
         if (!refresh) return;
         (async () => {
-        await fetchTrList();
+        await discoverCtx.refetch();
         setRefresh(false);
         })();
     }, [refresh]);
-
-    // Notify and redirect if there is an error fetching account data
-    useEffect(() => {
-        // Show a notification if an error occurred
-        if (errorTrList && !errorNotified) {
-        (async () => {
-            await notify(errorTrList, 'error', resolveTranslatable({key: "error.fetch.tr.title"}, translate));
-            setErrorNotified(true);
-            router.push('/');
-        })();
-        }
-    }, [errorTrList, router, errorNotified]);
   
   return (
     <>
@@ -131,17 +108,8 @@ export default function DiscoverJoinPage() {
               className="w-full px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={onKeyDown}
             />
           </div>
-          {/* <button
-            type="button"
-            onClick={onFilter}
-            className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
-          >
-            <i className="fas fa-filter mr-2" />
-            Filter
-          </button> */}
         </div>
       </section>
 
@@ -155,24 +123,23 @@ export default function DiscoverJoinPage() {
               <div className="skeleton-block h-16 rounded-lg" />
             </div>
           </div>
-        )) : paginated.map((eco, idx) => {
+        )) : paginated?.map((eco, idx) => {
           const egfUrl = eco.versions?.find((x) => x.version === eco.active_version)?.documents?.[0]?.url;
         return (
           <div
             key={eco.did + '-' + idx}
-            className="ecosystem-card bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6"
-            data-ecosystem-name={eco.did}
+            className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6"
           >
             <div className="mb-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 break-all">
                     {eco.did}
                   </h2>
                   <div className="flex items-center space-x-4 text-sm text-neutral-70 dark:text-neutral-70">
                     <span>
                       <FontAwesomeIcon className="mr-1" aria-hidden="true" icon={faFileContract} />
-                      {eco.csList.length} {resolveTranslatable({key: "discover.cs.label"}, translate)}
+                      {eco.csList?.length} {resolveTranslatable({key: "discover.cs.label"}, translate)}
                     </span>
                     <span>
                       <FontAwesomeIcon className="mr-1" aria-hidden="true" icon={faCoins} />
@@ -181,7 +148,6 @@ export default function DiscoverJoinPage() {
                   </div>
                 </div>
               </div>
-
               <div className="flex flex-wrap gap-3">
                 {egfUrl && (
                 <Link
@@ -202,13 +168,11 @@ export default function DiscoverJoinPage() {
                   <FontAwesomeIcon className="mr-2" aria-hidden="true" icon={faShieldHalved} />
                   {resolveTranslatable({key: "discover.btn.view"}, translate)} 
                 </Link>
-
-
               </div>
             </div>
 
             <div className="space-y-4">
-              {eco.csList.map((schema) => (
+              {eco.csList?.map((schema) => (
                 <CsCard key={schema.id} cs={schema}/>
               ))}
             </div>
@@ -216,7 +180,7 @@ export default function DiscoverJoinPage() {
         )})}
       </section>
 
-      {filtered.length>0 ? (
+      {filtered && filtered.length > 0 ? (
       <section id="pagination" className="mt-8 flex justify-center">
         <nav className="inline-flex rounded-lg shadow-sm" aria-label="Pagination">
           <button
@@ -234,30 +198,58 @@ export default function DiscoverJoinPage() {
             <FontAwesomeIcon icon={faChevronLeft}/>
           </button>
 
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
-            const isActive = p === page;
+          {(() => {
+            if (totalPages == null) return null;
+            const maxVisible = 6;
+            const pages: (number | 'ellipsis')[] = [];
 
-            return (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPage(p)}
-                aria-current={isActive ? "page" : undefined}
-                className={
-                  isActive
-                    ? "px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-primary-600"
-                    : "px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 hover:bg-gray-50 dark:hover:bg-gray-800"
-                }
-              >
-                {p}
-              </button>
-            );
-          })}
+            if (totalPages <= maxVisible) {
+              for (let i = 1; i <= totalPages; i++) pages.push(i);
+            } else {
+              if (page <= 3) {
+                pages.push(1, 2, 3, 4, 5, 'ellipsis', totalPages);
+              } else if (page >= totalPages - 2) {
+                pages.push(1, 'ellipsis', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+              } else {
+                pages.push(1, 'ellipsis', page - 1, page, page + 1, 'ellipsis', totalPages);
+              }
+            }
+
+            return pages.map((item, idx) => {
+              if (item === 'ellipsis') {
+                return (
+                  <span
+                    key={`ellipsis-${idx}`}
+                    className="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400"
+                  >
+                    ...
+                  </span>
+                );
+              }
+
+              const isActive = item === page;
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setPage(item)}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={
+                    isActive
+                      ? 'px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-primary-600'
+                      : 'px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }
+                >
+                  {item}
+                </button>
+              );
+            });
+          })()}
 
           <button
             type="button"
-            disabled={page === totalPages}
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={totalPages == null || page === totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages ?? 1, p + 1))}
             className={[
               "px-3 py-2 text-sm font-medium bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-r-lg",
               page === totalPages

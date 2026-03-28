@@ -4,55 +4,41 @@ import { useEffect, useState } from 'react';
 import { DataTable } from '@/ui/common/data-table';
 import { useRouter } from 'next/navigation';
 import TitleAndButton from '@/ui/common/title-and-button';
-import { useNotification } from '@/providers/notification-provider';
 import { columnsTrList, description, trFilter } from '@/ui/datatable/columnslist/tr';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { translateDataTableDescriptions } from '@/ui/datatable/types';
-import { useTrustRegistries } from '@/hooks/useTrustRegistries';
 import AddTrPage from '@/tr/add/add';
 import { ModalAction } from '@/ui/common/modal-action';
+import { useEcosytemsCtx } from '@/providers/api-rest-query-provider-context';
 
 export default function TrPage() {
   const router = useRouter();
-  const [ showArchived, setShowArchived ] = useState(false);
+  const ecosystemsCtx = useEcosytemsCtx();
+  const [ showArchived, setShowArchived ] = useState(!ecosystemsCtx.onlyActiveEcosystem);
   const [ trListAll, setTrListAll ] = useState(false);
-  const { trList, loading, errorTrList, refetch: fetchTrList } = useTrustRegistries(false, !showArchived);
-  const [errorNotified, setErrorNotified] = useState(false);
-  // Notification context for showing error messages
-  const { notify } = useNotification();
+    
   const [ addTR, setAddTR ] = useState<boolean>(false);
   
   useEffect(() => {
     if ( showArchived ) setTrListAll(true);
-  }, [trList]);
+  }, [ecosystemsCtx.ecosystemsList]);
   
   // Refresh trList
-  const [refresh, setRefresh] = useState<boolean>(false);
+  const [refresh, setRefresh] = useState<boolean>(true);
   useEffect(() => {
     if (!refresh) return;
     (async () => {
-      await fetchTrList();
+      await ecosystemsCtx.refetch();
       setRefresh(false);
     })();
   }, [refresh]);
 
   // Refresh trList for showArchived change
   useEffect(() => {
+    ecosystemsCtx.setOnlyActiveEcosystem(!showArchived);
     if ( showArchived && !trListAll ) setRefresh(true);
   }, [showArchived]);
-
-  // Notify and redirect if there is an error fetching account data
-  useEffect(() => {
-    // Show a notification if an error occurred
-    if (errorTrList && !errorNotified) {
-      (async () => {
-        await notify(errorTrList, 'error', resolveTranslatable({key: "error.fetch.tr.title"}, translate));
-        setErrorNotified(true);
-        router.push('/');
-      })();
-    }
-  }, [errorTrList, router, errorNotified]);
   
   return (
     <>
@@ -64,7 +50,7 @@ export default function TrPage() {
         tableTitle={resolveTranslatable({key: "datatable.tr.title"}, translate)}
         addTitle={resolveTranslatable({key: "datatable.tr.add"}, translate)}
         columnsI18n={columnsTrList}
-        data={ trList.filter(item => showArchived || !item.archived)}
+        data={ ecosystemsCtx.ecosystemsList.filter(item => showArchived || !item.archived)}
         initialPageSize={10}
         onRowClick={(row) => router.push(`/tr/${encodeURIComponent(row.id)}`)}
         defaultSortColumn={'modified'}
@@ -78,7 +64,10 @@ export default function TrPage() {
           changeFilter: setShowArchived,
           label: resolveTranslatable({ key: "datatable.tr.filter.showArchived" }, translate)??'Show Archived',
         }}
-        loading={loading}
+        currentFilters={{
+          filters: ecosystemsCtx.ecosystemFilters,
+          setFilters: ecosystemsCtx.setEcosystemFilters,
+        }}        
       />
       {/* render modal add Trust Registry*/}
       {addTR && (

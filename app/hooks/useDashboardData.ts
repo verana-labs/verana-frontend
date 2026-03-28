@@ -2,14 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { env } from 'next-runtime-env';
-import { useVeranaChain } from '@/hooks/useVeranaChain';
-import { useChain } from '@cosmos-kit/react';
 import { DashboardData } from '@/ui/dataview/datasections/dashboard';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { ApiErrorResponse } from '@/types/apiErrorResponse';
-import { formatVNAFromUVNA } from '@/util/util';
-import { useIndexerEvents } from '@/providers/indexer-events-provider';
 
 type MetricsApiResponse = {
   participants: number;
@@ -29,16 +25,12 @@ type MetricsApiResponse = {
 };
 
 export function useDashboardData() {
-  const veranaChain = useVeranaChain();
-  const chainName = veranaChain.chain_name;
-  const { isWalletConnected } = useChain(chainName);
 
   const getURL =
     env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_METRICS') ||
     process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_METRICS;
 
-  const [metrics, setMetrics] = useState<MetricsApiResponse | null>(null);
-  const [blockHeight, setBlockHeight] = useState<string>("");
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorDashboardData, setError] = useState<string | null>(null);
 
@@ -61,7 +53,14 @@ export function useDashboardData() {
         setError(`Error ${code}: ${error}`);
         return;
       }
-      setMetrics(json as MetricsApiResponse);
+      const entry = json as MetricsApiResponse;
+      setDashboardData({
+        ecosystems: entry.active_trust_registries,
+        schemas: entry.active_schemas,
+        totalLockedTrustDeposit: entry.weight,
+        issuedCredentials: entry.issued,
+        verifiedCredentials: entry.verified,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -74,28 +73,11 @@ export function useDashboardData() {
     fetchMetrics();
   }, []);
 
-  // Block height from indexer ws
-  const { latestProcessedHeight } = useIndexerEvents();
-  useEffect(() => {
-    setBlockHeight(String(latestProcessedHeight.toLocaleString(undefined)));
-  }, [latestProcessedHeight]);
-
-  // Derive dashboardData from independent state slices
-  const dashboardData: DashboardData = {
-    blockHeight,
-    isWalletConnected: String(isWalletConnected),
-    ecosystems: metrics ? Number(metrics.active_trust_registries).toLocaleString() : null,
-    schemas: metrics ? Number(metrics.active_schemas).toLocaleString() : null,
-    totalLockedTrustDeposit: metrics ? formatVNAFromUVNA(String(metrics.weight)) : null,
-    issuedCredentials: metrics ? Number(metrics.issued).toLocaleString() : null,
-    verifiedCredentials: metrics ? Number(metrics.verified).toLocaleString() : null,
-  };
 
   return {
     dashboardData,
     loading,
     errorDashboardData,
-    isWalletConnected,
     refetch: fetchMetrics,
   };
 }

@@ -1,4 +1,5 @@
 import { Section } from "@/ui/dataview/types";
+import { formatNetwork, formatVNAFromUVNA } from "@/util/util";
 import { faCoins, faPlus, faShieldHalved } from "@fortawesome/free-solid-svg-icons";
 
 const t = (key: string) => ({ key });
@@ -35,7 +36,8 @@ export const accountSections: Section<AccountData>[] = [
         icon: faCoins,
         iconClass: "bg-gradient-to-br from-primary-500 to-primary-700",
         iconColorClass: "text-white text-xl",
-        usdValue: true, hasStats: true
+        usdValue: true, hasStats: true,
+        format: (value) => formatVNAFromUVNA(String(value))
       },
       { name: "totalTrustDeposit", type: "data",
         label: t("dataview.account.fields.totalTrustDeposit.label"),
@@ -43,7 +45,8 @@ export const accountSections: Section<AccountData>[] = [
         icon: faShieldHalved,
         iconClass: "bg-gradient-to-br from-blue-500 to-blue-700",
         iconColorClass: "text-white text-xl",
-        usdValue: true, hasStats: true
+        usdValue: true, hasStats: true,
+        format: (value) => formatVNAFromUVNA(String(value))
       },
     ],
   },
@@ -69,10 +72,10 @@ export const accountSections: Section<AccountData>[] = [
     name: t("dataview.account.sections.accountInformation"),
     sectionBorder: true,
     fields: [
-      { name: "address", type: "data", label: t("dataview.account.fields.address") },
+      { name: "address", type: "data", label: t("dataview.account.fields.address")},
       { name: "totalTransactions", label: t("dataview.account.fields.totalTransactions"), type: "data" },
       { name: "network", label: t("dataview.account.fields.network"), type: "data",
-        classField: "flex items-center space-x-2 px-3 py-1 bg-success-50 dark:bg-success-900/20 rounded-full w-fit", isHtml: true
+        classField: "flex items-center space-x-2 px-3 py-1 bg-success-50 dark:bg-success-900/20 rounded-full w-fit", isHtml: true, format: (value) => formatNetwork(String(value)) 
        },
       { name: "trustRegistriesJoined", label: t("dataview.account.fields.trustRegistriesJoined"), type: "data" },
       { name: "created", label: t("dataview.account.fields.created"), type: "data" },

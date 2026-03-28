@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { DataTableProps, translateColumns, translateFilter } from '@/ui/datatable/types';
 import { translate } from '@/i18n/dataview';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMagnifyingGlass, faPlus, faSort, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faMagnifyingGlass, faPlus, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import DIDView from '@/did/[id]/view';
 import { DidData } from '@/ui//dataview/datasections/did';
@@ -38,14 +38,14 @@ export function DataTable<T extends object>({
   detailTitle,
   onRefresh,
   checkFilter,
+  currentFilters,
   loading
 }: DataTableProps<T>) {
   const columns = translateColumns(columnsI18n);
   const filter = translateFilter(filterI18n);
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = initialPageSize;
-  const [filters, setFilters] = useState<Record<string, string | boolean>>({});
-
+  const [filters, setFilters] = useState<Record<string, string | boolean>>(() => currentFilters?.filters ?? {});
   const [sortColumn, setSortColumn] = useState<keyof T | null>(defaultSortColumn ?? null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(defaultSortDirection);
 
@@ -110,9 +110,11 @@ export function DataTable<T extends object>({
   };
 
   const handleFilterChange = (accessor: keyof T, value: string | boolean) => {
-    setFilters(prev => ({ ...prev, [accessor as string]: value }));
+    const next = { ...filters, [accessor as string]: value };
+    setFilters(next);
+    currentFilters?.setFilters(next);
     setCurrentPage(0);
-  };
+  };  
 
   return (
     <>
@@ -209,7 +211,6 @@ export function DataTable<T extends object>({
                         className={`data-table-th ${getColumnClasses(col.priority)}`}
                       >
                           {col.header}
-                          {/* <FontAwesomeIcon icon={faSort}/> */}
                       </th>
                     ))}
                   </tr>
@@ -257,11 +258,11 @@ export function DataTable<T extends object>({
             </div>
             {/* Mobile Cards */}
             <div className="md:hidden data-table-list" id="mobile-dids-list">
-              {currentData.length === 0 && (
+              {/* {currentData.length === 0 && (
                 <div className="text-center py-10">
                     No results found
                 </div>
-              )}
+              )} */}
               {currentData.map((row, rowIdx) => (
                 <div
                   key={rowIdx}

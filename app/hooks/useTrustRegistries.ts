@@ -27,9 +27,7 @@ export function useTrustRegistries (all: boolean = false, onlyActive: boolean = 
       return;
     }
 
-    // Reset state when inputs change
     setError(null);
-    // setTrList([]);
     try {
       setLoading(true);
 
@@ -58,7 +56,7 @@ export function useTrustRegistries (all: boolean = false, onlyActive: boolean = 
 
   useEffect(() => {
     fetchTrList();
-  }, []);
+  }, [address]);
 
   return { trList, loading, errorTrList, refetch: fetchTrList };
 }
