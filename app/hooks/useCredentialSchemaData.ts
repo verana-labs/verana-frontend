@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { env } from 'next-runtime-env';
+import { getPublicEnv } from '@/lib/publicEnv';
 import { CsData } from '@/ui/dataview/datasections/cs';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
@@ -11,6 +11,7 @@ type RawSchema = Record<string, unknown> & {
   id?: string | number;
   tr_id?: string | number;
   creator?: string;
+  authority?: string;
   json_schema?: string;
   issuer_grantor_validation_validity_period?: number;
   verifier_grantor_validation_validity_period?: number;
@@ -27,9 +28,7 @@ type RawSchema = Record<string, unknown> & {
 
 export function useCsData(id: string) {
 
-  const getURL =
-    env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA') ||
-    process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA;
+  const getURL = getPublicEnv('NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA');
 
   const [csData, setData] = useState<CsData| null>(null);
   const [loading, setLoading] = useState(false);
@@ -67,6 +66,7 @@ export function useCsData(id: string) {
           id,
           trId: entry.tr_id ?? '',
           creator: entry.creator ?? '',
+          authority: entry.authority ?? '',
           issuerGrantorValidationValidityPeriod: entry.issuer_grantor_validation_validity_period ?? 0,
           verifierGrantorValidationValidityPeriod: entry.verifier_grantor_validation_validity_period ?? 0,
           issuerValidationValidityPeriod: entry.issuer_validation_validity_period ?? 0,

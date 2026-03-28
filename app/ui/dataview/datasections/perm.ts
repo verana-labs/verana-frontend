@@ -12,6 +12,7 @@ const t = (key: string) => ({ key });
 export interface PermissionData {
   // Common
   creator?: string;
+  authority?: string;
   country?: string;
   // Identifiers
   id?: string | number;
@@ -267,7 +268,7 @@ export function getActionPermSections(msgType: MsgType, excludeFees: boolean = f
         },
       ];
 
-    case "MsgExtendPermission":
+    case "MsgAdjustPermission":
       return [
         {
           name: t("dataview.perm.sections.main"),
@@ -375,6 +376,7 @@ export interface Permission {
   schema_id: string;
   type: PermissionType;
   did: string;
+  authority?: string;
   grantee: string;
   created_by: string;
   created: string;  // ISO datetime
@@ -511,8 +513,8 @@ export const permissionActionSlashing: PermissionAction[] = [
 ];
 
 export const permissionActionLifecycle: PermissionAction[] = [
-  { name: "PERM_EXTEND", value: "MsgExtendPermission",
-    icon: faClockRotateLeft, label: resolveTranslatable({key: "permissioncard.lifecycle.action.permextend"}, translate)?? "Extend Permission"},
+  { name: "PERM_ADJUST", value: "MsgAdjustPermission",
+    icon: faClockRotateLeft, label: resolveTranslatable({key: "permissioncard.lifecycle.action.permextend"}, translate)?? "Adjust Permission"},
   { name: "PERM_REVOKE", value: "MsgRevokePermission",
     icon: faBan, label: resolveTranslatable({key: "permissioncard.lifecycle.action.permrevoke"}, translate)?? "Revoke Permission",
     iconColorClass: "bg-red-600 hover:bg-red-700"},

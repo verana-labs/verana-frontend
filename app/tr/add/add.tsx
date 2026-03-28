@@ -36,7 +36,7 @@ export default function AddTrPage({ onCancel, onRefresh }: AddTrPageProps) {
       // Broadcast MsgCreateTrustRegistry transaction with user input
       await actionTR({
         msgType: 'MsgCreateTrustRegistry',
-        creator: address ?? '',
+        authority: address ?? '',
         did: newData.did || '',
         aka: newData.aka || '',
         language: newData.language || '',

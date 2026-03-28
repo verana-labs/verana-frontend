@@ -22,7 +22,7 @@ export type MsgTypePERM =
   | 'MsgSetPermissionVPToValidated'
   | 'MsgCancelPermissionVPLastRequest'
   | 'MsgCreateRootPermission'
-  | 'MsgExtendPermission'
+  | 'MsgAdjustPermission'
   | 'MsgRevokePermission'
   | 'MsgCreateOrUpdatePermissionSession'
   | 'MsgSlashPermissionTrustDeposit'
@@ -192,7 +192,7 @@ export const MSG_SUCCESS_ACTION_PERM: Record<MsgTypePERM, (id: string | number |
   MsgSetPermissionVPToValidated: () => t('notification.MsgSetPermissionVPToValidated.success'),
   MsgCancelPermissionVPLastRequest: () => t('notification.MsgCancelPermissionVPLastRequest.success'),
   MsgCreateRootPermission: (id) => t('notification.MsgCreateRootPermission.success', { id }),
-  MsgExtendPermission: () => t('notification.MsgExtendPermission.success'),
+  MsgAdjustPermission: () => t('notification.MsgExtendPermission.success'),
   MsgRevokePermission: () => t('notification.MsgRevokePermission.success'),
   MsgCreateOrUpdatePermissionSession: () => t('notification.MsgCreateOrUpdatePermissionSession.success'),
   MsgSlashPermissionTrustDeposit: () => t('notification.MsgSlashPermissionTrustDeposit.success'),
@@ -209,7 +209,7 @@ export const MSG_INPROGRESS_ACTION_PERM: Record<MsgTypePERM, () => string> = {
   MsgSetPermissionVPToValidated: () => t('notification.MsgSetPermissionVPToValidated.inprogress'),
   MsgCancelPermissionVPLastRequest: () => t('notification.MsgCancelPermissionVPLastRequest.inprogress'),
   MsgCreateRootPermission: () => t('notification.MsgCreateRootPermission.inprogress'),
-  MsgExtendPermission: () => t('notification.MsgExtendPermission.inprogress'),
+  MsgAdjustPermission: () => t('notification.MsgExtendPermission.inprogress'),
   MsgRevokePermission: () => t('notification.MsgRevokePermission.inprogress'),
   MsgCreateOrUpdatePermissionSession: () => t('notification.MsgCreateOrUpdatePermissionSession.inprogress'),
   MsgSlashPermissionTrustDeposit: () => t('notification.MsgSlashPermissionTrustDeposit.inprogress'),
@@ -234,7 +234,7 @@ export const MSG_ERROR_ACTION_PERM: Record<
     t('notification.MsgCancelPermissionVPLastRequest.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
   MsgCreateRootPermission: (id, code, msg) =>
     t('notification.MsgCreateRootPermission.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-  MsgExtendPermission: (id, code, msg) =>
+  MsgAdjustPermission: (id, code, msg) =>
     t('notification.MsgExtendPermission.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
   MsgRevokePermission: (id, code, msg) =>
     t('notification.MsgRevokePermission.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),

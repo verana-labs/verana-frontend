@@ -17,7 +17,6 @@ import { MSG_ERROR_ACTION_TR, MSG_INPROGRESS_ACTION_TR, MSG_SUCCESS_ACTION_TR } 
 import { isValidUrl } from '@/util/validations';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
-import Long from 'long';
 import { translate } from '@/i18n/dataview';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
@@ -68,7 +67,7 @@ export const MSG_TYPE_CONFIG_TR = {
 type ActionTRParams =
   | {
       msgType: 'MsgCreateTrustRegistry';
-      creator: string;
+      authority?: string;
       did: string;
       aka: string;
       language: string;
@@ -76,24 +75,24 @@ type ActionTRParams =
     }
   | {
       msgType: 'MsgUpdateTrustRegistry';
-      creator: string;
+      authority?: string;
       id: string | number;
       did: string;
       aka: string;
     }
   | {
       msgType: 'MsgArchiveTrustRegistry';
-      creator: string;
+      authority?: string;
       id: string | number;
     }
   | {
       msgType: 'MsgUnarchiveTrustRegistry';
-      creator: string;
+      authority?: string;
       id: string | number;
     }
   | {
       msgType: 'MsgAddGovernanceFrameworkDocument';
-      creator: string;
+      authority?: string;
       id: string | number;
       version: number;
       docLanguage: string;
@@ -101,7 +100,7 @@ type ActionTRParams =
     }
   | {
       msgType: 'MsgIncreaseActiveGovernanceFrameworkVersion';
-      creator: string;
+      authority?: string;
       id: string | number;
     };
 
@@ -173,6 +172,7 @@ export function useActionTR( onCancel?: () => void,
     let typeUrl = '';
     let value: MsgCreateTrustRegistry | MsgUpdateTrustRegistry | MsgArchiveTrustRegistry | MsgAddGovernanceFrameworkDocument | MsgIncreaseActiveGovernanceFrameworkVersion;
     let id = (params.msgType !== 'MsgCreateTrustRegistry') ? params.id.toString() : undefined;
+    const authority = params.authority ?? address;
 
     switch (params.msgType) {
       case 'MsgCreateTrustRegistry':
@@ -184,7 +184,8 @@ export function useActionTR( onCancel?: () => void,
         } 
         typeUrl = MSG_TYPE_CONFIG_TR.MsgCreateTrustRegistry.typeUrl;
         value = MsgCreateTrustRegistry.fromPartial({
-          creator: address,
+          authority,
+          operator: address,
           did: params.did,
           aka: params.aka,
           language: params.language,
@@ -196,8 +197,9 @@ export function useActionTR( onCancel?: () => void,
       case 'MsgUpdateTrustRegistry':
         typeUrl = MSG_TYPE_CONFIG_TR.MsgUpdateTrustRegistry.typeUrl;
         value = MsgUpdateTrustRegistry.fromPartial({
-          creator: address,
-          id: Long.fromString(String(params.id)),
+          authority,
+          operator: address,
+          id: Number(params.id),
           did: params.did,
           aka: params.aka,
         });
@@ -205,16 +207,18 @@ export function useActionTR( onCancel?: () => void,
       case 'MsgArchiveTrustRegistry':
         typeUrl = MSG_TYPE_CONFIG_TR.MsgArchiveTrustRegistry.typeUrl;
         value = MsgArchiveTrustRegistry.fromPartial({
-          creator: address,
-          id: Long.fromString(String(params.id)),
+          authority,
+          operator: address,
+          id: Number(params.id),
           archive: true,
         });
         break;
       case 'MsgUnarchiveTrustRegistry':
         typeUrl = MSG_TYPE_CONFIG_TR.MsgArchiveTrustRegistry.typeUrl;
         value = MsgArchiveTrustRegistry.fromPartial({
-          creator: address,
-          id: Long.fromString(String(params.id)),
+          authority,
+          operator: address,
+          id: Number(params.id),
           archive: false,
         });
         break;
@@ -227,8 +231,9 @@ export function useActionTR( onCancel?: () => void,
         } 
         typeUrl = MSG_TYPE_CONFIG_TR.MsgAddGovernanceFrameworkDocument.typeUrl;
         value = MsgAddGovernanceFrameworkDocument.fromPartial({
-          creator: address,
-          id: Long.fromString(String(params.id)),
+          authority,
+          operator: address,
+          id: Number(params.id),
           docLanguage: params.docLanguage,
           docUrl: params.docUrl,
           docDigestSri: sriAdd,
@@ -239,8 +244,9 @@ export function useActionTR( onCancel?: () => void,
       case 'MsgIncreaseActiveGovernanceFrameworkVersion':
         typeUrl = MSG_TYPE_CONFIG_TR.MsgIncreaseActiveGovernanceFrameworkVersion.typeUrl;
         value = MsgIncreaseActiveGovernanceFrameworkVersion.fromPartial({
-          creator: address,
-          id: Long.fromString(String(params.id)),
+          authority,
+          operator: address,
+          id: Number(params.id),
         });
         break;
       default:

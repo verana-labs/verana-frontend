@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from "react";
-import { env } from 'next-runtime-env';
+import { getPublicEnv } from '@/lib/publicEnv';
 
 type BlockProcessedEvent = {
   type: "block-processed";
@@ -57,9 +57,9 @@ export function IndexerEventsProvider({
 
     const connect = () => {
       if (unmounted) return;
-      const wsUrl =  env('NEXT_PUBLIC_VERANA_WEBSOCKET') || process.env.NEXT_PUBLIC_VERANA_WEBSOCKET;
+      const wsUrl = getPublicEnv('NEXT_PUBLIC_VERANA_WEBSOCKET');
       if (!wsUrl) {
-        console.error("NEXT_PUBLIC_VERANA_WEBSOCKET is not defined");
+        setIsConnected(false);
         return;
       }
       const ws = new WebSocket(wsUrl);

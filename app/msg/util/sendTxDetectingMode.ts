@@ -7,9 +7,9 @@ import { isDirectSigner, isAminoOnlySigner } from '@/msg/util/signerUtil';
 import { signAndBroadcastManualDirect } from '@/msg/util/signAndBroadcastManualDirect';
 import { signAndBroadcastManualAmino, SimulateResult } from '@/msg/util//signAndBroadcastManualAmino';
 import { veranaGasAdjustment, veranaGasPrice, veranaRegistry } from '@/config/veranaChain.sign.client';
+import { getPublicEnv } from '@/lib/publicEnv';
 import { useChain } from '@cosmos-kit/react';
 import { Chain } from '@chain-registry/types';
-import { env } from 'next-runtime-env';
 import { useCalculateFee } from '@/hooks/useCalculateFee';
 
 type SendTxParams = { msgs: EncodeObject[]; memo?: string; simulate?: boolean };
@@ -38,9 +38,7 @@ export function useSendTxDetectingMode(chain: Chain) {
       throw new Error('RPC endpoint not available');
     }
 
-    const veranaDirectMode = 
-        env('NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE') ||
-        process.env.NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE;
+    const veranaDirectMode = getPublicEnv('NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE');
     
     // Get signer from cosmos-kit (multi-wallet safe)
     const signer = (veranaDirectMode && veranaDirectMode==='true')

@@ -1,16 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { env } from 'next-runtime-env';
+import { getPublicEnv } from '@/lib/publicEnv';
 import { ApiErrorResponse } from '@/types/apiErrorResponse';
 import { Permission } from '@/ui/dataview/datasections/perm';
 
 export function usePermissions(schema?: string, type?: string, validatorId?: string) {
   const getURL = useMemo(
-    () =>
-      env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM') ||
-      process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM ||
-      '',
+    () => getPublicEnv('NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM') ?? '',
     []
   );
 

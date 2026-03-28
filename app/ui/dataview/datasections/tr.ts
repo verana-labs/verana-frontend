@@ -153,6 +153,11 @@ export const trSections: Section<TrData>[] = [
 
 //GFD data
 export interface GfdData {
+  authority?: string;
+  id?: string;
+  version?: number;
+  docLanguage?: string;
+  docUrl?: string;
   docs?: string[];
   addGovernanceFrameworkDocument?: string; // action type
   increaseActiveGovernanceFrameworkVersion?: string; // action type

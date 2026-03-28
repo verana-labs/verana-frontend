@@ -14,6 +14,7 @@ import DashboardFooter from "@/ui/common/dashboard-footer";
 import { useDashboardCtx } from "@/providers/api-rest-query-provider-context";
 import { useEffect, useState } from "react";
 import { useIndexerEvents } from "@/providers/indexer-events-provider";
+import { useLatestBlockHeight } from "@/hooks/useLatestBlockHeight";
 import { useVeranaChain } from "@/hooks/useVeranaChain";
 import { useChain } from "@cosmos-kit/react";
 
@@ -24,17 +25,19 @@ export default function Page() {
 
   // Block height from indexer ws
   const { latestProcessedHeight } = useIndexerEvents();
+  const latestBlockHeight = useLatestBlockHeight();
   const dashboardCtx = useDashboardCtx();
   const [dashboardData, setDashboardData] = useState<DashboardData>({});
 
   const [ refresh, setRefresh ] = useState<boolean>(true);
 
   useEffect(() => {
+    const blockHeight = latestProcessedHeight > 0 ? latestProcessedHeight : latestBlockHeight;
     setDashboardData((prev) => ({
       ...dashboardCtx.dashboardData,
-      blockHeight: latestProcessedHeight,
+      blockHeight,
     }));
-  }, [latestProcessedHeight, dashboardCtx.dashboardData]);
+  }, [latestProcessedHeight, latestBlockHeight, dashboardCtx.dashboardData]);
 
   useEffect(() => {
     if (!refresh) return;

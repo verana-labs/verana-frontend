@@ -12,6 +12,7 @@ import { MessageType } from "@/msg/constants/types";
 const requiredFieldsByMsgType: Record<MessageType, readonly string[]> = {
   // CS
   MsgCreateCredentialSchema: [
+    "authority",
     "trId",
     "jsonSchema",
     "issuerGrantorValidationValidityPeriod",
@@ -23,6 +24,7 @@ const requiredFieldsByMsgType: Record<MessageType, readonly string[]> = {
     "verifierPermManagementMode"
   ],
   MsgUpdateCredentialSchema: [
+    "authority",
     "id",
     "issuerGrantorValidationValidityPeriod",
     "verifierGrantorValidationValidityPeriod",
@@ -30,14 +32,14 @@ const requiredFieldsByMsgType: Record<MessageType, readonly string[]> = {
     "verifierValidationValidityPeriod",
     "holderValidationValidityPeriod"
   ],
-  MsgArchiveCredentialSchema: ["id"],
-  MsgUnarchiveCredentialSchema: ["id"],
+  MsgArchiveCredentialSchema: ["authority", "id"],
+  MsgUnarchiveCredentialSchema: ["authority", "id"],
 
   // TR
-  MsgCreateTrustRegistry: ["did", "aka", "language", "docUrl"],
-  MsgUpdateTrustRegistry: ["id", "did", "aka", "language", "docUrl"],
-  MsgArchiveTrustRegistry: ["id"],
-  MsgUnarchiveTrustRegistry: ["id"],
+  MsgCreateTrustRegistry: ["authority", "did", "aka", "language", "docUrl"],
+  MsgUpdateTrustRegistry: ["authority", "id", "did", "aka", "language", "docUrl"],
+  MsgArchiveTrustRegistry: ["authority", "id"],
+  MsgUnarchiveTrustRegistry: ["authority", "id"],
   MsgAddGovernanceFrameworkDocument: [],
   MsgIncreaseActiveGovernanceFrameworkVersion: [],
 
@@ -54,7 +56,7 @@ const requiredFieldsByMsgType: Record<MessageType, readonly string[]> = {
   MsgRenewPermissionVP: [],
   MsgSetPermissionVPToValidated: [],
   MsgCancelPermissionVPLastRequest: [],
-  MsgExtendPermission: [],
+  MsgAdjustPermission: [],
   MsgRevokePermission: [],
   MsgSlashPermissionTrustDeposit: [],
   MsgRepayPermissionSlashedTrustDeposit: [],
@@ -75,7 +77,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * Generic submit hook (no runtime validation/casting):
  * - Receives msgType + raw object
  * - Picks only the configured fields for that msgType
- * - Adds msgType + creator
+ * - Adds msgType and any explicitly configured routing fields
  * - Dispatches via the correct action hook
  */
 export function useSubmitTxMsgTypeFromObject( onCancel?: () => void,
@@ -105,7 +107,10 @@ export function useSubmitTxMsgTypeFromObject( onCancel?: () => void,
       const keys = requiredFieldsByMsgType[msgType] ?? [];
 
       const src = raw as Record<string, unknown>;
-      const payload: Record<string, unknown> = { msgType };
+      const payload: Record<string, unknown> = {
+        msgType,
+        authority: src.authority ?? src.controller,
+      };
 
       for (const k of keys) payload[k] = src[k];
 
