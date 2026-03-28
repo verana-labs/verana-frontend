@@ -54,3 +54,6 @@ coverage
 
 # Build logs
 docker-build-log.txt
+
+# Local-only workspace checkout
+verana-blockchain

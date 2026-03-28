@@ -2,7 +2,7 @@
 global:
   domain: vna-betanet-1.devnet.verana.network
 
-name: verana-frontend
+name: frontend-pr278
 host: frontend-pr278
 replicas: 1
 
