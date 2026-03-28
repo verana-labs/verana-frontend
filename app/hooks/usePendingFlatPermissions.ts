@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { env } from 'next-runtime-env';
+import { getPublicEnv } from '@/lib/publicEnv';
 import { ApiErrorResponse } from '@/types/apiErrorResponse';
 import { TrustRegistriesPermission } from '@/ui/dataview/datasections/perm';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
@@ -12,7 +12,7 @@ import { resolveTranslatable } from '@/ui/dataview/types';
 export function usePendingFlatPermissions() {
   const veranaChain = useVeranaChain();
   const { address } = useChain(veranaChain.chain_name);
-  const getURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM;
+  const getURL = getPublicEnv('NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM');
 
   const [permissionsList, setPermissionsList] = useState<TrustRegistriesPermission[]>([]);
   const [loading, setLoading] = useState(false);

@@ -1,12 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { env } from 'next-runtime-env';
+import { getPublicEnv } from '@/lib/publicEnv';
 import { ApiErrorResponse } from '@/types/apiErrorResponse';
 import { Permission } from '@/ui/dataview/datasections/perm';
 
 export function usePermissionsForAddress(address?: string) {
-  const getURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM;
+  const getURL = getPublicEnv('NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM');
 
   const [permissionsList, setPermissionsList] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(false);
