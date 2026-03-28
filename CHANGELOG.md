@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.12.0](https://github.com/verana-labs/verana-frontend/compare/v0.11.1...v0.12.0) (2026-03-28)
+
+
+### Features
+
+* [Navigation Improvement] ([#350](https://github.com/verana-labs/verana-frontend/issues/350)) ([b8a1579](https://github.com/verana-labs/verana-frontend/commit/b8a15798075b442f9edf068ab144d494ef7bc7c4))
+* consume published verana-types package ([#327](https://github.com/verana-labs/verana-frontend/issues/327)) ([d468520](https://github.com/verana-labs/verana-frontend/commit/d4685207319c96531d8ac009321a35c977a596f9))
+
+
+### Bug Fixes
+
+* add loading resources ([#345](https://github.com/verana-labs/verana-frontend/issues/345)) ([35d4575](https://github.com/verana-labs/verana-frontend/commit/35d4575cfb39dac2f1b8db66074e4723e20fe97e))
+* easy way to match Verana-front image with the chart version ([#346](https://github.com/verana-labs/verana-frontend/issues/346)) ([eb6d130](https://github.com/verana-labs/verana-frontend/commit/eb6d130ca273c5b932602dbff7515e5ea9590b28))
+
 ## [0.11.1](https://github.com/verana-labs/verana-frontend/compare/v0.11.0...v0.11.1) (2026-03-24)
 
 
