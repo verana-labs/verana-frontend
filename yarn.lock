@@ -3767,10 +3767,10 @@
   resolved "https://registry.npmjs.org/@vanilla-extract/recipes/-/recipes-0.5.7.tgz"
   integrity sha512-Fvr+htdyb6LVUu+PhH61UFPhwkjgDEk8L4Zq9oIdte42sntpKrgFy90MyTRtGwjVALmrJ0pwRUVr8UoByYeW8A==
 
-"@verana-labs/verana-types@0.10.1-pr-278.1":
-  version "0.10.1-pr-278.1"
-  resolved "https://registry.yarnpkg.com/@verana-labs/verana-types/-/verana-types-0.10.1-pr-278.1.tgz#32eb02665940215210a702ad680f5424a5eaf490"
-  integrity sha512-byfmXyWBNPjbQ6KF8Gc2T76IVzsaNeoLENqEcixFcJ9bRrsB7I6sRsaGsR3z1TkGynumo5ys0ZAh5wvEOWnekQ==
+"@verana-labs/verana-types@0.10.1-dev.8":
+  version "0.10.1-dev.8"
+  resolved "https://registry.yarnpkg.com/@verana-labs/verana-types/-/verana-types-0.10.1-dev.8.tgz#93ed91260d13f045b10df2b0f4cd8867600c6095"
+  integrity sha512-RZXjZ0yyEnKWiTEMXvqayOtMq9gLbTK1BWrSgeoBdW3ngkCco2GtpJJhiHkC0ZGVAEiDmW1heKGc9VcwTd3kpg==
   dependencies:
     long "5.3.2"
     protobufjs "7.2.6"
