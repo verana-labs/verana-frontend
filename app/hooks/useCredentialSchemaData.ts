@@ -11,6 +11,7 @@ type RawSchema = Record<string, unknown> & {
   id?: string | number;
   tr_id?: string | number;
   creator?: string;
+  authority?: string;
   json_schema?: string;
   issuer_grantor_validation_validity_period?: number;
   verifier_grantor_validation_validity_period?: number;
@@ -67,6 +68,7 @@ export function useCsData(id: string) {
           id,
           trId: entry.tr_id ?? '',
           creator: entry.creator ?? '',
+          authority: entry.authority ?? '',
           issuerGrantorValidationValidityPeriod: entry.issuer_grantor_validation_validity_period ?? 0,
           verifierGrantorValidationValidityPeriod: entry.verifier_grantor_validation_validity_period ?? 0,
           issuerValidationValidityPeriod: entry.issuer_validation_validity_period ?? 0,

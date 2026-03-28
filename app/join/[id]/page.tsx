@@ -131,10 +131,9 @@ export default function JoinEcosystemWizard() {
 
       await actionPerm({
         msgType,
-        creator: "",
+        authority: selectedValidator?.authority,
         type,
         validatorPermId,
-        country: "US",
         did,
       });      
   }

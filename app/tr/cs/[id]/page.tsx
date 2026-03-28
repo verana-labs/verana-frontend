@@ -58,12 +58,13 @@ export default function CSViewPage() {
     if (!csData) return;
     setData({
       ...csData,
+      authority: dataTR?.controller ?? csData.authority,
       archiveCredentialSchema: trController && !csData.archived ? "MsgArchiveCredentialSchema" : undefined,
       unarchiveCredentialSchema: trController && csData.archived ? "MsgUnarchiveCredentialSchema" : undefined,
       updateCredentialSchema: trController ? "MsgUpdateCredentialSchema" : undefined,
     });
     if (trId == "") setTrId(csData.trId as string);
-  }, [csData, trController]);
+  }, [csData, trController, dataTR]);
 
   return (
     <>

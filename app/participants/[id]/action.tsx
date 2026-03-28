@@ -31,7 +31,7 @@ export default function PermActionPage({ action, data, onClose, onRefresh, setMo
       case 'MsgRepayPermissionSlashedTrustDeposit':
         await actionPerm({
           msgType: action,
-          creator: '',
+          authority: permData.authority,
           id: permData.id
         });
         break;
@@ -39,21 +39,20 @@ export default function PermActionPage({ action, data, onClose, onRefresh, setMo
       case 'MsgSetPermissionVPToValidated':
         await actionPerm({
           msgType: 'MsgSetPermissionVPToValidated',
-          creator: "",
+          authority: permData.authority,
           id: permData.id,
           effectiveUntil: newData.effectiveUntil,
           validationFees: newData.validationFees?? 0,
           issuanceFees: newData.issuanceFees?? 0,
           verificationFees: newData.verificationFees?? 0,
-          country: permData.country,
           vpSummaryDigestSri: newData.vpSummaryDigestSri?? ''
         });
         break;
 
-      case 'MsgExtendPermission':
+      case 'MsgAdjustPermission':
         await actionPerm({
-          msgType: 'MsgExtendPermission',
-          creator: "",
+          msgType: 'MsgAdjustPermission',
+          authority: permData.authority,
           id: permData.id,
           effectiveUntil: newData.effectiveUntil,
         });
@@ -62,7 +61,7 @@ export default function PermActionPage({ action, data, onClose, onRefresh, setMo
       case 'MsgSlashPermissionTrustDeposit':
         await actionPerm({
           msgType: 'MsgSlashPermissionTrustDeposit',
-          creator: "",
+          authority: permData.authority,
           id: permData.id,
           amount: newData.amount??0
         });
@@ -71,10 +70,9 @@ export default function PermActionPage({ action, data, onClose, onRefresh, setMo
       case 'MsgCreateRootPermission':
         await actionPerm({
           msgType: 'MsgCreateRootPermission',
-          creator: "",
+          authority: permData.authority,
           schemaId: permData.schema_id,
           did: newData.did as string,
-          country: newData.country as string,
           effectiveFrom: newData.effectiveFrom,
           effectiveUntil: newData.effectiveUntil,
           validationFees: newData.validationFees?? 0,
@@ -86,22 +84,20 @@ export default function PermActionPage({ action, data, onClose, onRefresh, setMo
       case 'MsgStartPermissionVP':
         await actionPerm({
           msgType: 'MsgStartPermissionVP',
-          creator: "",
+          authority: permData.authority,
           type: permData.type,
-          validatorPermId: permData.validator_perm_id,
+          validatorPermId: permData.id,
           did: newData.did as string,
-          country: newData.country as string,
         });
         break;
 
       case 'MsgCreatePermission':
         await actionPerm({
           msgType: 'MsgCreatePermission',
-          creator: "",
-          schemaId: permData.schema_id,
+          authority: permData.authority,
+          validatorPermId: permData.id,
           type: permData.type,
           did: newData.did as string,
-          country: newData.country as string,
           effectiveFrom: newData.effectiveFrom,
           effectiveUntil: newData.effectiveUntil,
           validationFees: newData.validationFees?? 0,
@@ -121,7 +117,7 @@ export default function PermActionPage({ action, data, onClose, onRefresh, setMo
       case 'MsgCancelPermissionVPLastRequest':
       case 'MsgRevokePermission':
       case 'MsgRepayPermissionSlashedTrustDeposit': 
-        const res =  await actionPerm({ msgType: action, creator: '', id: permData.id}, true);
+        const res =  await actionPerm({ msgType: action, authority: permData.authority, id: permData.id}, true);
         if (res && typeof res === "object" && !("transactionHash" in res)) {
           return res as SimulateResult;
         }
@@ -138,7 +134,7 @@ export default function PermActionPage({ action, data, onClose, onRefresh, setMo
       case 'MsgRepayPermissionSlashedTrustDeposit':
         return true;
       case 'MsgSetPermissionVPToValidated':
-      case 'MsgExtendPermission':
+      case 'MsgAdjustPermission':
       case 'MsgSlashPermissionTrustDeposit':
       case 'MsgCreateRootPermission':
       case 'MsgStartPermissionVP':

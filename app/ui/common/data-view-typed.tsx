@@ -9,9 +9,8 @@ import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import EditableDataView from '@/ui/common/data-edit';
 import DataView from '@/ui/common/data-view-columns';
-import { MsgTypeCS, MsgTypeDID, MsgTypePERM, MsgTypeTD, MsgTypeTR } from '@/msg/constants/notificationMsgForMsgType';
+import { MsgTypeCS, MsgTypePERM, MsgTypeTD, MsgTypeTR } from '@/msg/constants/notificationMsgForMsgType';
 import GfdPage from '@/tr/[id]/gfd';
-import DidActionPage from '@/did/[id]/action';
 import TdActionPage from '@/account/action';
 import GetVNATokens from '@/ui/common/get-vna';
 import PermActionPage from '@/participants/[id]/action';
@@ -128,10 +127,6 @@ export function renderObjectList<I extends object>(args: {
   ));
 }
 
-// Define the valid actions for DID
-const validDIDAction = (action: string): action is MsgTypeDID => 
-  ['MsgAddDID','MsgRenewDID','MsgTouchDID','MsgRemoveDID'].includes(action);
-
 // Define the valid actions for TD
 const validTDAction = (action: string): action is MsgTypeTD => 
   ['MsgReclaimTrustDeposit','MsgReclaimTrustDepositYield'].includes(action);
@@ -147,7 +142,7 @@ export const validTRAction = (action: string): action is MsgTypeTR =>
 // Define the valid actions for PERM
 export const validPermAction = (action: string): action is MsgTypePERM => 
   ['MsgCancelPermissionVPLastRequest','MsgRenewPermissionVP','MsgSetPermissionVPToValidated','MsgStartPermissionVP',
-  'MsgExtendPermission','MsgRevokePermission','MsgSlashPermissionTrustDeposit','MsgRepayPermissionSlashedTrustDeposit',
+  'MsgAdjustPermission','MsgRevokePermission','MsgSlashPermissionTrustDeposit','MsgRepayPermissionSlashedTrustDeposit',
   'MsgCreateRootPermission', 'MsgCreatePermission'].includes(action);
 
 // Define the valid actions for CS
@@ -163,9 +158,6 @@ export function renderActionComponent(
   onBack?: () => void,
   setModalHidden?: () => void
 ): ReactNode {
-  if (validDIDAction(action)) {
-    return <DidActionPage action={action} data={data} onClose={onClose} onRefresh={onRefresh} onBack={onBack}/>;
-  }
   if (action === 'GetVNATrustDeposit') {
     return <GetVNATokens/>;
   }

@@ -7,6 +7,7 @@ import {
   MsgUpdateCredentialSchema,
   MsgArchiveCredentialSchema,
 } from '@codec-proto/verana/cs/v1/tx';
+import { PricingAssetType } from '@codec-proto/verana/cs/v1/types';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
 import { useNotification } from '@/providers/notification-provider';
@@ -15,7 +16,6 @@ import {
   MSG_INPROGRESS_ACTION_CS,
   MSG_SUCCESS_ACTION_CS,
 } from '@/msg/constants/notificationMsgForMsgType';
-import Long from 'long';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import { normalizeJsonSchema, validateJSONSchemaReturn } from '@/util/json_schema_util';
@@ -49,7 +49,8 @@ export const MSG_TYPE_CONFIG_CS = {
 type ActionCSParams =
   | {
       msgType: 'MsgCreateCredentialSchema';
-      trId: string | number | Long;
+      authority?: string;
+      trId: string | number;
       jsonSchema: string;
       issuerGrantorValidationValidityPeriod?: number;
       verifierGrantorValidationValidityPeriod?: number;
@@ -61,7 +62,8 @@ type ActionCSParams =
     }
   | {
       msgType: 'MsgUpdateCredentialSchema';
-      id: string | number | Long;
+      authority?: string;
+      id: string | number;
       issuerGrantorValidationValidityPeriod?: number;
       verifierGrantorValidationValidityPeriod?: number;
       issuerValidationValidityPeriod?: number;
@@ -70,12 +72,18 @@ type ActionCSParams =
     }
   | {
       msgType: 'MsgArchiveCredentialSchema';
-      id: string | number | Long;
+      authority?: string;
+      id: string | number;
     }
   | {
       msgType: 'MsgUnarchiveCredentialSchema';
-      id: string | number | Long;
+      authority?: string;
+      id: string | number;
     };
+
+const DEFAULT_CS_PRICING_ASSET_TYPE = PricingAssetType.TU;
+const DEFAULT_CS_PRICING_ASSET = 'tu';
+const DEFAULT_CS_DIGEST_ALGORITHM = 'sha256';
 
 // Hook to execute Credential Schema transactions + notifications
 export function useActionCS( onCancel?: () => void,
@@ -151,13 +159,15 @@ export function useActionCS( onCancel?: () => void,
     let typeUrl = '';
     let value: MsgCreateCredentialSchema | MsgUpdateCredentialSchema | MsgArchiveCredentialSchema;
     let id = (params.msgType !== 'MsgCreateCredentialSchema') ? params.id?.toString() : undefined;
+    const authority = params.authority ?? address;
 
     switch (params.msgType) {
       case 'MsgCreateCredentialSchema': {
         typeUrl = MSG_TYPE_CONFIG_CS.MsgCreateCredentialSchema.typeUrl;
         value = MsgCreateCredentialSchema.fromPartial({
-          creator: address, // always use the connected wallet address
-          trId: Long.fromValue(params.trId), // uint64
+          authority,
+          operator: address,
+          trId: Number(params.trId), // uint64
           jsonSchema: normalizeJsonSchema(params.jsonSchema),
           issuerGrantorValidationValidityPeriod: pickOptionalUInt32(params.issuerGrantorValidationValidityPeriod),
           verifierGrantorValidationValidityPeriod: pickOptionalUInt32(params.verifierGrantorValidationValidityPeriod),
@@ -166,6 +176,9 @@ export function useActionCS( onCancel?: () => void,
           holderValidationValidityPeriod: pickOptionalUInt32(params.holderValidationValidityPeriod),
           issuerPermManagementMode: params.issuerPermManagementMode,
           verifierPermManagementMode: params.verifierPermManagementMode,
+          pricingAssetType: DEFAULT_CS_PRICING_ASSET_TYPE,
+          pricingAsset: DEFAULT_CS_PRICING_ASSET,
+          digestAlgorithm: DEFAULT_CS_DIGEST_ALGORITHM,
         });
         break;
       }
@@ -173,8 +186,9 @@ export function useActionCS( onCancel?: () => void,
       case 'MsgUpdateCredentialSchema': {
         typeUrl = MSG_TYPE_CONFIG_CS.MsgUpdateCredentialSchema.typeUrl;
         value = MsgUpdateCredentialSchema.fromPartial({
-          creator: address, // always use the connected wallet address
-          id: Long.fromValue(params.id), // uint64
+          authority,
+          operator: address,
+          id: Number(params.id), // uint64
           issuerGrantorValidationValidityPeriod: pickOptionalUInt32(params.issuerGrantorValidationValidityPeriod),
           verifierGrantorValidationValidityPeriod: pickOptionalUInt32(params.verifierGrantorValidationValidityPeriod),
           issuerValidationValidityPeriod: pickOptionalUInt32(params.issuerValidationValidityPeriod),
@@ -187,8 +201,9 @@ export function useActionCS( onCancel?: () => void,
       case 'MsgArchiveCredentialSchema': {
         typeUrl = MSG_TYPE_CONFIG_CS.MsgArchiveCredentialSchema.typeUrl;
         value = MsgArchiveCredentialSchema.fromPartial({
-          creator: address,
-          id: Long.fromValue(params.id), // uint64
+          authority,
+          operator: address,
+          id: Number(params.id), // uint64
           archive: true,
         });
         break;
@@ -197,8 +212,9 @@ export function useActionCS( onCancel?: () => void,
       case 'MsgUnarchiveCredentialSchema': {
         typeUrl = MSG_TYPE_CONFIG_CS.MsgArchiveCredentialSchema.typeUrl;
         value = MsgArchiveCredentialSchema.fromPartial({
-          creator: address,
-          id: Long.fromValue(params.id), // uint64
+          authority,
+          operator: address,
+          id: Number(params.id), // uint64
           archive: false,
         });
         break;

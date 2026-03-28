@@ -9,6 +9,7 @@ const t = (key: string, values?: I18nValues) => ({ key, values });
 //CredentialSchema data
 export interface CsData {
   creator: string;
+  authority?: string;
   id: string | number;
   trId: string | number;
   issuerGrantorValidationValidityPeriod: number;

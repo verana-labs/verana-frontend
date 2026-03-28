@@ -42,6 +42,7 @@ type ActionTDParams =
     }
   | {
       msgType: 'MsgReclaimTrustDepositYield';
+      authority?: string;
     };
 
 // Build an executor for trust-deposit actions, handling wallet checks and UI refresh triggers.
@@ -83,6 +84,9 @@ export function useActionTD( onCancel?: () => void,
     let typeUrl = '';
     let value: MsgReclaimTrustDeposit | MsgReclaimTrustDepositYield;
     let claimedLabel: string | undefined;
+    const authority = params.msgType === 'MsgReclaimTrustDepositYield'
+      ? params.authority ?? address
+      : undefined;
 
     switch (params.msgType) {
       case 'MsgReclaimTrustDeposit': {
@@ -98,7 +102,8 @@ export function useActionTD( onCancel?: () => void,
       case 'MsgReclaimTrustDepositYield': {
         typeUrl = MSG_TYPE_CONFIG_TD.MsgReclaimTrustDepositYield.typeUrl;
         value = MsgReclaimTrustDepositYield.fromPartial({
-          creator: address,
+          authority,
+          operator: address,
         });
         break;
       }
