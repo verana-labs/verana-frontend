@@ -25,9 +25,6 @@ WORKDIR /app
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 
-# Keep the local-only excluded workspace path present so Next/TS config stays consistent in Docker builds.
-RUN mkdir -p verana-blockchain
-
 # Copy source code
 COPY . .
 
