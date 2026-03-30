@@ -109,7 +109,7 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     description: t("messages.MsgSetPermissionVPToValidated.description"),
     cost: t("messages.MsgSetPermissionVPToValidated.cost"), // {value}
   },
-  MsgExtendPermission: {
+  MsgAdjustPermission: {
     label: t("messages.MsgExtendPermission.label"),
     description: t("messages.MsgExtendPermission.description"),
     cost: t("messages.MsgExtendPermission.cost"), // {value}
@@ -210,7 +210,7 @@ export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
   MsgSetPermissionVPToValidated: {
     button: "bg-green-600 hover:bg-green-700"
   },
-  MsgExtendPermission: {},
+  MsgAdjustPermission: {},
   MsgRevokePermission: {
     button: "bg-red-600 hover:bg-red-700"
   },

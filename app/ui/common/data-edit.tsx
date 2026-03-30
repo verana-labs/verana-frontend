@@ -15,8 +15,8 @@ import { formatVNAFromUVNA, isJson } from '@/util/util';
 import JsonCodeBlock from '@/ui/common/json-code-block';
 import { LanguageCombobox } from '@/ui/common/language-combobox';
 import ActionCard, { ActionCardProps } from '@/ui/common/action-card';
+import { getPublicEnv } from '@/lib/publicEnv';
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
-import { env } from 'next-runtime-env';
 
 type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & {
   data: T;
@@ -74,7 +74,7 @@ export default function EditableDataView<T extends object>({
   }, []);
 
   // Container Global Variable LOW_BALANCE_WARN_UVNA
-  const LOW_BALANCE_WARN_UVNA = env('NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA') || process.env.NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA;
+  const LOW_BALANCE_WARN_UVNA = getPublicEnv('NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA');
   const [showMsgLowBalanceWarn, setShowMsgLowBalanceWarn] = useState<boolean | null>(null);
   const lowBalanceTemplate = resolveTranslatable({key: 'messages.lowbalance'}, translate)?? "You’re Running Low on VNA. Your balance is {value} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted.";
   const [feeAmount, setFeeAmount] = useState<number>(0);

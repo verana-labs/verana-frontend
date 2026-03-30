@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { env } from 'next-runtime-env';
+import { getPublicEnv } from '@/lib/publicEnv';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { ApiErrorResponse } from '@/types/apiErrorResponse';
@@ -31,9 +31,7 @@ type RawSchema = Record<string, unknown> & {
 
 export function useCSList(trId?: string, all: boolean = true, onlyActive: boolean = false) {
 
-  const getURL =
-    env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA') ||
-    process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA;
+  const getURL = getPublicEnv('NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA');
 
   const [csList, setCsList] = useState<CsList[]>([]);
   const [loading, setLoading] = useState(false);

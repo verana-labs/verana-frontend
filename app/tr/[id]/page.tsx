@@ -195,6 +195,7 @@ export default function TRViewPage() {
                         setAddCS(false);
                       }}
             trId={Number(id)}
+            authority={data.controller}
         />
       </ModalAction>
       )}

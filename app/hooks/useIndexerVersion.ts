@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { env } from 'next-runtime-env';
+import { getPublicEnv } from '@/lib/publicEnv';
 
 export function useIndexerVersion() {
   const [version, setVersion] = useState<string | null>(null);
@@ -12,9 +12,7 @@ export function useIndexerVersion() {
 
     const fetchVersion = async () => {
       try {
-        const indexerEndpoint =
-          env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_INDEXER') ||
-          process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_INDEXER;
+        const indexerEndpoint = getPublicEnv('NEXT_PUBLIC_VERANA_REST_ENDPOINT_INDEXER');
         if (!indexerEndpoint) return;
 
         const response = await fetch(

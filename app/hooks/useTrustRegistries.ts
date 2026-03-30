@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { env } from 'next-runtime-env';
+import { getPublicEnv } from '@/lib/publicEnv';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
 import { TrList } from '@/ui/datatable/columnslist/tr';
@@ -13,7 +13,7 @@ export function useTrustRegistries (all: boolean = false, onlyActive: boolean = 
   const veranaChain = useVeranaChain();
   const { address } = useChain(veranaChain.chain_name);
 
-  const getTrURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY;
+  const getTrURL = getPublicEnv('NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY');
 
   const [trList, setTrList] = useState<TrList[]>([]);
   const [loading, setLoading] = useState(false);

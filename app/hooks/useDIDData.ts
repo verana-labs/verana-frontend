@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { env } from 'next-runtime-env';
+import { getPublicEnv } from '@/lib/publicEnv';
 import { DidData } from '@/ui/dataview/datasections/did';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
@@ -12,9 +12,7 @@ export function useDIDData(id: string ) {
   const [loading, setLoading] = useState(true);
   const [errorDIDData, setError] = useState<string | null>(null);
 
-  const getURL =
-    env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID') ||
-    process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID;
+  const getURL = getPublicEnv('NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID');
 
   const fetchDID = async () => {
     if (!id) return;

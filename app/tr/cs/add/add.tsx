@@ -9,11 +9,12 @@ import { resolveTranslatable } from '@/ui/dataview/types';
 
 type AddCsPageProps = {
   trId: number;
+  authority: string;
   onCancel: () => void;
   onRefresh: (id?: string, txHeight?: number) => void;
 }
 
-export default function AddCsPage({ trId, onCancel, onRefresh }: AddCsPageProps) {
+export default function AddCsPage({ trId, authority, onCancel, onRefresh }: AddCsPageProps) {
   const msgType = getMsgTypeFor("CsData" as DataType, "create");
   const { submitTx } = useSubmitTxMsgTypeFromObject( onCancel, onRefresh );
 
@@ -27,7 +28,7 @@ export default function AddCsPage({ trId, onCancel, onRefresh }: AddCsPageProps)
   }
 
   const newCS = {
-    trId: trId, creator: '',
+    trId: trId, creator: '', authority,
     issuerGrantorValidationValidityPeriod: 0, verifierGrantorValidationValidityPeriod: 0,
     issuerValidationValidityPeriod: 0, verifierValidationValidityPeriod: 0, holderValidationValidityPeriod: 0,
     issuerPermManagementMode: 1, verifierPermManagementMode: 1, jsonSchema: "",

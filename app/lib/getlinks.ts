@@ -1,8 +1,8 @@
 import { translate } from '@/i18n/dataview';
+import { getPublicEnv } from '@/lib/publicEnv';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { faCcMastercard, faGooglePay } from '@fortawesome/free-brands-svg-icons'; // eslint-disable-line @typescript-eslint/no-unused-vars
 import { faDroplet, IconDefinition } from '@fortawesome/free-solid-svg-icons';
-import { env } from 'next-runtime-env';
 
 interface GetVNALink {
   name: string;
@@ -18,9 +18,7 @@ interface GetVNALink {
   className?: string;
 }
 
-const TOPUP_VS =
-    env('NEXT_PUBLIC_VERANA_TOPUP_VS') ||
-    process.env.NEXT_PUBLIC_VERANA_TOPUP_VS;
+const TOPUP_VS = getPublicEnv('NEXT_PUBLIC_VERANA_TOPUP_VS');
 
 const urlGetVNA = (TOPUP_VS ? TOPUP_VS.split(':')[2] : '');
 
