@@ -2,6 +2,7 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from "react";
 import { env } from 'next-runtime-env';
+import { useComponentsVersion } from '@/providers/components-version-provider';
 
 type BlockProcessedEvent = {
   type: "block-processed";
@@ -40,6 +41,8 @@ export function IndexerEventsProvider({
   const [isConnected, setIsConnected] = useState(false);
   const [latestProcessedHeight, setLatestProcessedHeight] = useState(0);
   const [latestProcessedTimestamp, setLatestProcessedTimestamp] = useState<string | null>(null);
+
+  const { setState: setVersionState } = useComponentsVersion();
 
   useEffect(() => {
     let unmounted = false;
@@ -80,6 +83,10 @@ export function IndexerEventsProvider({
           latestProcessedTimestampRef.current = data.timestamp;
           setLatestProcessedHeight(data.height);
           setLatestProcessedTimestamp(data.timestamp);
+          setVersionState((prev) => ({
+            ...prev,
+            indexer: { ...prev.indexer, lastProcessedBlock: data.height },
+          }));
           const ready: Waiting[] = [];
           const pending: Waiting[] = [];
           for (const waiting of waitingRef.current) {

@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { env } from 'next-runtime-env';
+import { useComponentsVersion } from '@/providers/components-version-provider';
 
 export function useIndexerVersion() {
-  const [version, setVersion] = useState<string | null>(null);
+  const { setState } = useComponentsVersion();
 
   useEffect(() => {
     let ignore = false;
@@ -24,11 +25,25 @@ export function useIndexerVersion() {
         if (!response.ok) throw new Error(`Failed to load indexer version: ${response.status}`);
         const data = await response.json();
         if (!ignore) {
-          setVersion(data?.appVersion ?? null);
+          setState((prev) => ({
+            ...prev,
+            indexer: {
+              ...prev.indexer,
+              version: data?.appVersion ?? null,
+            },
+          }));
         }
       } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') return;
-        if (!ignore) setVersion(null);
+        if (!ignore) {
+          setState((prev) => ({
+            ...prev,
+            indexer: {
+              ...prev.indexer,
+              version: null,
+            },
+          }));
+        }
         console.error('Failed to load indexer version', err);
       }
     };
@@ -40,6 +55,4 @@ export function useIndexerVersion() {
       controller.abort();
     };
   }, []);
-
-  return version;
 }

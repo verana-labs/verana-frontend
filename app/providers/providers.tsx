@@ -6,6 +6,7 @@ import { NotificationProvider } from '@/providers/notification-provider';
 import { ThemeProvider } from 'next-themes';
 import { RestQueryProvider } from "@/providers/api-rest-query-provider-context";
 import { IndexerEventsProvider } from "@/providers/indexer-events-provider";
+import { ComponentsVersionProvider } from "@/providers/components-version-provider";
 
 const VeranaChainProvider = dynamic(
   () => import("@/providers/verana-chain-provider"),
@@ -22,15 +23,17 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       defaultTheme="light"
     >
         <VeranaChainProvider>
-          <IndexerEventsProvider>
-            <RequireConnectedWallet>
-                <NotificationProvider>
-                  <RestQueryProvider>
-                    {children}   
-                  </RestQueryProvider>
-                </NotificationProvider>
-            </RequireConnectedWallet>
-          </IndexerEventsProvider>
+          <ComponentsVersionProvider>
+            <IndexerEventsProvider>
+              <RequireConnectedWallet>
+                  <NotificationProvider>
+                    <RestQueryProvider>
+                      {children}   
+                    </RestQueryProvider>
+                  </NotificationProvider>
+              </RequireConnectedWallet>
+            </IndexerEventsProvider>
+          </ComponentsVersionProvider>
         </VeranaChainProvider>  
     </ThemeProvider>
     );         
