@@ -57,12 +57,12 @@ export function usePermissions(schema?: string, type?: string, validatorId?: str
     } finally {
       setLoading(false);
     }
-  }, [schema, type, getURL]);
+  }, [schema, type, validatorId, getURL]);
 
   useEffect(() => {
     if (!schema) return;
-    fetchPermissions(schema, type);
-  }, [schema, type, fetchPermissions]);
+    fetchPermissions(schema, type, validatorId);
+  }, [schema, type, validatorId, fetchPermissions]);
 
   return { permissionsList, loading, errorPermissionsList, refetch: fetchPermissions };
 }
