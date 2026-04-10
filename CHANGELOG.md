@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.12.1](https://github.com/verana-labs/verana-frontend/compare/v0.12.0...v0.12.1) (2026-04-10)
+
+
+### Bug Fixes
+
+* create provider to handle versioning ([#361](https://github.com/verana-labs/verana-frontend/issues/361)) ([2c30e81](https://github.com/verana-labs/verana-frontend/commit/2c30e81458de49ce93a19055815a42ae2917fc20))
+* new permission must show the permission when transaction finishes ([#362](https://github.com/verana-labs/verana-frontend/issues/362)) ([4d44995](https://github.com/verana-labs/verana-frontend/commit/4d4499573b87faa3b1ce8f0c5afa5426096d9f7a))
+
 ## [0.12.0](https://github.com/verana-labs/verana-frontend/compare/v0.11.1...v0.12.0) (2026-03-28)
 
 
