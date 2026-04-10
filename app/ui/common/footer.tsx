@@ -6,13 +6,10 @@ import { resolveTranslatable } from '../dataview/types';
 import { translate } from '@/i18n/dataview';
 import { communityLinks, configFooter } from '@/lib/dashlinks';
 import Link from 'next/link';
-import { useChainVersion } from '@/hooks/useChainVersion';
-import { useIndexerVersion } from '@/hooks/useIndexerVersion';
+import { useComponentsVersion } from '@/providers/components-version-provider';
 
 export function Footer() {
-  const networkVersion = useChainVersion();
-  const indexerVersion = useIndexerVersion();
-  const frontendVersion = process.env.NEXT_PUBLIC_APP_VERSION;
+  const { state } = useComponentsVersion();
 
   return (
     <div className="flex-shrink-0 px-2 py-4 border-t border-neutral-20 dark:border-neutral-70">
@@ -31,11 +28,11 @@ export function Footer() {
       </div>
       <div className="mt-1 grid grid-cols-2 text-xs text-neutral-70 dark:text-neutral-70">
         <span>{resolveTranslatable({key: "footer.network"}, translate)}</span>
-        <span>{networkVersion ?? resolveTranslatable({key: "footer.version"}, translate)}</span>
+        <span>{state.ledger.version ?? resolveTranslatable({key: "footer.version"}, translate)}</span>
         <span>{resolveTranslatable({key: "footer.indexer"}, translate)}</span>
-        <span>{indexerVersion ?? resolveTranslatable({key: "footer.version"}, translate)}</span>
+        <span>{state.indexer.version ?? resolveTranslatable({key: "footer.version"}, translate)}</span>
         <span>{resolveTranslatable({key: "footer.frontend"}, translate)}</span>
-        <span>{frontendVersion ? `v${frontendVersion}` : resolveTranslatable({key: "footer.version"}, translate)}</span>
+        <span>{state.frontend.version ?? resolveTranslatable({key: "footer.version"}, translate)}</span>
       </div>
 
       {/* Social Ícons */}
