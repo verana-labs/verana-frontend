@@ -27,7 +27,7 @@ type AddJoinPageProps = {
   trId: string;
   nodeJoin: TreeNode;
   onCancel: () => void;
-  onRefresh: (id?: string) => void;
+  onRefresh: (id?: string, txHeight?: number) => void;
 }
 
 export default function AddJoinPage({ trId, nodeJoin, onCancel, onRefresh }: AddJoinPageProps) {
