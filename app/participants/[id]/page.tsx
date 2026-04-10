@@ -187,7 +187,8 @@ export default function ParicipantsPage() {
 
   return (
    <PermissionTree tree={permissionsTree} type={"participants"} csTitle={csData?.title??""} trTitle={dataTR?.did??""} csId={csData?.id as string} trId={csData?.trId as string}
-        isTrController={dataTR?.controller==address} setNodeRequestParams={setNodeRequestParams} refreshRoot={()=>setRefreshRoot(true)} onConnect={!isWalletConnected? connect : undefined}/>
+        isTrController={dataTR?.controller==address} setNodeRequestParams={setNodeRequestParams} refreshRoot={()=>setRefreshRoot(true)} onConnect={!isWalletConnected? connect : undefined}
+        onRetryFetch={() => refetchPermission(schemaId, type, validatorId)}/>
   );
 
 };

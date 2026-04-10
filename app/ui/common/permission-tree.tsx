@@ -40,6 +40,7 @@ type PermissionTreeProps = {
   ) => void;
   refreshRoot?: () => void;
   onConnect?: () => void;
+  onRetryFetch?: () => void;
 };
 
 /** ------------ Types ------------ */
@@ -275,7 +276,7 @@ function Tree({
   );
 }
 
-export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trId, isTrController, setNodeRequestParams, refreshRoot, onConnect }: PermissionTreeProps) {
+export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trId, isTrController, setNodeRequestParams, refreshRoot, onConnect, onRetryFetch }: PermissionTreeProps) {
   const [showWeight, setShowWeight] = useState(false);
   const [showBusiness, setShowBusiness] = useState(false);
   const [showStats, setShowStats] = useState(false);
@@ -371,12 +372,22 @@ export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trI
     console.info("PermissionTree", {txHeight: refreshState.txHeight, latestProcessedHeight, 'ss.mmm': new Date().toISOString().slice(17, 23)});
     if (latestProcessedHeight < refreshState.txHeight) return;
     setNodeRequestParams?.(refreshState.joinNode.nodeId, refreshState.joinNode.type, refreshState.joinNode.parentId);
-    const timeoutId = setTimeout(() => {
-      if (refreshState.id) handleSelect(String(refreshState.id));
-      setRefreshState({});
-    }, 1000);
-    return () => clearTimeout(timeoutId);
+    setRefreshState((prev) => ({ ...prev, txHeight: undefined }));
   }, [refreshState.txHeight, latestProcessedHeight]);
+
+  useEffect(() => {
+    if (!refreshState.joinNode || refreshState.txHeight != null) return;
+    const { node } = refreshState.id
+      ? findNodeAndPath(treeState, refreshState.id)
+      : { node: undefined };
+    if (!node) {
+      onRetryFetch?.();
+      return;
+    }
+    setExpanded((prev) => ({ ...prev, [refreshState.joinNode!.nodeId]: true }));
+    handleSelect(String(refreshState.id!));
+    setRefreshState({});
+  }, [treeState, latestProcessedHeight]);
 
   useEffect(() => {
     if (!selectedId) return;
