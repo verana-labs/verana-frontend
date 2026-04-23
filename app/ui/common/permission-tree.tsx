@@ -3,33 +3,29 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import {
-  faChartColumn,
-  faChevronRight,
-  faCoins,
-  faHandshake,
-  faPlus,
-  faScaleBalanced,
-} from "@fortawesome/free-solid-svg-icons";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import PermissionCard from "./permission-card";
-import { Permission, VpState } from "../dataview/datasections/perm";
-import Link from "next/link";
-import { formatVNAFromUVNA, permStateBadgeClass, roleBadgeClass, shortenDID, vpStateColor } from "@/util/util";
-import { translate } from "@/i18n/dataview";
+import { Permission } from "../dataview/datasections/perm";
 import { resolveTranslatable } from "../dataview/types";
-import TitleAndButton from "./title-and-button";
+import { translate } from "@/i18n/dataview";
 import { ModalAction } from "./modal-action";
 import { renderActionComponent } from "./data-view-typed";
 import AddJoinPage from "@/participants/add/page";
-import { service } from "./permission-atrribute";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useIndexerEvents } from "@/providers/indexer-events-provider";
+import TreeNodeHeader from "./tree-node-header";
+import SchemaHeader, { SchemaStatus } from "./schema-header";
+import TrustRegistryBreadcrumb from "./trust-registry-breadcrumb";
 
 type PermissionTreeProps = {
   tree: TreeNode[];
   type: "participants" | "tasks";
   csTitle?: string;
   csId?: string;
+  csDescription?: string;
+  csStatus?: SchemaStatus;
+  csIssuerPermManagementMode?: string | number;
+  csVerifierPermManagementMode?: string | number;
   trTitle?: string;
   trId?: string;
   isTrController?: boolean;
@@ -122,11 +118,9 @@ function Tree({
   return (
     <div className="space-y-1">
       {nodes.map((node, idx) => {
-        const hasChildren = !!node.children?.length;
         const isExpanded = expanded[node.nodeId] ?? false;
         const isSelected = String(selectedId) === String(node.nodeId);
-        const {labelVpState, classVpState} = vpStateColor(node.permission?.vp_state as VpState, node.permission?.vp_exp as string, node.permission?.expire_soon ?? false);
-        const {labelPermState, classPermState} = permStateBadgeClass(node.permission?.perm_state as PermState, node.permission?.expire_soon ?? false);
+        const hasChildren = !!node.children?.length;
         return (
           <div key={`${node.nodeId}-${idx}`}>
             <div
@@ -137,120 +131,18 @@ function Tree({
               ].join(" ")}
               style={{ marginLeft: depth * 24 }}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  {hasChildren || node.group ? (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onToggle(node.nodeId, node.type as string, node.parentId as string);
-                      }}
-                      className="text-gray-400 text-xs w-4"
-                      aria-label={isExpanded ? "Collapse" : "Expand"}
-                    >
-                      <FontAwesomeIcon
-                        icon={faChevronRight}
-                        className={`transition-transform ${isExpanded ? "rotate-90" : ""}`}
-                      />
-                    </button>
-                  ) : (
-                    <div className="w-4" />
-                  )}
-
-                  <button
-                    type="button"
-                    className="cursor-default"
-                    aria-expanded={hasChildren ? isExpanded : undefined}
-                  >
-                    <FontAwesomeIcon icon={node.icon} className={node.iconColorClass}/>
-                  </button>
-
-                  <span
-                    className={[
-                      "text-sm font-medium",
-                      node.group ? "text-gray-700 dark:text-gray-300" : "text-gray-900 dark:text-white cursor-pointer",
-                    ].join(" ")}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      !node.group && onSelect(node.nodeId)
-                    }}
-                  >
-                    {node.group ? node.name : shortenDID(node.permission?.did as string)}
-                  </span>
-
-                  { type==="participants" && !node.group && node.permission?.perm_state ? (
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${classPermState}`}>
-                      {labelPermState}
-                    </span>
-                  ) : null}
-
-                  { type==="tasks" && node.permission?.vp_state ? (
-                    <>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${classVpState}`}>
-                      {labelVpState}
-                    </span>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${roleBadgeClass(node.permission.type)}`}>
-                      {node.permission.type}
-                    </span>
-                    </>
-                  ) : null}
-
-                </div>
-
-                { type === "participants" && (
-                !node.group && node.permission ? (
-                <div className={`flex items-center space-x-3 text-xs ${node.roleColorClass}`}>
-                  {showWeight && node.permission.weight ? (
-                    <span >
-                      <FontAwesomeIcon icon={faScaleBalanced} className="mr-1" />
-                      {formatVNAFromUVNA(node.permission.weight)}
-                    </span>
-                  ) : null}
-                  {showBusiness && ( node.permission.validation_fees || node.permission.issuance_fees) ? (
-                    <span >
-                      <FontAwesomeIcon icon={faCoins} className="mr-1" />
-                      {`validation fees: ${formatVNAFromUVNA(node.permission.validation_fees)} issuance fees: ${formatVNAFromUVNA(node.permission.issuance_fees)}`} {node.permission.verification_fees && node.permission.verification_fees !== "0" ? `verification fees:  ${formatVNAFromUVNA(node.permission.verification_fees)}` : ""}
-                    </span>
-                  ) : null}
-                  {showStats && node.permission.issued &&  node.permission.verified && (node.permission.issued !== "0" || node.permission.verified !== "0" ) ? (
-                    <span >
-                      <FontAwesomeIcon icon={faChartColumn} className="mr-1" />
-                      {node.permission.issued && node.permission.issued !== "0" ? `issued: ${node.permission.issued}` : ''} {node.permission.verified && node.permission.verified !== "0" ? `verified: ${node.permission.verified}` : ''}
-                    </span>
-                  ) : null}
-                </div>
-                ) : (
-                  <div className= {`text-xs ${node.roleColorClass} flex items-center space-x-3`}>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${node.validationProcessColor}`}>
-                      {node.validationProcessLabel}
-                    </span>
-                    {node.enabledJoin ? (
-                      <span
-                        className="hover:text-purple-600 cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          switch (node.validationProcessAction) {
-                            case 'LinkDID':
-                              window.open(service(node.permission?.did ?? ''), "_blank");
-                              break;
-                            case 'Connect':
-                              onConnect?.();
-                              break;
-                            default:
-                              onJoin(node);
-                              onToggle(node.nodeId, node.type as string, node.parentId as string);
-                              break;
-                          }                          
-                        }}
-                      >
-                        <FontAwesomeIcon icon={faHandshake} className="mr-1" />
-                        {` ${resolveTranslatable({ key: "participants.btn.join" }, translate)}`}
-                      </span>
-                    ) : null}
-                  </div>
-                ) ) }
-              </div>
+              <TreeNodeHeader
+                node={node}
+                type={type}
+                isExpanded={isExpanded}
+                showWeight={showWeight}
+                showBusiness={showBusiness}
+                showStats={showStats}
+                onToggle={onToggle}
+                onSelect={onSelect}
+                onJoin={onJoin}
+                onConnect={onConnect}
+              />
             </div>
 
             {hasChildren && isExpanded ? (
@@ -276,7 +168,7 @@ function Tree({
   );
 }
 
-export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trId, isTrController, setNodeRequestParams, refreshRoot, onConnect, onRetryFetch }: PermissionTreeProps) {
+export default function PermissionTree({ tree, type, csTitle, csDescription, csStatus, csIssuerPermManagementMode, csVerifierPermManagementMode, trTitle, csId, trId, isTrController, setNodeRequestParams, refreshRoot, onConnect, onRetryFetch }: PermissionTreeProps) {
   const [showWeight, setShowWeight] = useState(false);
   const [showBusiness, setShowBusiness] = useState(false);
   const [showStats, setShowStats] = useState(false);
@@ -435,33 +327,33 @@ export default function PermissionTree({ tree, type, csTitle, trTitle, csId, trI
 
   return (
     <>
-      {/* Breadcrumbs */}
-      { (type === "participants" && csTitle && trTitle) ?  (
-      <section className="mb-6">
-        <nav className="flex flex-wrap items-center text-sm" aria-label="Breadcrumb">
-          <Link
-            href={`/tr/${trId}`}
-            className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
-          >
-            {shortenDID(trTitle)}
-          </Link>
-          <FontAwesomeIcon icon={faChevronRight} className="mx-2 text-neutral-70 text-xs" />
-          <Link
-            href={`/tr/cs/${csId}`}
-            className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
-          >
-            {csTitle}
-          </Link>
-          <FontAwesomeIcon icon={faChevronRight} className="mx-2 text-neutral-70 text-xs" />
-          <span className="text-gray-900 dark:text-white font-medium">{resolveTranslatable({key: "participants.title"}, translate)}</span>
-        </nav>
-      </section>
-      ) : null }
+      {/* v4 header: simplified TR breadcrumb + schema header card (participants only) */}
+      {type === "participants" && trTitle && trId ? (
+        <TrustRegistryBreadcrumb trId={trId} trName={trTitle} />
+      ) : null}
 
-      <TitleAndButton 
-        title={resolveTranslatable({key: (type === "participants")? "participants.title" : "task.title"}, translate)??""}
-        description={[resolveTranslatable({key: (type === "participants")? "participants.description" : "task.description"}, translate)??""]}
-      />
+      {type === "participants" && csTitle && csId ? (
+        <SchemaHeader
+          title={csTitle}
+          description={csDescription}
+          id={csId}
+          status={csStatus}
+          issuerPermManagementMode={csIssuerPermManagementMode}
+          verifierPermManagementMode={csVerifierPermManagementMode}
+        />
+      ) : null}
+
+      {/* Tasks mode keeps the simple title/description header */}
+      {type === "tasks" ? (
+        <section className="mb-8">
+          <h1 className="page-title">
+            {resolveTranslatable({ key: "task.title" }, translate) ?? ""}
+          </h1>
+          <p className="page-description">
+            {resolveTranslatable({ key: "task.description" }, translate) ?? ""}
+          </p>
+        </section>
+      ) : null}
 
       {/* Permission Tree Card */}
       <section className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6 mb-6">

@@ -155,6 +155,17 @@ export function getStatus(input: Date | string | number): 'expired' | 'expiring'
   return 'active';
 }
 
+export function countryCodeToFlag(code?: string | null): string {
+  if (!code) return "🏳️";
+  const normalized = code.trim().toUpperCase();
+  if (normalized.length !== 2 || !/^[A-Z]{2}$/.test(normalized)) return "🏳️";
+  const base = 0x1F1E6;
+  return String.fromCodePoint(
+    base + (normalized.charCodeAt(0) - 65),
+    base + (normalized.charCodeAt(1) - 65),
+  );
+}
+
 export function formatNetwork(network: string){
   const htmlNetwork = 
     `
