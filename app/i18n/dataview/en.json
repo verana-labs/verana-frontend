@@ -136,6 +136,9 @@
   "permission.labelrole.issuer": "Issuers",
   "permission.labelrole.verifier": "Verifiers",
   "permission.labelrole.holder": "Holders",
+  "permission.labeltruststate.trusted": "Trusted",
+  "permission.labeltruststate.untrusted": "Untrusted",
+  "permission.labeltruststate.unresolved": "Unresolved",
 
   "meta.title.template": "%s · Verana",
   "meta.root.title": "Verana Dashboard",

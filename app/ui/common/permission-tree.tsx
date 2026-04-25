@@ -109,7 +109,7 @@ function Tree({
   selectedId?: string;
   onSelect: (id: string) => void;
   expanded: Record<string, boolean>;
-  onToggle: (id: string, type: string, validatorId: string) => void;
+  onToggle: (id: string, type: string | undefined, validatorId: string | undefined) => void;
   onJoin: (node: TreeNode) => void;
   onConnect?: () => void;
   depth?: number;
@@ -195,7 +195,7 @@ export default function PermissionTree({ tree, type, csTitle, csDescription, csS
     return undefined;
   };  
 
-  const toggleNode = (id: string, type: string, validatorId: string) => {
+  const toggleNode = (id: string, type: string | undefined, validatorId: string | undefined) => {
     const isOpening = !(expanded[id] ?? false);
     setExpanded((p) => ({ ...p, [id]: isOpening }));
     if (isOpening) {
@@ -329,7 +329,7 @@ export default function PermissionTree({ tree, type, csTitle, csDescription, csS
     <>
       {/* v4 header: simplified TR breadcrumb + schema header card (participants only) */}
       {type === "participants" && trTitle && trId ? (
-        <TrustRegistryBreadcrumb trId={trId} trName={trTitle} />
+        <TrustRegistryBreadcrumb trId={trId} trDid={trTitle} />
       ) : null}
 
       {type === "participants" && csTitle && csId ? (

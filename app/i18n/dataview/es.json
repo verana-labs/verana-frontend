@@ -480,6 +480,9 @@
   "gettingstarted.quicklinks.documentation": "Documentación",
   "gettingstarted.quicklinks.tutorials": "Tutoriales en video",
   "gettingstarted.quicklinks.community": "Soporte de la comunidad",
-  "gettingstarted.quicklinks.api": "Referencia de API"
+  "gettingstarted.quicklinks.api": "Referencia de API",
 
+  "permission.labeltruststate.trusted": "De confianza",
+  "permission.labeltruststate.untrusted": "No confiable",
+  "permission.labeltruststate.unresolved": "Sin resolver"
 }
