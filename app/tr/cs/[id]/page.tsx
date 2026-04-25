@@ -1,52 +1,142 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import DataView from '@/ui/common/data-view-columns';
-import TitleAndButton from '@/ui/common/title-and-button';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBoxArchive, faPenToSquare, faSitemap } from '@fortawesome/free-solid-svg-icons';
+import { useChain } from '@cosmos-kit/react';
+
+import JsonCodeBlock from '@/ui/common/json-code-block';
+import SchemaHeader, { SchemaStatus } from '@/ui/common/schema-header';
+import TrustRegistryBreadcrumb from '@/ui/common/trust-registry-breadcrumb';
+import { ModalAction } from '@/ui/common/modal-action';
+import { renderActionComponent } from '@/ui/common/data-view-typed';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
-import { faChevronRight, faSitemap } from '@fortawesome/free-solid-svg-icons';
+
 import { useCsData } from '@/hooks/useCredentialSchemaData';
-import { CsData, csSections } from '@/ui/dataview/datasections/cs';
-import { useChain } from '@cosmos-kit/react';
-import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useTrustRegistryData } from '@/hooks/useTrustRegistryData';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { shortenDID } from '@/util/util';
-import Link from 'next/link';
-import { RefreshState } from '@/msg/util/signerUtil';
+import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useIndexerEvents } from '@/providers/indexer-events-provider';
+import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject';
+import { CsData } from '@/ui/dataview/datasections/cs';
+import { RefreshState } from '@/msg/util/signerUtil';
+
+type ValidityField = keyof Pick<
+  CsData,
+  | 'issuerGrantorValidationValidityPeriod'
+  | 'verifierGrantorValidationValidityPeriod'
+  | 'issuerValidationValidityPeriod'
+  | 'verifierValidationValidityPeriod'
+  | 'holderValidationValidityPeriod'
+>;
+
+const VALIDITY_FIELDS: Array<{ labelKey: string; field: ValidityField }> = [
+  { labelKey: 'dataview.cs.fields.issuerGrantorValidationValidityPeriod', field: 'issuerGrantorValidationValidityPeriod' },
+  { labelKey: 'dataview.cs.fields.verifierGrantorValidationValidityPeriod', field: 'verifierGrantorValidationValidityPeriod' },
+  { labelKey: 'dataview.cs.fields.issuerValidationValidityPeriod', field: 'issuerValidationValidityPeriod' },
+  { labelKey: 'dataview.cs.fields.verifierValidationValidityPeriod', field: 'verifierValidationValidityPeriod' },
+  { labelKey: 'dataview.cs.fields.holderValidationValidityPeriod', field: 'holderValidationValidityPeriod' },
+];
+
+type ValidityValues = Record<ValidityField, number>;
+
+function valuesFromCs(csData: CsData): ValidityValues {
+  return {
+    issuerGrantorValidationValidityPeriod: Number(csData.issuerGrantorValidationValidityPeriod ?? 0),
+    verifierGrantorValidationValidityPeriod: Number(csData.verifierGrantorValidationValidityPeriod ?? 0),
+    issuerValidationValidityPeriod: Number(csData.issuerValidationValidityPeriod ?? 0),
+    verifierValidationValidityPeriod: Number(csData.verifierValidationValidityPeriod ?? 0),
+    holderValidationValidityPeriod: Number(csData.holderValidationValidityPeriod ?? 0),
+  };
+}
+
+function ValidityFieldView({ labelKey, value }: { labelKey: string; value: number }) {
+  const label = resolveTranslatable({ key: labelKey }, translate) ?? labelKey;
+  const valueText = value === 0
+    ? (resolveTranslatable({ key: 'dataview.cs.value.never' }, translate) ?? 'Never expires')
+    : (resolveTranslatable({ key: 'dataview.cs.value.days', values: { n: value } }, translate) ?? `${value} days`);
+  return (
+    <div>
+      <span className="text-sm text-neutral-70 dark:text-neutral-70 block mb-1">{label}</span>
+      <p className="text-gray-900 dark:text-white font-medium">{valueText}</p>
+    </div>
+  );
+}
+
+function ValidityFieldInput({
+  labelKey, value, onChange, disabled,
+}: { labelKey: string; value: number; onChange: (n: number) => void; disabled?: boolean }) {
+  const label = resolveTranslatable({ key: labelKey }, translate) ?? labelKey;
+  const daysShort = resolveTranslatable({ key: 'dataview.cs.value.daysShort' }, translate) ?? 'days';
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        {`${label} (${daysShort})`}
+      </label>
+      <input
+        type="number"
+        min={0}
+        step={1}
+        value={Number.isFinite(value) ? value : 0}
+        onChange={(e) => {
+          const raw = e.target.value;
+          if (raw === '') {
+            onChange(0);
+            return;
+          }
+          const parsed = Number(raw);
+          if (!Number.isFinite(parsed)) return;
+          // Validity periods are non-negative integer days. Clamp here to
+          // avoid pickOptionalUInt32 wrapping a negative value into 2^32-1.
+          onChange(Math.max(0, Math.floor(parsed)));
+        }}
+        disabled={disabled}
+        className="w-full px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-surface text-gray-900 dark:text-white text-sm disabled:opacity-60"
+      />
+    </div>
+  );
+}
 
 export default function CSViewPage() {
   const params = useParams();
   const id = params?.id as string;
-  const [data, setData] = useState<CsData | null>(null);
   const router = useRouter();
   const veranaChain = useVeranaChain();
   const { address } = useChain(veranaChain.chain_name);
-  const [ trController, setTrController ] = useState<boolean>(false);
-  const [ trId, setTrId] = useState<string>('');
+
+  const [trController, setTrController] = useState<boolean>(false);
+  const [trId, setTrId] = useState<string>('');
   const { dataTR, refetch: refetchTR } = useTrustRegistryData(trId);
   const { csData, errorCS, refetch: refetchCS } = useCsData(id);
 
+  const [mode, setMode] = useState<'view' | 'edit'>('view');
+  const [editValues, setEditValues] = useState<ValidityValues | null>(null);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+
+  const [archiveActive, setArchiveActive] = useState<boolean>(false);
+  const [refreshState, setRefreshState] = useState<RefreshState>({});
+  const { latestProcessedHeight } = useIndexerEvents();
+
+  const onRefreshAfterTx = (id?: string, txHeight?: number) => {
+    setRefreshState({ id, txHeight });
+  };
+
+  const { submitTx } = useSubmitTxMsgTypeFromObject(
+    () => setMode('view'),
+    onRefreshAfterTx,
+  );
+
   useEffect(() => {
-    (async () => {
-      await refetchTR();
-    })();
+    (async () => { await refetchTR(); })();
   }, [trId]);
 
   useEffect(() => {
-    setTrController(dataTR?.controller === address);
+    setTrController(!!dataTR?.controller && dataTR.controller === address);
   }, [dataTR, address]);
 
-  // Refresh data CS
-  const [ refreshState, setRefreshState ] = useState<RefreshState>({});
-  const { latestProcessedHeight } = useIndexerEvents();
-  
   useEffect(() => {
     if (refreshState.txHeight == null) return;
-    console.info("CSViewPage", {txHeight: refreshState.txHeight, latestProcessedHeight, 'ss.mmm': new Date().toISOString().slice(17, 23)});
     if (latestProcessedHeight < refreshState.txHeight) return;
     (async () => {
       await refetchCS();
@@ -56,59 +146,202 @@ export default function CSViewPage() {
 
   useEffect(() => {
     if (!csData) return;
-    setData({
-      ...csData,
-      archiveCredentialSchema: trController && !csData.archived ? "MsgArchiveCredentialSchema" : undefined,
-      unarchiveCredentialSchema: trController && csData.archived ? "MsgUnarchiveCredentialSchema" : undefined,
-      updateCredentialSchema: trController ? "MsgUpdateCredentialSchema" : undefined,
+    if (trId === '') setTrId(csData.trId as string);
+  }, [csData]);
+
+  // Drop edit mode if the user loses controller status (e.g. wallet switch).
+  useEffect(() => {
+    if (!trController && mode === 'edit') {
+      setMode('view');
+      setEditValues(null);
+    }
+  }, [trController, mode]);
+
+  // Re-enable the form when we land back in view mode. The action hook fires
+  // its onCancel ~500ms after a successful tx; without this the form would be
+  // re-enabled before the mode flips, opening a window where the user could
+  // fire a duplicate update tx.
+  useEffect(() => {
+    if (mode === 'view' && submitting) setSubmitting(false);
+  }, [mode, submitting]);
+
+  const isArchived = !!csData?.archived;
+  const csStatus: SchemaStatus = isArchived ? 'ARCHIVED' : 'ACTIVE';
+
+  const archiveMsgType = isArchived ? 'MsgUnarchiveCredentialSchema' : 'MsgArchiveCredentialSchema';
+  const archiveTitleKey = isArchived
+    ? 'dataview.cs.actions.unarchiveCredentialSchema'
+    : 'dataview.cs.actions.archiveCredentialSchema';
+  const archiveButtonLabel = resolveTranslatable(
+    { key: isArchived ? 'dataview.cs.button.unarchive' : 'dataview.cs.button.archive' },
+    translate,
+  ) ?? (isArchived ? 'Unarchive' : 'Archive');
+
+  const editLabel = resolveTranslatable({ key: 'dataview.cs.button.editConfiguration' }, translate)
+    ?? 'Edit Configuration';
+  const participantsLabel = resolveTranslatable({ key: 'participants.title' }, translate) ?? 'Participants';
+  const mutableLabel = resolveTranslatable({ key: 'dataview.section.mutable' }, translate)
+    ?? 'Mutable Configuration';
+  const jsonSchemaLabel = resolveTranslatable({ key: 'dataview.cs.fields.jsonSchema' }, translate)
+    ?? 'JSON Schema';
+  const cancelLabel = resolveTranslatable({ key: 'messages.cancel' }, translate) ?? 'Cancel';
+  const confirmLabel = resolveTranslatable({ key: 'messages.confirm' }, translate) ?? 'Confirm';
+
+  function startEdit() {
+    if (!csData) return;
+    setEditValues(valuesFromCs(csData));
+    setMode('edit');
+  }
+
+  function cancelEdit() {
+    setMode('view');
+    setEditValues(null);
+  }
+
+  async function confirmEdit() {
+    if (!csData || !editValues) return;
+    setSubmitting(true);
+    try {
+      await submitTx('MsgUpdateCredentialSchema', { ...csData, ...editValues });
+      // On success the action hook fires onCancel which flips mode to 'view';
+      // the useEffect above clears `submitting` once that happens. Failures
+      // bubble through here so we can re-enable the form for a retry.
+    } catch {
+      setSubmitting(false);
+    }
+  }
+
+  function patchEditValue(field: ValidityField, value: number) {
+    setEditValues((prev) => {
+      if (!prev) return prev;
+      return { ...prev, [field]: value };
     });
-    if (trId == "") setTrId(csData.trId as string);
-  }, [csData, trController]);
+  }
 
   return (
     <>
-      {/* Breadcrumbs */}
-      <section className="mb-6">
-        {dataTR ? (
-          <nav className="flex flex-wrap items-center text-sm" aria-label="Breadcrumb">
-            <Link
-              href={`/tr/${trId}`}
-              className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
-            >
-              {shortenDID(dataTR.did as string)}
-            </Link>
-            <FontAwesomeIcon icon={faChevronRight} className="mx-2 text-neutral-70 text-xs" />
-            <span className="text-gray-900 dark:text-white font-medium">{csData?.title}</span>
-          </nav>
-        ) : (
-          <nav className="flex flex-wrap items-center text-sm" aria-label="Breadcrumb">
-            <div className="skeleton h-4 w-40" />
-            <div className="mx-2 skeleton h-3 w-3" />
-            <div className="skeleton h-4 w-28" />
-          </nav>
-        )}
-      </section>
+      {trId && dataTR?.did ? (
+        <TrustRegistryBreadcrumb trId={trId} trDid={dataTR.did as string} />
+      ) : (
+        <section className="mb-6">
+          <div className="skeleton h-4 w-40" />
+        </section>
+      )}
 
-      {/* Back Navigation & Back Navigation */}
-      <TitleAndButton
-        title= {resolveTranslatable({key: "dataview.cs.title"}, translate) ?? "Credential Schema"}
-        description={[resolveTranslatable({key: "dataview.cs.description"}, translate)??""]}
-      />
-      {data ? (
+      {csData ? (
         <>
-        {/* Basic Information Section */}
-        <DataView<CsData> 
-          sectionsI18n={csSections}
-          data={data}
-          id={id}
-          viewEditButton={false}
-          onRefresh={(id?: string, txHeight?: number) => {
-                      setRefreshState({id, txHeight});
-                    }}
-          showViewTitle={true}
-          generalBorder={true}
-          viewTitleButton={ {icon: faSitemap, buttonLabel: resolveTranslatable({key: "participants.title"}, translate)??"participants", onClick: () => router.push(`/participants/${data.id}`)} }
-        />
+          <SchemaHeader
+            title={csData.title ?? ''}
+            description={csData.description}
+            id={csData.id}
+            status={csStatus}
+            issuerPermManagementMode={csData.issuerPermManagementMode}
+            verifierPermManagementMode={csData.verifierPermManagementMode}
+            action={
+              <button
+                type="button"
+                onClick={() => router.push(`/participants/${csData.id}`)}
+                className="inline-flex w-full lg:w-auto items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors"
+              >
+                <FontAwesomeIcon icon={faSitemap} />
+                <span>{participantsLabel}</span>
+              </button>
+            }
+          />
+
+          {/* Mutable Configuration */}
+          <section className="mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                {mutableLabel}
+              </h2>
+              {trController && mode === 'view' ? (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button
+                    type="button"
+                    onClick={startEdit}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors"
+                  >
+                    <FontAwesomeIcon icon={faPenToSquare} />
+                    <span>{editLabel}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setArchiveActive(true)}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium transition-colors"
+                  >
+                    <FontAwesomeIcon icon={faBoxArchive} />
+                    <span>{archiveButtonLabel}</span>
+                  </button>
+                </div>
+              ) : null}
+            </div>
+            <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-4 sm:p-6">
+              {mode === 'view' || !editValues ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {VALIDITY_FIELDS.map(({ labelKey, field }) => (
+                    <ValidityFieldView
+                      key={field}
+                      labelKey={labelKey}
+                      value={Number(csData[field] ?? 0)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {VALIDITY_FIELDS.map(({ labelKey, field }) => (
+                      <ValidityFieldInput
+                        key={field}
+                        labelKey={labelKey}
+                        value={editValues[field]}
+                        onChange={(v) => patchEditValue(field, v)}
+                        disabled={submitting}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={cancelEdit}
+                      disabled={submitting}
+                      className="flex-1 px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 text-sm font-medium transition-colors disabled:opacity-60"
+                    >
+                      {cancelLabel}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={confirmEdit}
+                      disabled={submitting}
+                      className="flex-1 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors disabled:opacity-60"
+                    >
+                      {confirmLabel}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* JSON Schema */}
+          <section className="mb-8">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4">
+              {jsonSchemaLabel}
+            </h2>
+            <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-4 sm:p-6">
+              <JsonCodeBlock value={csData.jsonSchema} />
+            </div>
+          </section>
+
+          {/* Archive / Unarchive still goes through the existing modal flow,
+              spec does not define a dedicated inline path for it. */}
+          <ModalAction
+            isActive={archiveActive}
+            titleKey={archiveTitleKey}
+            onClose={() => setArchiveActive(false)}
+          >
+            {renderActionComponent(archiveMsgType, () => setArchiveActive(false), csData, onRefreshAfterTx)}
+          </ModalAction>
         </>
       ) : errorCS ? (
         <div className="error-pane">
@@ -126,7 +359,7 @@ export default function CSViewPage() {
             ))}
           </div>
         </div>
-      ) }
+      )}
     </>
   );
 }

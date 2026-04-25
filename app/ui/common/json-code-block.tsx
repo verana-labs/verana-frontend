@@ -97,7 +97,7 @@ export default function JsonCodeBlock({ value, className }: JsonCodeBlockProps) 
       <IconLabelButton
         icon={copied? faCheck: faCopy}
         onClick={() => handleCopy()}
-        title="Copy Address"
+        title={copied ? "Copied" : "Copy"}
         className="absolute right-3 top-3"
       />
     </div>
