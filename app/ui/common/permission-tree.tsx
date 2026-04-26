@@ -68,6 +68,9 @@ export type TreeNode = {
   validationProcessColor?: string;
   validationProcessAction?: 'MsgStartPermissionVP' | 'MsgCreatePermission' | 'LinkDID' | 'Connect';
   enabledJoin?: boolean;
+  serviceDid?: string;
+  serviceTitle?: string;
+  badgeCount?: number;
 };
 
 export type RefreshState = {

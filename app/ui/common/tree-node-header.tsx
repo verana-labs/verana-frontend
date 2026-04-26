@@ -137,12 +137,37 @@ export default function TreeNodeHeader({
         )}
 
         {node.group ? (
-          <>
-            <FontAwesomeIcon icon={node.icon} className={`${node.iconColorClass} flex-shrink-0`} />
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 break-all">
-              {node.name}
-            </span>
-          </>
+          node.serviceDid ? (
+            <>
+              <ServiceIdentity did={node.serviceDid} fallbackName={node.name} />
+              {typeof node.badgeCount === 'number' && node.badgeCount > 0 ? (
+                <span className="text-sm text-neutral-70 dark:text-neutral-30 flex-shrink-0">
+                  ({node.badgeCount})
+                </span>
+              ) : null}
+            </>
+          ) : node.serviceTitle ? (
+            <>
+              <ServiceIdentity
+                did={undefined}
+                fallbackName={node.serviceTitle}
+                showFlag={false}
+                showTrust={false}
+              />
+              {typeof node.badgeCount === 'number' && node.badgeCount > 0 ? (
+                <span className="text-sm text-neutral-70 dark:text-neutral-30 flex-shrink-0">
+                  ({node.badgeCount})
+                </span>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <FontAwesomeIcon icon={node.icon} className={`${node.iconColorClass} flex-shrink-0`} />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 break-all">
+                {node.name}
+              </span>
+            </>
+          )
         ) : (
           <>
             <button
