@@ -172,9 +172,11 @@ export function invalidateDid(did: string): void {
   cache.delete(did);
 }
 
+export const DEFAULT_SERVICE_AVATAR = '/default-service.svg';
+
 export function serviceAvatarUrl(seed: string | undefined): string {
-  const safe = seed && seed.length > 0 ? seed : 'unknown';
-  return `https://api.dicebear.com/7.x/shapes/svg?seed=service-${encodeURIComponent(safe)}`;
+  if (!seed || seed.length === 0) return DEFAULT_SERVICE_AVATAR;
+  return `https://api.dicebear.com/7.x/shapes/svg?seed=service-${encodeURIComponent(seed)}`;
 }
 
 export function serviceIdenticonUrl(seed: string | undefined): string {

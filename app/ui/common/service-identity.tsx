@@ -1,7 +1,7 @@
 'use client';
 
 import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment';
-import { serviceAvatarUrl } from '@/lib/resolverClient';
+import { DEFAULT_SERVICE_AVATAR, serviceAvatarUrl } from '@/lib/resolverClient';
 import { countryCodeToFlag, shortenDID } from '@/util/util';
 import TrustBadge from './trust-badge';
 
@@ -24,7 +24,7 @@ export default function ServiceIdentity({
   showTrust = true,
   className = '',
 }: ServiceIdentityProps) {
-  const { data: enrichment } = useDidTrustEnrichment(did);
+  const { data: enrichment, loading, error } = useDidTrustEnrichment(did);
 
   const fallbackLabel = did ? shortenDID(did) : (fallbackName ?? '');
   const serviceLabel = enrichment?.serviceName ?? fallbackLabel;
@@ -32,10 +32,18 @@ export default function ServiceIdentity({
   const avatarSeed = did ?? fallbackName ?? '';
   const avatarSizeClass = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5';
 
+  // Show the default avatar once the resolver has finished and didn't surface a
+  // service name (UNRESOLVED, errored, or returned without ECS-SERVICE claims).
+  // While loading we keep rendering the deterministic dicebear avatar to avoid
+  // a flash of the default placeholder on initial paint.
+  const resolverHasResponded = enrichment !== null || error !== null;
+  const showDefaultAvatar = !!did && !loading && resolverHasResponded && !enrichment?.serviceName;
+  const avatarSrc = showDefaultAvatar ? DEFAULT_SERVICE_AVATAR : serviceAvatarUrl(avatarSeed);
+
   return (
     <span className={`inline-flex items-center gap-x-2 min-w-0 ${className}`}>
       <img
-        src={serviceAvatarUrl(avatarSeed)}
+        src={avatarSrc}
         alt=""
         loading="lazy"
         referrerPolicy="no-referrer"
