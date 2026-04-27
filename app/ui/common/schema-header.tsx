@@ -32,6 +32,26 @@ function ModePill({ value, suffix }: { value?: string | number; suffix: string }
   );
 }
 
+function PermModeRow({
+  value,
+  label,
+  suffix,
+}: {
+  value?: string | number;
+  label: string;
+  suffix: string;
+}) {
+  if (value === undefined || value === '') return null;
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-sm text-neutral-70 dark:text-neutral-70 font-medium">
+        {label}:
+      </span>
+      <ModePill value={value} suffix={suffix} />
+    </div>
+  );
+}
+
 export default function SchemaHeader({
   title,
   description,
@@ -70,23 +90,16 @@ export default function SchemaHeader({
                 <span className="text-sm text-gray-900 dark:text-white font-mono">{id}</span>
               </div>
 
-              {issuerPermManagementMode !== undefined && issuerPermManagementMode !== '' ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm text-neutral-70 dark:text-neutral-70 font-medium">
-                    {resolveTranslatable({ key: "dataview.cs.fields.issuerPermManagementMode" }, translate) ?? "Issuer Permission Mode"}:
-                  </span>
-                  <ModePill value={issuerPermManagementMode} suffix="_ISSUER" />
-                </div>
-              ) : null}
-
-              {verifierPermManagementMode !== undefined && verifierPermManagementMode !== '' ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm text-neutral-70 dark:text-neutral-70 font-medium">
-                    {resolveTranslatable({ key: "dataview.cs.fields.verifierPermManagementMode" }, translate) ?? "Verifier Permission Mode"}:
-                  </span>
-                  <ModePill value={verifierPermManagementMode} suffix="_VERIFIER" />
-                </div>
-              ) : null}
+              <PermModeRow
+                value={issuerPermManagementMode}
+                label={resolveTranslatable({ key: "dataview.cs.fields.issuerPermManagementMode" }, translate) ?? "Issuer Permission Mode"}
+                suffix="_ISSUER"
+              />
+              <PermModeRow
+                value={verifierPermManagementMode}
+                label={resolveTranslatable({ key: "dataview.cs.fields.verifierPermManagementMode" }, translate) ?? "Verifier Permission Mode"}
+                suffix="_VERIFIER"
+              />
             </div>
           </div>
         </div>
