@@ -14,7 +14,7 @@ import { authorityPaticipants, nodeChildRoles, roleColorClass, roleJoinColorClas
 import { Role } from "@/ui/common/role-card";
 
 export default function ParicipantsPage() {
-  
+
   const veranaChain = useVeranaChain();
   const { address, isWalletConnected, connect } = useChain(veranaChain.chain_name);
   const idsAddressRef = useRef<Set<string>>(new Set());
@@ -81,7 +81,7 @@ export default function ParicipantsPage() {
     return types.map((t) => ({
       nodeId: `group:${parent.id}:${t.role}`,
       name: t.label,
-      validationProcessAction: isWalletConnected ? 
+      validationProcessAction: isWalletConnected ?
                                   t.validation ? (t.role == "HOLDER" && Number(parent.validation_fees) == 0 ? "LinkDID" : "MsgStartPermissionVP") : "MsgCreatePermission"
                                   : "Connect",
       validationProcessLabel: t.validation ? "validation process" : "open",
@@ -161,7 +161,6 @@ export default function ParicipantsPage() {
       const newChildren = permissionsList.map((p) =>
         toTreeNode({ ...(p as Permission), children: [] } as BuiltNode, typesToShow)
       );
-      // update nodo folder
       setPermissionsTree((prev) => setChildrenOnNodeId(prev, nodeUptade, newChildren));
     }
   }, [permissionsList, address, isWalletConnected, csData?.issuerPermManagementMode, csData?.verifierPermManagementMode]);
@@ -185,11 +184,23 @@ export default function ParicipantsPage() {
     setRefreshRoot(true);
   }, [isWalletConnected, address]);
 
+  const csStatus = csData?.archived ? 'ARCHIVED' : 'ACTIVE';
+
   return (
-   <PermissionTree tree={permissionsTree} type={"participants"} csTitle={csData?.title??""} trTitle={dataTR?.did??""} csId={csData?.id as string} trId={csData?.trId as string}
-        isTrController={dataTR?.controller==address} setNodeRequestParams={setNodeRequestParams} refreshRoot={()=>setRefreshRoot(true)} onConnect={!isWalletConnected? connect : undefined}
+   <PermissionTree tree={permissionsTree} type={"participants"}
+        csTitle={csData?.title ?? ""}
+        csDescription={csData?.description}
+        csStatus={csStatus}
+        csIssuerPermManagementMode={csData?.issuerPermManagementMode}
+        csVerifierPermManagementMode={csData?.verifierPermManagementMode}
+        trTitle={dataTR?.did ?? ""}
+        csId={csData?.id != null ? String(csData.id) : undefined}
+        trId={csData?.trId != null ? String(csData.trId) : undefined}
+        isTrController={!!dataTR?.controller && dataTR.controller === address}
+        setNodeRequestParams={setNodeRequestParams}
+        refreshRoot={() => setRefreshRoot(true)}
+        onConnect={!isWalletConnected ? connect : undefined}
         onRetryFetch={() => refetchPermission(schemaId, type, validatorId)}/>
   );
 
 };
-

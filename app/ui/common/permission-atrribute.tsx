@@ -50,6 +50,9 @@ export default function PermissionAttribute({ label, value, mono, actions }: Per
         if (explorerUrl) window.open(`${explorerUrl}/account/${value}`, "_blank");
         break;
       }
+      case "visualizer":
+        // Placeholder: button is shown for spec parity but has no behavior yet.
+        break;
       default:
         console.error("PermissionAction", action);
     }

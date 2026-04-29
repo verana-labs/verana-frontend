@@ -417,14 +417,13 @@ export interface Permission {
   transaction_cost?: string;
 };
 export interface PermissionHistory {
-  permission_id: string;
-  schema_id: string,
-  type: string;
-  grantee: string;
-  event_type: string;
-  height: string;
-  changes: object;
-  created_at: string;   // ISO datetime
+  entity_id: string;
+  entity_type: string;
+  timestamp: string;        // ISO datetime
+  block_height: number;
+  msg: string;              // e.g. "CreateRootPermission", "StartPermissionVP"
+  changes: Record<string, unknown>;
+  account: string;          // verana1... address that performed the action
 };
 
 type PermissionKey = keyof Permission;

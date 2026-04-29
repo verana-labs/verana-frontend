@@ -54,3 +54,8 @@ function getModeClass(value: string): string {
   const found = modeOptions.find(opt => opt.value === value);
   return found?.class ?? "";
 }
+
+export function getModePillClass(value: string, suffix: string): string {
+  if (!value?.trim()) return "";
+  return getModeClass(value.concat(suffix));
+}
