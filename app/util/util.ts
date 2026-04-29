@@ -85,6 +85,31 @@ export function formatDate( input: Date | string | number ): string {
   return date;
 }
 
+export function formatDateTime(input: Date | string | number): string {
+  if (input == null || input === "") return "";
+  const d = new Date(input);
+  if (Number.isNaN(d.getTime())) return "";
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  const ss = String(d.getSeconds()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
+}
+
+export function countryNameFromCode(code: string | undefined | null): string {
+  if (!code) return "";
+  const trimmed = String(code).trim().toUpperCase();
+  if (!trimmed) return "";
+  try {
+    const display = new Intl.DisplayNames(["en"], { type: "region" });
+    return display.of(trimmed) ?? trimmed;
+  } catch {
+    return trimmed;
+  }
+}
+
 export function formatLongDateUserLocale(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;
 

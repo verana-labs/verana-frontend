@@ -50,6 +50,8 @@ export default function PermissionAttribute({ label, value, mono, actions }: Per
         if (explorerUrl) window.open(`${explorerUrl}/account/${value}`, "_blank");
         break;
       }
+      case "visualizer":
+        break;
       default:
         console.error("PermissionAction", action);
     }

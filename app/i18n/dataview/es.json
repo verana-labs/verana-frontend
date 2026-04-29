@@ -265,8 +265,8 @@
   "dataview.cs.managementMode.OPEN": "ABIERTO",
   "dataview.cs.managementMode.GRANTOR_VALIDATION": "VALIDACIÓN DEL OTORGANTE",
   "dataview.cs.managementMode.TRUST_REGISTRY_VALIDATION": "VALIDACIÓN DEL REGISTRO DE CONFIANZA",
-  "dataview.cs.fields.issuerPermManagementMode": "Modo de Gestión de Permisos del Emisor",
-  "dataview.cs.fields.verifierPermManagementMode": "Modo de Gestión de Permisos del Verificador",
+  "dataview.cs.fields.issuerPermManagementMode": "Modo de Permisos del Emisor",
+  "dataview.cs.fields.verifierPermManagementMode": "Modo de Permisos del Verificador",
   "dataview.cs.fields.issuerGrantorValidationValidityPeriod": "Validez de la Validación del Otorgante del Emisor",
   "dataview.cs.fields.verifierGrantorValidationValidityPeriod": "Validez de la Validación del Otorgante del Verificador",
   "dataview.cs.fields.issuerValidationValidityPeriod": "Validez de la Validación del Emisor",
@@ -275,7 +275,7 @@
   "dataview.cs.fields.jsonSchema": "Json Schema",
   "dataview.cs.fields.creator": "Controlador",
   "dataview.cs.fields.trId": "Id del TR",
-  "dataview.cs.fields.id": "ID del Esquema de Credenciales",
+  "dataview.cs.fields.id": "ID",
   "dataview.cs.actions.updateCredentialSchema": "Actualizar Esquema de Credenciales",
   "dataview.cs.actions.archiveCredentialSchema": "Archivar Esquema de Credenciales",
   "dataview.cs.descriptions.issuerPermManagementMode": "Define cómo se gestionan los permisos para los emisores de este Esquema de Credenciales:\n<ul class=\"list-disc pl-6\">\n<li>ABIERTO: cualquiera puede crear su propio permiso de EMISOR.</li>\n<li>VALIDACIÓN DEL OTORGANTE: se debe realizar un proceso de validación entre un EMISOR candidato y un EMISOR_OTORGANTE para crear un permiso de EMISOR.</li>\n<li>VALIDACIÓN DEL REGISTRO DE CONFIANZA: se debe realizar un proceso de validación entre un EMISOR candidato y el propietario del registro de confianza para crear un permiso de EMISOR.</li>\n</ul>\nElige sabiamente, ya que los Esquemas de Credenciales son inmutables y no pueden modificarse.",
@@ -484,5 +484,17 @@
 
   "permission.labeltruststate.trusted": "De confianza",
   "permission.labeltruststate.untrusted": "No confiable",
-  "permission.labeltruststate.unresolved": "Sin resolver"
+  "permission.labeltruststate.unresolved": "Sin resolver",
+
+  "permissioncard.grantedservice.title": "Servicio Otorgado",
+  "permissioncard.grantedservice.terms": "Términos y Condiciones",
+  "permissioncard.grantedservice.privacy": "Política de Privacidad",
+  "permissioncard.serviceprovider.title": "Proveedor del Servicio",
+  "permissioncard.header.title": "Rol de {role} para el esquema {schema}",
+  "permissioncard.role.singular.ecosystem": "Ecosistema",
+  "permissioncard.role.singular.issuergrantor": "Otorgante Emisor",
+  "permissioncard.role.singular.verifiergrantor": "Otorgante Verificador",
+  "permissioncard.role.singular.issuer": "Emisor",
+  "permissioncard.role.singular.verifier": "Verificador",
+  "permissioncard.role.singular.holder": "Titular"
 }

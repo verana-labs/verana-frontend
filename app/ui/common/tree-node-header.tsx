@@ -9,7 +9,6 @@ import {
   formatVNAFromUVNA,
   permStateBadgeClass,
   roleBadgeClass,
-  roleColorClass,
   vpStateColor,
 } from "@/util/util";
 import { service } from "./permission-atrribute";
@@ -97,7 +96,7 @@ export default function TreeNodeHeader({
             </button>
             <FontAwesomeIcon
               icon={faCrown}
-              className={`${roleColorClass(permission?.type ?? '')} flex-shrink-0`}
+              className="text-yellow-500 flex-shrink-0"
               aria-hidden="true"
             />
           </>

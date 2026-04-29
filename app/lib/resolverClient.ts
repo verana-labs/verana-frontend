@@ -11,6 +11,9 @@ export interface DidEnrichment {
   countryCode?: string;
   evaluatedAtBlock?: number;
   expiresAt?: string;
+  serviceMinAge?: string;
+  serviceTermsUrl?: string;
+  servicePrivacyUrl?: string;
 }
 
 interface ResolverCredential {
@@ -26,11 +29,6 @@ interface ResolverFullResult {
   credentials?: ResolverCredential[];
 }
 
-// Successful evaluations are cached long enough to dedupe a tree of 30-50
-// leaves. Failed lookups (transient resolver outage, parse errors) get a much
-// shorter TTL so a brief hiccup doesn't pin every badge on UNRESOLVED.
-// MAX_CACHE_ENTRIES caps memory growth across long SPA sessions; the eviction
-// strategy is insertion-order (Map iterator returns keys in insertion order).
 const SUCCESS_TTL_MS = 60_000;
 const ERROR_TTL_MS = 5_000;
 const FETCH_TIMEOUT_MS = 10_000;
@@ -75,10 +73,6 @@ function mapResponse(did: string, raw: ResolverFullResult): DidEnrichment {
   const organizationName = pickString(org?.claims, 'name');
   const countryCode = pickString(org?.claims, 'countryCode');
 
-  // A resolver UNTRUSTED with no credentials at all means the DID Doc could
-  // not be dereferenced — we have no evidence to back a negative verdict, so
-  // surface that as UNRESOLVED. Any credential count above zero counts as
-  // resolver evidence, regardless of which display fields populated.
   const hasResolverEvidence = credentials.length > 0;
   let trustStatus: DidTrustState;
   if (raw.trustStatus === 'TRUSTED') {
@@ -142,8 +136,6 @@ export async function fetchDidEnrichment(
       return value;
     })
     .catch((error) => {
-      // Cache a fallback briefly so a flapping resolver does not spam retries,
-      // but re-throw so the calling hook can surface the failure to the UI.
       rememberCacheEntry(did, unresolved(did), ERROR_TTL_MS);
       throw error;
     })
@@ -159,10 +151,12 @@ export function invalidateDid(did: string): void {
   cache.delete(did);
 }
 
-// Deterministic avatar generator. The v4 spec itself uses dicebear shapes
-// keyed by service identifier — keep this stable so the same DID always
-// renders the same icon across pages and reloads.
 export function serviceAvatarUrl(seed: string | undefined): string {
   const safe = seed && seed.length > 0 ? seed : 'unknown';
   return `https://api.dicebear.com/7.x/shapes/svg?seed=service-${encodeURIComponent(safe)}`;
+}
+
+export function serviceIdenticonUrl(seed: string | undefined): string {
+  const safe = seed && seed.length > 0 ? seed : 'unknown';
+  return `https://api.dicebear.com/7.x/identicon/svg?seed=service-${encodeURIComponent(safe)}`;
 }

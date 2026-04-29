@@ -3,7 +3,7 @@
 import { translate } from "@/i18n/dataview";
 import { resolveTranslatable } from "@/ui/dataview/types";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { faCircleCheck, faCircleExclamation, faCircleQuestion } from "@fortawesome/free-solid-svg-icons";
+import { faCertificate, faCircleExclamation, faCircleQuestion } from "@fortawesome/free-solid-svg-icons";
 import { DidTrustState } from "@/lib/resolverClient";
 
 export function trustStateBadge(state: DidTrustState | undefined | null): {
@@ -15,7 +15,7 @@ export function trustStateBadge(state: DidTrustState | undefined | null): {
     case "TRUSTED":
       return {
         label: resolveTranslatable({ key: "permission.labeltruststate.trusted" }, translate) ?? "Trusted",
-        icon: faCircleCheck,
+        icon: faCertificate,
         iconColorClass: "text-green-500",
       };
     case "UNTRUSTED":
