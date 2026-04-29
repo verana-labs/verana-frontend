@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.13.0](https://github.com/verana-labs/verana-frontend/compare/v0.12.0...v0.13.0) (2026-04-29)
+
+
+### Features
+
+* [Credential Schema] v4 layout ([#365](https://github.com/verana-labs/verana-frontend/issues/365)) ([0962c98](https://github.com/verana-labs/verana-frontend/commit/0962c989731a2f31f6e9ccb1da9d583bedfd291a))
+* [Participants] v4 layout ([#364](https://github.com/verana-labs/verana-frontend/issues/364)) ([56b6f09](https://github.com/verana-labs/verana-frontend/commit/56b6f09330bb2836f91fdfe3ac8f19d9d450ef47))
+* [Pending Tasks] v4 layout ([#367](https://github.com/verana-labs/verana-frontend/issues/367)) ([8cd9e2a](https://github.com/verana-labs/verana-frontend/commit/8cd9e2a279c165b2441f19448bc570000509535d))
+
+
+### Bug Fixes
+
+* create provider to handle versioning ([#361](https://github.com/verana-labs/verana-frontend/issues/361)) ([2c30e81](https://github.com/verana-labs/verana-frontend/commit/2c30e81458de49ce93a19055815a42ae2917fc20))
+* new permission must show the permission when transaction finishes ([#362](https://github.com/verana-labs/verana-frontend/issues/362)) ([4d44995](https://github.com/verana-labs/verana-frontend/commit/4d4499573b87faa3b1ce8f0c5afa5426096d9f7a))
+
 ## [0.12.0](https://github.com/verana-labs/verana-frontend/compare/v0.11.1...v0.12.0) (2026-03-28)
 
 
