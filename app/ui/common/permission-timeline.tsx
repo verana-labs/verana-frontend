@@ -1,121 +1,190 @@
 'use client';
 
-import { formatDate } from "@/util/util";
+import { formatDateTime, formatVNAFromUVNA, shortenMiddle } from "@/util/util";
 import { PermissionHistory } from "../dataview/datasections/perm";
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import { faBan, faCheck, faPlay, faPlus, faQuestion } from "@fortawesome/free-solid-svg-icons";
+import { faBan, faCheck, faClockRotateLeft, faHandHoldingDollar, faPlay, faPlus, faQuestion, faRotate, faTriangleExclamation, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ReactNode } from "react";
+import { translate } from "@/i18n/dataview";
+import { resolveTranslatable } from "@/ui/dataview/types";
+
+const tr = (key: string, fallback: string) =>
+  resolveTranslatable({ key }, translate) ?? fallback;
 
 export default function PermissionTimeline({
     permissionHistory
 }: {
   permissionHistory: PermissionHistory;
 }) {
-    const { label, icon, iconClass } = getTimelineStyle (permissionHistory.event_type);
+  const { label, icon, iconBgClass, iconColorClass } = getTimelineStyle(permissionHistory.msg);
+  const account = permissionHistory.account
+    ? shortenMiddle(permissionHistory.account, 20)
+    : "";
+  const summary = describeChanges(permissionHistory.msg, permissionHistory.changes);
+
   return (
     <div className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${iconClass}`}>
-        <FontAwesomeIcon icon={icon} className={`text-xs ${iconClass}`} />
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${iconBgClass}`}>
+        <FontAwesomeIcon icon={icon} className={`text-xs ${iconColorClass}`} />
       </div>
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-gray-900 dark:text-white">{label}</p>
-        <p className="text-xs text-neutral-70 dark:text-neutral-70 mt-1">{formatDate(permissionHistory.created_at)}</p>
-        {renderChanges(permissionHistory.changes)}
+        <p className="text-xs text-neutral-70 dark:text-neutral-70 mt-1 break-all">
+          {formatDateTime(permissionHistory.timestamp)}
+          {account ? <> {tr("permissioncard.timeline.by", "by")} <span className="font-mono">{account}</span></> : null}
+        </p>
+        {summary ? (
+          <p className="text-xs text-gray-700 dark:text-gray-300 mt-1 break-words">{summary}</p>
+        ) : null}
       </div>
     </div>
   );
+}
+
+type TimelineStyle = {
+  label: string;
+  icon: IconDefinition;
+  iconBgClass: string;
+  iconColorClass: string;
 };
 
-export function getTimelineStyle(eventType: string): { label: string, icon: IconDefinition; iconClass: string } {
-  switch (eventType) {
-    case "CREATE_ROOT_PERMISSION":
-    case "CREATE_PERMISSION":
-      return { label: "Permission Created", icon: faPlus, iconClass: "bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400" };
-    case "START_PERMISSION_VP":
-      return { label: "Start Validation Process", icon: faPlay, iconClass: "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400" };
-    case "SET_VALIDATED_VP":
-      return { label: "Accept and Set Validated", icon: faCheck, iconClass: "bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400" };
-    case "REVOKE_PERMISSION":
-      return { label: "Permission Revoked", icon: faBan, iconClass: "bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400" };
+export function getTimelineStyle(msg: string): TimelineStyle {
+  switch (msg) {
+    case "CreateRootPermission":
+    case "CreatePermission":
+      return {
+        label: tr("permissioncard.timeline.event.created", "Permission Created"),
+        icon: faPlus,
+        iconBgClass: "bg-purple-100 dark:bg-purple-900/20",
+        iconColorClass: "text-purple-600 dark:text-purple-400",
+      };
+    case "StartPermissionVP":
+      return {
+        label: tr("permissioncard.timeline.event.startvp", "Start Validation Process"),
+        icon: faPlay,
+        iconBgClass: "bg-blue-100 dark:bg-blue-900/20",
+        iconColorClass: "text-blue-600 dark:text-blue-400",
+      };
+    case "SetPermissionVPToValidated":
+      return {
+        label: tr("permissioncard.timeline.event.setvalidated", "Accept and Set Validated"),
+        icon: faCheck,
+        iconBgClass: "bg-green-100 dark:bg-green-900/20",
+        iconColorClass: "text-green-600 dark:text-green-400",
+      };
+    case "RenewPermissionVP":
+      return {
+        label: tr("permissioncard.timeline.event.renewvp", "Renew Validation Process"),
+        icon: faRotate,
+        iconBgClass: "bg-blue-100 dark:bg-blue-900/20",
+        iconColorClass: "text-blue-600 dark:text-blue-400",
+      };
+    case "CancelPermissionVPLastRequest":
+      return {
+        label: tr("permissioncard.timeline.event.cancelvp", "Cancel Request"),
+        icon: faXmark,
+        iconBgClass: "bg-gray-100 dark:bg-gray-900/20",
+        iconColorClass: "text-gray-600 dark:text-gray-400",
+      };
+    case "ExtendPermission":
+      return {
+        label: tr("permissioncard.timeline.event.extended", "Permission Extended"),
+        icon: faClockRotateLeft,
+        iconBgClass: "bg-primary-100 dark:bg-primary-900/20",
+        iconColorClass: "text-primary-600 dark:text-primary-400",
+      };
+    case "RevokePermission":
+      return {
+        label: tr("permissioncard.timeline.event.revoked", "Permission Revoked"),
+        icon: faBan,
+        iconBgClass: "bg-red-100 dark:bg-red-900/20",
+        iconColorClass: "text-red-600 dark:text-red-400",
+      };
+    case "SlashPermissionTrustDeposit":
+      return {
+        label: tr("permissioncard.timeline.event.slashed", "Deposit Slashed"),
+        icon: faTriangleExclamation,
+        iconBgClass: "bg-red-100 dark:bg-red-900/20",
+        iconColorClass: "text-red-600 dark:text-red-400",
+      };
+    case "RepayPermissionSlashedTrustDeposit":
+      return {
+        label: tr("permissioncard.timeline.event.repaid", "Slashed Deposit Repaid"),
+        icon: faHandHoldingDollar,
+        iconBgClass: "bg-green-100 dark:bg-green-900/20",
+        iconColorClass: "text-green-600 dark:text-green-400",
+      };
     default:
-      return { label: "",  icon: faQuestion, iconClass: "bg-gray-100 dark:bg-gray-900/20 text-gray-600 dark:text-gray-400" };
-  }
-};
-
-function tryParseJson(input: string): unknown {
-  const trimmed = input.trim();
-  if (!trimmed) return input;
-  // Only attempt JSON parse for object/array-like strings
-  if (!(trimmed.startsWith("{") || trimmed.startsWith("["))) return input;
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    return input;
+      return {
+        label: msg || tr("permissioncard.timeline.event.unknown", "Unknown Event"),
+        icon: faQuestion,
+        iconBgClass: "bg-gray-100 dark:bg-gray-900/20",
+        iconColorClass: "text-gray-600 dark:text-gray-400",
+      };
   }
 }
 
-function formatChangeValue(value: unknown): string {
-  if (value == null) return "—";
-  if (typeof value === "string") return value;
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) return value.map((v) => formatChangeValue(v)).join(", ");
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return String(value);
+function describeChanges(msg: string, changes: Record<string, unknown> | unknown): string | null {
+  if (!changes || typeof changes !== "object" || Array.isArray(changes)) return null;
+  const c = changes as Record<string, unknown>;
+
+  switch (msg) {
+    case "CreateRootPermission":
+    case "CreatePermission": {
+      const parts: string[] = [];
+      const deposit = c.deposit;
+      if (deposit != null && Number(deposit) > 0) {
+        parts.push(`${formatVNAFromUVNA(String(deposit))} deposit`);
+      }
+      const effectiveUntil = c.effective_until;
+      if (typeof effectiveUntil === "string" && effectiveUntil) {
+        parts.push(`effective until ${formatDateTime(effectiveUntil)}`);
+      }
+      return parts.length ? parts.join(", ") : null;
+    }
+    case "StartPermissionVP": {
+      const deposit = c.vp_validator_deposit ?? c.deposit;
+      if (deposit != null && Number(deposit) > 0) {
+        return `Initiated validation process with ${formatVNAFromUVNA(String(deposit))} deposit`;
+      }
+      return null;
+    }
+    case "SetPermissionVPToValidated": {
+      const fees: string[] = [];
+      if (c.validation_fees != null && Number(c.validation_fees) > 0) fees.push(`validation_fees: ${formatVNAFromUVNA(String(c.validation_fees))}`);
+      if (c.issuance_fees != null && Number(c.issuance_fees) > 0) fees.push(`issuance_fees: ${formatVNAFromUVNA(String(c.issuance_fees))}`);
+      if (c.verification_fees != null && Number(c.verification_fees) > 0) fees.push(`verification_fees: ${formatVNAFromUVNA(String(c.verification_fees))}`);
+      return fees.length ? `Set ${fees.join(", ")}` : null;
+    }
+    case "ExtendPermission": {
+      const effectiveUntil = c.effective_until;
+      if (typeof effectiveUntil === "string" && effectiveUntil) {
+        return `Extended until ${formatDateTime(effectiveUntil)}`;
+      }
+      return null;
+    }
+    case "SlashPermissionTrustDeposit":
+    case "RepayPermissionSlashedTrustDeposit": {
+      const amount = c.slashed_deposit ?? c.repaid_deposit;
+      if (amount != null && Number(amount) > 0) {
+        return `Amount: ${formatVNAFromUVNA(String(amount))}`;
+      }
+      return null;
+    }
+    default:
+      return null;
   }
 }
 
-function renderChanges(changes: unknown): ReactNode {
+// Fallback renderer kept exported for callers that pass arbitrary change shapes.
+export function renderChanges(changes: unknown): ReactNode {
   if (changes == null) return null;
-
-  const normalized: unknown = typeof changes === "string" ? tryParseJson(changes) : changes;
-
-  // If it's still a string after normalization, render it plainly.
-  if (typeof normalized === "string") {
-    const text = normalized.trim();
+  if (typeof changes === "string") {
+    const text = changes.trim();
     if (!text) return null;
     return <p className="text-xs text-gray-700 dark:text-gray-300 mt-1 break-all">{text}</p>;
   }
-
-  // If it's an array, render each entry.
-  if (Array.isArray(normalized)) {
-    if (!normalized.length) return null;
-    return (
-      <ul className="mt-1 space-y-1">
-        {normalized.map((item, idx) => {
-          const text = formatChangeValue(item);
-          if (!text) return null;
-          return (
-            <li key={idx} className="text-xs text-gray-700 dark:text-gray-300 break-all">
-              {text}
-            </li>
-          );
-        })}
-      </ul>
-    );
-  }
-
-  // If it's an object, render key/value pairs.
-  if (typeof normalized === "object") {
-    const entries = Object.entries(normalized as Record<string, unknown>);
-    if (!entries.length) return null;
-
-    return (
-      <div className="mt-1 space-y-1">
-        {entries.map(([key, val]) => (
-          <div key={key} className="text-xs break-all">
-            <span className="font-medium text-gray-900 dark:text-white">{key}:</span>{" "}
-            <span className="text-gray-700 dark:text-gray-300">{formatChangeValue(val)}</span>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  // Fallback
-  const fallback = formatChangeValue(normalized);
-  if (!fallback) return null;
-  return <p className="text-xs text-gray-700 dark:text-gray-300 mt-1 break-all">{fallback}</p>;
+  if (typeof changes !== "object") return null;
+  return null;
 }

@@ -118,11 +118,13 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     label: t("messages.MsgRevokePermission.label"),
     description: t("messages.MsgRevokePermission.description"),
     cost: t("messages.MsgRevokePermission.cost"), // {value}
+    warning: t("messages.MsgRevokePermission.warning"),
   },
   MsgSlashPermissionTrustDeposit: {
     label: t("messages.MsgSlashPermissionTrustDeposit.label"),
     description: t("messages.MsgSlashPermissionTrustDeposit.description"),
     cost: t("messages.MsgSlashPermissionTrustDeposit.cost"), // {value}
+    warning: t("messages.MsgSlashPermissionTrustDeposit.warning"),
   },
   MsgRepayPermissionSlashedTrustDeposit: {
     label: t("messages.MsgRepayPermissionSlashedTrustDeposit.label"),

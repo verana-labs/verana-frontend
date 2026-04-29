@@ -37,7 +37,7 @@ export function usePermissionHistory(id?: string) {
         return;
       }
 
-      const list: PermissionHistory[] = Array.isArray(json) ? json : (json.history ?? []);
+      const list: PermissionHistory[] = Array.isArray(json) ? json : (json.activity ?? json.history ?? []);
       setPermissionHistoryList(list);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

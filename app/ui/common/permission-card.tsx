@@ -117,7 +117,7 @@ export default function PermissionCard({
   const did = selectedNode.permission?.did as string | undefined;
   const { data: enrichment } = useDidTrustEnrichment(did);
   const serviceLabel = enrichment?.serviceName ?? (did ? shortenDID(did) : "");
-  const orgLabel = enrichment?.organizationName ?? "";
+  const orgLabel = enrichment?.organizationName ?? (did ? shortenDID(did) : "");
   const headerTitle = resolveTranslatable(
     {
       key: "permissioncard.header.title",
@@ -295,6 +295,9 @@ export default function PermissionCard({
                 <h4 className="text-base font-medium text-gray-900 dark:text-white break-words">
                   {orgLabel || "—"}
                 </h4>
+                {!enrichment?.organizationName && did ? (
+                  <span className="sr-only">Unverified organization</span>
+                ) : null}
                 {enrichment?.countryCode ? (
                   <span className="text-lg flex-shrink-0" aria-hidden="true">
                     {countryCodeToFlag(enrichment.countryCode)}
@@ -448,13 +451,17 @@ export default function PermissionCard({
 
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{resolveTranslatable({key: "permissioncard.timeline.title"}, translate)}</h3>
-          <div className="space-y-4">
-          {permissionHistoryList.map((history, idx) => {
-            return (
-              <PermissionTimeline permissionHistory={history} key={`${history.permission_id}-${idx}`}/>
-            )}
+          {permissionHistoryList.length > 0 ? (
+            <div className="space-y-4">
+            {permissionHistoryList.map((history, idx) => (
+              <PermissionTimeline permissionHistory={history} key={`${history.entity_id}-${history.block_height}-${idx}`}/>
+            ))}
+            </div>
+          ) : (
+            <p className="text-sm text-neutral-70 dark:text-neutral-70">
+              {resolveTranslatable({key: "permissioncard.timeline.empty"}, translate) ?? "No activity yet."}
+            </p>
           )}
-          </div>
         </div>
 
       </div>

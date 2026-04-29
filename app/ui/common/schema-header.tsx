@@ -32,6 +32,23 @@ function ModePill({ value, suffix }: { value?: string | number; suffix: string }
   );
 }
 
+function HeaderRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-sm text-neutral-70 dark:text-neutral-70 font-medium">
+        {label}:
+      </span>
+      {children}
+    </div>
+  );
+}
+
 function PermModeRow({
   value,
   label,
@@ -43,12 +60,9 @@ function PermModeRow({
 }) {
   if (value === undefined || value === '') return null;
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="text-sm text-neutral-70 dark:text-neutral-70 font-medium">
-        {label}:
-      </span>
+    <HeaderRow label={label}>
       <ModePill value={value} suffix={suffix} />
-    </div>
+    </HeaderRow>
   );
 }
 

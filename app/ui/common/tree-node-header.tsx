@@ -123,26 +123,22 @@ export default function TreeNodeHeader({
       {type === "participants" && (
         !node.group && permission ? (
           <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ml-auto ${node.roleColorClass}`}>
-            {showWeight && permission.weight ? (
+            {showWeight ? (
               <span className="whitespace-nowrap">
                 <FontAwesomeIcon icon={faScaleBalanced} className="mr-1" />
-                {formatVNAFromUVNA(permission.weight)}
+                {formatVNAFromUVNA(permission.weight ?? "0")}
               </span>
             ) : null}
-            {showBusiness && (permission.validation_fees || permission.issuance_fees) ? (
-              <span>
+            {showBusiness ? (
+              <span className="whitespace-nowrap">
                 <FontAwesomeIcon icon={faCoins} className="mr-1" />
-                {`validation fees: ${formatVNAFromUVNA(permission.validation_fees)} issuance fees: ${formatVNAFromUVNA(permission.issuance_fees)}`}{' '}
-                {permission.verification_fees && permission.verification_fees !== "0"
-                  ? `verification fees: ${formatVNAFromUVNA(permission.verification_fees)}`
-                  : ""}
+                {`validation: ${formatVNAFromUVNA(permission.validation_fees ?? "0")} | issuance: ${formatVNAFromUVNA(permission.issuance_fees ?? "0")} | verification: ${formatVNAFromUVNA(permission.verification_fees ?? "0")}`}
               </span>
             ) : null}
-            {showStats && permission.issued && permission.verified && (permission.issued !== "0" || permission.verified !== "0") ? (
-              <span>
+            {showStats ? (
+              <span className="whitespace-nowrap">
                 <FontAwesomeIcon icon={faChartColumn} className="mr-1" />
-                {permission.issued && permission.issued !== "0" ? `issued: ${permission.issued}` : ''}{' '}
-                {permission.verified && permission.verified !== "0" ? `verified: ${permission.verified}` : ''}
+                {`issued: ${permission.issued ?? 0} | verified: ${permission.verified ?? 0}`}
               </span>
             ) : null}
           </div>

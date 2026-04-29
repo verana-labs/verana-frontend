@@ -496,5 +496,22 @@
   "permissioncard.role.singular.verifiergrantor": "Otorgante Verificador",
   "permissioncard.role.singular.issuer": "Emisor",
   "permissioncard.role.singular.verifier": "Verificador",
-  "permissioncard.role.singular.holder": "Titular"
+  "permissioncard.role.singular.holder": "Titular",
+
+  "permissioncard.timeline.title": "Línea de Tiempo de Actividad",
+  "permissioncard.timeline.empty": "Aún no hay actividad.",
+  "permissioncard.timeline.by": "por",
+  "permissioncard.timeline.event.created": "Permiso Creado",
+  "permissioncard.timeline.event.startvp": "Iniciar Proceso de Validación",
+  "permissioncard.timeline.event.setvalidated": "Aceptar y Marcar como Validado",
+  "permissioncard.timeline.event.renewvp": "Renovar Proceso de Validación",
+  "permissioncard.timeline.event.cancelvp": "Cancelar Solicitud",
+  "permissioncard.timeline.event.extended": "Permiso Extendido",
+  "permissioncard.timeline.event.revoked": "Permiso Revocado",
+  "permissioncard.timeline.event.slashed": "Depósito Confiscado",
+  "permissioncard.timeline.event.repaid": "Depósito Confiscado Reembolsado",
+  "permissioncard.timeline.event.unknown": "Evento Desconocido",
+
+  "messages.MsgRevokePermission.warning": "Revocar este permiso impedirá inmediatamente cualquier emisión o verificación de credenciales adicionales. Esta acción es irreversible.",
+  "messages.MsgSlashPermissionTrustDeposit.warning": "La confiscación es una acción seria y solo debe usarse cuando se hayan confirmado violaciones de la política."
 }

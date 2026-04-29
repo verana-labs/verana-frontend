@@ -51,6 +51,7 @@ export default function PermissionAttribute({ label, value, mono, actions }: Per
         break;
       }
       case "visualizer":
+        // Placeholder: button is shown for spec parity but has no behavior yet.
         break;
       default:
         console.error("PermissionAction", action);

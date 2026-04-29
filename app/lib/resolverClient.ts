@@ -27,6 +27,8 @@ interface ResolverFullResult {
   evaluatedAtBlock?: number;
   expiresAt?: string;
   credentials?: ResolverCredential[];
+  failedCredentials?: unknown[];
+  dereferenceErrors?: unknown[];
 }
 
 const SUCCESS_TTL_MS = 60_000;
@@ -52,6 +54,14 @@ function pickString(claims: Record<string, unknown> | undefined, key: string): s
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
+function pickStringOrNumber(claims: Record<string, unknown> | undefined, key: string): string | undefined {
+  if (!claims) return undefined;
+  const value = claims[key];
+  if (typeof value === 'string' && value.length > 0) return value;
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  return undefined;
+}
+
 function evictOldestIfFull(): void {
   if (cache.size < MAX_CACHE_ENTRIES) return;
   const oldestKey = cache.keys().next().value;
@@ -70,15 +80,23 @@ function mapResponse(did: string, raw: ResolverFullResult): DidEnrichment {
 
   const serviceName = pickString(service?.claims, 'name');
   const serviceDescription = pickString(service?.claims, 'description');
+  const serviceMinAge = pickStringOrNumber(service?.claims, 'minimumAgeRequired');
+  const serviceTermsUrl = pickString(service?.claims, 'termsAndConditions');
+  const servicePrivacyUrl = pickString(service?.claims, 'privacyPolicy');
+
   const organizationName = pickString(org?.claims, 'name');
   const countryCode = pickString(org?.claims, 'countryCode');
 
-  const hasResolverEvidence = credentials.length > 0;
+  const hasResolverEvidence =
+    credentials.length > 0 ||
+    (Array.isArray(raw.failedCredentials) && raw.failedCredentials.length > 0) ||
+    (Array.isArray(raw.dereferenceErrors) && raw.dereferenceErrors.length > 0);
+
   let trustStatus: DidTrustState;
   if (raw.trustStatus === 'TRUSTED') {
     trustStatus = 'TRUSTED';
-  } else if (raw.trustStatus === 'UNTRUSTED' && hasResolverEvidence) {
-    trustStatus = 'UNTRUSTED';
+  } else if (raw.trustStatus === 'UNTRUSTED') {
+    trustStatus = hasResolverEvidence ? 'UNTRUSTED' : 'UNRESOLVED';
   } else {
     trustStatus = 'UNRESOLVED';
   }
@@ -88,6 +106,9 @@ function mapResponse(did: string, raw: ResolverFullResult): DidEnrichment {
     trustStatus,
     serviceName,
     serviceDescription,
+    serviceMinAge,
+    serviceTermsUrl,
+    servicePrivacyUrl,
     organizationName,
     countryCode,
     evaluatedAtBlock: raw.evaluatedAtBlock,
