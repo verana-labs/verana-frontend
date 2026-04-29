@@ -40,7 +40,7 @@ export default function PendingTasksPage() {
   function buildTreeFromResponse(data: TrustRegistriesPermission[]): TreeNode[] {
     return data.map((tr) => ({
       nodeId: `tr:${tr.id}`,
-      name: `${tr.did} (${tr.pending_tasks})`,
+      name: tr.did,
       group: true,
       parentId: "root",
       isGrantee: false,
@@ -48,9 +48,11 @@ export default function PendingTasksPage() {
       roleColorClass: "text-purple-300",
       icon: faFolder,
       iconColorClass: "text-purple-300",
+      serviceDid: tr.did,
+      badgeCount: Number(tr.pending_tasks ?? 0),
       children: tr.credential_schemas.map((cs) => ({
         nodeId: `cs:${cs.id}`,
-        name: `${cs.title} (${cs.pending_tasks})`,
+        name: cs.title,
         group: true,
         parentId: `tr:${tr.id}`,
         isGrantee: false,
@@ -58,6 +60,8 @@ export default function PendingTasksPage() {
         roleColorClass: "text-purple-200",
         icon: faFolder,
         iconColorClass: "text-purple-200",
+        serviceTitle: cs.title,
+        badgeCount: Number(cs.pending_tasks ?? 0),
         children: cs.permissions.map((p) =>
           permissionToTreeNode(p)
         ),
@@ -69,7 +73,7 @@ export default function PendingTasksPage() {
     const tree = buildTreeFromResponse(pendingTasksCtx.permissionsList);
     setPermissionsTree(tree);
   }, [pendingTasksCtx.permissionsList]);
-  
+
   useEffect(() => {
     if (refreshRoot) pendingTasksCtx.refetch();
     setRefreshRoot(false);
