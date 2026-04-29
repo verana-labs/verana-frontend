@@ -1,5 +1,6 @@
 'use client';
 
+import { ReactNode } from "react";
 import { getModePillClass } from "@/ui/datatable/columnslist/cs";
 import { resolveTranslatable } from "@/ui/dataview/types";
 import { translate } from "@/i18n/dataview";
@@ -13,6 +14,7 @@ export type SchemaHeaderProps = {
   status?: SchemaStatus;
   issuerPermManagementMode?: string | number;
   verifierPermManagementMode?: string | number;
+  action?: ReactNode;
 };
 
 function statusPillClass(status: SchemaStatus) {
@@ -73,6 +75,7 @@ export default function SchemaHeader({
   status,
   issuerPermManagementMode,
   verifierPermManagementMode,
+  action,
 }: SchemaHeaderProps) {
   return (
     <section className="mb-8">
@@ -116,6 +119,7 @@ export default function SchemaHeader({
               />
             </div>
           </div>
+          {action ? <div className="flex-shrink-0">{action}</div> : null}
         </div>
       </div>
     </section>

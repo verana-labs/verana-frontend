@@ -1,5 +1,6 @@
 'use client';
 
+import { ReactNode } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronRight, faChartColumn, faCoins, faCrown, faHandshake, faScaleBalanced } from "@fortawesome/free-solid-svg-icons";
 import { Permission, VpState } from "../dataview/datasections/perm";
@@ -52,6 +53,66 @@ export default function TreeNodeHeader({
     permission?.perm_state as PermState,
     permission?.expire_soon ?? false,
   );
+
+  let participantContent: ReactNode = null;
+  if (type === "participants") {
+    if (!node.group && permission) {
+      participantContent = (
+        <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ml-auto ${node.roleColorClass}`}>
+          {showWeight ? (
+            <span className="whitespace-nowrap">
+              <FontAwesomeIcon icon={faScaleBalanced} className="mr-1" />
+              {formatVNAFromUVNA(permission.weight ?? "0")}
+            </span>
+          ) : null}
+          {showBusiness ? (
+            <span className="whitespace-nowrap">
+              <FontAwesomeIcon icon={faCoins} className="mr-1" />
+              {`validation: ${formatVNAFromUVNA(permission.validation_fees ?? "0")} | issuance: ${formatVNAFromUVNA(permission.issuance_fees ?? "0")} | verification: ${formatVNAFromUVNA(permission.verification_fees ?? "0")}`}
+            </span>
+          ) : null}
+          {showStats ? (
+            <span className="whitespace-nowrap">
+              <FontAwesomeIcon icon={faChartColumn} className="mr-1" />
+              {`issued: ${permission.issued ?? 0} | verified: ${permission.verified ?? 0}`}
+            </span>
+          ) : null}
+        </div>
+      );
+    } else {
+      participantContent = (
+        <div className={`text-xs flex flex-wrap items-center gap-x-3 gap-y-1 ml-auto ${node.roleColorClass}`}>
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${node.validationProcessColor}`}>
+            {node.validationProcessLabel}
+          </span>
+          {node.enabledJoin ? (
+            <button
+              type="button"
+              className="hover:text-purple-600 cursor-pointer whitespace-nowrap"
+              onClick={(e) => {
+                e.stopPropagation();
+                switch (node.validationProcessAction) {
+                  case 'LinkDID':
+                    window.open(service(permission?.did ?? ''), "_blank");
+                    break;
+                  case 'Connect':
+                    onConnect?.();
+                    break;
+                  default:
+                    onJoin(node);
+                    onToggle(node.nodeId, node.type, node.parentId);
+                    break;
+                }
+              }}
+            >
+              <FontAwesomeIcon icon={faHandshake} className="mr-1" />
+              {` ${resolveTranslatable({ key: "participants.btn.join" }, translate)}`}
+            </button>
+          ) : null}
+        </div>
+      );
+    }
+  }
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
@@ -120,60 +181,7 @@ export default function TreeNodeHeader({
         ) : null}
       </div>
 
-      {type === "participants" && (
-        !node.group && permission ? (
-          <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ml-auto ${node.roleColorClass}`}>
-            {showWeight ? (
-              <span className="whitespace-nowrap">
-                <FontAwesomeIcon icon={faScaleBalanced} className="mr-1" />
-                {formatVNAFromUVNA(permission.weight ?? "0")}
-              </span>
-            ) : null}
-            {showBusiness ? (
-              <span className="whitespace-nowrap">
-                <FontAwesomeIcon icon={faCoins} className="mr-1" />
-                {`validation: ${formatVNAFromUVNA(permission.validation_fees ?? "0")} | issuance: ${formatVNAFromUVNA(permission.issuance_fees ?? "0")} | verification: ${formatVNAFromUVNA(permission.verification_fees ?? "0")}`}
-              </span>
-            ) : null}
-            {showStats ? (
-              <span className="whitespace-nowrap">
-                <FontAwesomeIcon icon={faChartColumn} className="mr-1" />
-                {`issued: ${permission.issued ?? 0} | verified: ${permission.verified ?? 0}`}
-              </span>
-            ) : null}
-          </div>
-        ) : (
-          <div className={`text-xs flex flex-wrap items-center gap-x-3 gap-y-1 ml-auto ${node.roleColorClass}`}>
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${node.validationProcessColor}`}>
-              {node.validationProcessLabel}
-            </span>
-            {node.enabledJoin ? (
-              <button
-                type="button"
-                className="hover:text-purple-600 cursor-pointer whitespace-nowrap"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  switch (node.validationProcessAction) {
-                    case 'LinkDID':
-                      window.open(service(permission?.did ?? ''), "_blank");
-                      break;
-                    case 'Connect':
-                      onConnect?.();
-                      break;
-                    default:
-                      onJoin(node);
-                      onToggle(node.nodeId, node.type, node.parentId);
-                      break;
-                  }
-                }}
-              >
-                <FontAwesomeIcon icon={faHandshake} className="mr-1" />
-                {` ${resolveTranslatable({ key: "participants.btn.join" }, translate)}`}
-              </button>
-            ) : null}
-          </div>
-        )
-      )}
+      {participantContent}
     </div>
   );
 }
