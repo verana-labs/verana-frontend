@@ -14,7 +14,6 @@ export type SchemaHeaderProps = {
   status?: SchemaStatus;
   issuerPermManagementMode?: string | number;
   verifierPermManagementMode?: string | number;
-  /** Optional top-right action area (e.g. link to participants tree). */
   action?: ReactNode;
 };
 

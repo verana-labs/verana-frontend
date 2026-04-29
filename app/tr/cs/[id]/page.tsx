@@ -87,8 +87,6 @@ function ValidityFieldInput({
           }
           const parsed = Number(raw);
           if (!Number.isFinite(parsed)) return;
-          // Validity periods are non-negative integer days. Clamp here to
-          // avoid pickOptionalUInt32 wrapping a negative value into 2^32-1.
           onChange(Math.max(0, Math.floor(parsed)));
         }}
         disabled={disabled}
@@ -149,7 +147,6 @@ export default function CSViewPage() {
     if (trId === '') setTrId(csData.trId as string);
   }, [csData]);
 
-  // Drop edit mode if the user loses controller status (e.g. wallet switch).
   useEffect(() => {
     if (!trController && mode === 'edit') {
       setMode('view');
@@ -157,10 +154,6 @@ export default function CSViewPage() {
     }
   }, [trController, mode]);
 
-  // Re-enable the form when we land back in view mode. The action hook fires
-  // its onCancel ~500ms after a successful tx; without this the form would be
-  // re-enabled before the mode flips, opening a window where the user could
-  // fire a duplicate update tx.
   useEffect(() => {
     if (mode === 'view' && submitting) setSubmitting(false);
   }, [mode, submitting]);
@@ -203,9 +196,6 @@ export default function CSViewPage() {
     setSubmitting(true);
     try {
       await submitTx('MsgUpdateCredentialSchema', { ...csData, ...editValues });
-      // On success the action hook fires onCancel which flips mode to 'view';
-      // the useEffect above clears `submitting` once that happens. Failures
-      // bubble through here so we can re-enable the form for a retry.
     } catch {
       setSubmitting(false);
     }
