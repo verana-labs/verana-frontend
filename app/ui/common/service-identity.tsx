@@ -32,10 +32,6 @@ export default function ServiceIdentity({
   const avatarSeed = did ?? fallbackName ?? '';
   const avatarSizeClass = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5';
 
-  // Show the default avatar once the resolver has finished and didn't surface a
-  // service name (UNRESOLVED, errored, or returned without ECS-SERVICE claims).
-  // While loading we keep rendering the deterministic dicebear avatar to avoid
-  // a flash of the default placeholder on initial paint.
   const resolverHasResponded = enrichment !== null || error !== null;
   const showDefaultAvatar = !!did && !loading && resolverHasResponded && !enrichment?.serviceName;
   const avatarSrc = showDefaultAvatar ? DEFAULT_SERVICE_AVATAR : serviceAvatarUrl(avatarSeed);
