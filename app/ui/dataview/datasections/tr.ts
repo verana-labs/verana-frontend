@@ -12,6 +12,11 @@ export interface TrData {
   controller: string;
   language: string;
   docUrl?: string;
+  // V4 spec form metadata. Not chain-persisted yet — surfaced only in the
+  // create modal to align with the spec; will be wired to ECS-ORG /
+  // ECS-SERVICE credential issuance once verana-types#368 lands.
+  orgName?: string;
+  trServiceName?: string;
   deposit: string;
   role?: string;
   created?: string;
@@ -104,9 +109,27 @@ export const trSections: Section<TrData>[] = [
     nameCreate: t("dataview.tr.sections.basicInformation"),
     type: "basic",
     classFormEdit: "grid grid-cols-1 md:grid-cols-2 gap-6 mb-6", //lg:grid-cols-3
-    classFormCreate: "",
+    classFormCreate: "space-y-6 mb-6",
     fields: [
       { name: "id", label: t("dataview.tr.fields.id"), type: "data", show: "none", update: false, id: true },
+      {
+        name: "orgName",
+        label: t("dataview.tr.fields.orgName"),
+        type: "data",
+        show: "create",
+        required: true,
+        update: false,
+        placeholder: "Healthcare Credentials Ecosystem",
+      },
+      {
+        name: "trServiceName",
+        label: t("dataview.tr.fields.trServiceName"),
+        type: "data",
+        show: "create",
+        required: true,
+        update: false,
+        placeholder: "Healthcare Trust Registry",
+      },
       {
         name: "did",
         label: t("dataview.tr.fields.did"),
@@ -133,7 +156,7 @@ export const trSections: Section<TrData>[] = [
         type: "data",
         inputType: "languageSelector",
         show: "create",
-        required: false,
+        required: true,
         update: false,
       },
       {
@@ -143,6 +166,7 @@ export const trSections: Section<TrData>[] = [
         show: "create",
         required: true,
         update: false,
+        placeholder: "https://example.com/governance-framework.pdf",
         validation: { type: "URL" },
       },
       { name: "updateTrustRegistry", label: t("dataview.tr.actions.updateTrustRegistry"), type: "action", icon: faEdit, isEditButton: true },

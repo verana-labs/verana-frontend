@@ -203,19 +203,19 @@ export function formatNetwork(network: string){
 export function roleBadgeClass(role: PermissionType) {
   switch (role) {
     case "ECOSYSTEM":
-      return "bg-purple-100 text-purple-800";
+      return "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400";
     case "ISSUER_GRANTOR":
-      return "bg-blue-100 text-blue-800";
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400";
     case "VERIFIER_GRANTOR":
-      return "bg-slate-100 text-slate-800";
+      return "bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-400";
     case "ISSUER":
-      return "bg-green-100 text-green-800";
+      return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400";
     case "VERIFIER":
-      return "bg-orange-100 text-orange-800";
+      return "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400";
     case "HOLDER":
-      return "bg-pink-100 text-pink-800";
+      return "bg-pink-100 text-pink-800 dark:bg-pink-900/20 dark:text-pink-400";
     default:
-      return "bg-gray-100 text-gray-800";
+      return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
   }
 }
 
