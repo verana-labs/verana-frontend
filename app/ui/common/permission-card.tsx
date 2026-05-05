@@ -152,7 +152,7 @@ export default function PermissionCard({
   const {permissionHistoryList} = usePermissionHistory(permissionId);
   
   const {labelVpState, classVpState} = vpStateColor(selectedNode.permission?.vp_state as VpState, selectedNode.permission?.vp_exp as string, selectedNode.permission?.expire_soon ?? false);
-  const {labelPermState, classPermState} = permStateBadgeClass(selectedNode.permission?.perm_state as PermState, selectedNode.permission?.expire_soon as boolean);
+  const {labelPermState, classPermState} = permStateBadgeClass(selectedNode.permission?.perm_state as PermState, selectedNode.permission?.expire_soon as boolean, "header");
 
   const [activeActionId, setActiveActionId] = useState<string | null>(null);
 
