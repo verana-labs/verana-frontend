@@ -1,14 +1,11 @@
-/* Hook for trust-deposit transactions (reclaim deposit or yield) with notification plumbing. */
+/* Hook for trust-deposit transactions (reclaim yield) with notification plumbing. */
 'use client';
 
 import { useRef } from 'react';
 import { DeliverTxResponse } from '@cosmjs/stargate';
 import { useChain } from '@cosmos-kit/react';
 import { EncodeObject } from '@cosmjs/proto-signing';
-import {
-  MsgReclaimTrustDeposit,
-  MsgReclaimTrustDepositYield,
-} from '@codec-proto/verana/td/v1/tx';
+import { MsgReclaimTrustDepositYield } from '@codec-proto/verana/td/v1/tx';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useNotification } from '@/providers/notification-provider';
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
@@ -22,29 +19,15 @@ import { translate } from '@/i18n/dataview';
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 import { extractTxHeight, handleSuccess } from '@/msg/util/signerUtil'
 
-// Encapsulate typeUrl and memo label per trust-deposit message type.
 export const MSG_TYPE_CONFIG_TD = {
-  MsgReclaimTrustDeposit: {
-    typeUrl: '/verana.td.v1.MsgReclaimTrustDeposit',
-    txLabel: 'MsgReclaimTrustDeposit',
-  },
   MsgReclaimTrustDepositYield: {
     typeUrl: '/verana.td.v1.MsgReclaimTrustDepositYield',
     txLabel: 'MsgReclaimTrustDepositYield',
   },
 } as const;
 
-// Narrow payload variants required by each trust-deposit action.
-type ActionTDParams =
-  | {
-      msgType: 'MsgReclaimTrustDeposit';
-      claimedVNA: number;
-    }
-  | {
-      msgType: 'MsgReclaimTrustDepositYield';
-    };
+type ActionTDParams = { msgType: 'MsgReclaimTrustDepositYield' };
 
-// Build an executor for trust-deposit actions, handling wallet checks and UI refresh triggers.
 export function useActionTD( onCancel?: () => void,
                              onRefresh?: (id?: string, txHeight?: number) => void) {
   const veranaChain = useVeranaChain();
@@ -55,7 +38,6 @@ export function useActionTD( onCancel?: () => void,
 
   const txHeight = useRef<number | undefined>(undefined);
 
-  // Close the action UI when something goes wrong.
   const handleFailure = () => {
     onCancel?.();
   };
@@ -71,34 +53,21 @@ export function useActionTD( onCancel?: () => void,
       return;
     }
 
-    if (params.msgType === 'MsgReclaimTrustDeposit') {
-      if (!Number.isFinite(params.claimedVNA) || params.claimedVNA <= 0) {
-        await notify(resolveTranslatable({key: "error.msg.td.claimed"}, translate)??'', 'error');
-        return;
-      }
-    }
-
     inFlight.current = true;
 
     let typeUrl = '';
-    let value: MsgReclaimTrustDeposit | MsgReclaimTrustDepositYield;
-    let claimedLabel: string | undefined;
+    let value: MsgReclaimTrustDepositYield;
 
     switch (params.msgType) {
-      case 'MsgReclaimTrustDeposit': {
-        const claimedUvna = Math.round(params.claimedVNA * 1_000_000);
-        typeUrl = MSG_TYPE_CONFIG_TD.MsgReclaimTrustDeposit.typeUrl;
-        value = MsgReclaimTrustDeposit.fromPartial({
-          creator: address,
-          claimed: claimedUvna,
-        });
-        claimedLabel = `${params.claimedVNA} VNA`;
-        break;
-      }
       case 'MsgReclaimTrustDepositYield': {
         typeUrl = MSG_TYPE_CONFIG_TD.MsgReclaimTrustDepositYield.typeUrl;
+        // Reclaim yield is NOT in the de operator-authorization whitelist,
+        // but the chain still requires `operator` to be a valid bech32
+        // address (it does its own auth check inside the td handler).
+        // For self-execution we set operator = corporation = wallet.
         value = MsgReclaimTrustDepositYield.fromPartial({
-          creator: address,
+          corporation: address,
+          operator: address,
         });
         break;
       }
@@ -140,7 +109,7 @@ export function useActionTD( onCancel?: () => void,
         txHeight.current = extractTxHeight(txRes);
         success = true;
         notifyPromise = notify(
-          MSG_SUCCESS_ACTION_TD[params.msgType](claimedLabel),
+          MSG_SUCCESS_ACTION_TD[params.msgType](),
           'success',
           resolveTranslatable({key: 'notification.msg.successful.title'}, translate)
         );

@@ -8,7 +8,7 @@ const t = (key: string, values?: I18nValues) => ({ key, values });
 export interface TrList {
   id: string;
   did: string;
-  controller: string;
+  corporation: string;
   created: string;
   modified: string;
   aka: string;
@@ -41,7 +41,7 @@ export const trFilter: Filter<TrList>[] = [
 export const columnsTrList: Column<TrList>[] = [
   { header: t("datatable.tr.header.id"), accessor: "id", className: "font-medium"},
   { header: t("datatable.tr.header.did"), accessor: "did", format: (value) => shortenDID(String(value)), break: "break-all" },
-  { header: t("datatable.tr.header.controller"), accessor: "controller", format: (value) => shortenMiddle(String(value), 25), priority: 5, break: "break-all" },
+  { header: t("datatable.tr.header.corporation"), accessor: "corporation", format: (value) => shortenMiddle(String(value), 25), priority: 5, break: "break-all" },
   { header: t("datatable.tr.header.activeSchemas"), accessor: "active_schemas", format: (value) => formatNumber(value, true), priority: 4 },
   { header: t("datatable.tr.header.participants"), accessor: "participants", format: (value) => formatNumber(value, true) },
   { header: t("datatable.tr.header.trustDeposit"), accessor: "weight", format: (value) => formatVNAFromUVNA(value as string) },

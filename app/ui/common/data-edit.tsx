@@ -411,7 +411,7 @@ export default function EditableDataView<T extends object>({
           textareaInputs
       }
 
-      {/* Cost Message MsgStartPermissionVP | MsgCreatePermission */}
+      {/* Cost Message MsgStartPermissionVP | MsgSelfCreatePermission */}
       { transactionCost && (!actionCard || actionCard.available) && (
         <div className={clsx('bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4',
           actionCard && actionCard.available ? 'w-fit mx-auto text-center mb-6' : 'mb-4'

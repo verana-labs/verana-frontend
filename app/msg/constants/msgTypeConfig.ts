@@ -32,11 +32,6 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     description: t("messages.MsgReclaimTrustDepositYield.description"),
     cost: t("messages.MsgReclaimTrustDepositYield.cost"), // {value}
   },
-  MsgReclaimTrustDeposit: {
-    label: t("messages.MsgReclaimTrustDeposit.label"),
-    description: t("messages.MsgReclaimTrustDeposit.description"), // {addBalance} {burnRate}
-    cost: t("messages.MsgReclaimTrustDeposit.cost"), // {value}
-  },
   MsgRepaySlashedTrustDeposit: {
     label: t("messages.MsgRepaySlashedTrustDeposit.label"),
     description: t("messages.MsgRepaySlashedTrustDeposit.description"),
@@ -109,10 +104,10 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     description: t("messages.MsgSetPermissionVPToValidated.description"),
     cost: t("messages.MsgSetPermissionVPToValidated.cost"), // {value}
   },
-  MsgExtendPermission: {
-    label: t("messages.MsgExtendPermission.label"),
-    description: t("messages.MsgExtendPermission.description"),
-    cost: t("messages.MsgExtendPermission.cost"), // {value}
+  MsgAdjustPermission: {
+    label: t("messages.MsgAdjustPermission.label"),
+    description: t("messages.MsgAdjustPermission.description"),
+    cost: t("messages.MsgAdjustPermission.cost"), // {value}
   },
   MsgRevokePermission: {
     label: t("messages.MsgRevokePermission.label"),
@@ -141,10 +136,10 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     description: t("messages.MsgStartPermissionVP.description"),
     cost: t("messages.MsgStartPermissionVP.cost"), // {value}
   },
-  MsgCreatePermission: {
-    label: t("messages.MsgCreatePermission.label"),
-    description: t("messages.MsgCreatePermission.description"),
-    cost: t("messages.MsgCreatePermission.cost"), // {value}
+  MsgSelfCreatePermission: {
+    label: t("messages.MsgSelfCreatePermission.label"),
+    description: t("messages.MsgSelfCreatePermission.description"),
+    cost: t("messages.MsgSelfCreatePermission.cost"), // {value}
   }
 };
 
@@ -175,7 +170,6 @@ export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
     button: "bg-red-600 hover:bg-red-700"
   },
   MsgReclaimTrustDepositYield: {},
-  MsgReclaimTrustDeposit: {},
   MsgRepaySlashedTrustDeposit: {},
   MsgCreateTrustRegistry: {},
   MsgUpdateTrustRegistry: {},
@@ -212,7 +206,7 @@ export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
   MsgSetPermissionVPToValidated: {
     button: "bg-green-600 hover:bg-green-700"
   },
-  MsgExtendPermission: {},
+  MsgAdjustPermission: {},
   MsgRevokePermission: {
     button: "bg-red-600 hover:bg-red-700"
   },
@@ -223,6 +217,6 @@ export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
     button: "bg-green-600 hover:bg-green-700"
   },
   MsgCreateRootPermission: {},
-  MsgCreatePermission: {},
+  MsgSelfCreatePermission: {},
   MsgStartPermissionVP: {}
 }

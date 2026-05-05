@@ -49,18 +49,17 @@ const requiredFieldsByMsgType: Record<MessageType, readonly string[]> = {
 
   // TD
   MsgReclaimTrustDepositYield: [],
-  MsgReclaimTrustDeposit: [],
   MsgRepaySlashedTrustDeposit: [],
   MsgRenewPermissionVP: [],
   MsgSetPermissionVPToValidated: [],
   MsgCancelPermissionVPLastRequest: [],
-  MsgExtendPermission: [],
+  MsgAdjustPermission: [],
   MsgRevokePermission: [],
   MsgSlashPermissionTrustDeposit: [],
   MsgRepayPermissionSlashedTrustDeposit: [],
   MsgCreateRootPermission: [],
   MsgStartPermissionVP: [],
-  MsgCreatePermission: [],
+  MsgSelfCreatePermission: [],
 };
 
 // Generic type for an action handler

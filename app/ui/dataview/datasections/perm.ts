@@ -217,7 +217,7 @@ export function getActionPermSections(msgType: MsgType, excludeFees: boolean = f
         },
       ];
 
-    case "MsgCreatePermission":
+    case "MsgSelfCreatePermission":
       return [
         {
           name: t("dataview.perm.sections.main"),
@@ -267,7 +267,7 @@ export function getActionPermSections(msgType: MsgType, excludeFees: boolean = f
         },
       ];
 
-    case "MsgExtendPermission":
+    case "MsgAdjustPermission":
       return [
         {
           name: t("dataview.perm.sections.main"),
@@ -510,8 +510,8 @@ export const permissionActionSlashing: PermissionAction[] = [
 ];
 
 export const permissionActionLifecycle: PermissionAction[] = [
-  { name: "PERM_EXTEND", value: "MsgExtendPermission",
-    icon: faClockRotateLeft, label: resolveTranslatable({key: "permissioncard.lifecycle.action.permextend"}, translate)?? "Extend Permission"},
+  { name: "PERM_ADJUST", value: "MsgAdjustPermission",
+    icon: faClockRotateLeft, label: resolveTranslatable({key: "permissioncard.lifecycle.action.permadjust"}, translate)?? "Adjust Permission"},
   { name: "PERM_REVOKE", value: "MsgRevokePermission",
     icon: faBan, label: resolveTranslatable({key: "permissioncard.lifecycle.action.permrevoke"}, translate)?? "Revoke Permission",
     iconColorClass: "bg-red-600 hover:bg-red-700"},

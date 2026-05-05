@@ -82,7 +82,7 @@ export default function ParicipantsPage() {
       nodeId: `group:${parent.id}:${t.role}`,
       name: t.label,
       validationProcessAction: isWalletConnected ?
-                                  t.validation ? (t.role == "HOLDER" && Number(parent.validation_fees) == 0 ? "LinkDID" : "MsgStartPermissionVP") : "MsgCreatePermission"
+                                  t.validation ? (t.role == "HOLDER" && Number(parent.validation_fees) == 0 ? "LinkDID" : "MsgStartPermissionVP") : "MsgSelfCreatePermission"
                                   : "Connect",
       validationProcessLabel: t.validation ? "validation process" : "open",
       validationProcessColor: roleJoinColorClass(t.role),
@@ -196,7 +196,7 @@ export default function ParicipantsPage() {
         trTitle={dataTR?.did ?? ""}
         csId={csData?.id != null ? String(csData.id) : undefined}
         trId={csData?.trId != null ? String(csData.trId) : undefined}
-        isTrController={!!dataTR?.controller && dataTR.controller === address}
+        isTrController={!!dataTR?.corporation && dataTR.corporation === address}
         setNodeRequestParams={setNodeRequestParams}
         refreshRoot={() => setRefreshRoot(true)}
         onConnect={!isWalletConnected ? connect : undefined}

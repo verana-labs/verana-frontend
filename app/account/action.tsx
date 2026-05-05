@@ -50,12 +50,7 @@ export default function TdActionPage({ action, data, onClose, onRefresh }: TdAct
   // Save handler: called when the form is submitted
   async function onSave(newData: TdData) {
     setData(newData);
-    const claimedVNA = Number(newData.claimedVNA ??  0);
-    // Broadcast transaction with user input
     switch (action) {
-      case 'MsgReclaimTrustDeposit':
-        await actionTD({ msgType: 'MsgReclaimTrustDeposit', claimedVNA });
-        break;
       case 'MsgReclaimTrustDepositYield':
         await actionTD({ msgType: 'MsgReclaimTrustDepositYield'});
         break;
@@ -88,7 +83,7 @@ export default function TdActionPage({ action, data, onClose, onRefresh }: TdAct
         onSave={onSave}
         onSimulate={onSimulate}
         onCancel={onClose}
-        noForm={action!=='MsgReclaimTrustDeposit'}
+        noForm={true}
         actionCard={(action==='MsgReclaimTrustDepositYield') ? actionCardYield : undefined}
          />
     </>

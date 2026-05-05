@@ -130,7 +130,7 @@ export default function CSViewPage() {
   }, [trId]);
 
   useEffect(() => {
-    setTrController(!!dataTR?.controller && dataTR.controller === address);
+    setTrController(!!dataTR?.corporation && dataTR.corporation === address);
   }, [dataTR, address]);
 
   useEffect(() => {

@@ -22,7 +22,6 @@ export default function GfdPage({ action, data, onClose, onRefresh, setModalHidd
   const trData: TrData = data as TrData;
   // Compose initial data, including controller and docUrl if needed
   const [dataGFD, setData] = useState<GfdData>({
-    creator: trData.controller?? '',
     id: trData.id,
     version: trData.last_version,
     docLanguage: '',
@@ -39,7 +38,6 @@ export default function GfdPage({ action, data, onClose, onRefresh, setModalHidd
       case "MsgAddGovernanceFrameworkDocument":
         await actionTR({
           msgType: "MsgAddGovernanceFrameworkDocument",
-          creator: trData.controller,
           id: trData.id,
           version: trData.last_version?? 0,
           docLanguage: newData.docLanguage?? '',
@@ -50,7 +48,6 @@ export default function GfdPage({ action, data, onClose, onRefresh, setModalHidd
         await actionTR({
           msgType: 'MsgIncreaseActiveGovernanceFrameworkVersion',
           id: trData.id,
-          creator: trData.controller
         });
         break;
       default:
@@ -59,10 +56,10 @@ export default function GfdPage({ action, data, onClose, onRefresh, setModalHidd
   }
 
   // Simulate handler: called when the form is simulated
-  async function onSimulate(newData: GfdData) {
+  async function onSimulate(_newData: GfdData) {
     switch (action){
       case "MsgIncreaseActiveGovernanceFrameworkVersion":
-        const res =  await actionTR({ msgType: 'MsgIncreaseActiveGovernanceFrameworkVersion', id: trData.id, creator: trData.controller }, true);
+        const res =  await actionTR({ msgType: 'MsgIncreaseActiveGovernanceFrameworkVersion', id: trData.id }, true);
         if (res && typeof res === "object" && !("transactionHash" in res)) {
           return res as SimulateResult;
         }

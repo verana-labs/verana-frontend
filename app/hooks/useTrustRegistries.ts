@@ -44,8 +44,8 @@ export function useTrustRegistries (all: boolean = false, onlyActive: boolean = 
         setError(`Error ${code}: ${error}`);
         return;
       } 
-      const trListController: TrList[] = Array.isArray(jsonTrList.trust_registries) ? jsonTrList.trust_registries : [];      
-      setTrList(trListController);
+      const trListCorporation: TrList[] = Array.isArray(jsonTrList.trust_registries) ? jsonTrList.trust_registries : [];
+      setTrList(trListCorporation);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);

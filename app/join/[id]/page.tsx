@@ -131,12 +131,10 @@ export default function JoinEcosystemWizard() {
 
       await actionPerm({
         msgType,
-        creator: "",
         type,
         validatorPermId,
-        country: "US",
         did,
-      });      
+      });
   }
   
   const [errorNotified, setErrorNotified] = useState(false);

@@ -17,14 +17,15 @@ export default function AddTrPage({ onCancel, onRefresh }: AddTrPageProps) {
   const veranaChain = useVeranaChain();
   const { address } = useChain(veranaChain.chain_name);
 
-  // Compose initial data, including controller and docUrl if needed
+  // Compose initial data; corporation defaults to the connected wallet for
+  // self-execution (matches what action hooks will send).
   const [data, setData] = useState<TrData>({
     id: '',
     did: '',
     deposit: '',
     language: '',
     aka: '',
-    controller: address ?? '',
+    corporation: address ?? '',
     docUrl: ''
   });
 
@@ -36,7 +37,6 @@ export default function AddTrPage({ onCancel, onRefresh }: AddTrPageProps) {
       // Broadcast MsgCreateTrustRegistry transaction with user input
       await actionTR({
         msgType: 'MsgCreateTrustRegistry',
-        creator: address ?? '',
         did: newData.did || '',
         aka: newData.aka || '',
         language: newData.language || '',
