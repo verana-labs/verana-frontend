@@ -431,6 +431,7 @@ type PermissionKey = keyof Permission;
 export type PermissionAction = {
   name?: string;
   value?: string;
+  visualizerTarget?: "account" | "did" | "permission";
   icon: IconDefinition;
   label: string;
   iconColorClass?: string;

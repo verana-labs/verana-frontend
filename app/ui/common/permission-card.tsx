@@ -50,18 +50,18 @@ const t = (key: string, fallback: string) =>
 
 const accountActions: PermissionAction[] = [
   { icon: faCopy, label: t("permissioncard.action.copy", "copy"), value: "copy" },
-  { icon: faEye, label: t("permissioncard.action.visualizer", "visualizer"), value: "visualizer" },
+  { icon: faEye, label: t("permissioncard.action.visualizer", "visualizer"), value: "visualizer", visualizerTarget: "account" },
   { icon: faUpRightFromSquare, label: t("permissioncard.action.explorer", "explorer"), value: "explorer" },
 ];
 
 const idActions: PermissionAction[] = [
   { icon: faCopy, label: t("permissioncard.action.copy", "copy"), value: "copy" },
-  { icon: faEye, label: t("permissioncard.action.visualizer", "visualizer"), value: "visualizer" },
+  { icon: faEye, label: t("permissioncard.action.visualizer", "visualizer"), value: "visualizer", visualizerTarget: "permission" },
 ];
 
 const didActions: PermissionAction[] = [
   { icon: faCopy, label: t("permissioncard.action.copy", "copy"), value: "copy" },
-  { icon: faEye, label: t("permissioncard.action.visualizer", "visualizer"), value: "visualizer" },
+  { icon: faEye, label: t("permissioncard.action.visualizer", "visualizer"), value: "visualizer", visualizerTarget: "did" },
   { icon: faUpRightFromSquare, label: t("permissioncard.action.service", "service"), value: "service" },
 ];
 
