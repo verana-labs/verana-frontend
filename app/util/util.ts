@@ -300,11 +300,11 @@ export function vpStateColor(vpState: VpState, vpExp: string, expireSoon: boolea
   }
 }
 
-export function authorityPaticipants (isGrantee: boolean, isValidator: boolean, isPredecessor: boolean ): { icon: IconDefinition; iconColorClass: string; } {
+export function authorityPaticipants (isCorporation: boolean, isValidator: boolean, isPredecessor: boolean ): { icon: IconDefinition; iconColorClass: string; } {
   if (isValidator){ // validator
     return { icon: faCrown, iconColorClass: "text-yellow-500" };
   }
-  else if (isGrantee){ // grantee
+  else if (isCorporation){ // corporation (permission owner)
     return { icon: faCrown, iconColorClass: "text-green-500" };
   }
   else if (isPredecessor){ // predecessor

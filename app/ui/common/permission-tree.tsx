@@ -54,7 +54,7 @@ export type TreeNode = {
   nodeId: string;
   icon: IconDefinition;
   iconColorClass: string;
-  isGrantee: boolean;
+  isCorporation: boolean;
   isValidator: boolean;
   group?: boolean;
   schemaId?: string;

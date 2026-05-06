@@ -18,16 +18,16 @@ export default function PendingTasksPage() {
   const [refreshRoot, setRefreshRoot] = useState<boolean>(true);
 
   function permissionToTreeNode(p: Permission): TreeNode {
-    const isGrantee = (address === p.grantee);
+    const isCorporation = (address === p.corporation);
     const isValidator = true;
     const isPredecessor = false;
-    const {icon, iconColorClass } = authorityPaticipants(isGrantee, isValidator, isPredecessor);
+    const {icon, iconColorClass } = authorityPaticipants(isCorporation, isValidator, isPredecessor);
     return {
       nodeId: p.id,
       name: p.did,
       group: false,
-      parentId: p.validator_perm_id,
-      isGrantee,
+      parentId: p.validator_perm_id ?? undefined,
+      isCorporation,
       isValidator,
       roleColorClass: roleColorClass(p.type),
       icon,
@@ -43,7 +43,7 @@ export default function PendingTasksPage() {
       name: tr.did,
       group: true,
       parentId: "root",
-      isGrantee: false,
+      isCorporation: false,
       isValidator: false,
       roleColorClass: "text-purple-300",
       icon: faFolder,
@@ -55,7 +55,7 @@ export default function PendingTasksPage() {
         name: cs.title,
         group: true,
         parentId: `tr:${tr.id}`,
-        isGrantee: false,
+        isCorporation: false,
         isValidator: false,
         roleColorClass: "text-purple-200",
         icon: faFolder,

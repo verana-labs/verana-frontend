@@ -514,7 +514,7 @@
   "permissioncard.timeline.event.setvalidated": "Aceptar y Marcar como Validado",
   "permissioncard.timeline.event.renewvp": "Renovar Proceso de Validación",
   "permissioncard.timeline.event.cancelvp": "Cancelar Solicitud",
-  "permissioncard.timeline.event.extended": "Permiso Extendido",
+  "permissioncard.timeline.event.adjusted": "Permiso Ajustado",
   "permissioncard.timeline.event.revoked": "Permiso Revocado",
   "permissioncard.timeline.event.slashed": "Depósito Confiscado",
   "permissioncard.timeline.event.repaid": "Depósito Confiscado Reembolsado",

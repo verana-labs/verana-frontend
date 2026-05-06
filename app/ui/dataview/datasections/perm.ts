@@ -11,8 +11,7 @@ const t = (key: string) => ({ key });
 // Permission data (must include every field used by the sections)
 export interface PermissionData {
   // Common
-  creator?: string;
-  country?: string;
+  corporation?: string;
   // Identifiers
   id?: string | number;
   schemaId?: string | number;
@@ -40,11 +39,11 @@ export interface PermissionData {
 }
 
 
-const commonIdentityFields = (opts?: { includeCountry?: boolean }): Field<PermissionData>[] => {
-  const out: Field<PermissionData>[] = [
+const commonIdentityFields = (): Field<PermissionData>[] => {
+  return [
     {
-      name: "creator",
-      label: t("dataview.perm.fields.creator"),
+      name: "corporation",
+      label: t("dataview.perm.fields.corporation"),
       type: "data",
       inputType: "text",
       show: "none",
@@ -60,21 +59,7 @@ const commonIdentityFields = (opts?: { includeCountry?: boolean }): Field<Permis
       required: true,
       update: false,
     }
-  ]
-
-  if (opts?.includeCountry) {
-    out.push({
-      name: "country",
-      label: t("dataview.perm.fields.country"),
-      type: "data",
-      inputType: "text",
-      show: "edit create",
-      required: false,
-      update: true,
-    });
-  }
-
-  return out;
+  ];
 };
 
 const dateFields = (opts?: { from?: boolean; until?: boolean; untilRequired?: boolean }): Field<PermissionData>[] => {
@@ -211,7 +196,7 @@ export function getActionPermSections(msgType: MsgType, excludeFees: boolean = f
           name: t("dataview.perm.sections.main"),
           type: "basic",
           fields: [
-            ...commonIdentityFields({includeCountry: false}),
+            ...commonIdentityFields(),
             ...commonCreateFields({ includeType: true, includeValidatorPermId: true}),
         ],
         },
@@ -223,7 +208,7 @@ export function getActionPermSections(msgType: MsgType, excludeFees: boolean = f
           name: t("dataview.perm.sections.main"),
           type: "basic",
           fields: [
-            ...commonIdentityFields({includeCountry: false}),
+            ...commonIdentityFields(),
             ...commonCreateFields({includeType: true}),
             ...dateFields({ from: true, until: true }),
             ...( excludeFees ? [] : feeFields({ includeIssuance: false }) )
@@ -237,7 +222,7 @@ export function getActionPermSections(msgType: MsgType, excludeFees: boolean = f
           // name: t("dataview.perm.sections.main"),
           type: "basic",
           fields: [
-            ...commonIdentityFields({includeCountry: false}),
+            ...commonIdentityFields(),
             ...commonCreateFields({includeType: false}),
             ...dateFields({ from: true, until: true }),
             ...feeFields({ includeIssuance: true }),
@@ -251,7 +236,7 @@ export function getActionPermSections(msgType: MsgType, excludeFees: boolean = f
           name: t("dataview.perm.sections.main"),
           type: "basic",
           fields: [
-            ...commonIdentityFields({includeCountry: false}),
+            ...commonIdentityFields(),
             ...dateFields({ until: true }),
             ...( excludeFees ? [] : feeFields({ includeIssuance: true }) ),
             {
@@ -375,44 +360,45 @@ export interface Permission {
   schema_id: string;
   type: PermissionType;
   did: string;
-  grantee: string;
-  created_by: string;
+  corporation: string;
   created: string;  // ISO datetime
   modified: string; // ISO datetime
-  modified_by: string;
-  extended: string; // ISO datetime
-  extended_by: string;
-  slashed: string;  // ISO datetime
-  slashed_by: string;
-  repaid: string;   // ISO datetime
-  repaid_by: string;
+  adjusted: string | null; // ISO datetime
+  slashed: string | null;  // ISO datetime
+  repaid: string | null;   // ISO datetime
+  revoked: string | null;  // ISO datetime
   effective_from: string;   // ISO datetime
   effective_until: string;  // ISO datetime
-  revoked: string;  // ISO datetime
-  revoked_by: string;
-  country: string;
-  validation_fees: string;
-  issuance_fees: string;
-  verification_fees: string;
-  deposit: string;
-  slashed_deposit: string;
-  repaid_deposit: string;
-  validator_perm_id: string;
+  validation_fees: string | number;
+  issuance_fees: string | number;
+  verification_fees: string | number;
+  issuance_fee_discount: string | number;
+  verification_fee_discount: string | number;
+  deposit: string | number;
+  slashed_deposit: string | number;
+  repaid_deposit: string | number;
+  validator_perm_id: string | null;
   vp_state: VpState;
-  vp_last_state_change: string; // ISO datetime
-  vp_current_fees: string;
-  vp_current_deposit: string;
-  vp_summary_digest_sri: string;
-  vp_exp: string;   // ISO datetime
-  vp_validator_deposit: string;
-  vp_term_requested: string;    // ISO datetime
+  vp_last_state_change: string | null; // ISO datetime
+  vp_current_fees: string | number;
+  vp_current_deposit: string | number;
+  vp_summary_digest: string;
+  vp_exp: string | null;   // ISO datetime
+  vp_validator_deposit: string | number;
+  vp_term_requested?: string | null;    // ISO datetime
+  vs_operator: string | null;
+  vs_operator_authz_enabled: boolean;
+  vs_operator_authz_spend_limit: unknown[];
+  vs_operator_authz_with_feegrant: boolean;
+  vs_operator_authz_fee_spend_limit: unknown[];
+  vs_operator_authz_spend_period: unknown;
   perm_state: string;
-  grantee_available_actions: string[];
+  corporation_available_actions: string[];
   validator_available_actions: string[];
-  participants: string;
-  weight: string;
-  issued: string;
-  verified: string;
+  participants: string | number;
+  weight: string | number;
+  issued: string | number;
+  verified: string | number;
   expire_soon: boolean;
   transaction_cost?: string;
 };
@@ -460,7 +446,7 @@ export const permissionMetaItems: PermissionItem[] = [
     ],
   },
   {
-    label: "Grantee", attr: "grantee", mono: true,
+    label: resolveTranslatable({key: "permissioncard.meta.corporation"}, translate)?? "Corporation", attr: "corporation", mono: true,
     extraActions: [
       { icon: faCopy, label: resolveTranslatable({key: "permissioncard.action.copy"}, translate)?? "copy", value: "copy" },
       // { icon: faEye, label: resolveTranslatable({key: "permissioncard.action.visualizer"}, translate)?? "visualizer", value: "visualizer" },
@@ -486,17 +472,11 @@ export const permissionLifecycle: PermissionItem[] = [
   { label: resolveTranslatable({key: "permissioncard.meta.effectivefrom"}, translate)?? "Effective From", attr: "effective_from", format: (value) => formatDate(value as string) },
   { label: resolveTranslatable({key: "permissioncard.meta.effectiveuntil"}, translate)?? "Effective Until", attr: "effective_until", format: (value) => formatDate(value as string) },
   { label: resolveTranslatable({key: "permissioncard.lifecycle.created"}, translate)?? "Created", attr: "created", format: (value) => formatDate(value as string) },
-  { label: resolveTranslatable({key: "permissioncard.lifecycle.createdby"}, translate)?? "Created By", attr: "created_by", mono: true},
   { label: resolveTranslatable({key: "permissioncard.lifecycle.modified"}, translate)?? "Modified", attr: "modified", format: (value) => formatDate(value as string) },
-  { label: resolveTranslatable({key: "permissioncard.lifecycle.modifiedby"}, translate)?? "Modified By", attr: "modified_by", mono: true },
-  { label: resolveTranslatable({key: "permissioncard.lifecycle.extended"}, translate)?? "Extended", attr: "extended", format: (value) => formatDate(value as string) },
-  { label: resolveTranslatable({key: "permissioncard.lifecycle.extendedby"}, translate)?? "Extended By", attr: "extended_by", mono: true },
+  { label: resolveTranslatable({key: "permissioncard.lifecycle.adjusted"}, translate)?? "Adjusted", attr: "adjusted", format: (value) => formatDate(value as string) },
   { label: resolveTranslatable({key: "permissioncard.lifecycle.revoked"}, translate)?? "Revoked", attr: "revoked", format: (value) => formatDate(value as string) },
-  { label: resolveTranslatable({key: "permissioncard.lifecycle.revokedby"}, translate)?? "Revoked By", attr: "revoked_by", mono: true},
   { label: resolveTranslatable({key: "permissioncard.lifecycle.slashed"}, translate)?? "Slashed", attr: "slashed", format: (value) => formatDate(value as string) },
-  { label: resolveTranslatable({key: "permissioncard.lifecycle.slashedby"}, translate)?? "Slashed By", attr: "slashed_by", mono: true },
   { label: resolveTranslatable({key: "permissioncard.lifecycle.repaid"}, translate)?? "Repaid", attr: "repaid", format: (value) => formatDate(value as string) },
-  { label: resolveTranslatable({key: "permissioncard.lifecycle.repaidby"}, translate)?? "Repaid By", attr: "repaid_by", mono: true },
 ];
 export const permissionActionSlashing: PermissionAction[] = [
   { name: "PERM_SLASH", value: "MsgSlashPermissionTrustDeposit",
@@ -522,7 +502,7 @@ export const permissionValidationProcess: PermissionItem[] = [
   { label: resolveTranslatable({key: "permissioncard.validationprocess.vplaststatechange"}, translate)?? "VP Last State Change", attr: "vp_last_state_change"},
   { label: resolveTranslatable({key: "permissioncard.validationprocess.vpcurrentfees"}, translate)?? "VP Current Fees", attr: "vp_current_fees", format: (value) => formatVNAFromUVNA(String(value)), mono: true },
   { label: resolveTranslatable({key: "permissioncard.validationprocess.vpcurrentdeposit"}, translate)?? "VP Current Deposit", attr: "vp_current_deposit", format: (value) => formatVNAFromUVNA(String(value)), mono: true },
-  { label: resolveTranslatable({key: "permissioncard.validationprocess.vpsummarydigestsri"}, translate)?? "VP Summary Digest", attr: "vp_summary_digest_sri", mono: true },
+  { label: resolveTranslatable({key: "permissioncard.validationprocess.vpsummarydigest"}, translate)?? "VP Summary Digest", attr: "vp_summary_digest", mono: true },
   { label: resolveTranslatable({key: "permissioncard.validationprocess.vpexp"}, translate)?? "VP Expiration", attr: "vp_exp", format: (value) => formatDate(value as string) },
   { label: resolveTranslatable({key: "permissioncard.validationprocess.vpvalidatordeposit"}, translate)?? "VP Validator Deposit", attr: "vp_validator_deposit", format: (value) => formatVNAFromUVNA(String(value)), mono: true },
 ];
@@ -555,56 +535,12 @@ export interface TrustRegistriesPermission {
   did: string;
   aka?: string | null;
   pending_tasks: number;
-  participants: string;
+  participants: string | number;
   credential_schemas: Array<{
     id: string;
     title: string;
     description?: string | null;
     pending_tasks: number;
-    permissions: Array<{
-      id: string;
-      schema_id: string;
-      type: PermissionType;
-      did: string;
-      grantee: string;
-      created_by: string;
-      created: string;  // ISO datetime
-      modified: string; // ISO datetime
-      modified_by: string;
-      extended: string; // ISO datetime
-      extended_by: string;
-      slashed: string;  // ISO datetime
-      slashed_by: string;
-      repaid: string;   // ISO datetime
-      repaid_by: string;
-      effective_from: string;   // ISO datetime
-      effective_until: string;  // ISO datetime
-      revoked: string;  // ISO datetime
-      revoked_by: string;
-      country: string;
-      validation_fees: string;
-      issuance_fees: string;
-      verification_fees: string;
-      deposit: string;
-      slashed_deposit: string;
-      repaid_deposit: string;
-      validator_perm_id: string;
-      vp_state: VpState;
-      vp_last_state_change: string; // ISO datetime
-      vp_current_fees: string;
-      vp_current_deposit: string;
-      vp_summary_digest_sri: string;
-      vp_exp: string;   // ISO datetime
-      vp_validator_deposit: string;
-      vp_term_requested: string;    // ISO datetime
-      perm_state: string;
-      grantee_available_actions: string[];
-      validator_available_actions: string[];
-      weight: string;
-      participants: string;
-      issued: string;
-      verified: string;
-      expire_soon: boolean;
-    }>;
+    permissions: Permission[];
   }>;
 }

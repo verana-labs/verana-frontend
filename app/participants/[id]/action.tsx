@@ -116,7 +116,7 @@ export default function PermActionPage({ action, data, onClose, onRefresh, setMo
         await actionPerm({
           msgType: 'MsgStartPermissionVP',
           type: permData.type,
-          validatorPermId: permData.validator_perm_id,
+          validatorPermId: permData.validator_perm_id ?? 0,
           did: newData.did as string,
         });
         break;
@@ -124,7 +124,7 @@ export default function PermActionPage({ action, data, onClose, onRefresh, setMo
       case 'MsgSelfCreatePermission':
         await actionPerm({
           msgType: 'MsgSelfCreatePermission',
-          validatorPermId: permData.validator_perm_id,
+          validatorPermId: permData.validator_perm_id ?? 0,
           type: permData.type,
           did: newData.did as string,
           effectiveFrom: newData.effectiveFrom,

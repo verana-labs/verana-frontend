@@ -25,7 +25,7 @@ export function usePermissionsForAddress(address?: string) {
     // setPermissionsList([]);
 
     const url =
-      `${getURL}/list?grantee=${addressToUse}`;
+      `${getURL}/list?corporation=${addressToUse}`;
 
     try {
       setLoading(true);
