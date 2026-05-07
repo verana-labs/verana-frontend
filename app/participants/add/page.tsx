@@ -41,7 +41,7 @@ export default function AddJoinPage({ trId, nodeJoin, onCancel, onRefresh }: Add
     {
       id: 2,
       title: resolveTranslatable({key: "join.createpermission.title"}, translate) ?? "Confirm & Submit",
-      description: nodeJoin.validationProcessAction == 'MsgCreatePermission' ? 
+      description: nodeJoin.validationProcessAction == 'MsgSelfCreatePermission' ?
         ( nodeJoin.type == "VERIFIER" ? resolveTranslatable({key: "join.createpermission.description.open.verifier"}, translate) ?? "As the schema is OPEN to new verifiers, you just need to self-create your VERIFIER permission by filling this form."
           : resolveTranslatable({key: "join.createpermission.description.open.issuer"}, translate) ?? "As the schema is OPEN to new issuers, you just need to self-create your ISSUER permission by filling this form." )
         : resolveTranslatable({key: "join.createpermission.description.vp"}, translate) ?? "You must run a Validation Process (VP) to obtain a permission for this schema. Start the Validation Process by filling this form."
@@ -61,10 +61,14 @@ export default function AddJoinPage({ trId, nodeJoin, onCancel, onRefresh }: Add
   const { dataTR, errorTRData } = useTrustRegistryData(trId);
   const router = useRouter();
 
-  // Total required value for action MsgStartPermissionVP or MsgCreatePermission (validation_fees + trust_deposit_rate)
+  // Total required value for action MsgStartPermissionVP or MsgSelfCreatePermission (validation_fees + trust_deposit_rate)
   const trustDepositRate = useTrustDepositParams().trustDepositRate;
-  const tdRate = Number(trustDepositRate) ?? 0;
-  const validationFees = Number(nodeJoin.permission?.validation_fees) ?? 0;
+  // `??` doesn't catch NaN — Number('abc') is NaN, not nullish, so the fallback never kicks in.
+  // `Number.isFinite` handles undefined/NaN/Infinity in one go.
+  const tdRate = Number.isFinite(Number(trustDepositRate)) ? Number(trustDepositRate) : 0;
+  const validationFees = Number.isFinite(Number(nodeJoin.permission?.validation_fees))
+    ? Number(nodeJoin.permission?.validation_fees)
+    : 0;
   const transactionCost = (1 + tdRate) * validationFees;
 
   const dataInitPermission = {

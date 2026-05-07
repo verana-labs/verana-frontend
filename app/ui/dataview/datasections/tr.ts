@@ -9,7 +9,7 @@ export interface TrData {
   id: string;
   did: string;
   aka: string;
-  controller: string;
+  corporation: string;
   language: string;
   docUrl?: string;
   deposit: string;
@@ -70,7 +70,7 @@ export const trSections: Section<TrData>[] = [
         update: true,
         validation: { type: "URL" },
       },
-      { name: "controller", label: t("dataview.tr.fields.controller"), type: "data", show: "view", update: false },
+      { name: "corporation", label: t("dataview.tr.fields.corporation"), type: "data", show: "view", update: false },
       {
         name: "language",
         label: t("dataview.tr.fields.language"),
@@ -126,7 +126,7 @@ export const trSections: Section<TrData>[] = [
         update: true,
         validation: { type: "URL" },
       },
-      { name: "controller", label: t("dataview.tr.fields.controller"), type: "data", show: "none", update: false },
+      { name: "corporation", label: t("dataview.tr.fields.corporation"), type: "data", show: "none", update: false },
       {
         name: "language",
         label: t("dataview.tr.fields.language"),

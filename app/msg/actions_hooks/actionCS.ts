@@ -7,6 +7,10 @@ import {
   MsgUpdateCredentialSchema,
   MsgArchiveCredentialSchema,
 } from '@codec-proto/verana/cs/v1/tx';
+import {
+  PricingAssetType,
+  HolderOnboardingMode,
+} from '@codec-proto/verana/cs/v1/types';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useChain } from '@cosmos-kit/react';
 import { useNotification } from '@/providers/notification-provider';
@@ -15,7 +19,6 @@ import {
   MSG_INPROGRESS_ACTION_CS,
   MSG_SUCCESS_ACTION_CS,
 } from '@/msg/constants/notificationMsgForMsgType';
-import Long from 'long';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
 import { normalizeJsonSchema, validateJSONSchemaReturn } from '@/util/json_schema_util';
@@ -24,6 +27,11 @@ import { translate } from '@/i18n/dataview';
 import { pickOptionalUInt32 } from '@amino-converter/util/helpers';
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 import { extractTxHeight, handleSuccess } from '@/msg/util/signerUtil'
+
+const CS_PRICING_ASSET_TYPE_DEFAULT = PricingAssetType.TU;
+const CS_PRICING_ASSET_DEFAULT = 'tu';
+const CS_DIGEST_ALGORITHM_DEFAULT = 'sha384';
+const CS_HOLDER_ONBOARDING_MODE_DEFAULT = HolderOnboardingMode.HOLDER_ONBOARDING_MODE_PERMISSIONLESS;
 
 // Message type configuration (typeUrl + label for memo/notification)
 export const MSG_TYPE_CONFIG_CS = {
@@ -49,7 +57,7 @@ export const MSG_TYPE_CONFIG_CS = {
 type ActionCSParams =
   | {
       msgType: 'MsgCreateCredentialSchema';
-      trId: string | number | Long;
+      trId: string | number;
       jsonSchema: string;
       issuerGrantorValidationValidityPeriod?: number;
       verifierGrantorValidationValidityPeriod?: number;
@@ -61,7 +69,7 @@ type ActionCSParams =
     }
   | {
       msgType: 'MsgUpdateCredentialSchema';
-      id: string | number | Long;
+      id: string | number;
       issuerGrantorValidationValidityPeriod?: number;
       verifierGrantorValidationValidityPeriod?: number;
       issuerValidationValidityPeriod?: number;
@@ -70,11 +78,11 @@ type ActionCSParams =
     }
   | {
       msgType: 'MsgArchiveCredentialSchema';
-      id: string | number | Long;
+      id: string | number;
     }
   | {
       msgType: 'MsgUnarchiveCredentialSchema';
-      id: string | number | Long;
+      id: string | number;
     };
 
 // Hook to execute Credential Schema transactions + notifications
@@ -86,27 +94,18 @@ export function useActionCS( onCancel?: () => void,
   const { notify } = useNotification();
   const sendTx = useSendTxDetectingMode(veranaChain);
 
-  // Prevents parallel broadcasts with the same account (avoids sequence mismatch errors)
   const inFlight = useRef(false);
-
   const txHeight = useRef<number | undefined>(undefined);
 
-  /**
-   * Helper to extract the created credential schema ID from DeliverTxResponse.
-   * It first tries `res.events` (if available in the response),
-   * and falls back to parsing `rawLog` if necessary.
-   */
   function extractCreatedCSId(res: DeliverTxResponse): string | undefined {
-    // Prefer structured events (Cosmos SDK 0.50+). rawLog is deprecated.
     const ev = (res as any)?.events?.find( (e: any) => e?.type === 'create_credential_schema'); // eslint-disable-line @typescript-eslint/no-explicit-any
     const idAttr = ev?.attributes?.find( (a: any) => a?.key === 'credential_schema_id'); // eslint-disable-line @typescript-eslint/no-explicit-any
     if (idAttr?.value) return String(idAttr.value);
 
-    // Fallback: try parsing rawLog only if it's a string (older chains/SDKs)
     const raw = res.rawLog;
     if (typeof raw === 'string') {
       try {
-        const logs = JSON.parse(raw); // usually an array of log objects
+        const logs = JSON.parse(raw);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const allEvents = Array.isArray(logs)
           ? logs.flatMap((l: any) => l?.events ?? []) // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -156,16 +155,21 @@ export function useActionCS( onCancel?: () => void,
       case 'MsgCreateCredentialSchema': {
         typeUrl = MSG_TYPE_CONFIG_CS.MsgCreateCredentialSchema.typeUrl;
         value = MsgCreateCredentialSchema.fromPartial({
-          creator: address, // always use the connected wallet address
-          trId: Long.fromValue(params.trId), // uint64
+          corporation: address,
+          operator: address,
+          trId: Number(params.trId),
           jsonSchema: normalizeJsonSchema(params.jsonSchema),
           issuerGrantorValidationValidityPeriod: pickOptionalUInt32(params.issuerGrantorValidationValidityPeriod),
           verifierGrantorValidationValidityPeriod: pickOptionalUInt32(params.verifierGrantorValidationValidityPeriod),
           issuerValidationValidityPeriod: pickOptionalUInt32(params.issuerValidationValidityPeriod),
           verifierValidationValidityPeriod: pickOptionalUInt32(params.verifierValidationValidityPeriod),
           holderValidationValidityPeriod: pickOptionalUInt32(params.holderValidationValidityPeriod),
-          issuerPermManagementMode: params.issuerPermManagementMode,
-          verifierPermManagementMode: params.verifierPermManagementMode,
+          issuerOnboardingMode: params.issuerPermManagementMode,
+          verifierOnboardingMode: params.verifierPermManagementMode,
+          pricingAssetType: CS_PRICING_ASSET_TYPE_DEFAULT,
+          pricingAsset: CS_PRICING_ASSET_DEFAULT,
+          digestAlgorithm: CS_DIGEST_ALGORITHM_DEFAULT,
+          holderOnboardingMode: CS_HOLDER_ONBOARDING_MODE_DEFAULT,
         });
         break;
       }
@@ -173,8 +177,9 @@ export function useActionCS( onCancel?: () => void,
       case 'MsgUpdateCredentialSchema': {
         typeUrl = MSG_TYPE_CONFIG_CS.MsgUpdateCredentialSchema.typeUrl;
         value = MsgUpdateCredentialSchema.fromPartial({
-          creator: address, // always use the connected wallet address
-          id: Long.fromValue(params.id), // uint64
+          corporation: address,
+          operator: address,
+          id: Number(params.id),
           issuerGrantorValidationValidityPeriod: pickOptionalUInt32(params.issuerGrantorValidationValidityPeriod),
           verifierGrantorValidationValidityPeriod: pickOptionalUInt32(params.verifierGrantorValidationValidityPeriod),
           issuerValidationValidityPeriod: pickOptionalUInt32(params.issuerValidationValidityPeriod),
@@ -187,8 +192,9 @@ export function useActionCS( onCancel?: () => void,
       case 'MsgArchiveCredentialSchema': {
         typeUrl = MSG_TYPE_CONFIG_CS.MsgArchiveCredentialSchema.typeUrl;
         value = MsgArchiveCredentialSchema.fromPartial({
-          creator: address,
-          id: Long.fromValue(params.id), // uint64
+          corporation: address,
+          operator: address,
+          id: Number(params.id),
           archive: true,
         });
         break;
@@ -197,8 +203,9 @@ export function useActionCS( onCancel?: () => void,
       case 'MsgUnarchiveCredentialSchema': {
         typeUrl = MSG_TYPE_CONFIG_CS.MsgArchiveCredentialSchema.typeUrl;
         value = MsgArchiveCredentialSchema.fromPartial({
-          creator: address,
-          id: Long.fromValue(params.id), // uint64
+          corporation: address,
+          operator: address,
+          id: Number(params.id),
           archive: false,
         });
         break;
@@ -209,7 +216,6 @@ export function useActionCS( onCancel?: () => void,
         return;
     }
 
-    // Show "in progress" notification
     let notifyPromise: Promise<void> = Promise.resolve();
     if (!simulate) {
       notifyPromise = notify(
@@ -239,10 +245,10 @@ export function useActionCS( onCancel?: () => void,
       }
 
       const txRes = res as DeliverTxResponse;
-      
+
       if (txRes.code === 0) {
         txHeight.current = extractTxHeight(txRes);
-        if (params.msgType === 'MsgCreateCredentialSchema') id = extractCreatedCSId(txRes);        
+        if (params.msgType === 'MsgCreateCredentialSchema') id = extractCreatedCSId(txRes);
         if (id) sessionStorage.setItem('id_updated', id);
         success = true;
         notifyPromise = notify(
@@ -267,7 +273,6 @@ export function useActionCS( onCancel?: () => void,
     } finally {
       inFlight.current = false;
       if (notifyPromise) await notifyPromise;
-      // Refresh on success or fallback
       if (success) {
         handleSuccess(onCancel, onRefresh, id, txHeight.current);
       }

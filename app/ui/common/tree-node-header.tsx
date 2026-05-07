@@ -62,13 +62,13 @@ export default function TreeNodeHeader({
           {showWeight ? (
             <span className="whitespace-nowrap">
               <FontAwesomeIcon icon={faScaleBalanced} className="mr-1" />
-              {formatVNAFromUVNA(permission.weight ?? "0")}
+              {formatVNAFromUVNA(String(permission.weight ?? "0"))}
             </span>
           ) : null}
           {showBusiness ? (
             <span className="whitespace-nowrap">
               <FontAwesomeIcon icon={faCoins} className="mr-1" />
-              {`validation: ${formatVNAFromUVNA(permission.validation_fees ?? "0")} | issuance: ${formatVNAFromUVNA(permission.issuance_fees ?? "0")} | verification: ${formatVNAFromUVNA(permission.verification_fees ?? "0")}`}
+              {`validation: ${formatVNAFromUVNA(String(permission.validation_fees ?? "0"))} | issuance: ${formatVNAFromUVNA(String(permission.issuance_fees ?? "0"))} | verification: ${formatVNAFromUVNA(String(permission.verification_fees ?? "0"))}`}
             </span>
           ) : null}
           {showStats ? (

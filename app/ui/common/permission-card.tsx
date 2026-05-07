@@ -8,7 +8,7 @@ import { Permission, PermissionAction, permissionActionLifecycle, permissionActi
 import PermissionAttribute from "@/ui/common/permission-atrribute";
 import { usePermissionHistory } from "@/hooks/usePermissionHistory";
 import PermissionTimeline from "@/ui/common/permission-timeline";
-import { countryCodeToFlag, countryNameFromCode, formatDateTime, formatVNAFromUVNA, permStateBadgeClass, roleBadgeClass, shortenDID, vpStateColor } from "@/util/util";
+import { countryCodeToFlag, formatDateTime, formatVNAFromUVNA, permStateBadgeClass, roleBadgeClass, shortenDID, vpStateColor } from "@/util/util";
 import { ActionFieldProps } from "@/ui/common/data-view-typed";
 import { translate } from "@/i18n/dataview";
 import { resolveTranslatable } from "@/ui/dataview/types";
@@ -67,23 +67,19 @@ const didActions: PermissionAction[] = [
 
 const v4MetaItems: V4Item[] = [
   { label: "DID", attr: "did", mono: true, extraActions: didActions },
-  { label: "Grantee", attr: "grantee", mono: true, extraActions: accountActions },
+  { label: t("permissioncard.meta.corporation", "Corporation"), attr: "corporation", mono: true, extraActions: accountActions },
   { label: "ID", attr: "id", mono: true, extraActions: idActions },
   { label: t("permissioncard.meta.deposit", "Deposit"), attr: "deposit", mono: true, format: (v) => formatVNAFromUVNA(String(v)) },
   { label: t("permissioncard.meta.effectivefrom", "Effective From"), attr: "effective_from", format: (v) => formatDateTime(v as string) },
   { label: t("permissioncard.meta.effectiveuntil", "Effective Until"), attr: "effective_until", format: (v) => formatDateTime(v as string) },
-  { label: t("permissioncard.meta.country", "Country"), attr: "country", format: (v) => countryNameFromCode(v as string) },
   { label: t("permissioncard.meta.issued", "Issued Credentials"), attr: "issued" },
   { label: t("permissioncard.meta.verified", "Verified Credentials"), attr: "verified" },
 ];
 
 const v4LifecycleItems: V4Item[] = [
   { label: t("permissioncard.lifecycle.created", "Created"), attr: "created", format: (v) => formatDateTime(v as string) },
-  { label: t("permissioncard.lifecycle.createdby", "Created By"), attr: "created_by", mono: true, extraActions: accountActions },
   { label: t("permissioncard.lifecycle.modified", "Modified"), attr: "modified", format: (v) => formatDateTime(v as string) },
-  { label: t("permissioncard.lifecycle.modifiedby", "Modified By"), attr: "modified_by", mono: true, extraActions: accountActions },
-  { label: t("permissioncard.lifecycle.extended", "Extended"), attr: "extended", format: (v) => formatDateTime(v as string) },
-  { label: t("permissioncard.lifecycle.extendedby", "Extended By"), attr: "extended_by", mono: true, extraActions: accountActions },
+  { label: t("permissioncard.lifecycle.adjusted", "Adjusted"), attr: "adjusted", format: (v) => formatDateTime(v as string) },
 ];
 
 const v4VpItems: V4Item[] = [
@@ -92,7 +88,7 @@ const v4VpItems: V4Item[] = [
   { label: t("permissioncard.validationprocess.vpvalidatordeposit", "VP Validator Deposit"), attr: "vp_validator_deposit", mono: true, format: (v) => formatVNAFromUVNA(String(v)) },
   { label: t("permissioncard.validationprocess.vpcurrentfees", "VP Current Fees"), attr: "vp_current_fees", mono: true, format: (v) => formatVNAFromUVNA(String(v)) },
   { label: t("permissioncard.validationprocess.vpcurrentdeposit", "VP Current Deposit"), attr: "vp_current_deposit", mono: true, format: (v) => formatVNAFromUVNA(String(v)) },
-  { label: t("permissioncard.validationprocess.vpsummarydigestsri", "VP Summary Digest"), attr: "vp_summary_digest_sri", mono: true },
+  { label: t("permissioncard.validationprocess.vpsummarydigest", "VP Summary Digest"), attr: "vp_summary_digest", mono: true },
 ];
 
 type PermissionCardProps = {
@@ -135,15 +131,15 @@ export default function PermissionCard({
     return String(v);
   };
 
-  const granteeActions =
-    selectedNode.isGrantee
-      ? (selectedNode.permission?.grantee_available_actions ?? [])
+  const corporationActions =
+    selectedNode.isCorporation
+      ? (selectedNode.permission?.corporation_available_actions ?? [])
       : [];
   const validatorActions =
     selectedNode.isValidator
       ? (selectedNode.permission?.validator_available_actions ?? [])
       : [];
-  const allowed = new Set<string>([...granteeActions, ...validatorActions]);
+  const allowed = new Set<string>([...corporationActions, ...validatorActions]);
 
   const slashingActionNames = new Set(permissionActionSlashing.map((a) => a.name).filter(Boolean) as string[]);
   const lifecycleActionsWithoutSlashing = permissionActionLifecycle.filter((a) => !a.name || !slashingActionNames.has(a.name));

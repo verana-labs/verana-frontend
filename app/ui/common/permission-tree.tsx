@@ -54,7 +54,7 @@ export type TreeNode = {
   nodeId: string;
   icon: IconDefinition;
   iconColorClass: string;
-  isGrantee: boolean;
+  isCorporation: boolean;
   isValidator: boolean;
   group?: boolean;
   schemaId?: string;
@@ -66,7 +66,7 @@ export type TreeNode = {
   children?: TreeNode[];
   validationProcessLabel?: string;
   validationProcessColor?: string;
-  validationProcessAction?: 'MsgStartPermissionVP' | 'MsgCreatePermission' | 'LinkDID' | 'Connect';
+  validationProcessAction?: 'MsgStartPermissionVP' | 'MsgSelfCreatePermission' | 'LinkDID' | 'Connect';
   enabledJoin?: boolean;
   serviceDid?: string;
   serviceTitle?: string;

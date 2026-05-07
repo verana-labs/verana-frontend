@@ -17,7 +17,6 @@ import { MSG_ERROR_ACTION_TR, MSG_INPROGRESS_ACTION_TR, MSG_SUCCESS_ACTION_TR } 
 import { isValidUrl } from '@/util/validations';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
-import Long from 'long';
 import { translate } from '@/i18n/dataview';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
@@ -68,7 +67,6 @@ export const MSG_TYPE_CONFIG_TR = {
 type ActionTRParams =
   | {
       msgType: 'MsgCreateTrustRegistry';
-      creator: string;
       did: string;
       aka: string;
       language: string;
@@ -76,24 +74,20 @@ type ActionTRParams =
     }
   | {
       msgType: 'MsgUpdateTrustRegistry';
-      creator: string;
       id: string | number;
       did: string;
       aka: string;
     }
   | {
       msgType: 'MsgArchiveTrustRegistry';
-      creator: string;
       id: string | number;
     }
   | {
       msgType: 'MsgUnarchiveTrustRegistry';
-      creator: string;
       id: string | number;
     }
   | {
       msgType: 'MsgAddGovernanceFrameworkDocument';
-      creator: string;
       id: string | number;
       version: number;
       docLanguage: string;
@@ -101,7 +95,6 @@ type ActionTRParams =
     }
   | {
       msgType: 'MsgIncreaseActiveGovernanceFrameworkVersion';
-      creator: string;
       id: string | number;
     };
 
@@ -127,7 +120,6 @@ export function useActionTR( onCancel?: () => void,
    * Falls back to parsing `rawLog` as JSON for older SDK versions.
    */
   function extractCreatedTRId(res: DeliverTxResponse): string | undefined {
-    // Try reading from the structured events field
     const events = (res as any)?.events as // eslint-disable-line @typescript-eslint/no-explicit-any
       | Array<{ type: string; attributes?: Array<{ key: string; value: string }> }>
       | undefined;
@@ -138,11 +130,10 @@ export function useActionTR( onCancel?: () => void,
 
     if (idAttr?.value) return String(idAttr.value);
 
-    // Fallback: parse rawLog if available and is a string
     const raw = res.rawLog;
     if (typeof raw === 'string') {
       try {
-        const logs = JSON.parse(raw); // rawLog is usually an array of log objects
+        const logs = JSON.parse(raw);
         const allEvents = Array.isArray(logs)
           ? logs.flatMap((l: any) => l?.events ?? []) // eslint-disable-line @typescript-eslint/no-explicit-any
           : [];
@@ -176,28 +167,28 @@ export function useActionTR( onCancel?: () => void,
 
     switch (params.msgType) {
       case 'MsgCreateTrustRegistry':
-        // Calculate SRI hash for docUrl using your API
         const { sri, error } = await calculateSRIHash(params.docUrl);
-        if (error) {
-          await notify(error,'error');
+        if (error || !sri) {
+          await notify(error ?? resolveTranslatable({ key: 'error.msg.tr.sri' }, translate) ?? 'SRI digest unavailable', 'error');
           return;
-        } 
+        }
         typeUrl = MSG_TYPE_CONFIG_TR.MsgCreateTrustRegistry.typeUrl;
         value = MsgCreateTrustRegistry.fromPartial({
-          creator: address,
+          corporation: address,
+          operator: address,
           did: params.did,
           aka: params.aka,
           language: params.language,
           docUrl: params.docUrl,
-          docDigestSri: sri
+          docDigestSri: sri,
         });
-        // id undefined for create
         break;
       case 'MsgUpdateTrustRegistry':
         typeUrl = MSG_TYPE_CONFIG_TR.MsgUpdateTrustRegistry.typeUrl;
         value = MsgUpdateTrustRegistry.fromPartial({
-          creator: address,
-          id: Long.fromString(String(params.id)),
+          corporation: address,
+          operator: address,
+          trId: Number(params.id),
           did: params.did,
           aka: params.aka,
         });
@@ -205,42 +196,44 @@ export function useActionTR( onCancel?: () => void,
       case 'MsgArchiveTrustRegistry':
         typeUrl = MSG_TYPE_CONFIG_TR.MsgArchiveTrustRegistry.typeUrl;
         value = MsgArchiveTrustRegistry.fromPartial({
-          creator: address,
-          id: Long.fromString(String(params.id)),
+          corporation: address,
+          operator: address,
+          trId: Number(params.id),
           archive: true,
         });
         break;
       case 'MsgUnarchiveTrustRegistry':
         typeUrl = MSG_TYPE_CONFIG_TR.MsgArchiveTrustRegistry.typeUrl;
         value = MsgArchiveTrustRegistry.fromPartial({
-          creator: address,
-          id: Long.fromString(String(params.id)),
+          corporation: address,
+          operator: address,
+          trId: Number(params.id),
           archive: false,
         });
         break;
       case 'MsgAddGovernanceFrameworkDocument':
-        // Calculate SRI hash for docUrl using your API
         const { sri: sriAdd, error: errorAdd } = await calculateSRIHash(params.docUrl);
-        if (errorAdd) {
-          await notify(errorAdd,'error');
+        if (errorAdd || !sriAdd) {
+          await notify(errorAdd ?? resolveTranslatable({ key: 'error.msg.tr.sri' }, translate) ?? 'SRI digest unavailable', 'error');
           return;
-        } 
+        }
         typeUrl = MSG_TYPE_CONFIG_TR.MsgAddGovernanceFrameworkDocument.typeUrl;
         value = MsgAddGovernanceFrameworkDocument.fromPartial({
-          creator: address,
-          id: Long.fromString(String(params.id)),
-          docLanguage: params.docLanguage,
-          docUrl: params.docUrl,
-          docDigestSri: sriAdd,
+          corporation: address,
+          operator: address,
+          trId: Number(params.id),
+          language: params.docLanguage,
+          url: params.docUrl,
+          digestSri: sriAdd,
           version: params.version + 1
         });
-        // version undefined for create
         break;
       case 'MsgIncreaseActiveGovernanceFrameworkVersion':
         typeUrl = MSG_TYPE_CONFIG_TR.MsgIncreaseActiveGovernanceFrameworkVersion.typeUrl;
         value = MsgIncreaseActiveGovernanceFrameworkVersion.fromPartial({
-          creator: address,
-          id: Long.fromString(String(params.id)),
+          corporation: address,
+          operator: address,
+          trId: Number(params.id),
         });
         break;
       default:
@@ -249,7 +242,6 @@ export function useActionTR( onCancel?: () => void,
     }
 
     inFlight.current = true;
-    // Show progress notification
     let notifyPromise: Promise<void> = Promise.resolve();
     if (!simulate) {
       notifyPromise = notify(
@@ -267,7 +259,7 @@ export function useActionTR( onCancel?: () => void,
         msgs: [msg],
         memo: MSG_TYPE_CONFIG_TR[params.msgType].txLabel,
         simulate
-      });      
+      });
 
       if (simulate) {
         if (!res || typeof res !== "object" || ("transactionHash" in res)) {
@@ -303,7 +295,6 @@ export function useActionTR( onCancel?: () => void,
     } finally {
       inFlight.current = false;
       if (notifyPromise) await notifyPromise;
-      // Refresh on success or fallback
       if (success) {
         if (params.msgType === 'MsgCreateTrustRegistry'){
           const trUrl = `/tr/${id?? ''}`;

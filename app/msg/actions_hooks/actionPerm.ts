@@ -8,12 +8,12 @@ import {
   MsgSetPermissionVPToValidated,
   MsgCancelPermissionVPLastRequest,
   MsgCreateRootPermission,
-  MsgExtendPermission,
+  MsgAdjustPermission,
   MsgRevokePermission,
   MsgCreateOrUpdatePermissionSession,
   MsgSlashPermissionTrustDeposit,
   MsgRepayPermissionSlashedTrustDeposit,
-  MsgCreatePermission,
+  MsgSelfCreatePermission,
 } from '@codec-proto/verana/perm/v1/tx';
 import { PermissionType } from '@codec-proto/verana/perm/v1/types';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
@@ -26,13 +26,24 @@ import {
 } from '@/msg/constants/notificationMsgForMsgType';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
-import Long from 'long';
 import { translate } from '@/i18n/dataview';
 import { resolveTranslatable } from '@/ui/dataview/types';
-import { extractTxHeight, handleSuccess, stripZerosUndefinedAndEmptyStrings } from '@/msg/util/signerUtil'
+import { extractTxHeight, handleSuccess } from '@/msg/util/signerUtil'
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 
 const toDate = (v?: string | Date) => (v ? (v instanceof Date ? v : new Date(v)) : undefined);
+const toNumber = (v?: string | number) => (v == null || v === '' ? 0 : Number(v));
+
+function emptyVsOperatorAuthz() {
+  return {
+    vsOperator: '',
+    vsOperatorAuthzEnabled: false,
+    vsOperatorAuthzSpendLimit: [],
+    vsOperatorAuthzWithFeegrant: false,
+    vsOperatorAuthzFeeSpendLimit: [],
+    vsOperatorAuthzSpendPeriod: undefined,
+  };
+}
 
 export const MSG_TYPE_CONFIG_PERM = {
   MsgStartPermissionVP: {
@@ -55,9 +66,9 @@ export const MSG_TYPE_CONFIG_PERM = {
     typeUrl: '/verana.perm.v1.MsgCreateRootPermission',
     txLabel: 'MsgCreateRootPermission',
   },
-  MsgExtendPermission: {
-    typeUrl: '/verana.perm.v1.MsgExtendPermission',
-    txLabel: 'MsgExtendPermission',
+  MsgAdjustPermission: {
+    typeUrl: '/verana.perm.v1.MsgAdjustPermission',
+    txLabel: 'MsgAdjustPermission',
   },
   MsgRevokePermission: {
     typeUrl: '/verana.perm.v1.MsgRevokePermission',
@@ -75,9 +86,9 @@ export const MSG_TYPE_CONFIG_PERM = {
     typeUrl: '/verana.perm.v1.MsgRepayPermissionSlashedTrustDeposit',
     txLabel: 'MsgRepayPermissionSlashedTrustDeposit',
   },
-  MsgCreatePermission: {
-    typeUrl: '/verana.perm.v1.MsgCreatePermission',
-    txLabel: 'MsgCreatePermission',
+  MsgSelfCreatePermission: {
+    typeUrl: '/verana.perm.v1.MsgSelfCreatePermission',
+    txLabel: 'MsgSelfCreatePermission',
   },
 } as const;
 
@@ -85,19 +96,15 @@ export const MSG_TYPE_CONFIG_PERM = {
 export type ActionPermParams =
   | {
       msgType: 'MsgStartPermissionVP';
-      creator: string;
       type: string;
       validatorPermId: string | number;
-      country: string;
       did?: string;
     }
 | {
-      msgType: 'MsgCreatePermission';
-      creator: string;
-      schemaId: string | number;
+      msgType: 'MsgSelfCreatePermission';
+      validatorPermId: string | number;
       type: string;
       did: string;
-      country: string;
       effectiveFrom?: string | Date;
       effectiveUntil?: string | Date;
       validationFees: string | number;
@@ -105,10 +112,8 @@ export type ActionPermParams =
     }
 | {
       msgType: 'MsgCreateRootPermission';
-      creator: string;
       schemaId: string | number;
       did: string;
-      country: string;
       effectiveFrom?: string | Date;
       effectiveUntil?: string | Date;
       validationFees: string | number;
@@ -117,39 +122,32 @@ export type ActionPermParams =
     }
   | {
       msgType: 'MsgRenewPermissionVP';
-      creator: string;
       id: string | number;
     }
   | {
       msgType: 'MsgSetPermissionVPToValidated';
-      creator: string;
-      id: string | number | Long;
+      id: string | number;
       effectiveUntil?: string | Date;
       validationFees: string | number;
       issuanceFees: string | number;
       verificationFees: string | number;
-      country: string;
-      vpSummaryDigestSri: string;
+      vpSummaryDigest: string;
     }
   | {
       msgType: 'MsgCancelPermissionVPLastRequest';
-      creator: string;
       id: string | number;
     }
   | {
-      msgType: 'MsgExtendPermission';
-      creator: string;
+      msgType: 'MsgAdjustPermission';
       id: string | number;
       effectiveUntil?: string | Date;
     }
   | {
       msgType: 'MsgRevokePermission';
-      creator: string;
       id: string | number;
     }
   | {
       msgType: 'MsgCreateOrUpdatePermissionSession';
-      creator: string;
       id: string; // UUID
       issuerPermId: string | number;
       verifierPermId: string | number;
@@ -158,14 +156,14 @@ export type ActionPermParams =
     }
   | {
       msgType: 'MsgSlashPermissionTrustDeposit';
-      creator: string;
       id: string | number;
       amount: string | number;
+      reason: string;
     }
   | {
       msgType: 'MsgRepayPermissionSlashedTrustDeposit';
-      creator: string;
       id: string | number;
+      amount: string | number;
     };
 
 /**
@@ -179,26 +177,20 @@ export function useActionPerm( onCancel?: () => void,
   const { notify } = useNotification();
   const sendTx = useSendTxDetectingMode(veranaChain);
   const inFlight = useRef(false);
-  
+
   const txHeight = useRef<number | undefined>(undefined);
 
-  /**
-   * Extracts a created permission ID from a DeliverTxResponse.
-   * Prefers the structured `events` field (Cosmos SDK 0.50+).
-   * Falls back to parsing `rawLog` as JSON for older SDK versions.
-   *
-   * NOTE: Event names/keys can vary by module implementation; this helper tries common patterns.
-   */
   function extractCreatedPermissionId(res: DeliverTxResponse): string | undefined {
     const tryFind = (allEvents: Array<{ type: string; attributes?: Array<{ key: string; value: string }> }>) => {
       const eventTypes = [
         'start_permission_vp',
+        'self_create_permission',
         'create_permission',
         'create_root_permission',
         'permission_created',
       ];
 
-      const keys = ['permission_id', 'id', 'perm_id'];
+      const keys = ['root_permission_id', 'permission_id', 'id', 'perm_id'];
 
       for (const et of eventTypes) {
         const ev = allEvents.find((e) => e?.type === et);
@@ -211,7 +203,6 @@ export function useActionPerm( onCancel?: () => void,
       return undefined;
     };
 
-    // 1) Structured events
     const events = (res as any)?.events as // eslint-disable-line @typescript-eslint/no-explicit-any
       | Array<{ type: string; attributes?: Array<{ key: string; value: string }> }>
       | undefined;
@@ -219,7 +210,6 @@ export function useActionPerm( onCancel?: () => void,
     const fromEvents = events ? tryFind(events) : undefined;
     if (fromEvents) return fromEvents;
 
-    // 2) rawLog fallback
     const raw = res.rawLog;
     if (typeof raw === 'string') {
       try {
@@ -254,98 +244,107 @@ export function useActionPerm( onCancel?: () => void,
       | MsgSetPermissionVPToValidated
       | MsgCancelPermissionVPLastRequest
       | MsgCreateRootPermission
-      | MsgExtendPermission
+      | MsgAdjustPermission
       | MsgRevokePermission
       | MsgCreateOrUpdatePermissionSession
       | MsgSlashPermissionTrustDeposit
       | MsgRepayPermissionSlashedTrustDeposit
-      | MsgCreatePermission;
+      | MsgSelfCreatePermission;
 
-    // Use this to display a meaningful ID in notifications (when applicable)
     let id: string | undefined =
       params.msgType === 'MsgStartPermissionVP' ||
       params.msgType === 'MsgCreateRootPermission' ||
-      params.msgType === 'MsgCreatePermission'
+      params.msgType === 'MsgSelfCreatePermission'
         ? undefined
-        : (params as any).id?.toString(); // eslint-disable-line @typescript-eslint/no-explicit-any
+        : (params as { id: string | number }).id?.toString();
 
     switch (params.msgType) {
       case 'MsgStartPermissionVP':
         typeUrl = MSG_TYPE_CONFIG_PERM.MsgStartPermissionVP.typeUrl;
         value = MsgStartPermissionVP.fromPartial({
-          creator: address,
+          corporation: address,
+          operator: address,
           type: permissionTypeFromString(params.type),
-          validatorPermId: Long.fromString(String(params.validatorPermId)),
-          country: params.country,
+          validatorPermId: Number(params.validatorPermId),
           did: params.did ?? '',
+          validationFees: undefined,
+          issuanceFees: undefined,
+          verificationFees: undefined,
+          ...emptyVsOperatorAuthz(),
         });
         break;
 
-      case 'MsgCreatePermission':
-        typeUrl = MSG_TYPE_CONFIG_PERM.MsgCreatePermission.typeUrl;
-        value = MsgCreatePermission.fromPartial({
-          creator: address,
-          schemaId: Long.fromValue(params.schemaId),
+      case 'MsgSelfCreatePermission':
+        typeUrl = MSG_TYPE_CONFIG_PERM.MsgSelfCreatePermission.typeUrl;
+        value = MsgSelfCreatePermission.fromPartial({
+          corporation: address,
+          operator: address,
           type: permissionTypeFromString(params.type),
+          validatorPermId: Number(params.validatorPermId),
           did: params.did,
-          country: params.country,
           effectiveFrom: toDate(params.effectiveFrom),
           effectiveUntil: toDate(params.effectiveUntil),
-          verificationFees: Long.fromString(String(params.verificationFees)),
-          validationFees: Long.fromString(String(params.validationFees)),
+          verificationFees: toNumber(params.verificationFees),
+          validationFees: toNumber(params.validationFees),
+          ...emptyVsOperatorAuthz(),
         });
         break;
 
       case 'MsgCreateRootPermission':
         typeUrl = MSG_TYPE_CONFIG_PERM.MsgCreateRootPermission.typeUrl;
         value = MsgCreateRootPermission.fromPartial({
-          creator: address,
-          schemaId: Long.fromValue(params.schemaId),
+          corporation: address,
+          operator: address,
+          schemaId: Number(params.schemaId),
           did: params.did,
-          country: params.country,
           effectiveFrom: toDate(params.effectiveFrom),
           effectiveUntil: toDate(params.effectiveUntil),
-          validationFees: Long.fromValue(params.validationFees),
-          issuanceFees: Long.fromValue(params.issuanceFees),
-          verificationFees: Long.fromValue(params.verificationFees),
+          validationFees: toNumber(params.validationFees),
+          issuanceFees: toNumber(params.issuanceFees),
+          verificationFees: toNumber(params.verificationFees),
         });
         break;
 
       case 'MsgRenewPermissionVP':
         typeUrl = MSG_TYPE_CONFIG_PERM.MsgRenewPermissionVP.typeUrl;
         value = MsgRenewPermissionVP.fromPartial({
-          creator: address,
-          id: Long.fromString(String(params.id)),
+          corporation: address,
+          operator: address,
+          id: Number(params.id),
         });
         break;
 
       case 'MsgSetPermissionVPToValidated':
         typeUrl = MSG_TYPE_CONFIG_PERM.MsgSetPermissionVPToValidated.typeUrl;
         value = MsgSetPermissionVPToValidated.fromPartial({
-          creator: address,
-          id: Long.fromValue(params.id), // uint64
+          corporation: address,
+          operator: address,
+          id: Number(params.id),
           effectiveUntil: toDate(params.effectiveUntil),
-          validationFees: Long.fromValue(params.validationFees), // uint64
-          issuanceFees: Long.fromValue(params.issuanceFees), // uint64
-          verificationFees: Long.fromValue(params.verificationFees), // uint64
-          country: params.country,
-          vpSummaryDigestSri: params.vpSummaryDigestSri,
+          validationFees: toNumber(params.validationFees),
+          issuanceFees: toNumber(params.issuanceFees),
+          verificationFees: toNumber(params.verificationFees),
+          vpSummaryDigest: params.vpSummaryDigest,
+          issuanceFeeDiscount: 0,
+          verificationFeeDiscount: 0,
         });
         break;
 
       case 'MsgCancelPermissionVPLastRequest':
         typeUrl = MSG_TYPE_CONFIG_PERM.MsgCancelPermissionVPLastRequest.typeUrl;
         value = MsgCancelPermissionVPLastRequest.fromPartial({
-          creator: address,
-          id: Long.fromString(String(params.id)),
+          corporation: address,
+          operator: address,
+          id: Number(params.id),
         });
         break;
 
-      case 'MsgExtendPermission':
-        typeUrl = MSG_TYPE_CONFIG_PERM.MsgExtendPermission.typeUrl;
-        value = MsgExtendPermission.fromPartial({
-          creator: address,
-          id: Long.fromString(String(params.id)),
+      case 'MsgAdjustPermission':
+        typeUrl = MSG_TYPE_CONFIG_PERM.MsgAdjustPermission.typeUrl;
+        value = MsgAdjustPermission.fromPartial({
+          corporation: address,
+          operator: address,
+          id: Number(params.id),
           effectiveUntil: toDate(params.effectiveUntil),
         });
         break;
@@ -353,37 +352,47 @@ export function useActionPerm( onCancel?: () => void,
       case 'MsgRevokePermission':
         typeUrl = MSG_TYPE_CONFIG_PERM.MsgRevokePermission.typeUrl;
         value = MsgRevokePermission.fromPartial({
-          creator: address,
-          id: Long.fromString(String(params.id)),
+          corporation: address,
+          operator: address,
+          id: Number(params.id),
         });
         break;
 
       case 'MsgCreateOrUpdatePermissionSession':
         typeUrl = MSG_TYPE_CONFIG_PERM.MsgCreateOrUpdatePermissionSession.typeUrl;
+        // Permission session is NOT in the de operator-authorization whitelist,
+        // but the chain still requires `operator` to be a valid bech32
+        // address (it does its own check via the vs_operator path inside the
+        // perm handler). For self-execution we set operator = corporation = wallet.
         value = MsgCreateOrUpdatePermissionSession.fromPartial({
-          creator: address,
+          corporation: address,
+          operator: address,
           id: params.id,
-          issuerPermId: Long.fromString(String(params.issuerPermId)),
-          verifierPermId: Long.fromString(String(params.verifierPermId)),
-          agentPermId: Long.fromString(String(params.agentPermId)),
-          walletAgentPermId: Long.fromString(String(params.walletAgentPermId)),
+          issuerPermId: Number(params.issuerPermId),
+          verifierPermId: Number(params.verifierPermId),
+          agentPermId: Number(params.agentPermId),
+          walletAgentPermId: Number(params.walletAgentPermId),
         });
         break;
 
       case 'MsgSlashPermissionTrustDeposit':
         typeUrl = MSG_TYPE_CONFIG_PERM.MsgSlashPermissionTrustDeposit.typeUrl;
         value = MsgSlashPermissionTrustDeposit.fromPartial({
-          creator: address,
-          id: Long.fromString(String(params.id)),
-          amount: Long.fromString(String(params.amount)),
+          corporation: address,
+          operator: address,
+          id: Number(params.id),
+          amount: toNumber(params.amount),
+          reason: params.reason,
         });
         break;
 
       case 'MsgRepayPermissionSlashedTrustDeposit':
         typeUrl = MSG_TYPE_CONFIG_PERM.MsgRepayPermissionSlashedTrustDeposit.typeUrl;
         value = MsgRepayPermissionSlashedTrustDeposit.fromPartial({
-          creator: address,
-          id: Long.fromString(String(params.id)),
+          corporation: address,
+          operator: address,
+          id: Number(params.id),
+          amount: toNumber(params.amount),
         });
         break;
 
@@ -394,7 +403,6 @@ export function useActionPerm( onCancel?: () => void,
 
     inFlight.current = true;
 
-    // Show in-progress notification
     let notifyPromise: Promise<void> = Promise.resolve();
     if (!simulate) {
       notifyPromise = notify(
@@ -407,7 +415,7 @@ export function useActionPerm( onCancel?: () => void,
     let success = false;
 
     try {
-      value = stripZerosUndefinedAndEmptyStrings(value);
+
       const msg: EncodeObject = { typeUrl, value };
       const res = await sendTx({
         msgs: [msg],
@@ -426,11 +434,10 @@ export function useActionPerm( onCancel?: () => void,
 
       if (txRes.code === 0) {
         txHeight.current = extractTxHeight(txRes);
-        // Try to extract ID for create-like txs (or if you want it for others too)
         if (
           params.msgType === 'MsgStartPermissionVP' ||
           params.msgType === 'MsgCreateRootPermission' ||
-          params.msgType === 'MsgCreatePermission'
+          params.msgType === 'MsgSelfCreatePermission'
         ) {
           id = extractCreatedPermissionId(txRes);
         }
@@ -458,7 +465,6 @@ export function useActionPerm( onCancel?: () => void,
       inFlight.current = false;
       if (notifyPromise) await notifyPromise;
 
-      // Refresh on success (or redirect for create-like flows)
       if (success) {
           handleSuccess(onCancel, onRefresh, id, txHeight.current);
       }

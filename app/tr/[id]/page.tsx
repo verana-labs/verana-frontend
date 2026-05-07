@@ -103,7 +103,7 @@ export default function TRViewPage() {
       ).reverse();
     computed.last_version = lastVersion;
 
-    if (computed.controller === address){
+    if (computed.corporation === address){
       computed.updateTrustRegistry = "MsgUpdateTrustRegistry";
       computed.addGovernanceFrameworkDocument = "MsgAddGovernanceFrameworkDocument";
       computed.increaseActiveGovernanceFrameworkVersion =
@@ -163,7 +163,7 @@ export default function TRViewPage() {
       {/* Credential Schemas Section */}
       <DataTable
         tableTitle={resolveTranslatable({key: "datatable.cs.title"}, translate)}
-        addTitle={data.controller === address ? resolveTranslatable({key: "button.cs.add"}, translate) : undefined}
+        addTitle={data.corporation === address ? resolveTranslatable({key: "button.cs.add"}, translate) : undefined}
         columnsI18n={columnsCsList}
         data={ csList.filter(item => showArchived || !item.archived)}
         initialPageSize={10}
@@ -171,7 +171,7 @@ export default function TRViewPage() {
         defaultSortColumn={'id'}
         showDetailModal={false}
         detailTitle={resolveTranslatable({key: "datatable.tr.detail"}, translate)}
-        onAdd={data.controller === address ? () => setAddCS(true) : undefined}
+        onAdd={data.corporation === address ? () => setAddCS(true) : undefined}
         checkFilter={{
           show: showArchived,
           changeFilter: setShowArchived,

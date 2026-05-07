@@ -24,9 +24,9 @@ export default function ValidatorCard({
   const feeLabel = validator.issuance_fees ? "Issuance Fee" : "Verification Fee";
   const feeValue =
     validator.issuance_fees
-      ? formatVNA(validator.issuance_fees)
+      ? formatVNA(String(validator.issuance_fees))
       : validator.verification_fees
-      ? formatVNA(validator.verification_fees)
+      ? formatVNA(String(validator.verification_fees))
       : "—";
 
   return (
@@ -76,10 +76,10 @@ export default function ValidatorCard({
 
           <div>
             <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
-              Controller
+              Corporation
             </label>
             <p className="text-sm font-mono text-gray-900 dark:text-white break-all">
-              {validator.grantee}
+              {validator.corporation}
             </p>
           </div>
 
@@ -88,7 +88,7 @@ export default function ValidatorCard({
               Deposit
             </label>
             <p className="text-sm font-mono text-gray-900 dark:text-white">
-              {formatVNA(validator.deposit)}
+              {formatVNA(String(validator.deposit))}
             </p>
           </div>
 
@@ -97,7 +97,7 @@ export default function ValidatorCard({
               Validation Fee
             </label>
             <p className="text-sm font-mono text-gray-900 dark:text-white">
-              {validator.validation_fees ? formatVNA(validator.validation_fees) : "—"}
+              {validator.validation_fees ? formatVNA(String(validator.validation_fees)) : "—"}
             </p>
           </div>
 
@@ -107,15 +107,6 @@ export default function ValidatorCard({
             </label>
             <p className="text-sm font-mono text-gray-900 dark:text-white">
               {feeValue}
-            </p>
-          </div>
-
-          <div>
-            <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
-              Country
-            </label>
-            <p className="text-sm text-gray-900 dark:text-white">
-              {validator.country}
             </p>
           </div>
         </div>

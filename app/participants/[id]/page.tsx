@@ -44,30 +44,30 @@ export default function ParicipantsPage() {
   function toTreeNode(node: BuiltNode, typesToShow: {role: Role; label: string; validation: boolean}[]): TreeNode {
     const idsAddress = idsAddressRef.current;
     const idsPredecessor = idsPredecessorRef.current;
-    let isGrantee = false;
+    let isCorporation = false;
     let isValidator = false;
     let isPredecessor = false;
-    if (address === node.grantee){
-      isGrantee = true;
+    if (address === node.corporation){
+      isCorporation = true;
       idsAddress.add(node.id);
     }
-    if (idsAddress.has(node.validator_perm_id)){
+    if (node.validator_perm_id && idsAddress.has(node.validator_perm_id)){
       isValidator = true;
       idsPredecessor.add(node.id);
     }
-    if (idsPredecessor.has(node.validator_perm_id)){
+    if (node.validator_perm_id && idsPredecessor.has(node.validator_perm_id)){
       isPredecessor = true;
       idsPredecessor.add(node.id);
     }
 
-    const {icon, iconColorClass } = authorityPaticipants(isGrantee, isValidator, isPredecessor);
+    const {icon, iconColorClass } = authorityPaticipants(isCorporation, isValidator, isPredecessor);
 
     return {
       nodeId: node.id,
       name: node.did ? node.did : node.type,
       group: false,
-      parentId: node.validator_perm_id??'root',
-      isGrantee,
+      parentId: node.validator_perm_id ?? 'root',
+      isCorporation,
       isValidator,
       roleColorClass: roleColorClass(node.type),
       icon,
@@ -82,11 +82,11 @@ export default function ParicipantsPage() {
       nodeId: `group:${parent.id}:${t.role}`,
       name: t.label,
       validationProcessAction: isWalletConnected ?
-                                  t.validation ? (t.role == "HOLDER" && Number(parent.validation_fees) == 0 ? "LinkDID" : "MsgStartPermissionVP") : "MsgCreatePermission"
+                                  t.validation ? (t.role == "HOLDER" && Number(parent.validation_fees) == 0 ? "LinkDID" : "MsgStartPermissionVP") : "MsgSelfCreatePermission"
                                   : "Connect",
       validationProcessLabel: t.validation ? "validation process" : "open",
       validationProcessColor: roleJoinColorClass(t.role),
-      isGrantee: false,
+      isCorporation: false,
       isValidator: false,
       group: true,
       schemaId,
@@ -196,7 +196,7 @@ export default function ParicipantsPage() {
         trTitle={dataTR?.did ?? ""}
         csId={csData?.id != null ? String(csData.id) : undefined}
         trId={csData?.trId != null ? String(csData.trId) : undefined}
-        isTrController={!!dataTR?.controller && dataTR.controller === address}
+        isTrController={!!dataTR?.corporation && dataTR.corporation === address}
         setNodeRequestParams={setNodeRequestParams}
         refreshRoot={() => setRefreshRoot(true)}
         onConnect={!isWalletConnected ? connect : undefined}

@@ -133,8 +133,8 @@ const validDIDAction = (action: string): action is MsgTypeDID =>
   ['MsgAddDID','MsgRenewDID','MsgTouchDID','MsgRemoveDID'].includes(action);
 
 // Define the valid actions for TD
-const validTDAction = (action: string): action is MsgTypeTD => 
-  ['MsgReclaimTrustDeposit','MsgReclaimTrustDepositYield'].includes(action);
+const validTDAction = (action: string): action is MsgTypeTD =>
+  ['MsgReclaimTrustDepositYield'].includes(action);
 
 // Define the valid actions for TR-GFD
 export const validGFDAction = (action: string): action is MsgTypeTR => 
@@ -147,8 +147,8 @@ export const validTRAction = (action: string): action is MsgTypeTR =>
 // Define the valid actions for PERM
 export const validPermAction = (action: string): action is MsgTypePERM => 
   ['MsgCancelPermissionVPLastRequest','MsgRenewPermissionVP','MsgSetPermissionVPToValidated','MsgStartPermissionVP',
-  'MsgExtendPermission','MsgRevokePermission','MsgSlashPermissionTrustDeposit','MsgRepayPermissionSlashedTrustDeposit',
-  'MsgCreateRootPermission', 'MsgCreatePermission'].includes(action);
+  'MsgAdjustPermission','MsgRevokePermission','MsgSlashPermissionTrustDeposit','MsgRepayPermissionSlashedTrustDeposit',
+  'MsgCreateRootPermission', 'MsgSelfCreatePermission'].includes(action);
 
 // Define the valid actions for CS
 const validCSAction = (action: string): action is MsgTypeCS => 

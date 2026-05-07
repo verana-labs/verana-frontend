@@ -87,9 +87,9 @@ export function getTimelineStyle(msg: string): TimelineStyle {
         iconBgClass: "bg-gray-100 dark:bg-gray-900/20",
         iconColorClass: "text-gray-600 dark:text-gray-400",
       };
-    case "ExtendPermission":
+    case "AdjustPermission":
       return {
-        label: tr("permissioncard.timeline.event.extended", "Permission Extended"),
+        label: tr("permissioncard.timeline.event.adjusted", "Permission Adjusted"),
         icon: faClockRotateLeft,
         iconBgClass: "bg-primary-100 dark:bg-primary-900/20",
         iconColorClass: "text-primary-600 dark:text-primary-400",
@@ -157,10 +157,10 @@ function describeChanges(msg: string, changes: Record<string, unknown> | unknown
       if (c.verification_fees != null && Number(c.verification_fees) > 0) fees.push(`verification_fees: ${formatVNAFromUVNA(String(c.verification_fees))}`);
       return fees.length ? `Set ${fees.join(", ")}` : null;
     }
-    case "ExtendPermission": {
+    case "AdjustPermission": {
       const effectiveUntil = c.effective_until;
       if (typeof effectiveUntil === "string" && effectiveUntil) {
-        return `Extended until ${formatDateTime(effectiveUntil)}`;
+        return `Adjusted until ${formatDateTime(effectiveUntil)}`;
       }
       return null;
     }
