@@ -579,7 +579,7 @@
   "datatable.tr.title": "Ecosystems",
   "datatable.tr.description": "Ecosystems you own and ecosystems you joined.",
   "datatable.tr.add": "Create Ecosystem",
-  "datatable.tr.add.modal.title": "Create New Ecosystem Trust Registry",
+  "datatable.tr.add.modal.title": "Create Ecosystem",
   "datatable.tr.empty": "No ecosystems match your filters.",
   "datatable.tr.filter.search.label": "Search Ecosystems",
   "datatable.tr.filter.search.placeholder": "Search by organization name, trust registry, or other attributes...",
