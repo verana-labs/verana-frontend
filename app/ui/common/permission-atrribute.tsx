@@ -5,6 +5,7 @@ import { copyToClipboard } from "@/util/util";
 import { useVeranaChain } from "@/hooks/useVeranaChain";
 import { translate } from "@/i18n/dataview";
 import { resolveTranslatable } from "../dataview/types";
+import { env } from "next-runtime-env";
 
 type PermissionAttributeProps = {
   label: string;
@@ -23,6 +24,29 @@ export function service(did: string): string | undefined {
   const domain = did.split(":").pop();
   if (!domain) return undefined;
   return `https://${domain}`;
+}
+
+function visualizerUrl(value: string, action: PermissionAction): string | undefined {
+  const visualizerBaseUrl =
+    env("NEXT_PUBLIC_VERANA_VISUALIZER_URL") ||
+    process.env.NEXT_PUBLIC_VERANA_VISUALIZER_URL ||
+    "https://vis.testnet.verana.network";
+  const base = visualizerBaseUrl.replace(/\/+$/, "");
+  const params = new URLSearchParams();
+
+  switch (action.visualizerTarget) {
+    case "account":
+      params.set("controller", value);
+      return `${base}/did-directory?${params.toString()}`;
+    case "did":
+      params.set("did", value);
+      return `${base}/did-directory?${params.toString()}`;
+    case "permission":
+      params.set("permission", value);
+      return `${base}/permissions?${params.toString()}`;
+    default:
+      return undefined;
+  }
 }
 
 export default function PermissionAttribute({ label, value, mono, actions }: PermissionAttributeProps) {
@@ -50,9 +74,11 @@ export default function PermissionAttribute({ label, value, mono, actions }: Per
         if (explorerUrl) window.open(`${explorerUrl}/account/${value}`, "_blank");
         break;
       }
-      case "visualizer":
-        // Placeholder: button is shown for spec parity but has no behavior yet.
+      case "visualizer": {
+        const url = visualizerUrl(value, action);
+        if (url) window.open(url, "_blank");
         break;
+      }
       default:
         console.error("PermissionAction", action);
     }
