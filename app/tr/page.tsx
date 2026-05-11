@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { translate } from '@/i18n/dataview';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { useEcosytemsCtx } from '@/providers/api-rest-query-provider-context';
+import { DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient';
 import { TrList } from '@/ui/datatable/columnslist/tr';
 
 import EcosystemCard from '@/ui/common/ecosystem-card';
@@ -55,7 +56,9 @@ export default function TrPage() {
   const [addTR, setAddTR] = useState<boolean>(false);
   const [refresh, setRefresh] = useState<boolean>(true);
   const [trListAll, setTrListAll] = useState<boolean>(false);
-
+  const [enrichments, setEnrichments] = useState<Record<string, DidEnrichment>>(
+    {},
+  );
 
   useEffect(() => {
     if (!refresh) return;
@@ -78,21 +81,57 @@ export default function TrPage() {
     setPage(1);
   }, [filters]);
 
+  const didsKey = ecosystemsCtx.ecosystemsList.map((tr) => tr.did).join('|');
+
+  useEffect(() => {
+    const dids = didsKey ? didsKey.split('|') : [];
+    if (dids.length === 0) {
+      setEnrichments({});
+      return;
+    }
+    let cancelled = false;
+    Promise.allSettled(dids.map((did) => fetchDidEnrichment(did))).then(
+      (results) => {
+        if (cancelled) return;
+        const next: Record<string, DidEnrichment> = {};
+        results.forEach((result, idx) => {
+          if (result.status === 'fulfilled') {
+            next[dids[idx]] = result.value;
+          }
+        });
+        setEnrichments(next);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [didsKey]);
+
   const filtered = useMemo(() => {
     return ecosystemsCtx.ecosystemsList.filter((tr) => {
       if (!filters.showArchived && tr.archived) return false;
       if (filters.hideOwned && isOwnedRole(tr.role)) return false;
       if (filters.hideParticipant && hasParticipantRole(tr.role)) return false;
       if (!matchesSearch(tr, filters.search)) return false;
+      if (
+        !filters.showUntrusted &&
+        enrichments[tr.did]?.trustStatus === 'UNTRUSTED'
+      ) {
+        return false;
+      }
       return true;
     });
-  }, [ecosystemsCtx.ecosystemsList, filters]);
+  }, [ecosystemsCtx.ecosystemsList, filters, enrichments]);
 
   const total = filtered.length;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const safePage = Math.min(page, pageCount);
   const pageStart = (safePage - 1) * PAGE_SIZE;
   const pageItems = filtered.slice(pageStart, pageStart + PAGE_SIZE);
+
+  useEffect(() => {
+    if (page > pageCount) setPage(pageCount);
+  }, [page, pageCount]);
 
   const t = (key: string, fallback: string) =>
     resolveTranslatable({ key }, translate) ?? fallback;
@@ -135,11 +174,7 @@ export default function TrPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
             {pageItems.map((tr) => (
-              <EcosystemCard
-                key={tr.id}
-                ecosystem={tr}
-                hideUntrusted={!filters.showUntrusted}
-              />
+              <EcosystemCard key={tr.id} ecosystem={tr} />
             ))}
           </div>
         )}

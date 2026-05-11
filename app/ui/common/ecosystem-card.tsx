@@ -80,14 +80,11 @@ function egfHrefFromTr(tr: EcosystemCardData): string | undefined {
 
 type Props = {
   ecosystem: EcosystemCardData;
-  hideUntrusted?: boolean;
 };
 
-export default function EcosystemCard({ ecosystem, hideUntrusted }: Props) {
+export default function EcosystemCard({ ecosystem }: Props) {
   const router = useRouter();
   const { data: enrichment } = useDidTrustEnrichment(ecosystem.did);
-
-  if (hideUntrusted && enrichment?.trustStatus === 'UNTRUSTED') return null;
 
   const trustBadge = trustStateBadge(enrichment?.trustStatus);
   const trServiceName =
