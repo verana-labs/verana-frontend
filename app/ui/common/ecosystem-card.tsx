@@ -122,7 +122,7 @@ export default function EcosystemCard({ ecosystem, hideUntrusted }: Props) {
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white break-all">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white break-words">
                 {trServiceName}
               </h3>
               <FontAwesomeIcon
@@ -133,7 +133,7 @@ export default function EcosystemCard({ ecosystem, hideUntrusted }: Props) {
               />
             </div>
             {trDescription ? (
-              <p className="text-xs text-neutral-70 dark:text-neutral-70 mt-1 line-clamp-2 break-all">
+              <p className="text-xs text-neutral-70 dark:text-neutral-70 mt-1 line-clamp-2 break-words">
                 {trDescription}
               </p>
             ) : null}
@@ -150,7 +150,7 @@ export default function EcosystemCard({ ecosystem, hideUntrusted }: Props) {
             className="w-8 h-8 rounded flex-shrink-0"
           />
           <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-medium text-gray-900 dark:text-white break-all">
+            <h4 className="text-sm font-medium text-gray-900 dark:text-white break-words">
               {orgName}
             </h4>
             <div className="flex items-center space-x-2 mt-1 flex-wrap">
@@ -231,7 +231,7 @@ function Stat({
     <div className="flex justify-between gap-2">
       <span className="text-neutral-70 dark:text-neutral-70">{label}</span>
       <span
-        className={`font-medium text-gray-900 dark:text-white text-right break-all ${
+        className={`font-medium text-gray-900 dark:text-white text-right break-words ${
           mono ? 'font-mono' : ''
         }`}
       >
