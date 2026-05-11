@@ -28,6 +28,17 @@ const ECOSYSTEM_ROLES = [
 ] as const;
 type EcosystemRole = (typeof ECOSYSTEM_ROLES)[number];
 
+const CARD_BODY_CLASS =
+  'grid h-full min-h-[20.25rem] grid-rows-[5rem_3.25rem_1.5rem_1fr] gap-3 p-4 sm:p-6';
+const CARD_HEADER_REGION_CLASS =
+  'flex min-h-0 min-w-0 items-start space-x-3 overflow-hidden';
+const CARD_ORG_REGION_CLASS =
+  'flex min-h-0 min-w-0 items-start space-x-2 overflow-hidden';
+const CARD_ROLES_REGION_CLASS =
+  'flex min-h-0 min-w-0 items-start gap-2 overflow-hidden';
+const ROLE_PILL_CLASS =
+  'inline-flex min-w-0 max-w-[8.5rem] items-center rounded-full px-2.5 py-0.5 text-xs font-medium';
+
 function parseRoles(role: string | undefined | null): EcosystemRole[] {
   if (!role) return [];
   const valid = new Set<EcosystemRole>(ECOSYSTEM_ROLES);
@@ -87,6 +98,8 @@ export default function EcosystemCard({ ecosystem, hideUntrusted }: Props) {
   const flag = countryCodeToFlag(enrichment?.countryCode);
   const egfHref = egfHrefFromTr(ecosystem);
   const roles = parseRoles(ecosystem.role);
+  const visibleRoles = roles.slice(0, 2);
+  const extraRoleCount = Math.max(0, roles.length - visibleRoles.length);
   const isArchived = Boolean(ecosystem.archived);
 
   const handleClick = () => router.push(`/tr/${encodeURIComponent(ecosystem.id)}`);
@@ -106,13 +119,13 @@ export default function EcosystemCard({ ecosystem, hideUntrusted }: Props) {
           handleClick();
         }
       }}
-      className={`bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer ${
+      className={`h-full bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer ${
         isArchived ? 'archived-watermark' : ''
       }`}
     >
-      <div className={`p-4 sm:p-6 ${isArchived ? 'archived-bg' : ''}`}>
+      <div className={`${CARD_BODY_CLASS} ${isArchived ? 'archived-bg' : ''}`}>
         {/* Trust Registry row */}
-        <div className="flex items-start space-x-3 mb-4">
+        <div className={CARD_HEADER_REGION_CLASS}>
           <img
             src={serviceIdenticonUrl(ecosystem.did)}
             alt=""
@@ -122,7 +135,10 @@ export default function EcosystemCard({ ecosystem, hideUntrusted }: Props) {
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white break-words">
+              <h3
+                className="line-clamp-2 text-base font-semibold text-gray-900 dark:text-white break-words"
+                title={trServiceName}
+              >
                 {trServiceName}
               </h3>
               <FontAwesomeIcon
@@ -133,7 +149,10 @@ export default function EcosystemCard({ ecosystem, hideUntrusted }: Props) {
               />
             </div>
             {trDescription ? (
-              <p className="text-xs text-neutral-70 dark:text-neutral-70 mt-1 line-clamp-2 break-words">
+              <p
+                className="text-xs text-neutral-70 dark:text-neutral-70 mt-1 line-clamp-2 break-words"
+                title={trDescription}
+              >
                 {trDescription}
               </p>
             ) : null}
@@ -141,7 +160,7 @@ export default function EcosystemCard({ ecosystem, hideUntrusted }: Props) {
         </div>
 
         {/* Organization row */}
-        <div className="flex items-start space-x-2 mb-4">
+        <div className={CARD_ORG_REGION_CLASS}>
           <img
             src={serviceAvatarUrl(enrichment?.organizationName ?? ecosystem.did)}
             alt=""
@@ -150,11 +169,14 @@ export default function EcosystemCard({ ecosystem, hideUntrusted }: Props) {
             className="w-8 h-8 rounded flex-shrink-0"
           />
           <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-medium text-gray-900 dark:text-white break-words">
+            <h4
+              className="truncate text-sm font-medium text-gray-900 dark:text-white"
+              title={orgName}
+            >
               {orgName}
             </h4>
-            <div className="flex items-center space-x-2 mt-1 flex-wrap">
-              <span className="text-lg" aria-hidden="true">
+            <div className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden">
+              <span className="flex-shrink-0 text-lg" aria-hidden="true">
                 {flag}
               </span>
               {egfHref ? (
@@ -163,10 +185,13 @@ export default function EcosystemCard({ ecosystem, hideUntrusted }: Props) {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-xs font-medium flex items-center space-x-1"
+                  className="flex min-w-0 items-center space-x-1 text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
                 >
-                  <span>{t('datatable.tr.card.egf', 'EGF')}</span>
-                  <FontAwesomeIcon icon={faExternalLinkAlt} className="text-xs" />
+                  <span className="truncate">{t('datatable.tr.card.egf', 'EGF')}</span>
+                  <FontAwesomeIcon
+                    icon={faExternalLinkAlt}
+                    className="flex-shrink-0 text-xs"
+                  />
                 </a>
               ) : null}
             </div>
@@ -174,18 +199,29 @@ export default function EcosystemCard({ ecosystem, hideUntrusted }: Props) {
         </div>
 
         {/* Role pills */}
-        {roles.length > 0 ? (
-          <div className="flex flex-wrap gap-2 mb-4">
-            {roles.map((r) => (
+        <div className={CARD_ROLES_REGION_CLASS}>
+          {visibleRoles.length > 0 ? (
+            visibleRoles.map((r) => (
               <span
                 key={r}
-                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${roleBadgeClass(r)}`}
+                className={`${ROLE_PILL_CLASS} ${roleBadgeClass(r)}`}
+                title={r}
               >
-                {r}
+                <span className="truncate">{r}</span>
               </span>
-            ))}
-          </div>
-        ) : null}
+            ))
+          ) : (
+            <span className="sr-only">{t('datatable.tr.card.noRoles', 'No roles')}</span>
+          )}
+          {extraRoleCount > 0 ? (
+            <span
+              className="inline-flex flex-shrink-0 items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
+              title={roles.slice(visibleRoles.length).join(', ')}
+            >
+              +{extraRoleCount}
+            </span>
+          ) : null}
+        </div>
 
         {/* Stats */}
         <div className="space-y-2 text-sm">
@@ -228,12 +264,15 @@ function Stat({
   mono?: boolean;
 }) {
   return (
-    <div className="flex justify-between gap-2">
-      <span className="text-neutral-70 dark:text-neutral-70">{label}</span>
+    <div className="grid grid-cols-[minmax(0,1fr)_minmax(5.5rem,auto)] items-start gap-3">
+      <span className="min-w-0 break-words text-neutral-70 dark:text-neutral-70">
+        {label}
+      </span>
       <span
-        className={`font-medium text-gray-900 dark:text-white text-right break-words ${
+        className={`min-w-0 break-words text-right font-medium text-gray-900 dark:text-white ${
           mono ? 'font-mono' : ''
         }`}
+        title={value}
       >
         {value}
       </span>
