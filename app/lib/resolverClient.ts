@@ -9,6 +9,8 @@ export interface DidEnrichment {
   serviceDescription?: string;
   organizationName?: string;
   countryCode?: string;
+  organizationAddress?: string;
+  organizationRegistryId?: string;
   evaluatedAtBlock?: number;
   expiresAt?: string;
   serviceMinAge?: string;
@@ -86,6 +88,10 @@ function mapResponse(did: string, raw: ResolverFullResult): DidEnrichment {
 
   const organizationName = pickString(org?.claims, 'name');
   const countryCode = pickString(org?.claims, 'countryCode');
+  const organizationAddress = pickString(org?.claims, 'address')
+    ?? pickString(org?.claims, 'streetAddress');
+  const organizationRegistryId = pickString(org?.claims, 'registryId')
+    ?? pickString(org?.claims, 'registrationNumber');
 
   const hasResolverEvidence =
     credentials.length > 0 ||
@@ -111,6 +117,8 @@ function mapResponse(did: string, raw: ResolverFullResult): DidEnrichment {
     servicePrivacyUrl,
     organizationName,
     countryCode,
+    organizationAddress,
+    organizationRegistryId,
     evaluatedAtBlock: raw.evaluatedAtBlock,
     expiresAt: raw.expiresAt,
   };

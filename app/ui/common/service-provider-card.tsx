@@ -12,17 +12,30 @@ export type ServiceProviderCardProps = {
   controller?: string;
 };
 
+function countryName(code: string): string {
+  try {
+    const display = new Intl.DisplayNames(['en'], { type: 'region' }).of(code.toUpperCase());
+    return display ?? code;
+  } catch {
+    return code;
+  }
+}
+
 export default function ServiceProviderCard({ did, controller }: ServiceProviderCardProps) {
   const { data: enrichment } = useDidTrustEnrichment(did);
 
   const orgName = enrichment?.organizationName ?? enrichment?.serviceName;
   const countryCode = enrichment?.countryCode;
+  const address = enrichment?.organizationAddress;
+  const registryId = enrichment?.organizationRegistryId;
 
-  const hasContent = !!orgName || !!countryCode;
+  const hasContent = !!orgName || !!countryCode || !!address || !!registryId;
   if (!hasContent) return null;
 
   const sectionLabel = resolveTranslatable({ key: 'dataview.tr.sections.serviceProvider' }, translate) ?? 'Service Provider';
   const countryLabel = resolveTranslatable({ key: 'dataview.tr.fields.country' }, translate) ?? 'Country';
+  const addressLabel = resolveTranslatable({ key: 'dataview.tr.fields.address' }, translate) ?? 'Address';
+  const registryIdLabel = resolveTranslatable({ key: 'dataview.tr.fields.registryId' }, translate) ?? 'Registry ID';
   const issuerLabel = resolveTranslatable({ key: 'dataview.tr.fields.credentialIssuer' }, translate) ?? 'Credential Issuer';
 
   return (
@@ -57,8 +70,22 @@ export default function ServiceProviderCard({ did, controller }: ServiceProvider
                   <span className="text-neutral-70 dark:text-neutral-70 block mb-1">{countryLabel}:</span>
                   <div className="flex items-center gap-2">
                     <span className="text-xl sm:text-2xl" aria-hidden="true">{countryCodeToFlag(countryCode)}</span>
-                    <span className="text-gray-900 dark:text-white font-medium">{countryCode}</span>
+                    <span className="text-gray-900 dark:text-white font-medium">{countryName(countryCode)}</span>
                   </div>
+                </div>
+              ) : null}
+
+              {address ? (
+                <div>
+                  <span className="text-neutral-70 dark:text-neutral-70 block mb-1">{addressLabel}:</span>
+                  <p className="text-gray-900 dark:text-white font-medium break-words">{address}</p>
+                </div>
+              ) : null}
+
+              {registryId ? (
+                <div>
+                  <span className="text-neutral-70 dark:text-neutral-70 block mb-1">{registryIdLabel}:</span>
+                  <p className="text-gray-900 dark:text-white font-mono text-xs sm:text-sm break-all">{registryId}</p>
                 </div>
               ) : null}
 

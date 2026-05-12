@@ -39,7 +39,6 @@ function statusPillClass(state: RowState): string {
 
 function buildRows(versions: Versions, activeVersion: number): Row[] {
   const sorted = [...versions].sort((a, b) => a.version - b.version);
-  const lastVersion = sorted.reduce((acc, v) => (v.version > acc ? v.version : acc), activeVersion);
 
   const rows: Row[] = [];
   sorted.forEach((version, index) => {
@@ -54,7 +53,7 @@ function buildRows(versions: Versions, activeVersion: number): Row[] {
           { key: 'datalist.egf.status.activeSince', values: { date: formatDate(version.active_since) } },
           translate,
         ) ?? `Active since ${formatDate(version.active_since)}`;
-      } else if (version.version > activeVersion || version.version > lastVersion) {
+      } else if (version.version > activeVersion) {
         state = 'draft';
         statusText = resolveTranslatable({ key: 'datalist.egf.status.draft' }, translate) ?? 'Draft';
       } else {
@@ -85,7 +84,11 @@ function buildRows(versions: Versions, activeVersion: number): Row[] {
     });
   });
 
-  return rows.reverse();
+  const order: Record<RowState, number> = { active: 0, inactive: 1, draft: 2 };
+  return rows.sort((a, b) => {
+    if (order[a.state] !== order[b.state]) return order[a.state] - order[b.state];
+    return b.version - a.version;
+  });
 }
 
 export default function EgfDocumentsTable({ versions, activeVersion }: EgfDocumentsTableProps) {

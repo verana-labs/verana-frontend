@@ -24,7 +24,6 @@ import { RefreshState } from '@/msg/util/signerUtil';
 
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
-import { formatVNA } from '@/util/util';
 import { isValidDID, isValidUrl } from '@/util/validations';
 
 import AddCsPage from '../cs/add/add';
@@ -142,24 +141,23 @@ export default function TRViewPage() {
     ? 'dataview.tr.actions.unarchiveTrustRegistry'
     : 'dataview.tr.actions.archiveTrustRegistry';
 
-  const backLabel = resolveTranslatable({ key: 'button.tr.back' }, translate) ?? 'Back to My Ecosystems';
+  const backLabel = resolveTranslatable({ key: 'button.tr.back' }, translate) ?? 'Back';
   const basicInfoLabel = resolveTranslatable({ key: 'dataview.tr.sections.basicInformation' }, translate) ?? 'Basic Information';
-  const idLabel = resolveTranslatable({ key: 'dataview.tr.fields.id' }, translate) ?? 'Id';
-  const controllerLabel = resolveTranslatable({ key: 'dataview.tr.fields.controller' }, translate) ?? 'Controller';
+  const idLabel = resolveTranslatable({ key: 'dataview.tr.fields.id' }, translate) ?? 'ID';
+  const controllerLabel = resolveTranslatable({ key: 'dataview.tr.fields.controller' }, translate) ?? 'Controller Corporation';
   const languageLabel = resolveTranslatable({ key: 'dataview.tr.fields.language' }, translate) ?? 'Primary Governance Framework Language';
-  const depositLabel = resolveTranslatable({ key: 'dataview.tr.fields.deposit' }, translate) ?? 'Trust Deposit';
   const activeVersionLabel = resolveTranslatable({ key: 'dataview.tr.fields.active_version' }, translate) ?? 'Active GF Version';
   const mutableLabel = resolveTranslatable({ key: 'dataview.section.mutable' }, translate) ?? 'Mutable Configuration';
   const didLabel = resolveTranslatable({ key: 'dataview.tr.fields.did' }, translate) ?? 'DID';
-  const akaLabel = resolveTranslatable({ key: 'dataview.tr.fields.aka' }, translate) ?? 'Aka';
+  const akaLabel = resolveTranslatable({ key: 'dataview.tr.fields.aka' }, translate) ?? 'AKA (URI)';
   const editLabel = resolveTranslatable({ key: 'dataview.tr.actions.updateTrustRegistry' }, translate) ?? 'Edit Configuration';
-  const archiveLabel = resolveTranslatable({ key: 'dataview.tr.actions.archiveTrustRegistry' }, translate) ?? 'Archive Ecosystem';
-  const unarchiveLabel = resolveTranslatable({ key: 'dataview.tr.actions.unarchiveTrustRegistry' }, translate) ?? 'Unarchive Ecosystem';
+  const archiveLabel = resolveTranslatable({ key: 'dataview.tr.actions.archiveTrustRegistry' }, translate) ?? 'Archive';
+  const unarchiveLabel = resolveTranslatable({ key: 'dataview.tr.actions.unarchiveTrustRegistry' }, translate) ?? 'Unarchive';
   const cancelLabel = resolveTranslatable({ key: 'messages.cancel' }, translate) ?? 'Cancel';
   const confirmLabel = resolveTranslatable({ key: 'messages.confirm' }, translate) ?? 'Confirm';
   const egfLabel = resolveTranslatable({ key: 'datalist.egf.title' }, translate) ?? 'EGF Documents';
   const addEgfLabel = resolveTranslatable({ key: 'dataview.tr.actions.addGovernanceFrameworkDocument' }, translate) ?? 'Add New EGF Document';
-  const increaseEgfLabel = resolveTranslatable({ key: 'dataview.tr.actions.increaseActiveGovernanceFrameworkVersion' }, translate) ?? 'Increase Active EGF Version';
+  const increaseEgfLabel = resolveTranslatable({ key: 'dataview.tr.actions.increaseActiveGovernanceFrameworkVersion' }, translate) ?? 'Increase Active EGF';
   const csTitle = resolveTranslatable({ key: 'datatable.cs.title' }, translate) ?? 'Credential Schemas';
   const showArchivedLabel = resolveTranslatable({ key: 'datatable.cs.filter.showArchived' }, translate) ?? 'Show Archived';
   const newSchemaLabel = resolveTranslatable({ key: 'button.cs.add' }, translate) ?? 'New Schema';
@@ -226,10 +224,6 @@ export default function TRViewPage() {
             <div>
               <span className="text-sm text-neutral-70 dark:text-neutral-70 block mb-1">{languageLabel}</span>
               <p className="text-gray-900 dark:text-white font-medium">{getLabelByValue(dataTR.language)}</p>
-            </div>
-            <div>
-              <span className="text-sm text-neutral-70 dark:text-neutral-70 block mb-1">{depositLabel}</span>
-              <p className="text-gray-900 dark:text-white font-medium">{formatVNA(dataTR.deposit, 6)}</p>
             </div>
             <div>
               <span className="text-sm text-neutral-70 dark:text-neutral-70 block mb-1">{activeVersionLabel}</span>
