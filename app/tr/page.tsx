@@ -29,20 +29,17 @@ function matchesSearch(tr: TrList, search: string): boolean {
   );
 }
 
+function roleTokens(role: string | undefined | null): string[] {
+  if (!role) return [];
+  return role.split(/[,\s]+/).map((r) => r.trim().toUpperCase()).filter(Boolean);
+}
+
 function isOwnedRole(role: string | undefined | null): boolean {
-  if (!role) return false;
-  return role
-    .split(/[,\s]+/)
-    .map((r) => r.trim().toUpperCase())
-    .some((r) => r === 'ECOSYSTEM');
+  return roleTokens(role).some((r) => r === 'ECOSYSTEM');
 }
 
 function hasParticipantRole(role: string | undefined | null): boolean {
-  if (!role) return false;
-  return role
-    .split(/[,\s]+/)
-    .map((r) => r.trim().toUpperCase())
-    .some((r) => r && r !== 'ECOSYSTEM');
+  return roleTokens(role).some((r) => r !== 'ECOSYSTEM');
 }
 
 export default function TrPage() {
