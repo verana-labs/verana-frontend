@@ -1,8 +1,9 @@
 'use client';
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { ReactNode } from 'react';
 import { faEye, faSitemap } from '@fortawesome/free-solid-svg-icons';
 
+import IconActionButton from '@/ui/common/icon-action-button';
 import { CsList, getModePillClass } from '@/ui/datatable/columnslist/cs';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
@@ -22,6 +23,15 @@ function RolePill({ value, suffix }: { value?: string | number; suffix: string }
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${klass}`}>
       {raw}
     </span>
+  );
+}
+
+function StatRow({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="flex justify-between gap-2">
+      <span className="text-neutral-70 dark:text-neutral-70">{label}:</span>
+      <span className="font-medium text-gray-900 dark:text-white">{value}</span>
+    </div>
   );
 }
 
@@ -64,24 +74,8 @@ export default function CsSummaryCard({ cs, onView, onParticipants }: CsSummaryC
             {cs.title}
           </button>
           <div className="flex items-center gap-1 flex-shrink-0">
-            <button
-              type="button"
-              onClick={onView}
-              title={previewLabel}
-              aria-label={previewLabel}
-              className="px-2 text-neutral-70 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-            >
-              <FontAwesomeIcon icon={faEye} className="text-sm" />
-            </button>
-            <button
-              type="button"
-              onClick={onParticipants}
-              title={participantsLabel}
-              aria-label={participantsLabel}
-              className="px-2 text-neutral-70 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-            >
-              <FontAwesomeIcon icon={faSitemap} className="text-sm" />
-            </button>
+            <IconActionButton icon={faEye} label={previewLabel} onClick={onView} />
+            <IconActionButton icon={faSitemap} label={participantsLabel} onClick={onParticipants} />
           </div>
         </div>
 
@@ -97,22 +91,10 @@ export default function CsSummaryCard({ cs, onView, onParticipants }: CsSummaryC
         </div>
 
         <div className="space-y-2 text-xs sm:text-sm">
-          <div className="flex justify-between gap-2">
-            <span className="text-neutral-70 dark:text-neutral-70">{participants}:</span>
-            <span className="font-medium text-gray-900 dark:text-white">{formatNumber(cs.participants, true)}</span>
-          </div>
-          <div className="flex justify-between gap-2">
-            <span className="text-neutral-70 dark:text-neutral-70">{issued}:</span>
-            <span className="font-medium text-gray-900 dark:text-white">{formatNumber(cs.issuedCredentials, true)}</span>
-          </div>
-          <div className="flex justify-between gap-2">
-            <span className="text-neutral-70 dark:text-neutral-70">{verified}:</span>
-            <span className="font-medium text-gray-900 dark:text-white">{formatNumber(cs.verifiedCredentials, true)}</span>
-          </div>
-          <div className="flex justify-between gap-2">
-            <span className="text-neutral-70 dark:text-neutral-70">{trustValue}:</span>
-            <span className="font-medium text-gray-900 dark:text-white">{formatVNA(cs.trustValue ?? '0', 6) || '0 VNA'}</span>
-          </div>
+          <StatRow label={participants} value={formatNumber(cs.participants, true)} />
+          <StatRow label={issued} value={formatNumber(cs.issuedCredentials, true)} />
+          <StatRow label={verified} value={formatNumber(cs.verifiedCredentials, true)} />
+          <StatRow label={trustValue} value={formatVNA(cs.trustValue ?? '0', 6) || '0 VNA'} />
         </div>
       </div>
     </div>

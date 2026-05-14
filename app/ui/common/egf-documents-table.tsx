@@ -1,5 +1,6 @@
 'use client';
 
+import { ReactNode } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
 
@@ -8,6 +9,13 @@ import { getLabelByValue } from '@/ui/dataview/datasections/gfd';
 import { formatDate } from '@/util/util';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
+
+const HEADER_CELL_CLASS = 'px-4 sm:px-6 py-3 text-left text-xs font-medium text-neutral-70 dark:text-neutral-70 uppercase tracking-wider';
+const BODY_CELL_CLASS = 'px-4 sm:px-6 py-4';
+
+function Th({ children }: { children: ReactNode }) {
+  return <th className={HEADER_CELL_CLASS}>{children}</th>;
+}
 
 type Versions = NonNullable<TrData['versions']>;
 
@@ -105,29 +113,21 @@ export default function EgfDocumentsTable({ versions, activeVersion }: EgfDocume
         <table className="min-w-full divide-y divide-neutral-20 dark:divide-neutral-70">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-neutral-70 dark:text-neutral-70 uppercase tracking-wider">
-                {versionHeader}
-              </th>
-              <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-neutral-70 dark:text-neutral-70 uppercase tracking-wider">
-                {uriHeader}
-              </th>
-              <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-neutral-70 dark:text-neutral-70 uppercase tracking-wider">
-                {languageHeader}
-              </th>
-              <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-neutral-70 dark:text-neutral-70 uppercase tracking-wider">
-                {statusHeader}
-              </th>
+              <Th>{versionHeader}</Th>
+              <Th>{uriHeader}</Th>
+              <Th>{languageHeader}</Th>
+              <Th>{statusHeader}</Th>
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-surface divide-y divide-neutral-20 dark:divide-neutral-70">
             {rows.map((row) => (
               <tr key={row.key} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                <td className={`${BODY_CELL_CLASS} whitespace-nowrap`}>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
                     {versionHeader} {row.version}
                   </span>
                 </td>
-                <td className="px-4 sm:px-6 py-4">
+                <td className={BODY_CELL_CLASS}>
                   <a
                     href={row.url}
                     target="_blank"
@@ -138,10 +138,10 @@ export default function EgfDocumentsTable({ versions, activeVersion }: EgfDocume
                     <FontAwesomeIcon icon={faUpRightFromSquare} className="text-xs flex-shrink-0" />
                   </a>
                 </td>
-                <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                <td className={`${BODY_CELL_CLASS} whitespace-nowrap`}>
                   <span className="text-sm text-gray-900 dark:text-white">{row.language}</span>
                 </td>
-                <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                <td className={`${BODY_CELL_CLASS} whitespace-nowrap`}>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusPillClass(row.state)}`}>
                     {row.statusText}
                   </span>

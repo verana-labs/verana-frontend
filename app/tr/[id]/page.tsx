@@ -6,12 +6,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faArrowUp, faBoxArchive, faPenToSquare, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { useChain } from '@cosmos-kit/react';
 
-import { TrData } from '@/ui/dataview/datasections/tr';
 import { getLabelByValue } from '@/ui/dataview/datasections/gfd';
 import EcosystemHeader from '@/ui/common/ecosystem-header';
 import ServiceProviderCard from '@/ui/common/service-provider-card';
 import EgfDocumentsTable from '@/ui/common/egf-documents-table';
 import CsSummaryCard from '@/ui/common/cs-summary-card';
+import FieldRow from '@/ui/common/field-row';
 import { ModalAction } from '@/ui/common/modal-action';
 import { renderActionComponent } from '@/ui/common/data-view-typed';
 
@@ -31,8 +31,8 @@ import AddCsPage from '../cs/add/add';
 type GfdAction = 'MsgAddGovernanceFrameworkDocument' | 'MsgIncreaseActiveGovernanceFrameworkVersion';
 
 export default function TRViewPage() {
-  const params = useParams();
-  const id = params?.id as string;
+  const params = useParams<{ id: string }>();
+  const id = params?.id ?? '';
   const router = useRouter();
 
   const veranaChain = useVeranaChain();
@@ -86,8 +86,8 @@ export default function TRViewPage() {
 
   useEffect(() => {
     if (!dataTR) return;
-    setEditDid((dataTR.did as string) ?? '');
-    setEditAka((dataTR.aka as string) ?? '');
+    setEditDid(dataTR.did);
+    setEditAka(dataTR.aka);
   }, [dataTR?.did, dataTR?.aka]);
 
   if (errorTRData) {
@@ -203,32 +203,28 @@ export default function TRViewPage() {
         </button>
       </section>
 
-      <EcosystemHeader did={(dataTR.did as string) ?? ''} status={headerStatus} />
+      <EcosystemHeader did={dataTR.did} status={headerStatus} />
 
-      <ServiceProviderCard did={(dataTR.did as string) ?? ''} controller={dataTR.controller} />
+      <ServiceProviderCard did={dataTR.did} controller={dataTR.controller} />
 
       <section className="mb-8">
         <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4">{basicInfoLabel}</h2>
         <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-4 sm:p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <div>
-              <span className="text-sm text-neutral-70 dark:text-neutral-70 block mb-1">{idLabel}</span>
+            <FieldRow label={idLabel}>
               <p className="text-gray-900 dark:text-white font-medium">{dataTR.id}</p>
-            </div>
-            <div>
-              <span className="text-sm text-neutral-70 dark:text-neutral-70 block mb-1">{controllerLabel}</span>
+            </FieldRow>
+            <FieldRow label={controllerLabel}>
               <p className="text-gray-900 dark:text-white font-mono font-medium break-all text-sm">
                 {dataTR.controller}
               </p>
-            </div>
-            <div>
-              <span className="text-sm text-neutral-70 dark:text-neutral-70 block mb-1">{languageLabel}</span>
+            </FieldRow>
+            <FieldRow label={languageLabel}>
               <p className="text-gray-900 dark:text-white font-medium">{getLabelByValue(dataTR.language)}</p>
-            </div>
-            <div>
-              <span className="text-sm text-neutral-70 dark:text-neutral-70 block mb-1">{activeVersionLabel}</span>
+            </FieldRow>
+            <FieldRow label={activeVersionLabel}>
               <p className="text-gray-900 dark:text-white font-medium">{dataTR.active_version ?? '—'}</p>
-            </div>
+            </FieldRow>
           </div>
         </div>
       </section>
@@ -264,20 +260,19 @@ export default function TRViewPage() {
         <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-4 sm:p-6">
           {!editMode ? (
             <div className="space-y-4">
-              <div>
-                <span className="text-sm text-neutral-70 dark:text-neutral-70 block mb-1">{didLabel}</span>
+              <FieldRow label={didLabel}>
                 <p className="text-gray-900 dark:text-white font-mono font-medium break-all text-sm">{dataTR.did}</p>
-              </div>
-              <div>
-                <span className="text-sm text-neutral-70 dark:text-neutral-70 block mb-1">{akaLabel}</span>
+              </FieldRow>
+              <FieldRow label={akaLabel}>
                 <p className="text-gray-900 dark:text-white font-medium break-all text-sm">{dataTR.aka}</p>
-              </div>
+              </FieldRow>
             </div>
           ) : (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{didLabel}</label>
+                <label htmlFor="tr-edit-did" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{didLabel}</label>
                 <input
+                  id="tr-edit-did"
                   type="text"
                   value={editDid}
                   onChange={(e) => setEditDid(e.target.value)}
@@ -289,8 +284,9 @@ export default function TRViewPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{akaLabel}</label>
+                <label htmlFor="tr-edit-aka" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{akaLabel}</label>
                 <input
+                  id="tr-edit-aka"
                   type="url"
                   value={editAka}
                   onChange={(e) => setEditAka(e.target.value)}
@@ -407,7 +403,7 @@ export default function TRViewPage() {
         {renderActionComponent(
           archiveMsgType,
           () => setArchiveActive(false),
-          dataTR as TrData,
+          dataTR,
           onActionTRRefresh,
         )}
       </ModalAction>
@@ -423,7 +419,7 @@ export default function TRViewPage() {
           ? renderActionComponent(
               gfdAction,
               () => setGfdAction(null),
-              { ...(dataTR as TrData), last_version: lastVersion } as TrData,
+              { ...dataTR, last_version: lastVersion },
               onActionTRRefresh,
             )
           : null}

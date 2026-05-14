@@ -1,11 +1,15 @@
 'use client';
 
 import TrustBadge from '@/ui/common/trust-badge';
+import FieldRow from '@/ui/common/field-row';
 import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment';
 import { serviceAvatarUrl } from '@/lib/resolverClient';
 import { countryCodeToFlag } from '@/util/util';
 import { resolveTranslatable } from '@/ui/dataview/types';
 import { translate } from '@/i18n/dataview';
+
+const LABEL_CLASS = 'text-neutral-70 dark:text-neutral-70 block mb-1';
+const MONO_VALUE_CLASS = 'text-gray-900 dark:text-white font-mono text-xs sm:text-sm break-all';
 
 export type ServiceProviderCardProps = {
   did: string;
@@ -66,36 +70,30 @@ export default function ServiceProviderCard({ did, controller }: ServiceProvider
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               {countryCode ? (
-                <div>
-                  <span className="text-neutral-70 dark:text-neutral-70 block mb-1">{countryLabel}:</span>
+                <FieldRow label={`${countryLabel}:`} labelClassName={LABEL_CLASS}>
                   <div className="flex items-center gap-2">
                     <span className="text-xl sm:text-2xl" aria-hidden="true">{countryCodeToFlag(countryCode)}</span>
                     <span className="text-gray-900 dark:text-white font-medium">{countryName(countryCode)}</span>
                   </div>
-                </div>
+                </FieldRow>
               ) : null}
 
               {address ? (
-                <div>
-                  <span className="text-neutral-70 dark:text-neutral-70 block mb-1">{addressLabel}:</span>
+                <FieldRow label={`${addressLabel}:`} labelClassName={LABEL_CLASS}>
                   <p className="text-gray-900 dark:text-white font-medium break-words">{address}</p>
-                </div>
+                </FieldRow>
               ) : null}
 
               {registryId ? (
-                <div>
-                  <span className="text-neutral-70 dark:text-neutral-70 block mb-1">{registryIdLabel}:</span>
-                  <p className="text-gray-900 dark:text-white font-mono text-xs sm:text-sm break-all">{registryId}</p>
-                </div>
+                <FieldRow label={`${registryIdLabel}:`} labelClassName={LABEL_CLASS}>
+                  <p className={MONO_VALUE_CLASS}>{registryId}</p>
+                </FieldRow>
               ) : null}
 
               {controller ? (
-                <div>
-                  <span className="text-neutral-70 dark:text-neutral-70 block mb-1">{issuerLabel}:</span>
-                  <p className="text-gray-900 dark:text-white font-mono text-xs sm:text-sm break-all">
-                    {controller}
-                  </p>
-                </div>
+                <FieldRow label={`${issuerLabel}:`} labelClassName={LABEL_CLASS}>
+                  <p className={MONO_VALUE_CLASS}>{controller}</p>
+                </FieldRow>
               ) : null}
             </div>
           </div>

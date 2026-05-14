@@ -21,9 +21,8 @@ export default function EcosystemHeader({ did, status }: EcosystemHeaderProps) {
   const description = enrichment?.serviceDescription;
   const minAgeRaw = enrichment?.serviceMinAge;
   const minAgeNum = minAgeRaw != null ? Number(minAgeRaw) : NaN;
-  const showMinAge = Number.isFinite(minAgeNum) && minAgeNum > 0;
+  const showMinAge = Number.isFinite(minAgeNum) && minAgeNum >= 0;
   const displayName = enrichment?.serviceName ?? enrichment?.organizationName ?? did;
-  const showSecondaryDid = displayName !== did;
 
   return (
     <section className="mb-8">
@@ -41,22 +40,16 @@ export default function EcosystemHeader({ did, status }: EcosystemHeaderProps) {
 
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-3 mb-2">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white break-all">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white break-words">
                 {displayName}
+                <TrustBadge state={enrichment?.trustStatus} size="lg" className="ml-3 align-middle" />
               </h1>
-              <TrustBadge state={enrichment?.trustStatus} size="lg" />
               {status === 'ARCHIVED' ? (
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${ARCHIVED_PILL_CLASS}`}>
                   ARCHIVED
                 </span>
               ) : null}
             </div>
-
-            {showSecondaryDid ? (
-              <p className="text-xs sm:text-sm text-neutral-70 dark:text-neutral-70 font-mono break-all mb-3">
-                {did}
-              </p>
-            ) : null}
 
             {description ? (
               <p className="text-xs sm:text-sm text-neutral-70 dark:text-neutral-70 mb-4 line-clamp-3">
