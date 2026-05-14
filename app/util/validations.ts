@@ -35,7 +35,6 @@ export function isValidCountryCode(code: string): boolean {
   return /^[A-Z]{2}$/.test(code);
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: legacy any usage
 export function isValidField(field: DataField<any>, value: unknown): boolean {
   const validation = field.validation;
   const isEmptyString = typeof value === 'string' && value.trim() === '';

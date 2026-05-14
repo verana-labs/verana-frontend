@@ -6,7 +6,20 @@
     "useIgnoreFile": true
   },
   "files": {
-    "maxSize": 10000000
+    "maxSize": 10000000,
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/.next",
+      "!**/dist",
+      "!**/.idea",
+      "!**/coverage",
+      "!**/pnpm-lock.yaml",
+      "!**/.changeset",
+      "!**/proto-codecs",
+      "!**/*.css",
+      "!public"
+    ]
   },
   "formatter": {
     "indentStyle": "space",
@@ -110,6 +123,33 @@
           },
           "correctness": {
             "noUndeclaredDependencies": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["app/**"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noLabelWithoutControl": "off",
+            "useButtonType": "off",
+            "noSvgWithoutTitle": "off",
+            "noStaticElementInteractions": "off",
+            "useKeyWithClickEvents": "off",
+            "useSemanticElements": "off",
+            "useAriaPropsSupportedByRole": "off"
+          },
+          "performance": {
+            "noImgElement": "off"
+          },
+          "correctness": {
+            "useExhaustiveDependencies": "warn",
+            "useHookAtTopLevel": "warn"
+          },
+          "suspicious": {
+            "noShadowRestrictedNames": "warn",
+            "noFallthroughSwitchClause": "warn"
           }
         }
       }
