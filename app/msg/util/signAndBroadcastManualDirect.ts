@@ -1,5 +1,6 @@
 'use client'
 
+import { logger } from '@/lib/logger'
 import { fromBase64 } from '@cosmjs/encoding';
 import { createVeranaRegistry } from '@verana-labs/verana-types';
 import {
@@ -50,8 +51,8 @@ export async function signAndBroadcastManualDirect({
 }: ManualSignOptions): Promise<DeliverTxResponse> {
 
 const anys = messages.map(m => registry.encodeAsAny(m));
-console.log("Any.typeUrl:", anys[0].typeUrl);
-console.log("Any.value(hex):", Buffer.from(anys[0].value).toString("hex"));
+logger.log("Any.typeUrl:", anys[0].typeUrl);
+logger.log("Any.value(hex):", Buffer.from(anys[0].value).toString("hex"));
 
 // Connect a client — only used for simulate and broadcast
   const client = await SigningStargateClient.connectWithSigner(rpcEndpoint, signer, { registry });

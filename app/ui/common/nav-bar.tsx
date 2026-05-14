@@ -1,6 +1,6 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/** biome-ignore-all lint/correctness/noUnusedVariables: legacy code */
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import VeranaLog from '@/ui/common/verana-logo';
 import IconLabelButton from '@/ui/common/icon-label-button'; 

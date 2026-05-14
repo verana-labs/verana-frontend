@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/** biome-ignore-all lint/suspicious/noExplicitAny: legacy code */
 import type { DataField } from '@/ui/dataview/types';
 
 const DID_PATTERN = /^did:[a-zA-Z0-9]+:[a-zA-Z0-9._:%-]+$/;
@@ -35,7 +35,8 @@ export function isValidCountryCode(code: string): boolean {
   return /^[A-Z]{2}$/.test(code);
 }
 
-export function isValidField(field: DataField<any>, value: unknown): boolean { // eslint-disable-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+export function isValidField(field: DataField<any>, value: unknown): boolean {
   const validation = field.validation;
   const isEmptyString = typeof value === 'string' && value.trim() === '';
   if (value === undefined || value === null || isEmptyString) {

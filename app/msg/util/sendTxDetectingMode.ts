@@ -1,5 +1,6 @@
 'use client';
 
+import { logger } from '@/lib/logger'
 import { useCallback } from 'react';
 import { DeliverTxResponse } from '@cosmjs/stargate';
 import type { EncodeObject } from '@cosmjs/proto-signing';
@@ -30,9 +31,12 @@ export function useSendTxDetectingMode(chain: Chain) {
     const rpcEndpoint =
         typeof rpcRaw === 'string'
         ? rpcRaw
-        : (rpcRaw && typeof (rpcRaw as any).url === 'string') // eslint-disable-line @typescript-eslint/no-explicit-any
-            ? (rpcRaw as any).url // eslint-disable-line @typescript-eslint/no-explicit-any
-            : (rpcRaw as any)?.address; // eslint-disable-line @typescript-eslint/no-explicit-any
+        // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+        : (rpcRaw && typeof (rpcRaw as any).url === 'string')
+            // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+            ? (rpcRaw as any).url
+            // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+            : (rpcRaw as any)?.address;
 
     if (!rpcEndpoint) {
       throw new Error('RPC endpoint not available');
@@ -53,7 +57,7 @@ export function useSendTxDetectingMode(chain: Chain) {
 
     // --- DIRECT PATH (manual flow) ---
     if (isDirectSigner(signer)) {
-      console.info('*** Using DIRECT signer → manual flow ***');
+      logger.info('*** Using DIRECT signer → manual flow ***');
       try {
         return await signAndBroadcastManualDirect({
           rpcEndpoint,
@@ -73,7 +77,7 @@ export function useSendTxDetectingMode(chain: Chain) {
 
     // --- AMINO PATH (fallback) ---
     if (isAminoOnlySigner(signer)) {
-      console.info('*** Using AMINO signer → fallback ***');
+      logger.info('*** Using AMINO signer → fallback ***');
       try {
         return await signAndBroadcastManualAmino({
           rpcEndpoint,
@@ -88,7 +92,7 @@ export function useSendTxDetectingMode(chain: Chain) {
       } catch (e) {
         const error = new Error(`Amino signing failed: ${e instanceof Error ? e.message : String(e)}`);
         if (simulate){
-          console.error("signAndBroadcastManualAmino", error);
+          logger.error("signAndBroadcastManualAmino", error);
           return useCalculateFee().fee as SimulateResult;
         } 
         throw error;

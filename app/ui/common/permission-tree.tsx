@@ -1,5 +1,6 @@
 'use client';
 
+import { logger } from '@/lib/logger'
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
@@ -264,23 +265,22 @@ export default function PermissionTree({ tree, type, csTitle, csDescription, csS
 
   useEffect(() => {
     if (!refreshState.joinNode || refreshState.txHeight == null) return;
-    console.info("PermissionTree", {txHeight: refreshState.txHeight, latestProcessedHeight, 'ss.mmm': new Date().toISOString().slice(17, 23)});
+    logger.info("PermissionTree", {txHeight: refreshState.txHeight, latestProcessedHeight, 'ss.mmm': new Date().toISOString().slice(17, 23)});
     if (latestProcessedHeight < refreshState.txHeight) return;
     setNodeRequestParams?.(refreshState.joinNode.nodeId, refreshState.joinNode.type, refreshState.joinNode.parentId);
     setRefreshState((prev) => ({ ...prev, txHeight: undefined }));
   }, [refreshState.txHeight, latestProcessedHeight]);
 
   useEffect(() => {
-    if (!refreshState.joinNode || refreshState.txHeight != null) return;
-    const { node } = refreshState.id
-      ? findNodeAndPath(treeState, refreshState.id)
-      : { node: undefined };
-    if (!node) {
+    const { joinNode, txHeight, id } = refreshState;
+    if (!joinNode || txHeight != null) return;
+    const { node } = id ? findNodeAndPath(treeState, id) : { node: undefined };
+    if (!node || !id) {
       onRetryFetch?.();
       return;
     }
-    setExpanded((prev) => ({ ...prev, [refreshState.joinNode!.nodeId]: true }));
-    handleSelect(String(refreshState.id!));
+    setExpanded((prev) => ({ ...prev, [joinNode.nodeId]: true }));
+    handleSelect(String(id));
     setRefreshState({});
   }, [treeState, latestProcessedHeight]);
 

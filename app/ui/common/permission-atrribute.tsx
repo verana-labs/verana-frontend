@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { PermissionAction } from "../dataview/datasections/perm";
 import { useEffect, useState } from "react";
@@ -80,7 +81,7 @@ export default function PermissionAttribute({ label, value, mono, actions }: Per
         break;
       }
       default:
-        console.error("PermissionAction", action);
+        logger.error("PermissionAction", action);
     }
   };
 

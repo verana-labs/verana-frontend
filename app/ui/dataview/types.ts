@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/** biome-ignore-all lint/suspicious/noExplicitAny: legacy code */
 import { translate } from "@/i18n/dataview";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { ComponentType, ReactNode } from "react";

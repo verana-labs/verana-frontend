@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import deepEqual from 'fast-deep-equal';
 import { veranaAmino, veranaRegistry } from '@/config/veranaChain.sign.client';
 import { EncodeObject } from '@cosmjs/proto-signing';
@@ -8,7 +9,8 @@ import { toHex } from '@cosmjs/encoding';
  * - uint64 fields must be decimal strings
  * - uint32 fields must be finite numbers within [0, 2^32-1]
  */
-function assertAminoShape(a: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+function assertAminoShape(a: any) {
   const v = a?.value ?? {};
 
   // uint64 fields should always be string (decimal)
@@ -53,9 +55,10 @@ function assertAminoShape(a: any) { // eslint-disable-line @typescript-eslint/no
  * Debug helper: round-trip Amino <-> Proto and check consistency.
  */
 export function debugAminoRoundTrip(msg: EncodeObject) {
-  console.info('[PROTO typeof] ->', msg);
-  const pv: any = msg.value as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-  console.info('[PROTO typeof] ->', {
+  logger.info('[PROTO typeof] ->', msg);
+  // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+  const pv: any = msg.value as any;
+  logger.info('[PROTO typeof] ->', {
     issuerGrantorValidationValidityPeriod: typeof pv?.issuerGrantorValidationValidityPeriod,
     verifierGrantorValidationValidityPeriod: typeof pv?.verifierGrantorValidationValidityPeriod,
     issuerValidationValidityPeriod:       typeof pv?.issuerValidationValidityPeriod,
@@ -65,10 +68,12 @@ export function debugAminoRoundTrip(msg: EncodeObject) {
   });
 
   // 1) Proto -> Amino
-  const aminoAny = (veranaAmino as any).toAmino(msg); // eslint-disable-line @typescript-eslint/no-explicit-any
-  const v = (aminoAny as any).value; // eslint-disable-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+  const aminoAny = (veranaAmino as any).toAmino(msg);
+  // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+  const v = (aminoAny as any).value;
 
-  console.info('.toAmino typeof fields ->', {
+  logger.info('.toAmino typeof fields ->', {
     issuer_grantor_validation_validity_period: typeof v?.issuer_grantor_validation_validity_period,
     verifier_grantor_validation_validity_period: typeof v?.verifier_grantor_validation_validity_period,
     issuer_validation_validity_period: typeof v?.issuer_validation_validity_period,
@@ -81,14 +86,15 @@ export function debugAminoRoundTrip(msg: EncodeObject) {
   assertAminoShape(aminoAny);
 
   // 3) Pretty-print the Amino JSON for inspection
-  console.info('AMINO JSON →', JSON.stringify(aminoAny, null, 2));
+  logger.info('AMINO JSON →', JSON.stringify(aminoAny, null, 2));
 
   // 4) Amino -> Proto
-  const back = (veranaAmino as any).fromAmino(aminoAny); // eslint-disable-line @typescript-eslint/no-explicit-any
-  console.info('FROM AMINO →', back);
+  // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+  const back = (veranaAmino as any).fromAmino(aminoAny);
+  logger.info('FROM AMINO →', back);
 
   // 5) Check typeUrl consistency
-  console.info('typeUrl ok?', back.typeUrl === msg.typeUrl);
+  logger.info('typeUrl ok?', back.typeUrl === msg.typeUrl);
 
   // 6) Compare encoded Any bytes (Proto)
   const bytesOriginal = veranaRegistry.encodeAsAny(msg).value;
@@ -97,14 +103,14 @@ export function debugAminoRoundTrip(msg: EncodeObject) {
   const bytesEqual =
     bytesOriginal.length === bytesBack.length &&
     bytesOriginal.every((b: number, i: number) => b === bytesBack[i]);
-  console.info('Proto Any bytes equal?', bytesEqual);
+  logger.info('Proto Any bytes equal?', bytesEqual);
 
-  console.info('Original Any (hex):', toHex(bytesOriginal));
-  // console.info('aminoAny (hex):', toHex(bytesToAmino));
-  console.info('Back Any (hex):    ', toHex(bytesBack));
+  logger.info('Original Any (hex):', toHex(bytesOriginal));
+  // logger.info('aminoAny (hex):', toHex(bytesToAmino));
+  logger.info('Back Any (hex):    ', toHex(bytesBack));
 
   // 7) Deep equality of values (watch out for Long vs number mismatches)
-  console.info(
+  logger.info(
     'Equal value?',
     deepEqual(msg.value, back.value)
   );

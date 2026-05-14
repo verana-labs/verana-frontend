@@ -1,5 +1,6 @@
 'use client';
 
+import { logger } from '@/lib/logger'
 import { PermState, RefreshState, TreeNode } from "@/ui/common/permission-tree";
 import { useEffect, useMemo, useState } from "react";
 import { Permission, PermissionAction, permissionActionLifecycle, permissionActionSlashing, permissionActionValidationProcess,
@@ -163,7 +164,7 @@ export default function PermissionCard({
   
   useEffect(() => {
     if (refreshState.txHeight == null) return;
-    console.info("PermissionCard", {txHeight: refreshState.txHeight, latestProcessedHeight, 'ss.mmm': new Date().toISOString().slice(17, 23)});
+    logger.info("PermissionCard", {txHeight: refreshState.txHeight, latestProcessedHeight, 'ss.mmm': new Date().toISOString().slice(17, 23)});
     if (latestProcessedHeight < refreshState.txHeight) return;
     setIdUpdate(permissionId);
     setRefreshState({});

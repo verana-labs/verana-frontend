@@ -1,15 +1,16 @@
 'use client'
 
 import { Asset } from '@chain-registry/types';
+import { requireEnv } from '@/lib/env';
 
 export const veranaChainEnv = {
   chain_type: 'cosmos',
-  chain_name: process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,
-  pretty_name: process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,
-  chain_id: process.env.NEXT_PUBLIC_VERANA_CHAIN_ID!,
+  chain_name: requireEnv('NEXT_PUBLIC_VERANA_CHAIN_NAME'),
+  pretty_name: requireEnv('NEXT_PUBLIC_VERANA_CHAIN_NAME'),
+  chain_id: requireEnv('NEXT_PUBLIC_VERANA_CHAIN_ID'),
   apis: {
-    rpc: [{ address: process.env.NEXT_PUBLIC_VERANA_RPC_ENDPOINT!, provider: 'verana' }],
-    rest: [{ address: process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT!, provider: 'verana' }],
+    rpc: [{ address: requireEnv('NEXT_PUBLIC_VERANA_RPC_ENDPOINT'), provider: 'verana' }],
+    rest: [{ address: requireEnv('NEXT_PUBLIC_VERANA_REST_ENDPOINT'), provider: 'verana' }],
 
     },
   status: 'live',

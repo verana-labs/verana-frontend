@@ -122,7 +122,8 @@ export function renderObjectList<I extends object>(args: {
       data={item}
       id={String(getId?.(item, idx) ?? idx)}
       edit={edit}
-      getTitle={(d) => (d as any).title ?? ""}  // eslint-disable-line @typescript-eslint/no-explicit-any
+      // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+      getTitle={(d) => (d as any).title ?? ""}
       onRefresh={onRefresh}
     />
   ));

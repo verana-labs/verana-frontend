@@ -1,5 +1,6 @@
 'use client';
 
+import { logger } from '@/lib/logger'
 import { useEffect, useState } from 'react';
 import DataView from '@/ui/common/data-view-columns';
 import TitleAndButton from '@/ui/common/title-and-button';
@@ -34,7 +35,7 @@ export default function AccountPage() {
   
   useEffect(() => {
     if (refreshState.txHeight == null) return;
-    console.info("AccountPage", {txHeight: refreshState.txHeight, latestProcessedHeight, 'ss.mmm': new Date().toISOString().slice(17, 23)});
+    logger.info("AccountPage", {txHeight: refreshState.txHeight, latestProcessedHeight, 'ss.mmm': new Date().toISOString().slice(17, 23)});
     if (latestProcessedHeight < refreshState.txHeight) return;
     setRefresh(true);
   }, [refreshState.txHeight, latestProcessedHeight]);

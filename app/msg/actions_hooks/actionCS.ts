@@ -98,8 +98,10 @@ export function useActionCS( onCancel?: () => void,
    */
   function extractCreatedCSId(res: DeliverTxResponse): string | undefined {
     // Prefer structured events (Cosmos SDK 0.50+). rawLog is deprecated.
-    const ev = (res as any)?.events?.find( (e: any) => e?.type === 'create_credential_schema'); // eslint-disable-line @typescript-eslint/no-explicit-any
-    const idAttr = ev?.attributes?.find( (a: any) => a?.key === 'credential_schema_id'); // eslint-disable-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+    const ev = (res as any)?.events?.find( (e: any) => e?.type === 'create_credential_schema');
+    // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+    const idAttr = ev?.attributes?.find( (a: any) => a?.key === 'credential_schema_id');
     if (idAttr?.value) return String(idAttr.value);
 
     // Fallback: try parsing rawLog only if it's a string (older chains/SDKs)
@@ -107,13 +109,16 @@ export function useActionCS( onCancel?: () => void,
     if (typeof raw === 'string') {
       try {
         const logs = JSON.parse(raw); // usually an array of log objects
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // biome-ignore lint/suspicious/noExplicitAny: legacy
         const allEvents = Array.isArray(logs)
-          ? logs.flatMap((l: any) => l?.events ?? []) // eslint-disable-line @typescript-eslint/no-explicit-any
+          // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+          ? logs.flatMap((l: any) => l?.events ?? [])
           : [];
-        const ev2 = allEvents.find((e: any) => e?.type === 'create_credential_schema'); // eslint-disable-line @typescript-eslint/no-explicit-any
+        // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+        const ev2 = allEvents.find((e: any) => e?.type === 'create_credential_schema');
         const idAttr2 = ev2?.attributes?.find(
-          (a: any) => a?.key === 'credential_schema_id' // eslint-disable-line @typescript-eslint/no-explicit-any
+          // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+          (a: any) => a?.key === 'credential_schema_id'
         );
         if (idAttr2?.value) return String(idAttr2.value);
       } catch {

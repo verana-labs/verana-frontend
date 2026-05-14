@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from '@/lib/logger'
 import { useCSList } from "@/hooks/useCredentialSchemas";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useTrustRegistryData } from "@/hooks/useTrustRegistryData";
@@ -482,7 +483,7 @@ export default function JoinEcosystemWizard() {
           </div>
 
           <button
-            onClick={() => console.log("Continue to validator")}
+            onClick={() => logger.log("Continue to validator")}
             className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
             type="button"
           >

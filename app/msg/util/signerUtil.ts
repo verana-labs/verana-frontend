@@ -1,18 +1,22 @@
 'use client'
 
+import { logger } from '@/lib/logger'
 import type { OfflineSigner, OfflineDirectSigner } from '@cosmjs/proto-signing';
 import { DeliverTxResponse } from '@cosmjs/stargate';
 
 // Type guard: detects if signer exposes signDirect
 export function isDirectSigner(signer: unknown): signer is OfflineDirectSigner {
-  return !!signer && typeof (signer as any).signDirect === 'function'; // eslint-disable-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+  return !!signer && typeof (signer as any).signDirect === 'function';
 }
 
 // Type guard: detects if signer exposes only signAmino (no signDirect)
 export function isAminoOnlySigner(signer: unknown): signer is OfflineSigner {
   return !!signer
-    && typeof (signer as any).signAmino === 'function' // eslint-disable-line @typescript-eslint/no-explicit-any
-    && typeof (signer as any).signDirect !== 'function'; // eslint-disable-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+    && typeof (signer as any).signAmino === 'function'
+    // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+    && typeof (signer as any).signDirect !== 'function';
 }
 
 type LongLike = { low: number; high: number; unsigned?: boolean };
@@ -90,7 +94,7 @@ export function handleSuccess ( onCancel?: () => void,
                                 id?: string, txHeight?: number )
 {
   if (txHeight == undefined) {
-    console.error("txHeight is null");
+    logger.error("txHeight is null");
     return;
   }
   onRefresh?.(id, txHeight);

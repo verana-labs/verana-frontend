@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from '@/lib/logger'
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from "react";
 import { env } from 'next-runtime-env';
 import { useComponentsVersion } from '@/providers/components-version-provider';
@@ -62,7 +63,7 @@ export function IndexerEventsProvider({
       if (unmounted) return;
       const wsUrl =  env('NEXT_PUBLIC_VERANA_WEBSOCKET') || process.env.NEXT_PUBLIC_VERANA_WEBSOCKET;
       if (!wsUrl) {
-        console.error("NEXT_PUBLIC_VERANA_WEBSOCKET is not defined");
+        logger.error("NEXT_PUBLIC_VERANA_WEBSOCKET is not defined");
         return;
       }
       const ws = new WebSocket(wsUrl);
@@ -99,16 +100,16 @@ export function IndexerEventsProvider({
           waitingRef.current = pending;
           for (const waiting of ready) {
             if (waiting.timeoutId) clearTimeout(waiting.timeoutId);
-            console.info("waitForBlock:resolved-from-event", {targetHeight: waiting.targetHeight, latestProcessedHeight: data.height, date: new Date().toLocaleTimeString()});
+            logger.info("waitForBlock:resolved-from-event", {targetHeight: waiting.targetHeight, latestProcessedHeight: data.height, date: new Date().toLocaleTimeString()});
             waiting.resolve();
           }
         } catch (error) {
-          console.error("Failed to parse indexer websocket event:", error);
+          logger.error("Failed to parse indexer websocket event:", error);
         }
       };
 
       ws.onerror = (error) => {
-        console.error("Indexer websocket error:", error);
+        logger.error("Indexer websocket error:", error);
       };
 
       ws.onclose = () => {
@@ -141,9 +142,9 @@ export function IndexerEventsProvider({
   const waitForBlock = useCallback(
     (targetHeight: number, timeoutMs = 10000) => {
       const currentHeight = latestProcessedHeightRef.current;
-      console.info("waitForBlock:start", {targetHeight, latestProcessedHeight: currentHeight, date: new Date().toLocaleTimeString()});
+      logger.info("waitForBlock:start", {targetHeight, latestProcessedHeight: currentHeight, date: new Date().toLocaleTimeString()});
       if (currentHeight >= targetHeight) {
-        console.info("waitForBlock:resolved-immediately", {targetHeight, latestProcessedHeight: currentHeight, date: new Date().toLocaleTimeString()});
+        logger.info("waitForBlock:resolved-immediately", {targetHeight, latestProcessedHeight: currentHeight, date: new Date().toLocaleTimeString()});
         return Promise.resolve();
       }
       return new Promise<void>((resolve, reject) => {
@@ -154,7 +155,7 @@ export function IndexerEventsProvider({
         };
         if (timeoutMs > 0) {
           waiting.timeoutId = setTimeout(() => {
-            console.error("waitForBlock:timeout", { targetHeight, latestProcessedHeight: latestProcessedHeightRef.current, waitingCount: waitingRef.current.length, date: new Date().toLocaleTimeString()});
+            logger.error("waitForBlock:timeout", { targetHeight, latestProcessedHeight: latestProcessedHeightRef.current, waitingCount: waitingRef.current.length, date: new Date().toLocaleTimeString()});
             waitingRef.current = waitingRef.current.filter((w) => w !== waiting);
             reject(
               new Error(

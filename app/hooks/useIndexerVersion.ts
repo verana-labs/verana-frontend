@@ -1,5 +1,6 @@
 'use client';
 
+import { logger } from '@/lib/logger'
 import { useEffect } from 'react';
 import { env } from 'next-runtime-env';
 import { useComponentsVersion } from '@/providers/components-version-provider';
@@ -44,7 +45,7 @@ export function useIndexerVersion() {
             },
           }));
         }
-        console.error('Failed to load indexer version', err);
+        logger.error('Failed to load indexer version', err);
       }
     };
 

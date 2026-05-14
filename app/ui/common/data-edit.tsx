@@ -1,5 +1,6 @@
 'use client';
 
+import { logger } from '@/lib/logger'
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { ResolvedDataField, DataViewProps, isResolvedDataField, ResolvedField, visibleFieldsForMode, translateSections, resolveTranslatable } from '@/ui/dataview/types';
 import { getCostMessage, getLowBalanceMessage, msgTypeStyle } from '@/msg/constants/msgTypeConfig';
@@ -66,7 +67,8 @@ export default function EditableDataView<T extends object>({
   const [errorNotified, setErrorNotified] = useState(false);
   
   // Checks if the current field value is valid
-  const validatedRequiredField = useCallback((field: ResolvedField<any>, value: unknown): boolean => { // eslint-disable-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+  const validatedRequiredField = useCallback((field: ResolvedField<any>, value: unknown): boolean => {
     if (!field.required) return true;
     if (value === undefined || value === null) return false;
     if (typeof value === "string" && value.trim() === "") return false;
@@ -205,7 +207,7 @@ export default function EditableDataView<T extends object>({
         const res = await Promise.resolve(onSimulate(formData));
         if (res) setFeeAmount( Number(res.amount?.[0]?.amount) || 900_000 );
       } catch (err) {
-          console.error("handleSimulate", err);
+          logger.error("handleSimulate", err);
       } finally {
         setSubmitting(false);
       }

@@ -128,7 +128,8 @@ export function useActionTR( onCancel?: () => void,
    */
   function extractCreatedTRId(res: DeliverTxResponse): string | undefined {
     // Try reading from the structured events field
-    const events = (res as any)?.events as // eslint-disable-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+    const events = (res as any)?.events as
       | Array<{ type: string; attributes?: Array<{ key: string; value: string }> }>
       | undefined;
 
@@ -144,12 +145,15 @@ export function useActionTR( onCancel?: () => void,
       try {
         const logs = JSON.parse(raw); // rawLog is usually an array of log objects
         const allEvents = Array.isArray(logs)
-          ? logs.flatMap((l: any) => l?.events ?? []) // eslint-disable-line @typescript-eslint/no-explicit-any
+          // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+          ? logs.flatMap((l: any) => l?.events ?? [])
           : [];
 
         const idAttrRaw = allEvents
-          .find((e: any) => e?.type === 'create_trust_registry') // eslint-disable-line @typescript-eslint/no-explicit-any
-          ?.attributes?.find((a: any) => a?.key === 'trust_registry_id'); // eslint-disable-line @typescript-eslint/no-explicit-any
+          // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+          .find((e: any) => e?.type === 'create_trust_registry')
+          // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+          ?.attributes?.find((a: any) => a?.key === 'trust_registry_id');
 
         if (idAttrRaw?.value) return String(idAttrRaw.value);
       } catch {

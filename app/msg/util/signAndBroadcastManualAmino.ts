@@ -1,5 +1,6 @@
 'use client'
 
+import { logger } from '@/lib/logger'
 import { EncodeObject, OfflineSigner as OfflineSignerAmino } from '@cosmjs/proto-signing';
 import { calculateFee, DeliverTxResponse, GasPrice, SigningStargateClient, StdFee } from '@cosmjs/stargate';
 import { veranaAmino, veranaRegistry} from '@/config/veranaChain.sign.client';
@@ -43,7 +44,7 @@ export async function signAndBroadcastManualAmino({
   const chainId = await client.getChainId();
 
   let { accountNumber, sequence } = await client.getSequence(address);
-  console.log("{ accountNumber, sequence }", { accountNumber, sequence });
+  logger.log("{ accountNumber, sequence }", { accountNumber, sequence });
 
   // Simulate gas usage for the messages
   let simulated = 300000;
@@ -51,7 +52,7 @@ export async function signAndBroadcastManualAmino({
     simulated = await client.simulate(address, messages, memo);
   } catch (e) {
     if (isSequenceMismatch(e)){
-      console.error("Simulated Tx: ", e);
+      logger.error("Simulated Tx: ", e);
       const { expected } = parseSequenceMismatch(e);
       if (expected != null) sequence = expected;
     }
@@ -67,7 +68,7 @@ export async function signAndBroadcastManualAmino({
   // sign + broadcast (retry once on sequence mismatch) ----
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      console.log("{ attempt, sequence }", {attempt, sequence});
+      logger.log("{ attempt, sequence }", {attempt, sequence});
       const txRaw = await client.sign(address, messages, fee, memo, {
         accountNumber,
         sequence,
@@ -77,7 +78,7 @@ export async function signAndBroadcastManualAmino({
       return await client.broadcastTx(txBytes);
     } catch (e) {
       if (isSequenceMismatch(e) && attempt === 0){
-        console.error("Tx: ", e);
+        logger.error("Tx: ", e);
         const { expected } = parseSequenceMismatch(e);
         if (expected != null) sequence = expected;
         continue;
@@ -92,9 +93,9 @@ export async function signAndBroadcastManualAmino({
 export function debugCreateAny(anyMsg: { typeUrl: string; value: Uint8Array }) {
   if (anyMsg.typeUrl !== "/verana.cs.v1.MsgCreateCredentialSchema" && anyMsg.typeUrl !== "/verana.cs.v1.MsgUpdateCredentialSchema") return;
   const decoded = anyMsg.typeUrl == "/verana.cs.v1.MsgCreateCredentialSchema" ? MsgCreateCredentialSchema.decode(anyMsg.value) : MsgUpdateCredentialSchema.decode(anyMsg.value);
-  console.log("Any.typeUrl:", anyMsg.typeUrl);
-  console.log("Any.value(hex):", toHex(anyMsg.value));
-  console.log(`DECODED ${anyMsg.typeUrl}`, {
+  logger.log("Any.typeUrl:", anyMsg.typeUrl);
+  logger.log("Any.value(hex):", toHex(anyMsg.value));
+  logger.log(`DECODED ${anyMsg.typeUrl}`, {
     issuerGrantorValidationValidityPeriod: decoded.issuerGrantorValidationValidityPeriod?.value,
     verifierGrantorValidationValidityPeriod: decoded.verifierGrantorValidationValidityPeriod?.value,
     issuerValidationValidityPeriod: decoded.issuerValidationValidityPeriod?.value,

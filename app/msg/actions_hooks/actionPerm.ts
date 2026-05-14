@@ -212,7 +212,8 @@ export function useActionPerm( onCancel?: () => void,
     };
 
     // 1) Structured events
-    const events = (res as any)?.events as // eslint-disable-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+    const events = (res as any)?.events as
       | Array<{ type: string; attributes?: Array<{ key: string; value: string }> }>
       | undefined;
 
@@ -225,7 +226,8 @@ export function useActionPerm( onCancel?: () => void,
       try {
         const logs = JSON.parse(raw);
         const allEvents = Array.isArray(logs)
-          ? logs.flatMap((l: any) => l?.events ?? []) // eslint-disable-line @typescript-eslint/no-explicit-any
+          // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+          ? logs.flatMap((l: any) => l?.events ?? [])
           : [];
         const fromRaw = tryFind(allEvents);
         if (fromRaw) return fromRaw;
@@ -267,7 +269,8 @@ export function useActionPerm( onCancel?: () => void,
       params.msgType === 'MsgCreateRootPermission' ||
       params.msgType === 'MsgCreatePermission'
         ? undefined
-        : (params as any).id?.toString(); // eslint-disable-line @typescript-eslint/no-explicit-any
+        // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+        : (params as any).id?.toString();
 
     switch (params.msgType) {
       case 'MsgStartPermissionVP':

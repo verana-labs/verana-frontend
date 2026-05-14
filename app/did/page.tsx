@@ -44,7 +44,8 @@ export default function DidPage() {
           const res = await fetch(listUrl + `/list?account=${address}`);
           const json = await res.json();
           let listDids = Array.isArray(json) ? json : json.dids || [];
-          listDids = listDids.map((did: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+          // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
+          listDids = listDids.map((did: any) => ({
             ...did,
             status: getStatus(did.exp)
           }));

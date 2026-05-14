@@ -1,5 +1,6 @@
 'use client';
 
+import { logger } from '@/lib/logger'
 import { useEffect } from 'react';
 import { useVeranaChain } from '@/hooks/useVeranaChain';
 import { useComponentsVersion } from '@/providers/components-version-provider';
@@ -52,7 +53,7 @@ export function useChainVersion() {
           }));
         }
 
-        console.error('Failed to load chain version', err);
+        logger.error('Failed to load chain version', err);
       }
     };
 
