@@ -16,6 +16,7 @@ export interface CsList {
   participants: number;
   issuedCredentials: number;
   verifiedCredentials: number;
+  trustValue: string;
   archived: string;
   issuerValidationValidityPeriod: number;
   verifierValidationValidityPeriod: number;

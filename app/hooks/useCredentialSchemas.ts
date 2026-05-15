@@ -80,6 +80,7 @@ export function useCSList(trId?: string, all: boolean = true, onlyActive: boolea
           participants: src.participants ?? 0,
           issuedCredentials: src.issued ?? 0,
           verifiedCredentials: src.verified ?? 0,
+          trustValue: src.deposit ?? '0',
           archived: src.archived ?? '',
           role: "",
         };
