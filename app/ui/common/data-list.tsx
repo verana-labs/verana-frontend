@@ -1,81 +1,89 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { isResolvedActionField, isResolvedStringListField, Section, translateSections, visibleFieldsForMode } from "@/ui/dataview/types";
-import { msgTypeStyle } from '@/msg/constants/msgTypeConfig';
-import clsx from 'clsx';
-import { MessageType } from '@/msg/constants/types';
-import { ActionFieldProps } from '@/ui/common/data-view-typed';
-import ActionFieldButtonModal from '@/ui/common/action-field-button-modal';
+import clsx from 'clsx'
+import { useState } from 'react'
+import { msgTypeStyle } from '@/msg/constants/msgTypeConfig'
+import { MessageType } from '@/msg/constants/types'
+import ActionFieldButtonModal from '@/ui/common/action-field-button-modal'
+import { ActionFieldProps } from '@/ui/common/data-view-typed'
+import {
+  isResolvedActionField,
+  isResolvedStringListField,
+  Section,
+  translateSections,
+  visibleFieldsForMode,
+} from '@/ui/dataview/types'
 
 interface DataListProps<T extends object> {
-  sectionsI18n: Section<T>[];
-  data: T;
-  listTitle?: string;
-  onRefresh?: (id?: string, txHeight?: number) => void;
-  onBack?: () => void;
+  sectionsI18n: Section<T>[]
+  data: T
+  listTitle?: string
+  onRefresh?: (id?: string, txHeight?: number) => void
+  onBack?: () => void
 }
 
-export function DataList<T extends object>({
-  sectionsI18n,
-  data,
-  listTitle,
-  onRefresh,
-  onBack
-}: DataListProps<T>) {
-  
-  const sections = translateSections(sectionsI18n);
-  const section = sections[0];
-  const [activeActionId, setActiveActionId] = useState<string | null>(null);
+export function DataList<T extends object>({ sectionsI18n, data, listTitle, onRefresh, onBack }: DataListProps<T>) {
+  const sections = translateSections(sectionsI18n)
+  const section = sections[0]
+  const [activeActionId, setActiveActionId] = useState<string | null>(null)
 
-  const showFields = (section.type === "advanced" && section.fields && section.fields.length > 0) ?
-                      visibleFieldsForMode(section.fields, "view") 
-                      : [];
-
+  const showFields =
+    section.type === 'advanced' && section.fields && section.fields.length > 0
+      ? visibleFieldsForMode(section.fields, 'view')
+      : []
 
   return (
     <section id="data-list-section" className="py-8">
-      { showFields && showFields.length > 0 && (
-      <div className="data-table-section-div p-6">
-        <div className="flex items-center justify-between mb-6">
+      {showFields && showFields.length > 0 && (
+        <div className="data-table-section-div p-6">
+          <div className="flex items-center justify-between mb-6">
             <h3 className="data-table-title">{listTitle}</h3>
             <div className="flex space-x-3">
               {showFields.map((field, fieldIndex) => {
-                const messageType = data[field.name];
-                const messageTypeStyle = msgTypeStyle[messageType as MessageType];
-                if (isResolvedActionField(field) && messageType !== undefined){
-                  const isActive = activeActionId === String(field.name);
-                  const obj = { ...field, value: String(messageType), icon: messageTypeStyle.icon, iconColorClass: clsx("btn-action-confirm text-sm", messageTypeStyle.button)  };
+                const messageType = data[field.name]
+                const messageTypeStyle = msgTypeStyle[messageType as MessageType]
+                if (isResolvedActionField(field) && messageType !== undefined) {
+                  const isActive = activeActionId === String(field.name)
+                  const obj = {
+                    ...field,
+                    value: String(messageType),
+                    icon: messageTypeStyle.icon,
+                    iconColorClass: clsx('btn-action-confirm text-sm', messageTypeStyle.button),
+                  }
                   return (
-                    <ActionFieldButtonModal isActive={isActive} data={data} field={obj as ActionFieldProps} key={`action-${String(field.name)}-${fieldIndex}`} 
-                      onRefresh={onRefresh?? undefined} onClickButton={() => setActiveActionId(String(field.name))} onClose={()=> setActiveActionId(null)}/>
-                )}
+                    <ActionFieldButtonModal
+                      isActive={isActive}
+                      data={data}
+                      field={obj as ActionFieldProps}
+                      key={`action-${String(field.name)}-${fieldIndex}`}
+                      onRefresh={onRefresh ?? undefined}
+                      onClickButton={() => setActiveActionId(String(field.name))}
+                      onClose={() => setActiveActionId(null)}
+                    />
+                  )
+                }
                 // For fields that don't match the condition, return null
-                return null;
+                return null
               })}
             </div>
-        </div>
+          </div>
 
-        <div id={`${section.name}-list`} className="space-y-3">
-          {/* Render list fields as a full-width row */}
-          {showFields.map((field, fieldIndex) => {
-            const value = data[field.name];
-            if (isResolvedStringListField(field) && value !== null && Array.isArray(value)) {
-              // Return the mapped
-              return (value as string[]).map((html, i) => (
-                <div
-                  key={`div-value-${fieldIndex}-${i}`}
-                  dangerouslySetInnerHTML={{ __html: html }}
-                />
-              ));
-            }
-            // For fields that don't match the condition, return null
-            return null;
-          })}
+          <div id={`${section.name}-list`} className="space-y-3">
+            {/* Render list fields as a full-width row */}
+            {showFields.map((field, fieldIndex) => {
+              const value = data[field.name]
+              if (isResolvedStringListField(field) && value !== null && Array.isArray(value)) {
+                // Return the mapped
+                return (value as string[]).map((html, i) => (
+                  <div key={`div-value-${fieldIndex}-${i}`} dangerouslySetInnerHTML={{ __html: html }} />
+                ))
+              }
+              // For fields that don't match the condition, return null
+              return null
+            })}
+          </div>
         </div>
-
-      </div>
       )}
     </section>
-  );
+  )
 }

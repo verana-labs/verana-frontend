@@ -1,81 +1,84 @@
 'use client'
 
-import { DidData, didSections } from '@/ui/dataview/datasections/did';
-import DataView from '@/ui/common/data-view-columns';
-import TitleAndButton from '@/ui/common/title-and-button';
-import { useDIDData } from '@/hooks/useDIDData';
-import { useEffect, useState, useMemo } from 'react';
-import { formatVNA } from '@/util/util';
-import { resolveTranslatable } from '@/ui/dataview/types';
-import { translate } from '@/i18n/dataview';
-import { faChevronLeft } from '@fortawesome/free-solid-svg-icons';
-import { useVeranaChain } from '@/hooks/useVeranaChain';
-import { useChain } from '@cosmos-kit/react';
+import { useChain } from '@cosmos-kit/react'
+import { faChevronLeft } from '@fortawesome/free-solid-svg-icons'
+import { useEffect, useMemo, useState } from 'react'
+import { useDIDData } from '@/hooks/useDIDData'
+import { useVeranaChain } from '@/hooks/useVeranaChain'
+import { translate } from '@/i18n/dataview'
+import DataView from '@/ui/common/data-view-columns'
+import TitleAndButton from '@/ui/common/title-and-button'
+import { DidData, didSections } from '@/ui/dataview/datasections/did'
+import { resolveTranslatable } from '@/ui/dataview/types'
+import { formatVNA } from '@/util/util'
 
 type DIDViewProps = {
-  id?: string;
-  selectDidData?: DidData;
-  onBack?: () => void;
-  showHeader?: boolean;
-  onRefreshTable?: () => void;
-};
+  id?: string
+  selectDidData?: DidData
+  onBack?: () => void
+  showHeader?: boolean
+  onRefreshTable?: () => void
+}
 
-export default function DIDView({ id, selectDidData, onBack, showHeader = true, onRefreshTable}: DIDViewProps) {
-
+export default function DIDView({ id, selectDidData, onBack, showHeader = true, onRefreshTable }: DIDViewProps) {
   // Hook to get connected account data (includes address)
-  const veranaChain = useVeranaChain();
-  const { address } = useChain(veranaChain.chain_name);
+  const veranaChain = useVeranaChain()
+  const { address } = useChain(veranaChain.chain_name)
 
   // Hook to fetch the DID data (optionally actions if controller matches)
-  const { dataDID, errorDIDData, refetch: refetchDID } = useDIDData((id?? selectDidData?.did) ?? "");
+  const { dataDID, errorDIDData, refetch: refetchDID } = useDIDData(id ?? selectDidData?.did ?? '')
 
   // Refresh data DID
-  const [refresh, setRefresh] = useState(false);
+  const [refresh, setRefresh] = useState(false)
   useEffect(() => {
-    if (!refresh) return;
-    (async () => {
-      await refetchDID();
+    if (!refresh) return
+    ;(async () => {
+      await refetchDID()
       // await refetchAD();
-      setRefresh(false);
-      onRefreshTable?.();
-    })();
-  }, [refresh]);
-  
+      setRefresh(false)
+      onRefreshTable?.()
+    })()
+  }, [refresh])
+
   // DidData, formatting deposit and setting actions if controller matches
   const data: DidData | null = useMemo(() => {
     // const source: DidData | null = (selectDidData ?? dataDID) ?? null;
-    const source: DidData | null = dataDID ?? null;
-    if (!source) return null;
-    id = source.did;
+    const source: DidData | null = dataDID ?? null
+    if (!source) return null
+    id = source.did
 
     // Create a copy of dataDID to avoid mutating the original
-    const data = { ...source };
+    const data = { ...source }
 
-    if (address &&  address === data.controller) {
-      data.renewDID = 'MsgRenewDID';
-      data.touchDID = 'MsgTouchDID';
-      data.removeDID = 'MsgRemoveDID';
+    if (address && address === data.controller) {
+      data.renewDID = 'MsgRenewDID'
+      data.touchDID = 'MsgTouchDID'
+      data.removeDID = 'MsgRemoveDID'
     }
 
     // Return the object with formatted deposit
     return {
       ...data,
       deposit: formatVNA(data.deposit ?? '0', 6),
-    };
-  }, [selectDidData, dataDID]);
-  
+    }
+  }, [selectDidData, dataDID])
+
   // Show error message if fetch failed or DID not found
   if (errorDIDData || !data) {
-    return <div className="p-6 text-red-600">{ errorDIDData || (resolveTranslatable({key: "error.did.notfound"}, translate)?? "DID not found")}</div>;
+    return (
+      <div className="p-6 text-red-600">
+        {errorDIDData || (resolveTranslatable({ key: 'error.did.notfound' }, translate) ?? 'DID not found')}
+      </div>
+    )
   }
 
   // Render the page: Title, button, and DataView for DID info
   return (
-    <> 
+    <>
       {showHeader ? (
         <TitleAndButton
-          title={`${resolveTranslatable({key: "did.title"}, translate)?? "DID"}  ${data.did}`}
-          buttonLabel={resolveTranslatable({key: "button.did.back"}, translate)?? "Back to Directory"}
+          title={`${resolveTranslatable({ key: 'did.title' }, translate) ?? 'DID'}  ${data.did}`}
+          buttonLabel={resolveTranslatable({ key: 'button.did.back' }, translate) ?? 'Back to Directory'}
           to="/did"
           icon={faChevronLeft}
         />
@@ -88,5 +91,5 @@ export default function DIDView({ id, selectDidData, onBack, showHeader = true, 
         onBack={onBack}
       />
     </>
-  );
+  )
 }

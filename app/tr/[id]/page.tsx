@@ -1,101 +1,95 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faArrowUp, faBoxArchive, faPenToSquare, faPlus } from '@fortawesome/free-solid-svg-icons';
-import { useChain } from '@cosmos-kit/react';
+import { useChain } from '@cosmos-kit/react'
+import { faArrowLeft, faArrowUp, faBoxArchive, faPenToSquare, faPlus } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useCSList } from '@/hooks/useCredentialSchemas'
+import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
+import { useTrustRegistryData } from '@/hooks/useTrustRegistryData'
+import { useVeranaChain } from '@/hooks/useVeranaChain'
+import { translate } from '@/i18n/dataview'
+import { RefreshState } from '@/msg/util/signerUtil'
+import { useIndexerEvents } from '@/providers/indexer-events-provider'
+import CsSummaryCard from '@/ui/common/cs-summary-card'
+import { renderActionComponent } from '@/ui/common/data-view-typed'
+import EcosystemHeader from '@/ui/common/ecosystem-header'
+import EgfDocumentsTable from '@/ui/common/egf-documents-table'
+import FieldRow from '@/ui/common/field-row'
+import { ModalAction } from '@/ui/common/modal-action'
+import ServiceProviderCard from '@/ui/common/service-provider-card'
+import { getLabelByValue } from '@/ui/dataview/datasections/gfd'
+import { resolveTranslatable } from '@/ui/dataview/types'
+import { isValidDID, isValidUrl } from '@/util/validations'
 
-import { getLabelByValue } from '@/ui/dataview/datasections/gfd';
-import EcosystemHeader from '@/ui/common/ecosystem-header';
-import ServiceProviderCard from '@/ui/common/service-provider-card';
-import EgfDocumentsTable from '@/ui/common/egf-documents-table';
-import CsSummaryCard from '@/ui/common/cs-summary-card';
-import FieldRow from '@/ui/common/field-row';
-import { ModalAction } from '@/ui/common/modal-action';
-import { renderActionComponent } from '@/ui/common/data-view-typed';
+import AddCsPage from '../cs/add/add'
 
-import { useVeranaChain } from '@/hooks/useVeranaChain';
-import { useTrustRegistryData } from '@/hooks/useTrustRegistryData';
-import { useCSList } from '@/hooks/useCredentialSchemas';
-import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject';
-import { useIndexerEvents } from '@/providers/indexer-events-provider';
-import { RefreshState } from '@/msg/util/signerUtil';
-
-import { resolveTranslatable } from '@/ui/dataview/types';
-import { translate } from '@/i18n/dataview';
-import { isValidDID, isValidUrl } from '@/util/validations';
-
-import AddCsPage from '../cs/add/add';
-
-type GfdAction = 'MsgAddGovernanceFrameworkDocument' | 'MsgIncreaseActiveGovernanceFrameworkVersion';
+type GfdAction = 'MsgAddGovernanceFrameworkDocument' | 'MsgIncreaseActiveGovernanceFrameworkVersion'
 
 export default function TRViewPage() {
-  const params = useParams<{ id: string }>();
-  const id = params?.id ?? '';
-  const router = useRouter();
+  const params = useParams<{ id: string }>()
+  const id = params?.id ?? ''
+  const router = useRouter()
 
-  const veranaChain = useVeranaChain();
-  const { address } = useChain(veranaChain.chain_name);
+  const veranaChain = useVeranaChain()
+  const { address } = useChain(veranaChain.chain_name)
 
-  const { dataTR, errorTRData, refetch: refetchTR } = useTrustRegistryData(id);
-  const [showArchived, setShowArchived] = useState(false);
-  const { csList, refetch: refetchCSList } = useCSList(id, false, false);
+  const { dataTR, errorTRData, refetch: refetchTR } = useTrustRegistryData(id)
+  const [showArchived, setShowArchived] = useState(false)
+  const { csList, refetch: refetchCSList } = useCSList(id, false, false)
 
-  const [editMode, setEditMode] = useState(false);
-  const [editDid, setEditDid] = useState('');
-  const [editAka, setEditAka] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [editMode, setEditMode] = useState(false)
+  const [editDid, setEditDid] = useState('')
+  const [editAka, setEditAka] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
-  const [archiveActive, setArchiveActive] = useState(false);
-  const [gfdAction, setGfdAction] = useState<GfdAction | null>(null);
-  const [addCS, setAddCS] = useState(false);
+  const [archiveActive, setArchiveActive] = useState(false)
+  const [gfdAction, setGfdAction] = useState<GfdAction | null>(null)
+  const [addCS, setAddCS] = useState(false)
 
-  const [refresh, setRefresh] = useState<string | null>(null);
-  const [refreshState, setRefreshState] = useState<RefreshState>({});
-  const { latestProcessedHeight } = useIndexerEvents();
+  const [refresh, setRefresh] = useState<string | null>(null)
+  const [refreshState, setRefreshState] = useState<RefreshState>({})
+  const { latestProcessedHeight } = useIndexerEvents()
 
   const onActionTRRefresh = (rid?: string, txHeight?: number) => {
-    setRefreshState({ id: rid, txHeight });
-    setRefresh('actionTR');
-  };
+    setRefreshState({ id: rid, txHeight })
+    setRefresh('actionTR')
+  }
 
   const onActionCSRefresh = (rid?: string, txHeight?: number) => {
-    setRefreshState({ id: rid, txHeight });
-    setRefresh('actionCS');
-  };
+    setRefreshState({ id: rid, txHeight })
+    setRefresh('actionCS')
+  }
 
-  const { submitTx } = useSubmitTxMsgTypeFromObject(
-    () => {
-      setEditMode(false);
-      setSubmitting(false);
-    },
-    onActionTRRefresh,
-  );
+  const { submitTx } = useSubmitTxMsgTypeFromObject(() => {
+    setEditMode(false)
+    setSubmitting(false)
+  }, onActionTRRefresh)
 
   useEffect(() => {
-    if (refreshState.txHeight == null || refresh == null) return;
-    if (latestProcessedHeight < refreshState.txHeight) return;
-    (async () => {
-      if (refresh === 'actionTR') await refetchTR();
-      if (refresh === 'actionCS') await refetchCSList();
-      setRefreshState({});
-      setRefresh(null);
-    })();
-  }, [refreshState.txHeight, latestProcessedHeight, refresh]);
+    if (refreshState.txHeight == null || refresh == null) return
+    if (latestProcessedHeight < refreshState.txHeight) return
+    ;(async () => {
+      if (refresh === 'actionTR') await refetchTR()
+      if (refresh === 'actionCS') await refetchCSList()
+      setRefreshState({})
+      setRefresh(null)
+    })()
+  }, [refreshState.txHeight, latestProcessedHeight, refresh])
 
   useEffect(() => {
-    if (!dataTR) return;
-    setEditDid(dataTR.did);
-    setEditAka(dataTR.aka);
-  }, [dataTR?.did, dataTR?.aka]);
+    if (!dataTR) return
+    setEditDid(dataTR.did)
+    setEditAka(dataTR.aka)
+  }, [dataTR?.did, dataTR?.aka])
 
   if (errorTRData) {
     return (
       <div className="error-pane">
         {errorTRData || (resolveTranslatable({ key: 'error.tr.notfound' }, translate) ?? 'Trust Registry not found')}
       </div>
-    );
+    )
   }
 
   if (!dataTR) {
@@ -123,70 +117,81 @@ export default function TRViewPage() {
           ))}
         </div>
       </div>
-    );
+    )
   }
 
-  const isOwner = !!dataTR.controller && dataTR.controller === address;
-  const isArchived = !!dataTR.archived;
-  const headerStatus = isArchived ? ('ARCHIVED' as const) : undefined;
+  const isOwner = !!dataTR.controller && dataTR.controller === address
+  const isArchived = !!dataTR.archived
+  const headerStatus = isArchived ? ('ARCHIVED' as const) : undefined
 
   const lastVersion = (dataTR.versions ?? []).reduce(
     (acc, v) => (v.version > acc ? v.version : acc),
-    dataTR.active_version ?? 1,
-  );
-  const canIncreaseEgf = isOwner && lastVersion > (dataTR.active_version ?? 0);
+    dataTR.active_version ?? 1
+  )
+  const canIncreaseEgf = isOwner && lastVersion > (dataTR.active_version ?? 0)
 
-  const archiveMsgType = isArchived ? 'MsgUnarchiveTrustRegistry' : 'MsgArchiveTrustRegistry';
+  const archiveMsgType = isArchived ? 'MsgUnarchiveTrustRegistry' : 'MsgArchiveTrustRegistry'
   const archiveTitleKey = isArchived
     ? 'dataview.tr.actions.unarchiveTrustRegistry'
-    : 'dataview.tr.actions.archiveTrustRegistry';
+    : 'dataview.tr.actions.archiveTrustRegistry'
 
-  const backLabel = resolveTranslatable({ key: 'button.tr.back' }, translate) ?? 'Back';
-  const basicInfoLabel = resolveTranslatable({ key: 'dataview.tr.sections.basicInformation' }, translate) ?? 'Basic Information';
-  const idLabel = resolveTranslatable({ key: 'dataview.tr.fields.id' }, translate) ?? 'ID';
-  const controllerLabel = resolveTranslatable({ key: 'dataview.tr.fields.controller' }, translate) ?? 'Controller Corporation';
-  const languageLabel = resolveTranslatable({ key: 'dataview.tr.fields.language' }, translate) ?? 'Primary Governance Framework Language';
-  const activeVersionLabel = resolveTranslatable({ key: 'dataview.tr.fields.active_version' }, translate) ?? 'Active GF Version';
-  const mutableLabel = resolveTranslatable({ key: 'dataview.section.mutable' }, translate) ?? 'Mutable Configuration';
-  const didLabel = resolveTranslatable({ key: 'dataview.tr.fields.did' }, translate) ?? 'DID';
-  const akaLabel = resolveTranslatable({ key: 'dataview.tr.fields.aka' }, translate) ?? 'AKA (URI)';
-  const editLabel = resolveTranslatable({ key: 'dataview.tr.actions.updateTrustRegistry' }, translate) ?? 'Edit Configuration';
-  const archiveLabel = resolveTranslatable({ key: 'dataview.tr.actions.archiveTrustRegistry' }, translate) ?? 'Archive';
-  const unarchiveLabel = resolveTranslatable({ key: 'dataview.tr.actions.unarchiveTrustRegistry' }, translate) ?? 'Unarchive';
-  const cancelLabel = resolveTranslatable({ key: 'messages.cancel' }, translate) ?? 'Cancel';
-  const confirmLabel = resolveTranslatable({ key: 'messages.confirm' }, translate) ?? 'Confirm';
-  const egfLabel = resolveTranslatable({ key: 'datalist.egf.title' }, translate) ?? 'EGF Documents';
-  const addEgfLabel = resolveTranslatable({ key: 'dataview.tr.actions.addGovernanceFrameworkDocument' }, translate) ?? 'Add New EGF Document';
-  const increaseEgfLabel = resolveTranslatable({ key: 'dataview.tr.actions.increaseActiveGovernanceFrameworkVersion' }, translate) ?? 'Increase Active EGF';
-  const csTitle = resolveTranslatable({ key: 'datatable.cs.title' }, translate) ?? 'Credential Schemas';
-  const showArchivedLabel = resolveTranslatable({ key: 'datatable.cs.filter.showArchived' }, translate) ?? 'Show Archived';
-  const newSchemaLabel = resolveTranslatable({ key: 'button.cs.add' }, translate) ?? 'New Schema';
+  const backLabel = resolveTranslatable({ key: 'button.tr.back' }, translate) ?? 'Back'
+  const basicInfoLabel =
+    resolveTranslatable({ key: 'dataview.tr.sections.basicInformation' }, translate) ?? 'Basic Information'
+  const idLabel = resolveTranslatable({ key: 'dataview.tr.fields.id' }, translate) ?? 'ID'
+  const controllerLabel =
+    resolveTranslatable({ key: 'dataview.tr.fields.controller' }, translate) ?? 'Controller Corporation'
+  const languageLabel =
+    resolveTranslatable({ key: 'dataview.tr.fields.language' }, translate) ?? 'Primary Governance Framework Language'
+  const activeVersionLabel =
+    resolveTranslatable({ key: 'dataview.tr.fields.active_version' }, translate) ?? 'Active GF Version'
+  const mutableLabel = resolveTranslatable({ key: 'dataview.section.mutable' }, translate) ?? 'Mutable Configuration'
+  const didLabel = resolveTranslatable({ key: 'dataview.tr.fields.did' }, translate) ?? 'DID'
+  const akaLabel = resolveTranslatable({ key: 'dataview.tr.fields.aka' }, translate) ?? 'AKA (URI)'
+  const editLabel =
+    resolveTranslatable({ key: 'dataview.tr.actions.updateTrustRegistry' }, translate) ?? 'Edit Configuration'
+  const archiveLabel = resolveTranslatable({ key: 'dataview.tr.actions.archiveTrustRegistry' }, translate) ?? 'Archive'
+  const unarchiveLabel =
+    resolveTranslatable({ key: 'dataview.tr.actions.unarchiveTrustRegistry' }, translate) ?? 'Unarchive'
+  const cancelLabel = resolveTranslatable({ key: 'messages.cancel' }, translate) ?? 'Cancel'
+  const confirmLabel = resolveTranslatable({ key: 'messages.confirm' }, translate) ?? 'Confirm'
+  const egfLabel = resolveTranslatable({ key: 'datalist.egf.title' }, translate) ?? 'EGF Documents'
+  const addEgfLabel =
+    resolveTranslatable({ key: 'dataview.tr.actions.addGovernanceFrameworkDocument' }, translate) ??
+    'Add New EGF Document'
+  const increaseEgfLabel =
+    resolveTranslatable({ key: 'dataview.tr.actions.increaseActiveGovernanceFrameworkVersion' }, translate) ??
+    'Increase Active EGF'
+  const csTitle = resolveTranslatable({ key: 'datatable.cs.title' }, translate) ?? 'Credential Schemas'
+  const showArchivedLabel =
+    resolveTranslatable({ key: 'datatable.cs.filter.showArchived' }, translate) ?? 'Show Archived'
+  const newSchemaLabel = resolveTranslatable({ key: 'button.cs.add' }, translate) ?? 'New Schema'
 
-  const visibleSchemas = csList.filter((item) => showArchived || !item.archived);
+  const visibleSchemas = csList.filter((item) => showArchived || !item.archived)
 
-  const didIsValid = isValidDID(editDid);
-  const akaIsValid = isValidUrl(editAka);
-  const editIsValid = didIsValid && akaIsValid && (editDid !== dataTR.did || editAka !== dataTR.aka);
+  const didIsValid = isValidDID(editDid)
+  const akaIsValid = isValidUrl(editAka)
+  const editIsValid = didIsValid && akaIsValid && (editDid !== dataTR.did || editAka !== dataTR.aka)
 
   function startEdit() {
-    setEditDid((dataTR?.did as string) ?? '');
-    setEditAka((dataTR?.aka as string) ?? '');
-    setEditMode(true);
+    setEditDid((dataTR?.did as string) ?? '')
+    setEditAka((dataTR?.aka as string) ?? '')
+    setEditMode(true)
   }
 
   function cancelEdit() {
-    setEditDid((dataTR?.did as string) ?? '');
-    setEditAka((dataTR?.aka as string) ?? '');
-    setEditMode(false);
+    setEditDid((dataTR?.did as string) ?? '')
+    setEditAka((dataTR?.aka as string) ?? '')
+    setEditMode(false)
   }
 
   async function confirmEdit() {
-    if (!dataTR || !editIsValid) return;
-    setSubmitting(true);
+    if (!dataTR || !editIsValid) return
+    setSubmitting(true)
     try {
-      await submitTx('MsgUpdateTrustRegistry', { ...dataTR, did: editDid, aka: editAka });
+      await submitTx('MsgUpdateTrustRegistry', { ...dataTR, did: editDid, aka: editAka })
     } catch {
-      setSubmitting(false);
+      setSubmitting(false)
     }
   }
 
@@ -246,9 +251,7 @@ export default function TRViewPage() {
                 type="button"
                 onClick={() => setArchiveActive(true)}
                 className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors ${
-                  isArchived
-                    ? 'bg-red-600 hover:bg-red-700'
-                    : 'bg-gray-600 hover:bg-gray-700'
+                  isArchived ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600 hover:bg-gray-700'
                 }`}
               >
                 <FontAwesomeIcon icon={faBoxArchive} />
@@ -270,7 +273,12 @@ export default function TRViewPage() {
           ) : (
             <div className="space-y-4">
               <div>
-                <label htmlFor="tr-edit-did" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{didLabel}</label>
+                <label
+                  htmlFor="tr-edit-did"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  {didLabel}
+                </label>
                 <input
                   id="tr-edit-did"
                   type="text"
@@ -284,7 +292,12 @@ export default function TRViewPage() {
                 />
               </div>
               <div>
-                <label htmlFor="tr-edit-aka" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{akaLabel}</label>
+                <label
+                  htmlFor="tr-edit-aka"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  {akaLabel}
+                </label>
                 <input
                   id="tr-edit-aka"
                   type="url"
@@ -346,10 +359,7 @@ export default function TRViewPage() {
             </div>
           ) : null}
         </div>
-        <EgfDocumentsTable
-          versions={dataTR.versions ?? []}
-          activeVersion={dataTR.active_version ?? 1}
-        />
+        <EgfDocumentsTable versions={dataTR.versions ?? []} activeVersion={dataTR.active_version ?? 1} />
       </section>
 
       <section className="mb-8">
@@ -395,24 +405,17 @@ export default function TRViewPage() {
         )}
       </section>
 
-      <ModalAction
-        isActive={archiveActive}
-        titleKey={archiveTitleKey}
-        onClose={() => setArchiveActive(false)}
-      >
-        {renderActionComponent(
-          archiveMsgType,
-          () => setArchiveActive(false),
-          dataTR,
-          onActionTRRefresh,
-        )}
+      <ModalAction isActive={archiveActive} titleKey={archiveTitleKey} onClose={() => setArchiveActive(false)}>
+        {renderActionComponent(archiveMsgType, () => setArchiveActive(false), dataTR, onActionTRRefresh)}
       </ModalAction>
 
       <ModalAction
         isActive={gfdAction != null}
-        titleKey={gfdAction === 'MsgIncreaseActiveGovernanceFrameworkVersion'
-          ? 'dataview.tr.actions.increaseActiveGovernanceFrameworkVersion'
-          : 'dataview.tr.actions.addGovernanceFrameworkDocument'}
+        titleKey={
+          gfdAction === 'MsgIncreaseActiveGovernanceFrameworkVersion'
+            ? 'dataview.tr.actions.increaseActiveGovernanceFrameworkVersion'
+            : 'dataview.tr.actions.addGovernanceFrameworkDocument'
+        }
         onClose={() => setGfdAction(null)}
       >
         {gfdAction
@@ -420,7 +423,7 @@ export default function TRViewPage() {
               gfdAction,
               () => setGfdAction(null),
               { ...dataTR, last_version: lastVersion },
-              onActionTRRefresh,
+              onActionTRRefresh
             )
           : null}
       </ModalAction>
@@ -430,18 +433,20 @@ export default function TRViewPage() {
           onClose={() => setAddCS(false)}
           titleKey={'datatable.cs.add'}
           isActive={addCS}
-          classModal={'relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-xl bg-white dark:bg-surface'}
+          classModal={
+            'relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-xl bg-white dark:bg-surface'
+          }
         >
           <AddCsPage
             onCancel={() => setAddCS(false)}
             onRefresh={(rid?: string, txHeight?: number) => {
-              onActionCSRefresh(rid, txHeight);
-              setAddCS(false);
+              onActionCSRefresh(rid, txHeight)
+              setAddCS(false)
             }}
             trId={Number(id)}
           />
         </ModalAction>
       ) : null}
     </>
-  );
+  )
 }

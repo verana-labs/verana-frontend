@@ -1,45 +1,37 @@
-'use client';
+'use client'
 
-import React from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
-import { translate } from '@/i18n/dataview';
-import { resolveTranslatable } from '@/ui/dataview/types';
+import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { translate } from '@/i18n/dataview'
+import { resolveTranslatable } from '@/ui/dataview/types'
 
 type Props = {
-  page: number;
-  pageCount: number;
-  showing: number;
-  total: number;
-  onChange: (page: number) => void;
-};
+  page: number
+  pageCount: number
+  showing: number
+  total: number
+  onChange: (page: number) => void
+}
 
 function buildPageList(page: number, pageCount: number): Array<number | 'ellipsis'> {
   if (pageCount <= 9) {
-    return Array.from({ length: pageCount }, (_, i) => i + 1);
+    return Array.from({ length: pageCount }, (_, i) => i + 1)
   }
-  const out: Array<number | 'ellipsis'> = [1];
-  const start = Math.max(2, page - 1);
-  const end = Math.min(pageCount - 1, page + 1);
-  if (start > 2) out.push('ellipsis');
-  for (let i = start; i <= end; i++) out.push(i);
-  if (end < pageCount - 1) out.push('ellipsis');
-  out.push(pageCount);
-  return out;
+  const out: Array<number | 'ellipsis'> = [1]
+  const start = Math.max(2, page - 1)
+  const end = Math.min(pageCount - 1, page + 1)
+  if (start > 2) out.push('ellipsis')
+  for (let i = start; i <= end; i++) out.push(i)
+  if (end < pageCount - 1) out.push('ellipsis')
+  out.push(pageCount)
+  return out
 }
 
-export default function EcosystemsPagination({
-  page,
-  pageCount,
-  showing,
-  total,
-  onChange,
-}: Props) {
-  if (pageCount <= 0) return null;
+export default function EcosystemsPagination({ page, pageCount, showing, total, onChange }: Props) {
+  if (pageCount <= 0) return null
 
-  const pages = buildPageList(page, pageCount);
-  const t = (key: string, fallback: string) =>
-    resolveTranslatable({ key }, translate) ?? fallback;
+  const pages = buildPageList(page, pageCount)
+  const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
 
   return (
     <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -63,11 +55,7 @@ export default function EcosystemsPagination({
         <div className="flex flex-wrap gap-1 justify-center">
           {pages.map((p, idx) =>
             p === 'ellipsis' ? (
-              <span
-                key={`ellipsis-${idx}`}
-                className="px-2 py-1 text-sm text-gray-500"
-                aria-hidden="true"
-              >
+              <span key={`ellipsis-${idx}`} className="px-2 py-1 text-sm text-gray-500" aria-hidden="true">
                 ...
               </span>
             ) : (
@@ -84,7 +72,7 @@ export default function EcosystemsPagination({
               >
                 {p}
               </button>
-            ),
+            )
           )}
         </div>
         <button
@@ -98,5 +86,5 @@ export default function EcosystemsPagination({
         </button>
       </div>
     </div>
-  );
+  )
 }

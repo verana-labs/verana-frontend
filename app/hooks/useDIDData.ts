@@ -1,56 +1,54 @@
 'use client'
 
-import { useState, useEffect } from 'react';
-import { env } from 'next-runtime-env';
-import { DidData } from '@/ui/dataview/datasections/did';
-import { resolveTranslatable } from '@/ui/dataview/types';
-import { translate } from '@/i18n/dataview';
-import { ApiErrorResponse } from '@/types/apiErrorResponse';
+import { env } from 'next-runtime-env'
+import { useEffect, useState } from 'react'
+import { translate } from '@/i18n/dataview'
+import { ApiErrorResponse } from '@/types/apiErrorResponse'
+import { DidData } from '@/ui/dataview/datasections/did'
+import { resolveTranslatable } from '@/ui/dataview/types'
 
-export function useDIDData(id: string ) {
-  const [dataDID, setData] = useState<DidData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [errorDIDData, setError] = useState<string | null>(null);
+export function useDIDData(id: string) {
+  const [dataDID, setData] = useState<DidData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [errorDIDData, setError] = useState<string | null>(null)
 
-  const getURL =
-    env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID') ||
-    process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID;
+  const getURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID
 
   const fetchDID = async () => {
-    if (!id) return;
+    if (!id) return
     if (!getURL) {
-      setError(resolveTranslatable({key: "error.fetch.did"}, translate)??'Missing DID or endpoint URL');
-      setLoading(false);
-      return;
+      setError(resolveTranslatable({ key: 'error.fetch.did' }, translate) ?? 'Missing DID or endpoint URL')
+      setLoading(false)
+      return
     }
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
     try {
-      const url = `${getURL}/get/${decodeURIComponent(id)}`;
-      const res = await fetch(url);
-      const json = await res.json();
-      if (!res.ok){
-        const { error, code } = json as ApiErrorResponse;
-        setError(`Error ${code}: ${error}`);
-        return;
-      } 
+      const url = `${getURL}/get/${decodeURIComponent(id)}`
+      const res = await fetch(url)
+      const json = await res.json()
+      if (!res.ok) {
+        const { error, code } = json as ApiErrorResponse
+        setError(`Error ${code}: ${error}`)
+        return
+      }
       // Parse response: DidData or { did: DidData }
       // type ResponseShape = Partial<{ did: DidData }> & DidData;
-      type ResponseShape = Partial<{ did: DidData }> & DidData;
-      const resp = json as ResponseShape;
-      const entry = resp.did ?? (resp as DidData);
-      setData(entry);
+      type ResponseShape = Partial<{ did: DidData }> & DidData
+      const resp = json as ResponseShape
+      const entry = resp.did ?? (resp as DidData)
+      setData(entry)
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      setData(null);
+      setError(err instanceof Error ? err.message : String(err))
+      setData(null)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchDID();
-  }, []);
+    fetchDID()
+  }, [])
 
-  return { dataDID, loading, errorDIDData, refetch: fetchDID };
+  return { dataDID, loading, errorDIDData, refetch: fetchDID }
 }

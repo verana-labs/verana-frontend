@@ -1,151 +1,138 @@
-'use client';
+'use client'
 
-import { useEffect, useMemo, useState } from 'react';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useEffect, useMemo, useState } from 'react'
 
-import { translate } from '@/i18n/dataview';
-import { resolveTranslatable } from '@/ui/dataview/types';
-import { useEcosytemsCtx } from '@/providers/api-rest-query-provider-context';
-import { DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient';
-import { TrList } from '@/ui/datatable/columnslist/tr';
-
-import EcosystemCard from '@/ui/common/ecosystem-card';
+import { translate } from '@/i18n/dataview'
+import { DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
+import { useEcosytemsCtx } from '@/providers/api-rest-query-provider-context'
+import AddTrPage from '@/tr/add/add'
+import EcosystemCard from '@/ui/common/ecosystem-card'
 import EcosystemsFilterBar, {
   EcosystemsFilterState,
   INITIAL_ECOSYSTEMS_FILTER,
-} from '@/ui/common/ecosystems-filter-bar';
-import EcosystemsPagination from '@/ui/common/ecosystems-pagination';
-import { ModalAction } from '@/ui/common/modal-action';
-import AddTrPage from '@/tr/add/add';
+} from '@/ui/common/ecosystems-filter-bar'
+import EcosystemsPagination from '@/ui/common/ecosystems-pagination'
+import { ModalAction } from '@/ui/common/modal-action'
+import { TrList } from '@/ui/datatable/columnslist/tr'
+import { resolveTranslatable } from '@/ui/dataview/types'
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 9
 
 function matchesSearch(tr: TrList, search: string): boolean {
-  const q = search.trim().toLowerCase();
-  if (!q) return true;
-  return [tr.did, tr.aka, tr.controller, tr.role, tr.id].some((v) =>
-    v != null && String(v).toLowerCase().includes(q),
-  );
+  const q = search.trim().toLowerCase()
+  if (!q) return true
+  return [tr.did, tr.aka, tr.controller, tr.role, tr.id].some((v) => v != null && String(v).toLowerCase().includes(q))
 }
 
 function roleTokens(role: string | undefined | null): string[] {
-  if (!role) return [];
-  return role.split(/[,\s]+/).map((r) => r.trim().toUpperCase()).filter(Boolean);
+  if (!role) return []
+  return role
+    .split(/[,\s]+/)
+    .map((r) => r.trim().toUpperCase())
+    .filter(Boolean)
 }
 
 function isOwnedRole(role: string | undefined | null): boolean {
-  return roleTokens(role).some((r) => r === 'ECOSYSTEM');
+  return roleTokens(role).some((r) => r === 'ECOSYSTEM')
 }
 
 function hasParticipantRole(role: string | undefined | null): boolean {
-  return roleTokens(role).some((r) => r !== 'ECOSYSTEM');
+  return roleTokens(role).some((r) => r !== 'ECOSYSTEM')
 }
 
 export default function TrPage() {
-  const ecosystemsCtx = useEcosytemsCtx();
+  const ecosystemsCtx = useEcosytemsCtx()
 
   const [filters, setFilters] = useState<EcosystemsFilterState>({
     ...INITIAL_ECOSYSTEMS_FILTER,
     showArchived: !ecosystemsCtx.onlyActiveEcosystem,
-  });
-  const [page, setPage] = useState<number>(1);
-  const [addTR, setAddTR] = useState<boolean>(false);
-  const [refresh, setRefresh] = useState<boolean>(true);
-  const [trListAll, setTrListAll] = useState<boolean>(false);
-  const [enrichments, setEnrichments] = useState<Record<string, DidEnrichment>>(
-    {},
-  );
+  })
+  const [page, setPage] = useState<number>(1)
+  const [addTR, setAddTR] = useState<boolean>(false)
+  const [refresh, setRefresh] = useState<boolean>(true)
+  const [trListAll, setTrListAll] = useState<boolean>(false)
+  const [enrichments, setEnrichments] = useState<Record<string, DidEnrichment>>({})
 
   useEffect(() => {
-    if (!refresh) return;
+    if (!refresh) return
     void (async () => {
-      await ecosystemsCtx.refetch();
-      setRefresh(false);
-    })();
-  }, [refresh, ecosystemsCtx]);
+      await ecosystemsCtx.refetch()
+      setRefresh(false)
+    })()
+  }, [refresh, ecosystemsCtx])
 
   useEffect(() => {
-    ecosystemsCtx.setOnlyActiveEcosystem(!filters.showArchived);
-    if (filters.showArchived && !trListAll) setRefresh(true);
-  }, [filters.showArchived, trListAll, ecosystemsCtx]);
+    ecosystemsCtx.setOnlyActiveEcosystem(!filters.showArchived)
+    if (filters.showArchived && !trListAll) setRefresh(true)
+  }, [filters.showArchived, trListAll, ecosystemsCtx])
 
   useEffect(() => {
-    if (filters.showArchived) setTrListAll(true);
-  }, [ecosystemsCtx.ecosystemsList, filters.showArchived]);
+    if (filters.showArchived) setTrListAll(true)
+  }, [ecosystemsCtx.ecosystemsList, filters.showArchived])
 
   useEffect(() => {
-    setPage(1);
-  }, [filters]);
+    setPage(1)
+  }, [filters])
 
-  const didsKey = ecosystemsCtx.ecosystemsList.map((tr) => tr.did).join('|');
+  const didsKey = ecosystemsCtx.ecosystemsList.map((tr) => tr.did).join('|')
 
   useEffect(() => {
-    const dids = didsKey ? didsKey.split('|') : [];
+    const dids = didsKey ? didsKey.split('|') : []
     if (dids.length === 0) {
-      setEnrichments({});
-      return;
+      setEnrichments({})
+      return
     }
-    let cancelled = false;
-    Promise.allSettled(dids.map((did) => fetchDidEnrichment(did))).then(
-      (results) => {
-        if (cancelled) return;
-        const next: Record<string, DidEnrichment> = {};
-        results.forEach((result, idx) => {
-          if (result.status === 'fulfilled') {
-            next[dids[idx]] = result.value;
-          }
-        });
-        setEnrichments(next);
-      },
-    );
+    let cancelled = false
+    Promise.allSettled(dids.map((did) => fetchDidEnrichment(did))).then((results) => {
+      if (cancelled) return
+      const next: Record<string, DidEnrichment> = {}
+      results.forEach((result, idx) => {
+        if (result.status === 'fulfilled') {
+          next[dids[idx]] = result.value
+        }
+      })
+      setEnrichments(next)
+    })
     return () => {
-      cancelled = true;
-    };
-  }, [didsKey]);
+      cancelled = true
+    }
+  }, [didsKey])
 
   const filtered = useMemo(() => {
     return ecosystemsCtx.ecosystemsList.filter((tr) => {
-      if (!filters.showArchived && tr.archived) return false;
-      if (filters.hideOwned && isOwnedRole(tr.role)) return false;
-      if (filters.hideParticipant && hasParticipantRole(tr.role)) return false;
-      if (!matchesSearch(tr, filters.search)) return false;
-      if (
-        !filters.showUntrusted &&
-        enrichments[tr.did]?.trustStatus === 'UNTRUSTED'
-      ) {
-        return false;
+      if (!filters.showArchived && tr.archived) return false
+      if (filters.hideOwned && isOwnedRole(tr.role)) return false
+      if (filters.hideParticipant && hasParticipantRole(tr.role)) return false
+      if (!matchesSearch(tr, filters.search)) return false
+      if (!filters.showUntrusted && enrichments[tr.did]?.trustStatus === 'UNTRUSTED') {
+        return false
       }
-      return true;
-    });
-  }, [ecosystemsCtx.ecosystemsList, filters, enrichments]);
+      return true
+    })
+  }, [ecosystemsCtx.ecosystemsList, filters, enrichments])
 
-  const total = filtered.length;
-  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const safePage = Math.min(page, pageCount);
-  const pageStart = (safePage - 1) * PAGE_SIZE;
-  const pageItems = filtered.slice(pageStart, pageStart + PAGE_SIZE);
+  const total = filtered.length
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const safePage = Math.min(page, pageCount)
+  const pageStart = (safePage - 1) * PAGE_SIZE
+  const pageItems = filtered.slice(pageStart, pageStart + PAGE_SIZE)
 
   useEffect(() => {
-    if (page > pageCount) setPage(pageCount);
-  }, [page, pageCount]);
+    if (page > pageCount) setPage(pageCount)
+  }, [page, pageCount])
 
-  const t = (key: string, fallback: string) =>
-    resolveTranslatable({ key }, translate) ?? fallback;
+  const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
 
   return (
     <>
       <section id="page-header" className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="page-title">
-              {t('trlist.title', 'Ecosystems')}
-            </h1>
+            <h1 className="page-title">{t('trlist.title', 'Ecosystems')}</h1>
             <p className="page-description">
-              {t(
-                'datatable.tr.description',
-                'Ecosystems you own and ecosystems you joined.',
-              )}
+              {t('datatable.tr.description', 'Ecosystems you own and ecosystems you joined.')}
             </p>
           </div>
           <div className="flex-shrink-0">
@@ -186,20 +173,16 @@ export default function TrPage() {
       </section>
 
       {addTR && (
-        <ModalAction
-          onClose={() => setAddTR(false)}
-          titleKey={'datatable.tr.add.modal.title'}
-          isActive={addTR}
-        >
+        <ModalAction onClose={() => setAddTR(false)} titleKey={'datatable.tr.add.modal.title'} isActive={addTR}>
           <AddTrPage
             onCancel={() => setAddTR(false)}
             onRefresh={() => {
-              setRefresh(true);
-              setAddTR(false);
+              setRefresh(true)
+              setAddTR(false)
             }}
           />
         </ModalAction>
       )}
     </>
-  );
+  )
 }

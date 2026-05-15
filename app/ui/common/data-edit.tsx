@@ -1,42 +1,50 @@
-'use client';
+'use client'
 
+import clsx from 'clsx'
+import { useRouter } from 'next/navigation'
+import { env } from 'next-runtime-env'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
+import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { ResolvedDataField, DataViewProps, isResolvedDataField, ResolvedField, visibleFieldsForMode, translateSections, resolveTranslatable } from '@/ui/dataview/types';
-import { getCostMessage, getLowBalanceMessage, msgTypeStyle } from '@/msg/constants/msgTypeConfig';
-import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData';
-import { useNotification } from '@/providers/notification-provider';
-import { useRouter } from 'next/navigation';
-import { getErrorMessage, isValidField } from '@/util/validations';
-import { MessageType } from '@/msg/constants/types';
-import { resolveMsgCopy } from '@/msg/constants/resolveMsgTypeConfig';
-import clsx from "clsx"
-import { translate } from '@/i18n/dataview';
-import { formatVNAFromUVNA, isJson } from '@/util/util';
-import JsonCodeBlock from '@/ui/common/json-code-block';
-import { LanguageCombobox } from '@/ui/common/language-combobox';
-import ActionCard, { ActionCardProps } from '@/ui/common/action-card';
-import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
-import { env } from 'next-runtime-env';
+import { getCostMessage, getLowBalanceMessage, msgTypeStyle } from '@/msg/constants/msgTypeConfig'
+import { resolveMsgCopy } from '@/msg/constants/resolveMsgTypeConfig'
+import { MessageType } from '@/msg/constants/types'
+import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
+import { useNotification } from '@/providers/notification-provider'
+import ActionCard, { ActionCardProps } from '@/ui/common/action-card'
+import JsonCodeBlock from '@/ui/common/json-code-block'
+import { LanguageCombobox } from '@/ui/common/language-combobox'
+import {
+  DataViewProps,
+  isResolvedDataField,
+  ResolvedDataField,
+  ResolvedField,
+  resolveTranslatable,
+  translateSections,
+  visibleFieldsForMode,
+} from '@/ui/dataview/types'
+import { formatVNAFromUVNA, isJson } from '@/util/util'
+import { getErrorMessage, isValidField } from '@/util/validations'
 
 type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & {
-  data: T;
-  messageType: MessageType;
-  onSave: (newData: T) => void | Promise<void>;
-  onSimulate?: (newData: T) => SimulateResult | void | Promise<SimulateResult | void>;
-  onCancel?: () => void;
-  noForm?: boolean;
-  isModal?: boolean;
-  actionCard?: ActionCardProps;
-  withinView?: boolean;
-  setModalHidden?: () => void;
-  transactionCost?: string;
-};
+  data: T
+  messageType: MessageType
+  onSave: (newData: T) => void | Promise<void>
+  onSimulate?: (newData: T) => SimulateResult | void | Promise<SimulateResult | void>
+  onCancel?: () => void
+  noForm?: boolean
+  isModal?: boolean
+  actionCard?: ActionCardProps
+  withinView?: boolean
+  setModalHidden?: () => void
+  transactionCost?: string
+}
 
 type FieldValidationError = {
-  key: string;
-  errorMessage?: string;
-};
+  key: string
+  errorMessage?: string
+}
 
 export default function EditableDataView<T extends object>({
   sectionsI18n,
@@ -51,87 +59,91 @@ export default function EditableDataView<T extends object>({
   actionCard,
   withinView,
   setModalHidden,
-  transactionCost
+  transactionCost,
 }: EditableDataViewProps<T>) {
-  const sections = translateSections(sectionsI18n);
-  const [formData, setFormData] = useState<T>(data);
-  const [errorFields, setErrorFields] = useState<FieldValidationError[]>([]);
-  const [submitting, setSubmitting] = useState(false);
-  const uiMsgType = resolveMsgCopy(messageType);
-  const action = id? 'edit' : 'create';
-  const [hasTriedSubmit, setHasTriedSubmit] = useState(false);
+  const sections = translateSections(sectionsI18n)
+  const [formData, setFormData] = useState<T>(data)
+  const [errorFields, setErrorFields] = useState<FieldValidationError[]>([])
+  const [submitting, setSubmitting] = useState(false)
+  const uiMsgType = resolveMsgCopy(messageType)
+  const action = id ? 'edit' : 'create'
+  const [hasTriedSubmit, setHasTriedSubmit] = useState(false)
 
   // Router, notification, and errorNotified
-  const router = useRouter();
-  const { notify } = useNotification();
-  const [errorNotified, setErrorNotified] = useState(false);
-  
+  const router = useRouter()
+  const { notify } = useNotification()
+  const [errorNotified, setErrorNotified] = useState(false)
+
   // Checks if the current field value is valid
   // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
   const validatedRequiredField = useCallback((field: ResolvedField<any>, value: unknown): boolean => {
-    if (!field.required) return true;
-    if (value === undefined || value === null) return false;
-    if (typeof value === "string" && value.trim() === "") return false;
-    return true;
-  }, []);
+    if (!field.required) return true
+    if (value === undefined || value === null) return false
+    if (typeof value === 'string' && value.trim() === '') return false
+    return true
+  }, [])
 
   // Container Global Variable LOW_BALANCE_WARN_UVNA
-  const LOW_BALANCE_WARN_UVNA = env('NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA') || process.env.NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA;
-  const [showMsgLowBalanceWarn, setShowMsgLowBalanceWarn] = useState<boolean | null>(null);
-  const lowBalanceTemplate = resolveTranslatable({key: 'messages.lowbalance'}, translate)?? "You’re Running Low on VNA. Your balance is {value} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted.";
-  const [feeAmount, setFeeAmount] = useState<number>(0);
-  const [showMsgBalanceLessThanFeeWarn, setShowMsgBalanceLessThanFeeWarn] = useState<boolean | null>(null);
-  const balanceLessThanFeeTemplate = resolveTranslatable({key: 'messages.balanceLessThanFee'}, translate)?? "You’re Running Low on VNA. Your balance is {value} VNA and running this transaction requires {fee} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted.";
+  const LOW_BALANCE_WARN_UVNA =
+    env('NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA') || process.env.NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA
+  const [showMsgLowBalanceWarn, setShowMsgLowBalanceWarn] = useState<boolean | null>(null)
+  const lowBalanceTemplate =
+    resolveTranslatable({ key: 'messages.lowbalance' }, translate) ??
+    "You’re Running Low on VNA. Your balance is {value} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted."
+  const [feeAmount, setFeeAmount] = useState<number>(0)
+  const [showMsgBalanceLessThanFeeWarn, setShowMsgBalanceLessThanFeeWarn] = useState<boolean | null>(null)
+  const balanceLessThanFeeTemplate =
+    resolveTranslatable({ key: 'messages.balanceLessThanFee' }, translate) ??
+    "You’re Running Low on VNA. Your balance is {value} VNA and running this transaction requires {fee} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted."
 
   // Custom hook to fetch user's account/trust deposit data
-  const { accountData, errorAccountData } = useTrustDepositAccountData();
+  const { accountData, errorAccountData } = useTrustDepositAccountData()
 
   // Show notification if there is an error fetching account data
   useEffect(() => {
     if (errorAccountData && !errorNotified) {
-      (async () => {
-        await notify(errorAccountData, 'error', 'Error fetching account balance');
-        setErrorNotified(true);
+      ;(async () => {
+        await notify(errorAccountData, 'error', 'Error fetching account balance')
+        setErrorNotified(true)
         // router.push('/tr');
-      })();
+      })()
     }
-  }, [errorAccountData, router, errorNotified]);
-  
-  const basicSection = sections.find( (section) => (!section.type || section.type === 'basic' ) && !section.noEdit);
+  }, [errorAccountData, router, errorNotified])
+
+  const basicSection = sections.find((section) => (!section.type || section.type === 'basic') && !section.noEdit)
   // if (!basicSection) {
   //   return null;
   // }
-  const visibleFields = visibleFieldsForMode(basicSection?.fields, action).filter(isResolvedDataField);
+  const visibleFields = visibleFieldsForMode(basicSection?.fields, action).filter(isResolvedDataField)
 
-  const ran = useRef(false);
+  const ran = useRef(false)
   useEffect(() => {
-    if (!noForm){
-      setModalHidden?.();
-      return;
-    } 
-    if (ran.current) return;
-    ran.current = true;
-    handleSimulate();
-  }, [noForm, handleSimulate]);
+    if (!noForm) {
+      setModalHidden?.()
+      return
+    }
+    if (ran.current) return
+    ran.current = true
+    handleSimulate()
+  }, [noForm, handleSimulate])
 
   useEffect(() => {
-    if (!noForm) return;
-    if (showMsgBalanceLessThanFeeWarn == null || showMsgLowBalanceWarn == null) return;
-    if (showMsgBalanceLessThanFeeWarn == false && showMsgLowBalanceWarn == false){
-      handleSave();
-      onCancel?.();
+    if (!noForm) return
+    if (showMsgBalanceLessThanFeeWarn == null || showMsgLowBalanceWarn == null) return
+    if (showMsgBalanceLessThanFeeWarn === false && showMsgLowBalanceWarn === false) {
+      handleSave()
+      onCancel?.()
+    } else {
+      setModalHidden?.()
     }
-    else {
-        setModalHidden?.();
-    }
-  }, [showMsgBalanceLessThanFeeWarn, showMsgLowBalanceWarn]);
-  
+  }, [showMsgBalanceLessThanFeeWarn, showMsgLowBalanceWarn])
+
   useEffect(() => {
-    // Verified if user has equal or more than LOW_BALANCE_WARN_UVNA in its wallet 
-    const availableBalance = accountData.balance && Number(accountData.balance);
-    if (!availableBalance) return;
-    const hasLowBalance = (availableBalance <= Number(LOW_BALANCE_WARN_UVNA));
-    setShowMsgLowBalanceWarn(hasLowBalance);
+    // Verified if user has equal or more than LOW_BALANCE_WARN_UVNA in its wallet
+    const availableBalance = accountData.balance && Number(accountData.balance)
+    if (!availableBalance) return
+    const hasLowBalance = availableBalance <= Number(LOW_BALANCE_WARN_UVNA)
+    setShowMsgLowBalanceWarn(hasLowBalance)
     // Set validation 'claimedVNA'
     // const availableReclaimable = (accountData.reclaimable) ? Number(accountData.reclaimable)/ 1_000_000 : 0;
     // visibleFields.forEach(field => {
@@ -142,164 +154,160 @@ export default function EditableDataView<T extends object>({
     //     lessThanOrEqual: availableReclaimable,
     //   };
     // });
-  }, [accountData.balance, accountData.reclaimable]); //, sections]);
+  }, [accountData.balance, accountData.reclaimable]) //, sections]);
 
   useEffect(() => {
     // Verified if user has equal or more than Simulated Fee in its wallet
-    if (!noForm) return;
-    const availableBalance = accountData.balance && Number(accountData.balance);
-    if (!availableBalance || !feeAmount) return;
-    const hasBalanceLessThanFee = (availableBalance <= feeAmount);
-    setShowMsgBalanceLessThanFeeWarn(hasBalanceLessThanFee);
-  }, [feeAmount, accountData.balance]);
-  
+    if (!noForm) return
+    const availableBalance = accountData.balance && Number(accountData.balance)
+    if (!availableBalance || !feeAmount) return
+    const hasBalanceLessThanFee = availableBalance <= feeAmount
+    setShowMsgBalanceLessThanFeeWarn(hasBalanceLessThanFee)
+  }, [feeAmount, accountData.balance])
+
   // Updates form state and manages error tracking on change
   function handleChange(fieldName: keyof T, value: unknown, field: ResolvedDataField<T>) {
-    setFormData(prev => ({ ...prev, [fieldName]: value }));
-    setErrorFields(prev => {
-      const key = String(fieldName);
-      const filtered = prev.filter(err => err.key !== key);
+    setFormData((prev) => ({ ...prev, [fieldName]: value }))
+    setErrorFields((prev) => {
+      const key = String(fieldName)
+      const filtered = prev.filter((err) => err.key !== key)
       if (!validatedRequiredField(field, value)) {
-        return [...filtered, { key }];
+        return [...filtered, { key }]
       }
-      return filtered;
-    });
+      return filtered
+    })
   }
 
   function hasInvalidRequiredFields(): boolean {
-    const requiredErrors = new Map<string, FieldValidationError>();
+    const requiredErrors = new Map<string, FieldValidationError>()
     for (const field of visibleFields) {
-      const typedField = field as ResolvedDataField<T>;
-      const value = formData[field.name as keyof T];
+      const typedField = field as ResolvedDataField<T>
+      const value = formData[field.name as keyof T]
       if (!validatedRequiredField(typedField, value)) {
-        const key = String(field.name);
+        const key = String(field.name)
         requiredErrors.set(key, {
           key,
           errorMessage: 'Required',
-        });
+        })
       }
     }
-    setErrorFields(prev => {
-      const nonRequiredErrors = prev.filter(err => !requiredErrors.has(err.key));
-      return [...nonRequiredErrors, ...Array.from(requiredErrors.values())];
-    });
-    return requiredErrors.size > 0;
+    setErrorFields((prev) => {
+      const nonRequiredErrors = prev.filter((err) => !requiredErrors.has(err.key))
+      return [...nonRequiredErrors, ...Array.from(requiredErrors.values())]
+    })
+    return requiredErrors.size > 0
   }
 
   // Handles save action; disables buttons while saving and prevents double submission
   async function handleSave() {
-    setHasTriedSubmit(true);
-    if (submitting || hasInvalidRequiredFields() || hasInvalidData()) return;
-    setSubmitting(true);
+    setHasTriedSubmit(true)
+    if (submitting || hasInvalidRequiredFields() || hasInvalidData()) return
+    setSubmitting(true)
     try {
-      await Promise.resolve(onSave(formData));
+      await Promise.resolve(onSave(formData))
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
   }
 
   // Handles simulate action
   async function handleSimulate() {
-    if (messageType == "MsgReclaimTrustDepositYield") return;
-    if (onSimulate){
+    if (messageType === 'MsgReclaimTrustDepositYield') return
+    if (onSimulate) {
       try {
-        setSubmitting(true);
-        const res = await Promise.resolve(onSimulate(formData));
-        if (res) setFeeAmount( Number(res.amount?.[0]?.amount) || 900_000 );
+        setSubmitting(true)
+        const res = await Promise.resolve(onSimulate(formData))
+        if (res) setFeeAmount(Number(res.amount?.[0]?.amount) || 900_000)
       } catch (err) {
-          logger.error("handleSimulate", err);
+        logger.error('handleSimulate', err)
       } finally {
-        setSubmitting(false);
+        setSubmitting(false)
       }
     }
   }
 
   // Future helper: checks full form validity using extended field rules
   function hasInvalidData(): boolean {
-    const invalid = new Map<string, string>();
+    const invalid = new Map<string, string>()
     for (const field of visibleFields) {
-      const typedField = field as ResolvedDataField<T>;
-      const value = formData[field.name as keyof T];
+      const typedField = field as ResolvedDataField<T>
+      const value = formData[field.name as keyof T]
       if (!isValidField(typedField, value)) {
-        const key = String(field.name);
-        const errorMessage = getErrorMessage(field);
-        invalid.set(key, errorMessage);
+        const key = String(field.name)
+        const errorMessage = getErrorMessage(field)
+        invalid.set(key, errorMessage)
       }
     }
-    setErrorFields(Array.from(invalid.entries()).map(([key, errorMessage]) => ({ key, errorMessage })));
-    return invalid.size > 0;
+    setErrorFields(Array.from(invalid.entries()).map(([key, errorMessage]) => ({ key, errorMessage })))
+    return invalid.size > 0
   }
 
   // Handles cancel action; disables button while submitting
   function handleCancel() {
-    if (submitting || !onCancel) return;
-    setSubmitting(true);
+    if (submitting || !onCancel) return
+    setSubmitting(true)
     try {
-      onCancel();
+      onCancel()
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
   }
 
-  const normalInputs: React.ReactNode[] = [];
-  const textareaInputs: React.ReactNode[] = [];
+  const normalInputs: React.ReactNode[] = []
+  const textareaInputs: React.ReactNode[] = []
 
   visibleFields.forEach((field) => {
-    const typedField = field as ResolvedDataField<T>;
-    const value = formData[field.name as keyof T];
-    const isDisabled = field.disabled || (action === 'edit' && field.update === false);
-    const key = String(field.name);
-    const fieldError = errorFields.find(err => err.key === key);
-    const showError = hasTriedSubmit && (Boolean(fieldError)
-      || (!validatedRequiredField(typedField, value)));
-    const errorMessage = fieldError?.errorMessage ?? 'Required';
+    const typedField = field as ResolvedDataField<T>
+    const value = formData[field.name as keyof T]
+    const isDisabled = field.disabled || (action === 'edit' && field.update === false)
+    const key = String(field.name)
+    const fieldError = errorFields.find((err) => err.key === key)
+    const showError = hasTriedSubmit && (Boolean(fieldError) || !validatedRequiredField(typedField, value))
+    const errorMessage = fieldError?.errorMessage ?? 'Required'
 
     // Build base input class for all fields
-    const baseInputClass = 
-      "input" +
-      (showError ? " border-red-500" : "") +
-      (isDisabled ? " bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed" : "");
+    const baseInputClass =
+      'input' +
+      (showError ? ' border-red-500' : '') +
+      (isDisabled ? ' bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed' : '')
 
     // Render different input types
-    let inputEl: React.ReactNode;
+    let inputEl: React.ReactNode
 
     if (field.inputType === 'textarea') {
-      const jsonValue = isJson(value);
-      inputEl = (action == 'edit' && jsonValue) ?
-        (
+      const jsonValue = isJson(value)
+      inputEl =
+        action === 'edit' && jsonValue ? (
           <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 h-64 overflow-y-auto border border-neutral-20 dark:border-neutral-70">
             <JsonCodeBlock value={jsonValue} className="data-view-label" />
           </div>
-        ):(
-        <textarea
-          className={baseInputClass + " w-full"}
-          value={String(value ?? '')}
-          disabled={isDisabled}
-          onChange={e =>
-            handleChange(field.name as keyof T, e.target.value, field)
-          }
-          rows={8}
-        />
-      );
-    }
-    else if (field.inputType === 'select') {
+        ) : (
+          <textarea
+            className={baseInputClass + ' w-full'}
+            value={String(value ?? '')}
+            disabled={isDisabled}
+            onChange={(e) => handleChange(field.name as keyof T, e.target.value, field)}
+            rows={8}
+          />
+        )
+    } else if (field.inputType === 'select') {
       inputEl = (
         <select
           className={baseInputClass}
           value={String(value ?? '')}
           disabled={isDisabled}
-          onChange={e => handleChange(field.name as keyof T, e.target.value, field)}
+          onChange={(e) => handleChange(field.name as keyof T, e.target.value, field)}
         >
           <option value="" disabled>
             Select…
           </option>
-          {(field.options ?? []).map(opt => (
+          {(field.options ?? []).map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
             </option>
           ))}
         </select>
-      );
+      )
     } else if (field.inputType === 'languageSelector') {
       inputEl = (
         <LanguageCombobox
@@ -308,7 +316,7 @@ export default function EditableDataView<T extends object>({
           disabled={isDisabled}
           className={showError ? 'border-red-500' : ''}
         />
-      );
+      )
     } else if (field.inputType === 'number') {
       inputEl = (
         <input
@@ -316,13 +324,13 @@ export default function EditableDataView<T extends object>({
           className={baseInputClass}
           value={String(value ?? '')}
           disabled={isDisabled}
-          onChange={e => {
-            const raw = e.target.value;
-            const parsed = raw === '' ? '' : Number(raw);
-            handleChange(field.name as keyof T, parsed, field);
+          onChange={(e) => {
+            const raw = e.target.value
+            const parsed = raw === '' ? '' : Number(raw)
+            handleChange(field.name as keyof T, parsed, field)
           }}
         />
-      );
+      )
     } else if (field.inputType === 'date') {
       inputEl = (
         <input
@@ -330,9 +338,9 @@ export default function EditableDataView<T extends object>({
           className={baseInputClass}
           value={String(value ?? '')}
           disabled={isDisabled}
-          onChange={e => handleChange(field.name as keyof T, e.target.value, field)}
+          onChange={(e) => handleChange(field.name as keyof T, e.target.value, field)}
         />
-      );
+      )
     } else {
       inputEl = (
         <input
@@ -341,9 +349,9 @@ export default function EditableDataView<T extends object>({
           value={String(value ?? '')}
           disabled={isDisabled}
           placeholder={field.placeholder}
-          onChange={e => handleChange(field.name as keyof T, e.target.value, field)}
+          onChange={(e) => handleChange(field.name as keyof T, e.target.value, field)}
         />
-      );
+      )
     }
 
     const fieldBlock = (
@@ -351,40 +359,30 @@ export default function EditableDataView<T extends object>({
         {/* Label with asterisk if required */}
         <label className="data-edit-label">
           {field.label}
-          {field.required && (
-            <span className="data-edit-required">*</span>
-          )}
+          {field.required && <span className="data-edit-required">*</span>}
         </label>
         {/* Input and error message */}
         {inputEl}
-        {showError && (
-            <div className="data-edit-error">{errorMessage}</div>
-        )}
+        {showError && <div className="data-edit-error">{errorMessage}</div>}
         {/* Description inputType */}
-        { (field.description) && (
-            <p className="data-edit-input-description"
-                dangerouslySetInnerHTML={{ __html: field.description }}
-            />
-          )
-        }
+        {field.description && (
+          <p className="data-edit-input-description" dangerouslySetInnerHTML={{ __html: field.description }} />
+        )}
       </div>
-    );
+    )
 
     if (field.inputType === 'textarea') {
-      textareaInputs.push(
-        <div key={field.name as string}>
-          {fieldBlock}
-        </div>
-      );
+      textareaInputs.push(<div key={field.name as string}>{fieldBlock}</div>)
     } else {
-      normalInputs.push(fieldBlock);
+      normalInputs.push(fieldBlock)
     }
+  })
 
-  });
-  
   return (
-    <div className={`bg-white dark:bg-surface ${withinView? "" : "rounded-xl border border-neutral-20 dark:border-neutral-70 p-6 space-y-4"}`}>
-      { (basicSection?.name || basicSection?.nameCreate) && action == 'create' && (
+    <div
+      className={`bg-white dark:bg-surface ${withinView ? '' : 'rounded-xl border border-neutral-20 dark:border-neutral-70 p-6 space-y-4'}`}
+    >
+      {(basicSection?.name || basicSection?.nameCreate) && action === 'create' && (
         <h2 className="data-edit-section-title">{basicSection?.nameCreate ?? basicSection?.name}</h2>
       )}
       {/* { basicSection?.name && action == 'edit' && withinView && (
@@ -403,90 +401,134 @@ export default function EditableDataView<T extends object>({
       {actionCard && <ActionCard {...actionCard} />}
 
       {!noForm && normalInputs.length > 0 && (
-        <div className={`${(action=="create" && basicSection?.classFormCreate != undefined) ? basicSection?.classFormCreate : basicSection?.classFormEdit}`}>
-            {normalInputs}
+        <div
+          className={`${action === 'create' && basicSection?.classFormCreate !== undefined ? basicSection?.classFormCreate : basicSection?.classFormEdit}`}
+        >
+          {normalInputs}
         </div>
       )}
 
       {/* Inputs Textarea */}
-      {textareaInputs.length > 0 && 
-          textareaInputs
-      }
+      {textareaInputs.length > 0 && textareaInputs}
 
       {/* Cost Message MsgStartPermissionVP | MsgCreatePermission */}
-      { transactionCost && (!actionCard || actionCard.available) && (
-        <div className={clsx('bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4',
-          actionCard && actionCard.available ? 'w-fit mx-auto text-center mb-6' : 'mb-4'
+      {transactionCost && (!actionCard || actionCard.available) && (
+        <div
+          className={clsx(
+            'bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4',
+            actionCard && actionCard.available ? 'w-fit mx-auto text-center mb-6' : 'mb-4'
           )}
         >
           <p
             className="data-edit-form-description"
             dangerouslySetInnerHTML={{ __html: getCostMessage(uiMsgType.cost, formatVNAFromUVNA(transactionCost)) }}
-          /> 
+          />
         </div>
       )}
 
       {/* Warning Cost Message */}
       {(showMsgLowBalanceWarn || showMsgBalanceLessThanFeeWarn) && (
-        <div className={clsx('bg-red-50 dark:bg-red-900/20 rounded-lg p-4',
-          actionCard && actionCard.available ? 'w-fit mx-auto text-center mb-6' : 'mb-4'
+        <div
+          className={clsx(
+            'bg-red-50 dark:bg-red-900/20 rounded-lg p-4',
+            actionCard && actionCard.available ? 'w-fit mx-auto text-center mb-6' : 'mb-4'
           )}
         >
-            <div className="flex">
-                <i className="text-red-600 dark:text-red-400 mt-0.5 mr-3" data-fa-i2svg=""><svg className="svg-inline--fa fa-triangle-exclamation" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="triangle-exclamation" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" data-fa-i2svg=""><path fill="currentColor" d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"></path></svg></i>
-          <p
-            className="text-sm mt-1"
-            dangerouslySetInnerHTML={{ __html: getLowBalanceMessage( showMsgBalanceLessThanFeeWarn ? balanceLessThanFeeTemplate : lowBalanceTemplate, (Number(accountData.balance)/ 1_000_000).toString() ?? "1", (feeAmount / 1_000_000).toString()) }}
-          /> 
-            </div>
+          <div className="flex">
+            <i className="text-red-600 dark:text-red-400 mt-0.5 mr-3" data-fa-i2svg="">
+              <svg
+                className="svg-inline--fa fa-triangle-exclamation"
+                aria-hidden="true"
+                focusable="false"
+                data-prefix="fas"
+                data-icon="triangle-exclamation"
+                role="img"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 512 512"
+                data-fa-i2svg=""
+              >
+                <path
+                  fill="currentColor"
+                  d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"
+                ></path>
+              </svg>
+            </i>
+            <p
+              className="text-sm mt-1"
+              dangerouslySetInnerHTML={{
+                __html: getLowBalanceMessage(
+                  showMsgBalanceLessThanFeeWarn ? balanceLessThanFeeTemplate : lowBalanceTemplate,
+                  (Number(accountData.balance) / 1_000_000).toString() ?? '1',
+                  (feeAmount / 1_000_000).toString()
+                ),
+              }}
+            />
+          </div>
         </div>
       )}
 
       {/* Warning Message */}
       {uiMsgType.warning && (
         <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 mb-4">
-            <div className="flex">
-                <i className="text-red-600 dark:text-red-400 mt-0.5 mr-3" data-fa-i2svg=""><svg className="svg-inline--fa fa-triangle-exclamation" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="triangle-exclamation" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" data-fa-i2svg=""><path fill="currentColor" d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"></path></svg></i>
-                <div>
-                    <h5 className="font-medium text-red-900 dark:text-red-100">{resolveTranslatable({key: 'messages.warning'}, translate)}</h5>
-                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">{uiMsgType.warning}</p>
-                </div>
+          <div className="flex">
+            <i className="text-red-600 dark:text-red-400 mt-0.5 mr-3" data-fa-i2svg="">
+              <svg
+                className="svg-inline--fa fa-triangle-exclamation"
+                aria-hidden="true"
+                focusable="false"
+                data-prefix="fas"
+                data-icon="triangle-exclamation"
+                role="img"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 512 512"
+                data-fa-i2svg=""
+              >
+                <path
+                  fill="currentColor"
+                  d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"
+                ></path>
+              </svg>
+            </i>
+            <div>
+              <h5 className="font-medium text-red-900 dark:text-red-100">
+                {resolveTranslatable({ key: 'messages.warning' }, translate)}
+              </h5>
+              <p className="text-sm text-red-700 dark:text-red-300 mt-1">{uiMsgType.warning}</p>
             </div>
+          </div>
         </div>
       )}
 
       {/* Action buttons: disabled if submitting or validation fails */}
-      { (!actionCard || actionCard.available) && (
-      <div className={clsx('actions-center',
-        actionCard && actionCard.available ? 'w-fit mx-auto text-center mb-6' : ''
-        )}
-      >
-        {onCancel && (
+      {(!actionCard || actionCard.available) && (
+        <div
+          className={clsx('actions-center', actionCard && actionCard.available ? 'w-fit mx-auto text-center mb-6' : '')}
+        >
+          {onCancel && (
+            <button
+              className={clsx(
+                'btn-action-cancel', // base
+                isModal ? 'flex-1' : ''
+              )}
+              onClick={handleCancel}
+              disabled={submitting}
+            >
+              {resolveTranslatable({ key: 'messages.cancel' }, translate)}
+            </button>
+          )}
           <button
             className={clsx(
-              "btn-action-cancel", // base
-              isModal ? "flex-1" : ''
+              'btn-action-confirm', // base
+              isModal ? 'flex-1' : '',
+              msgTypeStyle[messageType].button // specific
             )}
-            onClick={handleCancel}
+            onClick={handleSave}
             disabled={submitting}
           >
-            {resolveTranslatable({key: 'messages.cancel'}, translate)}
+            {uiMsgType.label}
           </button>
-        )}
-        <button
-          className={clsx(
-            "btn-action-confirm", // base
-            isModal ? "flex-1" : '',
-            msgTypeStyle[messageType].button // specific
-          )}
-          onClick={handleSave}
-          disabled={submitting}
-        >
-          {uiMsgType.label}
-        </button>
-      </div>
+        </div>
       )}
-
     </div>
-  );
+  )
 }
