@@ -1,28 +1,27 @@
-'use client';
+'use client'
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChildReaching } from '@fortawesome/free-solid-svg-icons';
+import { faChildReaching } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
+import { serviceAvatarUrl } from '@/lib/resolverClient'
+import TrustBadge from '@/ui/common/trust-badge'
 
-import TrustBadge from '@/ui/common/trust-badge';
-import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment';
-import { serviceAvatarUrl } from '@/lib/resolverClient';
-
-export type EcosystemStatus = 'ARCHIVED';
+export type EcosystemStatus = 'ARCHIVED'
 
 export type EcosystemHeaderProps = {
-  did: string;
-  status?: EcosystemStatus;
-};
+  did: string
+  status?: EcosystemStatus
+}
 
-const ARCHIVED_PILL_CLASS = 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+const ARCHIVED_PILL_CLASS = 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
 
 export default function EcosystemHeader({ did, status }: EcosystemHeaderProps) {
-  const { data: enrichment } = useDidTrustEnrichment(did);
-  const description = enrichment?.serviceDescription;
-  const minAgeRaw = enrichment?.serviceMinAge;
-  const minAgeNum = minAgeRaw != null ? Number(minAgeRaw) : NaN;
-  const showMinAge = Number.isFinite(minAgeNum) && minAgeNum >= 0;
-  const displayName = enrichment?.serviceName ?? enrichment?.organizationName ?? did;
+  const { data: enrichment } = useDidTrustEnrichment(did)
+  const description = enrichment?.serviceDescription
+  const minAgeRaw = enrichment?.serviceMinAge
+  const minAgeNum = minAgeRaw != null ? Number(minAgeRaw) : NaN
+  const showMinAge = Number.isFinite(minAgeNum) && minAgeNum >= 0
+  const displayName = enrichment?.serviceName ?? enrichment?.organizationName ?? did
 
   return (
     <section className="mb-8">
@@ -45,16 +44,16 @@ export default function EcosystemHeader({ did, status }: EcosystemHeaderProps) {
                 <TrustBadge state={enrichment?.trustStatus} size="lg" className="ml-3 align-middle" />
               </h1>
               {status === 'ARCHIVED' ? (
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${ARCHIVED_PILL_CLASS}`}>
+                <span
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${ARCHIVED_PILL_CLASS}`}
+                >
                   ARCHIVED
                 </span>
               ) : null}
             </div>
 
             {description ? (
-              <p className="text-xs sm:text-sm text-neutral-70 dark:text-neutral-70 mb-4 line-clamp-3">
-                {description}
-              </p>
+              <p className="text-xs sm:text-sm text-neutral-70 dark:text-neutral-70 mb-4 line-clamp-3">{description}</p>
             ) : null}
 
             {showMinAge ? (
@@ -69,5 +68,5 @@ export default function EcosystemHeader({ did, status }: EcosystemHeaderProps) {
         </div>
       </div>
     </section>
-  );
+  )
 }

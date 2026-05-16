@@ -1,202 +1,222 @@
-import { Section } from "@/ui/dataview/types";
-import { CsData } from "./cs";
-import { faBoxArchive, faEdit } from "@fortawesome/free-solid-svg-icons";
+import { faBoxArchive, faEdit } from '@fortawesome/free-solid-svg-icons'
+import { Section } from '@/ui/dataview/types'
+import { CsData } from './cs'
 
-const t = (key: string) => ({ key });
+const t = (key: string) => ({ key })
 
 //Trust Registry data
 export interface TrData {
-  id: string;
-  did: string;
-  aka: string;
-  controller: string;
-  language: string;
-  docUrl?: string;
+  id: string
+  did: string
+  aka: string
+  controller: string
+  language: string
+  docUrl?: string
   // V4 spec form metadata. Not chain-persisted yet — surfaced only in the
   // create modal to align with the spec; will be wired to ECS-ORG /
   // ECS-SERVICE credential issuance once verana-types#368 lands.
-  orgName?: string;
-  trServiceName?: string;
-  deposit: string;
-  role?: string;
-  created?: string;
-  modified?: string;
-  archived?: string;
-  active_version?: number;
-  schemas?: string;
-  docs?: string[];
-  addGovernanceFrameworkDocument?: string; // action type
-  increaseActiveGovernanceFrameworkVersion?: string; // action type
+  orgName?: string
+  trServiceName?: string
+  deposit: string
+  role?: string
+  created?: string
+  modified?: string
+  archived?: string
+  active_version?: number
+  schemas?: string
+  docs?: string[]
+  addGovernanceFrameworkDocument?: string // action type
+  increaseActiveGovernanceFrameworkVersion?: string // action type
   versions?: {
-    id: string;
-    version: number;
-    active_since: string;
+    id: string
+    version: number
+    active_since: string
     documents?: {
-      id: string;
-      url: string;
-      language: string;
-    }[];
-  }[];
-  last_version?: number;
-  csList?: CsData[];
-  participants?: number;
-  title?: string;
-  description?: string;
-  updateTrustRegistry?: string; // action type
-  archiveTrustRegistry?: string; // action type
-  unarchiveTrustRegistry?: string; // action type
+      id: string
+      url: string
+      language: string
+    }[]
+  }[]
+  last_version?: number
+  csList?: CsData[]
+  participants?: number
+  title?: string
+  description?: string
+  updateTrustRegistry?: string // action type
+  archiveTrustRegistry?: string // action type
+  unarchiveTrustRegistry?: string // action type
 }
 
 // Sections configuration for TrData
 export const trSections: Section<TrData>[] = [
   {
-    name: t("dataview.tr.sections.basicInformation"),
-    type: "basic",
-    classFormEdit: "grid grid-cols-1 md:grid-cols-2 gap-6 mb-6", //lg:grid-cols-3
+    name: t('dataview.tr.sections.basicInformation'),
+    type: 'basic',
+    classFormEdit: 'grid grid-cols-1 md:grid-cols-2 gap-6 mb-6', //lg:grid-cols-3
     noEdit: true,
     fields: [
-      { name: "id", label: t("dataview.tr.fields.id"), type: "data", show: "view", update: false, id: true },
+      { name: 'id', label: t('dataview.tr.fields.id'), type: 'data', show: 'view', update: false, id: true },
       {
-        name: "did",
-        label: t("dataview.tr.fields.did"),
-        type: "data",
-        show: "none",
+        name: 'did',
+        label: t('dataview.tr.fields.did'),
+        type: 'data',
+        show: 'none',
         required: true,
         update: true,
-        placeholder: "did:method:identifier",
-        validation: { type: "DID" },
+        placeholder: 'did:method:identifier',
+        validation: { type: 'DID' },
       },
       {
-        name: "aka",
-        label: t("dataview.tr.fields.aka"),
-        type: "data",
-        show: "none",
+        name: 'aka',
+        label: t('dataview.tr.fields.aka'),
+        type: 'data',
+        show: 'none',
         required: true,
         update: true,
-        validation: { type: "URL" },
+        validation: { type: 'URL' },
       },
-      { name: "controller", label: t("dataview.tr.fields.controller"), type: "data", show: "view", update: false },
+      { name: 'controller', label: t('dataview.tr.fields.controller'), type: 'data', show: 'view', update: false },
       {
-        name: "language",
-        label: t("dataview.tr.fields.language"),
-        type: "data",
-        inputType: "languageSelector",
-        show: "view",
+        name: 'language',
+        label: t('dataview.tr.fields.language'),
+        type: 'data',
+        inputType: 'languageSelector',
+        show: 'view',
         required: false,
         update: false,
       },
       {
-        name: "docUrl",
-        label: t("dataview.tr.fields.docUrl"),
-        type: "data",
-        show: "none",
+        name: 'docUrl',
+        label: t('dataview.tr.fields.docUrl'),
+        type: 'data',
+        show: 'none',
         required: true,
         update: false,
-        validation: { type: "URL" },
+        validation: { type: 'URL' },
       },
-      { name: "deposit", label: t("dataview.tr.fields.deposit"), type: "data", show: "view" },
-      { name: "role", label: t("dataview.tr.fields.role"), type: "data", show: "none" },
-      { name: "created", label: t("dataview.tr.fields.created"), type: "data", show: "none" },
-      { name: "modified", label: t("dataview.tr.fields.modified"), type: "data", show: "none" },
-      { name: "active_version", label: t("dataview.tr.fields.active_version"), type: "data", show: "view" },
-      { name: "schemas", label: t("dataview.tr.fields.schemas"), type: "data", show: "none" },
-      { name: "archiveTrustRegistry", label: t("dataview.tr.actions.archiveTrustRegistry"), type: "action", icon: faBoxArchive, iconColorClass: "bg-gray-600 text-white hover:bg-gray-700" },
-      { name: "unarchiveTrustRegistry", label: t("dataview.tr.actions.unarchiveTrustRegistry"), type: "action", icon: faBoxArchive, iconColorClass: "bg-green-600 text-white hover:bg-green-700" },
+      { name: 'deposit', label: t('dataview.tr.fields.deposit'), type: 'data', show: 'view' },
+      { name: 'role', label: t('dataview.tr.fields.role'), type: 'data', show: 'none' },
+      { name: 'created', label: t('dataview.tr.fields.created'), type: 'data', show: 'none' },
+      { name: 'modified', label: t('dataview.tr.fields.modified'), type: 'data', show: 'none' },
+      { name: 'active_version', label: t('dataview.tr.fields.active_version'), type: 'data', show: 'view' },
+      { name: 'schemas', label: t('dataview.tr.fields.schemas'), type: 'data', show: 'none' },
+      {
+        name: 'archiveTrustRegistry',
+        label: t('dataview.tr.actions.archiveTrustRegistry'),
+        type: 'action',
+        icon: faBoxArchive,
+        iconColorClass: 'bg-gray-600 text-white hover:bg-gray-700',
+      },
+      {
+        name: 'unarchiveTrustRegistry',
+        label: t('dataview.tr.actions.unarchiveTrustRegistry'),
+        type: 'action',
+        icon: faBoxArchive,
+        iconColorClass: 'bg-green-600 text-white hover:bg-green-700',
+      },
     ],
   },
   {
-    name: t("dataview.section.mutable"),
-    nameCreate: t("dataview.tr.sections.basicInformation"),
-    type: "basic",
-    classFormEdit: "grid grid-cols-1 md:grid-cols-2 gap-6 mb-6", //lg:grid-cols-3
-    classFormCreate: "space-y-6 mb-6",
+    name: t('dataview.section.mutable'),
+    nameCreate: t('dataview.tr.sections.basicInformation'),
+    type: 'basic',
+    classFormEdit: 'grid grid-cols-1 md:grid-cols-2 gap-6 mb-6', //lg:grid-cols-3
+    classFormCreate: 'space-y-6 mb-6',
     fields: [
-      { name: "id", label: t("dataview.tr.fields.id"), type: "data", show: "none", update: false, id: true },
+      { name: 'id', label: t('dataview.tr.fields.id'), type: 'data', show: 'none', update: false, id: true },
       {
-        name: "orgName",
-        label: t("dataview.tr.fields.orgName"),
-        type: "data",
-        show: "create",
+        name: 'orgName',
+        label: t('dataview.tr.fields.orgName'),
+        type: 'data',
+        show: 'create',
         required: true,
         update: false,
-        placeholder: "Healthcare Credentials Ecosystem",
+        placeholder: 'Healthcare Credentials Ecosystem',
       },
       {
-        name: "trServiceName",
-        label: t("dataview.tr.fields.trServiceName"),
-        type: "data",
-        show: "create",
+        name: 'trServiceName',
+        label: t('dataview.tr.fields.trServiceName'),
+        type: 'data',
+        show: 'create',
         required: true,
         update: false,
-        placeholder: "Healthcare Trust Registry",
+        placeholder: 'Healthcare Trust Registry',
       },
       {
-        name: "did",
-        label: t("dataview.tr.fields.did"),
-        type: "data",
-        show: "all",
+        name: 'did',
+        label: t('dataview.tr.fields.did'),
+        type: 'data',
+        show: 'all',
         required: true,
         update: true,
-        placeholder: "did:method:identifier",
-        validation: { type: "DID" },
+        placeholder: 'did:method:identifier',
+        validation: { type: 'DID' },
       },
       {
-        name: "aka",
-        label: t("dataview.tr.fields.aka"),
-        type: "data",
-        show: "all",
+        name: 'aka',
+        label: t('dataview.tr.fields.aka'),
+        type: 'data',
+        show: 'all',
         required: true,
         update: true,
-        validation: { type: "URL" },
+        validation: { type: 'URL' },
       },
-      { name: "controller", label: t("dataview.tr.fields.controller"), type: "data", show: "none", update: false },
+      { name: 'controller', label: t('dataview.tr.fields.controller'), type: 'data', show: 'none', update: false },
       {
-        name: "language",
-        label: t("dataview.tr.fields.language"),
-        type: "data",
-        inputType: "languageSelector",
-        show: "create",
+        name: 'language',
+        label: t('dataview.tr.fields.language'),
+        type: 'data',
+        inputType: 'languageSelector',
+        show: 'create',
         required: true,
         update: false,
       },
       {
-        name: "docUrl",
-        label: t("dataview.tr.fields.docUrl"),
-        type: "data",
-        show: "create",
+        name: 'docUrl',
+        label: t('dataview.tr.fields.docUrl'),
+        type: 'data',
+        show: 'create',
         required: true,
         update: false,
-        placeholder: "https://example.com/governance-framework.pdf",
-        validation: { type: "URL" },
+        placeholder: 'https://example.com/governance-framework.pdf',
+        validation: { type: 'URL' },
       },
-      { name: "updateTrustRegistry", label: t("dataview.tr.actions.updateTrustRegistry"), type: "action", icon: faEdit, isEditButton: true },
+      {
+        name: 'updateTrustRegistry',
+        label: t('dataview.tr.actions.updateTrustRegistry'),
+        type: 'action',
+        icon: faEdit,
+        isEditButton: true,
+      },
     ],
   },
-];
-
+]
 
 //GFD data
 export interface GfdData {
-  docs?: string[];
-  addGovernanceFrameworkDocument?: string; // action type
-  increaseActiveGovernanceFrameworkVersion?: string; // action type
+  docs?: string[]
+  addGovernanceFrameworkDocument?: string // action type
+  increaseActiveGovernanceFrameworkVersion?: string // action type
 }
 
 // Sections configuration for TrData
 export const gfdSections: Section<GfdData>[] = [
   {
-    name: t("dataview.tr.sections.governanceFrameworkDocuments"),
+    name: t('dataview.tr.sections.governanceFrameworkDocuments'),
     // icon: ListBulletIcon,
-    type: "advanced",
+    type: 'advanced',
     fields: [
-      { name: "docs", label: t("dataview.tr.fields.docs"), type: "list", objectData: "string" },
-      { name: "addGovernanceFrameworkDocument", label: t("dataview.tr.actions.addGovernanceFrameworkDocument"), type: "action" },
+      { name: 'docs', label: t('dataview.tr.fields.docs'), type: 'list', objectData: 'string' },
       {
-        name: "increaseActiveGovernanceFrameworkVersion",
-        label: t("dataview.tr.actions.increaseActiveGovernanceFrameworkVersion"),
-        type: "action",
+        name: 'addGovernanceFrameworkDocument',
+        label: t('dataview.tr.actions.addGovernanceFrameworkDocument'),
+        type: 'action',
+      },
+      {
+        name: 'increaseActiveGovernanceFrameworkVersion',
+        label: t('dataview.tr.actions.increaseActiveGovernanceFrameworkVersion'),
+        type: 'action',
       },
     ],
-  }
-];
-
+  },
+]

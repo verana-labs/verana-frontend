@@ -1,100 +1,104 @@
 'use client'
 
-import { translate } from "@/i18n/dataview";
-import CsCard from "@/ui/common/cs-card";
-import TitleAndButton from "@/ui/common/title-and-button";
-import { CsList } from "@/ui/datatable/columnslist/cs";
-import { resolveTranslatable } from "@/ui/dataview/types";
-import { useEffect, useMemo, useState } from "react";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronLeft, faChevronRight, faCoins, faFileContract, faScaleBalanced, faShieldHalved } from "@fortawesome/free-solid-svg-icons";
-import { formatVNA } from "@/util/util";
-import Link from "next/link";
-import { useDiscoverCtx } from "@/providers/api-rest-query-provider-context";
-import { TrList } from "@/ui/datatable/columnslist/tr";
+import {
+  faChevronLeft,
+  faChevronRight,
+  faCoins,
+  faFileContract,
+  faScaleBalanced,
+  faShieldHalved,
+} from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import Link from 'next/link'
+import { useEffect, useMemo, useState } from 'react'
+import { translate } from '@/i18n/dataview'
+import { useDiscoverCtx } from '@/providers/api-rest-query-provider-context'
+import CsCard from '@/ui/common/cs-card'
+import TitleAndButton from '@/ui/common/title-and-button'
+import { CsList } from '@/ui/datatable/columnslist/cs'
+import { TrList } from '@/ui/datatable/columnslist/tr'
+import { resolveTranslatable } from '@/ui/dataview/types'
+import { formatVNA } from '@/util/util'
 
 export default function DiscoverJoinPage() {
+  const discoverCtx = useDiscoverCtx()
+  const [ecosystems, setEcosystems] = useState<TrList[]>()
+  const loading = false
 
-    const discoverCtx = useDiscoverCtx();
-    const [ ecosystems, setEcosystems ] = useState<TrList[]>();
-    const loading = false;
+  const csByTrId = useMemo(() => {
+    const map = new Map<string, CsList[]>()
+    if (!discoverCtx.csList) return map
+    for (const cs of discoverCtx.csList) {
+      const key = cs.trId
+      const arr = map.get(key)
+      if (arr) arr.push(cs)
+      else map.set(key, [cs])
+    }
+    return map
+  }, [discoverCtx.csList])
 
-    const csByTrId = useMemo(() => {
-      const map = new Map<string, CsList[]>();
-      if (!discoverCtx.csList) return map;
-      for (const cs of discoverCtx.csList) {
-          const key = cs.trId;
-          const arr = map.get(key);
-          if (arr) arr.push(cs);
-          else map.set(key, [cs]);
-      }
-      return map;
-    }, [discoverCtx.csList]);
+  useEffect(() => {
+    if (!discoverCtx.discoverList) {
+      setEcosystems([])
+      return
+    }
+    setEcosystems(
+      discoverCtx.discoverList.map((tr) => ({
+        ...tr,
+        csList: csByTrId.get(String(tr.id)) ?? [],
+      }))
+    )
+  }, [discoverCtx.discoverList, csByTrId])
 
-    useEffect(() => {
-      if (!discoverCtx.discoverList) {
-        setEcosystems([]);
-        return;
-      }
-      setEcosystems(
-        discoverCtx.discoverList.map((tr) => ({
-          ...tr,
-          csList: csByTrId.get(String(tr.id)) ?? []
-        }))
-      );
-    }, [discoverCtx.discoverList, csByTrId]);
+  const [search, setSearch] = useState(discoverCtx.discoverSearch)
 
-    const [search, setSearch] = useState(discoverCtx.discoverSearch);
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) return ecosystems
+    return ecosystems?.filter((e) => e.did?.toLowerCase().includes(term))
+  }, [search, ecosystems])
 
-    const filtered = useMemo(() => {
-      const term = search.trim().toLowerCase(); 
-      if (!term) return ecosystems;
-      return ecosystems?.filter((e) => e.did?.toLowerCase().includes(term));
-    }, [search, ecosystems]);
+  const PAGE_SIZE = 5
+  const [page, setPage] = useState(discoverCtx.discoverPage)
 
-    const PAGE_SIZE = 5;
-    const [page, setPage] = useState(discoverCtx.discoverPage);
+  const totalPages = useMemo(() => {
+    if (!filtered) return undefined
+    return Math.max(1, Math.ceil((filtered?.length ?? 0) / PAGE_SIZE))
+  }, [filtered])
 
-    const totalPages = useMemo(() => {
-      if (!filtered) return undefined;
-      return Math.max(1, Math.ceil((filtered?.length ?? 0) / PAGE_SIZE));
-    }, [filtered]);
+  useEffect(() => {
+    if (totalPages == null) return
+    setPage((p) => Math.min(Math.max(1, p), totalPages))
+  }, [totalPages])
 
-    useEffect(() => {
-      if (totalPages == null) return;
-      setPage((p) => Math.min(Math.max(1, p), totalPages));
-    }, [totalPages]);
+  const paginated = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE
+    return filtered?.slice(start, start + PAGE_SIZE)
+  }, [filtered, page])
 
-    const paginated = useMemo(() => {
-      const start = (page - 1) * PAGE_SIZE;
-      return filtered?.slice(start, start + PAGE_SIZE);
-    }, [filtered, page]);
+  useEffect(() => {
+    discoverCtx.setDiscoverSearch(search)
+  }, [search])
 
-    useEffect(() => {
-      discoverCtx.setDiscoverSearch(search);
-    }, [search]);
+  useEffect(() => {
+    discoverCtx.setDiscoverPage(page)
+    document.getElementById('app-scroll')?.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [page])
 
-    useEffect(() => {
-      discoverCtx.setDiscoverPage(page);
-      document.getElementById("app-scroll")?.scrollTo({ top: 0, behavior: "smooth" });
-    }, [page]);
+  // Refresh trList and csList
+  const [refresh, setRefresh] = useState<boolean>(true)
+  useEffect(() => {
+    if (!refresh) return
+    ;(async () => {
+      await discoverCtx.refetch()
+      setRefresh(false)
+    })()
+  }, [refresh])
 
-    // Refresh trList and csList
-    const [refresh, setRefresh] = useState<boolean>(true);
-    useEffect(() => {
-        if (!refresh) return;
-        (async () => {
-        await discoverCtx.refetch();
-        setRefresh(false);
-        })();
-    }, [refresh]);
-  
   return (
     <>
-       <TitleAndButton
-         title={resolveTranslatable({key: "discover.title"}, translate)?? "Discover & Join"}
-       />
-        
+      <TitleAndButton title={resolveTranslatable({ key: 'discover.title' }, translate) ?? 'Discover & Join'} />
+
       <section
         id="search-form"
         className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6 mb-6"
@@ -104,7 +108,7 @@ export default function DiscoverJoinPage() {
             <input
               type="text"
               id="search-input"
-              placeholder={resolveTranslatable({key: "discover.search.placeholder"}, translate)}
+              placeholder={resolveTranslatable({ key: 'discover.search.placeholder' }, translate)}
               className="w-full px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -114,156 +118,156 @@ export default function DiscoverJoinPage() {
       </section>
 
       <section id="ecosystem-list" className="space-y-6">
-        {loading ? [...Array(3)].map((_, i) => (
-          <div key={i} className="skeleton-card rounded-xl border border-neutral-20 dark:border-neutral-70">
-            <div className="skeleton-title mb-2 w-1/2" />
-            <div className="skeleton-text w-1/3 mb-6" />
-            <div className="space-y-4">
-              <div className="skeleton-block h-16 rounded-lg" />
-              <div className="skeleton-block h-16 rounded-lg" />
-            </div>
-          </div>
-        )) : paginated?.map((eco, idx) => {
-          const egfUrl = eco.versions?.find((x) => x.version === eco.active_version)?.documents?.[0]?.url;
-        return (
-          <div
-            key={eco.did + '-' + idx}
-            className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6"
-          >
-            <div className="mb-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 break-all">
-                    {eco.did}
-                  </h2>
-                  <div className="flex items-center space-x-4 text-sm text-neutral-70 dark:text-neutral-70">
-                    <span>
-                      <FontAwesomeIcon className="mr-1" aria-hidden="true" icon={faFileContract} />
-                      {eco.csList?.length} {resolveTranslatable({key: "discover.cs.label"}, translate)}
-                    </span>
-                    <span>
-                      <FontAwesomeIcon className="mr-1" aria-hidden="true" icon={faCoins} />
-                      {resolveTranslatable({key: "discover.td.label"}, translate)} {formatVNA(eco.deposit)}
-                    </span>
-                  </div>
+        {loading
+          ? [...Array(3)].map((_, i) => (
+              <div key={i} className="skeleton-card rounded-xl border border-neutral-20 dark:border-neutral-70">
+                <div className="skeleton-title mb-2 w-1/2" />
+                <div className="skeleton-text w-1/3 mb-6" />
+                <div className="space-y-4">
+                  <div className="skeleton-block h-16 rounded-lg" />
+                  <div className="skeleton-block h-16 rounded-lg" />
                 </div>
               </div>
-              <div className="flex flex-wrap gap-3">
-                {egfUrl && (
-                <Link
-                  href={egfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center px-4 py-2 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors text-sm font-medium"
+            ))
+          : paginated?.map((eco, idx) => {
+              const egfUrl = eco.versions?.find((x) => x.version === eco.active_version)?.documents?.[0]?.url
+              return (
+                <div
+                  key={eco.did + '-' + idx}
+                  className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6"
                 >
-                  <FontAwesomeIcon className="mr-2" aria-hidden="true" icon={faScaleBalanced} />
-                  {resolveTranslatable({key: "discover.btn.egf"}, translate)}
-                </Link>
-                )}
+                  <div className="mb-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 break-all">{eco.did}</h2>
+                        <div className="flex items-center space-x-4 text-sm text-neutral-70 dark:text-neutral-70">
+                          <span>
+                            <FontAwesomeIcon className="mr-1" aria-hidden="true" icon={faFileContract} />
+                            {eco.csList?.length} {resolveTranslatable({ key: 'discover.cs.label' }, translate)}
+                          </span>
+                          <span>
+                            <FontAwesomeIcon className="mr-1" aria-hidden="true" icon={faCoins} />
+                            {resolveTranslatable({ key: 'discover.td.label' }, translate)} {formatVNA(eco.deposit)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      {egfUrl && (
+                        <Link
+                          href={egfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center px-4 py-2 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors text-sm font-medium"
+                        >
+                          <FontAwesomeIcon className="mr-2" aria-hidden="true" icon={faScaleBalanced} />
+                          {resolveTranslatable({ key: 'discover.btn.egf' }, translate)}
+                        </Link>
+                      )}
 
-                <Link
-                  href={`/tr/${eco.id}`}
-                  className="inline-flex items-center px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-sm font-medium"
-                >
-                  <FontAwesomeIcon className="mr-2" aria-hidden="true" icon={faShieldHalved} />
-                  {resolveTranslatable({key: "discover.btn.view"}, translate)} 
-                </Link>
-              </div>
-            </div>
+                      <Link
+                        href={`/tr/${eco.id}`}
+                        className="inline-flex items-center px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-sm font-medium"
+                      >
+                        <FontAwesomeIcon className="mr-2" aria-hidden="true" icon={faShieldHalved} />
+                        {resolveTranslatable({ key: 'discover.btn.view' }, translate)}
+                      </Link>
+                    </div>
+                  </div>
 
-            <div className="space-y-4">
-              {eco.csList?.map((schema) => (
-                <CsCard key={schema.id} cs={schema}/>
-              ))}
-            </div>
-          </div>
-        )})}
+                  <div className="space-y-4">
+                    {eco.csList?.map((schema) => (
+                      <CsCard key={schema.id} cs={schema} />
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
       </section>
 
       {filtered && filtered.length > 0 ? (
-      <section id="pagination" className="mt-8 flex justify-center">
-        <nav className="inline-flex rounded-lg shadow-sm" aria-label="Pagination">
-          <button
-            type="button"
-            disabled={page === 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className={[
-              "px-3 py-2 text-sm font-medium bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-l-lg",
-              page === 1
-                ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
-                : "text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800",
-            ].join(" ")}
-            aria-label="Previous page"
-          >
-            <FontAwesomeIcon icon={faChevronLeft}/>
-          </button>
+        <section id="pagination" className="mt-8 flex justify-center">
+          <nav className="inline-flex rounded-lg shadow-sm" aria-label="Pagination">
+            <button
+              type="button"
+              disabled={page === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className={[
+                'px-3 py-2 text-sm font-medium bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-l-lg',
+                page === 1
+                  ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                  : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800',
+              ].join(' ')}
+              aria-label="Previous page"
+            >
+              <FontAwesomeIcon icon={faChevronLeft} />
+            </button>
 
-          {(() => {
-            if (totalPages == null) return null;
-            const maxVisible = 6;
-            const pages: (number | 'ellipsis')[] = [];
+            {(() => {
+              if (totalPages == null) return null
+              const maxVisible = 6
+              const pages: (number | 'ellipsis')[] = []
 
-            if (totalPages <= maxVisible) {
-              for (let i = 1; i <= totalPages; i++) pages.push(i);
-            } else {
-              if (page <= 3) {
-                pages.push(1, 2, 3, 4, 5, 'ellipsis', totalPages);
-              } else if (page >= totalPages - 2) {
-                pages.push(1, 'ellipsis', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+              if (totalPages <= maxVisible) {
+                for (let i = 1; i <= totalPages; i++) pages.push(i)
               } else {
-                pages.push(1, 'ellipsis', page - 1, page, page + 1, 'ellipsis', totalPages);
+                if (page <= 3) {
+                  pages.push(1, 2, 3, 4, 5, 'ellipsis', totalPages)
+                } else if (page >= totalPages - 2) {
+                  pages.push(1, 'ellipsis', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
+                } else {
+                  pages.push(1, 'ellipsis', page - 1, page, page + 1, 'ellipsis', totalPages)
+                }
               }
-            }
 
-            return pages.map((item, idx) => {
-              if (item === 'ellipsis') {
+              return pages.map((item, idx) => {
+                if (item === 'ellipsis') {
+                  return (
+                    <span
+                      key={`ellipsis-${idx}`}
+                      className="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400"
+                    >
+                      ...
+                    </span>
+                  )
+                }
+
+                const isActive = item === page
                 return (
-                  <span
-                    key={`ellipsis-${idx}`}
-                    className="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400"
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setPage(item)}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={
+                      isActive
+                        ? 'px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-primary-600'
+                        : 'px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }
                   >
-                    ...
-                  </span>
-                );
-              }
+                    {item}
+                  </button>
+                )
+              })
+            })()}
 
-              const isActive = item === page;
-              return (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => setPage(item)}
-                  aria-current={isActive ? 'page' : undefined}
-                  className={
-                    isActive
-                      ? 'px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-primary-600'
-                      : 'px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 hover:bg-gray-50 dark:hover:bg-gray-800'
-                  }
-                >
-                  {item}
-                </button>
-              );
-            });
-          })()}
-
-          <button
-            type="button"
-            disabled={totalPages == null || page === totalPages}
-            onClick={() => setPage((p) => Math.min(totalPages ?? 1, p + 1))}
-            className={[
-              "px-3 py-2 text-sm font-medium bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-r-lg",
-              page === totalPages
-                ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
-                : "text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800",
-            ].join(" ")}
-            aria-label="Next page"
-          >
-            <FontAwesomeIcon icon={faChevronRight}/>
-          </button>
-        </nav>
-      </section>
-      ) : null }
-
+            <button
+              type="button"
+              disabled={totalPages == null || page === totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages ?? 1, p + 1))}
+              className={[
+                'px-3 py-2 text-sm font-medium bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-r-lg',
+                page === totalPages
+                  ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                  : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800',
+              ].join(' ')}
+              aria-label="Next page"
+            >
+              <FontAwesomeIcon icon={faChevronRight} />
+            </button>
+          </nav>
+        </section>
+      ) : null}
     </>
-  );
+  )
 }

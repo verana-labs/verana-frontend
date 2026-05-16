@@ -1,94 +1,92 @@
 'use client'
 
-import { DashboardData, dashboardSections } from "@/ui/dataview/datasections/dashboard";
-import DataView from "@/ui/common/data-view-columns";
-import TitleAndButton from "@/ui/common/title-and-button";
-import { resolveTranslatable } from "@/ui/dataview/types";
-import { translate } from "@/i18n/dataview";
-import Wallet from "@/wallet/wallet";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faWallet } from "@fortawesome/free-solid-svg-icons";
-import FeaturedServices from "@/ui/common/featured-services";
-import GettingStarted from "@/ui/common/getting-started";
-import DashboardFooter from "@/ui/common/dashboard-footer";
-import { useDashboardCtx } from "@/providers/api-rest-query-provider-context";
-import { useEffect, useState } from "react";
-import { useIndexerEvents } from "@/providers/indexer-events-provider";
-import { useVeranaChain } from "@/hooks/useVeranaChain";
-import { useChain } from "@cosmos-kit/react";
+import { useChain } from '@cosmos-kit/react'
+import { faWallet } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useEffect, useState } from 'react'
+import { useVeranaChain } from '@/hooks/useVeranaChain'
+import { translate } from '@/i18n/dataview'
+import { useDashboardCtx } from '@/providers/api-rest-query-provider-context'
+import { useIndexerEvents } from '@/providers/indexer-events-provider'
+import DashboardFooter from '@/ui/common/dashboard-footer'
+import DataView from '@/ui/common/data-view-columns'
+import FeaturedServices from '@/ui/common/featured-services'
+import GettingStarted from '@/ui/common/getting-started'
+import TitleAndButton from '@/ui/common/title-and-button'
+import { DashboardData, dashboardSections } from '@/ui/dataview/datasections/dashboard'
+import { resolveTranslatable } from '@/ui/dataview/types'
+import Wallet from '@/wallet/wallet'
 
 export default function Page() {
-  const veranaChain = useVeranaChain();
-  const chainName = veranaChain.chain_name;
-  const { isWalletConnected } = useChain(chainName);
+  const veranaChain = useVeranaChain()
+  const chainName = veranaChain.chain_name
+  const { isWalletConnected } = useChain(chainName)
 
   // Block height from indexer ws
-  const { latestProcessedHeight } = useIndexerEvents();
-  const dashboardCtx = useDashboardCtx();
-  const [dashboardData, setDashboardData] = useState<DashboardData>({});
+  const { latestProcessedHeight } = useIndexerEvents()
+  const dashboardCtx = useDashboardCtx()
+  const [dashboardData, setDashboardData] = useState<DashboardData>({})
 
-  const [ refresh, setRefresh ] = useState<boolean>(true);
+  const [refresh, setRefresh] = useState<boolean>(true)
 
   useEffect(() => {
     setDashboardData((prev) => ({
       ...dashboardCtx.dashboardData,
       blockHeight: latestProcessedHeight,
-    }));
-  }, [latestProcessedHeight, dashboardCtx.dashboardData]);
+    }))
+  }, [latestProcessedHeight, dashboardCtx.dashboardData])
 
   useEffect(() => {
-    if (!refresh) return;
-    (async () => {
-      await dashboardCtx.refetch();
-      setRefresh(false);
-    })();
-  }, [refresh]);
-  
+    if (!refresh) return
+    ;(async () => {
+      await dashboardCtx.refetch()
+      setRefresh(false)
+    })()
+  }, [refresh])
+
   return (
     <>
       <TitleAndButton
-        title={resolveTranslatable({key: "dashboard.title"}, translate)?? "Dashboard"}
-        description={[resolveTranslatable({key: "dashboard.desc"}, translate)??""]}
+        title={resolveTranslatable({ key: 'dashboard.title' }, translate) ?? 'Dashboard'}
+        description={[resolveTranslatable({ key: 'dashboard.desc' }, translate) ?? '']}
       />
 
-      <DataView<DashboardData>
-          sectionsI18n={dashboardSections}
-          data={dashboardData}
-          id=""
-          loading={false}
-      />
+      <DataView<DashboardData> sectionsI18n={dashboardSections} data={dashboardData} id="" loading={false} />
 
       {/* Wallet Connection CTA */}
-      { !isWalletConnected && (
-      <section className="mb-8">
-        <div className="bg-gradient-to-r from-primary-600 to-primary-500 rounded-2xl shadow-xl overflow-hidden">
-          <div className="px-6 py-8 sm:px-8 sm:py-12">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <div className="flex-1 min-w-0">
-                  <h2 className="text-2xl font-bold text-white mb-2">{resolveTranslatable({key: 'notconnected.dashboard.title'}, translate)}</h2>
-                  <p className="text-primary-100 text-lg mb-4">{resolveTranslatable({key: 'notconnected.dashboard.msg'}, translate)}</p>
-              </div>
-              <div className="flex-shrink-0">
+      {!isWalletConnected && (
+        <section className="mb-8">
+          <div className="bg-gradient-to-r from-primary-600 to-primary-500 rounded-2xl shadow-xl overflow-hidden">
+            <div className="px-6 py-8 sm:px-8 sm:py-12">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-2xl font-bold text-white mb-2">
+                    {resolveTranslatable({ key: 'notconnected.dashboard.title' }, translate)}
+                  </h2>
+                  <p className="text-primary-100 text-lg mb-4">
+                    {resolveTranslatable({ key: 'notconnected.dashboard.msg' }, translate)}
+                  </p>
+                </div>
+                <div className="flex-shrink-0">
                   <div className="inline-flex items-center px-8 py-4 bg-white text-primary-700 text-lg font-semibold rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-600">
                     <FontAwesomeIcon icon={faWallet} />
-                    <Wallet/>
+                    <Wallet />
                   </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
       )}
 
       {/* Featured Services */}
-      <FeaturedServices isWalletConnected={isWalletConnected}/>
+      <FeaturedServices isWalletConnected={isWalletConnected} />
 
       {/* Getting Started Guide */}
-      <GettingStarted/>
+      <GettingStarted />
 
       {/* Footer */}
-      <DashboardFooter/>
-
+      <DashboardFooter />
     </>
-  );
+  )
 }

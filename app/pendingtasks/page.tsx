@@ -1,27 +1,27 @@
-'use client';
+'use client'
 
-import PermissionTree, { TreeNode } from "@/ui/common/permission-tree";
-import { useEffect, useState } from "react";
-import { Permission, TrustRegistriesPermission } from "@/ui/dataview/datasections/perm";
-import { faFolder } from "@fortawesome/free-solid-svg-icons";
-import { useVeranaChain } from "@/hooks/useVeranaChain";
-import { useChain } from "@cosmos-kit/react";
-import { authorityPaticipants, roleColorClass } from "@/util/util";
-import { usePendingTasksCtx } from '@/providers/api-rest-query-provider-context';
+import { useChain } from '@cosmos-kit/react'
+import { faFolder } from '@fortawesome/free-solid-svg-icons'
+import { useEffect, useState } from 'react'
+import { useVeranaChain } from '@/hooks/useVeranaChain'
+import { usePendingTasksCtx } from '@/providers/api-rest-query-provider-context'
+import PermissionTree, { TreeNode } from '@/ui/common/permission-tree'
+import { Permission, TrustRegistriesPermission } from '@/ui/dataview/datasections/perm'
+import { authorityPaticipants, roleColorClass } from '@/util/util'
 
 export default function PendingTasksPage() {
-  const veranaChain = useVeranaChain();
-  const { address } = useChain(veranaChain.chain_name);
+  const veranaChain = useVeranaChain()
+  const { address } = useChain(veranaChain.chain_name)
 
-  const pendingTasksCtx = usePendingTasksCtx();
-  const [permissionsTree, setPermissionsTree] = useState<TreeNode[]>([]);
-  const [refreshRoot, setRefreshRoot] = useState<boolean>(true);
+  const pendingTasksCtx = usePendingTasksCtx()
+  const [permissionsTree, setPermissionsTree] = useState<TreeNode[]>([])
+  const [refreshRoot, setRefreshRoot] = useState<boolean>(true)
 
   function permissionToTreeNode(p: Permission): TreeNode {
-    const isGrantee = (address === p.grantee);
-    const isValidator = true;
-    const isPredecessor = false;
-    const {icon, iconColorClass } = authorityPaticipants(isGrantee, isValidator, isPredecessor);
+    const isGrantee = address === p.grantee
+    const isValidator = true
+    const isPredecessor = false
+    const { icon, iconColorClass } = authorityPaticipants(isGrantee, isValidator, isPredecessor)
     return {
       nodeId: p.id,
       name: p.did,
@@ -34,7 +34,7 @@ export default function PendingTasksPage() {
       iconColorClass,
       permission: p,
       children: undefined,
-    };
+    }
   }
 
   function buildTreeFromResponse(data: TrustRegistriesPermission[]): TreeNode[] {
@@ -42,12 +42,12 @@ export default function PendingTasksPage() {
       nodeId: `tr:${tr.id}`,
       name: tr.did,
       group: true,
-      parentId: "root",
+      parentId: 'root',
       isGrantee: false,
       isValidator: false,
-      roleColorClass: "text-purple-300",
+      roleColorClass: 'text-purple-300',
       icon: faFolder,
-      iconColorClass: "text-purple-300",
+      iconColorClass: 'text-purple-300',
       serviceDid: tr.did,
       badgeCount: Number(tr.pending_tasks ?? 0),
       children: tr.credential_schemas.map((cs) => ({
@@ -57,27 +57,25 @@ export default function PendingTasksPage() {
         parentId: `tr:${tr.id}`,
         isGrantee: false,
         isValidator: false,
-        roleColorClass: "text-purple-200",
+        roleColorClass: 'text-purple-200',
         icon: faFolder,
-        iconColorClass: "text-purple-200",
+        iconColorClass: 'text-purple-200',
         serviceTitle: cs.title,
         badgeCount: Number(cs.pending_tasks ?? 0),
-        children: cs.permissions.map((p) =>
-          permissionToTreeNode(p)
-        ),
+        children: cs.permissions.map((p) => permissionToTreeNode(p)),
       })),
-    }));
+    }))
   }
 
   useEffect(() => {
-    const tree = buildTreeFromResponse(pendingTasksCtx.permissionsList);
-    setPermissionsTree(tree);
-  }, [pendingTasksCtx.permissionsList]);
+    const tree = buildTreeFromResponse(pendingTasksCtx.permissionsList)
+    setPermissionsTree(tree)
+  }, [pendingTasksCtx.permissionsList])
 
   useEffect(() => {
-    if (refreshRoot) pendingTasksCtx.refetch();
-    setRefreshRoot(false);
-  }, [refreshRoot]);
+    if (refreshRoot) pendingTasksCtx.refetch()
+    setRefreshRoot(false)
+  }, [refreshRoot])
 
-  return <PermissionTree tree={permissionsTree} type={"tasks"} refreshRoot={()=>setRefreshRoot(true)} />;
+  return <PermissionTree tree={permissionsTree} type={'tasks'} refreshRoot={() => setRefreshRoot(true)} />
 }

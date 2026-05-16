@@ -1,20 +1,20 @@
-'use client';
+'use client'
 
-import React, { useState } from 'react';
-import { TrData, trSections } from '@/ui/dataview/datasections/tr';
-import EditableDataView from '@/ui/common/data-edit';
-import { useVeranaChain } from '@/hooks/useVeranaChain';
-import { useChain } from '@cosmos-kit/react';
-import { useActionTR } from '@/msg/actions_hooks/actionTR';
+import { useChain } from '@cosmos-kit/react'
+import { useState } from 'react'
+import { useVeranaChain } from '@/hooks/useVeranaChain'
+import { useActionTR } from '@/msg/actions_hooks/actionTR'
+import EditableDataView from '@/ui/common/data-edit'
+import { TrData, trSections } from '@/ui/dataview/datasections/tr'
 
 type AddTrPageProps = {
-  onCancel: () => void;
-  onRefresh: (id?: string, txHeight?: number) => void;
-};
+  onCancel: () => void
+  onRefresh: (id?: string, txHeight?: number) => void
+}
 
 export default function AddTrPage({ onCancel, onRefresh }: AddTrPageProps) {
-  const veranaChain = useVeranaChain();
-  const { address } = useChain(veranaChain.chain_name);
+  const veranaChain = useVeranaChain()
+  const { address } = useChain(veranaChain.chain_name)
 
   const [data, setData] = useState<TrData>({
     id: '',
@@ -26,15 +26,15 @@ export default function AddTrPage({ onCancel, onRefresh }: AddTrPageProps) {
     docUrl: '',
     orgName: '',
     trServiceName: '',
-  });
+  })
 
-  const actionTR = useActionTR(onCancel, onRefresh);
+  const actionTR = useActionTR(onCancel, onRefresh)
 
   // `orgName` / `trServiceName` are spec-only fields today: they live in form
   // state for v4 layout parity but are not part of MsgCreateTrustRegistry. They
   // will be persisted via ECS-ORG / ECS-SERVICE credentials once #368 lands.
   async function onSave(newData: TrData) {
-    setData(newData);
+    setData(newData)
     await actionTR({
       msgType: 'MsgCreateTrustRegistry',
       creator: address ?? '',
@@ -42,7 +42,7 @@ export default function AddTrPage({ onCancel, onRefresh }: AddTrPageProps) {
       aka: newData.aka || '',
       language: newData.language || '',
       docUrl: newData.docUrl || '',
-    });
+    })
   }
 
   return (
@@ -55,5 +55,5 @@ export default function AddTrPage({ onCancel, onRefresh }: AddTrPageProps) {
       onCancel={onCancel}
       isModal={true}
     />
-  );
+  )
 }

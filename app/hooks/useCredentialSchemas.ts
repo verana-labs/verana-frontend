@@ -1,75 +1,73 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { env } from 'next-runtime-env';
-import { resolveTranslatable } from '@/ui/dataview/types';
-import { translate } from '@/i18n/dataview';
-import { ApiErrorResponse } from '@/types/apiErrorResponse';
-import { CsList } from '@/ui/datatable/columnslist/cs';
+import { env } from 'next-runtime-env'
+import { useEffect, useState } from 'react'
+import { translate } from '@/i18n/dataview'
+import { ApiErrorResponse } from '@/types/apiErrorResponse'
+import { CsList } from '@/ui/datatable/columnslist/cs'
+import { resolveTranslatable } from '@/ui/dataview/types'
 
 type RawSchema = Record<string, unknown> & {
-  id?: number;
-  tr_id?: string | number;
-  json_schema?: string;
-  deposit?: string;
-  issuer_grantor_validation_validity_period?: number;
-  verifier_grantor_validation_validity_period?: number;
-  issuer_validation_validity_period?: number;
-  verifier_validation_validity_period?: number;
-  holder_validation_validity_period?: number;
-  issuer_perm_management_mode?: string;
-  verifier_perm_management_mode?: string;
-  archived?: string;
-  created?: string;
-  modified?: string;
-  title?: string;
-  description?: string;
-  participants?: number;
-  issued?: number;
-  verified?: number;
-};
+  id?: number
+  tr_id?: string | number
+  json_schema?: string
+  deposit?: string
+  issuer_grantor_validation_validity_period?: number
+  verifier_grantor_validation_validity_period?: number
+  issuer_validation_validity_period?: number
+  verifier_validation_validity_period?: number
+  holder_validation_validity_period?: number
+  issuer_perm_management_mode?: string
+  verifier_perm_management_mode?: string
+  archived?: string
+  created?: string
+  modified?: string
+  title?: string
+  description?: string
+  participants?: number
+  issued?: number
+  verified?: number
+}
 
 export function useCSList(trId?: string, all: boolean = true, onlyActive: boolean = false) {
-
   const getURL =
     env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA') ||
-    process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA;
+    process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA
 
-  const [csList, setCsList] = useState<CsList[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [errorCSList, setError] = useState<string | null>(null);
+  const [csList, setCsList] = useState<CsList[]>([])
+  const [loading, setLoading] = useState(false)
+  const [errorCSList, setError] = useState<string | null>(null)
 
   const fetchCS = async () => {
-
     if ((!all && !trId) || !getURL) {
-      setError(resolveTranslatable({key: "error.fetch.cs"}, translate)?? 'Missing TR id or endpoint URL');
-      setLoading(false);
-      return;
+      setError(resolveTranslatable({ key: 'error.fetch.cs' }, translate) ?? 'Missing TR id or endpoint URL')
+      setLoading(false)
+      return
     }
 
     // Reset state when inputs change
-    setError(null);
+    setError(null)
 
-    const params = new URLSearchParams();
-    params.set('response_max_size', '1024');
-    if ( trId != undefined && !all) params.set('tr_id', trId);
-    if ( onlyActive ) params.set('only_active', 'true');
-    const url = `${getURL}/list?${params.toString()}`;
+    const params = new URLSearchParams()
+    params.set('response_max_size', '1024')
+    if (trId !== undefined && !all) params.set('tr_id', trId)
+    if (onlyActive) params.set('only_active', 'true')
+    const url = `${getURL}/list?${params.toString()}`
 
     try {
-      setLoading(true);
-      const res = await fetch(url);
-      const json = await res.json();
-      if (!res.ok){
-        const { error, code } = json as ApiErrorResponse;
-        setError(`Error ${code}: ${error}`);
-        return;
-      } 
-      const schemas: RawSchema[] = Array.isArray(json) ? json : (json.schemas ?? []);
+      setLoading(true)
+      const res = await fetch(url)
+      const json = await res.json()
+      if (!res.ok) {
+        const { error, code } = json as ApiErrorResponse
+        setError(`Error ${code}: ${error}`)
+        return
+      }
+      const schemas: RawSchema[] = Array.isArray(json) ? json : (json.schemas ?? [])
       const list: CsList[] = schemas.map((src) => {
         return {
-          id: (src.id)?.toString() ?? '',
-          trId: (src.tr_id)?.toString() ?? '',
+          id: src.id?.toString() ?? '',
+          trId: src.tr_id?.toString() ?? '',
           issuerPermManagementMode: src.issuer_perm_management_mode ?? '',
           verifierPermManagementMode: src.verifier_perm_management_mode ?? '',
           issuerValidationValidityPeriod: src.issuer_grantor_validation_validity_period ?? 0,
@@ -82,21 +80,21 @@ export function useCSList(trId?: string, all: boolean = true, onlyActive: boolea
           verifiedCredentials: src.verified ?? 0,
           trustValue: src.deposit ?? '0',
           archived: src.archived ?? '',
-          role: "",
-        };
-      });
-      setCsList(list);
+          role: '',
+        }
+      })
+      setCsList(list)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(msg);
+      const msg = err instanceof Error ? err.message : String(err)
+      setError(msg)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchCS();
-  }, []);
+    fetchCS()
+  }, [])
 
-  return { csList, loading, errorCSList, refetch: fetchCS };
+  return { csList, loading, errorCSList, refetch: fetchCS }
 }

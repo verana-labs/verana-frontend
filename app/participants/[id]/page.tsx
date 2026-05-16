@@ -1,90 +1,94 @@
-'use client';
+'use client'
 
-import { usePermissions } from "@/hooks/usePermissions";
-import PermissionTree, {PermState, TreeNode } from "@/ui/common/permission-tree";
-import { useParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { Permission } from '@/ui/dataview/datasections/perm';
-import { faFolder } from "@fortawesome/free-solid-svg-icons";
-import { useCsData } from "@/hooks/useCredentialSchemaData";
-import { useVeranaChain } from "@/hooks/useVeranaChain";
-import { useChain } from "@cosmos-kit/react";
-import { useTrustRegistryData } from "@/hooks/useTrustRegistryData";
-import { authorityPaticipants, nodeChildRoles, roleColorClass, roleJoinColorClass } from "@/util/util";
-import { Role } from "@/ui/common/role-card";
+import { useChain } from '@cosmos-kit/react'
+import { faFolder } from '@fortawesome/free-solid-svg-icons'
+import { useParams } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
+import { useCsData } from '@/hooks/useCredentialSchemaData'
+import { usePermissions } from '@/hooks/usePermissions'
+import { useTrustRegistryData } from '@/hooks/useTrustRegistryData'
+import { useVeranaChain } from '@/hooks/useVeranaChain'
+import PermissionTree, { PermState, TreeNode } from '@/ui/common/permission-tree'
+import { Role } from '@/ui/common/role-card'
+import { Permission } from '@/ui/dataview/datasections/perm'
+import { authorityPaticipants, nodeChildRoles, roleColorClass, roleJoinColorClass } from '@/util/util'
 
 export default function ParicipantsPage() {
-
-  const veranaChain = useVeranaChain();
-  const { address, isWalletConnected, connect } = useChain(veranaChain.chain_name);
-  const idsAddressRef = useRef<Set<string>>(new Set());
-  const idsPredecessorRef = useRef<Set<string>>(new Set());
-  type BuiltNode = Permission & { children: BuiltNode[] };
+  const veranaChain = useVeranaChain()
+  const { address, isWalletConnected, connect } = useChain(veranaChain.chain_name)
+  const idsAddressRef = useRef<Set<string>>(new Set())
+  const idsPredecessorRef = useRef<Set<string>>(new Set())
+  type BuiltNode = Permission & { children: BuiltNode[] }
 
   function buildTreeByValidatorPermId(perms: Permission[]): BuiltNode[] {
-    const byId = new Map<string, BuiltNode>();
-    const roots: BuiltNode[] = [];
+    const byId = new Map<string, BuiltNode>()
+    const roots: BuiltNode[] = []
 
-    for (const p of perms) byId.set(p.id, { ...p, children: [] });
+    for (const p of perms) byId.set(p.id, { ...p, children: [] })
 
     for (const p of perms) {
-      const node = byId.get(p.id)!;
+      const node = byId.get(p.id)
+      if (!node) continue
       if (!p.validator_perm_id) {
-        roots.push(node);
-        continue;
+        roots.push(node)
+        continue
       }
-      const parent = byId.get(p.validator_perm_id);
-      if (parent) parent.children.push(node);
-      else roots.push(node);
+      const parent = byId.get(p.validator_perm_id)
+      if (parent) parent.children.push(node)
+      else roots.push(node)
     }
 
-    return roots;
+    return roots
   }
 
-  function toTreeNode(node: BuiltNode, typesToShow: {role: Role; label: string; validation: boolean}[]): TreeNode {
-    const idsAddress = idsAddressRef.current;
-    const idsPredecessor = idsPredecessorRef.current;
-    let isGrantee = false;
-    let isValidator = false;
-    let isPredecessor = false;
-    if (address === node.grantee){
-      isGrantee = true;
-      idsAddress.add(node.id);
+  function toTreeNode(node: BuiltNode, typesToShow: { role: Role; label: string; validation: boolean }[]): TreeNode {
+    const idsAddress = idsAddressRef.current
+    const idsPredecessor = idsPredecessorRef.current
+    let isGrantee = false
+    let isValidator = false
+    let isPredecessor = false
+    if (address === node.grantee) {
+      isGrantee = true
+      idsAddress.add(node.id)
     }
-    if (idsAddress.has(node.validator_perm_id)){
-      isValidator = true;
-      idsPredecessor.add(node.id);
+    if (idsAddress.has(node.validator_perm_id)) {
+      isValidator = true
+      idsPredecessor.add(node.id)
     }
-    if (idsPredecessor.has(node.validator_perm_id)){
-      isPredecessor = true;
-      idsPredecessor.add(node.id);
+    if (idsPredecessor.has(node.validator_perm_id)) {
+      isPredecessor = true
+      idsPredecessor.add(node.id)
     }
 
-    const {icon, iconColorClass } = authorityPaticipants(isGrantee, isValidator, isPredecessor);
+    const { icon, iconColorClass } = authorityPaticipants(isGrantee, isValidator, isPredecessor)
 
     return {
       nodeId: node.id,
       name: node.did ? node.did : node.type,
       group: false,
-      parentId: node.validator_perm_id??'root',
+      parentId: node.validator_perm_id ?? 'root',
       isGrantee,
       isValidator,
       roleColorClass: roleColorClass(node.type),
       icon,
       iconColorClass,
       permission: node,
-      children: foldersByTypes(node, typesToShow)
-    };
+      children: foldersByTypes(node, typesToShow),
+    }
   }
 
-  function foldersByTypes(parent: Permission, types: {role: Role; label: string; validation: boolean}[]): TreeNode[] {
+  function foldersByTypes(parent: Permission, types: { role: Role; label: string; validation: boolean }[]): TreeNode[] {
     return types.map((t) => ({
       nodeId: `group:${parent.id}:${t.role}`,
       name: t.label,
-      validationProcessAction: isWalletConnected ?
-                                  t.validation ? (t.role == "HOLDER" && Number(parent.validation_fees) == 0 ? "LinkDID" : "MsgStartPermissionVP") : "MsgCreatePermission"
-                                  : "Connect",
-      validationProcessLabel: t.validation ? "validation process" : "open",
+      validationProcessAction: isWalletConnected
+        ? t.validation
+          ? t.role === 'HOLDER' && Number(parent.validation_fees) === 0
+            ? 'LinkDID'
+            : 'MsgStartPermissionVP'
+          : 'MsgCreatePermission'
+        : 'Connect',
+      validationProcessLabel: t.validation ? 'validation process' : 'open',
       validationProcessColor: roleJoinColorClass(t.role),
       isGrantee: false,
       isValidator: false,
@@ -97,110 +101,116 @@ export default function ParicipantsPage() {
       iconColorClass: roleColorClass(t.role),
       children: [],
       permission: parent,
-      enabledJoin: parent.perm_state as PermState === "ACTIVE"
-    }));
+      enabledJoin: (parent.perm_state as PermState) === 'ACTIVE',
+    }))
   }
 
-  function buildPermissionTreeGroupedByType(perms: Permission[], typesToShow: {role: Role; label: string; validation: boolean}[]): TreeNode[] {
-    const permissionTree = buildTreeByValidatorPermId(perms);
-    return permissionTree.map((n) => toTreeNode(n, typesToShow));
+  function buildPermissionTreeGroupedByType(
+    perms: Permission[],
+    typesToShow: { role: Role; label: string; validation: boolean }[]
+  ): TreeNode[] {
+    const permissionTree = buildTreeByValidatorPermId(perms)
+    return permissionTree.map((n) => toTreeNode(n, typesToShow))
   }
 
   // helper for update nodeId
-  function setChildrenOnNodeId(
-    nodes: TreeNode[],
-    targetNodeId: string,
-    newChildren: TreeNode[]
-  ): TreeNode[] {
+  function setChildrenOnNodeId(nodes: TreeNode[], targetNodeId: string, newChildren: TreeNode[]): TreeNode[] {
     return nodes.map((n) => {
       if (n.nodeId === targetNodeId) {
-        return { ...n, children: newChildren };
+        return { ...n, children: newChildren }
       }
       if (n.children?.length) {
-        return { ...n, children: setChildrenOnNodeId(n.children, targetNodeId, newChildren) };
+        return { ...n, children: setChildrenOnNodeId(n.children, targetNodeId, newChildren) }
       }
-      return n;
-    });
+      return n
+    })
   }
 
-  const params = useParams();
-  const schemaId = params?.id as string;
-  const [type, setType] = useState<string | undefined>("ECOSYSTEM");
-  const [validatorId, setValidatorId] = useState<string | undefined>(undefined);
-  const [nodeUptade, setNodeUptade] = useState<string | undefined>(undefined);
-  const [refreshRoot, setRefreshRoot] = useState<boolean>(false);
+  const params = useParams()
+  const schemaId = params?.id as string
+  const [type, setType] = useState<string | undefined>('ECOSYSTEM')
+  const [validatorId, setValidatorId] = useState<string | undefined>(undefined)
+  const [nodeUptade, setNodeUptade] = useState<string | undefined>(undefined)
+  const [refreshRoot, setRefreshRoot] = useState<boolean>(false)
 
-  function setNodeRequestParams(
-    nodeId: string | undefined,
-    type: string | undefined,
-    validatorId: string | undefined
-  ) {
-    setType(type);
-    setValidatorId(validatorId);
-    setNodeUptade(nodeId);
+  function setNodeRequestParams(nodeId: string | undefined, type: string | undefined, validatorId: string | undefined) {
+    setType(type)
+    setValidatorId(validatorId)
+    setNodeUptade(nodeId)
   }
 
-  const {permissionsList, refetch: refetchPermission} = usePermissions(schemaId, type, validatorId);
+  const { permissionsList, refetch: refetchPermission } = usePermissions(schemaId, type, validatorId)
 
-  const [permissionsTree, setPermissionsTree] = useState<TreeNode[] | []>([]);
-  const {csData} = useCsData(schemaId);
-  const {dataTR, refetch} = useTrustRegistryData(csData?.trId as string);
+  const [permissionsTree, setPermissionsTree] = useState<TreeNode[] | []>([])
+  const { csData } = useCsData(schemaId)
+  const { dataTR, refetch } = useTrustRegistryData(csData?.trId as string)
 
   useEffect(() => {
     const typesToShow = csData
-      ? nodeChildRoles(csData.issuerPermManagementMode as string, csData.verifierPermManagementMode as string, type as string)
-      : [];
-    if (type === "ECOSYSTEM") {
-      idsAddressRef.current.clear();
-      idsPredecessorRef.current.clear();
-      const groupedTreeNodes = buildPermissionTreeGroupedByType(permissionsList, typesToShow);
-      setPermissionsTree(groupedTreeNodes);
-    }
-    else if (type != undefined && validatorId != undefined && nodeUptade != undefined) {
+      ? nodeChildRoles(
+          csData.issuerPermManagementMode as string,
+          csData.verifierPermManagementMode as string,
+          type as string
+        )
+      : []
+    if (type === 'ECOSYSTEM') {
+      idsAddressRef.current.clear()
+      idsPredecessorRef.current.clear()
+      const groupedTreeNodes = buildPermissionTreeGroupedByType(permissionsList, typesToShow)
+      setPermissionsTree(groupedTreeNodes)
+    } else if (type !== undefined && validatorId !== undefined && nodeUptade !== undefined) {
       // childs TreeNode
       const newChildren = permissionsList.map((p) =>
         toTreeNode({ ...(p as Permission), children: [] } as BuiltNode, typesToShow)
-      );
-      setPermissionsTree((prev) => setChildrenOnNodeId(prev, nodeUptade, newChildren));
+      )
+      setPermissionsTree((prev) => setChildrenOnNodeId(prev, nodeUptade, newChildren))
     }
-  }, [permissionsList, address, isWalletConnected, csData?.issuerPermManagementMode, csData?.verifierPermManagementMode]);
+  }, [
+    permissionsList,
+    address,
+    isWalletConnected,
+    csData?.issuerPermManagementMode,
+    csData?.verifierPermManagementMode,
+  ])
 
   useEffect(() => {
-    refetch();
-  }, [csData]);
+    refetch()
+  }, [csData])
 
   useEffect(() => {
-    if (refreshRoot){
-      if (type === "ECOSYSTEM"){
-        refetchPermission();
+    if (refreshRoot) {
+      if (type === 'ECOSYSTEM') {
+        refetchPermission()
       } else {
-        setNodeRequestParams(undefined, "ECOSYSTEM", undefined);
+        setNodeRequestParams(undefined, 'ECOSYSTEM', undefined)
       }
     }
-    setRefreshRoot(false);
-  }, [refreshRoot]);
+    setRefreshRoot(false)
+  }, [refreshRoot])
 
   useEffect(() => {
-    setRefreshRoot(true);
-  }, [isWalletConnected, address]);
+    setRefreshRoot(true)
+  }, [isWalletConnected, address])
 
-  const csStatus = csData?.archived ? 'ARCHIVED' : 'ACTIVE';
+  const csStatus = csData?.archived ? 'ARCHIVED' : 'ACTIVE'
 
   return (
-   <PermissionTree tree={permissionsTree} type={"participants"}
-        csTitle={csData?.title ?? ""}
-        csDescription={csData?.description}
-        csStatus={csStatus}
-        csIssuerPermManagementMode={csData?.issuerPermManagementMode}
-        csVerifierPermManagementMode={csData?.verifierPermManagementMode}
-        trTitle={dataTR?.did ?? ""}
-        csId={csData?.id != null ? String(csData.id) : undefined}
-        trId={csData?.trId != null ? String(csData.trId) : undefined}
-        isTrController={!!dataTR?.controller && dataTR.controller === address}
-        setNodeRequestParams={setNodeRequestParams}
-        refreshRoot={() => setRefreshRoot(true)}
-        onConnect={!isWalletConnected ? connect : undefined}
-        onRetryFetch={() => refetchPermission(schemaId, type, validatorId)}/>
-  );
-
-};
+    <PermissionTree
+      tree={permissionsTree}
+      type={'participants'}
+      csTitle={csData?.title ?? ''}
+      csDescription={csData?.description}
+      csStatus={csStatus}
+      csIssuerPermManagementMode={csData?.issuerPermManagementMode}
+      csVerifierPermManagementMode={csData?.verifierPermManagementMode}
+      trTitle={dataTR?.did ?? ''}
+      csId={csData?.id != null ? String(csData.id) : undefined}
+      trId={csData?.trId != null ? String(csData.trId) : undefined}
+      isTrController={!!dataTR?.controller && dataTR.controller === address}
+      setNodeRequestParams={setNodeRequestParams}
+      refreshRoot={() => setRefreshRoot(true)}
+      onConnect={!isWalletConnected ? connect : undefined}
+      onRetryFetch={() => refetchPermission(schemaId, type, validatorId)}
+    />
+  )
+}

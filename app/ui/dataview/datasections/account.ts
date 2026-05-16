@@ -1,25 +1,25 @@
-import { Section } from "@/ui/dataview/types";
-import { formatNetwork, formatVNAFromUVNA } from "@/util/util";
-import { faCoins, faPlus, faShieldHalved } from "@fortawesome/free-solid-svg-icons";
+import { faCoins, faPlus, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
+import { Section } from '@/ui/dataview/types'
+import { formatNetwork, formatVNAFromUVNA } from '@/util/util'
 
-const t = (key: string) => ({ key });
+const t = (key: string) => ({ key })
 
 //Account data
 export interface AccountData {
-  balance: string | null;
-  totalTrustDeposit: string | null;
-  claimableInterests: string | null;
-  reclaimable: string | null;
-  message: string | null;
-  getVNA?: string; // action type
-  claimInterests?: string; // action type
-  reclaimDeposit?: string; // action type
-  address: string | null;
-  network: string | null;
-  created: string | null;
-  totalTransactions: number;
-  trustRegistriesJoined: number;
-  didsManaged: number;
+  balance: string | null
+  totalTrustDeposit: string | null
+  claimableInterests: string | null
+  reclaimable: string | null
+  message: string | null
+  getVNA?: string // action type
+  claimInterests?: string // action type
+  reclaimDeposit?: string // action type
+  address: string | null
+  network: string | null
+  created: string | null
+  totalTransactions: number
+  trustRegistriesJoined: number
+  didsManaged: number
 }
 
 // Sections configuration for AccountData
@@ -30,57 +30,73 @@ export const accountSections: Section<AccountData>[] = [
     cardView: true,
     largeTexts: true,
     fields: [
-      { name: "balance", type: "data",
-        label: t("dataview.account.fields.balance.label"), 
-        description: t("dataview.account.fields.balance.desc"), 
+      {
+        name: 'balance',
+        type: 'data',
+        label: t('dataview.account.fields.balance.label'),
+        description: t('dataview.account.fields.balance.desc'),
         icon: faCoins,
-        iconClass: "bg-gradient-to-br from-primary-500 to-primary-700",
-        iconColorClass: "text-white text-xl",
-        usdValue: true, hasStats: true,
-        format: (value) => formatVNAFromUVNA(String(value))
+        iconClass: 'bg-gradient-to-br from-primary-500 to-primary-700',
+        iconColorClass: 'text-white text-xl',
+        usdValue: true,
+        hasStats: true,
+        format: (value) => formatVNAFromUVNA(String(value)),
       },
-      { name: "totalTrustDeposit", type: "data",
-        label: t("dataview.account.fields.totalTrustDeposit.label"),
-        description: t("dataview.account.fields.totalTrustDeposit.desc"),
+      {
+        name: 'totalTrustDeposit',
+        type: 'data',
+        label: t('dataview.account.fields.totalTrustDeposit.label'),
+        description: t('dataview.account.fields.totalTrustDeposit.desc'),
         icon: faShieldHalved,
-        iconClass: "bg-gradient-to-br from-blue-500 to-blue-700",
-        iconColorClass: "text-white text-xl",
-        usdValue: true, hasStats: true,
-        format: (value) => formatVNAFromUVNA(String(value))
+        iconClass: 'bg-gradient-to-br from-blue-500 to-blue-700',
+        iconColorClass: 'text-white text-xl',
+        usdValue: true,
+        hasStats: true,
+        format: (value) => formatVNAFromUVNA(String(value)),
       },
     ],
   },
   {
-    type: "actions",
-    name: t("dataview.account.sections.accountActions"),
+    type: 'actions',
+    name: t('dataview.account.sections.accountActions'),
     fields: [
-      { name: "getVNA", label: t("dataview.account.actions.getVNA.label"), type: "action",
-        description: t("dataview.account.actions.getVNA.desc"), 
+      {
+        name: 'getVNA',
+        label: t('dataview.account.actions.getVNA.label'),
+        type: 'action',
+        description: t('dataview.account.actions.getVNA.desc'),
         icon: faPlus,
-        iconClass: "bg-gradient-to-br from-green-500 to-green-700",
-        iconColorClass: "text-white"
+        iconClass: 'bg-gradient-to-br from-green-500 to-green-700',
+        iconColorClass: 'text-white',
       },
-      { name: "claimInterests", label: t("dataview.account.actions.claimInterests.label"), type: "action",
-        description: t("dataview.account.actions.claimInterests.desc"), 
+      {
+        name: 'claimInterests',
+        label: t('dataview.account.actions.claimInterests.label'),
+        type: 'action',
+        description: t('dataview.account.actions.claimInterests.desc'),
         icon: faCoins,
-        iconClass: "bg-gradient-to-br from-orange-500 to-orange-700",
-        iconColorClass: "text-white"
+        iconClass: 'bg-gradient-to-br from-orange-500 to-orange-700',
+        iconColorClass: 'text-white',
       },
     ],
   },
   {
-    name: t("dataview.account.sections.accountInformation"),
+    name: t('dataview.account.sections.accountInformation'),
     sectionBorder: true,
     fields: [
-      { name: "address", type: "data", label: t("dataview.account.fields.address")},
-      { name: "totalTransactions", label: t("dataview.account.fields.totalTransactions"), type: "data" },
-      { name: "network", label: t("dataview.account.fields.network"), type: "data",
-        classField: "flex items-center space-x-2 px-3 py-1 bg-success-50 dark:bg-success-900/20 rounded-full w-fit", isHtml: true, format: (value) => formatNetwork(String(value)) 
-       },
-      { name: "trustRegistriesJoined", label: t("dataview.account.fields.trustRegistriesJoined"), type: "data" },
-      { name: "created", label: t("dataview.account.fields.created"), type: "data" },
-      { name: "didsManaged", label: t("dataview.account.fields.didsManaged"), type: "data" },
+      { name: 'address', type: 'data', label: t('dataview.account.fields.address') },
+      { name: 'totalTransactions', label: t('dataview.account.fields.totalTransactions'), type: 'data' },
+      {
+        name: 'network',
+        label: t('dataview.account.fields.network'),
+        type: 'data',
+        classField: 'flex items-center space-x-2 px-3 py-1 bg-success-50 dark:bg-success-900/20 rounded-full w-fit',
+        isHtml: true,
+        format: (value) => formatNetwork(String(value)),
+      },
+      { name: 'trustRegistriesJoined', label: t('dataview.account.fields.trustRegistriesJoined'), type: 'data' },
+      { name: 'created', label: t('dataview.account.fields.created'), type: 'data' },
+      { name: 'didsManaged', label: t('dataview.account.fields.didsManaged'), type: 'data' },
     ],
   },
-
-];
+]

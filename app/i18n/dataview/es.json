@@ -78,7 +78,7 @@
   "footer.network": "network",
   "footer.indexer": "indexer",
   "footer.frontend": "frontend",
-  
+
   "connected.title": "Conectado",
   "connected.msg": "Tu billetera cripto está conectada a Verana, lo que te permite acceder a todas las funciones.",
   "notconnected.nav.title": "No Conectado",
@@ -201,7 +201,7 @@
   "dataview.account.sections.trustDeposit": "Depósito de Confianza",
   "dataview.account.sections.aboutBalances": "Acerca de tus Saldos",
   "dataview.account.sections.accountActions": "Acciones",
-  "dataview.account.sections.accountInformation": "Información",  
+  "dataview.account.sections.accountInformation": "Información",
   "dataview.account.fields.balance.label": "Saldo principal",
   "dataview.account.fields.balance.desc": "Saldo disponible para usar",
   "dataview.account.fields.totalTrustDeposit.label": "Depósito en Garantía",
@@ -352,7 +352,7 @@
   "datatable.rowspage": "Filas por página",
   "datatable.previous": "Anterior",
   "datatable.next": "Siguiente",
-  
+
   "datatable.did.entities": "DIDs",
   "datatable.did.description": "Registre sus DIDs en el Directorio para que sus Servicios Verificables sean fácilmente localizables.",
   "datatable.did.add": "Agregar Nuevo DID",

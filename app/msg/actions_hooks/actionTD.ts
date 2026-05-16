@@ -1,26 +1,23 @@
 /* Hook for trust-deposit transactions (reclaim deposit or yield) with notification plumbing. */
-'use client';
+'use client'
 
-import { useRef } from 'react';
-import { DeliverTxResponse } from '@cosmjs/stargate';
-import { useChain } from '@cosmos-kit/react';
-import { EncodeObject } from '@cosmjs/proto-signing';
-import {
-  MsgReclaimTrustDeposit,
-  MsgReclaimTrustDepositYield,
-} from '@codec-proto/verana/td/v1/tx';
-import { useVeranaChain } from '@/hooks/useVeranaChain';
-import { useNotification } from '@/providers/notification-provider';
-import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode';
+import { MsgReclaimTrustDeposit, MsgReclaimTrustDepositYield } from '@codec-proto/verana/td/v1/tx'
+import { EncodeObject } from '@cosmjs/proto-signing'
+import { DeliverTxResponse } from '@cosmjs/stargate'
+import { useChain } from '@cosmos-kit/react'
+import { useRef } from 'react'
+import { useVeranaChain } from '@/hooks/useVeranaChain'
+import { translate } from '@/i18n/dataview'
 import {
   MSG_ERROR_ACTION_TD,
   MSG_INPROGRESS_ACTION_TD,
   MSG_SUCCESS_ACTION_TD,
-} from '@/msg/constants/notificationMsgForMsgType';
-import { resolveTranslatable } from '@/ui/dataview/types';
-import { translate } from '@/i18n/dataview';
-import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
+} from '@/msg/constants/notificationMsgForMsgType'
+import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
+import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
 import { extractTxHeight, handleSuccess } from '@/msg/util/signerUtil'
+import { useNotification } from '@/providers/notification-provider'
+import { resolveTranslatable } from '@/ui/dataview/types'
 
 // Encapsulate typeUrl and memo label per trust-deposit message type.
 export const MSG_TYPE_CONFIG_TD = {
@@ -32,141 +29,143 @@ export const MSG_TYPE_CONFIG_TD = {
     typeUrl: '/verana.td.v1.MsgReclaimTrustDepositYield',
     txLabel: 'MsgReclaimTrustDepositYield',
   },
-} as const;
+} as const
 
 // Narrow payload variants required by each trust-deposit action.
 type ActionTDParams =
   | {
-      msgType: 'MsgReclaimTrustDeposit';
-      claimedVNA: number;
+      msgType: 'MsgReclaimTrustDeposit'
+      claimedVNA: number
     }
   | {
-      msgType: 'MsgReclaimTrustDepositYield';
-    };
+      msgType: 'MsgReclaimTrustDepositYield'
+    }
 
 // Build an executor for trust-deposit actions, handling wallet checks and UI refresh triggers.
-export function useActionTD( onCancel?: () => void,
-                             onRefresh?: (id?: string, txHeight?: number) => void) {
-  const veranaChain = useVeranaChain();
-  const { address, isWalletConnected } = useChain(veranaChain.chain_name);
-  const { notify } = useNotification();
-  const sendTx = useSendTxDetectingMode(veranaChain);
-  const inFlight = useRef(false);
+export function useActionTD(onCancel?: () => void, onRefresh?: (id?: string, txHeight?: number) => void) {
+  const veranaChain = useVeranaChain()
+  const { address, isWalletConnected } = useChain(veranaChain.chain_name)
+  const { notify } = useNotification()
+  const sendTx = useSendTxDetectingMode(veranaChain)
+  const inFlight = useRef(false)
 
-  const txHeight = useRef<number | undefined>(undefined);
+  const txHeight = useRef<number | undefined>(undefined)
 
   // Close the action UI when something goes wrong.
   const handleFailure = () => {
-    onCancel?.();
-  };
+    onCancel?.()
+  }
 
-  async function actionTD(params: ActionTDParams, simulate: boolean = false): Promise<DeliverTxResponse | SimulateResult | void> {
+  async function actionTD(
+    params: ActionTDParams,
+    simulate: boolean = false
+  ): Promise<DeliverTxResponse | SimulateResult | void> {
     if (!isWalletConnected || !address) {
-      await notify(resolveTranslatable({key: "notification.msg.connectwallet"}, translate)??'', 'error');
-      return;
+      await notify(resolveTranslatable({ key: 'notification.msg.connectwallet' }, translate) ?? '', 'error')
+      return
     }
 
     if (inFlight.current) {
-      await notify(resolveTranslatable({key: "error.msg.pending.transaction"}, translate)??'', 'error');
-      return;
+      await notify(resolveTranslatable({ key: 'error.msg.pending.transaction' }, translate) ?? '', 'error')
+      return
     }
 
     if (params.msgType === 'MsgReclaimTrustDeposit') {
       if (!Number.isFinite(params.claimedVNA) || params.claimedVNA <= 0) {
-        await notify(resolveTranslatable({key: "error.msg.td.claimed"}, translate)??'', 'error');
-        return;
+        await notify(resolveTranslatable({ key: 'error.msg.td.claimed' }, translate) ?? '', 'error')
+        return
       }
     }
 
-    inFlight.current = true;
+    inFlight.current = true
 
-    let typeUrl = '';
-    let value: MsgReclaimTrustDeposit | MsgReclaimTrustDepositYield;
-    let claimedLabel: string | undefined;
+    let typeUrl = ''
+    let value: MsgReclaimTrustDeposit | MsgReclaimTrustDepositYield
+    let claimedLabel: string | undefined
 
     switch (params.msgType) {
       case 'MsgReclaimTrustDeposit': {
-        const claimedUvna = Math.round(params.claimedVNA * 1_000_000);
-        typeUrl = MSG_TYPE_CONFIG_TD.MsgReclaimTrustDeposit.typeUrl;
+        const claimedUvna = Math.round(params.claimedVNA * 1_000_000)
+        typeUrl = MSG_TYPE_CONFIG_TD.MsgReclaimTrustDeposit.typeUrl
         value = MsgReclaimTrustDeposit.fromPartial({
           creator: address,
           claimed: claimedUvna,
-        });
-        claimedLabel = `${params.claimedVNA} VNA`;
-        break;
+        })
+        claimedLabel = `${params.claimedVNA} VNA`
+        break
       }
       case 'MsgReclaimTrustDepositYield': {
-        typeUrl = MSG_TYPE_CONFIG_TD.MsgReclaimTrustDepositYield.typeUrl;
+        typeUrl = MSG_TYPE_CONFIG_TD.MsgReclaimTrustDepositYield.typeUrl
         value = MsgReclaimTrustDepositYield.fromPartial({
           creator: address,
-        });
-        break;
+        })
+        break
       }
       default:
-        inFlight.current = false;
-        await notify(resolveTranslatable({key: "error.msg.invalid.msgtype"}, translate)??'', 'error');
-        return;
+        inFlight.current = false
+        await notify(resolveTranslatable({ key: 'error.msg.invalid.msgtype' }, translate) ?? '', 'error')
+        return
     }
 
-    let notifyPromise: Promise<void> = Promise.resolve();
+    let notifyPromise: Promise<void> = Promise.resolve()
     if (!simulate) {
       notifyPromise = notify(
         MSG_INPROGRESS_ACTION_TD[params.msgType](),
         'inProgress',
-        resolveTranslatable({key: 'notification.msg.inprogress.title'}, translate)
-      );
+        resolveTranslatable({ key: 'notification.msg.inprogress.title' }, translate)
+      )
     }
 
-    let success = false;
+    let success = false
 
     try {
-      const msg: EncodeObject = { typeUrl, value };
+      const msg: EncodeObject = { typeUrl, value }
       const res = await sendTx({
         msgs: [msg],
         memo: MSG_TYPE_CONFIG_TD[params.msgType].txLabel,
-        simulate
-      });
+        simulate,
+      })
 
       if (simulate) {
-        if (!res || typeof res !== "object" || ("transactionHash" in res)) {
-          throw new Error("Expected SimulateResult but got tx response/empty result");
+        if (!res || typeof res !== 'object' || 'transactionHash' in res) {
+          throw new Error('Expected SimulateResult but got tx response/empty result')
         }
-        return res as SimulateResult;
+        return res as SimulateResult
       }
 
-      const txRes = res as DeliverTxResponse;
+      const txRes = res as DeliverTxResponse
 
       if (txRes.code === 0) {
-        txHeight.current = extractTxHeight(txRes);
-        success = true;
+        txHeight.current = extractTxHeight(txRes)
+        success = true
         notifyPromise = notify(
           MSG_SUCCESS_ACTION_TD[params.msgType](claimedLabel),
           'success',
-          resolveTranslatable({key: 'notification.msg.successful.title'}, translate)
-        );
+          resolveTranslatable({ key: 'notification.msg.successful.title' }, translate)
+        )
       } else {
         notifyPromise = notify(
           MSG_ERROR_ACTION_TD[params.msgType](txRes.code, txRes.rawLog),
           'error',
-          resolveTranslatable({key: 'notification.msg.failed.title'}, translate)
-        );
+          resolveTranslatable({ key: 'notification.msg.failed.title' }, translate)
+        )
       }
     } catch (err) {
       notifyPromise = notify(
         MSG_ERROR_ACTION_TD[params.msgType](undefined, err instanceof Error ? err.message : String(err)),
         'error',
-        resolveTranslatable({key: 'notification.msg.failed.title'}, translate)
-      );
+        resolveTranslatable({ key: 'notification.msg.failed.title' }, translate)
+      )
     } finally {
-      inFlight.current = false;
-      if (notifyPromise) await notifyPromise;
+      inFlight.current = false
+      if (notifyPromise) await notifyPromise
       if (success) {
-        handleSuccess(onCancel, onRefresh, undefined, txHeight.current);
+        handleSuccess(onCancel, onRefresh, undefined, txHeight.current)
       } else if (!success) {
-        handleFailure();
+        handleFailure()
       }
     }
   }
 
-  return actionTD;
+  return actionTD
 }
