@@ -254,10 +254,12 @@ export function roleLabel(type: string): string {
   }
 }
 
-export function permStateBadgeClass(permState: PermState, expireSoon: boolean, variant: "tree" | "header" = "tree") : {labelPermState: string, classPermState: string} {
+export function permStateBadgeClass(permState: PermState | undefined, expireSoon: boolean, variant: "tree" | "header" = "tree") : {labelPermState: string, classPermState: string} {
+  if (!permState) return { labelPermState: "", classPermState: "" };
   const activeClass = variant === "header"
     ? "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
     : "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300";
+  const badge = ((): { labelPermState: string; classPermState: string } => {
   switch (permState) {
     case "REPAID":
       return { labelPermState: resolveTranslatable({key: "permission.labelpermstate.repaid"}, translate) ?? "REPAID",
@@ -279,6 +281,12 @@ export function permStateBadgeClass(permState: PermState, expireSoon: boolean, v
     default:
       return  { labelPermState: permState, classPermState: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300" };
   }
+  })();
+  // Permission Tree shows lowercase state labels per spec v4; the card detail
+  // header keeps them uppercase (variant === "header").
+  return variant === "tree"
+    ? { ...badge, labelPermState: badge.labelPermState.toLowerCase() }
+    : badge;
 }
 
 export function vpStateColor(vpState: VpState, vpExp: string, expireSoon: boolean): {labelVpState: string, classVpState: string} {
