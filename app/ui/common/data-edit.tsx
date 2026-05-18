@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { ResolvedDataField, DataViewProps, isResolvedDataField, ResolvedField, visibleFieldsForMode, translateSections, resolveTranslatable } from '@/ui/dataview/types';
 import { getCostMessage, getLowBalanceMessage, msgTypeStyle } from '@/msg/constants/msgTypeConfig';
 import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData';
@@ -14,6 +14,7 @@ import { translate } from '@/i18n/dataview';
 import { formatVNAFromUVNA, isJson } from '@/util/util';
 import JsonCodeBlock from '@/ui/common/json-code-block';
 import { LanguageCombobox } from '@/ui/common/language-combobox';
+import { canonicalizeLanguageTag } from '@/ui/dataview/datasections/gfd';
 import ActionCard, { ActionCardProps } from '@/ui/common/action-card';
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
 import { env } from 'next-runtime-env';
@@ -302,7 +303,7 @@ export default function EditableDataView<T extends object>({
       inputEl = (
         <LanguageCombobox
           value={String(value ?? '')}
-          onChange={(val) => handleChange(field.name as keyof T, val, field)}
+          onChange={(val) => handleChange(field.name as keyof T, canonicalizeLanguageTag(val), field)}
           disabled={isDisabled}
           className={showError ? 'border-red-500' : ''}
         />
