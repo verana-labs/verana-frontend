@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from '@headlessui/react';
 import { ChevronUpDownIcon, CheckIcon } from '@heroicons/react/20/solid';
-import { languageOptions, LanguageOption } from '@/ui/dataview/datasections/gfd';
+import { getLanguageOptions, canonicalizeLanguageTag, LanguageOption } from '@/ui/dataview/datasections/gfd';
 
 type LanguageComboboxProps = {
   value: string;
@@ -14,14 +14,19 @@ type LanguageComboboxProps = {
 
 export function LanguageCombobox({ value, onChange, disabled = false, className = '' }: LanguageComboboxProps) {
   const [query, setQuery] = useState('');
+  const options = useMemo(() => getLanguageOptions(), []);
 
   const filtered = query === ''
-    ? languageOptions
-    : languageOptions.filter((opt) =>
+    ? options
+    : options.filter((opt) =>
         opt.label.toLowerCase().includes(query.toLowerCase())
       );
 
-  const selected = languageOptions.find((o) => o.value === value) ?? null;
+  // Fast path on the canonical value; fall back to a canonicalized comparison
+  // so a legacy / non-canonical stored tag still resolves to its option.
+  const canonicalValue = canonicalizeLanguageTag(value);
+  const selected =
+    options.find((o) => o.value === value || o.value === canonicalValue) ?? null;
 
   return (
     <Combobox
