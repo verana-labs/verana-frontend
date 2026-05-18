@@ -28,6 +28,7 @@ type DiscoverCtxValue = {
 
 type EcosystemsCtxValue = {
   ecosystemsList: TrList[];
+  ecosystemsLoading: boolean;
   refetch: () => Promise<void>;
   onlyActiveEcosystem: boolean;
   setOnlyActiveEcosystem: React.Dispatch<React.SetStateAction<boolean>>;
@@ -59,7 +60,7 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
   
   const [ onlyActiveEcosystem, setOnlyActiveEcosystem ] = useState(true);
   const [ ecosystemFilters, setEcosystemFilters ] = useState<Record<string, string | boolean>>({});
-  const { trList: ecosystemsList, refetch: refetchEcosystems } = useTrustRegistries(false, onlyActiveEcosystem);
+  const { trList: ecosystemsList, loading: ecosystemsLoading, refetch: refetchEcosystems } = useTrustRegistries(false, onlyActiveEcosystem);
 
   const [ discoverSearch, setDiscoverSearch ] = useState<string>('');
   const [ discoverPage, setDiscoverPage ] = useState<number>(1);
@@ -94,13 +95,14 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
   const ecosystemsValue = useMemo(
     () => ({
       ecosystemsList,
+      ecosystemsLoading,
       refetch: refetchEcosystems,
       onlyActiveEcosystem,
       setOnlyActiveEcosystem,
       ecosystemFilters,
       setEcosystemFilters,
     }),
-    [ecosystemsList, refetchEcosystems, onlyActiveEcosystem, ecosystemFilters]
+    [ecosystemsList, ecosystemsLoading, refetchEcosystems, onlyActiveEcosystem, ecosystemFilters]
   );
 
   const accountValue = useMemo(
