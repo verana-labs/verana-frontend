@@ -43,7 +43,7 @@ export default function ServiceIdentity({
       />
       <span className="text-sm font-medium text-gray-900 dark:text-white break-all">{serviceLabel}</span>
       {showFlag ? (
-        <span className="text-sm flex-shrink-0" aria-hidden="true">
+        <span className="inline-flex items-center leading-none text-sm flex-shrink-0" aria-hidden="true">
           {countryCodeToFlag(countryCode)}
         </span>
       ) : null}

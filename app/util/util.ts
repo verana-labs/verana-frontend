@@ -270,52 +270,56 @@ export function roleLabel(type: string): string {
 }
 
 export function permStateBadgeClass(
-  permState: PermState,
+  permState: PermState | undefined,
   expireSoon: boolean,
   variant: 'tree' | 'header' = 'tree'
 ): { labelPermState: string; classPermState: string } {
+  if (!permState) return { labelPermState: '', classPermState: '' }
   const activeClass =
     variant === 'header'
       ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
       : 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
-  switch (permState) {
-    case 'REPAID':
-      return {
-        labelPermState: resolveTranslatable({ key: 'permission.labelpermstate.repaid' }, translate) ?? 'REPAID',
-        classPermState: 'bg-gray-100 text-red-800 dark:bg-gray-900/20 dark:text-red-300',
-      }
-    case 'SLASHED':
-      return {
-        labelPermState: resolveTranslatable({ key: 'permission.labelpermstate.slashed' }, translate) ?? 'SLASHED',
-        classPermState: 'bg-red-900 text-red-100 dark:bg-red-300/20 dark:text-red-800',
-      }
-    case 'FUTURE':
-      return {
-        labelPermState: resolveTranslatable({ key: 'permission.labelpermstate.future' }, translate) ?? 'FUTURE',
-        classPermState: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300',
-      }
-    case 'ACTIVE':
-      return expireSoon
-        ? {
-            labelPermState:
-              resolveTranslatable({ key: 'permission.labelpermstate.expiresoon' }, translate) ?? 'EXPIRE SOON',
-            classPermState: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300',
-          }
-        : {
-            labelPermState: resolveTranslatable({ key: 'permission.labelpermstate.active' }, translate) ?? 'ACTIVE',
-            classPermState: activeClass,
-          }
-    case 'INACTIVE':
-      return {
-        labelPermState: resolveTranslatable({ key: 'permission.labelpermstate.inactive' }, translate) ?? 'INACTIVE',
-        classPermState: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300',
-      }
-    default:
-      return {
-        labelPermState: permState,
-        classPermState: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300',
-      }
-  }
+  const badge = ((): { labelPermState: string; classPermState: string } => {
+    switch (permState) {
+      case 'REPAID':
+        return {
+          labelPermState: resolveTranslatable({ key: 'permission.labelpermstate.repaid' }, translate) ?? 'REPAID',
+          classPermState: 'bg-gray-100 text-red-800 dark:bg-gray-900/20 dark:text-red-300',
+        }
+      case 'SLASHED':
+        return {
+          labelPermState: resolveTranslatable({ key: 'permission.labelpermstate.slashed' }, translate) ?? 'SLASHED',
+          classPermState: 'bg-red-900 text-red-100 dark:bg-red-300/20 dark:text-red-800',
+        }
+      case 'FUTURE':
+        return {
+          labelPermState: resolveTranslatable({ key: 'permission.labelpermstate.future' }, translate) ?? 'FUTURE',
+          classPermState: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300',
+        }
+      case 'ACTIVE':
+        return expireSoon
+          ? {
+              labelPermState:
+                resolveTranslatable({ key: 'permission.labelpermstate.expiresoon' }, translate) ?? 'EXPIRE SOON',
+              classPermState: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300',
+            }
+          : {
+              labelPermState: resolveTranslatable({ key: 'permission.labelpermstate.active' }, translate) ?? 'ACTIVE',
+              classPermState: activeClass,
+            }
+      case 'INACTIVE':
+        return {
+          labelPermState: resolveTranslatable({ key: 'permission.labelpermstate.inactive' }, translate) ?? 'INACTIVE',
+          classPermState: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300',
+        }
+      default:
+        return {
+          labelPermState: permState,
+          classPermState: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300',
+        }
+    }
+  })()
+  return variant === 'tree' ? { ...badge, labelPermState: badge.labelPermState.toLowerCase() } : badge
 }
 
 export function vpStateColor(
