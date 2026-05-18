@@ -4656,6 +4656,11 @@ cipher-base@^1.0.0, cipher-base@^1.0.1, cipher-base@^1.0.3:
     inherits "^2.0.4"
     safe-buffer "^5.2.1"
 
+cldr-core@^48.2.0:
+  version "48.2.0"
+  resolved "https://registry.yarnpkg.com/cldr-core/-/cldr-core-48.2.0.tgz#f0003abf564df762bfbdeb5fbe2c34ed6420eaf6"
+  integrity sha512-zfmLothncSwfv2jlevoSrgI2VGgH8SDGHXst6jUEotHA8nq9Igeg9jzdJDFtBso9pgJuG89DK16TzrmZDdo2Bg==
+
 client-only@0.0.1, client-only@^0.0.1:
   version "0.0.1"
   resolved "https://registry.npmjs.org/client-only/-/client-only-0.0.1.tgz"

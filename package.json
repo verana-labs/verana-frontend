@@ -28,6 +28,7 @@
     "bcrypt": "^5.1.1",
     "canonicalize": "^2.1.0",
     "chain-registry": "^2.0.16",
+    "cldr-core": "^48.2.0",
     "clsx": "^2.1.1",
     "cosmos-kit": "2.22.0",
     "framer-motion": "^12.5.0",
