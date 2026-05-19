@@ -1,6 +1,7 @@
+/** biome-ignore-all lint/style/noNonNullAssertion: NEXT_PUBLIC_* vars are inlined by Next at build time and validated by entrypoint.sh at container start */
 'use client'
 
-import { Asset } from '@chain-registry/types';
+import { Asset } from '@chain-registry/types'
 
 export const veranaChainEnv = {
   chain_type: 'cosmos',
@@ -10,17 +11,14 @@ export const veranaChainEnv = {
   apis: {
     rpc: [{ address: process.env.NEXT_PUBLIC_VERANA_RPC_ENDPOINT!, provider: 'verana' }],
     rest: [{ address: process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT!, provider: 'verana' }],
-
-    },
+  },
   status: 'live',
   network_type: process.env.NEXT_PUBLIC_VERANA_CHAIN_ID?.includes('devnet') ? 'devnet' : 'testnet',
-  bech32_prefix: "verana",
-  slip44:  118,
+  bech32_prefix: 'verana',
+  slip44: 118,
   key_algos: ['secp256k1'],
   staking: {
-    staking_tokens: [
-      { denom: "uvna" }
-    ]
+    staking_tokens: [{ denom: 'uvna' }],
   },
   fees: {
     fee_tokens: [
@@ -40,18 +38,17 @@ export const veranaChainEnv = {
       tx_page: `${process.env.NEXT_PUBLIC_VERANA_EXPLORER_URL || ''}/tx/\${txHash}`,
     },
   ],
-
-};
+}
 
 export const veranaAssets: Asset = {
-    description: "The native staking and governance token of the Verana network.",
-    type_asset: 'sdk.coin',
-    base: 'uvna',
-    name: 'Verana Token',
-    display: 'VNA',
-    symbol: 'VNA',
-    denom_units: [
-      { denom: "uvna", exponent: 0 },
-      { denom: "VNA",  exponent: 6 }
-    ]
-};
+  description: 'The native staking and governance token of the Verana network.',
+  type_asset: 'sdk.coin',
+  base: 'uvna',
+  name: 'Verana Token',
+  display: 'VNA',
+  symbol: 'VNA',
+  denom_units: [
+    { denom: 'uvna', exponent: 0 },
+    { denom: 'VNA', exponent: 6 },
+  ],
+}

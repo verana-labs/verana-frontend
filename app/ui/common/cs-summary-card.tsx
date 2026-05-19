@@ -1,29 +1,26 @@
-'use client';
+'use client'
 
-import { ReactNode } from 'react';
-import { faEye, faSitemap } from '@fortawesome/free-solid-svg-icons';
-
-import IconActionButton from '@/ui/common/icon-action-button';
-import { CsList, getModePillClass } from '@/ui/datatable/columnslist/cs';
-import { resolveTranslatable } from '@/ui/dataview/types';
-import { translate } from '@/i18n/dataview';
-import { formatNumber, formatVNA } from '@/util/util';
+import { faEye, faSitemap } from '@fortawesome/free-solid-svg-icons'
+import { ReactNode } from 'react'
+import { translate } from '@/i18n/dataview'
+import IconActionButton from '@/ui/common/icon-action-button'
+import { CsList, getModePillClass } from '@/ui/datatable/columnslist/cs'
+import { resolveTranslatable } from '@/ui/dataview/types'
+import { formatNumber, formatVNA } from '@/util/util'
 
 export type CsSummaryCardProps = {
-  cs: CsList;
-  onView: () => void;
-  onParticipants: () => void;
-};
+  cs: CsList
+  onView: () => void
+  onParticipants: () => void
+}
 
 function RolePill({ value, suffix }: { value?: string | number; suffix: string }) {
-  const raw = value !== undefined && value !== null ? String(value) : '';
-  if (!raw.trim()) return null;
-  const klass = getModePillClass(raw, suffix);
+  const raw = value !== undefined && value !== null ? String(value) : ''
+  if (!raw.trim()) return null
+  const klass = getModePillClass(raw, suffix)
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${klass}`}>
-      {raw}
-    </span>
-  );
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${klass}`}>{raw}</span>
+  )
 }
 
 function StatRow({ label, value }: { label: string; value: ReactNode }) {
@@ -32,19 +29,21 @@ function StatRow({ label, value }: { label: string; value: ReactNode }) {
       <span className="text-neutral-70 dark:text-neutral-70">{label}:</span>
       <span className="font-medium text-gray-900 dark:text-white">{value}</span>
     </div>
-  );
+  )
 }
 
 export default function CsSummaryCard({ cs, onView, onParticipants }: CsSummaryCardProps) {
-  const isArchived = !!cs.archived;
+  const isArchived = !!cs.archived
 
-  const previewLabel = resolveTranslatable({ key: 'datatable.cs.card.previewSchema' }, translate) ?? 'Preview Schema';
-  const participantsLabel = resolveTranslatable({ key: 'datatable.cs.card.viewParticipants' }, translate) ?? 'View Participants';
-  const archivedLabel = resolveTranslatable({ key: 'datatable.cs.card.archived' }, translate) ?? 'ARCHIVED';
-  const participants = resolveTranslatable({ key: 'datatable.cs.card.participants' }, translate) ?? 'Participants';
-  const issued = resolveTranslatable({ key: 'datatable.cs.card.issuedCredentials' }, translate) ?? 'Issued Credentials';
-  const verified = resolveTranslatable({ key: 'datatable.cs.card.verifiedCredentials' }, translate) ?? 'Verified Credentials';
-  const trustValue = resolveTranslatable({ key: 'datatable.cs.card.trustValue' }, translate) ?? 'Trust Value';
+  const previewLabel = resolveTranslatable({ key: 'datatable.cs.card.previewSchema' }, translate) ?? 'Preview Schema'
+  const participantsLabel =
+    resolveTranslatable({ key: 'datatable.cs.card.viewParticipants' }, translate) ?? 'View Participants'
+  const archivedLabel = resolveTranslatable({ key: 'datatable.cs.card.archived' }, translate) ?? 'ARCHIVED'
+  const participants = resolveTranslatable({ key: 'datatable.cs.card.participants' }, translate) ?? 'Participants'
+  const issued = resolveTranslatable({ key: 'datatable.cs.card.issuedCredentials' }, translate) ?? 'Issued Credentials'
+  const verified =
+    resolveTranslatable({ key: 'datatable.cs.card.verifiedCredentials' }, translate) ?? 'Verified Credentials'
+  const trustValue = resolveTranslatable({ key: 'datatable.cs.card.trustValue' }, translate) ?? 'Trust Value'
 
   return (
     <div
@@ -80,9 +79,7 @@ export default function CsSummaryCard({ cs, onView, onParticipants }: CsSummaryC
         </div>
 
         {cs.description ? (
-          <p className="text-xs sm:text-sm text-neutral-70 dark:text-neutral-70 mb-4 line-clamp-2">
-            {cs.description}
-          </p>
+          <p className="text-xs sm:text-sm text-neutral-70 dark:text-neutral-70 mb-4 line-clamp-2">{cs.description}</p>
         ) : null}
 
         <div className="flex flex-wrap gap-2 mb-4">
@@ -98,5 +95,5 @@ export default function CsSummaryCard({ cs, onView, onParticipants }: CsSummaryC
         </div>
       </div>
     </div>
-  );
+  )
 }

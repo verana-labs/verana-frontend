@@ -1,4 +1,4 @@
 declare module 'langs' {
-  const langs: any;
-  export default langs;
+  const langs: any
+  export default langs
 }

@@ -1,12 +1,12 @@
-import Link from "next/link";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
-import ServiceIdentity from "./service-identity";
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import Link from 'next/link'
+import ServiceIdentity from './service-identity'
 
 export type TrustRegistryBreadcrumbProps = {
-  trId: string;
-  trDid: string;
-};
+  trId: string
+  trDid: string
+}
 
 export default function TrustRegistryBreadcrumb({ trId, trDid }: TrustRegistryBreadcrumbProps) {
   return (
@@ -19,5 +19,5 @@ export default function TrustRegistryBreadcrumb({ trId, trDid }: TrustRegistryBr
         <ServiceIdentity did={trDid} showFlag={false} showTrust={false} />
       </Link>
     </section>
-  );
+  )
 }

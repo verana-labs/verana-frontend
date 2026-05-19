@@ -1,33 +1,35 @@
-'use client';
+'use client'
 
-import { ReactNode } from "react";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronRight, faChartColumn, faCoins, faCrown, faHandshake, faScaleBalanced } from "@fortawesome/free-solid-svg-icons";
-import { Permission, VpState } from "../dataview/datasections/perm";
-import { translate } from "@/i18n/dataview";
-import { resolveTranslatable } from "../dataview/types";
 import {
-  formatVNAFromUVNA,
-  permStateBadgeClass,
-  roleBadgeClass,
-  vpStateColor,
-} from "@/util/util";
-import { service } from "./permission-atrribute";
-import { PermState, TreeNode } from "./permission-tree";
-import ServiceIdentity from "./service-identity";
+  faChartColumn,
+  faChevronRight,
+  faCoins,
+  faCrown,
+  faHandshake,
+  faScaleBalanced,
+} from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { ReactNode } from 'react'
+import { translate } from '@/i18n/dataview'
+import { formatVNAFromUVNA, permStateBadgeClass, roleBadgeClass, vpStateColor } from '@/util/util'
+import { VpState } from '../dataview/datasections/perm'
+import { resolveTranslatable } from '../dataview/types'
+import { service } from './permission-atrribute'
+import { PermState, TreeNode } from './permission-tree'
+import ServiceIdentity from './service-identity'
 
 export type TreeNodeHeaderProps = {
-  node: TreeNode;
-  type: "participants" | "tasks";
-  isExpanded: boolean;
-  showWeight: boolean;
-  showBusiness: boolean;
-  showStats: boolean;
-  onToggle: (id: string, type: string | undefined, validatorId: string | undefined) => void;
-  onSelect: (id: string) => void;
-  onJoin: (node: TreeNode) => void;
-  onConnect?: () => void;
-};
+  node: TreeNode
+  type: 'participants' | 'tasks'
+  isExpanded: boolean
+  showWeight: boolean
+  showBusiness: boolean
+  showStats: boolean
+  onToggle: (id: string, type: string | undefined, validatorId: string | undefined) => void
+  onSelect: (id: string) => void
+  onJoin: (node: TreeNode) => void
+  onConnect?: () => void
+}
 
 export default function TreeNodeHeader({
   node,
@@ -41,34 +43,34 @@ export default function TreeNodeHeader({
   onJoin,
   onConnect,
 }: TreeNodeHeaderProps) {
-  const hasChildren = !!node.children?.length;
-  const permission = node.permission;
+  const hasChildren = !!node.children?.length
+  const permission = node.permission
 
   const { labelVpState, classVpState } = vpStateColor(
     permission?.vp_state as VpState,
     permission?.vp_exp as string,
-    permission?.expire_soon ?? false,
-  );
+    permission?.expire_soon ?? false
+  )
   const { labelPermState, classPermState } = permStateBadgeClass(
     permission?.perm_state as PermState,
-    permission?.expire_soon ?? false,
-  );
+    permission?.expire_soon ?? false
+  )
 
-  let participantContent: ReactNode = null;
-  if (type === "participants") {
+  let participantContent: ReactNode = null
+  if (type === 'participants') {
     if (!node.group && permission) {
       participantContent = (
         <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ml-auto ${node.roleColorClass}`}>
           {showWeight ? (
             <span className="whitespace-nowrap">
               <FontAwesomeIcon icon={faScaleBalanced} className="mr-1" />
-              {formatVNAFromUVNA(permission.weight ?? "0")}
+              {formatVNAFromUVNA(permission.weight ?? '0')}
             </span>
           ) : null}
           {showBusiness ? (
             <span className="whitespace-nowrap">
               <FontAwesomeIcon icon={faCoins} className="mr-1" />
-              {`validation: ${formatVNAFromUVNA(permission.validation_fees ?? "0")} | issuance: ${formatVNAFromUVNA(permission.issuance_fees ?? "0")} | verification: ${formatVNAFromUVNA(permission.verification_fees ?? "0")}`}
+              {`validation: ${formatVNAFromUVNA(permission.validation_fees ?? '0')} | issuance: ${formatVNAFromUVNA(permission.issuance_fees ?? '0')} | verification: ${formatVNAFromUVNA(permission.verification_fees ?? '0')}`}
             </span>
           ) : null}
           {showStats ? (
@@ -78,11 +80,13 @@ export default function TreeNodeHeader({
             </span>
           ) : null}
         </div>
-      );
+      )
     } else {
       participantContent = (
         <div className={`text-xs flex flex-wrap items-center gap-x-3 gap-y-1 ml-auto ${node.roleColorClass}`}>
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${node.validationProcessColor}`}>
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${node.validationProcessColor}`}
+          >
             {node.validationProcessLabel}
           </span>
           {node.enabledJoin ? (
@@ -90,27 +94,27 @@ export default function TreeNodeHeader({
               type="button"
               className="hover:text-purple-600 cursor-pointer whitespace-nowrap"
               onClick={(e) => {
-                e.stopPropagation();
+                e.stopPropagation()
                 switch (node.validationProcessAction) {
                   case 'LinkDID':
-                    window.open(service(permission?.did ?? ''), "_blank");
-                    break;
+                    window.open(service(permission?.did ?? ''), '_blank')
+                    break
                   case 'Connect':
-                    onConnect?.();
-                    break;
+                    onConnect?.()
+                    break
                   default:
-                    onJoin(node);
-                    onToggle(node.nodeId, node.type, node.parentId);
-                    break;
+                    onJoin(node)
+                    onToggle(node.nodeId, node.type, node.parentId)
+                    break
                 }
               }}
             >
               <FontAwesomeIcon icon={faHandshake} className="mr-1" />
-              {` ${resolveTranslatable({ key: "participants.btn.join" }, translate)}`}
+              {` ${resolveTranslatable({ key: 'participants.btn.join' }, translate)}`}
             </button>
           ) : null}
         </div>
-      );
+      )
     }
   }
 
@@ -121,15 +125,15 @@ export default function TreeNodeHeader({
           <button
             type="button"
             onClick={(e) => {
-              e.stopPropagation();
-              onToggle(node.nodeId, node.type, node.parentId);
+              e.stopPropagation()
+              onToggle(node.nodeId, node.type, node.parentId)
             }}
             className="text-gray-400 text-xs w-4 flex-shrink-0"
             aria-label="Toggle"
           >
             <FontAwesomeIcon
               icon={faChevronRight}
-              className={`transition-transform ${isExpanded ? "rotate-90" : ""}`}
+              className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`}
             />
           </button>
         ) : (
@@ -141,31 +145,20 @@ export default function TreeNodeHeader({
             <>
               <ServiceIdentity did={node.serviceDid} fallbackName={node.name} />
               {typeof node.badgeCount === 'number' && node.badgeCount > 0 ? (
-                <span className="text-sm text-neutral-70 dark:text-neutral-30 flex-shrink-0">
-                  ({node.badgeCount})
-                </span>
+                <span className="text-sm text-neutral-70 dark:text-neutral-30 flex-shrink-0">({node.badgeCount})</span>
               ) : null}
             </>
           ) : node.serviceTitle ? (
             <>
-              <ServiceIdentity
-                did={undefined}
-                fallbackName={node.serviceTitle}
-                showFlag={false}
-                showTrust={false}
-              />
+              <ServiceIdentity did={undefined} fallbackName={node.serviceTitle} showFlag={false} showTrust={false} />
               {typeof node.badgeCount === 'number' && node.badgeCount > 0 ? (
-                <span className="text-sm text-neutral-70 dark:text-neutral-30 flex-shrink-0">
-                  ({node.badgeCount})
-                </span>
+                <span className="text-sm text-neutral-70 dark:text-neutral-30 flex-shrink-0">({node.badgeCount})</span>
               ) : null}
             </>
           ) : (
             <>
               <FontAwesomeIcon icon={node.icon} className={`${node.iconColorClass} flex-shrink-0`} />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 break-all">
-                {node.name}
-              </span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 break-all">{node.name}</span>
             </>
           )
         ) : (
@@ -173,33 +166,35 @@ export default function TreeNodeHeader({
             <button
               type="button"
               onClick={(e) => {
-                e.stopPropagation();
-                onSelect(node.nodeId);
+                e.stopPropagation()
+                onSelect(node.nodeId)
               }}
               className="cursor-pointer min-w-0"
             >
               <ServiceIdentity did={permission?.did} fallbackName={node.name} />
             </button>
-            <FontAwesomeIcon
-              icon={faCrown}
-              className="text-yellow-500 flex-shrink-0"
-              aria-hidden="true"
-            />
+            <FontAwesomeIcon icon={faCrown} className="text-yellow-500 flex-shrink-0" aria-hidden="true" />
           </>
         )}
 
-        {type === "participants" && !node.group && permission?.perm_state ? (
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${classPermState}`}>
+        {type === 'participants' && !node.group && permission?.perm_state ? (
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${classPermState}`}
+          >
             {labelPermState}
           </span>
         ) : null}
 
-        {type === "tasks" && permission?.vp_state ? (
+        {type === 'tasks' && permission?.vp_state ? (
           <>
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${classVpState}`}>
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${classVpState}`}
+            >
               {labelVpState}
             </span>
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${roleBadgeClass(permission.type)}`}>
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${roleBadgeClass(permission.type)}`}
+            >
               {permission.type}
             </span>
           </>
@@ -208,5 +203,5 @@ export default function TreeNodeHeader({
 
       {participantContent}
     </div>
-  );
+  )
 }

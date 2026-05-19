@@ -1,28 +1,28 @@
-'use client';
+'use client'
 
-import EditableDataView from '@/ui/common/data-edit';
-import { useActionPerm } from '@/msg/actions_hooks/actionPerm';
-import { Permission, PermissionData, getActionPermSections } from '@/ui/dataview/datasections/perm';
-import { MsgTypePERM } from '@/msg/constants/notificationMsgForMsgType';
-import { MessageType } from '@/msg/constants/types';
-import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino';
+import { useActionPerm } from '@/msg/actions_hooks/actionPerm'
+import { MsgTypePERM } from '@/msg/constants/notificationMsgForMsgType'
+import { MessageType } from '@/msg/constants/types'
+import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
+import EditableDataView from '@/ui/common/data-edit'
+import { getActionPermSections, Permission, PermissionData } from '@/ui/dataview/datasections/perm'
 
 // Define PermActionPage props interface
 interface PermActionProps {
-  action: MsgTypePERM;  // Action type to perform
-  data: object;
-  onClose: () => void; // Collapse/hide action on cancel
-  onRefresh?: (id?: string, txHeight?: number) => void; // Refresh Permission data
-  setModalHidden?: () => void; // Hidden/Visible modal
+  action: MsgTypePERM // Action type to perform
+  data: object
+  onClose: () => void // Collapse/hide action on cancel
+  onRefresh?: (id?: string, txHeight?: number) => void // Refresh Permission data
+  setModalHidden?: () => void // Hidden/Visible modal
 }
 
 export default function PermActionPage({ action, data, onClose, onRefresh, setModalHidden }: PermActionProps) {
-  const permData = data as Permission;
-  const actionPerm = useActionPerm(onClose, onRefresh);
+  const permData = data as Permission
+  const actionPerm = useActionPerm(onClose, onRefresh)
 
   // Save handler: called when the form is submitted
   async function onSave(formData: object) {
-    const newData = formData as PermissionData;
+    const newData = formData as PermissionData
     // Broadcast transaction with user input
     switch (action) {
       case 'MsgRenewPermissionVP':
@@ -32,85 +32,85 @@ export default function PermActionPage({ action, data, onClose, onRefresh, setMo
         await actionPerm({
           msgType: action,
           creator: '',
-          id: permData.id
-        });
-        break;
+          id: permData.id,
+        })
+        break
 
       case 'MsgSetPermissionVPToValidated':
         await actionPerm({
           msgType: 'MsgSetPermissionVPToValidated',
-          creator: "",
+          creator: '',
           id: permData.id,
           effectiveUntil: newData.effectiveUntil,
-          validationFees: newData.validationFees?? 0,
-          issuanceFees: newData.issuanceFees?? 0,
-          verificationFees: newData.verificationFees?? 0,
+          validationFees: newData.validationFees ?? 0,
+          issuanceFees: newData.issuanceFees ?? 0,
+          verificationFees: newData.verificationFees ?? 0,
           country: permData.country,
-          vpSummaryDigestSri: newData.vpSummaryDigestSri?? ''
-        });
-        break;
+          vpSummaryDigestSri: newData.vpSummaryDigestSri ?? '',
+        })
+        break
 
       case 'MsgExtendPermission':
         await actionPerm({
           msgType: 'MsgExtendPermission',
-          creator: "",
+          creator: '',
           id: permData.id,
           effectiveUntil: newData.effectiveUntil,
-        });
-        break;
+        })
+        break
 
       case 'MsgSlashPermissionTrustDeposit':
         await actionPerm({
           msgType: 'MsgSlashPermissionTrustDeposit',
-          creator: "",
+          creator: '',
           id: permData.id,
-          amount: newData.amount??0
-        });
-        break;
+          amount: newData.amount ?? 0,
+        })
+        break
 
       case 'MsgCreateRootPermission':
         await actionPerm({
           msgType: 'MsgCreateRootPermission',
-          creator: "",
+          creator: '',
           schemaId: permData.schema_id,
           did: newData.did as string,
           country: newData.country as string,
           effectiveFrom: newData.effectiveFrom,
           effectiveUntil: newData.effectiveUntil,
-          validationFees: newData.validationFees?? 0,
-          issuanceFees: newData.issuanceFees?? 0,
-          verificationFees: newData.verificationFees?? 0,
-        });
-        break;
+          validationFees: newData.validationFees ?? 0,
+          issuanceFees: newData.issuanceFees ?? 0,
+          verificationFees: newData.verificationFees ?? 0,
+        })
+        break
 
       case 'MsgStartPermissionVP':
         await actionPerm({
           msgType: 'MsgStartPermissionVP',
-          creator: "",
+          creator: '',
           type: permData.type,
           validatorPermId: permData.validator_perm_id,
           did: newData.did as string,
           country: newData.country as string,
-        });
-        break;
+        })
+        break
 
       case 'MsgCreatePermission':
         await actionPerm({
           msgType: 'MsgCreatePermission',
-          creator: "",
+          creator: '',
           schemaId: permData.schema_id,
           type: permData.type,
           did: newData.did as string,
           country: newData.country as string,
           effectiveFrom: newData.effectiveFrom,
           effectiveUntil: newData.effectiveUntil,
-          validationFees: newData.validationFees?? 0,
-          verificationFees: newData.verificationFees?? 0,
-        });
-        break;
+          validationFees: newData.validationFees ?? 0,
+          verificationFees: newData.verificationFees ?? 0,
+        })
+        break
 
       default:
-        break;
+        break
     }
   }
 
@@ -120,13 +120,14 @@ export default function PermActionPage({ action, data, onClose, onRefresh, setMo
       case 'MsgRenewPermissionVP':
       case 'MsgCancelPermissionVPLastRequest':
       case 'MsgRevokePermission':
-      case 'MsgRepayPermissionSlashedTrustDeposit': 
-        const res =  await actionPerm({ msgType: action, creator: '', id: permData.id}, true);
-        if (res && typeof res === "object" && !("transactionHash" in res)) {
-          return res as SimulateResult;
+      case 'MsgRepayPermissionSlashedTrustDeposit': {
+        const res = await actionPerm({ msgType: action, creator: '', id: permData.id }, true)
+        if (res && typeof res === 'object' && !('transactionHash' in res)) {
+          return res as SimulateResult
         }
-      default :
-        return;
+      }
+      default:
+        return
     }
   }
 
@@ -136,20 +137,20 @@ export default function PermActionPage({ action, data, onClose, onRefresh, setMo
       case 'MsgCancelPermissionVPLastRequest':
       case 'MsgRevokePermission':
       case 'MsgRepayPermissionSlashedTrustDeposit':
-        return true;
+        return true
       case 'MsgSetPermissionVPToValidated':
       case 'MsgExtendPermission':
       case 'MsgSlashPermissionTrustDeposit':
       case 'MsgCreateRootPermission':
       case 'MsgStartPermissionVP':
       case 'MsgCreatePermission':
-        return false;
+        return false
       default:
-        return true;
+        return true
     }
   }
-  
-  const sectionPermission = getActionPermSections(action, ["VERIFIER", "HOLDER"].includes(permData.type));
+
+  const sectionPermission = getActionPermSections(action, ['VERIFIER', 'HOLDER'].includes(permData.type))
 
   return (
     <>
@@ -157,17 +158,16 @@ export default function PermActionPage({ action, data, onClose, onRefresh, setMo
       <EditableDataView<PermissionData>
         sectionsI18n={sectionPermission}
         id={permData.id}
-        messageType={action as MessageType}     
+        messageType={action as MessageType}
         data={{}}
         onSave={onSave}
         onSimulate={onSimulate}
         isModal={true}
         onCancel={onClose}
-        noForm={isNoForm()} 
+        noForm={isNoForm()}
         setModalHidden={setModalHidden}
         transactionCost={permData.transaction_cost}
       />
     </>
-  );
-
+  )
 }

@@ -1,46 +1,48 @@
-'use client';
+'use client'
 
-import TrustBadge from '@/ui/common/trust-badge';
-import FieldRow from '@/ui/common/field-row';
-import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment';
-import { serviceAvatarUrl } from '@/lib/resolverClient';
-import { countryCodeToFlag } from '@/util/util';
-import { resolveTranslatable } from '@/ui/dataview/types';
-import { translate } from '@/i18n/dataview';
+import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
+import { translate } from '@/i18n/dataview'
+import { serviceAvatarUrl } from '@/lib/resolverClient'
+import FieldRow from '@/ui/common/field-row'
+import TrustBadge from '@/ui/common/trust-badge'
+import { resolveTranslatable } from '@/ui/dataview/types'
+import { countryCodeToFlag } from '@/util/util'
 
-const LABEL_CLASS = 'text-neutral-70 dark:text-neutral-70 block mb-1';
-const MONO_VALUE_CLASS = 'text-gray-900 dark:text-white font-mono text-xs sm:text-sm break-all';
+const LABEL_CLASS = 'text-neutral-70 dark:text-neutral-70 block mb-1'
+const MONO_VALUE_CLASS = 'text-gray-900 dark:text-white font-mono text-xs sm:text-sm break-all'
 
 export type ServiceProviderCardProps = {
-  did: string;
-  controller?: string;
-};
+  did: string
+  controller?: string
+}
 
 function countryName(code: string): string {
   try {
-    const display = new Intl.DisplayNames(['en'], { type: 'region' }).of(code.toUpperCase());
-    return display ?? code;
+    const display = new Intl.DisplayNames(['en'], { type: 'region' }).of(code.toUpperCase())
+    return display ?? code
   } catch {
-    return code;
+    return code
   }
 }
 
 export default function ServiceProviderCard({ did, controller }: ServiceProviderCardProps) {
-  const { data: enrichment } = useDidTrustEnrichment(did);
+  const { data: enrichment } = useDidTrustEnrichment(did)
 
-  const orgName = enrichment?.organizationName ?? enrichment?.serviceName;
-  const countryCode = enrichment?.countryCode;
-  const address = enrichment?.organizationAddress;
-  const registryId = enrichment?.organizationRegistryId;
+  const orgName = enrichment?.organizationName ?? enrichment?.serviceName
+  const countryCode = enrichment?.countryCode
+  const address = enrichment?.organizationAddress
+  const registryId = enrichment?.organizationRegistryId
 
-  const hasContent = !!orgName || !!countryCode || !!address || !!registryId;
-  if (!hasContent) return null;
+  const hasContent = !!orgName || !!countryCode || !!address || !!registryId
+  if (!hasContent) return null
 
-  const sectionLabel = resolveTranslatable({ key: 'dataview.tr.sections.serviceProvider' }, translate) ?? 'Service Provider';
-  const countryLabel = resolveTranslatable({ key: 'dataview.tr.fields.country' }, translate) ?? 'Country';
-  const addressLabel = resolveTranslatable({ key: 'dataview.tr.fields.address' }, translate) ?? 'Address';
-  const registryIdLabel = resolveTranslatable({ key: 'dataview.tr.fields.registryId' }, translate) ?? 'Registry ID';
-  const issuerLabel = resolveTranslatable({ key: 'dataview.tr.fields.credentialIssuer' }, translate) ?? 'Credential Issuer';
+  const sectionLabel =
+    resolveTranslatable({ key: 'dataview.tr.sections.serviceProvider' }, translate) ?? 'Service Provider'
+  const countryLabel = resolveTranslatable({ key: 'dataview.tr.fields.country' }, translate) ?? 'Country'
+  const addressLabel = resolveTranslatable({ key: 'dataview.tr.fields.address' }, translate) ?? 'Address'
+  const registryIdLabel = resolveTranslatable({ key: 'dataview.tr.fields.registryId' }, translate) ?? 'Registry ID'
+  const issuerLabel =
+    resolveTranslatable({ key: 'dataview.tr.fields.credentialIssuer' }, translate) ?? 'Credential Issuer'
 
   return (
     <section className="mb-8">
@@ -72,7 +74,9 @@ export default function ServiceProviderCard({ did, controller }: ServiceProvider
               {countryCode ? (
                 <FieldRow label={`${countryLabel}:`} labelClassName={LABEL_CLASS}>
                   <div className="flex items-center gap-2">
-                    <span className="text-xl sm:text-2xl" aria-hidden="true">{countryCodeToFlag(countryCode)}</span>
+                    <span className="text-xl sm:text-2xl" aria-hidden="true">
+                      {countryCodeToFlag(countryCode)}
+                    </span>
                     <span className="text-gray-900 dark:text-white font-medium">{countryName(countryCode)}</span>
                   </div>
                 </FieldRow>
@@ -100,5 +104,5 @@ export default function ServiceProviderCard({ did, controller }: ServiceProvider
         </div>
       </div>
     </section>
-  );
+  )
 }

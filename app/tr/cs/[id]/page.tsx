@@ -1,26 +1,24 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBoxArchive, faPenToSquare, faSitemap } from '@fortawesome/free-solid-svg-icons';
-import { useChain } from '@cosmos-kit/react';
-
-import JsonCodeBlock from '@/ui/common/json-code-block';
-import SchemaHeader, { SchemaStatus } from '@/ui/common/schema-header';
-import TrustRegistryBreadcrumb from '@/ui/common/trust-registry-breadcrumb';
-import { ModalAction } from '@/ui/common/modal-action';
-import { renderActionComponent } from '@/ui/common/data-view-typed';
-import { resolveTranslatable } from '@/ui/dataview/types';
-import { translate } from '@/i18n/dataview';
-
-import { useCsData } from '@/hooks/useCredentialSchemaData';
-import { useTrustRegistryData } from '@/hooks/useTrustRegistryData';
-import { useVeranaChain } from '@/hooks/useVeranaChain';
-import { useIndexerEvents } from '@/providers/indexer-events-provider';
-import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject';
-import { CsData } from '@/ui/dataview/datasections/cs';
-import { RefreshState } from '@/msg/util/signerUtil';
+import { useChain } from '@cosmos-kit/react'
+import { faBoxArchive, faPenToSquare, faSitemap } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useCsData } from '@/hooks/useCredentialSchemaData'
+import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
+import { useTrustRegistryData } from '@/hooks/useTrustRegistryData'
+import { useVeranaChain } from '@/hooks/useVeranaChain'
+import { translate } from '@/i18n/dataview'
+import { RefreshState } from '@/msg/util/signerUtil'
+import { useIndexerEvents } from '@/providers/indexer-events-provider'
+import { renderActionComponent } from '@/ui/common/data-view-typed'
+import JsonCodeBlock from '@/ui/common/json-code-block'
+import { ModalAction } from '@/ui/common/modal-action'
+import SchemaHeader, { SchemaStatus } from '@/ui/common/schema-header'
+import TrustRegistryBreadcrumb from '@/ui/common/trust-registry-breadcrumb'
+import { CsData } from '@/ui/dataview/datasections/cs'
+import { resolveTranslatable } from '@/ui/dataview/types'
 
 type ValidityField = keyof Pick<
   CsData,
@@ -29,17 +27,23 @@ type ValidityField = keyof Pick<
   | 'issuerValidationValidityPeriod'
   | 'verifierValidationValidityPeriod'
   | 'holderValidationValidityPeriod'
->;
+>
 
 const VALIDITY_FIELDS: Array<{ labelKey: string; field: ValidityField }> = [
-  { labelKey: 'dataview.cs.fields.issuerGrantorValidationValidityPeriod', field: 'issuerGrantorValidationValidityPeriod' },
-  { labelKey: 'dataview.cs.fields.verifierGrantorValidationValidityPeriod', field: 'verifierGrantorValidationValidityPeriod' },
+  {
+    labelKey: 'dataview.cs.fields.issuerGrantorValidationValidityPeriod',
+    field: 'issuerGrantorValidationValidityPeriod',
+  },
+  {
+    labelKey: 'dataview.cs.fields.verifierGrantorValidationValidityPeriod',
+    field: 'verifierGrantorValidationValidityPeriod',
+  },
   { labelKey: 'dataview.cs.fields.issuerValidationValidityPeriod', field: 'issuerValidationValidityPeriod' },
   { labelKey: 'dataview.cs.fields.verifierValidationValidityPeriod', field: 'verifierValidationValidityPeriod' },
   { labelKey: 'dataview.cs.fields.holderValidationValidityPeriod', field: 'holderValidationValidityPeriod' },
-];
+]
 
-type ValidityValues = Record<ValidityField, number>;
+type ValidityValues = Record<ValidityField, number>
 
 function valuesFromCs(csData: CsData): ValidityValues {
   return {
@@ -48,27 +52,36 @@ function valuesFromCs(csData: CsData): ValidityValues {
     issuerValidationValidityPeriod: Number(csData.issuerValidationValidityPeriod ?? 0),
     verifierValidationValidityPeriod: Number(csData.verifierValidationValidityPeriod ?? 0),
     holderValidationValidityPeriod: Number(csData.holderValidationValidityPeriod ?? 0),
-  };
+  }
 }
 
 function ValidityFieldView({ labelKey, value }: { labelKey: string; value: number }) {
-  const label = resolveTranslatable({ key: labelKey }, translate) ?? labelKey;
-  const valueText = value === 0
-    ? (resolveTranslatable({ key: 'dataview.cs.value.never' }, translate) ?? 'Never expires')
-    : (resolveTranslatable({ key: 'dataview.cs.value.days', values: { n: value } }, translate) ?? `${value} days`);
+  const label = resolveTranslatable({ key: labelKey }, translate) ?? labelKey
+  const valueText =
+    value === 0
+      ? (resolveTranslatable({ key: 'dataview.cs.value.never' }, translate) ?? 'Never expires')
+      : (resolveTranslatable({ key: 'dataview.cs.value.days', values: { n: value } }, translate) ?? `${value} days`)
   return (
     <div>
       <span className="text-sm text-neutral-70 dark:text-neutral-70 block mb-1">{label}</span>
       <p className="text-gray-900 dark:text-white font-medium">{valueText}</p>
     </div>
-  );
+  )
 }
 
 function ValidityFieldInput({
-  labelKey, value, onChange, disabled,
-}: { labelKey: string; value: number; onChange: (n: number) => void; disabled?: boolean }) {
-  const label = resolveTranslatable({ key: labelKey }, translate) ?? labelKey;
-  const daysShort = resolveTranslatable({ key: 'dataview.cs.value.daysShort' }, translate) ?? 'days';
+  labelKey,
+  value,
+  onChange,
+  disabled,
+}: {
+  labelKey: string
+  value: number
+  onChange: (n: number) => void
+  disabled?: boolean
+}) {
+  const label = resolveTranslatable({ key: labelKey }, translate) ?? labelKey
+  const daysShort = resolveTranslatable({ key: 'dataview.cs.value.daysShort' }, translate) ?? 'days'
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -80,132 +93,130 @@ function ValidityFieldInput({
         step={1}
         value={Number.isFinite(value) ? value : 0}
         onChange={(e) => {
-          const raw = e.target.value;
+          const raw = e.target.value
           if (raw === '') {
-            onChange(0);
-            return;
+            onChange(0)
+            return
           }
-          const parsed = Number(raw);
-          if (!Number.isFinite(parsed)) return;
-          onChange(Math.max(0, Math.floor(parsed)));
+          const parsed = Number(raw)
+          if (!Number.isFinite(parsed)) return
+          onChange(Math.max(0, Math.floor(parsed)))
         }}
         disabled={disabled}
         className="w-full px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-surface text-gray-900 dark:text-white text-sm disabled:opacity-60"
       />
     </div>
-  );
+  )
 }
 
 export default function CSViewPage() {
-  const params = useParams();
-  const id = params?.id as string;
-  const router = useRouter();
-  const veranaChain = useVeranaChain();
-  const { address } = useChain(veranaChain.chain_name);
+  const params = useParams()
+  const id = params?.id as string
+  const router = useRouter()
+  const veranaChain = useVeranaChain()
+  const { address } = useChain(veranaChain.chain_name)
 
-  const [trController, setTrController] = useState<boolean>(false);
-  const [trId, setTrId] = useState<string>('');
-  const { dataTR, refetch: refetchTR } = useTrustRegistryData(trId);
-  const { csData, errorCS, refetch: refetchCS } = useCsData(id);
+  const [trController, setTrController] = useState<boolean>(false)
+  const [trId, setTrId] = useState<string>('')
+  const { dataTR, refetch: refetchTR } = useTrustRegistryData(trId)
+  const { csData, errorCS, refetch: refetchCS } = useCsData(id)
 
-  const [mode, setMode] = useState<'view' | 'edit'>('view');
-  const [editValues, setEditValues] = useState<ValidityValues | null>(null);
-  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [mode, setMode] = useState<'view' | 'edit'>('view')
+  const [editValues, setEditValues] = useState<ValidityValues | null>(null)
+  const [submitting, setSubmitting] = useState<boolean>(false)
 
-  const [archiveActive, setArchiveActive] = useState<boolean>(false);
-  const [refreshState, setRefreshState] = useState<RefreshState>({});
-  const { latestProcessedHeight } = useIndexerEvents();
+  const [archiveActive, setArchiveActive] = useState<boolean>(false)
+  const [refreshState, setRefreshState] = useState<RefreshState>({})
+  const { latestProcessedHeight } = useIndexerEvents()
 
   const onRefreshAfterTx = (id?: string, txHeight?: number) => {
-    setRefreshState({ id, txHeight });
-  };
+    setRefreshState({ id, txHeight })
+  }
 
-  const { submitTx } = useSubmitTxMsgTypeFromObject(
-    () => setMode('view'),
-    onRefreshAfterTx,
-  );
+  const { submitTx } = useSubmitTxMsgTypeFromObject(() => setMode('view'), onRefreshAfterTx)
 
   useEffect(() => {
-    (async () => { await refetchTR(); })();
-  }, [trId]);
+    ;(async () => {
+      await refetchTR()
+    })()
+  }, [trId])
 
   useEffect(() => {
-    setTrController(!!dataTR?.controller && dataTR.controller === address);
-  }, [dataTR, address]);
+    setTrController(!!dataTR?.controller && dataTR.controller === address)
+  }, [dataTR, address])
 
   useEffect(() => {
-    if (refreshState.txHeight == null) return;
-    if (latestProcessedHeight < refreshState.txHeight) return;
-    (async () => {
-      await refetchCS();
-      setRefreshState({});
-    })();
-  }, [refreshState.txHeight, latestProcessedHeight]);
+    if (refreshState.txHeight == null) return
+    if (latestProcessedHeight < refreshState.txHeight) return
+    ;(async () => {
+      await refetchCS()
+      setRefreshState({})
+    })()
+  }, [refreshState.txHeight, latestProcessedHeight])
 
   useEffect(() => {
-    if (!csData) return;
-    if (trId === '') setTrId(csData.trId as string);
-  }, [csData]);
+    if (!csData) return
+    if (trId === '') setTrId(csData.trId as string)
+  }, [csData])
 
   useEffect(() => {
     if (!trController && mode === 'edit') {
-      setMode('view');
-      setEditValues(null);
+      setMode('view')
+      setEditValues(null)
     }
-  }, [trController, mode]);
+  }, [trController, mode])
 
   useEffect(() => {
-    if (mode === 'view' && submitting) setSubmitting(false);
-  }, [mode, submitting]);
+    if (mode === 'view' && submitting) setSubmitting(false)
+  }, [mode, submitting])
 
-  const isArchived = !!csData?.archived;
-  const csStatus: SchemaStatus = isArchived ? 'ARCHIVED' : 'ACTIVE';
+  const isArchived = !!csData?.archived
+  const csStatus: SchemaStatus = isArchived ? 'ARCHIVED' : 'ACTIVE'
 
-  const archiveMsgType = isArchived ? 'MsgUnarchiveCredentialSchema' : 'MsgArchiveCredentialSchema';
+  const archiveMsgType = isArchived ? 'MsgUnarchiveCredentialSchema' : 'MsgArchiveCredentialSchema'
   const archiveTitleKey = isArchived
     ? 'dataview.cs.actions.unarchiveCredentialSchema'
-    : 'dataview.cs.actions.archiveCredentialSchema';
-  const archiveButtonLabel = resolveTranslatable(
-    { key: isArchived ? 'dataview.cs.button.unarchive' : 'dataview.cs.button.archive' },
-    translate,
-  ) ?? (isArchived ? 'Unarchive' : 'Archive');
+    : 'dataview.cs.actions.archiveCredentialSchema'
+  const archiveButtonLabel =
+    resolveTranslatable(
+      { key: isArchived ? 'dataview.cs.button.unarchive' : 'dataview.cs.button.archive' },
+      translate
+    ) ?? (isArchived ? 'Unarchive' : 'Archive')
 
-  const editLabel = resolveTranslatable({ key: 'dataview.cs.button.editConfiguration' }, translate)
-    ?? 'Edit Configuration';
-  const participantsLabel = resolveTranslatable({ key: 'participants.title' }, translate) ?? 'Participants';
-  const mutableLabel = resolveTranslatable({ key: 'dataview.section.mutable' }, translate)
-    ?? 'Mutable Configuration';
-  const jsonSchemaLabel = resolveTranslatable({ key: 'dataview.cs.fields.jsonSchema' }, translate)
-    ?? 'JSON Schema';
-  const cancelLabel = resolveTranslatable({ key: 'messages.cancel' }, translate) ?? 'Cancel';
-  const confirmLabel = resolveTranslatable({ key: 'messages.confirm' }, translate) ?? 'Confirm';
+  const editLabel =
+    resolveTranslatable({ key: 'dataview.cs.button.editConfiguration' }, translate) ?? 'Edit Configuration'
+  const participantsLabel = resolveTranslatable({ key: 'participants.title' }, translate) ?? 'Participants'
+  const mutableLabel = resolveTranslatable({ key: 'dataview.section.mutable' }, translate) ?? 'Mutable Configuration'
+  const jsonSchemaLabel = resolveTranslatable({ key: 'dataview.cs.fields.jsonSchema' }, translate) ?? 'JSON Schema'
+  const cancelLabel = resolveTranslatable({ key: 'messages.cancel' }, translate) ?? 'Cancel'
+  const confirmLabel = resolveTranslatable({ key: 'messages.confirm' }, translate) ?? 'Confirm'
 
   function startEdit() {
-    if (!csData) return;
-    setEditValues(valuesFromCs(csData));
-    setMode('edit');
+    if (!csData) return
+    setEditValues(valuesFromCs(csData))
+    setMode('edit')
   }
 
   function cancelEdit() {
-    setMode('view');
-    setEditValues(null);
+    setMode('view')
+    setEditValues(null)
   }
 
   async function confirmEdit() {
-    if (!csData || !editValues) return;
-    setSubmitting(true);
+    if (!csData || !editValues) return
+    setSubmitting(true)
     try {
-      await submitTx('MsgUpdateCredentialSchema', { ...csData, ...editValues });
+      await submitTx('MsgUpdateCredentialSchema', { ...csData, ...editValues })
     } catch {
-      setSubmitting(false);
+      setSubmitting(false)
     }
   }
 
   function patchEditValue(field: ValidityField, value: number) {
     setEditValues((prev) => {
-      if (!prev) return prev;
-      return { ...prev, [field]: value };
-    });
+      if (!prev) return prev
+      return { ...prev, [field]: value }
+    })
   }
 
   return (
@@ -242,9 +253,7 @@ export default function CSViewPage() {
           {/* Mutable Configuration */}
           <section className="mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
-                {mutableLabel}
-              </h2>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">{mutableLabel}</h2>
               {trController && mode === 'view' ? (
                 <div className="flex flex-col sm:flex-row gap-2">
                   <button
@@ -270,11 +279,7 @@ export default function CSViewPage() {
               {mode === 'view' || !editValues ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {VALIDITY_FIELDS.map(({ labelKey, field }) => (
-                    <ValidityFieldView
-                      key={field}
-                      labelKey={labelKey}
-                      value={Number(csData[field] ?? 0)}
-                    />
+                    <ValidityFieldView key={field} labelKey={labelKey} value={Number(csData[field] ?? 0)} />
                   ))}
                 </div>
               ) : (
@@ -315,9 +320,7 @@ export default function CSViewPage() {
 
           {/* JSON Schema */}
           <section className="mb-8">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4">
-              {jsonSchemaLabel}
-            </h2>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4">{jsonSchemaLabel}</h2>
             <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-4 sm:p-6">
               <JsonCodeBlock value={csData.jsonSchema} />
             </div>
@@ -325,11 +328,7 @@ export default function CSViewPage() {
 
           {/* Archive / Unarchive still goes through the existing modal flow,
               spec does not define a dedicated inline path for it. */}
-          <ModalAction
-            isActive={archiveActive}
-            titleKey={archiveTitleKey}
-            onClose={() => setArchiveActive(false)}
-          >
+          <ModalAction isActive={archiveActive} titleKey={archiveTitleKey} onClose={() => setArchiveActive(false)}>
             {renderActionComponent(archiveMsgType, () => setArchiveActive(false), csData, onRefreshAfterTx)}
           </ModalAction>
         </>
@@ -351,5 +350,5 @@ export default function CSViewPage() {
         </div>
       )}
     </>
-  );
+  )
 }

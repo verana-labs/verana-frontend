@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -25,19 +21,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["app/*"],
-      "@codec-proto/*": ["node_modules/@verana-labs/verana-types/dist/codec/*"], //@verana-labs/verana-types 
+      "@codec-proto/*": ["node_modules/@verana-labs/verana-types/dist/codec/*"], //@verana-labs/verana-types
       "@amino-converter/*": ["node_modules/@verana-labs/verana-types/dist/amino-converter/*"] //@verana-labs/verana-types
     }
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "verana-blockchain"
-  ]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
+  "exclude": ["node_modules", "verana-blockchain"]
 }

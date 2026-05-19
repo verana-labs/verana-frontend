@@ -1,21 +1,21 @@
-'use client';
+'use client'
 
-import { CsData, csSections } from '@/ui/dataview/datasections/cs';
-import EditableDataView from '@/ui/common/data-edit';
-import { DataType, getMsgTypeFor } from '@/msg/constants/msgTypeForDataType';
-import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject';
-import { translate } from '@/i18n/dataview';
-import { resolveTranslatable } from '@/ui/dataview/types';
+import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
+import { translate } from '@/i18n/dataview'
+import { DataType, getMsgTypeFor } from '@/msg/constants/msgTypeForDataType'
+import EditableDataView from '@/ui/common/data-edit'
+import { CsData, csSections } from '@/ui/dataview/datasections/cs'
+import { resolveTranslatable } from '@/ui/dataview/types'
 
 type AddCsPageProps = {
-  trId: number;
-  onCancel: () => void;
-  onRefresh: (id?: string, txHeight?: number) => void;
+  trId: number
+  onCancel: () => void
+  onRefresh: (id?: string, txHeight?: number) => void
 }
 
 export default function AddCsPage({ trId, onCancel, onRefresh }: AddCsPageProps) {
-  const msgType = getMsgTypeFor("CsData" as DataType, "create");
-  const { submitTx } = useSubmitTxMsgTypeFromObject( onCancel, onRefresh );
+  const msgType = getMsgTypeFor('CsData' as DataType, 'create')
+  const { submitTx } = useSubmitTxMsgTypeFromObject(onCancel, onRefresh)
 
   /**
    * Generic save handler:
@@ -23,16 +23,23 @@ export default function AddCsPage({ trId, onCancel, onRefresh }: AddCsPageProps)
    * - Directly forwards both to submitTx
    */
   async function onSave(data: object) {
-    await submitTx(msgType, data);
+    await submitTx(msgType, data)
   }
 
   const newCS = {
-    trId: trId, creator: '',
-    issuerGrantorValidationValidityPeriod: 0, verifierGrantorValidationValidityPeriod: 0,
-    issuerValidationValidityPeriod: 0, verifierValidationValidityPeriod: 0, holderValidationValidityPeriod: 0,
-    issuerPermManagementMode: 1, verifierPermManagementMode: 1, jsonSchema: "",
-    title: resolveTranslatable({key: "tr.cs.add.title"}, translate), id: ''
-  };
+    trId: trId,
+    creator: '',
+    issuerGrantorValidationValidityPeriod: 0,
+    verifierGrantorValidationValidityPeriod: 0,
+    issuerValidationValidityPeriod: 0,
+    verifierValidationValidityPeriod: 0,
+    holderValidationValidityPeriod: 0,
+    issuerPermManagementMode: 1,
+    verifierPermManagementMode: 1,
+    jsonSchema: '',
+    title: resolveTranslatable({ key: 'tr.cs.add.title' }, translate),
+    id: '',
+  }
 
   return (
     <>
@@ -40,12 +47,12 @@ export default function AddCsPage({ trId, onCancel, onRefresh }: AddCsPageProps)
       <EditableDataView<CsData>
         sectionsI18n={csSections}
         id={undefined}
-        messageType={'MsgCreateCredentialSchema'}     
+        messageType={'MsgCreateCredentialSchema'}
         data={newCS}
         onSave={onSave}
         onCancel={onCancel}
         isModal={true}
       />
     </>
-  );
+  )
 }

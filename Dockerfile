@@ -9,12 +9,16 @@ WORKDIR /app
 # Install build dependencies for native modules (bcrypt)
 RUN apk add --no-cache python3 make g++
 
+# Enable Corepack so pnpm is available without a global install
+RUN corepack enable
+
 # Copy package files
-COPY package.json yarn.lock ./
+COPY package.json pnpm-lock.yaml .npmrc ./
 
 # Install dependencies with cache mount for faster rebuilds
-RUN --mount=type=cache,target=/root/.yarn \
-    YARN_CACHE_FOLDER=/root/.yarn yarn install --frozen-lockfile
+RUN --mount=type=cache,target=/pnpm-store \
+    pnpm config set store-dir /pnpm-store && \
+    pnpm install --frozen-lockfile
 
 # ============================================
 # Stage 2: Build the application
@@ -32,7 +36,7 @@ COPY . .
 ENV NODE_ENV=production
 
 # Build the application (standalone output configured in next.config.ts)
-RUN yarn build
+RUN corepack enable && pnpm build
 
 # ============================================
 # Stage 3: Production runner (minimal image)

@@ -1,97 +1,93 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { env } from 'next-runtime-env';
-import { CsData } from '@/ui/dataview/datasections/cs';
-import { resolveTranslatable } from '@/ui/dataview/types';
-import { translate } from '@/i18n/dataview';
-import { ApiErrorResponse } from '@/types/apiErrorResponse';
+import { env } from 'next-runtime-env'
+import { useEffect, useState } from 'react'
+import { translate } from '@/i18n/dataview'
+import { ApiErrorResponse } from '@/types/apiErrorResponse'
+import { CsData } from '@/ui/dataview/datasections/cs'
+import { resolveTranslatable } from '@/ui/dataview/types'
 
 type RawSchema = Record<string, unknown> & {
-  id?: string | number;
-  tr_id?: string | number;
-  creator?: string;
-  json_schema?: string;
-  issuer_grantor_validation_validity_period?: number;
-  verifier_grantor_validation_validity_period?: number;
-  issuer_validation_validity_period?: number;
-  verifier_validation_validity_period?: number;
-  holder_validation_validity_period?: number;
-  issuer_perm_management_mode?: number;
-  verifier_perm_management_mode?: number;
-  state?: string;
-  archived?: string;
-  title?: string;
-  description?: string;
-};
+  id?: string | number
+  tr_id?: string | number
+  creator?: string
+  json_schema?: string
+  issuer_grantor_validation_validity_period?: number
+  verifier_grantor_validation_validity_period?: number
+  issuer_validation_validity_period?: number
+  verifier_validation_validity_period?: number
+  holder_validation_validity_period?: number
+  issuer_perm_management_mode?: number
+  verifier_perm_management_mode?: number
+  state?: string
+  archived?: string
+  title?: string
+  description?: string
+}
 
 export function useCsData(id: string) {
-
   const getURL =
     env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA') ||
-    process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA;
+    process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA
 
-  const [csData, setData] = useState<CsData| null>(null);
-  const [loading, setLoading] = useState(false);
-  const [errorCS, setError] = useState<string | null>(null);
+  const [csData, setData] = useState<CsData | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [errorCS, setError] = useState<string | null>(null)
 
   const fetchCS = async () => {
-
     if (!id || !getURL) {
-      setError(resolveTranslatable({key: "error.fetch.cs"}, translate)?? 'Missing CS id or endpoint URL');
-      setLoading(false);
-      return;
+      setError(resolveTranslatable({ key: 'error.fetch.cs' }, translate) ?? 'Missing CS id or endpoint URL')
+      setLoading(false)
+      return
     }
 
     // Reset state when inputs change
-    setError(null);
-    const url = `${getURL}/get/${id}`;
+    setError(null)
+    const url = `${getURL}/get/${id}`
     try {
-      setLoading(true);
-      const res = await fetch(url);
-      const json = await res.json();
-      if (!res.ok){
-        const { error, code } = json as ApiErrorResponse;
-        setError(`Error ${code}: ${error}`);
-        return;
-      } 
+      setLoading(true)
+      const res = await fetch(url)
+      const json = await res.json()
+      if (!res.ok) {
+        const { error, code } = json as ApiErrorResponse
+        setError(`Error ${code}: ${error}`)
+        return
+      }
 
-      type ResponseShape = { schema: RawSchema };
-      const resp = json as ResponseShape;
-      const entry = resp.schema ?? (resp as RawSchema);
-      
-      const id = entry.id ?? '';
+      type ResponseShape = { schema: RawSchema }
+      const resp = json as ResponseShape
+      const entry = resp.schema ?? (resp as RawSchema)
 
-      setData(
-        {
-          id,
-          trId: entry.tr_id ?? '',
-          creator: entry.creator ?? '',
-          issuerGrantorValidationValidityPeriod: entry.issuer_grantor_validation_validity_period ?? 0,
-          verifierGrantorValidationValidityPeriod: entry.verifier_grantor_validation_validity_period ?? 0,
-          issuerValidationValidityPeriod: entry.issuer_validation_validity_period ?? 0,
-          verifierValidationValidityPeriod: entry.verifier_validation_validity_period ?? 0,
-          holderValidationValidityPeriod: entry.holder_validation_validity_period ?? 0,
-          issuerPermManagementMode: entry.issuer_perm_management_mode ?? 0,
-          verifierPermManagementMode: entry.verifier_perm_management_mode ?? 0,
-          jsonSchema: entry.json_schema ?? '',
-          title: entry.title,
-          description: entry.description,
-          state: entry.state,
-          archived: entry.archived??''
-        }
-      );
+      const id = entry.id ?? ''
+
+      setData({
+        id,
+        trId: entry.tr_id ?? '',
+        creator: entry.creator ?? '',
+        issuerGrantorValidationValidityPeriod: entry.issuer_grantor_validation_validity_period ?? 0,
+        verifierGrantorValidationValidityPeriod: entry.verifier_grantor_validation_validity_period ?? 0,
+        issuerValidationValidityPeriod: entry.issuer_validation_validity_period ?? 0,
+        verifierValidationValidityPeriod: entry.verifier_validation_validity_period ?? 0,
+        holderValidationValidityPeriod: entry.holder_validation_validity_period ?? 0,
+        issuerPermManagementMode: entry.issuer_perm_management_mode ?? 0,
+        verifierPermManagementMode: entry.verifier_perm_management_mode ?? 0,
+        jsonSchema: entry.json_schema ?? '',
+        title: entry.title,
+        description: entry.description,
+        state: entry.state,
+        archived: entry.archived ?? '',
+      })
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(msg);
+      const msg = err instanceof Error ? err.message : String(err)
+      setError(msg)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchCS();
-  }, []);
+    fetchCS()
+  }, [])
 
-  return { csData, loading, errorCS, refetch: fetchCS };
+  return { csData, loading, errorCS, refetch: fetchCS }
 }

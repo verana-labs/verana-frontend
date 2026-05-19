@@ -1,29 +1,26 @@
-'use client';
+'use client'
 
-import { useEffect } from 'react';
-import { env } from 'next-runtime-env';
-import { useComponentsVersion } from '@/providers/components-version-provider';
+import { env } from 'next-runtime-env'
+import { useEffect } from 'react'
+import { logger } from '@/lib/logger'
+import { useComponentsVersion } from '@/providers/components-version-provider'
 
 export function useIndexerVersion() {
-  const { setState } = useComponentsVersion();
+  const { setState } = useComponentsVersion()
 
   useEffect(() => {
-    let ignore = false;
-    const controller = new AbortController();
+    let ignore = false
+    const controller = new AbortController()
 
     const fetchVersion = async () => {
       try {
         const indexerEndpoint =
-          env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_INDEXER') ||
-          process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_INDEXER;
-        if (!indexerEndpoint) return;
+          env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_INDEXER') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_INDEXER
+        if (!indexerEndpoint) return
 
-        const response = await fetch(
-          `${indexerEndpoint}/version`,
-          { signal: controller.signal }
-        );
-        if (!response.ok) throw new Error(`Failed to load indexer version: ${response.status}`);
-        const data = await response.json();
+        const response = await fetch(`${indexerEndpoint}/version`, { signal: controller.signal })
+        if (!response.ok) throw new Error(`Failed to load indexer version: ${response.status}`)
+        const data = await response.json()
         if (!ignore) {
           setState((prev) => ({
             ...prev,
@@ -31,10 +28,10 @@ export function useIndexerVersion() {
               ...prev.indexer,
               version: data?.appVersion ?? null,
             },
-          }));
+          }))
         }
       } catch (err) {
-        if (err instanceof DOMException && err.name === 'AbortError') return;
+        if (err instanceof DOMException && err.name === 'AbortError') return
         if (!ignore) {
           setState((prev) => ({
             ...prev,
@@ -42,17 +39,17 @@ export function useIndexerVersion() {
               ...prev.indexer,
               version: null,
             },
-          }));
+          }))
         }
-        console.error('Failed to load indexer version', err);
+        logger.error('Failed to load indexer version', err)
       }
-    };
+    }
 
-    fetchVersion();
+    fetchVersion()
 
     return () => {
-      ignore = true;
-      controller.abort();
-    };
-  }, []);
+      ignore = true
+      controller.abort()
+    }
+  }, [])
 }

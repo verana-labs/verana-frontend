@@ -1,18 +1,13 @@
 interface DataTableSkeletonProps {
-  rows?: number;
-  columns?: number;
-  showHeader?: boolean;
+  rows?: number
+  columns?: number
+  showHeader?: boolean
 }
 
-export default function DataTableSkeleton({
-  rows = 6,
-  columns = 4,
-  showHeader = true,
-}: DataTableSkeletonProps) {
-  const colWidth = (j: number) =>
-    j === 0 ? "w-1/4" : j === 1 ? "w-1/3" : "w-1/5";
+export default function DataTableSkeleton({ rows = 6, columns = 4, showHeader = true }: DataTableSkeletonProps) {
+  const colWidth = (j: number) => (j === 0 ? 'w-1/4' : j === 1 ? 'w-1/3' : 'w-1/5')
 
-  const base = "bg-gray-200 dark:bg-gray-700 animate-pulse rounded";
+  const base = 'bg-gray-200 dark:bg-gray-700 animate-pulse rounded'
 
   return (
     <div className="skeleton-card">
@@ -25,23 +20,16 @@ export default function DataTableSkeleton({
 
       <div className="space-y-3">
         {Array.from({ length: rows }).map((_, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-4 py-3 border-b border-gray-100 dark:border-gray-800"
-          >
+          <div key={i} className="flex items-center gap-4 py-3 border-b border-gray-100 dark:border-gray-800">
             {Array.from({ length: columns }).map((_, j) => (
               <div
                 key={j}
-                className={
-                  j === columns - 1
-                    ? `${base} h-6 w-16 rounded-full`
-                    : `${base} h-4 ${colWidth(j)}`
-                }
+                className={j === columns - 1 ? `${base} h-6 w-16 rounded-full` : `${base} h-4 ${colWidth(j)}`}
               />
             ))}
           </div>
         ))}
       </div>
     </div>
-  );
+  )
 }

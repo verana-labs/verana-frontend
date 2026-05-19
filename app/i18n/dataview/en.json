@@ -42,7 +42,7 @@
   "join.egf.verifiedtext": "The integrity of this Ecosystem Governance Framework has been verified.",
   "join.egf.version.label": "Version",
   "join.egf.lastupdate.label": "Last updated: ",
-  "join.egf.keypoints.label":"Key Governance Points",
+  "join.egf.keypoints.label": "Key Governance Points",
   "join.egf.acceptancemessage": "I have read and accept the Ecosystem Governance Framework and agree to omply with all governance requirements",
   "join.role.issuergrantor.label": "Issuer Grantor",
   "join.role.issuer.label": "Issuer",
@@ -212,7 +212,7 @@
   "footer.network": "network",
   "footer.indexer": "indexer",
   "footer.frontend": "frontend",
-  
+
   "connected.title": "Connected",
   "copied.label": "Copied!",
   "connected.msg": "Your crypto wallet is connected to Verana allowing you to proceed with all features.",
@@ -375,12 +375,12 @@
 
   "dataview.section.mutable": "Mutable Configuration",
   "dataview.archived.label": "ARCHIVED",
-  
+
   "dataview.account.sections.mainBalance": "Main Balance",
   "dataview.account.sections.trustDeposit": "Trust Deposit",
   "dataview.account.sections.aboutBalances": "About your Balances",
   "dataview.account.sections.accountActions": "Account Actions",
-  "dataview.account.sections.accountInformation": "Account Information",  
+  "dataview.account.sections.accountInformation": "Account Information",
   "dataview.account.fields.balance.label": "Main Balance",
   "dataview.account.fields.balance.desc": "Available for transactions",
   "dataview.account.fields.totalTrustDeposit.label": "Trust Deposit",
@@ -530,7 +530,6 @@
   "datatable.cs.card.viewParticipants": "View Participants",
   "datatable.cs.card.archived": "ARCHIVED",
 
-
   "dataview.perm.sections.main": "Main",
   "dataview.perm.fields.creator": "Creator",
   "dataview.perm.fields.country": "Country",
@@ -553,9 +552,9 @@
   "dataview.perm.fields.amount": "Amount",
 
   "datatable.your": "Your",
-  "datatable.rowspage":  "Rows per page",
-  "datatable.previous":  "Previous",
-  "datatable.next":  "Next",
+  "datatable.rowspage": "Rows per page",
+  "datatable.previous": "Previous",
+  "datatable.next": "Next",
 
   "datatable.did.entities": "DIDs",
   "datatable.did.description": "Register your DIDs in the Directory to make your Verifiable Services instantly discoverable.",
@@ -737,34 +736,34 @@
   "messages.MsgRenewPermissionVP.label": "Confirm",
   "messages.MsgRenewPermissionVP.description": "",
   "messages.MsgRenewPermissionVP.cost": "Click confirm when you are ready. You'll need approx. {value} VNA to complete the transaction.",
-  
-  "messages.MsgExtendPermission.label" : "Confirm",
+
+  "messages.MsgExtendPermission.label": "Confirm",
   "messages.MsgExtendPermission.description": "",
   "messages.MsgExtendPermission.cost": "Click confirm when you are ready. You'll need approx. {value} VNA to complete the transaction.",
-  
-  "messages.MsgRevokePermission.label" : "Confirm",
+
+  "messages.MsgRevokePermission.label": "Confirm",
   "messages.MsgRevokePermission.description": "",
   "messages.MsgRevokePermission.cost": "Click confirm when you are ready. You'll need approx. {value} VNA to complete the transaction.",
   "messages.MsgRevokePermission.warning": "Revoking this permission will immediately prevent any further credential issuance or verification. This action cannot be undone.",
 
-  "messages.MsgSlashPermissionTrustDeposit.label" : "Confirm",
+  "messages.MsgSlashPermissionTrustDeposit.label": "Confirm",
   "messages.MsgSlashPermissionTrustDeposit.description": "",
   "messages.MsgSlashPermissionTrustDeposit.cost": "Click confirm when you are ready. You'll need approx. {value} VNA to complete the transaction.",
   "messages.MsgSlashPermissionTrustDeposit.warning": "Slashing is a serious action and should only be used when policy violations are confirmed.",
 
-  "messages.MsgRepayPermissionSlashedTrustDeposit.label" : "Confirm",
+  "messages.MsgRepayPermissionSlashedTrustDeposit.label": "Confirm",
   "messages.MsgRepayPermissionSlashedTrustDeposit.description": "",
   "messages.MsgRepayPermissionSlashedTrustDeposit.cost": "Click confirm when you are ready. You'll need approx. {value} VNA to complete the transaction.",
 
-  "messages.MsgCreateRootPermission.label" : "Confirm",
+  "messages.MsgCreateRootPermission.label": "Confirm",
   "messages.MsgCreateRootPermission.description": "",
   "messages.MsgCreateRootPermission.cost": "Click confirm when you are ready. You'll need approx. {value} to complete the transaction.",
 
-  "messages.MsgStartPermissionVP.label" : "Confirm & Start Validation Process",
+  "messages.MsgStartPermissionVP.label": "Confirm & Start Validation Process",
   "messages.MsgStartPermissionVP.description": "",
   "messages.MsgStartPermissionVP.cost": "Added to the network transaction fees, you will need {value} to execute this transaction, to pay validation fees and trust deposit.",
 
-  "messages.MsgCreatePermission.label" : "Confirm & Self Create Permission",
+  "messages.MsgCreatePermission.label": "Confirm & Self Create Permission",
   "messages.MsgCreatePermission.description": "",
   "messages.MsgCreatePermission.cost": "Added to the network transaction fees, you will need {value} to execute this transaction, to pay validation fees and trust deposit.",
 
@@ -797,5 +796,4 @@
   "gettingstarted.quicklinks.tutorials": "Video Tutorials",
   "gettingstarted.quicklinks.community": "Community Support",
   "gettingstarted.quicklinks.api": "API Reference"
-
 }

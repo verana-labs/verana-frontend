@@ -1,62 +1,63 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { env } from 'next-runtime-env';
-import { resolveTranslatable } from '@/ui/dataview/types';
-import { translate } from '@/i18n/dataview';
-import { TrList } from '@/ui/datatable/columnslist/tr';
-import { ApiErrorResponse } from '@/types/apiErrorResponse';
-import { useVeranaChain } from '@/hooks/useVeranaChain';
-import { useChain } from '@cosmos-kit/react';
+import { useChain } from '@cosmos-kit/react'
+import { env } from 'next-runtime-env'
+import { useEffect, useState } from 'react'
+import { useVeranaChain } from '@/hooks/useVeranaChain'
+import { translate } from '@/i18n/dataview'
+import { ApiErrorResponse } from '@/types/apiErrorResponse'
+import { TrList } from '@/ui/datatable/columnslist/tr'
+import { resolveTranslatable } from '@/ui/dataview/types'
 
-export function useTrustRegistries (all: boolean = false, onlyActive: boolean = true) {
-  const veranaChain = useVeranaChain();
-  const { address } = useChain(veranaChain.chain_name);
+export function useTrustRegistries(all: boolean = false, onlyActive: boolean = true) {
+  const veranaChain = useVeranaChain()
+  const { address } = useChain(veranaChain.chain_name)
 
-  const getTrURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY;
+  const getTrURL =
+    env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY') ||
+    process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY
 
-  const [trList, setTrList] = useState<TrList[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [errorTrList, setError] = useState<string | null>(null);
-  
+  const [trList, setTrList] = useState<TrList[]>([])
+  const [loading, setLoading] = useState(false)
+  const [errorTrList, setError] = useState<string | null>(null)
+
   const fetchTrList = async () => {
-
     if (!getTrURL || (!all && !address)) {
-      setError(resolveTranslatable({key: "error.fetch.tr"}, translate)?? 'Missing address or endpoint URL');
-      setLoading(false);
-      return;
+      setError(resolveTranslatable({ key: 'error.fetch.tr' }, translate) ?? 'Missing address or endpoint URL')
+      setLoading(false)
+      return
     }
 
-    setError(null);
+    setError(null)
     try {
-      setLoading(true);
+      setLoading(true)
 
-      const params = new URLSearchParams();
-      params.set('response_max_size', '1024');
-      if ( !all && address) params.set('participant', address);
-      if ( onlyActive ) params.set('only_active', 'true');
-      const urlTrList = `${getTrURL}/list?${params.toString()}`;
+      const params = new URLSearchParams()
+      params.set('response_max_size', '1024')
+      if (!all && address) params.set('participant', address)
+      if (onlyActive) params.set('only_active', 'true')
+      const urlTrList = `${getTrURL}/list?${params.toString()}`
 
-      const resTrList = await fetch(urlTrList);
-      const jsonTrList = await resTrList.json();
-      if (!resTrList.ok){
-        const { error, code } = jsonTrList as ApiErrorResponse;
-        setError(`Error ${code}: ${error}`);
-        return;
-      } 
-      const trListController: TrList[] = Array.isArray(jsonTrList.trust_registries) ? jsonTrList.trust_registries : [];      
-      setTrList(trListController);
+      const resTrList = await fetch(urlTrList)
+      const jsonTrList = await resTrList.json()
+      if (!resTrList.ok) {
+        const { error, code } = jsonTrList as ApiErrorResponse
+        setError(`Error ${code}: ${error}`)
+        return
+      }
+      const trListController: TrList[] = Array.isArray(jsonTrList.trust_registries) ? jsonTrList.trust_registries : []
+      setTrList(trListController)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(msg);
+      const msg = err instanceof Error ? err.message : String(err)
+      setError(msg)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchTrList();
-  }, [address]);
+    fetchTrList()
+  }, [address])
 
-  return { trList, loading, errorTrList, refetch: fetchTrList };
+  return { trList, loading, errorTrList, refetch: fetchTrList }
 }

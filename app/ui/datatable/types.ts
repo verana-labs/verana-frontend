@@ -1,107 +1,92 @@
-import React, { ReactNode } from 'react';
-import {
-  Translatable,
-  resolveTranslatable,
-  resolveTranslatables,
-} from "@/ui/dataview/types";
-import { translate } from '@/i18n/dataview';
+import React, { ReactNode } from 'react'
+import { translate } from '@/i18n/dataview'
+import { resolveTranslatable, resolveTranslatables, Translatable } from '@/ui/dataview/types'
 
 // Generic column definition (i18n-aware)
 export type Column<T> = {
-  header: Translatable;                 // ← before: string
-  accessor: keyof T;
-  format?: (value: T[keyof T]) => ReactNode;
-  priority?: number;
-  getClassName?: (value: T[keyof T]) => string;
-  className?: string;
-  viewMobileRight?: boolean;
-  isHtml?: boolean;
-  break?: string;
-};
+  header: Translatable // ← before: string
+  accessor: keyof T
+  format?: (value: T[keyof T]) => ReactNode
+  priority?: number
+  getClassName?: (value: T[keyof T]) => string
+  className?: string
+  viewMobileRight?: boolean
+  isHtml?: boolean
+  break?: string
+}
 
 // Generic filter definition (i18n-aware)
 export type Filter<T> = {
-  label: Translatable;                 // ← before: string
-  columns: (keyof T)[];
-  inputType: "text" | "select";
-  placeholder?: Translatable;
-  options?: { value: string | number; label: Translatable }[]; // (inputType === 'select');
-};
+  label: Translatable // ← before: string
+  columns: (keyof T)[]
+  inputType: 'text' | 'select'
+  placeholder?: Translatable
+  options?: { value: string | number; label: Translatable }[] // (inputType === 'select');
+}
 
 // Resolved (ready-to-render) columns
-export type ResolvedColumn<T> = Omit<Column<T>, "header" | "filterLabel"> & {
-  header: string;
-  filterLabel?: string;
-};
+export type ResolvedColumn<T> = Omit<Column<T>, 'header' | 'filterLabel'> & {
+  header: string
+  filterLabel?: string
+}
 
 // Resolved (ready-to-render) filters
-export type ResolvedFilter<T> = Omit<
-  Filter<T>,
-  "label" | "placeholder" | "options"
-> & {
-  label: string;
-  placeholder?: string;
-  options?: { value: string | number; label: string }[];
-};
+export type ResolvedFilter<T> = Omit<Filter<T>, 'label' | 'placeholder' | 'options'> & {
+  label: string
+  placeholder?: string
+  options?: { value: string | number; label: string }[]
+}
 
 export interface DataTableProps<T extends object> {
-  columnsI18n: Column<T>[];         // ← resolved
-  data: T[];
-  initialPageSize?: number;
-  pageSizeOptions?: number[];
-  onRowClick?: (row: T) => void;
-  descriptionI18n?: Translatable[];               // ← resolved
-  defaultSortColumn?: keyof T;
-  defaultSortDirection?: "asc" | "desc";
-  filterI18n?: Filter<T>[];
-  showDetailModal?: boolean;
-  entities?: string;
-  tableTitle?: string;
-  addTitle?: string;
-  onAdd?: () => void;
-  detailTitle?: string;
-  onRefresh?: (id?: string, txHeight?: number) => void;
-  checkFilter?: {show: boolean; changeFilter: (value: boolean) => void; label: string};
+  columnsI18n: Column<T>[] // ← resolved
+  data: T[]
+  initialPageSize?: number
+  pageSizeOptions?: number[]
+  onRowClick?: (row: T) => void
+  descriptionI18n?: Translatable[] // ← resolved
+  defaultSortColumn?: keyof T
+  defaultSortDirection?: 'asc' | 'desc'
+  filterI18n?: Filter<T>[]
+  showDetailModal?: boolean
+  entities?: string
+  tableTitle?: string
+  addTitle?: string
+  onAdd?: () => void
+  detailTitle?: string
+  onRefresh?: (id?: string, txHeight?: number) => void
+  checkFilter?: { show: boolean; changeFilter: (value: boolean) => void; label: string }
   currentFilters?: {
-    filters: Record<string, string | boolean>;
-    setFilters: React.Dispatch<React.SetStateAction<Record<string, string | boolean>>>;
-  };
-  loading?: boolean;
+    filters: Record<string, string | boolean>
+    setFilters: React.Dispatch<React.SetStateAction<Record<string, string | boolean>>>
+  }
+  loading?: boolean
 }
 
 // Helper: translate columns
-export function translateColumns<T>(
-  cols: ReadonlyArray<Column<T>>
-): ResolvedColumn<T>[] {
+export function translateColumns<T>(cols: ReadonlyArray<Column<T>>): ResolvedColumn<T>[] {
   return cols.map((c) => ({
     ...c,
-    header: resolveTranslatable(c.header, translate) ?? "",
-  }));
+    header: resolveTranslatable(c.header, translate) ?? '',
+  }))
 }
 
 // Helper: translate filters
-export function translateFilter<T>(
-  filters: ReadonlyArray<Filter<T>> | undefined
-): ResolvedFilter<T>[] | undefined {
-  if (!filters) return undefined;
+export function translateFilter<T>(filters: ReadonlyArray<Filter<T>> | undefined): ResolvedFilter<T>[] | undefined {
+  if (!filters) return undefined
   return filters.map((f) => ({
     ...f,
-    label: resolveTranslatable(f.label, translate) ?? "",
-    placeholder: f.placeholder
-      ? resolveTranslatable(f.placeholder, translate) ?? ""
-      : undefined,
+    label: resolveTranslatable(f.label, translate) ?? '',
+    placeholder: f.placeholder ? (resolveTranslatable(f.placeholder, translate) ?? '') : undefined,
     options: f.options
       ? f.options.map((opt) => ({
           ...opt,
-          label: resolveTranslatable(opt.label, translate) ?? "",
+          label: resolveTranslatable(opt.label, translate) ?? '',
         }))
       : undefined,
-  }));
+  }))
 }
 
 // Helper: translate columns description
-export function translateDataTableDescriptions(
-  texts: ReadonlyArray<Translatable> | undefined
-): string[] | undefined {
-  return texts ? resolveTranslatables(texts, translate) : undefined;
+export function translateDataTableDescriptions(texts: ReadonlyArray<Translatable> | undefined): string[] | undefined {
+  return texts ? resolveTranslatables(texts, translate) : undefined
 }

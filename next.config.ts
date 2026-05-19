@@ -1,5 +1,5 @@
-import type { NextConfig } from 'next';
-import { version } from './package.json';
+import type { NextConfig } from 'next'
+import { version } from './package.json'
 
 const nextConfig: NextConfig = {
   output: 'standalone',
@@ -9,11 +9,11 @@ const nextConfig: NextConfig = {
   turbopack: {
     resolveAlias: {
       '@codec-proto': '@verana-labs/verana-types/codec', // @verana-labs/verana-types
-      '@amino-converter': '@verana-labs/verana-types/amino-converter' // @verana-labs/verana-types
+      '@amino-converter': '@verana-labs/verana-types/amino-converter', // @verana-labs/verana-types
       // '@codec-proto': 'proto-codecs/codec', // local
       // '@amino-converter': 'app/msg/amino-converter' // local
-    }
+    },
   },
-};
+}
 
-export default nextConfig;
+export default nextConfig

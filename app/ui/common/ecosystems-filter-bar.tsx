@@ -1,18 +1,17 @@
-'use client';
+'use client'
 
-import React from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
-import { translate } from '@/i18n/dataview';
-import { resolveTranslatable } from '@/ui/dataview/types';
+import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { translate } from '@/i18n/dataview'
+import { resolveTranslatable } from '@/ui/dataview/types'
 
 export type EcosystemsFilterState = {
-  search: string;
-  showArchived: boolean;
-  hideOwned: boolean;
-  hideParticipant: boolean;
-  showUntrusted: boolean;
-};
+  search: string
+  showArchived: boolean
+  hideOwned: boolean
+  hideParticipant: boolean
+  showUntrusted: boolean
+}
 
 export const INITIAL_ECOSYSTEMS_FILTER: EcosystemsFilterState = {
   search: '',
@@ -20,21 +19,18 @@ export const INITIAL_ECOSYSTEMS_FILTER: EcosystemsFilterState = {
   hideOwned: false,
   hideParticipant: false,
   showUntrusted: false,
-};
+}
 
 type Props = {
-  value: EcosystemsFilterState;
-  onChange: (next: EcosystemsFilterState) => void;
-};
+  value: EcosystemsFilterState
+  onChange: (next: EcosystemsFilterState) => void
+}
 
 export default function EcosystemsFilterBar({ value, onChange }: Props) {
-  const t = (key: string, fallback: string) =>
-    resolveTranslatable({ key }, translate) ?? fallback;
+  const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
 
-  const set = <K extends keyof EcosystemsFilterState>(
-    key: K,
-    next: EcosystemsFilterState[K],
-  ) => onChange({ ...value, [key]: next });
+  const set = <K extends keyof EcosystemsFilterState>(key: K, next: EcosystemsFilterState[K]) =>
+    onChange({ ...value, [key]: next })
 
   return (
     <section className="mb-6">
@@ -55,15 +51,12 @@ export default function EcosystemsFilterBar({ value, onChange }: Props) {
                 onChange={(e) => set('search', e.target.value)}
                 placeholder={t(
                   'datatable.tr.filter.search.placeholder',
-                  'Search by organization name, trust registry, or other attributes...',
+                  'Search by organization name, trust registry, or other attributes...'
                 )}
                 className="w-full px-4 py-2.5 pr-10 border border-neutral-20 dark:border-neutral-70 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-surface text-gray-900 dark:text-white"
               />
               <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                <FontAwesomeIcon
-                  icon={faMagnifyingGlass}
-                  className="text-neutral-70 dark:text-neutral-70"
-                />
+                <FontAwesomeIcon icon={faMagnifyingGlass} className="text-neutral-70 dark:text-neutral-70" />
               </div>
             </div>
           </div>
@@ -85,25 +78,19 @@ export default function EcosystemsFilterBar({ value, onChange }: Props) {
               id="hide-participant"
               checked={value.hideParticipant}
               onChange={(v) => set('hideParticipant', v)}
-              label={t(
-                'datatable.tr.filter.hideParticipant',
-                'Hide participant ecosystems',
-              )}
+              label={t('datatable.tr.filter.hideParticipant', 'Hide participant ecosystems')}
             />
             <Checkbox
               id="show-untrusted"
               checked={value.showUntrusted}
               onChange={(v) => set('showUntrusted', v)}
-              label={t(
-                'datatable.tr.filter.showUntrusted',
-                'Show untrusted ecosystems',
-              )}
+              label={t('datatable.tr.filter.showUntrusted', 'Show untrusted ecosystems')}
             />
           </div>
         </div>
       </div>
     </section>
-  );
+  )
 }
 
 function Checkbox({
@@ -112,10 +99,10 @@ function Checkbox({
   onChange,
   label,
 }: {
-  id: string;
-  checked: boolean;
-  onChange: (next: boolean) => void;
-  label: string;
+  id: string
+  checked: boolean
+  onChange: (next: boolean) => void
+  label: string
 }) {
   return (
     <label className="flex items-center space-x-2 cursor-pointer" htmlFor={id}>
@@ -128,5 +115,5 @@ function Checkbox({
       />
       <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
     </label>
-  );
+  )
 }
