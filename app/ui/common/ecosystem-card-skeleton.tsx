@@ -1,4 +1,6 @@
-const CARD_BODY_CLASS = 'grid h-full min-h-[20.25rem] grid-rows-[5rem_3.25rem_1.5rem_1fr] gap-3 p-4 sm:p-6'
+import { CARD_BODY_CLASS } from './ecosystem-card'
+
+const STAT_ROW_COUNT = 5
 
 export default function EcosystemCardSkeleton() {
   return (
@@ -29,7 +31,7 @@ export default function EcosystemCardSkeleton() {
         </div>
 
         <div className="space-y-2">
-          {[...Array(5)].map((_, i) => (
+          {Array.from({ length: STAT_ROW_COUNT }, (_, i) => (
             <div key={i} className="flex items-center justify-between gap-3">
               <div className="skeleton h-4 w-1/2" />
               <div className="skeleton h-4 w-16" />

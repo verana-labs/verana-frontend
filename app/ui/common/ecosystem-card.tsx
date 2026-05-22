@@ -14,7 +14,7 @@ import { countryCodeToFlag, formatNumber, formatVNAFromUVNA, roleBadgeClass, sho
 const ECOSYSTEM_ROLES = ['ECOSYSTEM', 'ISSUER_GRANTOR', 'VERIFIER_GRANTOR', 'ISSUER', 'VERIFIER', 'HOLDER'] as const
 type EcosystemRole = (typeof ECOSYSTEM_ROLES)[number]
 
-const CARD_BODY_CLASS = 'grid h-full min-h-[20.25rem] grid-rows-[5rem_3.25rem_1.5rem_1fr] gap-3 p-4 sm:p-6'
+export const CARD_BODY_CLASS = 'grid h-full min-h-[20.25rem] grid-rows-[5rem_3.25rem_1.5rem_1fr] gap-3 p-4 sm:p-6'
 const CARD_HEADER_REGION_CLASS = 'flex min-h-0 min-w-0 items-start space-x-3 overflow-hidden'
 const CARD_ORG_REGION_CLASS = 'flex min-h-0 min-w-0 items-start space-x-2 overflow-hidden'
 const CARD_ROLES_REGION_CLASS = 'flex min-h-0 min-w-0 items-start gap-2 overflow-hidden'
