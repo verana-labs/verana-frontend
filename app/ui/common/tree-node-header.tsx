@@ -157,7 +157,7 @@ export default function TreeNodeHeader({
             </>
           ) : (
             <>
-              <FontAwesomeIcon icon={node.icon} className={`${node.iconColorClass} flex-shrink-0`} />
+              <FontAwesomeIcon icon={node.icon} className={`${node.iconColorClass} text-sm flex-shrink-0`} />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300 break-all">{node.name}</span>
             </>
           )
@@ -169,11 +169,11 @@ export default function TreeNodeHeader({
                 e.stopPropagation()
                 onSelect(node.nodeId)
               }}
-              className="cursor-pointer min-w-0"
+              className="cursor-pointer min-w-0 inline-flex items-center"
             >
               <ServiceIdentity did={permission?.did} fallbackName={node.name} />
             </button>
-            <FontAwesomeIcon icon={faCrown} className="text-yellow-500 flex-shrink-0" aria-hidden="true" />
+            <FontAwesomeIcon icon={faCrown} className="text-yellow-500 text-sm flex-shrink-0" aria-hidden="true" />
           </>
         )}
 
