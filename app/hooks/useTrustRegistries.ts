@@ -18,7 +18,7 @@ export function useTrustRegistries(all: boolean = false, onlyActive: boolean = t
     process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY
 
   const [trList, setTrList] = useState<TrList[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [errorTrList, setError] = useState<string | null>(null)
 
   const fetchTrList = async () => {

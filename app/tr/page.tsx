@@ -9,6 +9,7 @@ import { DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
 import { useEcosytemsCtx } from '@/providers/api-rest-query-provider-context'
 import AddTrPage from '@/tr/add/add'
 import EcosystemCard from '@/ui/common/ecosystem-card'
+import EcosystemCardSkeleton from '@/ui/common/ecosystem-card-skeleton'
 import EcosystemsFilterBar, {
   EcosystemsFilterState,
   INITIAL_ECOSYSTEMS_FILTER,
@@ -53,7 +54,10 @@ export default function TrPage() {
   const [addTR, setAddTR] = useState<boolean>(false)
   const [refresh, setRefresh] = useState<boolean>(true)
   const [trListAll, setTrListAll] = useState<boolean>(false)
-  const [enrichments, setEnrichments] = useState<Record<string, DidEnrichment>>({})
+  const [enrichmentState, setEnrichmentState] = useState<{
+    key: string
+    map: Record<string, DidEnrichment>
+  }>({ key: '', map: {} })
 
   useEffect(() => {
     if (!refresh) return
@@ -76,12 +80,15 @@ export default function TrPage() {
     setPage(1)
   }, [filters])
 
-  const didsKey = ecosystemsCtx.ecosystemsList.map((tr) => tr.did).join('|')
+  const didsKey = useMemo(
+    () => ecosystemsCtx.ecosystemsList.map((tr) => tr.did).join('|'),
+    [ecosystemsCtx.ecosystemsList]
+  )
 
   useEffect(() => {
     const dids = didsKey ? didsKey.split('|') : []
     if (dids.length === 0) {
-      setEnrichments({})
+      setEnrichmentState({ key: didsKey, map: {} })
       return
     }
     let cancelled = false
@@ -93,12 +100,15 @@ export default function TrPage() {
           next[dids[idx]] = result.value
         }
       })
-      setEnrichments(next)
+      setEnrichmentState({ key: didsKey, map: next })
     })
     return () => {
       cancelled = true
     }
   }, [didsKey])
+
+  const enrichments = enrichmentState.map
+  const enrichmentsReady = enrichmentState.key === didsKey
 
   const filtered = useMemo(() => {
     return ecosystemsCtx.ecosystemsList.filter((tr) => {
@@ -124,6 +134,10 @@ export default function TrPage() {
   }, [page, pageCount])
 
   const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
+
+  const enrichmentGateActive = !filters.showUntrusted
+  const hasEcosystems = ecosystemsCtx.ecosystemsList.length > 0
+  const gridLoading = (ecosystemsCtx.ecosystemsLoading && !hasEcosystems) || (enrichmentGateActive && !enrichmentsReady)
 
   return (
     <>
@@ -151,25 +165,35 @@ export default function TrPage() {
       <EcosystemsFilterBar value={filters} onChange={setFilters} />
 
       <section id="ecosystems-grid" className="mb-8">
-        {pageItems.length === 0 ? (
-          <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-8 text-center text-sm text-neutral-70 dark:text-neutral-70">
-            {t('datatable.tr.empty', 'No ecosystems match your filters.')}
-          </div>
-        ) : (
+        {gridLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-            {pageItems.map((tr) => (
-              <EcosystemCard key={tr.id} ecosystem={tr} />
+            {[...Array(PAGE_SIZE)].map((_, i) => (
+              <EcosystemCardSkeleton key={i} />
             ))}
           </div>
-        )}
+        ) : (
+          <>
+            {pageItems.length === 0 ? (
+              <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-8 text-center text-sm text-neutral-70 dark:text-neutral-70">
+                {t('datatable.tr.empty', 'No ecosystems match your filters.')}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+                {pageItems.map((tr) => (
+                  <EcosystemCard key={tr.id} ecosystem={tr} />
+                ))}
+              </div>
+            )}
 
-        <EcosystemsPagination
-          page={safePage}
-          pageCount={pageCount}
-          showing={pageItems.length}
-          total={total}
-          onChange={setPage}
-        />
+            <EcosystemsPagination
+              page={safePage}
+              pageCount={pageCount}
+              showing={pageItems.length}
+              total={total}
+              onChange={setPage}
+            />
+          </>
+        )}
       </section>
 
       {addTR && (
