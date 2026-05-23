@@ -13,7 +13,7 @@ RUN apk add --no-cache python3 make g++
 RUN corepack enable
 
 # Copy package files
-COPY package.json pnpm-lock.yaml .npmrc ./
+COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies with cache mount for faster rebuilds
 RUN --mount=type=cache,target=/pnpm-store \
