@@ -5,8 +5,8 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { logger } from '@/lib/logger'
 import { useComponentsVersion } from '@/providers/components-version-provider'
 
-type BlockProcessedEvent = {
-  type: 'block-processed'
+type BlockIndexedEvent = {
+  type: 'block-indexed'
   height: number
   timestamp: string
 }
@@ -74,8 +74,8 @@ export function IndexerEventsProvider({ children }: { children: React.ReactNode 
 
       ws.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data) as BlockProcessedEvent
-          if (data.type !== 'block-processed') return
+          const data = JSON.parse(event.data) as BlockIndexedEvent
+          if (data.type !== 'block-indexed') return
           latestProcessedHeightRef.current = data.height
           latestProcessedTimestampRef.current = data.timestamp
           setLatestProcessedHeight(data.height)
