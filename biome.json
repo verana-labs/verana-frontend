@@ -86,7 +86,8 @@
         "noInvalidUseBeforeDeclaration": "error"
       },
       "suspicious": {
-        "noConsole": "error"
+        "noConsole": "error",
+        "noImportCycles": "error"
       },
       "complexity": {
         "noBannedTypes": "error"

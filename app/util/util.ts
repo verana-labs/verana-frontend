@@ -3,7 +3,7 @@
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faCrown, faEye } from '@fortawesome/free-solid-svg-icons'
 import { translate } from '@/i18n/dataview'
-import { PermState } from '@/ui/common/permission-tree'
+import { PermState } from '@/ui/common/permission-tree-types'
 import { Role } from '@/ui/common/role-card'
 import { PermissionType, VpState } from '@/ui/dataview/datasections/perm'
 import { resolveTranslatable } from '@/ui/dataview/types'
