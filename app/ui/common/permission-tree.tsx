@@ -1,6 +1,5 @@
 'use client'
 
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { usePathname, useSearchParams } from 'next/navigation'
@@ -14,6 +13,7 @@ import { resolveTranslatable } from '../dataview/types'
 import { renderActionComponent } from './data-view-typed'
 import { ModalAction } from './modal-action'
 import PermissionCard from './permission-card'
+import { RefreshState, TreeNode } from './permission-tree-types'
 import SchemaHeader, { SchemaStatus } from './schema-header'
 import TreeNodeHeader from './tree-node-header'
 import TrustRegistryBreadcrumb from './trust-registry-breadcrumb'
@@ -36,41 +36,6 @@ type PermissionTreeProps = {
   onRetryFetch?: () => void
 }
 
-/** ------------ Types ------------ */
-export type PermissionType = 'ECOSYSTEM' | 'ISSUER_GRANTOR' | 'VERIFIER_GRANTOR' | 'ISSUER' | 'VERIFIER' | 'HOLDER'
-
-export type PermState = 'ACTIVE' | 'INACTIVE' | 'REPAID' | 'SLASHED' | 'FUTURE'
-
-export type TreeNode = {
-  nodeId: string
-  icon: IconDefinition
-  iconColorClass: string
-  isGrantee: boolean
-  isValidator: boolean
-  group?: boolean
-  schemaId?: string
-  parentId?: string
-  type?: string
-  name?: string
-  roleColorClass?: string
-  permission?: Permission
-  children?: TreeNode[]
-  validationProcessLabel?: string
-  validationProcessColor?: string
-  validationProcessAction?: 'MsgStartPermissionVP' | 'MsgCreatePermission' | 'LinkDID' | 'Connect'
-  enabledJoin?: boolean
-  serviceDid?: string
-  serviceTitle?: string
-  badgeCount?: number
-}
-
-export type RefreshState = {
-  joinNode?: TreeNode
-  id?: string
-  txHeight?: number
-}
-
-/** ------------ Helpers ------------ */
 const findNodeAndPath = (nodes: TreeNode[], id: string): { node?: TreeNode; path: TreeNode[] } => {
   const queue: { n: TreeNode; path: TreeNode[] }[] = nodes.map((n) => ({ n, path: [n] }))
   while (queue.length) {

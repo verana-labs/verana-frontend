@@ -1,8 +1,8 @@
+/** biome-ignore-all lint/correctness/noUnusedVariables: legacy code */
 'use client'
 
 import { faBars, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-/** biome-ignore-all lint/correctness/noUnusedVariables: legacy code */
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import NavLinks from '@/ui/common/nav-links'

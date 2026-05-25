@@ -15,7 +15,7 @@ import { formatVNAFromUVNA, permStateBadgeClass, roleBadgeClass, vpStateColor } 
 import { VpState } from '../dataview/datasections/perm'
 import { resolveTranslatable } from '../dataview/types'
 import { service } from './permission-atrribute'
-import { PermState, TreeNode } from './permission-tree'
+import { PermState, TreeNode } from './permission-tree-types'
 import ServiceIdentity from './service-identity'
 
 export type TreeNodeHeaderProps = {

@@ -8,7 +8,7 @@ import { useNotification } from '@/providers/notification-provider'
 import { useTrustDepositParams } from '@/providers/trust-deposit-params-context'
 import ActionFieldButton from '@/ui/common/action-field-button'
 import EgfCard from '@/ui/common/egf-card'
-import { TreeNode } from '@/ui/common/permission-tree'
+import { TreeNode } from '@/ui/common/permission-tree-types'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
 type StepId = 1 | 2

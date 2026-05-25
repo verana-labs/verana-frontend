@@ -21,7 +21,7 @@ import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { ActionFieldProps } from '@/ui/common/data-view-typed'
 import PermissionAttribute from '@/ui/common/permission-atrribute'
 import PermissionTimeline from '@/ui/common/permission-timeline'
-import { PermState, RefreshState, TreeNode } from '@/ui/common/permission-tree'
+import { PermState, RefreshState, TreeNode } from '@/ui/common/permission-tree-types'
 import {
   Permission,
   PermissionAction,
