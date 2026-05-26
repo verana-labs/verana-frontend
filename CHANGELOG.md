@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.13.0](https://github.com/verana-labs/verana-frontend/compare/v0.12.0...v0.13.0) (2026-05-26)
+
+
+### Features
+
+* [Credential Schema] v4 layout ([#365](https://github.com/verana-labs/verana-frontend/issues/365)) ([0962c98](https://github.com/verana-labs/verana-frontend/commit/0962c989731a2f31f6e9ccb1da9d583bedfd291a))
+* [Ecosystem] v4 layout ([#374](https://github.com/verana-labs/verana-frontend/issues/374)) ([9433157](https://github.com/verana-labs/verana-frontend/commit/9433157fea13166e7e5046a4379d438ead3f8f53))
+* [Ecosystems] v4 layout ([#369](https://github.com/verana-labs/verana-frontend/issues/369)) ([3f720a2](https://github.com/verana-labs/verana-frontend/commit/3f720a298fff9e952a9b485cdf2e4b060a398a50))
+* [Participants] v4 layout ([#364](https://github.com/verana-labs/verana-frontend/issues/364)) ([56b6f09](https://github.com/verana-labs/verana-frontend/commit/56b6f09330bb2836f91fdfe3ac8f19d9d450ef47))
+* [Pending Tasks] v4 layout ([#367](https://github.com/verana-labs/verana-frontend/issues/367)) ([8cd9e2a](https://github.com/verana-labs/verana-frontend/commit/8cd9e2a279c165b2441f19448bc570000509535d))
+* wire permission card visualizer actions ([#375](https://github.com/verana-labs/verana-frontend/issues/375)) ([8012c90](https://github.com/verana-labs/verana-frontend/commit/8012c901ea768f4a14212cf810e08988ff7f9ce5))
+
+
+### Bug Fixes
+
+* [Dashboard] handle renamed block-indexed event from indexer ([#390](https://github.com/verana-labs/verana-frontend/issues/390)) ([29ca924](https://github.com/verana-labs/verana-frontend/commit/29ca9240fcf81ec7c12693de35d2a4083b7f1c2c))
+* [Ecosystems] prevent untrusted-card flash on /tr initial load ([#381](https://github.com/verana-labs/verana-frontend/issues/381)) ([ecd55b6](https://github.com/verana-labs/verana-frontend/commit/ecd55b6732e2fd7d64239f09f64eedcddcb195f2))
+* [Participants][Pending Tasks] align permission tree node row + lowercase state badge ([#380](https://github.com/verana-labs/verana-frontend/issues/380)) ([e045fd0](https://github.com/verana-labs/verana-frontend/commit/e045fd044863cba15925f09a8398a6bd673a2446)), closes [#358](https://github.com/verana-labs/verana-frontend/issues/358) [#360](https://github.com/verana-labs/verana-frontend/issues/360)
+* [Permission Card] ACTIVE badge blue in detail header per spec v4 ([#372](https://github.com/verana-labs/verana-frontend/issues/372)) ([5ed7633](https://github.com/verana-labs/verana-frontend/commit/5ed7633a1284de82e2a97ed11574936e1cd7aed4))
+* create provider to handle versioning ([#361](https://github.com/verana-labs/verana-frontend/issues/361)) ([2c30e81](https://github.com/verana-labs/verana-frontend/commit/2c30e81458de49ce93a19055815a42ae2917fc20))
+* drop unused .npmrc from Dockerfile COPY ([#385](https://github.com/verana-labs/verana-frontend/issues/385)) ([0d46189](https://github.com/verana-labs/verana-frontend/commit/0d46189ebc015ad551e55c81221d246db5830b01))
+* new permission must show the permission when transaction finishes ([#362](https://github.com/verana-labs/verana-frontend/issues/362)) ([4d44995](https://github.com/verana-labs/verana-frontend/commit/4d4499573b87faa3b1ce8f0c5afa5426096d9f7a))
+
 ## [0.12.0](https://github.com/verana-labs/verana-frontend/compare/v0.11.1...v0.12.0) (2026-03-28)
 
 
