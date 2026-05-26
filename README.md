@@ -41,7 +41,6 @@ This repo is the web dashboard where participants connect a wallet and act on th
 - [Tech stack](#tech-stack)
 - [Quick start](#quick-start)
 - [Configuration](#configuration)
-- [Local development](#local-development)
 - [Docker](#docker)
 - [Kubernetes](#kubernetes)
 - [Helm](#helm)
@@ -106,14 +105,10 @@ A few of the main screens:
 
 ### Tech stack
 
-- Next.js 16 (App Router, Turbopack, standalone output)
-- React 19 and TypeScript 5.7
-- Tailwind 3, Headless UI, Heroicons, Lucide, FontAwesome
-- Cosmos-Kit 2.22, cosmjs 0.32
-- Biome 2 (lint and format), pnpm 9
-- Docker (node:22-alpine multi-stage), Helm, Kubernetes
-- `@verana-labs/verana-types` for proto codecs and amino converters
-- next-auth 5 beta, zod, framer-motion, use-debounce
+- Next.js + React
+- TypeScript
+- Cosmos ecosystem integrations
+- NextAuth authentication
 
 ---
 
@@ -193,21 +188,6 @@ Public runtime variables. Source of truth is `.env` at the repo root.
 | `NEXT_PUBLIC_VERANA_TOPUP_VS` | Faucet/topup verifiable service | `did:web:faucet-vs.testnet.verana.network` |
 
 All `NEXT_PUBLIC_*` values are exposed to the client by design (standard Next.js behavior). Override per environment via `.env.local` or container env vars.
-
----
-
-### Local development
-
-Scripts:
-
-- `pnpm dev` - dev server with Turbopack HMR (http://localhost:3000)
-- `pnpm build` - production build (standalone output)
-- `pnpm start` - serve the production build
-- `pnpm check-format` - Biome lint and format check
-- `pnpm check-types` - `tsc --noEmit`
-- `pnpm fix-format` - apply Biome autofixes (uses `--unsafe`, review the diff)
-
-CI runs `check-format` and `check-types` on every push and PR via the 2060-io reusable workflow.
 
 ---
 
