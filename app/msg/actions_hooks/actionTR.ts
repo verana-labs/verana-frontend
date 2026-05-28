@@ -25,12 +25,12 @@ import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
 import { extractTxHeight, handleSuccess } from '@/msg/util/signerUtil'
 import { useNotification } from '@/providers/notification-provider'
 import { resolveTranslatable } from '@/ui/dataview/types'
-import { isValidUrl } from '@/util/validations'
+import { isValidHttpUrl } from '@/util/validations'
 
 async function calculateSRIHash(
   docUrl: string | undefined
 ): Promise<{ sri: string | undefined; error: string | undefined }> {
-  if (!docUrl || !isValidUrl(docUrl)) return { sri: undefined, error: 'Invalid Document URL' }
+  if (!docUrl || !isValidHttpUrl(docUrl)) return { sri: undefined, error: 'Invalid Document URL' }
   try {
     const res = await fetch(`/api/sri?url=${encodeURIComponent(docUrl)}`)
     if (!res.ok) {

@@ -21,7 +21,7 @@ import { ModalAction } from '@/ui/common/modal-action'
 import ServiceProviderCard from '@/ui/common/service-provider-card'
 import { getLabelByValue } from '@/ui/dataview/datasections/gfd'
 import { resolveTranslatable } from '@/ui/dataview/types'
-import { isValidDID, isValidUrl } from '@/util/validations'
+import { isValidDID, isValidHttpUrl } from '@/util/validations'
 
 import AddCsPage from '../cs/add/add'
 
@@ -170,7 +170,7 @@ export default function TRViewPage() {
   const visibleSchemas = csList.filter((item) => showArchived || !item.archived)
 
   const didIsValid = isValidDID(editDid)
-  const akaIsValid = isValidUrl(editAka)
+  const akaIsValid = isValidHttpUrl(editAka)
   const editIsValid = didIsValid && akaIsValid && (editDid !== dataTR.did || editAka !== dataTR.aka)
 
   function startEdit() {

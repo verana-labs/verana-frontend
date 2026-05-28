@@ -12,15 +12,6 @@ export function isValidLanguageTag(lang: string): boolean {
   return LANGUAGE_TAG_PATTERN.test(lang)
 }
 
-export function isValidUrl(url: string): boolean {
-  try {
-    new URL(url)
-    return true
-  } catch {
-    return false
-  }
-}
-
 export function isValidHttpUrl(url: string): boolean {
   try {
     const u = new URL(url)
@@ -50,7 +41,7 @@ export function isValidField(field: DataField<any>, value: unknown): boolean {
     case 'DID':
       return typeof value === 'string' && isValidDID(value)
     case 'URL': {
-      if (typeof value !== 'string' || !isValidUrl(value)) return false
+      if (typeof value !== 'string' || !isValidHttpUrl(value)) return false
       if (minLength !== undefined && value.length < minLength) return false
       if (maxLength !== undefined && value.length > maxLength) return false
       return true
