@@ -22,6 +22,7 @@ import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
 import { extractTxHeight, handleSuccess } from '@/msg/util/signerUtil'
 import { useNotification } from '@/providers/notification-provider'
+import { useTrustDepositParams } from '@/providers/trust-deposit-params-context'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { normalizeJsonSchema, validateJSONSchemaReturn } from '@/util/json_schema_util'
 
@@ -83,6 +84,7 @@ export function useActionCS(onCancel?: () => void, onRefresh?: (id?: string, txH
   const { address, isWalletConnected } = useChain(veranaChain.chain_name)
 
   const { notify } = useNotification()
+  const { credentialSchemaSchemaMaxSize } = useTrustDepositParams()
   const sendTx = useSendTxDetectingMode(veranaChain)
 
   // Prevents parallel broadcasts with the same account (avoids sequence mismatch errors)
@@ -139,7 +141,11 @@ export function useActionCS(onCancel?: () => void, onRefresh?: (id?: string, txH
 
     if (params.msgType === 'MsgCreateCredentialSchema') {
       try {
-        const errorValidate = validateJSONSchemaReturn(params.jsonSchema)
+        const maxSizeBytes =
+          typeof credentialSchemaSchemaMaxSize === 'number' && credentialSchemaSchemaMaxSize > 0
+            ? credentialSchemaSchemaMaxSize
+            : undefined
+        const errorValidate = validateJSONSchemaReturn(params.jsonSchema, maxSizeBytes)
         if (errorValidate !== null) {
           await notify(
             `${resolveTranslatable({ key: 'error.msg.cs.create.schema.json' }, translate)} ${errorValidate}`,

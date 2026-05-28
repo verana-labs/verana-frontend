@@ -42,9 +42,12 @@ export function normalizeJsonSchema(jsonSchema: string): string {
   }
 }
 
-const DefaultCredentialSchemaSchemaMaxSize = 8192 // set your real parameter
+const DEFAULT_CREDENTIAL_SCHEMA_SCHEMA_MAX_SIZE = 8192
 
-export function validateJSONSchema(schemaJSON: string): void {
+export function validateJSONSchema(
+  schemaJSON: string,
+  maxSizeBytes: number = DEFAULT_CREDENTIAL_SCHEMA_SCHEMA_MAX_SIZE
+): void {
   // Reject empty input
   if (!schemaJSON) {
     throw new Error('json schema cannot be empty')
@@ -52,8 +55,8 @@ export function validateJSONSchema(schemaJSON: string): void {
 
   // Enforce max size in bytes (UTF-8), similar to Go's len([]byte(...))
   const byteLength = new TextEncoder().encode(schemaJSON).length
-  if (byteLength > DefaultCredentialSchemaSchemaMaxSize) {
-    throw new Error(`json schema exceeds maximum size of ${DefaultCredentialSchemaSchemaMaxSize} bytes`)
+  if (byteLength > maxSizeBytes) {
+    throw new Error(`json schema exceeds maximum size of ${maxSizeBytes} bytes`)
   }
 
   // Parse JSON
@@ -104,9 +107,9 @@ export function validateJSONSchema(schemaJSON: string): void {
   }
 }
 
-export function validateJSONSchemaReturn(schemaJSON: string): Error | null {
+export function validateJSONSchemaReturn(schemaJSON: string, maxSizeBytes?: number): Error | null {
   try {
-    validateJSONSchema(schemaJSON)
+    validateJSONSchema(schemaJSON, maxSizeBytes)
     return null
   } catch (e) {
     return e instanceof Error ? e : new Error(String(e))
