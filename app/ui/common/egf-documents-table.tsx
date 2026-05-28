@@ -4,7 +4,7 @@ import { faUpRightFromSquare } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { ReactNode } from 'react'
 import { translate } from '@/i18n/dataview'
-import { getLabelByValue } from '@/ui/dataview/datasections/gfd'
+import { getLanguageLabel, useLanguageData } from '@/lib/language'
 import { TrData } from '@/ui/dataview/datasections/tr'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { formatDate } from '@/util/util'
@@ -45,7 +45,7 @@ function statusPillClass(state: RowState): string {
   return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
 }
 
-function buildRows(versions: Versions, activeVersion: number): Row[] {
+function buildRows(versions: Versions, activeVersion: number, resolveLabel: (value: string) => string): Row[] {
   const sorted = [...versions].sort((a, b) => a.version - b.version)
 
   const rows: Row[] = []
@@ -86,7 +86,7 @@ function buildRows(versions: Versions, activeVersion: number): Row[] {
         key: `${version.id}-${doc.id}`,
         version: version.version,
         url: doc.url,
-        language: getLabelByValue(doc.language),
+        language: resolveLabel(doc.language),
         state,
         statusText,
       })
@@ -101,7 +101,8 @@ function buildRows(versions: Versions, activeVersion: number): Row[] {
 }
 
 export default function EgfDocumentsTable({ versions, activeVersion }: EgfDocumentsTableProps) {
-  const rows = buildRows(versions, activeVersion)
+  const state = useLanguageData()
+  const rows = buildRows(versions, activeVersion, (value) => getLanguageLabel(state, value))
 
   const versionHeader = resolveTranslatable({ key: 'datalist.egf.header.version' }, translate) ?? 'Version'
   const uriHeader = resolveTranslatable({ key: 'datalist.egf.header.uri' }, translate) ?? 'URI'

@@ -10,6 +10,7 @@ import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObje
 import { useTrustRegistryData } from '@/hooks/useTrustRegistryData'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
+import { useLanguageLabel } from '@/lib/language'
 import { RefreshState } from '@/msg/util/signerUtil'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import CsSummaryCard from '@/ui/common/cs-summary-card'
@@ -19,7 +20,6 @@ import EgfDocumentsTable from '@/ui/common/egf-documents-table'
 import FieldRow from '@/ui/common/field-row'
 import { ModalAction } from '@/ui/common/modal-action'
 import ServiceProviderCard from '@/ui/common/service-provider-card'
-import { getLabelByValue } from '@/ui/dataview/datasections/gfd'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { isValidDID, isValidHttpUrl } from '@/util/validations'
 
@@ -83,6 +83,8 @@ export default function TRViewPage() {
     setEditDid(dataTR.did)
     setEditAka(dataTR.aka)
   }, [dataTR?.did, dataTR?.aka])
+
+  const resolvedLanguage = useLanguageLabel(dataTR?.language)
 
   if (errorTRData) {
     return (
@@ -225,7 +227,7 @@ export default function TRViewPage() {
               </p>
             </FieldRow>
             <FieldRow label={languageLabel}>
-              <p className="text-gray-900 dark:text-white font-medium">{getLabelByValue(dataTR.language)}</p>
+              <p className="text-gray-900 dark:text-white font-medium">{resolvedLanguage}</p>
             </FieldRow>
             <FieldRow label={activeVersionLabel}>
               <p className="text-gray-900 dark:text-white font-medium">{dataTR.active_version ?? '—'}</p>

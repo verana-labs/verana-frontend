@@ -6,6 +6,7 @@ import { env } from 'next-runtime-env'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
 import { translate } from '@/i18n/dataview'
+import { canonicalizeLanguageTag } from '@/lib/language'
 import { logger } from '@/lib/logger'
 import { getCostMessage, getLowBalanceMessage, msgTypeStyle } from '@/msg/constants/msgTypeConfig'
 import { resolveMsgCopy } from '@/msg/constants/resolveMsgTypeConfig'
@@ -312,7 +313,7 @@ export default function EditableDataView<T extends object>({
       inputEl = (
         <LanguageCombobox
           value={String(value ?? '')}
-          onChange={(val) => handleChange(field.name as keyof T, val, field)}
+          onChange={(val) => handleChange(field.name as keyof T, canonicalizeLanguageTag(val), field)}
           disabled={isDisabled}
           className={showError ? 'border-red-500' : ''}
         />

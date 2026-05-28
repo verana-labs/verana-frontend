@@ -4,8 +4,8 @@ import { faShieldHalved } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
 import { translate } from '@/i18n/dataview'
+import { useLanguageLabel } from '@/lib/language'
 import { formatLongDateUserLocale } from '@/util/util'
-import { getLabelByValue } from '../dataview/datasections/gfd'
 import { TrData } from '../dataview/datasections/tr'
 import { resolveTranslatable } from '../dataview/types'
 
@@ -22,7 +22,7 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
     .filter(Boolean)
   const version = ecosystem.versions?.find((x) => x.version === ecosystem.active_version)
   const egfDoc = version?.documents?.[0]
-  const language = getLabelByValue(egfDoc?.language) ?? ''
+  const language = useLanguageLabel(egfDoc?.language)
   return (
     <div className="border border-neutral-20 dark:border-neutral-70 rounded-xl p-6 mb-6">
       <div className="flex items-start space-x-4 mb-6">
