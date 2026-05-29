@@ -9,6 +9,7 @@ export type TrustDepositParams = {
   trustDepositReclaimBurnRate: string | number | null
   trustDepositRate: string | number | null
   credentialSchemaTrustDeposit: string | number | null
+  credentialSchemaSchemaMaxSize: string | number | null
 }
 
 export const trustDepositParamsInitialState: TrustDepositParams = {
@@ -18,6 +19,7 @@ export const trustDepositParamsInitialState: TrustDepositParams = {
   trustDepositReclaimBurnRate: null,
   trustDepositRate: null,
   credentialSchemaTrustDeposit: null,
+  credentialSchemaSchemaMaxSize: null,
 }
 
 type ParamConfigKey = keyof TrustDepositParams
@@ -63,6 +65,12 @@ const configs: ParamConfig[] = [
   {
     key: 'credentialSchemaTrustDeposit',
     responseKey: 'credential_schema_trust_deposit',
+    envKey: 'NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA',
+    transform: (value) => (value == null ? null : Number(value)),
+  },
+  {
+    key: 'credentialSchemaSchemaMaxSize',
+    responseKey: 'credential_schema_schema_max_size',
     envKey: 'NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA',
     transform: (value) => (value == null ? null : Number(value)),
   },
