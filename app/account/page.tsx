@@ -59,10 +59,6 @@ export default function AccountPage() {
         claimableInterests,
         getVNA,
         claimInterests,
-        created: 'March 15, 2024',
-        totalTransactions: 765,
-        trustRegistriesJoined: 127,
-        didsManaged: 554,
       })
     }
   }, [accountCtx.accountData])

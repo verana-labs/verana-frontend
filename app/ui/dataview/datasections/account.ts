@@ -16,10 +16,6 @@ export interface AccountData {
   reclaimDeposit?: string // action type
   address: string | null
   network: string | null
-  created: string | null
-  totalTransactions: number
-  trustRegistriesJoined: number
-  didsManaged: number
 }
 
 // Sections configuration for AccountData
@@ -85,7 +81,6 @@ export const accountSections: Section<AccountData>[] = [
     sectionBorder: true,
     fields: [
       { name: 'address', type: 'data', label: t('dataview.account.fields.address') },
-      { name: 'totalTransactions', label: t('dataview.account.fields.totalTransactions'), type: 'data' },
       {
         name: 'network',
         label: t('dataview.account.fields.network'),
@@ -94,9 +89,6 @@ export const accountSections: Section<AccountData>[] = [
         isHtml: true,
         format: (value) => formatNetwork(String(value)),
       },
-      { name: 'trustRegistriesJoined', label: t('dataview.account.fields.trustRegistriesJoined'), type: 'data' },
-      { name: 'created', label: t('dataview.account.fields.created'), type: 'data' },
-      { name: 'didsManaged', label: t('dataview.account.fields.didsManaged'), type: 'data' },
     ],
   },
 ]
