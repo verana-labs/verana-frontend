@@ -16,6 +16,7 @@ export type TrustDepositAccountData = {
   reclaimable: string | null
   message: string | null
   network: string | null
+  slashCount: number | null
 }
 
 /**
@@ -37,6 +38,7 @@ export function useTrustDepositAccountData() {
     reclaimable: null,
     message: null,
     network: null,
+    slashCount: null,
   })
   const [loading, setLoading] = useState(false)
   const [errorAccountData, setError] = useState<string | null>(null)
@@ -55,6 +57,7 @@ export function useTrustDepositAccountData() {
     let claimableInterests = null
     let reclaimable = null
     let message = null
+    let slashCount: number | null = null
     const network = veranaChain.chain_id
 
     try {
@@ -74,6 +77,7 @@ export function useTrustDepositAccountData() {
           totalTrustDeposit = '0'
           claimableInterests = '0'
           reclaimable = '0'
+          slashCount = 0
         } else {
           setError(`Error ${code}: ${error}`)
           // return;
@@ -83,6 +87,7 @@ export function useTrustDepositAccountData() {
         totalTrustDeposit = json.trust_deposit.amount
         claimableInterests = '0'
         reclaimable = json.trust_deposit.claimable
+        slashCount = json.trust_deposit.slash_count ?? 0
       } else if (json.message) {
         message = json.message
       }
@@ -98,6 +103,7 @@ export function useTrustDepositAccountData() {
       reclaimable,
       message,
       network,
+      slashCount,
     })
     setLoading(false)
   }
