@@ -71,6 +71,12 @@ importers:
       chain-registry:
         specifier: ^2.0.16
         version: 2.0.200
+      cldr-core:
+        specifier: 48.2.0
+        version: 48.2.0
+      cldr-localenames-full:
+        specifier: 48.2.0
+        version: 48.2.0(cldr-core@48.2.0)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -86,9 +92,6 @@ importers:
       framer-motion:
         specifier: ^12.5.0
         version: 12.38.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      langs:
-        specifier: ^2.0.0
-        version: 2.0.0
       long:
         specifier: 5.3.2
         version: 5.3.2
@@ -1656,6 +1659,14 @@ packages:
     resolution: {integrity: sha512-Mz9QMT5fJe7bKI7MH31UilT5cEK5EHHRCccw/YRFsRY47AuNgaV6HY3rscp0/I4Q+tTW/5zoqpSeRRI54TkDWA==}
     engines: {node: '>= 0.10'}
 
+  cldr-core@48.2.0:
+    resolution: {integrity: sha512-zfmLothncSwfv2jlevoSrgI2VGgH8SDGHXst6jUEotHA8nq9Igeg9jzdJDFtBso9pgJuG89DK16TzrmZDdo2Bg==}
+
+  cldr-localenames-full@48.2.0:
+    resolution: {integrity: sha512-4o0paYDz0UXhfhChAVFkmVl2CP0YTSEqE6WrC0fNafaSC5u5DAXphxH3SZ1Ujczarikr8DToKZfiok6EqWLdNQ==}
+    peerDependencies:
+      cldr-core: 48.2.0
+
   client-only@0.0.1:
     resolution: {integrity: sha512-IV3Ou0jSMzZrd3pZ48nLkT9DA7Ag1pnPzaiQhpW7c3RbcqqzvzzVu+L8gfqMp/8IM2MQtSiqaCxrrcfu8I8rMA==}
 
@@ -2208,9 +2219,6 @@ packages:
 
   keyvaluestorage-interface@1.0.0:
     resolution: {integrity: sha512-8t6Q3TclQ4uZynJY9IGr2+SsIGwK9JHcO6ootkHCGA0CrQCRy+VkouYNO2xicET6b9al7QKzpebNow+gkpCL8g==}
-
-  langs@2.0.0:
-    resolution: {integrity: sha512-v4pxOBEQVN1WBTfB1crhTtxzNLZU9HPWgadlwzWKISJtt6Ku/CnpBrwVy+jFv8StjxsPfwPFzO0CMwdZLJ0/BA==}
 
   libsodium-sumo@0.7.16:
     resolution: {integrity: sha512-x6atrz2AdXCJg6G709x9W9TTJRI6/0NcL5dD0l5GGVqNE48UJmDsjO4RUWYTeyXXUpg+NXZ2SHECaZnFRYzwGA==}
@@ -6765,6 +6773,12 @@ snapshots:
       safe-buffer: 5.2.1
       to-buffer: 1.2.2
 
+  cldr-core@48.2.0: {}
+
+  cldr-localenames-full@48.2.0(cldr-core@48.2.0):
+    dependencies:
+      cldr-core: 48.2.0
+
   client-only@0.0.1: {}
 
   cliui@8.0.1:
@@ -7409,8 +7423,6 @@ snapshots:
       readable-stream: 3.6.2
 
   keyvaluestorage-interface@1.0.0: {}
-
-  langs@2.0.0: {}
 
   libsodium-sumo@0.7.16: {}
 
