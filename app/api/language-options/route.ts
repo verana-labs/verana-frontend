@@ -6,10 +6,9 @@ export const dynamic = 'force-static'
 
 const PINNED_CODES = ['en', 'en-US', 'es', 'es-419', 'fr', 'pt-BR', 'zh-Hans', 'ar']
 
-// English names for ISO 639-3 tags that Node 22's ICU 77.1 does not ship.
-const ENGLISH_OVERRIDES: Record<string, string> = {
+// cldr-localenames-full
+const ENGLISH_LANGUAGE_OVERRIDES: Record<string, string> = {
   apc: 'Levantine Arabic',
-  kek: "Q'eqchi'",
   lld: 'Ladin',
   mhn: 'Mòcheno',
   mww: 'Hmong Daw',
@@ -20,9 +19,44 @@ const ENGLISH_OVERRIDES: Record<string, string> = {
 const UNDETERMINED_LANGUAGE_TAG = 'und'
 const UNPINNED_RANK = Number.POSITIVE_INFINITY
 
-const englishLanguages = new Intl.DisplayNames(['en'], { type: 'language', languageDisplay: 'standard' })
-const englishRegions = new Intl.DisplayNames(['en'], { type: 'region' })
-const englishScripts = new Intl.DisplayNames(['en'], { type: 'script' })
+const { createRequire } = process.getBuiltinModule('node:module')
+const { readFileSync, readdirSync } = process.getBuiltinModule('node:fs')
+const { dirname, join } = process.getBuiltinModule('node:path')
+
+const cldrRequire = createRequire(import.meta.url)
+const CLDR_MAIN = join(dirname(cldrRequire.resolve('cldr-localenames-full/package.json')), 'main')
+
+type LocaleDisplayNames = {
+  languages?: Record<string, string>
+  territories?: Record<string, string>
+  scripts?: Record<string, string>
+}
+type CldrNamesFile = { main: Record<string, { localeDisplayNames: LocaleDisplayNames }> }
+
+function readDisplayNames(locale: string, kind: keyof LocaleDisplayNames): Record<string, string> {
+  const file = JSON.parse(readFileSync(join(CLDR_MAIN, locale, `${kind}.json`), 'utf8')) as CldrNamesFile
+  return file.main[locale]?.localeDisplayNames[kind] ?? {}
+}
+
+const englishLanguages = readDisplayNames('en', 'languages')
+const englishTerritories = readDisplayNames('en', 'territories')
+const englishScripts = readDisplayNames('en', 'scripts')
+
+const availableLocaleDirs = new Set(readdirSync(CLDR_MAIN))
+const nativeLanguagesCache = new Map<string, Record<string, string> | null>()
+
+function nativeLanguages(dir: string): Record<string, string> | null {
+  const cached = nativeLanguagesCache.get(dir)
+  if (cached !== undefined) return cached
+  let result: Record<string, string> | null = null
+  try {
+    result = readDisplayNames(dir, 'languages')
+  } catch {
+    result = null
+  }
+  nativeLanguagesCache.set(dir, result)
+  return result
+}
 
 function capitalizeFirst(s: string): string {
   if (!s) return s
@@ -31,37 +65,34 @@ function capitalizeFirst(s: string): string {
 }
 
 function englishLabel(loc: Intl.Locale): string | undefined {
-  const rawBase = englishLanguages.of(loc.language)
-  const base = rawBase && rawBase !== loc.language ? rawBase : ENGLISH_OVERRIDES[loc.language]
+  const base = englishLanguages[loc.language] ?? ENGLISH_LANGUAGE_OVERRIDES[loc.language]
   if (!base) return undefined
 
   const qualifiers: string[] = []
   if (loc.script) {
-    const name = englishScripts.of(loc.script)
-    if (name && name !== loc.script) qualifiers.push(name)
+    const name = englishScripts[loc.script]
+    if (name) qualifiers.push(name)
   }
   if (loc.region) {
-    const name = englishRegions.of(loc.region)
-    if (name && name !== loc.region) qualifiers.push(name)
+    const name = englishTerritories[loc.region]
+    if (name) qualifiers.push(name)
   }
 
   return qualifiers.length ? `${base} (${qualifiers.join(', ')})` : base
 }
 
-const autonymCache = new Map<string, string | undefined>()
-
-function autonym(tag: string): string | undefined {
-  if (autonymCache.has(tag)) return autonymCache.get(tag)
-  let result: string | undefined
-  try {
-    const names = new Intl.DisplayNames([tag], { type: 'language', languageDisplay: 'standard' })
-    const value = names.of(tag)
-    result = value && value !== tag ? value : undefined
-  } catch {
-    result = undefined
+function autonym(loc: Intl.Locale): string | undefined {
+  const scriptDir = loc.script ? `${loc.language}-${loc.script}` : undefined
+  const candidates = [loc.baseName, scriptDir, loc.language].filter(
+    (dir): dir is string => !!dir && availableLocaleDirs.has(dir)
+  )
+  for (const dir of candidates) {
+    const languages = nativeLanguages(dir)
+    if (!languages) continue
+    const name = languages[loc.baseName] ?? (scriptDir ? languages[scriptDir] : undefined) ?? languages[loc.language]
+    if (name) return name
   }
-  autonymCache.set(tag, result)
-  return result
+  return undefined
 }
 
 let cached: LanguageOption[] | null = null
@@ -89,7 +120,7 @@ function buildLanguageOptions(): LanguageOption[] {
       unresolved.push(tag)
       continue
     }
-    const native = autonym(tag)
+    const native = autonym(loc)
     const left = native ? capitalizeFirst(native) : undefined
     const label = left && !english.startsWith(left) ? `${left} — ${english} (${tag})` : `${english} (${tag})`
     entries.push({ value: tag, label, sortKey: english })
@@ -97,7 +128,7 @@ function buildLanguageOptions(): LanguageOption[] {
 
   if (unresolved.length > 0) {
     throw new Error(
-      `Unresolved language tags (no English name): ${unresolved.join(', ')}. Add entries to ENGLISH_OVERRIDES in app/api/language-options/route.ts.`
+      `Unresolved language tags (no English name in cldr-localenames-full): ${unresolved.join(', ')}. Add entries to ENGLISH_LANGUAGE_OVERRIDES in app/api/language-options/route.ts.`
     )
   }
 

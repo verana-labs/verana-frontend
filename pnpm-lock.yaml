@@ -74,6 +74,9 @@ importers:
       cldr-core:
         specifier: 48.2.0
         version: 48.2.0
+      cldr-localenames-full:
+        specifier: 48.2.0
+        version: 48.2.0(cldr-core@48.2.0)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -1658,6 +1661,11 @@ packages:
 
   cldr-core@48.2.0:
     resolution: {integrity: sha512-zfmLothncSwfv2jlevoSrgI2VGgH8SDGHXst6jUEotHA8nq9Igeg9jzdJDFtBso9pgJuG89DK16TzrmZDdo2Bg==}
+
+  cldr-localenames-full@48.2.0:
+    resolution: {integrity: sha512-4o0paYDz0UXhfhChAVFkmVl2CP0YTSEqE6WrC0fNafaSC5u5DAXphxH3SZ1Ujczarikr8DToKZfiok6EqWLdNQ==}
+    peerDependencies:
+      cldr-core: 48.2.0
 
   client-only@0.0.1:
     resolution: {integrity: sha512-IV3Ou0jSMzZrd3pZ48nLkT9DA7Ag1pnPzaiQhpW7c3RbcqqzvzzVu+L8gfqMp/8IM2MQtSiqaCxrrcfu8I8rMA==}
@@ -6766,6 +6774,10 @@ snapshots:
       to-buffer: 1.2.2
 
   cldr-core@48.2.0: {}
+
+  cldr-localenames-full@48.2.0(cldr-core@48.2.0):
+    dependencies:
+      cldr-core: 48.2.0
 
   client-only@0.0.1: {}
 
