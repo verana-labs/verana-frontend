@@ -1,6 +1,6 @@
 import { faCoins, faPlus, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
 import { Section } from '@/ui/dataview/types'
-import { formatNetwork, formatVNAFromUVNA } from '@/util/util'
+import { formatNetwork, formatNumber, formatVNAFromUVNA } from '@/util/util'
 
 const t = (key: string) => ({ key })
 
@@ -16,10 +16,9 @@ export interface AccountData {
   reclaimDeposit?: string // action type
   address: string | null
   network: string | null
-  created: string | null
-  totalTransactions: number
-  trustRegistriesJoined: number
-  didsManaged: number
+  didsManaged: number | null
+  transactionsSent: number | null
+  slashCount: number | null
 }
 
 // Sections configuration for AccountData
@@ -85,7 +84,6 @@ export const accountSections: Section<AccountData>[] = [
     sectionBorder: true,
     fields: [
       { name: 'address', type: 'data', label: t('dataview.account.fields.address') },
-      { name: 'totalTransactions', label: t('dataview.account.fields.totalTransactions'), type: 'data' },
       {
         name: 'network',
         label: t('dataview.account.fields.network'),
@@ -94,9 +92,24 @@ export const accountSections: Section<AccountData>[] = [
         isHtml: true,
         format: (value) => formatNetwork(String(value)),
       },
-      { name: 'trustRegistriesJoined', label: t('dataview.account.fields.trustRegistriesJoined'), type: 'data' },
-      { name: 'created', label: t('dataview.account.fields.created'), type: 'data' },
-      { name: 'didsManaged', label: t('dataview.account.fields.didsManaged'), type: 'data' },
+      {
+        name: 'didsManaged',
+        label: t('dataview.account.fields.didsManaged'),
+        type: 'data',
+        format: (value) => (value == null ? '' : formatNumber(value, false, true)),
+      },
+      {
+        name: 'transactionsSent',
+        label: t('dataview.account.fields.transactionsSent'),
+        type: 'data',
+        format: (value) => (value == null ? '' : formatNumber(value, false, true)),
+      },
+      {
+        name: 'slashCount',
+        label: t('dataview.account.fields.slashCount'),
+        type: 'data',
+        format: (value) => (value == null ? '' : formatNumber(value, false, true)),
+      },
     ],
   },
 ]

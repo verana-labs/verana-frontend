@@ -2,6 +2,8 @@
 
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { useAccountTxCount } from '@/hooks/useAccountTxCount'
+import { useDIDsManaged } from '@/hooks/useDIDsManaged'
 import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
 import { RefreshState } from '@/msg/util/signerUtil'
@@ -19,6 +21,8 @@ export default function AccountPage() {
 
   // Custom hook to fetch account/trust deposit data
   const accountCtx = useAccountCtx()
+  const { didCount, refetch: refetchDids } = useDIDsManaged()
+  const { txCount, refetch: refetchTxCount } = useAccountTxCount()
 
   // Refresh account/trust deposit data
   const [refresh, setRefresh] = useState<boolean>(true)
@@ -28,7 +32,7 @@ export default function AccountPage() {
   useEffect(() => {
     if (!refresh) return
     ;(async () => {
-      await accountCtx.refetch()
+      await Promise.all([accountCtx.refetch(), refetchDids(), refetchTxCount()])
       setRefresh(false)
     })()
   }, [refresh])
@@ -59,13 +63,11 @@ export default function AccountPage() {
         claimableInterests,
         getVNA,
         claimInterests,
-        created: 'March 15, 2024',
-        totalTransactions: 765,
-        trustRegistriesJoined: 127,
-        didsManaged: 554,
+        didsManaged: didCount,
+        transactionsSent: txCount,
       })
     }
-  }, [accountCtx.accountData])
+  }, [accountCtx.accountData, didCount, txCount])
 
   return (
     <>
