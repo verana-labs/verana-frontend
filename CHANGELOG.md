@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.14.0](https://github.com/verana-labs/verana-frontend/compare/v0.13.0...v0.14.0) (2026-06-02)
+
+
+### Features
+
+* [Account] replace placeholder stats with real data ([#404](https://github.com/verana-labs/verana-frontend/issues/404)) ([3f2bba3](https://github.com/verana-labs/verana-frontend/commit/3f2bba323f822cb9f06020f66dba05d3927a7244))
+* use BCP-47 tags for language fields ([#401](https://github.com/verana-labs/verana-frontend/issues/401)) ([1dba7b8](https://github.com/verana-labs/verana-frontend/commit/1dba7b8ede24d53f06f26b88f353d0c5efe6457d))
+
+
+### Bug Fixes
+
+* [Credential Schema] source JSON schema max size from the chain ([#400](https://github.com/verana-labs/verana-frontend/issues/400)) ([d1e0371](https://github.com/verana-labs/verana-frontend/commit/d1e037186747c702377ed13963a0fe7487516318))
+* validate URL fields are http/https only ([#399](https://github.com/verana-labs/verana-frontend/issues/399)) ([7ad7731](https://github.com/verana-labs/verana-frontend/commit/7ad77311cb015dd4fe079438aa1f82f5c999bed1))
+
 ## [0.13.0](https://github.com/verana-labs/verana-frontend/compare/v0.12.0...v0.13.0) (2026-05-26)
 
 
