@@ -212,7 +212,7 @@ export default function TRViewPage() {
 
       <EcosystemHeader did={dataTR.did} status={headerStatus} />
 
-      <ServiceProviderCard did={dataTR.did} controller={dataTR.controller} />
+      <ServiceProviderCard did={dataTR.did} />
 
       <section className="mb-8">
         <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4">{basicInfoLabel}</h2>

@@ -13,7 +13,6 @@ const MONO_VALUE_CLASS = 'text-gray-900 dark:text-white font-mono text-xs sm:tex
 
 export type ServiceProviderCardProps = {
   did: string
-  controller?: string
 }
 
 function countryName(code: string): string {
@@ -25,15 +24,16 @@ function countryName(code: string): string {
   }
 }
 
-export default function ServiceProviderCard({ did, controller }: ServiceProviderCardProps) {
+export default function ServiceProviderCard({ did }: ServiceProviderCardProps) {
   const { data: enrichment } = useDidTrustEnrichment(did)
 
   const orgName = enrichment?.organizationName ?? enrichment?.serviceName
   const countryCode = enrichment?.countryCode
   const address = enrichment?.organizationAddress
   const registryId = enrichment?.organizationRegistryId
+  const credentialIssuer = enrichment?.credentialIssuerDid
 
-  const hasContent = !!orgName || !!countryCode || !!address || !!registryId
+  const hasContent = !!orgName || !!countryCode || !!address || !!registryId || !!credentialIssuer
   if (!hasContent) return null
 
   const sectionLabel =
@@ -94,9 +94,9 @@ export default function ServiceProviderCard({ did, controller }: ServiceProvider
                 </FieldRow>
               ) : null}
 
-              {controller ? (
+              {credentialIssuer ? (
                 <FieldRow label={`${issuerLabel}:`} labelClassName={LABEL_CLASS}>
-                  <p className={MONO_VALUE_CLASS}>{controller}</p>
+                  <p className={MONO_VALUE_CLASS}>{credentialIssuer}</p>
                 </FieldRow>
               ) : null}
             </div>

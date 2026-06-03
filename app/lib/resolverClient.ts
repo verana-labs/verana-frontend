@@ -11,6 +11,7 @@ export interface DidEnrichment {
   countryCode?: string
   organizationAddress?: string
   organizationRegistryId?: string
+  credentialIssuerDid?: string
   evaluatedAtBlock?: number
   expiresAt?: string
   serviceMinAge?: string
@@ -20,6 +21,7 @@ export interface DidEnrichment {
 
 interface ResolverCredential {
   ecsType?: string | null
+  issuedBy?: string | null
   claims?: Record<string, unknown>
 }
 
@@ -90,6 +92,7 @@ function mapResponse(did: string, raw: ResolverFullResult): DidEnrichment {
   const countryCode = pickString(org?.claims, 'countryCode')
   const organizationAddress = pickString(org?.claims, 'address') ?? pickString(org?.claims, 'streetAddress')
   const organizationRegistryId = pickString(org?.claims, 'registryId') ?? pickString(org?.claims, 'registrationNumber')
+  const credentialIssuerDid = typeof org?.issuedBy === 'string' && org.issuedBy.length > 0 ? org.issuedBy : undefined
 
   const hasResolverEvidence =
     credentials.length > 0 ||
@@ -117,6 +120,7 @@ function mapResponse(did: string, raw: ResolverFullResult): DidEnrichment {
     countryCode,
     organizationAddress,
     organizationRegistryId,
+    credentialIssuerDid,
     evaluatedAtBlock: raw.evaluatedAtBlock,
     expiresAt: raw.expiresAt,
   }
