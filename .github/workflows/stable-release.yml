@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      notify_tag:
+        description: "Release tag to (re)announce on Discord, e.g. v1.2.0"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -12,6 +18,7 @@ permissions:
 
 jobs:
   release-please:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
@@ -79,3 +86,24 @@ jobs:
           echo "Helm Charts" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- verana-front:${{ needs.release-please.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
+
+  discord-notify:
+    needs: [release-please, docker-release]
+    if: needs.release-please.outputs.releases_created == 'true'
+    permissions:
+      contents: read
+    uses: 2060-io/organization/.github/workflows/discord-release-notify-call.yml@main
+    with:
+      tag_name: ${{ needs.release-please.outputs.tag_name }}
+    secrets:
+      DISCORD_UPDATES_WEBHOOK_URL: ${{ secrets.DISCORD_UPDATES_WEBHOOK_URL }}
+
+  discord-notify-manual:
+    if: github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+    uses: 2060-io/organization/.github/workflows/discord-release-notify-call.yml@main
+    with:
+      tag_name: ${{ inputs.notify_tag }}
+    secrets:
+      DISCORD_UPDATES_WEBHOOK_URL: ${{ secrets.DISCORD_UPDATES_WEBHOOK_URL }}
