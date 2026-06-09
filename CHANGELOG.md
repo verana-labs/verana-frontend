@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.14.1](https://github.com/verana-labs/verana-frontend/compare/v0.14.0...v0.14.1) (2026-06-09)
+
+
+### Bug Fixes
+
+* [Ecosystem] show credential issuer DID instead of controller account ([#408](https://github.com/verana-labs/verana-frontend/issues/408)) ([2a58d3d](https://github.com/verana-labs/verana-frontend/commit/2a58d3dd134f9e23d51e5746d68274538a1a1b89))
+* release please ([#411](https://github.com/verana-labs/verana-frontend/issues/411)) ([85b73fa](https://github.com/verana-labs/verana-frontend/commit/85b73fa6c7803c12ba313687425cc34b731e5d1b))
+
 ## [0.14.0](https://github.com/verana-labs/verana-frontend/compare/v0.13.0...v0.14.0) (2026-06-02)
 
 
