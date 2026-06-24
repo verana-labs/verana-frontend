@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState } from 'react'
+import { APP_VERSION } from '@/config/env'
 import { useChainVersion } from '@/hooks/useChainVersion'
 import { useIndexerVersion } from '@/hooks/useIndexerVersion'
 
@@ -17,7 +18,7 @@ export function ComponentsVersionProvider({ children }: React.PropsWithChildren)
     },
     frontend: {
       version: (() => {
-        const v = process.env.NEXT_PUBLIC_APP_VERSION
+        const v = APP_VERSION
         if (!v) return null
         return v.startsWith('v') ? v : `v${v}`
       })(),

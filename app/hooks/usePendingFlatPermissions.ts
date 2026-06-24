@@ -1,8 +1,8 @@
 'use client'
 
 import { useChain } from '@cosmos-kit/react'
-import { env } from 'next-runtime-env'
 import { useEffect, useState } from 'react'
+import { VERANA_REST_ENDPOINT_PERM } from '@/config/env'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { ApiErrorResponse } from '@/types/apiErrorResponse'
@@ -12,7 +12,7 @@ import { resolveTranslatable } from '@/ui/dataview/types'
 export function usePendingFlatPermissions() {
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
-  const getURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM
+  const getURL = VERANA_REST_ENDPOINT_PERM
 
   const [permissionsList, setPermissionsList] = useState<TrustRegistriesPermission[]>([])
   const [loading, setLoading] = useState(false)

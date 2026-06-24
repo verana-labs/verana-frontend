@@ -1,16 +1,14 @@
 'use client'
 
-import { env } from 'next-runtime-env'
 import { useEffect, useState } from 'react'
+import { VERANA_REST_ENDPOINT_TRUST_REGISTRY } from '@/config/env'
 import { translate } from '@/i18n/dataview'
 import { ApiErrorResponse } from '@/types/apiErrorResponse'
 import { TrData } from '@/ui/dataview/datasections/tr'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
 export function useTrustRegistryData(id: string) {
-  const getURL =
-    env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY') ||
-    process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY
+  const getURL = VERANA_REST_ENDPOINT_TRUST_REGISTRY
   const [dataTR, setData] = useState<TrData | null>(null)
   const [loading, setLoading] = useState(true)
   const [errorTRData, setError] = useState<string | null>(null)

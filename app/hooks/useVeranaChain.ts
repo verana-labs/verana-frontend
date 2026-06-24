@@ -1,15 +1,21 @@
 'use client'
 
 import { Chain } from '@chain-registry/types'
-import { env } from 'next-runtime-env'
+import {
+  VERANA_CHAIN_ID,
+  VERANA_CHAIN_NAME,
+  VERANA_EXPLORER_URL,
+  VERANA_REST_ENDPOINT,
+  VERANA_RPC_ENDPOINT,
+} from '@/config/env'
 import { veranaChainEnv } from '@/config/veranaChain.client'
 
 export function useVeranaChain() {
-  const chainName = env('NEXT_PUBLIC_VERANA_CHAIN_NAME')
-  const chainId = env('NEXT_PUBLIC_VERANA_CHAIN_ID')
-  const rpc = env('NEXT_PUBLIC_VERANA_RPC_ENDPOINT')
-  const rest = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT')
-  const explorerUrl = env('NEXT_PUBLIC_VERANA_EXPLORER_URL')
+  const chainName = VERANA_CHAIN_NAME
+  const chainId = VERANA_CHAIN_ID
+  const rpc = VERANA_RPC_ENDPOINT
+  const rest = VERANA_REST_ENDPOINT
+  const explorerUrl = VERANA_EXPLORER_URL
 
   if (chainName && chainId && rpc && rest) {
     return {

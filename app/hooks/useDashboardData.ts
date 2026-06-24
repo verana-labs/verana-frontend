@@ -1,7 +1,7 @@
 'use client'
 
-import { env } from 'next-runtime-env'
 import { useEffect, useState } from 'react'
+import { VERANA_REST_ENDPOINT_METRICS } from '@/config/env'
 import { translate } from '@/i18n/dataview'
 import { ApiErrorResponse } from '@/types/apiErrorResponse'
 import { DashboardData } from '@/ui/dataview/datasections/dashboard'
@@ -25,7 +25,7 @@ type MetricsApiResponse = {
 }
 
 export function useDashboardData() {
-  const getURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_METRICS') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_METRICS
+  const getURL = VERANA_REST_ENDPOINT_METRICS
 
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)

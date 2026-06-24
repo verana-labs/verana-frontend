@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { env } from 'next-runtime-env'
 import { useEffect, useState } from 'react'
+import { VERANA_VISUALIZER_URL } from '@/config/env'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
@@ -28,10 +28,7 @@ export function service(did: string): string | undefined {
 }
 
 function visualizerUrl(value: string, action: PermissionAction): string | undefined {
-  const visualizerBaseUrl =
-    env('NEXT_PUBLIC_VERANA_VISUALIZER_URL') ||
-    process.env.NEXT_PUBLIC_VERANA_VISUALIZER_URL ||
-    'https://vis.testnet.verana.network'
+  const visualizerBaseUrl = VERANA_VISUALIZER_URL || 'https://vis.testnet.verana.network'
   const base = visualizerBaseUrl.replace(/\/+$/, '')
   const params = new URLSearchParams()
 

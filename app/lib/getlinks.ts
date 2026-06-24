@@ -1,7 +1,7 @@
 // biome-ignore lint/correctness/noUnusedImports: kept for commented-out future use
 import { faCcMastercard, faGooglePay } from '@fortawesome/free-brands-svg-icons'
 import { faDroplet, IconDefinition } from '@fortawesome/free-solid-svg-icons'
-import { env } from 'next-runtime-env'
+import { VERANA_TOPUP_VS } from '@/config/env'
 import { translate } from '@/i18n/dataview'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
@@ -19,9 +19,7 @@ interface GetVNALink {
   className?: string
 }
 
-const TOPUP_VS = env('NEXT_PUBLIC_VERANA_TOPUP_VS') || process.env.NEXT_PUBLIC_VERANA_TOPUP_VS
-
-const urlGetVNA = TOPUP_VS ? TOPUP_VS.split(':')[2] : ''
+const urlGetVNA = VERANA_TOPUP_VS ? VERANA_TOPUP_VS.split(':')[2] : ''
 
 // Extract network name (e.g. "Testnet", "Devnet") from did:web:faucet-vs.{network}.verana.network
 const networkName = urlGetVNA.split('.')[1] ?? ''

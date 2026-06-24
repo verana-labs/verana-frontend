@@ -1,7 +1,7 @@
 'use client'
 
-import { env } from 'next-runtime-env'
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { VERANA_WEBSOCKET } from '@/config/env'
 import { logger } from '@/lib/logger'
 import { useComponentsVersion } from '@/providers/components-version-provider'
 
@@ -57,7 +57,7 @@ export function IndexerEventsProvider({ children }: { children: React.ReactNode 
 
     const connect = () => {
       if (unmounted) return
-      const wsUrl = env('NEXT_PUBLIC_VERANA_WEBSOCKET') || process.env.NEXT_PUBLIC_VERANA_WEBSOCKET
+      const wsUrl = VERANA_WEBSOCKET
       if (!wsUrl) {
         logger.error('NEXT_PUBLIC_VERANA_WEBSOCKET is not defined')
         return

@@ -1,7 +1,7 @@
 'use client'
 
-import { env } from 'next-runtime-env'
 import { useEffect, useState } from 'react'
+import { VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA } from '@/config/env'
 import { translate } from '@/i18n/dataview'
 import { ApiErrorResponse } from '@/types/apiErrorResponse'
 import { CsList } from '@/ui/datatable/columnslist/cs'
@@ -30,9 +30,7 @@ type RawSchema = Record<string, unknown> & {
 }
 
 export function useCSList(trId?: string, all: boolean = true, onlyActive: boolean = false) {
-  const getURL =
-    env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA') ||
-    process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA
+  const getURL = VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA
 
   const [csList, setCsList] = useState<CsList[]>([])
   const [loading, setLoading] = useState(false)

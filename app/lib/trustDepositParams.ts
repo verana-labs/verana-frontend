@@ -1,4 +1,4 @@
-import { env } from 'next-runtime-env'
+import { readEnv } from '@/config/env'
 import { translate } from '@/i18n/dataview'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
@@ -77,7 +77,7 @@ const configs: ParamConfig[] = [
 ]
 
 function getEndpointBase(envKey: string) {
-  return env(envKey) || process.env[envKey]
+  return readEnv(envKey)
 }
 
 function extractParam(json: unknown, responseKey: string) {

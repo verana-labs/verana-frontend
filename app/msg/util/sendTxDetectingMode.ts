@@ -4,8 +4,8 @@ import { Chain } from '@chain-registry/types'
 import type { EncodeObject } from '@cosmjs/proto-signing'
 import { DeliverTxResponse } from '@cosmjs/stargate'
 import { useChain } from '@cosmos-kit/react'
-import { env } from 'next-runtime-env'
 import { useCallback } from 'react'
+import { VERANA_SIGN_DIRECT_MODE } from '@/config/env'
 import { veranaGasAdjustment, veranaGasPrice, veranaRegistry } from '@/config/veranaChain.sign.client'
 import { useCalculateFee } from '@/hooks/useCalculateFee'
 import { logger } from '@/lib/logger'
@@ -45,8 +45,7 @@ export function useSendTxDetectingMode(chain: Chain) {
         throw new Error('RPC endpoint not available')
       }
 
-      const veranaDirectMode =
-        env('NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE') || process.env.NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE
+      const veranaDirectMode = VERANA_SIGN_DIRECT_MODE
 
       // Get signer from cosmos-kit (multi-wallet safe)
       const signer =
