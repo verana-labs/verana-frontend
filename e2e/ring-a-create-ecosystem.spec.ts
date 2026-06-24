@@ -1,12 +1,10 @@
 import { expect, type Page, test } from '@playwright/test'
 import { connectWallet } from './support/connect'
+import { fillEcosystemForm } from './support/flows'
 import { installMockChain } from './support/mock-chain'
 
-const SHOT = 'e2e/artifacts'
 const FAKE_TR_ID = '777'
-
-const labelInput = (page: Page, label: string) =>
-  page.locator(`label.data-edit-label:has-text("${label}")`).locator('xpath=following-sibling::input[1]')
+const RPC_METHODS = ['status', 'abci_query', 'broadcast_tx_sync', 'tx_search']
 
 const walletAddress = (page: Page) =>
   page.evaluate(async () => {
@@ -17,54 +15,23 @@ const walletAddress = (page: Page) =>
 
 test('Ring A — create ecosystem reaches faked success without a real chain write', async ({ page }) => {
   test.setTimeout(90_000)
-
   const stamp = Date.now().toString(36)
-  const did = `did:web:ring-a-${stamp}.testnet.verana.network`
-  const aka = `https://ring-a-${stamp}.testnet.verana.network`
-  const docUrl = `https://ring-a-${stamp}.example/egf.md`
 
   await connectWallet(page)
-
   const address = await walletAddress(page)
   const mock = await installMockChain(page, { address, trustRegistryId: FAKE_TR_ID })
 
-  await test.step('open + fill create-ecosystem form', async () => {
-    await page.goto('/tr')
-    await page
-      .getByRole('button', { name: /create ecosystem/i })
-      .first()
-      .click()
-    await expect(page.getByText(/basic information/i)).toBeVisible()
-
-    await page.getByPlaceholder('Healthcare Credentials Ecosystem').fill('Ring A Ecosystem')
-    await page.getByPlaceholder('Healthcare Trust Registry').fill('Ring A Trust Registry')
-    await page.getByPlaceholder('did:method:identifier').first().fill(did)
-    await labelInput(page, 'AKA').fill(aka)
-
-    await page.getByPlaceholder(/search languages/i).fill('English')
-    await page
-      .getByRole('option', { name: /english/i })
-      .first()
-      .click()
-
-    await labelInput(page, 'Document URL').fill(docUrl)
-    await page.screenshot({ path: `${SHOT}/ring-a-01-filled.png`, fullPage: true })
+  await fillEcosystemForm(page, {
+    did: `did:web:ring-a-${stamp}.testnet.verana.network`,
+    docUrl: `https://ring-a-${stamp}.example/egf.md`,
+    orgName: 'Ring A Ecosystem',
   })
+  await page.locator('.btn-action-confirm').click()
 
-  await test.step('sign + faked broadcast, assert redirect to the new TR', async () => {
-    await page.locator('.btn-action-confirm').click()
-
-    await page.waitForURL(new RegExp(`/tr/${FAKE_TR_ID}(\\?|$)`), { timeout: 60_000 })
-    await page.screenshot({ path: `${SHOT}/ring-a-02-faked-success.png`, fullPage: true })
-
-    expect(page.url()).toMatch(new RegExp(`/tr/${FAKE_TR_ID}(\\?|$)`))
-  })
+  await page.waitForURL(new RegExp(`/tr/${FAKE_TR_ID}(\\?|$)`), { timeout: 60_000 })
+  expect(page.url()).toMatch(new RegExp(`/tr/${FAKE_TR_ID}(\\?|$)`))
 
   const methods = mock.seenMethods()
-  expect(methods).toContain('status')
-  expect(methods).toContain('abci_query')
-  expect(methods).toContain('broadcast_tx_sync')
-  expect(methods).toContain('tx_search')
-
+  for (const m of RPC_METHODS) expect(methods).toContain(m)
   await mock.teardown()
 })

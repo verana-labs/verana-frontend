@@ -1,107 +1,46 @@
-import { expect, test } from '@playwright/test'
-import { installKeplrMock } from './mocks/keplrMock'
+import { randomUUID } from 'node:crypto'
+import { expect, type Page, test } from '@playwright/test'
+import { connectWallet } from './support/connect'
+import { createEcosystem } from './support/flows'
 import { requireFundedMnemonic } from './support/mnemonic'
 
-const SHOT = 'e2e/artifacts'
-const DOC_URL =
-  'https://raw.githubusercontent.com/verana-labs/mosip-playground/0835414ea1ec121153666c74538d4ff608d3c941/docs/egf/mosip-pilot-egf.md'
-
-const labelInput = (page: import('@playwright/test').Page, label: string) =>
-  page.locator(`label.data-edit-label:has-text("${label}")`).locator('xpath=following-sibling::input[1]')
-
-const confirmIfPresent = async (page: import('@playwright/test').Page) => {
+const confirmIfPresent = async (page: Page) => {
   const confirm = page.locator('.btn-action-confirm')
-  if (await confirm.isVisible().catch(() => false)) {
-    await confirm.click().catch(() => {})
-  }
+  if (await confirm.isVisible().catch(() => false)) await confirm.click().catch(() => {})
 }
 
-const archivedPill = (page: import('@playwright/test').Page) =>
+const archivedPill = (page: Page) =>
   page
     .locator('section')
     .filter({ has: page.locator('h1') })
     .getByText('ARCHIVED', { exact: true })
 
-const mutableSection = (page: import('@playwright/test').Page) =>
+const mutableSection = (page: Page) =>
   page.locator('section').filter({ has: page.getByRole('heading', { name: /mutable configuration/i }) })
 
-test('archive-tr: sign + broadcast MsgArchiveTrustRegistry then unarchive on testnet', async ({ page }) => {
+test('archive then unarchive a trust registry (real testnet broadcast)', async ({ page }) => {
   test.setTimeout(300_000)
-  const stamp = Date.now().toString(36)
-  const did = `did:web:e2e-archive-${stamp}.testnet.verana.network`
-  const aka = `https://e2e-archive-${stamp}.testnet.verana.network`
+  await connectWallet(page, { mnemonic: requireFundedMnemonic() })
 
-  const mnemonic = requireFundedMnemonic()
-  await installKeplrMock(page, { mnemonic })
+  const did = `did:web:e2e-archive-${randomUUID().replace(/-/g, '').slice(0, 8)}.testnet.verana.network`
+  const trId = await createEcosystem(page, { did, orgName: 'E2E Archive Ecosystem' })
+  console.log(`created TR ${trId}`)
 
-  await test.step('connect', async () => {
-    await page.goto('/dashboard')
-    await page
-      .getByRole('button', { name: /connect/i })
-      .first()
-      .click()
-    await page.getByText(/keplr/i).first().click()
-    await expect(page.getByText(/connected/i).first()).toBeVisible({ timeout: 20_000 })
-  })
-
-  let trId: string | undefined
-
-  await test.step('create a trust registry we own', async () => {
-    await page.goto('/tr')
-    await page
-      .getByRole('button', { name: /create ecosystem/i })
-      .first()
-      .click()
-    await expect(page.getByText(/basic information/i)).toBeVisible()
-
-    await page.getByPlaceholder('Healthcare Credentials Ecosystem').fill('E2E Archive Ecosystem')
-    await page.getByPlaceholder('Healthcare Trust Registry').fill('E2E Archive Trust Registry')
-    await page.getByPlaceholder('did:method:identifier').first().fill(did)
-    await labelInput(page, 'AKA').fill(aka)
-
-    await page.getByPlaceholder(/search languages/i).fill('English')
-    await page
-      .getByRole('option', { name: /english/i })
-      .first()
-      .click()
-
-    await labelInput(page, 'Document URL').fill(DOC_URL)
-
-    await page.locator('.btn-action-confirm').click()
-    await page.waitForURL(/\/tr\/\d+(\?|$)/, { timeout: 90_000 })
-    await expect(page.getByText(did).first()).toBeVisible()
-    trId = page.url().match(/\/tr\/(\d+)/)?.[1]
-    console.log(`CREATED TR ${trId}, ${did}`)
-    expect(trId).toBeTruthy()
-  })
-
-  await test.step('archive the trust registry', async () => {
-    const archiveBtn = mutableSection(page).getByRole('button', { name: /^archive$/i })
-    await expect(archiveBtn).toBeVisible({ timeout: 20_000 })
+  await test.step('archive', async () => {
     await expect(archivedPill(page)).toHaveCount(0)
-    await archiveBtn.click()
-
+    await mutableSection(page)
+      .getByRole('button', { name: /^archive$/i })
+      .click()
     await confirmIfPresent(page)
-
     await expect(archivedPill(page)).toBeVisible({ timeout: 120_000 })
-    await page.screenshot({ path: `${SHOT}/archive-tr-archived.png`, fullPage: true })
-    console.log(`ARCHIVED TR ${trId}`)
   })
 
-  await test.step('assert archived state', async () => {
-    await expect(archivedPill(page)).toBeVisible()
-    await expect(mutableSection(page).getByRole('button', { name: /^unarchive$/i })).toBeVisible({ timeout: 20_000 })
-  })
-
-  await test.step('unarchive the trust registry', async () => {
-    const unarchiveBtn = mutableSection(page).getByRole('button', { name: /^unarchive$/i })
-    await unarchiveBtn.click()
-
+  await test.step('unarchive', async () => {
+    await mutableSection(page)
+      .getByRole('button', { name: /^unarchive$/i })
+      .click()
     await confirmIfPresent(page)
-
     await expect(archivedPill(page)).toHaveCount(0, { timeout: 120_000 })
     await expect(mutableSection(page).getByRole('button', { name: /^archive$/i })).toBeVisible({ timeout: 20_000 })
-    await page.screenshot({ path: `${SHOT}/archive-tr-unarchived.png`, fullPage: true })
-    console.log(`UNARCHIVED TR ${trId}`)
   })
 })
