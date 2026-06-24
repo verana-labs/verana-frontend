@@ -44,3 +44,8 @@ next-env.d.ts
 # local tooling
 .claude/
 .playwright-mcp/
+
+.test-mnemonic
+playwright-report/
+test-results/
+e2e/artifacts/

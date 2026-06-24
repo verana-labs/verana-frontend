@@ -13,3 +13,70 @@ jobs:
     uses: 2060-io/organization/.github/workflows/2060-linter-call.yml@main
     with:
       enable-charts-lint: true
+
+  unit:
+    name: Unit (vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup node v22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run unit tests
+        run: pnpm test
+
+  e2e:
+    name: E2E Ring A (fund-free)
+    runs-on: ubuntu-latest
+    # Ring A only: drives the real UI and real client-side amino signing, but the
+    # Tendermint RPC is fully intercepted (e2e/support/mock-chain.ts), so nothing is
+    # broadcast and no funds move. The injected wallet falls back to a generated
+    # throwaway mnemonic when .test-mnemonic / E2E_MNEMONIC are absent.
+    #
+    # The real-broadcast Ring B specs (create-ecosystem, create-schema, did-add,
+    # archive-tr, reclaim-yield) sign and broadcast to testnet and need a funded
+    # wallet plus chain env. They live in a SEPARATE nightly/manual workflow and
+    # are intentionally NOT part of this PR gate.
+    env:
+      E2E_HEADLESS: 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup node v22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Provide public testnet env
+        run: cp .env.ci .env
+
+      - name: Run Ring A specs (headless)
+        run: pnpm exec playwright test 'e2e/ring-a-*.spec.ts'
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-ring-a
+          path: playwright-report/
+          retention-days: 7
