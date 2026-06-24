@@ -22,7 +22,6 @@ test('create schema: sign + broadcast MsgCreateCredentialSchema to testnet', asy
   const aka = `https://e2e-cs-${stamp}.testnet.verana.network`
   const schemaTitle = `E2E Schema ${stamp}`
   const schemaDescription = `Schema authored by the create-schema e2e run ${stamp}`
-  // $id is set by the chain; validateJSONSchema only requires $schema/type/title/description/properties.
   const jsonSchema = JSON.stringify(
     {
       $schema: 'https://json-schema.org/draft/2020-12/schema',
@@ -92,7 +91,7 @@ test('create schema: sign + broadcast MsgCreateCredentialSchema to testnet', asy
   })
 
   await test.step('fill + broadcast the credential schema (MsgCreateCredentialSchema)', async () => {
-    // Option values are 1/2/3 (OPEN / GRANTOR_VALIDATION / TRUST_REGISTRY_VALIDATION); OPEN needs no extra validator account.
+    // permission mode option values: 1=OPEN, 2=GRANTOR_VALIDATION, 3=TRUST_REGISTRY_VALIDATION
     await labelSelect(page, 'Issuer Permission Mode').selectOption('1')
     await labelSelect(page, 'Verifier Permission Mode').selectOption('1')
 
@@ -107,8 +106,6 @@ test('create schema: sign + broadcast MsgCreateCredentialSchema to testnet', asy
 
     await page.locator('.btn-action-confirm').click()
 
-    // No detail-page redirect for a schema: the success toast (fired only on on-chain code === 0) is the
-    // authoritative signal, since the CS list refreshes on indexer catch-up which can lag.
     const successToast = page.locator('.notify-success')
     const errorToast = page.locator('.notify-error')
     await expect(successToast.or(errorToast)).toBeVisible({ timeout: 120_000 })
@@ -118,7 +115,6 @@ test('create schema: sign + broadcast MsgCreateCredentialSchema to testnet', asy
   })
 
   await test.step('verify the new schema surfaces on the TR detail page', async () => {
-    // Best-effort: the indexer-sourced card title can lag a few blocks, so tolerate it not appearing.
     await page.reload()
     const card = page.getByText(schemaTitle).first()
     const appeared = await card.isVisible({ timeout: 60_000 }).catch(() => false)

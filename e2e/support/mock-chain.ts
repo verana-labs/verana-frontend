@@ -15,18 +15,13 @@ type JsonRpcRequest = {
 }
 
 export type MockChainOptions = {
-  /** RPC endpoint the browser POSTs Tendermint JSON-RPC to. Must match NEXT_PUBLIC_VERANA_RPC_ENDPOINT. */
   rpcEndpoint?: string
   chainId?: string
-  /** Bech32 address whose account we fake. Must match the connected wallet. */
   address: string
   accountNumber?: number
   sequence?: number
-  /** Gas the faked simulate reports back. The app multiplies by gasAdjustment to size the fee. */
   gasUsed?: number
-  /** trust_registry_id surfaced in the create_trust_registry event → drives the /tr/<id> redirect. */
   trustRegistryId?: string
-  /** Also stub the app's own /api/sri route so Ring A needs no external doc fetch. */
   stubSri?: boolean
 }
 
@@ -42,12 +37,7 @@ const jsonRpcResult = (id: number | string, result: unknown) => ({
   result,
 })
 
-/**
- * Minimal but decoder-valid CometBFT 0.38 `status` payload. CosmJS calls `status` twice on
- * connect: once in connectComet() for version sniffing (version MUST start with "0.38."), once
- * cached for getChainId() (reads node_info.network). decodeStatus also walks sync_info and
- * validator_info, so every asserted field has to be present.
- */
+// CometBFT 0.38 status; version must start with "0.38." or CosmJS connectComet rejects it
 const statusResult = (chainId: string) => ({
   node_info: {
     protocol_version: { p2p: '8', block: '11', app: '0' },
@@ -73,12 +63,7 @@ const statusResult = (chainId: string) => ({
   },
 })
 
-/**
- * abci_query response for /cosmos.auth.v1beta1.Query/Account. The base64 `value` is a proto
- * QueryAccountResponse wrapping an Any(BaseAccount). CosmJS's queryAbci throws unless `height`
- * is a non-zero string, hence height: '1000'. pubKey is left empty — decodeOptionalPubkey
- * tolerates that and the amino signer supplies the real pubkey at sign time.
- */
+// height must be a non-zero string or CosmJS queryAbci throws
 const accountQueryResult = (address: string, accountNumber: number, sequence: number) => {
   const baseAccount = BaseAccount.fromPartial({
     address,
@@ -104,7 +89,6 @@ const accountQueryResult = (address: string, accountNumber: number, sequence: nu
   }
 }
 
-/** abci_query response for /cosmos.tx.v1beta1.Service/Simulate — only gas_info.gas_used is read. */
 const simulateQueryResult = (gasUsed: number) => {
   const value = SimulateResponse.encode(
     SimulateResponse.fromPartial({
@@ -125,7 +109,6 @@ const simulateQueryResult = (gasUsed: number) => {
   }
 }
 
-/** broadcast_tx_sync success: code 0 means CheckTx passed; broadcastTxSync then returns the hash. */
 const broadcastSyncResult = () => ({
   code: 0,
   data: '',
@@ -134,10 +117,7 @@ const broadcastSyncResult = () => ({
   hash: FAKE_TX_HASH_HEX,
 })
 
-/**
- * tx_search success: one tx with code 0. The create_trust_registry event (plaintext key/value in
- * comet 0.38) is what extractCreatedTRId() reads to build the /tr/<id> redirect.
- */
+// the create_trust_registry event is what the app reads to build the /tr/<id> redirect
 const txSearchResult = (trustRegistryId: string) => ({
   txs: [
     {
@@ -177,20 +157,7 @@ function parseRequest(route: Route): JsonRpcRequest | null {
   }
 }
 
-/**
- * Intercepts the Tendermint JSON-RPC endpoint and returns canned, decoder-valid responses for the
- * full amino broadcast sequence, so client-side signing runs end to end but NOTHING is sent to a
- * real chain and no funds move. Endpoints faked (all POST to the single RPC URL, method in body):
- *
- *   status            → connectComet version sniff + getChainId
- *   abci_query        → routed by params.path:
- *                         /cosmos.auth.v1beta1.Query/Account  (getSequence)
- *                         /cosmos.tx.v1beta1.Service/Simulate (gas estimate)
- *   broadcast_tx_sync → CheckTx pass (code 0) + tx hash
- *   tx_search         → polled DeliverTx result with the create_trust_registry event
- *
- * Returns a teardown that removes the routes.
- */
+// Intercepts the Tendermint RPC so client-side signing runs end-to-end but nothing broadcasts.
 export async function installMockChain(page: Page, opts: MockChainOptions) {
   const {
     rpcEndpoint = process.env.NEXT_PUBLIC_VERANA_RPC_ENDPOINT ?? 'https://rpc.testnet.verana.network',

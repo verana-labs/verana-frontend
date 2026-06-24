@@ -15,8 +15,6 @@ const walletAddress = (page: Page) =>
     return k.bech32Address as string
   })
 
-// Ring A is fund-free: the tx is signed for real but installMockChain intercepts the RPC, so nothing
-// broadcasts. Success is the app's redirect to /tr/<id> driven by the faked create_trust_registry event.
 test('Ring A — create ecosystem reaches faked success without a real chain write', async ({ page }) => {
   test.setTimeout(90_000)
 
@@ -62,7 +60,6 @@ test('Ring A — create ecosystem reaches faked success without a real chain wri
     expect(page.url()).toMatch(new RegExp(`/tr/${FAKE_TR_ID}(\\?|$)`))
   })
 
-  // Prove signing actually ran through the amino flow against the interceptor, not a stub shortcut.
   const methods = mock.seenMethods()
   expect(methods).toContain('status')
   expect(methods).toContain('abci_query')

@@ -9,9 +9,6 @@ const DOC_URL =
 const labelInput = (page: import('@playwright/test').Page, label: string) =>
   page.locator(`label.data-edit-label:has-text("${label}")`).locator('xpath=following-sibling::input[1]')
 
-// The noForm archive/unarchive modal auto-submits once the fee simulation and balance checks
-// resolve, so the confirm button can disappear before we click it. Click only if it is still
-// present; either path broadcasts the same MsgArchiveTrustRegistry.
 const confirmIfPresent = async (page: import('@playwright/test').Page) => {
   const confirm = page.locator('.btn-action-confirm')
   if (await confirm.isVisible().catch(() => false)) {
@@ -19,16 +16,12 @@ const confirmIfPresent = async (page: import('@playwright/test').Page) => {
   }
 }
 
-// The ARCHIVED pill lives in EcosystemHeader (the section that carries the h1 displayName).
-// Scoping there avoids matching the "ARCHIVED" badge a credential-schema card would render.
 const archivedPill = (page: import('@playwright/test').Page) =>
   page
     .locator('section')
     .filter({ has: page.locator('h1') })
     .getByText('ARCHIVED', { exact: true })
 
-// The Archive/Unarchive controls live in the "Mutable Configuration" section header.
-// Scoping there avoids colliding with the "Show Archived" filter label elsewhere on the page.
 const mutableSection = (page: import('@playwright/test').Page) =>
   page.locator('section').filter({ has: page.getByRole('heading', { name: /mutable configuration/i }) })
 

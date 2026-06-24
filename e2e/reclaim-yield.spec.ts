@@ -34,13 +34,10 @@ test('reclaim yield: trigger MsgReclaimTrustDepositYield from /account', async (
 
   await test.step('broadcast if yield is available, otherwise accept the benign no-yield state', async () => {
     const noYieldCard = page.getByText(/no yield available yet/i).first()
-    // EditableDataView only renders the confirm button when the yield card is "available";
-    // with no yield the button never mounts and nothing is broadcast.
     const confirmBtn = page.locator('.btn-action-confirm')
 
     if (await confirmBtn.isVisible().catch(() => false)) {
       await confirmBtn.click()
-      // Success is a toast here, not a redirect: this flow has no detail page to land on.
       const successToast = page.locator('.notify-success')
       const errorToast = page.locator('.notify-error')
       await expect(successToast.or(errorToast)).toBeVisible({ timeout: 90_000 })

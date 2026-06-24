@@ -10,7 +10,6 @@ const fromFile = () => {
   }
 }
 
-// Ring A never broadcasts, so an unfunded generated wallet is fine when none is provided (e.g. CI).
 export async function resolveMnemonic(prefix = 'verana'): Promise<string> {
   const provided = fromEnv() ?? fromFile()
   if (provided) return provided
