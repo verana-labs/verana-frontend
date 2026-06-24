@@ -1,12 +1,14 @@
 import { expect, test } from '@playwright/test'
-import { installKeplrMock } from './support/keplr-mock'
+import { installKeplrMock } from './mocks/keplrMock'
+import { requireFundedMnemonic } from './support/mnemonic'
 
 const SHOT = 'e2e/artifacts'
 
 test('reclaim yield: trigger MsgReclaimTrustDepositYield from /account', async ({ page }) => {
   test.setTimeout(180_000)
 
-  await installKeplrMock(page, { prefix: 'verana' })
+  const mnemonic = requireFundedMnemonic()
+  await installKeplrMock(page, { mnemonic })
 
   await test.step('connect', async () => {
     await page.goto('/dashboard')

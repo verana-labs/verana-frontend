@@ -10,17 +10,13 @@ const labelInput = (page: Page, label: string) =>
 
 const walletAddress = (page: Page) =>
   page.evaluate(async () => {
-    // biome-ignore lint/suspicious/noExplicitAny: page global exposed by keplr-mock
-    const k = await (window as any).__keplrGetKey()
+    // biome-ignore lint/suspicious/noExplicitAny: page global exposed by the keplr mock
+    const k = await (window as any).__mock_getKey()
     return k.bech32Address as string
   })
 
-/**
- * Ring A: fast, fund-free, every-PR. Drives the real UI, real wallet connect, and real client-side
- * amino signing, but the Tendermint RPC is fully intercepted (see installMockChain), so the tx is
- * signed but never broadcast to a chain and no funds move. Success is the app's own consequence of
- * a code=0 DeliverTxResponse: redirect to /tr/<trust_registry_id> from the faked event.
- */
+// Ring A is fund-free: the tx is signed for real but installMockChain intercepts the RPC, so nothing
+// broadcasts. Success is the app's redirect to /tr/<id> driven by the faked create_trust_registry event.
 test('Ring A — create ecosystem reaches faked success without a real chain write', async ({ page }) => {
   test.setTimeout(90_000)
 

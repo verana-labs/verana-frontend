@@ -1,23 +1,17 @@
 import { expect, type Page } from '@playwright/test'
-import { installKeplrMock } from './keplr-mock'
+import { installKeplrMock } from '../mocks/keplrMock'
+import { resolveMnemonic } from './mnemonic'
 
 type ConnectOptions = {
-  prefix?: string
-  gotoTimeout?: number
+  mnemonic?: string
   connectedTimeout?: number
 }
 
-/**
- * Reusable wallet-connect helper extracted from connect.spec.ts / create-ecosystem.spec.ts.
- *
- * Installs the postMessage Keplr mock (signing delegated to a CosmJS wallet in Node), loads
- * /dashboard, opens the connect modal, picks Keplr, and asserts the Connected state. No chain
- * write happens here — connect only triggers wallet `enable` + `getKey`, both faked by the mock.
- */
 export async function connectWallet(page: Page, opts: ConnectOptions = {}) {
-  const { prefix = 'verana', connectedTimeout = 20_000 } = opts
+  const { connectedTimeout = 20_000 } = opts
+  const mnemonic = opts.mnemonic ?? (await resolveMnemonic())
 
-  await installKeplrMock(page, { prefix })
+  await installKeplrMock(page, { mnemonic })
 
   await page.goto('/dashboard')
   await page.waitForLoadState('domcontentloaded')

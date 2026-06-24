@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test'
-import { installKeplrMock } from './support/keplr-mock'
+import { installKeplrMock } from './mocks/keplrMock'
+import { requireFundedMnemonic } from './support/mnemonic'
 
 const SHOT = 'e2e/artifacts'
-// A real, reachable governance doc so /api/sri can fetch it and compute the digest.
 const DOC_URL =
   'https://raw.githubusercontent.com/verana-labs/mosip-playground/0835414ea1ec121153666c74538d4ff608d3c941/docs/egf/mosip-pilot-egf.md'
 
@@ -38,7 +38,8 @@ test('archive-tr: sign + broadcast MsgArchiveTrustRegistry then unarchive on tes
   const did = `did:web:e2e-archive-${stamp}.testnet.verana.network`
   const aka = `https://e2e-archive-${stamp}.testnet.verana.network`
 
-  await installKeplrMock(page, { prefix: 'verana' })
+  const mnemonic = requireFundedMnemonic()
+  await installKeplrMock(page, { mnemonic })
 
   await test.step('connect', async () => {
     await page.goto('/dashboard')
@@ -74,7 +75,6 @@ test('archive-tr: sign + broadcast MsgArchiveTrustRegistry then unarchive on tes
     await labelInput(page, 'Document URL').fill(DOC_URL)
 
     await page.locator('.btn-action-confirm').click()
-    // Success = the app redirects to the new trust registry's detail page.
     await page.waitForURL(/\/tr\/\d+(\?|$)/, { timeout: 90_000 })
     await expect(page.getByText(did).first()).toBeVisible()
     trId = page.url().match(/\/tr\/(\d+)/)?.[1]
@@ -83,16 +83,13 @@ test('archive-tr: sign + broadcast MsgArchiveTrustRegistry then unarchive on tes
   })
 
   await test.step('archive the trust registry', async () => {
-    // Owner-only Archive button proves the wallet is the controller and the page resolved.
     const archiveBtn = mutableSection(page).getByRole('button', { name: /^archive$/i })
     await expect(archiveBtn).toBeVisible({ timeout: 20_000 })
     await expect(archivedPill(page)).toHaveCount(0)
     await archiveBtn.click()
 
-    // ModalAction renders TrActionPage (noForm): confirm broadcasts MsgArchiveTrustRegistry.
     await confirmIfPresent(page)
 
-    // Success = indexer-gated refetch flips dataTR.archived true and EcosystemHeader shows the ARCHIVED pill.
     await expect(archivedPill(page)).toBeVisible({ timeout: 120_000 })
     await page.screenshot({ path: `${SHOT}/archive-tr-archived.png`, fullPage: true })
     console.log(`ARCHIVED TR ${trId}`)
@@ -100,7 +97,6 @@ test('archive-tr: sign + broadcast MsgArchiveTrustRegistry then unarchive on tes
 
   await test.step('assert archived state', async () => {
     await expect(archivedPill(page)).toBeVisible()
-    // The action button flips to Unarchive once archived.
     await expect(mutableSection(page).getByRole('button', { name: /^unarchive$/i })).toBeVisible({ timeout: 20_000 })
   })
 
@@ -108,10 +104,8 @@ test('archive-tr: sign + broadcast MsgArchiveTrustRegistry then unarchive on tes
     const unarchiveBtn = mutableSection(page).getByRole('button', { name: /^unarchive$/i })
     await unarchiveBtn.click()
 
-    // Confirm broadcasts MsgArchiveTrustRegistry with archive:false.
     await confirmIfPresent(page)
 
-    // Success = the ARCHIVED pill disappears and the Archive button comes back.
     await expect(archivedPill(page)).toHaveCount(0, { timeout: 120_000 })
     await expect(mutableSection(page).getByRole('button', { name: /^archive$/i })).toBeVisible({ timeout: 20_000 })
     await page.screenshot({ path: `${SHOT}/archive-tr-unarchived.png`, fullPage: true })

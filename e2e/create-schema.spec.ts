@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test'
-import { installKeplrMock } from './support/keplr-mock'
+import { installKeplrMock } from './mocks/keplrMock'
+import { requireFundedMnemonic } from './support/mnemonic'
 
 const SHOT = 'e2e/artifacts'
-// A real, reachable governance doc so /api/sri can fetch it and compute the digest while creating the TR.
 const DOC_URL =
   'https://raw.githubusercontent.com/verana-labs/mosip-playground/0835414ea1ec121153666c74538d4ff608d3c941/docs/egf/mosip-pilot-egf.md'
 
@@ -38,7 +38,8 @@ test('create schema: sign + broadcast MsgCreateCredentialSchema to testnet', asy
     2
   )
 
-  await installKeplrMock(page, { prefix: 'verana' })
+  const mnemonic = requireFundedMnemonic()
+  await installKeplrMock(page, { mnemonic })
 
   await test.step('connect', async () => {
     await page.goto('/dashboard')
@@ -74,7 +75,6 @@ test('create schema: sign + broadcast MsgCreateCredentialSchema to testnet', asy
     await labelInput(page, 'Document URL').fill(DOC_URL)
 
     await page.locator('.btn-action-confirm').click()
-    // The app redirects to the new trust registry detail page once the TR is created.
     await page.waitForURL(/\/tr\/\d+(\?|$)/, { timeout: 120_000 })
     trId = page.url().match(/\/tr\/(\d+)/)?.[1] ?? ''
     expect(trId).toBeTruthy()
@@ -84,23 +84,18 @@ test('create schema: sign + broadcast MsgCreateCredentialSchema to testnet', asy
   })
 
   await test.step('open the add-schema modal from the TR detail page', async () => {
-    // "New Schema" is only rendered when the connected wallet owns the TR (isOwner), which it does here.
     const newSchema = page.getByRole('button', { name: /new schema/i }).first()
     await expect(newSchema).toBeVisible({ timeout: 20_000 })
     await newSchema.click()
 
-    // The modal mounts AddCsPage -> EditableDataView in create mode (title "Create New Credential Schema").
     await expect(page.getByRole('heading', { name: /create new credential schema/i })).toBeVisible({ timeout: 20_000 })
   })
 
   await test.step('fill + broadcast the credential schema (MsgCreateCredentialSchema)', async () => {
-    // Permission-mode selects: option values are 1/2/3 (OPEN / GRANTOR_VALIDATION / TRUST_REGISTRY_VALIDATION).
-    // OPEN keeps the flow self-contained (no extra validator account needed).
+    // Option values are 1/2/3 (OPEN / GRANTOR_VALIDATION / TRUST_REGISTRY_VALIDATION); OPEN needs no extra validator account.
     await labelSelect(page, 'Issuer Permission Mode').selectOption('1')
     await labelSelect(page, 'Verifier Permission Mode').selectOption('1')
 
-    // Validity-period text inputs default to "0" (newCS defaults); fill explicitly so the test is robust
-    // to default changes. 0 = never expires, which keeps the schema valid.
     await labelInput(page, 'Issuer Grantor Validity Period').fill('0')
     await labelInput(page, 'Verifier Grantor Validity Period').fill('0')
     await labelInput(page, 'Issuer Validity Period').fill('0')
@@ -112,9 +107,8 @@ test('create schema: sign + broadcast MsgCreateCredentialSchema to testnet', asy
 
     await page.locator('.btn-action-confirm').click()
 
-    // No detail-page redirect exists for a schema: success closes the modal and surfaces a success toast
-    // (handleSuccess fires only on an on-chain code === 0). The CS list itself refreshes on indexer
-    // catch-up, which can lag, so the toast is the authoritative success signal here.
+    // No detail-page redirect for a schema: the success toast (fired only on on-chain code === 0) is the
+    // authoritative signal, since the CS list refreshes on indexer catch-up which can lag.
     const successToast = page.locator('.notify-success')
     const errorToast = page.locator('.notify-error')
     await expect(successToast.or(errorToast)).toBeVisible({ timeout: 120_000 })
@@ -124,8 +118,7 @@ test('create schema: sign + broadcast MsgCreateCredentialSchema to testnet', asy
   })
 
   await test.step('verify the new schema surfaces on the TR detail page', async () => {
-    // Best-effort: the card title comes from the indexer (src.title), which may lag a few blocks.
-    // Reload to nudge the CS list fetch; tolerate indexer lag without failing the broadcast assertion.
+    // Best-effort: the indexer-sourced card title can lag a few blocks, so tolerate it not appearing.
     await page.reload()
     const card = page.getByText(schemaTitle).first()
     const appeared = await card.isVisible({ timeout: 60_000 }).catch(() => false)
