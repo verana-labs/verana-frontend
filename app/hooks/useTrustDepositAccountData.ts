@@ -1,8 +1,8 @@
 'use client'
 
 import { useChain } from '@cosmos-kit/react'
-import { env } from 'next-runtime-env'
 import { useEffect, useState } from 'react'
+import { VERANA_REST_ENDPOINT_TRUST_DEPOSIT } from '@/config/env'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { ApiErrorResponse } from '@/types/apiErrorResponse'
@@ -27,8 +27,7 @@ export function useTrustDepositAccountData() {
   const veranaChain = useVeranaChain()
   const { address, isWalletConnected, getStargateClient } = useChain(veranaChain.chain_name)
 
-  const getAccountURL =
-    env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT
+  const getAccountURL = VERANA_REST_ENDPOINT_TRUST_DEPOSIT
 
   const [accountData, setData] = useState<TrustDepositAccountData>({
     address: null,

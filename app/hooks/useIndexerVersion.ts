@@ -1,7 +1,7 @@
 'use client'
 
-import { env } from 'next-runtime-env'
 import { useEffect } from 'react'
+import { VERANA_REST_ENDPOINT_INDEXER } from '@/config/env'
 import { logger } from '@/lib/logger'
 import { useComponentsVersion } from '@/providers/components-version-provider'
 
@@ -14,8 +14,7 @@ export function useIndexerVersion() {
 
     const fetchVersion = async () => {
       try {
-        const indexerEndpoint =
-          env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_INDEXER') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_INDEXER
+        const indexerEndpoint = VERANA_REST_ENDPOINT_INDEXER
         if (!indexerEndpoint) return
 
         const response = await fetch(`${indexerEndpoint}/version`, { signal: controller.signal })

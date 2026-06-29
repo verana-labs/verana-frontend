@@ -1,12 +1,12 @@
 'use client'
 
-import { env } from 'next-runtime-env'
 import { useCallback, useEffect, useState } from 'react'
+import { VERANA_REST_ENDPOINT_PERM } from '@/config/env'
 import { ApiErrorResponse } from '@/types/apiErrorResponse'
 import { PermissionHistory } from '@/ui/dataview/datasections/perm'
 
 export function usePermissionHistory(id?: string) {
-  const getURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM
+  const getURL = VERANA_REST_ENDPOINT_PERM
 
   const [permissionHistoryList, setPermissionHistoryList] = useState<PermissionHistory[]>([])
   const [loading, setLoading] = useState(false)

@@ -1,4 +1,4 @@
-import { env } from 'next-runtime-env'
+import { VERANA_REST_ENDPOINT_RESOLVER } from '@/config/env'
 
 export type DidTrustState = 'TRUSTED' | 'UNTRUSTED' | 'UNRESOLVED'
 
@@ -44,8 +44,7 @@ const cache = new Map<string, { value: DidEnrichment; expires: number }>()
 const inflight = new Map<string, Promise<DidEnrichment>>()
 
 function resolverBaseUrl(): string | undefined {
-  const fromRuntime = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_RESOLVER')
-  return fromRuntime || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_RESOLVER
+  return VERANA_REST_ENDPOINT_RESOLVER
 }
 
 function unresolved(did: string): DidEnrichment {

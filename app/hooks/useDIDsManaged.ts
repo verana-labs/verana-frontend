@@ -1,8 +1,8 @@
 'use client'
 
 import { useChain } from '@cosmos-kit/react'
-import { env } from 'next-runtime-env'
 import { useCallback, useEffect, useState } from 'react'
+import { VERANA_REST_ENDPOINT_DID } from '@/config/env'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { ApiErrorResponse } from '@/types/apiErrorResponse'
 
@@ -10,7 +10,7 @@ export function useDIDsManaged() {
   const veranaChain = useVeranaChain()
   const { address, isWalletConnected } = useChain(veranaChain.chain_name)
 
-  const getURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID
+  const getURL = VERANA_REST_ENDPOINT_DID
 
   const [didCount, setDidCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)

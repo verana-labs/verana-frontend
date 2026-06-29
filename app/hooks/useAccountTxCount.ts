@@ -1,15 +1,15 @@
 'use client'
 
 import { useChain } from '@cosmos-kit/react'
-import { env } from 'next-runtime-env'
 import { useCallback, useEffect, useState } from 'react'
+import { VERANA_REST_ENDPOINT } from '@/config/env'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 
 export function useAccountTxCount() {
   const veranaChain = useVeranaChain()
   const { address, isWalletConnected } = useChain(veranaChain.chain_name)
 
-  const getURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT
+  const getURL = VERANA_REST_ENDPOINT
 
   const [txCount, setTxCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)

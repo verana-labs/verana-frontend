@@ -1,8 +1,8 @@
 'use client'
 
 import { useChain } from '@cosmos-kit/react'
-import { env } from 'next-runtime-env'
 import { useEffect, useState } from 'react'
+import { VERANA_REST_ENDPOINT_TRUST_REGISTRY } from '@/config/env'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { ApiErrorResponse } from '@/types/apiErrorResponse'
@@ -13,9 +13,7 @@ export function useTrustRegistries(all: boolean = false, onlyActive: boolean = t
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
 
-  const getTrURL =
-    env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY') ||
-    process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY
+  const getTrURL = VERANA_REST_ENDPOINT_TRUST_REGISTRY
 
   const [trList, setTrList] = useState<TrList[]>([])
   const [loading, setLoading] = useState(true)

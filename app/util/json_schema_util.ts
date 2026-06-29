@@ -1,7 +1,7 @@
 import canonicalize from 'canonicalize'
-import { env } from 'next-runtime-env'
+import { VERANA_CHAIN_ID } from '@/config/env'
 
-const CHAIN_ID = env('NEXT_PUBLIC_VERANA_CHAIN_ID') || process.env.NEXT_PUBLIC_VERANA_CHAIN_ID
+const CHAIN_ID = VERANA_CHAIN_ID
 // export const SCHEMA_ID_PREFIX = CHAIN_ID
 //   ? `vpr:verana:${CHAIN_ID}/cs/v1/js/`
 //   : '';

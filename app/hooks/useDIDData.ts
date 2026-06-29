@@ -1,7 +1,7 @@
 'use client'
 
-import { env } from 'next-runtime-env'
 import { useEffect, useState } from 'react'
+import { VERANA_REST_ENDPOINT_DID } from '@/config/env'
 import { translate } from '@/i18n/dataview'
 import { ApiErrorResponse } from '@/types/apiErrorResponse'
 import { DidData } from '@/ui/dataview/datasections/did'
@@ -12,7 +12,7 @@ export function useDIDData(id: string) {
   const [loading, setLoading] = useState(true)
   const [errorDIDData, setError] = useState<string | null>(null)
 
-  const getURL = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID
+  const getURL = VERANA_REST_ENDPOINT_DID
 
   const fetchDID = async () => {
     if (!id) return

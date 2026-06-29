@@ -2,8 +2,8 @@
 
 import clsx from 'clsx'
 import { useRouter } from 'next/navigation'
-import { env } from 'next-runtime-env'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { LOW_BALANCE_WARN_UVNA } from '@/config/env'
 import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
 import { translate } from '@/i18n/dataview'
 import { canonicalizeLanguageTag } from '@/lib/language'
@@ -84,9 +84,6 @@ export default function EditableDataView<T extends object>({
     return true
   }, [])
 
-  // Container Global Variable LOW_BALANCE_WARN_UVNA
-  const LOW_BALANCE_WARN_UVNA =
-    env('NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA') || process.env.NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA
   const [showMsgLowBalanceWarn, setShowMsgLowBalanceWarn] = useState<boolean | null>(null)
   const lowBalanceTemplate =
     resolveTranslatable({ key: 'messages.lowbalance' }, translate) ??

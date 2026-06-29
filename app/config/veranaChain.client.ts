@@ -2,18 +2,25 @@
 'use client'
 
 import { Asset } from '@chain-registry/types'
+import {
+  VERANA_CHAIN_ID,
+  VERANA_CHAIN_NAME,
+  VERANA_EXPLORER_URL,
+  VERANA_REST_ENDPOINT,
+  VERANA_RPC_ENDPOINT,
+} from '@/config/env'
 
 export const veranaChainEnv = {
   chain_type: 'cosmos',
-  chain_name: process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,
-  pretty_name: process.env.NEXT_PUBLIC_VERANA_CHAIN_NAME!,
-  chain_id: process.env.NEXT_PUBLIC_VERANA_CHAIN_ID!,
+  chain_name: VERANA_CHAIN_NAME!,
+  pretty_name: VERANA_CHAIN_NAME!,
+  chain_id: VERANA_CHAIN_ID!,
   apis: {
-    rpc: [{ address: process.env.NEXT_PUBLIC_VERANA_RPC_ENDPOINT!, provider: 'verana' }],
-    rest: [{ address: process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT!, provider: 'verana' }],
+    rpc: [{ address: VERANA_RPC_ENDPOINT!, provider: 'verana' }],
+    rest: [{ address: VERANA_REST_ENDPOINT!, provider: 'verana' }],
   },
   status: 'live',
-  network_type: process.env.NEXT_PUBLIC_VERANA_CHAIN_ID?.includes('devnet') ? 'devnet' : 'testnet',
+  network_type: VERANA_CHAIN_ID?.includes('devnet') ? 'devnet' : 'testnet',
   bech32_prefix: 'verana',
   slip44: 118,
   key_algos: ['secp256k1'],
@@ -34,8 +41,8 @@ export const veranaChainEnv = {
   explorers: [
     {
       kind: 'Verana Explorer',
-      url: process.env.NEXT_PUBLIC_VERANA_EXPLORER_URL || '',
-      tx_page: `${process.env.NEXT_PUBLIC_VERANA_EXPLORER_URL || ''}/tx/\${txHash}`,
+      url: VERANA_EXPLORER_URL || '',
+      tx_page: `${VERANA_EXPLORER_URL || ''}/tx/\${txHash}`,
     },
   ],
 }

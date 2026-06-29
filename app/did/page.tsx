@@ -3,8 +3,8 @@
 import { useChain } from '@cosmos-kit/react'
 import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import { useRouter } from 'next/navigation'
-import { env } from 'next-runtime-env'
 import { useEffect, useState } from 'react'
+import { VERANA_REST_ENDPOINT_DID } from '@/config/env'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { useNotification } from '@/providers/notification-provider'
@@ -22,7 +22,7 @@ export default function DidPage() {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const { notify } = useNotification()
-  const listUrl = env('NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID') || process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID
+  const listUrl = VERANA_REST_ENDPOINT_DID
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
   const [addEntity, setAddEntity] = useState<boolean>(false)
