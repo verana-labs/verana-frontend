@@ -39,10 +39,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       
       - name: Setup Helm
-        uses: azure/setup-helm@5119fcb9089d432beecbf79bb2c7915207344b78 # v3.5
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
@@ -92,7 +92,7 @@ jobs:
     if: needs.release-please.outputs.releases_created == 'true'
     permissions:
       contents: read
-    uses: 2060-io/organization/.github/workflows/discord-release-notify-call.yml@main
+    uses: 2060-io/organization/.github/workflows/discord-release-notify-call.yml@d199fdc55832f78f90158117a93d227709ca2746 # main
     with:
       tag_name: ${{ needs.release-please.outputs.tag_name }}
     secrets:
@@ -102,7 +102,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
-    uses: 2060-io/organization/.github/workflows/discord-release-notify-call.yml@main
+    uses: 2060-io/organization/.github/workflows/discord-release-notify-call.yml@d199fdc55832f78f90158117a93d227709ca2746 # main
     with:
       tag_name: ${{ inputs.notify_tag }}
     secrets:
