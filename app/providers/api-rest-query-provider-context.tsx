@@ -1,24 +1,24 @@
 'use client'
 
 import React, { createContext, useContext, useMemo, useState } from 'react'
-import { useCSList } from '@/hooks/useCredentialSchemas'
+import { useCredentialSchemas } from '@/hooks/useCredentialSchemas'
 import { useDashboardData } from '@/hooks/useDashboardData'
-import { usePendingFlatPermissions } from '@/hooks/usePendingFlatPermissions'
+import { useEcosystems } from '@/hooks/useEcosystems'
+import { usePendingParticipants } from '@/hooks/usePendingParticipants'
 import { TrustDepositAccountData, useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
-import { useTrustRegistries } from '@/hooks/useTrustRegistries'
-import { CsList } from '@/ui/datatable/columnslist/cs'
-import { TrList } from '@/ui/datatable/columnslist/tr'
+import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
+import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { DashboardData } from '@/ui/dataview/datasections/dashboard'
-import { TrustRegistriesPermission } from '@/ui/dataview/datasections/perm'
+import type { PendingEcosystem } from '@/ui/dataview/datasections/participant'
 
 type PendingTasksCtxValue = {
-  permissionsList: TrustRegistriesPermission[]
+  pendingParticipants: PendingEcosystem[]
   refetch: () => Promise<void>
 }
 
 type DiscoverCtxValue = {
-  discoverList: TrList[]
-  csList: CsList[]
+  discoverList: EcosystemListItem[]
+  credentialSchemas: CredentialSchemaListItem[]
   refetch: () => Promise<void>
   discoverSearch: string
   setDiscoverSearch: React.Dispatch<React.SetStateAction<string>>
@@ -27,7 +27,7 @@ type DiscoverCtxValue = {
 }
 
 type EcosystemsCtxValue = {
-  ecosystemsList: TrList[]
+  ecosystemsList: EcosystemListItem[]
   ecosystemsLoading: boolean
   refetch: () => Promise<void>
   onlyActiveEcosystem: boolean
@@ -55,44 +55,44 @@ const DashboardContext = createContext<DashboardCtxValue | undefined>(undefined)
 export function RestQueryProvider({ children }: { children: React.ReactNode }) {
   const { dashboardData, refetch: refetchDashboard } = useDashboardData()
   const { accountData, refetch: refetchAccountData } = useTrustDepositAccountData()
-  const { permissionsList, refetch: refetchPermissions } = usePendingFlatPermissions()
+  const { pendingParticipants, refetch: refetchPendingParticipants } = usePendingParticipants()
 
   const [onlyActiveEcosystem, setOnlyActiveEcosystem] = useState(true)
   const [ecosystemFilters, setEcosystemFilters] = useState<Record<string, string | boolean>>({})
   const {
-    trList: ecosystemsList,
+    ecosystems: ecosystemsList,
     loading: ecosystemsLoading,
     refetch: refetchEcosystems,
-  } = useTrustRegistries(false, onlyActiveEcosystem)
+  } = useEcosystems(false, onlyActiveEcosystem)
 
   const [discoverSearch, setDiscoverSearch] = useState<string>('')
   const [discoverPage, setDiscoverPage] = useState<number>(1)
-  const { trList: discoverList, refetch: refetchDiscoverList } = useTrustRegistries(true)
-  const { csList, refetch: refetchCS } = useCSList(undefined, true)
+  const { ecosystems: discoverList, refetch: refetchDiscoverList } = useEcosystems(true)
+  const { credentialSchemas, refetch: refetchCredentialSchemas } = useCredentialSchemas(undefined, true)
 
   const refetchDiscover = React.useCallback(async () => {
-    await Promise.all([refetchDiscoverList(), refetchCS()])
-  }, [refetchDiscoverList, refetchCS])
+    await Promise.all([refetchDiscoverList(), refetchCredentialSchemas()])
+  }, [refetchDiscoverList, refetchCredentialSchemas])
 
   const pendingTasksValue = useMemo(
     () => ({
-      permissionsList,
-      refetch: refetchPermissions,
+      pendingParticipants,
+      refetch: refetchPendingParticipants,
     }),
-    [permissionsList, refetchPermissions]
+    [pendingParticipants, refetchPendingParticipants]
   )
 
   const discoverValue = useMemo(
     () => ({
       discoverList,
       refetch: refetchDiscover,
-      csList,
+      credentialSchemas,
       discoverSearch,
       setDiscoverSearch,
       discoverPage,
       setDiscoverPage,
     }),
-    [discoverList, csList, refetchDiscover, discoverSearch, discoverPage]
+    [discoverList, credentialSchemas, refetchDiscover, discoverSearch, discoverPage]
   )
 
   const ecosystemsValue = useMemo(
@@ -149,9 +149,9 @@ export function useDiscoverCtx() {
   return ctx
 }
 
-export function useEcosytemsCtx() {
+export function useEcosystemsCtx() {
   const ctx = useContext(EcosystemsContext)
-  if (!ctx) throw new Error('useEcosytemsCtx must be used within RestQueryProvider')
+  if (!ctx) throw new Error('useEcosystemsCtx must be used within RestQueryProvider')
   return ctx
 }
 

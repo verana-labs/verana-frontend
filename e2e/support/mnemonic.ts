@@ -21,7 +21,7 @@ export function requireFundedMnemonic(): string {
   const provided = fromEnv() ?? fromFile()
   if (!provided) {
     throw new Error(
-      'No funded test wallet found. Set E2E_MNEMONIC (or SECRET_WORDS), or put a funded testnet mnemonic in .test-mnemonic.'
+      'No funded test wallet found. Set E2E_MNEMONIC (or SECRET_WORDS), or put a funded devnet mnemonic in .test-mnemonic.'
     )
   }
   return provided

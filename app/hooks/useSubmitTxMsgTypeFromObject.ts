@@ -1,26 +1,23 @@
 'use client'
 
-import { useActionCS } from '@/msg/actions_hooks/actionCS'
-import { useActionTR } from '@/msg/actions_hooks/actionTR'
-import { MessageType } from '@/msg/constants/types'
+import {
+  type CredentialSchemaActionParams,
+  useActionCredentialSchema,
+} from '@/msg/actions_hooks/actionCredentialSchema'
+import { type EcosystemActionParams, useActionEcosystem } from '@/msg/actions_hooks/actionEcosystem'
+import type { MessageType } from '@/msg/constants/types'
 
-/**
- * Define, for each MessageType, which raw keys should be included
- * in the payload passed to the action hook.
- * This is the only place you touch when adding a new MsgType.
- */
-const requiredFieldsByMsgType: Record<MessageType, readonly string[]> = {
-  // CS
+const requiredFieldsByMsgType: Partial<Record<MessageType, readonly string[]>> = {
   MsgCreateCredentialSchema: [
-    'trId',
+    'ecosystemId',
     'jsonSchema',
     'issuerGrantorValidationValidityPeriod',
     'verifierGrantorValidationValidityPeriod',
     'issuerValidationValidityPeriod',
     'verifierValidationValidityPeriod',
     'holderValidationValidityPeriod',
-    'issuerPermManagementMode',
-    'verifierPermManagementMode',
+    'issuerOnboardingMode',
+    'verifierOnboardingMode',
   ],
   MsgUpdateCredentialSchema: [
     'id',
@@ -32,100 +29,60 @@ const requiredFieldsByMsgType: Record<MessageType, readonly string[]> = {
   ],
   MsgArchiveCredentialSchema: ['id'],
   MsgUnarchiveCredentialSchema: ['id'],
-
-  // TR
-  MsgCreateTrustRegistry: ['did', 'aka', 'language', 'docUrl'],
-  MsgUpdateTrustRegistry: ['id', 'did', 'aka', 'language', 'docUrl'],
-  MsgArchiveTrustRegistry: ['id'],
-  MsgUnarchiveTrustRegistry: ['id'],
-  MsgAddGovernanceFrameworkDocument: [],
-  MsgIncreaseActiveGovernanceFrameworkVersion: [],
-
-  // DID
-  MsgAddDID: [],
-  MsgRenewDID: [],
-  MsgTouchDID: [],
-  MsgRemoveDID: [],
-
-  // TD
-  MsgReclaimTrustDepositYield: [],
-  MsgReclaimTrustDeposit: [],
-  MsgRepaySlashedTrustDeposit: [],
-  MsgRenewPermissionVP: [],
-  MsgSetPermissionVPToValidated: [],
-  MsgCancelPermissionVPLastRequest: [],
-  MsgExtendPermission: [],
-  MsgRevokePermission: [],
-  MsgSlashPermissionTrustDeposit: [],
-  MsgRepayPermissionSlashedTrustDeposit: [],
-  MsgCreateRootPermission: [],
-  MsgStartPermissionVP: [],
-  MsgCreatePermission: [],
+  MsgCreateEcosystem: ['did', 'language', 'docUrl'],
+  MsgUpdateEcosystem: ['id', 'did'],
+  MsgArchiveEcosystem: ['id'],
+  MsgUnarchiveEcosystem: ['id'],
 }
 
-// Generic type for an action handler
-type ActionHandler = (payload: Record<string, unknown>, simulate: boolean) => Promise<unknown> | unknown
-
-// Simple type guard to validate that a value is an object
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-/**
- * Generic submit hook (no runtime validation/casting):
- * - Receives msgType + raw object
- * - Picks only the configured fields for that msgType
- * - Adds msgType + creator
- * - Dispatches via the correct action hook
- */
+function isCredentialSchemaMessage(messageType: MessageType): boolean {
+  return (
+    messageType === 'MsgCreateCredentialSchema' ||
+    messageType === 'MsgUpdateCredentialSchema' ||
+    messageType === 'MsgArchiveCredentialSchema' ||
+    messageType === 'MsgUnarchiveCredentialSchema'
+  )
+}
+
+function isEcosystemMessage(messageType: MessageType): boolean {
+  return (
+    messageType === 'MsgCreateEcosystem' ||
+    messageType === 'MsgUpdateEcosystem' ||
+    messageType === 'MsgArchiveEcosystem' ||
+    messageType === 'MsgUnarchiveEcosystem'
+  )
+}
+
 export function useSubmitTxMsgTypeFromObject(
   onCancel?: () => void,
   onRefresh?: (id?: string, txHeight?: number) => void
 ) {
-  // Hooks are called at top-level (safe according to the Rules of Hooks)
-  const actionCS = useActionCS(onCancel, onRefresh) as unknown as ActionHandler
-  const actionTR = useActionTR(onCancel, onRefresh) as unknown as ActionHandler
+  const submitCredentialSchema = useActionCredentialSchema(onCancel, onRefresh)
+  const submitEcosystem = useActionEcosystem(onCancel, onRefresh)
 
-  /**
-   * Returns the action hook implementation for a given MessageType.
-   * Hooks are called unconditionally here, so we respect Rules of Hooks.
-   */
-  const selectActionFor = (msgType: MessageType): ActionHandler => {
-    if (
-      [
-        'MsgCreateCredentialSchema',
-        'MsgUpdateCredentialSchema',
-        'MsgArchiveCredentialSchema',
-        'MsgUnarchiveCredentialSchema',
-      ].includes(msgType)
-    )
-      return actionCS
-
-    if (
-      [
-        'MsgCreateTrustRegistry',
-        'MsgUpdateTrustRegistry',
-        'MsgArchiveTrustRegistry',
-        'MsgUnarchiveTrustRegistry',
-      ].includes(msgType)
-    )
-      return actionTR
-
-    // Exhaustiveness guard
-    throw new Error(`Unsupported MsgType: ${msgType}`)
-  }
-
-  async function submitTx(msgType: MessageType, raw: unknown, simulate: boolean = false) {
+  async function submitTx(messageType: MessageType, raw: unknown, simulate = false) {
     if (!isRecord(raw)) throw new Error('Payload must be an object')
-    const action = selectActionFor(msgType)
-    const keys = requiredFieldsByMsgType[msgType] ?? []
+    const requiredFields = requiredFieldsByMsgType[messageType]
+    if (!requiredFields) throw new Error(`Unsupported form message type: ${messageType}`)
 
-    const src = raw as Record<string, unknown>
-    const payload: Record<string, unknown> = { msgType }
+    const payload: Record<string, unknown> = { msgType: messageType }
+    for (const field of requiredFields) {
+      if (!(field in raw)) throw new Error(`Missing required field: ${field}`)
+      payload[field] = raw[field]
+    }
 
-    for (const k of keys) payload[k] = src[k]
-
-    return action(payload, simulate)
+    if (isCredentialSchemaMessage(messageType)) {
+      return submitCredentialSchema(payload as CredentialSchemaActionParams, simulate)
+    }
+    if (isEcosystemMessage(messageType)) {
+      return submitEcosystem(payload as EcosystemActionParams, simulate)
+    }
+    throw new Error(`Unsupported form message type: ${messageType}`)
   }
+
   return { submitTx }
 }

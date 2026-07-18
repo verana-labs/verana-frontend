@@ -5,16 +5,15 @@ import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React, { ReactNode, useId, useState } from 'react'
 import TdActionPage from '@/account/action'
-import DidActionPage from '@/did/[id]/action'
+import CredentialSchemaActionPage from '@/credential-schemas/[id]/action'
+import EcosystemActionPage from '@/ecosystems/[id]/action'
+import GovernanceFrameworkActionPage from '@/ecosystems/[id]/governance-framework-action'
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
 import { DataType, getMsgTypeFor } from '@/msg/constants/msgTypeForDataType'
-import { MsgTypeCS, MsgTypeDID, MsgTypePERM, MsgTypeTD, MsgTypeTR } from '@/msg/constants/notificationMsgForMsgType'
-import PermActionPage from '@/participants/[id]/action'
-import TrActionPage from '@/tr/[id]/action'
-import GfdPage from '@/tr/[id]/gfd'
-import CsActionPage from '@/tr/cs/[id]/action'
+import { MsgTypeCS, MsgTypeEcosystem, MsgTypeParticipant, MsgTypeTD } from '@/msg/constants/notificationMsgForMsgType'
+import ParticipantActionPage from '@/participants/[id]/action'
 import EditableDataView from '@/ui/common/data-edit'
-import DataView from '@/ui/common/data-view-columns'
+import ColumnsDataView from '@/ui/common/data-view-columns'
 import GetVNATokens from '@/ui/common/get-vna'
 import { Section, TypeToken } from '@/ui/dataview/types'
 
@@ -46,12 +45,9 @@ export default function DataViewTyped<I extends object>(props: {
   // Build a stable content id for aria-controls
   const reactId = useId()
   const contentId = id ? `${id}-dv-content` : `dv-content-${reactId}`
-  const [editing, setEditing] = useState(id ? false : true)
+  const [editing, setEditing] = useState(!id)
   const msgType = getMsgTypeFor(objectData.typeName as DataType, id ? 'update' : 'create')
-  const { submitTx } = useSubmitTxMsgTypeFromObject(
-    id ? () => setEditing(false) : () => setExpanded(false),
-    (id?: string, txHeight?: number) => onRefresh
-  )
+  const { submitTx } = useSubmitTxMsgTypeFromObject(id ? () => setEditing(false) : () => setExpanded(false), onRefresh)
 
   /**
    * Generic save handler:
@@ -84,7 +80,7 @@ export default function DataViewTyped<I extends object>(props: {
               onCancel={id ? () => setEditing(false) : () => setExpanded(false)}
             />
           ) : (
-            <DataView<I>
+            <ColumnsDataView<I>
               sectionsI18n={normalized}
               data={data}
               id={id}
@@ -117,42 +113,38 @@ export function renderObjectList<I extends object>(args: {
       data={item}
       id={String(getId?.(item, idx) ?? idx)}
       edit={edit}
-      // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
-      getTitle={(d) => (d as any).title ?? ''}
+      getTitle={(data) => {
+        const title = (data as Record<string, unknown>).title
+        return typeof title === 'string' ? title : ''
+      }}
       onRefresh={onRefresh}
     />
   ))
 }
 
-// Define the valid actions for DID
-const validDIDAction = (action: string): action is MsgTypeDID =>
-  ['MsgAddDID', 'MsgRenewDID', 'MsgTouchDID', 'MsgRemoveDID'].includes(action)
-
 // Define the valid actions for TD
 const validTDAction = (action: string): action is MsgTypeTD =>
-  ['MsgReclaimTrustDeposit', 'MsgReclaimTrustDepositYield'].includes(action)
+  ['MsgReclaimTrustDepositYield', 'MsgRepaySlashedTrustDeposit'].includes(action)
 
-// Define the valid actions for TR-GFD
-export const validGFDAction = (action: string): action is MsgTypeTR =>
+export const validGovernanceFrameworkAction = (action: string): action is MsgTypeEcosystem =>
   ['MsgAddGovernanceFrameworkDocument', 'MsgIncreaseActiveGovernanceFrameworkVersion'].includes(action)
 
-// Define the valid actions for TR
-export const validTRAction = (action: string): action is MsgTypeTR =>
-  ['MsgUpdateTrustRegistry', 'MsgArchiveTrustRegistry', 'MsgUnarchiveTrustRegistry'].includes(action)
+export const validEcosystemAction = (action: string): action is MsgTypeEcosystem =>
+  ['MsgUpdateEcosystem', 'MsgArchiveEcosystem', 'MsgUnarchiveEcosystem'].includes(action)
 
-// Define the valid actions for PERM
-export const validPermAction = (action: string): action is MsgTypePERM =>
+export const validParticipantAction = (action: string): action is MsgTypeParticipant =>
   [
-    'MsgCancelPermissionVPLastRequest',
-    'MsgRenewPermissionVP',
-    'MsgSetPermissionVPToValidated',
-    'MsgStartPermissionVP',
-    'MsgExtendPermission',
-    'MsgRevokePermission',
-    'MsgSlashPermissionTrustDeposit',
-    'MsgRepayPermissionSlashedTrustDeposit',
-    'MsgCreateRootPermission',
-    'MsgCreatePermission',
+    'MsgCancelParticipantOPLastRequest',
+    'MsgRenewParticipantOP',
+    'MsgSetParticipantOPToValidated',
+    'MsgStartParticipantOP',
+    'MsgSetParticipantEffectiveUntil',
+    'MsgRevokeParticipant',
+    'MsgCreateOrUpdateParticipantSession',
+    'MsgSlashParticipantTrustDeposit',
+    'MsgRepayParticipantSlashedTrustDeposit',
+    'MsgCreateRootParticipant',
+    'MsgSelfCreateParticipant',
   ].includes(action)
 
 // Define the valid actions for CS
@@ -165,26 +157,29 @@ export function renderActionComponent(
   onClose: () => void,
   data: object,
   onRefresh?: (id?: string, txHeight?: number) => void,
-  onBack?: () => void,
+  _onBack?: () => void,
   setModalHidden?: () => void
 ): ReactNode {
-  if (validDIDAction(action)) {
-    return <DidActionPage action={action} data={data} onClose={onClose} onRefresh={onRefresh} onBack={onBack} />
-  }
   if (action === 'GetVNATrustDeposit') {
     return <GetVNATokens />
   }
   if (validTDAction(action)) {
     return <TdActionPage action={action} data={data} onClose={onClose} onRefresh={onRefresh} />
   }
-  if (validGFDAction(action)) {
+  if (validGovernanceFrameworkAction(action)) {
     return (
-      <GfdPage action={action} data={data} onClose={onClose} onRefresh={onRefresh} setModalHidden={setModalHidden} />
+      <GovernanceFrameworkActionPage
+        action={action}
+        data={data}
+        onClose={onClose}
+        onRefresh={onRefresh}
+        setModalHidden={setModalHidden}
+      />
     )
   }
-  if (validPermAction(action)) {
+  if (validParticipantAction(action)) {
     return (
-      <PermActionPage
+      <ParticipantActionPage
         action={action}
         data={data}
         onClose={onClose}
@@ -195,7 +190,7 @@ export function renderActionComponent(
   }
   if (validCSAction(action)) {
     return (
-      <CsActionPage
+      <CredentialSchemaActionPage
         action={action}
         data={data}
         onClose={onClose}
@@ -204,9 +199,9 @@ export function renderActionComponent(
       />
     )
   }
-  if (validTRAction(action)) {
+  if (validEcosystemAction(action)) {
     return (
-      <TrActionPage
+      <EcosystemActionPage
         action={action}
         data={data}
         onClose={onClose}

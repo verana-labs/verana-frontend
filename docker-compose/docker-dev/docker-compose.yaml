@@ -13,17 +13,22 @@ services:
       - NEXT_PUBLIC_BASE_URL=http://localhost:2904
       - NEXT_PUBLIC_VERANA_CHAIN_ID=vna-devnet-1
       - NEXT_PUBLIC_VERANA_CHAIN_NAME=VeranaDevnet1
-      - NEXT_PUBLIC_VERANA_RPC_ENDPOINT=http://node1.devnet.verana.network:26657
-      - NEXT_PUBLIC_VERANA_REST_ENDPOINT=http://node1.devnet.verana.network:1317
-      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT=http://node1.devnet.verana.network:1317/verana/td/v1
-      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID=http://node1.devnet.verana.network:1317/verana/dd/v1
-      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY=http://node1.devnet.verana.network:1317/verana/tr/v1
-      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA=http://node1.devnet.verana.network:1317/verana/cs/v1
-      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_INDEXER=http://node1.devnet.verana.network:1317/verana/indexer/v1
-      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_METRICS=http://node1.devnet.verana.network:1317/verana/metrics/v1
+      - NEXT_PUBLIC_VERANA_RPC_ENDPOINT=https://rpc.devnet.verana.network
+      - NEXT_PUBLIC_VERANA_REST_ENDPOINT=https://api.devnet.verana.network
+      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_ECOSYSTEM=https://idx.devnet.verana.network/v4/ecosystem
+      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA=https://idx.devnet.verana.network/v4/credential-schema
+      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_PARTICIPANT=https://idx.devnet.verana.network/v4/participant
+      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_DIGEST=https://idx.devnet.verana.network/v4/di
+      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT=https://idx.devnet.verana.network/v4/trust-deposit
+      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_CORPORATION=https://idx.devnet.verana.network/v4/corporation
+      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_DELEGATION=https://idx.devnet.verana.network/v4/delegation
+      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_GOVERNANCE_FRAMEWORK=https://idx.devnet.verana.network/v4/governance-framework
+      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_INDEXER=https://idx.devnet.verana.network/v4/indexer
+      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_METRICS=https://idx.devnet.verana.network/v4/metrics
       - NEXT_PUBLIC_VERANA_REST_ENDPOINT_RESOLVER=https://resolver.devnet.verana.network/v1
       - NEXT_PUBLIC_VERANA_EXPLORER_URL=https://explorer.devnet.verana.network/Verana%20Devnet
       - NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE=true
+      - NEXT_PUBLIC_VERANA_WEBSOCKET=wss://idx.devnet.verana.network/v4/indexer/subscribe
     networks:
       - verana
 

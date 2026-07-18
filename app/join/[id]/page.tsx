@@ -1,501 +1,373 @@
 'use client'
 
-import { faArrowRight, faQrcode } from '@fortawesome/free-solid-svg-icons'
+import { faArrowRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useParams, useRouter } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
-import { useCSList } from '@/hooks/useCredentialSchemas'
-import { usePermissions } from '@/hooks/usePermissions'
-import { useTrustRegistryData } from '@/hooks/useTrustRegistryData'
+import { useMemo, useState } from 'react'
+import { useCredentialSchemas } from '@/hooks/useCredentialSchemas'
+import { useEcosystemData } from '@/hooks/useEcosystemData'
+import { useParticipants } from '@/hooks/useParticipants'
 import { translate } from '@/i18n/dataview'
-import { logger } from '@/lib/logger'
-import { useActionPerm } from '@/msg/actions_hooks/actionPerm'
+import { getParticipantOnboardingDecision, type JoinableParticipantRole } from '@/lib/participant-onboarding'
+import { useActionParticipant } from '@/msg/actions_hooks/actionParticipant'
 import { useNotification } from '@/providers/notification-provider'
 import CsCard from '@/ui/common/cs-card'
 import EcosystemCard from '@/ui/common/ecosystem-card'
 import EgfCard from '@/ui/common/egf-card'
-import RoleCard, { Role } from '@/ui/common/role-card'
+import RoleCard from '@/ui/common/role-card'
 import ValidatorCard from '@/ui/common/validator-card'
-import { CsList } from '@/ui/datatable/columnslist/cs'
-import { Permission } from '@/ui/dataview/datasections/perm'
+import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
+import type { Participant } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { rolesSchema } from '@/util/util'
 import { isValidDID } from '@/util/validations'
 
-function validatorRole(schema: CsList, role: Role): Role {
-  switch (role) {
-    case 'ISSUER':
-      return schema.issuerPermManagementMode === 'GRANTOR_VALIDATION' ? 'ISSUER_GRANTOR' : 'ECOSYSTEM'
-    case 'HOLDER':
-      return 'ISSUER'
-    case 'VERIFIER':
-      return schema.verifierPermManagementMode === 'GRANTOR_VALIDATION' ? 'VERIFIER_GRANTOR' : 'ECOSYSTEM'
-    case 'ISSUER_GRANTOR':
-    case 'VERIFIER_GRANTOR':
-      return 'ECOSYSTEM'
-    default:
-      return role
-  }
-}
+type WizardStep = 1 | 2 | 3 | 4 | 5 | 6 | 7
 
-type StepId = 1 | 2 | 3 | 4 | 5 | 6 | 7
-
-type Step = {
-  id: StepId
-  title: string
-  shortTitle: string
-  description?: string
-}
-
-const steps: Step[] = [
-  {
-    id: 1,
-    title: 'Review Ecosystem Info',
-    description: 'Verify the ecosystem details before proceeding',
-    shortTitle: 'Review Info',
-  },
-  {
-    id: 2,
-    title: 'Select Credential Schema',
-    description: 'Choose the credential schema you want to participate in',
-    shortTitle: 'Select Schema',
-  },
-  {
-    id: 3,
-    title: 'Select Your Role',
-    description: 'Pick the role you want to have in this ecosystem for the selected schema',
-    shortTitle: 'Select Role',
-  },
+const STEPS = [
+  { id: 1, title: 'Review Ecosystem', description: 'Verify the ecosystem before continuing.' },
+  { id: 2, title: 'Select Credential Schema', description: 'Choose the schema you want to join.' },
+  { id: 3, title: 'Select Your Role', description: 'Choose your participant role.' },
   {
     id: 4,
-    title: 'Review & Accept Governance Framework',
-    description: 'Review and accept the Ecosystem Governance Framework (EGF) before continuing',
-    shortTitle: 'Accept EGF',
+    title: 'Accept the Governance Framework',
+    description: 'Review the active governance framework document and accept it.',
   },
-  {
-    id: 5,
-    title: 'Select Validator',
-    description: 'Select a validator to process your permission request',
-    shortTitle: 'Pick Validator',
-  },
-  {
-    id: 6,
-    title: 'Confirm & Submit',
-    description: 'Review your selections, provide your Service DID, and submit the request',
-    shortTitle: 'Confirm',
-  },
-]
+  { id: 5, title: 'Select Validator', description: 'Choose the participant that will validate your request.' },
+  { id: 6, title: 'Confirm and Submit', description: 'Provide the DID that will participate in the ecosystem.' },
+] as const
 
-function cn(...v: Array<string | false | null | undefined>) {
-  return v.filter(Boolean).join(' ')
+function classes(...values: Array<string | false | null | undefined>) {
+  return values.filter(Boolean).join(' ')
+}
+
+function isJoinableRole(role: string): role is JoinableParticipantRole {
+  return ['ISSUER_GRANTOR', 'VERIFIER_GRANTOR', 'ISSUER', 'VERIFIER', 'HOLDER'].includes(role)
+}
+
+function availableRoles(schema: CredentialSchemaListItem): JoinableParticipantRole[] {
+  return rolesSchema(schema.issuerOnboardingMode, schema.verifierOnboardingMode).filter(
+    (role): role is JoinableParticipantRole =>
+      isJoinableRole(role) && (role !== 'HOLDER' || schema.holderOnboardingMode === 'ISSUER_ONBOARDING_PROCESS')
+  )
 }
 
 export default function JoinEcosystemWizard() {
-  const params = useParams()
-  const trId = params?.id as string
-
-  const [currentStep, setCurrentStep] = useState<number>(1)
-  const [enabledContinue, setEnabledContinue] = useState(true)
-  const currentStepObj = useMemo(() => {
-    return steps.find((s) => s.id === currentStep)
-  }, [currentStep])
-
-  const [acceptEgf, setAcceptEgf] = useState(false)
-  const [selectedSchema, setSelectedSchema] = useState<CsList | null>(null)
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null)
-  const [selectedValidator, setSelectedValidator] = useState<Permission | null>(null)
-
-  const [serviceDid, setServiceDid] = useState('')
-
-  const { dataTR, errorTRData } = useTrustRegistryData(trId)
-
+  const params = useParams<{ id: string }>()
+  const ecosystemId = params?.id ?? ''
   const router = useRouter()
-  const { csList } = useCSList(trId, false)
-
-  const schemaId = selectedSchema?.id
-  const roleVal = selectedSchema && selectedRole ? validatorRole(selectedSchema, selectedRole) : undefined
-
-  const { permissionsList } = usePermissions(schemaId, roleVal)
-
-  const actionPerm = useActionPerm(undefined, () => {
-    setCurrentStep((prev) => prev + 1)
-    document.getElementById('app-scroll')?.scrollTo({ top: 0, behavior: 'smooth' })
-  })
-
-  // Save handler: called when the form is submitted
-  async function onSendActionPerm() {
-    // Broadcast MsgCreateTrustRegistry transaction with user input
-    const msgType = 'MsgStartPermissionVP'
-    const type = selectedRole ?? ''
-    const validatorPermId = selectedValidator?.id ?? 0
-    const did = serviceDid
-
-    await actionPerm({
-      msgType,
-      creator: '',
-      type,
-      validatorPermId,
-      country: 'US',
-      did,
-    })
-  }
-
-  const [errorNotified, setErrorNotified] = useState(false)
-  // Notification context for showing error messages
   const { notify } = useNotification()
+  const { ecosystem, errorEcosystem } = useEcosystemData(ecosystemId)
+  const { credentialSchemas, errorCredentialSchemas } = useCredentialSchemas(ecosystemId, false, true)
 
-  // Notify and redirect if there is an error fetching account data
-  useEffect(() => {
-    // Show a notification if an error occurred
-    if (errorTRData && !errorNotified) {
-      ;(async () => {
-        await notify(errorTRData, 'error', resolveTranslatable({ key: 'error.fetch.tr.title' }, translate))
-        setErrorNotified(true)
-        router.push('/')
-      })()
+  const [currentStep, setCurrentStep] = useState<WizardStep>(1)
+  const [selectedSchema, setSelectedSchema] = useState<CredentialSchemaListItem | null>(null)
+  const [selectedRole, setSelectedRole] = useState<JoinableParticipantRole | null>(null)
+  const [acceptedGovernanceFramework, setAcceptedGovernanceFramework] = useState(false)
+  const [selectedValidator, setSelectedValidator] = useState<Participant | null>(null)
+  const [serviceDid, setServiceDid] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  const decision = useMemo(() => {
+    if (!selectedSchema || !selectedRole) return null
+    if (selectedRole === 'HOLDER' && !selectedSchema.holderOnboardingMode) return null
+    return getParticipantOnboardingDecision(selectedRole, {
+      issuerOnboardingMode: selectedSchema.issuerOnboardingMode,
+      verifierOnboardingMode: selectedSchema.verifierOnboardingMode,
+      holderOnboardingMode: selectedSchema.holderOnboardingMode,
+    })
+  }, [selectedRole, selectedSchema])
+
+  const validatorRole = decision?.validatorRole ?? undefined
+  const { participants: validators, errorParticipants } = useParticipants(selectedSchema?.id, validatorRole)
+  const activeValidators = validators.filter((participant) => participant.participant_state === 'ACTIVE')
+
+  const submitParticipant = useActionParticipant(() => setCurrentStep(7))
+  const activeStep = STEPS.find((step) => step.id === currentStep)
+  const percentage = currentStep === 7 ? 100 : ((currentStep - 1) / STEPS.length) * 100
+
+  const canContinue = (() => {
+    switch (currentStep) {
+      case 1:
+        return ecosystem !== null
+      case 2:
+        return selectedSchema !== null
+      case 3:
+        return selectedRole !== null
+      case 4:
+        return acceptedGovernanceFramework
+      case 5:
+        return decision?.validatorRole === null || selectedValidator !== null
+      case 6:
+        return isValidDID(serviceDid) && !submitting
+      case 7:
+        return false
     }
-  }, [errorTRData, router, errorNotified])
+  })()
 
-  const percentage = useMemo(() => ((currentStep - 1) / 6) * 100, [currentStep])
-  const progressText = `${Math.round(percentage)}%`
+  async function submit() {
+    if (!decision || !selectedRole || !selectedSchema || !isValidDID(serviceDid)) return
+    setSubmitting(true)
+    try {
+      if (decision.messageType === 'MsgSelfCreateParticipant') {
+        if (!selectedValidator) return
+        await submitParticipant({
+          msgType: decision.messageType,
+          role: selectedRole,
+          validatorParticipantId: selectedValidator.id,
+          did: serviceDid,
+        })
+        return
+      }
+      if (!selectedValidator) return
+      await submitParticipant({
+        msgType: decision.messageType,
+        role: selectedRole,
+        validatorParticipantId: selectedValidator.id,
+        did: serviceDid,
+      })
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
-  function proceedToStep() {
-    if (currentStep === 4) {
-      //2
-      if (!acceptEgf) {
-        notify('Please accept the Ecosystem Governance Framework', 'error')
-        return
-      }
-    } else if (currentStep === 2) {
-      //3
-      if (!selectedSchema) {
-        notify('Please select a credential schema', 'error')
-        return
-      }
-    } else if (currentStep === 3) {
-      //4
-      if (!selectedRole) {
-        notify('Please select a role', 'error')
-        return
-      }
-    } else if (currentStep === 5) {
-      if (!selectedValidator) {
-        notify('Please select a validator', 'error')
-        return
-      }
-    } else if (currentStep === 6) {
-      submitPermissionRequest()
+  function continueWizard() {
+    if (!canContinue) {
+      void notify('Complete the current step before continuing.', 'error')
       return
     }
-
-    setCurrentStep((prev) => prev + 1)
-  }
-
-  useEffect(() => {
-    enableContinueStep()
-    document.getElementById('app-scroll')?.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [currentStep])
-
-  function enableContinueStep() {
-    if (currentStep === 2) setEnabledContinue(acceptEgf)
-    else if (currentStep === 3) setEnabledContinue(selectedSchema != null)
-    else if (currentStep === 4) setEnabledContinue(selectedRole != null)
-    else if (currentStep === 5) setEnabledContinue(selectedValidator != null)
-    else setEnabledContinue(true)
-  }
-
-  function backToStep() {
-    const backStep = currentStep > 1 ? currentStep - 1 : 1
-    setCurrentStep(backStep)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  function submitPermissionRequest() {
-    if (!serviceDid.trim() || !isValidDID(serviceDid)) {
-      notify('Please enter your Service DID', 'error')
+    if (currentStep === 6) {
+      void submit()
       return
     }
-    onSendActionPerm()
+    if (currentStep < 6) setCurrentStep((currentStep + 1) as WizardStep)
+  }
+
+  if (errorEcosystem || errorCredentialSchemas) {
+    return <div className="error-pane">{errorEcosystem ?? errorCredentialSchemas}</div>
+  }
+
+  if (!ecosystem) {
+    return (
+      <div className="skeleton-card">
+        <div className="skeleton-title mb-6 w-1/3" />
+        <div className="skeleton-block h-48 rounded-lg" />
+      </div>
+    )
+  }
+
+  if (currentStep === 7) {
+    return (
+      <section className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-8 text-center">
+        <div className="w-20 h-20 bg-success-500 rounded-full flex items-center justify-center mx-auto mb-6">
+          <span className="text-white text-4xl">✓</span>
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Participant submitted</h1>
+        <p className="text-neutral-70 mb-8">
+          The indexer has processed the transaction. The participant page now reflects the resulting onboarding state.
+        </p>
+        <button
+          type="button"
+          onClick={() => router.push(`/participants/${selectedSchema?.id ?? ''}`)}
+          className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium"
+        >
+          <FontAwesomeIcon className="mr-2" icon={faArrowRight} />
+          View participants
+        </button>
+      </section>
+    )
   }
 
   return (
     <>
-      {/* Page header */}
-      <section id="page-header" className="mb-8">
+      <section className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          {resolveTranslatable({ key: 'join.title' }, translate)}
+          {resolveTranslatable({ key: 'join.title' }, translate) ?? 'Join Ecosystem'}
         </h1>
-        <p className="mt-2 text-sm text-neutral-70 dark:text-neutral-70">
-          {resolveTranslatable({ key: 'join.desc' }, translate)}
+        <p className="mt-2 text-sm text-neutral-70">
+          {resolveTranslatable({ key: 'join.desc' }, translate) ?? 'Create a V4 participant for a credential schema.'}
         </p>
       </section>
 
-      {/* Progress */}
-      <section id="progress-section" className="mb-8">
+      <section className="mb-8">
         <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6">
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {resolveTranslatable({ key: 'join.progress' }, translate)}
-              </span>
-              <span className="text-sm font-medium text-primary-600 dark:text-primary-400">{progressText}</span>
-            </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-              <div
-                className="bg-gradient-to-r from-success-500 to-success-500 h-3 rounded-full transition-all duration-500"
-                style={{ width: `${percentage}%` }}
-              />
-            </div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Progress</span>
+            <span className="text-sm font-medium text-primary-600">{Math.round(percentage)}%</span>
           </div>
-
-          {/* Desktop steps */}
-          <div className="hidden sm:block">
-            <div className="relative py-4">
-              <div className="absolute inset-x-0 top-1/2 h-0.5 bg-gray-200 dark:bg-gray-700 -translate-y-1/2" />
-              <div className="flex justify-between items-center relative z-10">
-                {steps.map((step) => {
-                  const done = step.id < currentStep
-                  const active = step.id === currentStep
-
-                  return (
-                    <div key={`step-${step.id}`} className="flex flex-col items-center">
-                      <div
-                        className={cn(
-                          'w-10 h-10 rounded-full flex items-center justify-center font-semibold mb-2',
-                          done
-                            ? 'bg-success-500 text-white'
-                            : active
-                              ? 'bg-primary-600 text-white'
-                              : 'bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400'
-                        )}
-                      >
-                        {done ? <span>✓</span> : step.id}
-                      </div>
-                      <span
-                        className={cn(
-                          'text-xs font-medium text-center',
-                          done
-                            ? 'text-success-600 dark:text-success-600'
-                            : active
-                              ? 'text-gray-700 dark:text-gray-300'
-                              : 'text-gray-500 dark:text-gray-500'
-                        )}
-                      >
-                        {step.shortTitle}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+            <div
+              className="bg-success-500 h-3 rounded-full transition-all duration-500"
+              style={{ width: `${percentage}%` }}
+            />
           </div>
-
-          {/* Mobile steps */}
-          <div className="sm:hidden">
-            <div className="flex items-center justify-center space-x-2">
-              <div className="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center font-semibold text-sm">
-                {currentStep}
+          <div className="hidden sm:flex justify-between mt-6">
+            {STEPS.map((step) => (
+              <div key={step.id} className="flex flex-col items-center max-w-24 text-center">
+                <div
+                  className={classes(
+                    'w-9 h-9 rounded-full flex items-center justify-center font-semibold mb-2',
+                    step.id < currentStep
+                      ? 'bg-success-500 text-white'
+                      : step.id === currentStep
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
+                  )}
+                >
+                  {step.id < currentStep ? '✓' : step.id}
+                </div>
+                <span className="text-xs text-gray-600 dark:text-gray-300">{step.title}</span>
               </div>
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">of {steps.length}</span>
-            </div>
-            <p className="text-center text-sm text-neutral-70 dark:text-neutral-70 mt-2">
-              {'stepNames[currentStep - 1]'}
-            </p>
+            ))}
           </div>
         </div>
       </section>
 
-      {currentStepObj ? (
+      {activeStep ? (
         <section className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{currentStepObj.title}</h2>
-              <p className="text-sm text-neutral-70 dark:text-neutral-70 mt-1">{currentStepObj.description}</p>
-            </div>
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{activeStep.title}</h2>
+            <p className="text-sm text-neutral-70 mt-1">{activeStep.description}</p>
           </div>
 
-          {/* Step 1 */}
-          {currentStep === 1 && dataTR ? <EcosystemCard ecosystem={dataTR} /> : null}
+          {currentStep === 1 ? <EcosystemCard ecosystem={{ ...ecosystem, role: ecosystem.role ?? '' }} /> : null}
 
-          {/* Step 2 */}
           {currentStep === 2 ? (
             <div className="space-y-4 mb-6">
-              {csList.map((s) => {
-                return (
-                  <CsCard
-                    key={s.id}
-                    cs={s}
-                    selected={selectedSchema?.id === s.id}
-                    onSelect={() => {
-                      setSelectedSchema(s)
-                      setEnabledContinue(true)
-                    }}
-                  />
-                )
-              })}
+              {credentialSchemas.map((credentialSchema) => (
+                <CsCard
+                  key={credentialSchema.id}
+                  credentialSchema={credentialSchema}
+                  selected={selectedSchema?.id === credentialSchema.id}
+                  onSelect={() => {
+                    setSelectedSchema(credentialSchema)
+                    setSelectedRole(null)
+                    setSelectedValidator(null)
+                    setAcceptedGovernanceFramework(false)
+                  }}
+                />
+              ))}
+              {credentialSchemas.length === 0 ? (
+                <p className="text-sm text-neutral-70">No active credential schemas are available.</p>
+              ) : null}
             </div>
           ) : null}
 
-          {/* Step 3 */}
           {currentStep === 3 && selectedSchema ? (
-            <>
-              {rolesSchema(selectedSchema.issuerPermManagementMode, selectedSchema.verifierPermManagementMode).map(
-                (role) => {
-                  return (
-                    <RoleCard
-                      key={role}
-                      role={role}
-                      selected={selectedRole === role}
-                      onSelect={() => {
-                        setSelectedRole(role)
-                        setEnabledContinue(true)
-                      }}
-                    />
-                  )
-                }
-              )}
-            </>
+            <div className="mb-6">
+              {availableRoles(selectedSchema).map((role) => (
+                <RoleCard
+                  key={role}
+                  role={role}
+                  selected={selectedRole === role}
+                  onSelect={() => {
+                    setSelectedRole(role)
+                    setSelectedValidator(null)
+                  }}
+                />
+              ))}
+            </div>
           ) : null}
 
-          {/* Step 4 */}
-          {currentStep === 4 && dataTR ? (
+          {currentStep === 4 ? (
             <EgfCard
-              ecosystem={dataTR}
-              accepted={acceptEgf}
-              onAcceptedChange={(v) => {
-                setAcceptEgf(v)
-                setEnabledContinue(v)
-              }}
+              ecosystem={ecosystem}
+              accepted={acceptedGovernanceFramework}
+              onAcceptedChange={setAcceptedGovernanceFramework}
             />
           ) : null}
 
-          {/* Step 5 */}
           {currentStep === 5 ? (
-            <>
-              <div className="space-y-4 mb-6">
-                {permissionsList.map((v) => {
-                  return (
+            <div className="space-y-4 mb-6">
+              {decision?.messageType === 'MsgSelfCreateParticipant' ? (
+                <div className="rounded-lg bg-green-50 dark:bg-green-900/20 p-4 text-sm text-green-800 dark:text-green-300">
+                  This role uses open onboarding. Select the ecosystem participant that anchors the new participant.
+                </div>
+              ) : null}
+              {errorParticipants ? <div className="error-pane">{errorParticipants}</div> : null}
+              {decision?.validatorRole && activeValidators.length === 0 ? (
+                <p className="text-sm text-neutral-70">No active validator participant is available.</p>
+              ) : null}
+              {decision?.validatorRole
+                ? activeValidators.map((validator) => (
                     <ValidatorCard
-                      key={`validator-${v.id}`}
-                      validator={v}
-                      selected={selectedValidator?.id === v.id}
-                      onSelect={() => {
-                        setSelectedValidator(v)
-                        setEnabledContinue(true)
-                      }}
+                      key={validator.id}
+                      validator={validator}
+                      selected={selectedValidator?.id === validator.id}
+                      onSelect={() => setSelectedValidator(validator)}
                     />
-                  )
-                })}
-              </div>
-
-              {/* <div className="flex items-center justify-between mb-6">
-              <span className="text-sm text-neutral-70 dark:text-neutral-70">
-                Showing {permissionsList.length} of {permissionsList.length} validators
-              </span>
-              <div className="flex space-x-2">
-                <button
-                  className="px-3 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed"
-                  type="button"
-                  disabled
-                >
-                  Previous
-                </button>
-                <button
-                  className="px-3 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed"
-                  type="button"
-                  disabled
-                >
-                  Next
-                </button>
-              </div>
-            </div> */}
-            </>
+                  ))
+                : null}
+            </div>
           ) : null}
 
-          {/* Step 6 */}
           {currentStep === 6 ? (
             <div className="space-y-4 mb-6">
-              <div className="border border-neutral-20 dark:border-neutral-70 rounded-xl p-4">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Selected Validator</h3>
-
+              <div className="rounded-lg bg-gray-50 dark:bg-gray-800/50 p-4 text-sm">
+                <p>
+                  <span className="font-medium">Schema:</span> {selectedSchema?.title}
+                </p>
+                <p>
+                  <span className="font-medium">Role:</span> {selectedRole}
+                </p>
+                <p>
+                  <span className="font-medium">Onboarding transaction:</span> {decision?.messageType}
+                </p>
                 {selectedValidator ? (
-                  <ValidatorCard validator={selectedValidator} selected={true} />
-                ) : (
-                  <p className="text-sm text-neutral-70 dark:text-neutral-70">No validator selected.</p>
-                )}
+                  <p>
+                    <span className="font-medium">Validator participant:</span> {selectedValidator.id}
+                  </p>
+                ) : null}
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Service DID</label>
+                <label
+                  htmlFor="service-did"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  Service DID
+                </label>
                 <input
+                  id="service-did"
                   type="text"
                   value={serviceDid}
-                  onChange={(e) => setServiceDid(e.target.value)}
-                  placeholder="did:verana:mainnet:..."
-                  className="w-full px-4 py-3 border border-neutral-20 dark:border-neutral-70 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-surface text-gray-900 dark:text-white"
+                  onChange={(event) => setServiceDid(event.target.value)}
+                  placeholder="did:method:identifier"
+                  className={classes(
+                    'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 bg-white dark:bg-surface text-gray-900 dark:text-white',
+                    serviceDid === '' || isValidDID(serviceDid) ? 'border-neutral-20' : 'border-red-500'
+                  )}
                 />
-                <p className="text-xs text-neutral-70 dark:text-neutral-70 mt-1">
-                  The DID of your service that will participate in the ecosystem
-                </p>
               </div>
             </div>
           ) : null}
 
-          <div className={`flex ${currentStep === 1 ? 'justify-end' : 'justify-between'}`}>
-            {currentStep !== 1 && (
+          <div className={classes('flex', currentStep === 1 ? 'justify-end' : 'justify-between')}>
+            {currentStep > 1 ? (
               <button
-                onClick={currentStep === 1 ? undefined : backToStep}
-                className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
                 type="button"
+                onClick={() => setCurrentStep((currentStep - 1) as WizardStep)}
+                className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium"
               >
-                {resolveTranslatable({ key: 'join.btn.back' }, translate)}
+                {resolveTranslatable({ key: 'join.btn.back' }, translate) ?? 'Back'}
               </button>
-            )}
+            ) : null}
             <button
-              onClick={proceedToStep}
-              disabled={!enabledContinue}
-              className={cn(
-                'px-6 py-3 rounded-lg font-medium transition-colors',
-                enabledContinue
+              type="button"
+              onClick={continueWizard}
+              disabled={!canContinue}
+              className={classes(
+                'px-6 py-3 rounded-lg font-medium',
+                canContinue
                   ? 'bg-primary-600 text-white hover:bg-primary-700'
-                  : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                  : 'bg-gray-300 dark:bg-gray-600 text-gray-500 cursor-not-allowed'
               )}
-              type="button"
             >
-              {resolveTranslatable({ key: currentStep === 6 ? 'join.btn.join' : 'join.btn.continue' }, translate)}
+              {resolveTranslatable({ key: currentStep === 6 ? 'join.btn.join' : 'join.btn.continue' }, translate) ??
+                (currentStep === 6 ? 'Join' : 'Continue')}
             </button>
           </div>
         </section>
-      ) : (
-        <section className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6">
-          <div className="text-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-success-500 to-success-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <span className="text-white text-4xl">✓</span>
-            </div>
-
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Congratulations!</h2>
-            <p className="text-base text-neutral-70 dark:text-neutral-70 mb-8">
-              Your request is being processed by the Ecosystem. Connect to the validator service to continue with the
-              onboarding process by scanning this QR:
-            </p>
-
-            <div className="w-64 h-64 mx-auto mb-6 bg-white rounded-xl p-4 shadow-sm border border-neutral-20 dark:border-neutral-70">
-              <div className="w-full h-full bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">
-                <FontAwesomeIcon className="text-8xl text-gray-400" icon={faQrcode} />
-              </div>
-            </div>
-
-            <button
-              onClick={() => logger.log('Continue to validator')}
-              className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
-              type="button"
-            >
-              <FontAwesomeIcon className="mr-2" icon={faArrowRight} />
-              Or click this link to continue
-            </button>
-          </div>
-        </section>
-      )}
+      ) : null}
     </>
   )
 }

@@ -4,12 +4,12 @@ import { faEye, faSitemap } from '@fortawesome/free-solid-svg-icons'
 import { ReactNode } from 'react'
 import { translate } from '@/i18n/dataview'
 import IconActionButton from '@/ui/common/icon-action-button'
-import { CsList, getModePillClass } from '@/ui/datatable/columnslist/cs'
+import { type CredentialSchemaListItem, getModePillClass } from '@/ui/datatable/columnslist/cs'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { formatNumber, formatVNA } from '@/util/util'
 
 export type CsSummaryCardProps = {
-  cs: CsList
+  credentialSchema: CredentialSchemaListItem
   onView: () => void
   onParticipants: () => void
 }
@@ -32,8 +32,8 @@ function StatRow({ label, value }: { label: string; value: ReactNode }) {
   )
 }
 
-export default function CsSummaryCard({ cs, onView, onParticipants }: CsSummaryCardProps) {
-  const isArchived = !!cs.archived
+export default function CsSummaryCard({ credentialSchema, onView, onParticipants }: CsSummaryCardProps) {
+  const isArchived = !!credentialSchema.archived
 
   const previewLabel = resolveTranslatable({ key: 'datatable.cs.card.previewSchema' }, translate) ?? 'Preview Schema'
   const participantsLabel =
@@ -70,7 +70,7 @@ export default function CsSummaryCard({ cs, onView, onParticipants }: CsSummaryC
             onClick={onView}
             className="text-left text-base sm:text-lg font-semibold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors flex-1 pr-2 break-words"
           >
-            {cs.title}
+            {credentialSchema.title}
           </button>
           <div className="flex items-center gap-1 flex-shrink-0">
             <IconActionButton icon={faEye} label={previewLabel} onClick={onView} />
@@ -78,20 +78,22 @@ export default function CsSummaryCard({ cs, onView, onParticipants }: CsSummaryC
           </div>
         </div>
 
-        {cs.description ? (
-          <p className="text-xs sm:text-sm text-neutral-70 dark:text-neutral-70 mb-4 line-clamp-2">{cs.description}</p>
+        {credentialSchema.description ? (
+          <p className="text-xs sm:text-sm text-neutral-70 dark:text-neutral-70 mb-4 line-clamp-2">
+            {credentialSchema.description}
+          </p>
         ) : null}
 
         <div className="flex flex-wrap gap-2 mb-4">
-          <RolePill value={cs.issuerPermManagementMode} suffix="_ISSUER" />
-          <RolePill value={cs.verifierPermManagementMode} suffix="_VERIFIER" />
+          <RolePill value={credentialSchema.issuerOnboardingMode} suffix="_ISSUER" />
+          <RolePill value={credentialSchema.verifierOnboardingMode} suffix="_VERIFIER" />
         </div>
 
         <div className="space-y-2 text-xs sm:text-sm">
-          <StatRow label={participants} value={formatNumber(cs.participants, true)} />
-          <StatRow label={issued} value={formatNumber(cs.issuedCredentials, true)} />
-          <StatRow label={verified} value={formatNumber(cs.verifiedCredentials, true)} />
-          <StatRow label={trustValue} value={formatVNA(cs.trustValue ?? '0', 6) || '0 VNA'} />
+          <StatRow label={participants} value={formatNumber(credentialSchema.participants, true)} />
+          <StatRow label={issued} value={formatNumber(credentialSchema.issuedCredentials, true)} />
+          <StatRow label={verified} value={formatNumber(credentialSchema.verifiedCredentials, true)} />
+          <StatRow label={trustValue} value={formatVNA(String(credentialSchema.weight), 6) || '0 VNA'} />
         </div>
       </div>
     </div>

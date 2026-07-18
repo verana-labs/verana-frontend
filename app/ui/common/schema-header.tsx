@@ -12,8 +12,8 @@ export type SchemaHeaderProps = {
   description?: string
   id: string | number
   status?: SchemaStatus
-  issuerPermManagementMode?: string | number
-  verifierPermManagementMode?: string | number
+  issuerOnboardingMode?: string | number
+  verifierOnboardingMode?: string | number
   action?: ReactNode
 }
 
@@ -41,7 +41,7 @@ function HeaderRow({ label, children }: { label: string; children: React.ReactNo
   )
 }
 
-function PermModeRow({ value, label, suffix }: { value?: string | number; label: string; suffix: string }) {
+function OnboardingModeRow({ value, label, suffix }: { value?: string | number; label: string; suffix: string }) {
   if (value === undefined || value === '') return null
   return (
     <HeaderRow label={label}>
@@ -55,8 +55,8 @@ export default function SchemaHeader({
   description,
   id,
   status,
-  issuerPermManagementMode,
-  verifierPermManagementMode,
+  issuerOnboardingMode,
+  verifierOnboardingMode,
   action,
 }: SchemaHeaderProps) {
   return (
@@ -87,19 +87,19 @@ export default function SchemaHeader({
                 <span className="text-sm text-gray-900 dark:text-white font-mono">{id}</span>
               </div>
 
-              <PermModeRow
-                value={issuerPermManagementMode}
+              <OnboardingModeRow
+                value={issuerOnboardingMode}
                 label={
-                  resolveTranslatable({ key: 'dataview.cs.fields.issuerPermManagementMode' }, translate) ??
-                  'Issuer Permission Mode'
+                  resolveTranslatable({ key: 'dataview.cs.fields.issuerOnboardingMode' }, translate) ??
+                  'Issuer Onboarding Mode'
                 }
                 suffix="_ISSUER"
               />
-              <PermModeRow
-                value={verifierPermManagementMode}
+              <OnboardingModeRow
+                value={verifierOnboardingMode}
                 label={
-                  resolveTranslatable({ key: 'dataview.cs.fields.verifierPermManagementMode' }, translate) ??
-                  'Verifier Permission Mode'
+                  resolveTranslatable({ key: 'dataview.cs.fields.verifierOnboardingMode' }, translate) ??
+                  'Verifier Onboarding Mode'
                 }
                 suffix="_VERIFIER"
               />

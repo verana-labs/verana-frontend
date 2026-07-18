@@ -3,18 +3,14 @@
 import { translate } from '@/i18n/dataview'
 import { I18nValues, resolveTranslatable, Translatable } from '@/ui/dataview/types'
 
-// Restrict allowed actions to valid message types
-export type MsgTypeDID = 'MsgAddDID' | 'MsgRenewDID' | 'MsgTouchDID' | 'MsgRemoveDID'
+export type MsgTypeTD = 'MsgReclaimTrustDepositYield' | 'MsgRepaySlashedTrustDeposit'
 
-// Explicit type for supported Trust Deposit actions
-export type MsgTypeTD = 'MsgReclaimTrustDeposit' | 'MsgReclaimTrustDepositYield'
-
-// Supported Trust Registry actions
-export type MsgTypeTR =
-  | 'MsgCreateTrustRegistry'
-  | 'MsgUpdateTrustRegistry'
-  | 'MsgArchiveTrustRegistry'
-  | 'MsgUnarchiveTrustRegistry'
+// Supported Ecosystem actions
+export type MsgTypeEcosystem =
+  | 'MsgCreateEcosystem'
+  | 'MsgUpdateEcosystem'
+  | 'MsgArchiveEcosystem'
+  | 'MsgUnarchiveEcosystem'
   | 'MsgAddGovernanceFrameworkDocument'
   | 'MsgIncreaseActiveGovernanceFrameworkVersion'
 
@@ -25,19 +21,19 @@ export type MsgTypeCS =
   | 'MsgArchiveCredentialSchema'
   | 'MsgUnarchiveCredentialSchema'
 
-// Supported Permission actions
-export type MsgTypePERM =
-  | 'MsgStartPermissionVP'
-  | 'MsgRenewPermissionVP'
-  | 'MsgSetPermissionVPToValidated'
-  | 'MsgCancelPermissionVPLastRequest'
-  | 'MsgCreateRootPermission'
-  | 'MsgExtendPermission'
-  | 'MsgRevokePermission'
-  | 'MsgCreateOrUpdatePermissionSession'
-  | 'MsgSlashPermissionTrustDeposit'
-  | 'MsgRepayPermissionSlashedTrustDeposit'
-  | 'MsgCreatePermission'
+// Supported Participant actions
+export type MsgTypeParticipant =
+  | 'MsgStartParticipantOP'
+  | 'MsgRenewParticipantOP'
+  | 'MsgSetParticipantOPToValidated'
+  | 'MsgCancelParticipantOPLastRequest'
+  | 'MsgCreateRootParticipant'
+  | 'MsgSetParticipantEffectiveUntil'
+  | 'MsgRevokeParticipant'
+  | 'MsgCreateOrUpdateParticipantSession'
+  | 'MsgSlashParticipantTrustDeposit'
+  | 'MsgRepayParticipantSlashedTrustDeposit'
+  | 'MsgSelfCreateParticipant'
 
 /** Safely cast any object to I18nValues */
 function toI18nValues(values?: Record<string, unknown>): I18nValues | undefined {
@@ -59,97 +55,61 @@ function t(key: string, values?: Record<string, unknown>): string {
   return resolveTranslatable(tr, translate) ?? key
 }
 
-// ============================================================================
-// DID ACTIONS
-// ============================================================================
-
-// Constants for user notifications per DID action
-
-export const MSG_SUCCESS_ACTION_DID: Record<MsgTypeDID, (did: string) => string> = {
-  MsgAddDID: (did) => t('notification.MsgAddDID.success', { did }),
-  MsgRenewDID: (did) => t('notification.MsgRenewDID.success', { did }),
-  MsgTouchDID: (did) => t('notification.MsgTouchDID.success', { did }),
-  MsgRemoveDID: (did) => t('notification.MsgRemoveDID.success', { did }),
-}
-
-export const MSG_ERROR_ACTION_DID: Record<MsgTypeDID, (did: string, code?: number, msg?: string) => string> = {
-  MsgAddDID: (did, code, msg) =>
-    t('notification.MsgAddDID.error', { did, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-  MsgRenewDID: (did, code, msg) =>
-    t('notification.MsgRenewDID.error', { did, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-  MsgTouchDID: (did, code, msg) =>
-    t('notification.MsgTouchDID.error', { did, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-  MsgRemoveDID: (did, code, msg) =>
-    t('notification.MsgRemoveDID.error', { did, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-}
-export const MSG_INPROGRESS_ACTION_DID: Record<MsgTypeDID, (did: string) => string> = {
-  MsgAddDID: (did) => t('notification.MsgAddDID.inprogress', { did }),
-  MsgRenewDID: (did) => t('notification.MsgRenewDID.inprogress', { did }),
-  MsgTouchDID: (did) => t('notification.MsgTouchDID.inprogress', { did }),
-  MsgRemoveDID: (did) => t('notification.MsgRemoveDID.inprogress', { did }),
-}
-
-// ============================================================================
-// TRUST DEPOSIT ACTIONS
-// ============================================================================
-
-// Success, error and in-progress messages per TD action
-
 export const MSG_SUCCESS_ACTION_TD: Record<MsgTypeTD, (claimed?: string) => string> = {
-  MsgReclaimTrustDeposit: (claimed) => t('notification.MsgReclaimTrustDeposit.success', { claimed }),
   MsgReclaimTrustDepositYield: () => t('notification.MsgReclaimTrustDepositYield.success'),
+  MsgRepaySlashedTrustDeposit: () => t('notification.MsgRepaySlashedTrustDeposit.success'),
 }
 
 export const MSG_INPROGRESS_ACTION_TD: Record<MsgTypeTD, () => string> = {
-  MsgReclaimTrustDeposit: () => t('notification.MsgReclaimTrustDeposit.inprogress'),
   MsgReclaimTrustDepositYield: () => t('notification.MsgReclaimTrustDepositYield.inprogress'),
+  MsgRepaySlashedTrustDeposit: () => t('notification.MsgRepaySlashedTrustDeposit.inprogress'),
 }
 
 export const MSG_ERROR_ACTION_TD: Record<MsgTypeTD, (code?: number, msg?: string) => string> = {
-  MsgReclaimTrustDeposit: (code, msg) =>
-    t('notification.MsgReclaimTrustDeposit.error', { code: code ? `(${code}) ` : '', msg: msg ?? '' }),
   MsgReclaimTrustDepositYield: (code, msg) =>
     t('notification.MsgReclaimTrustDepositYield.error', { code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgRepaySlashedTrustDeposit: (code, msg) =>
+    t('notification.MsgRepaySlashedTrustDeposit.error', { code: code ? `(${code}) ` : '', msg: msg ?? '' }),
 }
 
 // ============================================================================
-// TRUST REGISTRY ACTIONS
+// ECOSYSTEM ACTIONS
 // ============================================================================
 
 // Constants for success, error, and in-progress messages for each action
 
-export const MSG_SUCCESS_ACTION_TR: Record<MsgTypeTR, () => string> = {
-  MsgCreateTrustRegistry: () => t('notification.MsgCreateTrustRegistry.success'),
-  MsgUpdateTrustRegistry: () => t('notification.MsgUpdateTrustRegistry.success'),
-  MsgArchiveTrustRegistry: () => t('notification.MsgArchiveTrustRegistry.success'),
-  MsgUnarchiveTrustRegistry: () => t('notification.MsgUnarchiveTrustRegistry.success'),
+export const MSG_SUCCESS_ACTION_ECOSYSTEM: Record<MsgTypeEcosystem, () => string> = {
+  MsgCreateEcosystem: () => t('notification.MsgCreateEcosystem.success'),
+  MsgUpdateEcosystem: () => t('notification.MsgUpdateEcosystem.success'),
+  MsgArchiveEcosystem: () => t('notification.MsgArchiveEcosystem.success'),
+  MsgUnarchiveEcosystem: () => t('notification.MsgUnarchiveEcosystem.success'),
   MsgAddGovernanceFrameworkDocument: () => t('notification.MsgAddGovernanceFrameworkDocument.success'),
   MsgIncreaseActiveGovernanceFrameworkVersion: () =>
     t('notification.MsgIncreaseActiveGovernanceFrameworkVersion.success'),
 }
 
-export const MSG_INPROGRESS_ACTION_TR: Record<MsgTypeTR, () => string> = {
-  MsgCreateTrustRegistry: () => t('notification.MsgCreateTrustRegistry.inprogress'),
-  MsgUpdateTrustRegistry: () => t('notification.MsgUpdateTrustRegistry.inprogress'),
-  MsgArchiveTrustRegistry: () => t('notification.MsgArchiveTrustRegistry.inprogress'),
-  MsgUnarchiveTrustRegistry: () => t('notification.MsgUnarchiveTrustRegistry.inprogress'),
+export const MSG_INPROGRESS_ACTION_ECOSYSTEM: Record<MsgTypeEcosystem, () => string> = {
+  MsgCreateEcosystem: () => t('notification.MsgCreateEcosystem.inprogress'),
+  MsgUpdateEcosystem: () => t('notification.MsgUpdateEcosystem.inprogress'),
+  MsgArchiveEcosystem: () => t('notification.MsgArchiveEcosystem.inprogress'),
+  MsgUnarchiveEcosystem: () => t('notification.MsgUnarchiveEcosystem.inprogress'),
   MsgAddGovernanceFrameworkDocument: () => t('notification.MsgAddGovernanceFrameworkDocument.inprogress'),
   MsgIncreaseActiveGovernanceFrameworkVersion: () =>
     t('notification.MsgIncreaseActiveGovernanceFrameworkVersion.inprogress'),
 }
 
-export const MSG_ERROR_ACTION_TR: Record<
-  MsgTypeTR,
+export const MSG_ERROR_ACTION_ECOSYSTEM: Record<
+  MsgTypeEcosystem,
   (id: string | number | undefined, code?: number, msg?: string) => string
 > = {
-  MsgCreateTrustRegistry: (id, code, msg) =>
-    t('notification.MsgCreateTrustRegistry.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-  MsgUpdateTrustRegistry: (id, code, msg) =>
-    t('notification.MsgUpdateTrustRegistry.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-  MsgArchiveTrustRegistry: (id, code, msg) =>
-    t('notification.MsgArchiveTrustRegistry.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-  MsgUnarchiveTrustRegistry: (id, code, msg) =>
-    t('notification.MsgUnarchiveTrustRegistry.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgCreateEcosystem: (id, code, msg) =>
+    t('notification.MsgCreateEcosystem.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgUpdateEcosystem: (id, code, msg) =>
+    t('notification.MsgUpdateEcosystem.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgArchiveEcosystem: (id, code, msg) =>
+    t('notification.MsgArchiveEcosystem.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgUnarchiveEcosystem: (id, code, msg) =>
+    t('notification.MsgUnarchiveEcosystem.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
   MsgAddGovernanceFrameworkDocument: (id, code, msg) =>
     t('notification.MsgAddGovernanceFrameworkDocument.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
   MsgIncreaseActiveGovernanceFrameworkVersion: (id, code, msg) =>
@@ -195,74 +155,74 @@ export const MSG_ERROR_ACTION_CS: Record<
 }
 
 // ============================================================================
-// PERMISSION ACTIONS
+// PARTICIPANT ACTIONS
 // ============================================================================
 
 /**
- * Success messages for Permission actions
+ * Success messages for Participant actions
  */
-export const MSG_SUCCESS_ACTION_PERM: Record<MsgTypePERM, (id: string | number | undefined) => string> = {
-  MsgStartPermissionVP: (id) => t('notification.MsgStartPermissionVP.success', { id }),
-  MsgRenewPermissionVP: () => t('notification.MsgRenewPermissionVP.success'),
-  MsgSetPermissionVPToValidated: () => t('notification.MsgSetPermissionVPToValidated.success'),
-  MsgCancelPermissionVPLastRequest: () => t('notification.MsgCancelPermissionVPLastRequest.success'),
-  MsgCreateRootPermission: (id) => t('notification.MsgCreateRootPermission.success', { id }),
-  MsgExtendPermission: () => t('notification.MsgExtendPermission.success'),
-  MsgRevokePermission: () => t('notification.MsgRevokePermission.success'),
-  MsgCreateOrUpdatePermissionSession: () => t('notification.MsgCreateOrUpdatePermissionSession.success'),
-  MsgSlashPermissionTrustDeposit: () => t('notification.MsgSlashPermissionTrustDeposit.success'),
-  MsgRepayPermissionSlashedTrustDeposit: () => t('notification.MsgRepayPermissionSlashedTrustDeposit.success'),
-  MsgCreatePermission: (id) => t('notification.MsgCreatePermission.success', { id }),
+export const MSG_SUCCESS_ACTION_PARTICIPANT: Record<MsgTypeParticipant, (id: string | number | undefined) => string> = {
+  MsgStartParticipantOP: (id) => t('notification.MsgStartParticipantOP.success', { id }),
+  MsgRenewParticipantOP: () => t('notification.MsgRenewParticipantOP.success'),
+  MsgSetParticipantOPToValidated: () => t('notification.MsgSetParticipantOPToValidated.success'),
+  MsgCancelParticipantOPLastRequest: () => t('notification.MsgCancelParticipantOPLastRequest.success'),
+  MsgCreateRootParticipant: (id) => t('notification.MsgCreateRootParticipant.success', { id }),
+  MsgSetParticipantEffectiveUntil: () => t('notification.MsgSetParticipantEffectiveUntil.success'),
+  MsgRevokeParticipant: () => t('notification.MsgRevokeParticipant.success'),
+  MsgCreateOrUpdateParticipantSession: () => t('notification.MsgCreateOrUpdateParticipantSession.success'),
+  MsgSlashParticipantTrustDeposit: () => t('notification.MsgSlashParticipantTrustDeposit.success'),
+  MsgRepayParticipantSlashedTrustDeposit: () => t('notification.MsgRepayParticipantSlashedTrustDeposit.success'),
+  MsgSelfCreateParticipant: (id) => t('notification.MsgSelfCreateParticipant.success', { id }),
 }
 
 /**
- * In-progress messages for Permission actions
+ * In-progress messages for Participant actions
  */
-export const MSG_INPROGRESS_ACTION_PERM: Record<MsgTypePERM, () => string> = {
-  MsgStartPermissionVP: () => t('notification.MsgStartPermissionVP.inprogress'),
-  MsgRenewPermissionVP: () => t('notification.MsgRenewPermissionVP.inprogress'),
-  MsgSetPermissionVPToValidated: () => t('notification.MsgSetPermissionVPToValidated.inprogress'),
-  MsgCancelPermissionVPLastRequest: () => t('notification.MsgCancelPermissionVPLastRequest.inprogress'),
-  MsgCreateRootPermission: () => t('notification.MsgCreateRootPermission.inprogress'),
-  MsgExtendPermission: () => t('notification.MsgExtendPermission.inprogress'),
-  MsgRevokePermission: () => t('notification.MsgRevokePermission.inprogress'),
-  MsgCreateOrUpdatePermissionSession: () => t('notification.MsgCreateOrUpdatePermissionSession.inprogress'),
-  MsgSlashPermissionTrustDeposit: () => t('notification.MsgSlashPermissionTrustDeposit.inprogress'),
-  MsgRepayPermissionSlashedTrustDeposit: () => t('notification.MsgRepayPermissionSlashedTrustDeposit.inprogress'),
-  MsgCreatePermission: () => t('notification.MsgCreatePermission.inprogress'),
+export const MSG_INPROGRESS_ACTION_PARTICIPANT: Record<MsgTypeParticipant, () => string> = {
+  MsgStartParticipantOP: () => t('notification.MsgStartParticipantOP.inprogress'),
+  MsgRenewParticipantOP: () => t('notification.MsgRenewParticipantOP.inprogress'),
+  MsgSetParticipantOPToValidated: () => t('notification.MsgSetParticipantOPToValidated.inprogress'),
+  MsgCancelParticipantOPLastRequest: () => t('notification.MsgCancelParticipantOPLastRequest.inprogress'),
+  MsgCreateRootParticipant: () => t('notification.MsgCreateRootParticipant.inprogress'),
+  MsgSetParticipantEffectiveUntil: () => t('notification.MsgSetParticipantEffectiveUntil.inprogress'),
+  MsgRevokeParticipant: () => t('notification.MsgRevokeParticipant.inprogress'),
+  MsgCreateOrUpdateParticipantSession: () => t('notification.MsgCreateOrUpdateParticipantSession.inprogress'),
+  MsgSlashParticipantTrustDeposit: () => t('notification.MsgSlashParticipantTrustDeposit.inprogress'),
+  MsgRepayParticipantSlashedTrustDeposit: () => t('notification.MsgRepayParticipantSlashedTrustDeposit.inprogress'),
+  MsgSelfCreateParticipant: () => t('notification.MsgSelfCreateParticipant.inprogress'),
 }
 
 /**
- * Error messages for Permission actions (with id + optional error code/log)
+ * Error messages for Participant actions (with id + optional error code/log)
  */
-export const MSG_ERROR_ACTION_PERM: Record<
-  MsgTypePERM,
+export const MSG_ERROR_ACTION_PARTICIPANT: Record<
+  MsgTypeParticipant,
   (id: string | number | undefined, code?: number, msg?: string) => string
 > = {
-  MsgStartPermissionVP: (id, code, msg) =>
-    t('notification.MsgStartPermissionVP.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-  MsgRenewPermissionVP: (id, code, msg) =>
-    t('notification.MsgRenewPermissionVP.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-  MsgSetPermissionVPToValidated: (id, code, msg) =>
-    t('notification.MsgSetPermissionVPToValidated.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-  MsgCancelPermissionVPLastRequest: (id, code, msg) =>
-    t('notification.MsgCancelPermissionVPLastRequest.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-  MsgCreateRootPermission: (id, code, msg) =>
-    t('notification.MsgCreateRootPermission.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-  MsgExtendPermission: (id, code, msg) =>
-    t('notification.MsgExtendPermission.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-  MsgRevokePermission: (id, code, msg) =>
-    t('notification.MsgRevokePermission.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-  MsgCreateOrUpdatePermissionSession: (id, code, msg) =>
-    t('notification.MsgCreateOrUpdatePermissionSession.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-  MsgSlashPermissionTrustDeposit: (id, code, msg) =>
-    t('notification.MsgSlashPermissionTrustDeposit.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-  MsgRepayPermissionSlashedTrustDeposit: (id, code, msg) =>
-    t('notification.MsgRepayPermissionSlashedTrustDeposit.error', {
+  MsgStartParticipantOP: (id, code, msg) =>
+    t('notification.MsgStartParticipantOP.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgRenewParticipantOP: (id, code, msg) =>
+    t('notification.MsgRenewParticipantOP.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgSetParticipantOPToValidated: (id, code, msg) =>
+    t('notification.MsgSetParticipantOPToValidated.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgCancelParticipantOPLastRequest: (id, code, msg) =>
+    t('notification.MsgCancelParticipantOPLastRequest.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgCreateRootParticipant: (id, code, msg) =>
+    t('notification.MsgCreateRootParticipant.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgSetParticipantEffectiveUntil: (id, code, msg) =>
+    t('notification.MsgSetParticipantEffectiveUntil.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgRevokeParticipant: (id, code, msg) =>
+    t('notification.MsgRevokeParticipant.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgCreateOrUpdateParticipantSession: (id, code, msg) =>
+    t('notification.MsgCreateOrUpdateParticipantSession.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgSlashParticipantTrustDeposit: (id, code, msg) =>
+    t('notification.MsgSlashParticipantTrustDeposit.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgRepayParticipantSlashedTrustDeposit: (id, code, msg) =>
+    t('notification.MsgRepayParticipantSlashedTrustDeposit.error', {
       id,
       code: code ? `(${code}) ` : '',
       msg: msg ?? '',
     }),
-  MsgCreatePermission: (id, code, msg) =>
-    t('notification.MsgCreatePermission.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
+  MsgSelfCreateParticipant: (id, code, msg) =>
+    t('notification.MsgSelfCreateParticipant.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
 }
