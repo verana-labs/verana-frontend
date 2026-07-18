@@ -1,7 +1,5 @@
 'use client'
 
-import { MsgCreateCredentialSchema, MsgUpdateCredentialSchema } from '@codec-proto/verana/cs/v1/tx'
-import { toHex } from '@cosmjs/encoding'
 import { EncodeObject, OfflineSigner as OfflineSignerAmino } from '@cosmjs/proto-signing'
 import { calculateFee, DeliverTxResponse, GasPrice, SigningStargateClient, StdFee } from '@cosmjs/stargate'
 import { TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
@@ -31,9 +29,6 @@ export async function signAndBroadcastManualAmino({
   memo = '',
   simulate = false,
 }: AminoSignOptions): Promise<DeliverTxResponse | SimulateResult> {
-  // const any = veranaRegistry.encodeAsAny(messages[0]);
-  // debugCreateAny(any);
-
   // Connect a client — only used for simulate and broadcast
   const client = await SigningStargateClient.connectWithSigner(rpcEndpoint, signer, {
     aminoTypes: veranaAmino,
@@ -89,34 +84,13 @@ export async function signAndBroadcastManualAmino({
   throw new Error('Sequence mismatch after retry')
 }
 
-export function debugCreateAny(anyMsg: { typeUrl: string; value: Uint8Array }) {
-  if (
-    anyMsg.typeUrl !== '/verana.cs.v1.MsgCreateCredentialSchema' &&
-    anyMsg.typeUrl !== '/verana.cs.v1.MsgUpdateCredentialSchema'
-  )
-    return
-  const decoded =
-    anyMsg.typeUrl === '/verana.cs.v1.MsgCreateCredentialSchema'
-      ? MsgCreateCredentialSchema.decode(anyMsg.value)
-      : MsgUpdateCredentialSchema.decode(anyMsg.value)
-  logger.log('Any.typeUrl:', anyMsg.typeUrl)
-  logger.log('Any.value(hex):', toHex(anyMsg.value))
-  logger.log(`DECODED ${anyMsg.typeUrl}`, {
-    issuerGrantorValidationValidityPeriod: decoded.issuerGrantorValidationValidityPeriod?.value,
-    verifierGrantorValidationValidityPeriod: decoded.verifierGrantorValidationValidityPeriod?.value,
-    issuerValidationValidityPeriod: decoded.issuerValidationValidityPeriod?.value,
-    verifierValidationValidityPeriod: decoded.verifierValidationValidityPeriod?.value,
-    holderValidationValidityPeriod: decoded.holderValidationValidityPeriod?.value,
-  })
-}
-
 function isSequenceMismatch(e: unknown): boolean {
-  const m = String((e as any)?.message ?? e)
+  const m = e instanceof Error ? e.message : String(e)
   return m.includes('account sequence mismatch') || m.includes('incorrect account sequence')
 }
 
 function parseSequenceMismatch(err: unknown): { expected?: number; got?: number } {
-  const msg = String((err as any)?.message ?? err)
+  const msg = err instanceof Error ? err.message : String(err)
   const m = msg.match(/expected\s+(\d+)\s*,\s*got\s+(\d+)/i)
   if (!m) return {}
   return {

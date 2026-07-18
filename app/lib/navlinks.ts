@@ -1,6 +1,7 @@
 import {
   faCircleUser,
   faCompass,
+  faFingerprint,
   faGaugeHigh,
   faShieldHalved,
   faTasks,
@@ -35,17 +36,19 @@ export function getNavLinks(pendingCount?: number): NavLink[] {
       href: '/account',
       icon: faCircleUser,
     },
-    /* { name: resolveTranslatable({key: "directory.title"}, translate)??'Manage DIDs', href: '/did',
-      icon: faIdCard,
-      iconClass: "bg-gradient-to-br from-purple-500 to-purple-700 text-white",
-      featuredService: true, description: resolveTranslatable({key: "directory.description"}, translate) }, */
     {
-      name: resolveTranslatable({ key: 'trlist.title' }, translate) ?? 'My Ecosystems',
-      href: '/tr',
+      name: resolveTranslatable({ key: 'digest.title' }, translate) ?? 'Digest Registry',
+      href: '/digests',
+      icon: faFingerprint,
+      availableOffline: true,
+    },
+    {
+      name: resolveTranslatable({ key: 'ecosystemList.title' }, translate) ?? 'My Ecosystems',
+      href: '/ecosystems',
       icon: faShieldHalved,
       iconClass: 'bg-gradient-to-br from-orange-500 to-orange-700 text-white',
       featuredService: true,
-      description: resolveTranslatable({ key: 'trlist.description' }, translate),
+      description: resolveTranslatable({ key: 'ecosystemList.description' }, translate),
     },
     {
       name: resolveTranslatable({ key: 'discover.title' }, translate) ?? 'Discover & Join',
@@ -69,8 +72,9 @@ export function getNavLinks(pendingCount?: number): NavLink[] {
 const offlineRoutesAllowed: (string | RegExp)[] = [
   '/dashboard',
   '/discover',
-  /^\/tr\/[^/]+$/,
-  /^\/tr\/cs\/[^/]+$/,
+  '/digests',
+  /^\/ecosystems\/[^/]+$/,
+  /^\/credential-schemas\/[^/]+$/,
   /^\/participants\/[^/]+$/,
 ]
 

@@ -1,8 +1,7 @@
 'use client'
 
 import clsx from 'clsx'
-import { useRouter } from 'next/navigation'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { LOW_BALANCE_WARN_UVNA } from '@/config/env'
 import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
 import { translate } from '@/i18n/dataview'
@@ -10,12 +9,13 @@ import { canonicalizeLanguageTag } from '@/lib/language'
 import { logger } from '@/lib/logger'
 import { getCostMessage, getLowBalanceMessage, msgTypeStyle } from '@/msg/constants/msgTypeConfig'
 import { resolveMsgCopy } from '@/msg/constants/resolveMsgTypeConfig'
-import { MessageType } from '@/msg/constants/types'
-import { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
+import type { MessageType } from '@/msg/constants/types'
+import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
 import { useNotification } from '@/providers/notification-provider'
 import ActionCard, { ActionCardProps } from '@/ui/common/action-card'
 import JsonCodeBlock from '@/ui/common/json-code-block'
 import { LanguageCombobox } from '@/ui/common/language-combobox'
+import { getBalanceWarningState, shouldStartNoFormSimulation } from '@/ui/common/no-form-transaction'
 import {
   DataViewProps,
   isResolvedDataField,
@@ -32,7 +32,7 @@ type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & 
   data: T
   messageType: MessageType
   onSave: (newData: T) => void | Promise<void>
-  onSimulate?: (newData: T) => SimulateResult | void | Promise<SimulateResult | void>
+  onSimulate?: (newData: T) => SimulateResult | undefined | Promise<SimulateResult | undefined>
   onCancel?: () => void
   noForm?: boolean
   isModal?: boolean
@@ -62,7 +62,7 @@ export default function EditableDataView<T extends object>({
   setModalHidden,
   transactionCost,
 }: EditableDataViewProps<T>) {
-  const sections = translateSections(sectionsI18n)
+  const sections = useMemo(() => translateSections(sectionsI18n), [sectionsI18n])
   const [formData, setFormData] = useState<T>(data)
   const [errorFields, setErrorFields] = useState<FieldValidationError[]>([])
   const [submitting, setSubmitting] = useState(false)
@@ -70,98 +70,55 @@ export default function EditableDataView<T extends object>({
   const action = id ? 'edit' : 'create'
   const [hasTriedSubmit, setHasTriedSubmit] = useState(false)
 
-  // Router, notification, and errorNotified
-  const router = useRouter()
   const { notify } = useNotification()
   const [errorNotified, setErrorNotified] = useState(false)
 
-  // Checks if the current field value is valid
-  // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
-  const validatedRequiredField = useCallback((field: ResolvedField<any>, value: unknown): boolean => {
+  const validatedRequiredField = useCallback((field: ResolvedField<T>, value: unknown): boolean => {
     if (!field.required) return true
     if (value === undefined || value === null) return false
     if (typeof value === 'string' && value.trim() === '') return false
     return true
   }, [])
 
-  const [showMsgLowBalanceWarn, setShowMsgLowBalanceWarn] = useState<boolean | null>(null)
   const lowBalanceTemplate =
     resolveTranslatable({ key: 'messages.lowbalance' }, translate) ??
     "You’re Running Low on VNA. Your balance is {value} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted."
-  const [feeAmount, setFeeAmount] = useState<number>(0)
-  const [showMsgBalanceLessThanFeeWarn, setShowMsgBalanceLessThanFeeWarn] = useState<boolean | null>(null)
+  const [feeAmount, setFeeAmount] = useState<number | null>(null)
   const balanceLessThanFeeTemplate =
     resolveTranslatable({ key: 'messages.balanceLessThanFee' }, translate) ??
     "You’re Running Low on VNA. Your balance is {value} VNA and running this transaction requires {fee} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted."
 
   // Custom hook to fetch user's account/trust deposit data
   const { accountData, errorAccountData } = useTrustDepositAccountData()
+  const {
+    availableBalance,
+    lowBalance: showMsgLowBalanceWarn,
+    balanceLessThanFee: showMsgBalanceLessThanFeeWarn,
+  } = useMemo(
+    () => getBalanceWarningState(accountData.balance, feeAmount, LOW_BALANCE_WARN_UVNA ?? '0'),
+    [accountData.balance, feeAmount]
+  )
 
-  // Show notification if there is an error fetching account data
   useEffect(() => {
     if (errorAccountData && !errorNotified) {
-      ;(async () => {
+      void (async () => {
         await notify(errorAccountData, 'error', 'Error fetching account balance')
         setErrorNotified(true)
-        // router.push('/tr');
       })()
     }
-  }, [errorAccountData, router, errorNotified])
+  }, [errorAccountData, errorNotified, notify])
 
-  const basicSection = sections.find((section) => (!section.type || section.type === 'basic') && !section.noEdit)
-  // if (!basicSection) {
-  //   return null;
-  // }
-  const visibleFields = visibleFieldsForMode(basicSection?.fields, action).filter(isResolvedDataField)
+  const basicSection = useMemo(
+    () => sections.find((section) => (!section.type || section.type === 'basic') && !section.noEdit),
+    [sections]
+  )
+  const visibleFields = useMemo(
+    () => visibleFieldsForMode(basicSection?.fields, action).filter(isResolvedDataField),
+    [action, basicSection]
+  )
 
   const ran = useRef(false)
-  useEffect(() => {
-    if (!noForm) {
-      setModalHidden?.()
-      return
-    }
-    if (ran.current) return
-    ran.current = true
-    handleSimulate()
-  }, [noForm, handleSimulate])
-
-  useEffect(() => {
-    if (!noForm) return
-    if (showMsgBalanceLessThanFeeWarn == null || showMsgLowBalanceWarn == null) return
-    if (showMsgBalanceLessThanFeeWarn === false && showMsgLowBalanceWarn === false) {
-      handleSave()
-      onCancel?.()
-    } else {
-      setModalHidden?.()
-    }
-  }, [showMsgBalanceLessThanFeeWarn, showMsgLowBalanceWarn])
-
-  useEffect(() => {
-    // Verified if user has equal or more than LOW_BALANCE_WARN_UVNA in its wallet
-    const availableBalance = accountData.balance && Number(accountData.balance)
-    if (!availableBalance) return
-    const hasLowBalance = availableBalance <= Number(LOW_BALANCE_WARN_UVNA)
-    setShowMsgLowBalanceWarn(hasLowBalance)
-    // Set validation 'claimedVNA'
-    // const availableReclaimable = (accountData.reclaimable) ? Number(accountData.reclaimable)/ 1_000_000 : 0;
-    // visibleFields.forEach(field => {
-    //   if (!isResolvedDataField(field)) return;
-    //   if (field.name !== 'claimedVNA') return;
-    //   field.validation = {
-    //     ...(field.validation ?? { type: 'Number' }),
-    //     lessThanOrEqual: availableReclaimable,
-    //   };
-    // });
-  }, [accountData.balance, accountData.reclaimable]) //, sections]);
-
-  useEffect(() => {
-    // Verified if user has equal or more than Simulated Fee in its wallet
-    if (!noForm) return
-    const availableBalance = accountData.balance && Number(accountData.balance)
-    if (!availableBalance || !feeAmount) return
-    const hasBalanceLessThanFee = availableBalance <= feeAmount
-    setShowMsgBalanceLessThanFeeWarn(hasBalanceLessThanFee)
-  }, [feeAmount, accountData.balance])
+  const autoSaveRan = useRef(false)
 
   // Updates form state and manages error tracking on change
   function handleChange(fieldName: keyof T, value: unknown, field: ResolvedDataField<T>) {
@@ -176,7 +133,7 @@ export default function EditableDataView<T extends object>({
     })
   }
 
-  function hasInvalidRequiredFields(): boolean {
+  const hasInvalidRequiredFields = useCallback((): boolean => {
     const requiredErrors = new Map<string, FieldValidationError>()
     for (const field of visibleFields) {
       const typedField = field as ResolvedDataField<T>
@@ -194,38 +151,9 @@ export default function EditableDataView<T extends object>({
       return [...nonRequiredErrors, ...Array.from(requiredErrors.values())]
     })
     return requiredErrors.size > 0
-  }
+  }, [formData, validatedRequiredField, visibleFields])
 
-  // Handles save action; disables buttons while saving and prevents double submission
-  async function handleSave() {
-    setHasTriedSubmit(true)
-    if (submitting || hasInvalidRequiredFields() || hasInvalidData()) return
-    setSubmitting(true)
-    try {
-      await Promise.resolve(onSave(formData))
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  // Handles simulate action
-  async function handleSimulate() {
-    if (messageType === 'MsgReclaimTrustDepositYield') return
-    if (onSimulate) {
-      try {
-        setSubmitting(true)
-        const res = await Promise.resolve(onSimulate(formData))
-        if (res) setFeeAmount(Number(res.amount?.[0]?.amount) || 900_000)
-      } catch (err) {
-        logger.error('handleSimulate', err)
-      } finally {
-        setSubmitting(false)
-      }
-    }
-  }
-
-  // Future helper: checks full form validity using extended field rules
-  function hasInvalidData(): boolean {
+  const hasInvalidData = useCallback((): boolean => {
     const invalid = new Map<string, string>()
     for (const field of visibleFields) {
       const typedField = field as ResolvedDataField<T>
@@ -238,7 +166,56 @@ export default function EditableDataView<T extends object>({
     }
     setErrorFields(Array.from(invalid.entries()).map(([key, errorMessage]) => ({ key, errorMessage })))
     return invalid.size > 0
-  }
+  }, [formData, visibleFields])
+
+  const handleSave = useCallback(async () => {
+    setHasTriedSubmit(true)
+    if (submitting || hasInvalidRequiredFields() || hasInvalidData()) return
+    setSubmitting(true)
+    try {
+      await Promise.resolve(onSave(formData))
+    } finally {
+      setSubmitting(false)
+    }
+  }, [formData, hasInvalidData, hasInvalidRequiredFields, onSave, submitting])
+
+  const handleSimulate = useCallback(async () => {
+    if (onSimulate) {
+      try {
+        setSubmitting(true)
+        const res = await Promise.resolve(onSimulate(formData))
+        if (res) setFeeAmount(Number(res.amount?.[0]?.amount) || 900_000)
+      } catch (err) {
+        logger.error('handleSimulate', err)
+      } finally {
+        setSubmitting(false)
+      }
+    }
+  }, [formData, onSimulate])
+
+  useEffect(() => {
+    if (!noForm) {
+      setModalHidden?.()
+      return
+    }
+    if (errorAccountData) return
+    if (!shouldStartNoFormSimulation(noForm, availableBalance, ran.current)) return
+    ran.current = true
+    void handleSimulate()
+  }, [availableBalance, errorAccountData, handleSimulate, noForm, setModalHidden])
+
+  useEffect(() => {
+    if (!noForm) return
+    if (showMsgBalanceLessThanFeeWarn == null || showMsgLowBalanceWarn == null) return
+    if (showMsgBalanceLessThanFeeWarn || showMsgLowBalanceWarn) {
+      setModalHidden?.()
+      return
+    }
+    if (autoSaveRan.current) return
+    autoSaveRan.current = true
+    void handleSave()
+    onCancel?.()
+  }, [handleSave, noForm, onCancel, setModalHidden, showMsgBalanceLessThanFeeWarn, showMsgLowBalanceWarn])
 
   // Handles cancel action; disables button while submitting
   function handleCancel() {
@@ -264,10 +241,9 @@ export default function EditableDataView<T extends object>({
     const errorMessage = fieldError?.errorMessage ?? 'Required'
 
     // Build base input class for all fields
-    const baseInputClass =
-      'input' +
-      (showError ? ' border-red-500' : '') +
-      (isDisabled ? ' bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed' : '')
+    const baseInputClass = `input${showError ? ' border-red-500' : ''}${
+      isDisabled ? ' bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed' : ''
+    }`
 
     // Render different input types
     let inputEl: React.ReactNode
@@ -281,7 +257,7 @@ export default function EditableDataView<T extends object>({
           </div>
         ) : (
           <textarea
-            className={baseInputClass + ' w-full'}
+            className={`${baseInputClass} w-full`}
             value={String(value ?? '')}
             disabled={isDisabled}
             onChange={(e) => handleChange(field.name as keyof T, e.target.value, field)}
@@ -409,12 +385,12 @@ export default function EditableDataView<T extends object>({
       {/* Inputs Textarea */}
       {textareaInputs.length > 0 && textareaInputs}
 
-      {/* Cost Message MsgStartPermissionVP | MsgCreatePermission */}
+      {/* Transaction cost */}
       {transactionCost && (!actionCard || actionCard.available) && (
         <div
           className={clsx(
             'bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4',
-            actionCard && actionCard.available ? 'w-fit mx-auto text-center mb-6' : 'mb-4'
+            actionCard?.available ? 'w-fit mx-auto text-center mb-6' : 'mb-4'
           )}
         >
           <p
@@ -429,7 +405,7 @@ export default function EditableDataView<T extends object>({
         <div
           className={clsx(
             'bg-red-50 dark:bg-red-900/20 rounded-lg p-4',
-            actionCard && actionCard.available ? 'w-fit mx-auto text-center mb-6' : 'mb-4'
+            actionCard?.available ? 'w-fit mx-auto text-center mb-6' : 'mb-4'
           )}
         >
           <div className="flex">
@@ -457,7 +433,7 @@ export default function EditableDataView<T extends object>({
                 __html: getLowBalanceMessage(
                   showMsgBalanceLessThanFeeWarn ? balanceLessThanFeeTemplate : lowBalanceTemplate,
                   (Number(accountData.balance) / 1_000_000).toString() ?? '1',
-                  (feeAmount / 1_000_000).toString()
+                  ((feeAmount ?? 0) / 1_000_000).toString()
                 ),
               }}
             />
@@ -499,9 +475,7 @@ export default function EditableDataView<T extends object>({
 
       {/* Action buttons: disabled if submitting or validation fails */}
       {(!actionCard || actionCard.available) && (
-        <div
-          className={clsx('actions-center', actionCard && actionCard.available ? 'w-fit mx-auto text-center mb-6' : '')}
-        >
+        <div className={clsx('actions-center', actionCard?.available ? 'w-fit mx-auto text-center mb-6' : '')}>
           {onCancel && (
             <button
               className={clsx(

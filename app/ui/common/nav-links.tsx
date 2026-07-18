@@ -22,7 +22,7 @@ export default function NavLinks() {
   }
 
   const pendingTasksCtx = usePendingTasksCtx()
-  const totalPendingTasks = pendingTasksCtx.permissionsList.reduce((acc, item) => acc + item.pending_tasks, 0)
+  const totalPendingTasks = pendingTasksCtx.pendingParticipants.reduce((total, item) => total + item.pending_tasks, 0)
   const links = getNavLinks(totalPendingTasks)
 
   return (

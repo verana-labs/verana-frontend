@@ -1,91 +1,128 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA } from '@/config/env'
 import { translate } from '@/i18n/dataview'
-import { ApiErrorResponse } from '@/types/apiErrorResponse'
-import { CsData } from '@/ui/dataview/datasections/cs'
+import type { ApiErrorResponse } from '@/types/apiErrorResponse'
+import type { CredentialSchemaData } from '@/ui/dataview/datasections/cs'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
-type RawSchema = Record<string, unknown> & {
-  id?: string | number
-  tr_id?: string | number
-  creator?: string
-  json_schema?: string
-  issuer_grantor_validation_validity_period?: number
-  verifier_grantor_validation_validity_period?: number
-  issuer_validation_validity_period?: number
-  verifier_validation_validity_period?: number
-  holder_validation_validity_period?: number
-  issuer_perm_management_mode?: number
-  verifier_perm_management_mode?: number
-  state?: string
-  archived?: string
-  title?: string
-  description?: string
+const ONBOARDING_MODES = new Set(['OPEN', 'ECOSYSTEM_ONBOARDING_PROCESS', 'GRANTOR_ONBOARDING_PROCESS'])
+const HOLDER_ONBOARDING_MODES = new Set(['ISSUER_ONBOARDING_PROCESS', 'PERMISSIONLESS'])
+
+function record(value: unknown, path: string): Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error(`Invalid credential schema response: ${path}`)
+  }
+  return value as Record<string, unknown>
 }
 
-export function useCsData(id: string) {
-  const getURL = VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA
+function string(value: unknown, path: string): string {
+  if (typeof value !== 'string') throw new Error(`Invalid credential schema response: ${path}`)
+  return value
+}
 
-  const [csData, setData] = useState<CsData | null>(null)
+function number(value: unknown, path: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`Invalid credential schema response: ${path}`)
+  }
+  return value
+}
+
+function mode(value: unknown, path: string, allowed: Set<string>): string {
+  const result = string(value, path)
+  if (!allowed.has(result)) throw new Error(`Invalid credential schema response: ${path}`)
+  return result
+}
+
+function nullableString(value: unknown, path: string): string | null {
+  if (value === null) return null
+  return string(value, path)
+}
+
+export function parseCredentialSchemaResponse(payload: unknown): CredentialSchemaData {
+  const envelope = record(payload, 'response')
+  if (!('schema' in envelope)) {
+    throw new Error('Invalid credential schema response: missing schema envelope')
+  }
+  const source = record(envelope.schema, 'schema')
+  return {
+    id: number(source.id, 'schema.id'),
+    ecosystemId: number(source.ecosystem_id, 'schema.ecosystem_id'),
+    jsonSchema: string(source.json_schema, 'schema.json_schema'),
+    issuerGrantorValidationValidityPeriod: number(
+      source.issuer_grantor_validation_validity_period,
+      'schema.issuer_grantor_validation_validity_period'
+    ),
+    verifierGrantorValidationValidityPeriod: number(
+      source.verifier_grantor_validation_validity_period,
+      'schema.verifier_grantor_validation_validity_period'
+    ),
+    issuerValidationValidityPeriod: number(
+      source.issuer_validation_validity_period,
+      'schema.issuer_validation_validity_period'
+    ),
+    verifierValidationValidityPeriod: number(
+      source.verifier_validation_validity_period,
+      'schema.verifier_validation_validity_period'
+    ),
+    holderValidationValidityPeriod: number(
+      source.holder_validation_validity_period,
+      'schema.holder_validation_validity_period'
+    ),
+    issuerOnboardingMode: mode(source.issuer_onboarding_mode, 'schema.issuer_onboarding_mode', ONBOARDING_MODES),
+    verifierOnboardingMode: mode(source.verifier_onboarding_mode, 'schema.verifier_onboarding_mode', ONBOARDING_MODES),
+    holderOnboardingMode:
+      source.holder_onboarding_mode === null
+        ? null
+        : mode(source.holder_onboarding_mode, 'schema.holder_onboarding_mode', HOLDER_ONBOARDING_MODES),
+    pricingAssetType: nullableString(source.pricing_asset_type, 'schema.pricing_asset_type'),
+    pricingAsset: nullableString(source.pricing_asset, 'schema.pricing_asset'),
+    digestAlgorithm: nullableString(source.digest_algorithm, 'schema.digest_algorithm'),
+    archived: nullableString(source.archived, 'schema.archived'),
+    title: typeof source.title === 'string' ? source.title : undefined,
+    description: typeof source.description === 'string' ? source.description : undefined,
+    state: source.archived === null ? 'ACTIVE' : 'ARCHIVED',
+  }
+}
+
+export function useCredentialSchemaData(id: string) {
+  const [credentialSchema, setCredentialSchema] = useState<CredentialSchemaData | null>(null)
   const [loading, setLoading] = useState(false)
-  const [errorCS, setError] = useState<string | null>(null)
+  const [errorCredentialSchema, setError] = useState<string | null>(null)
 
-  const fetchCS = async () => {
-    if (!id || !getURL) {
-      setError(resolveTranslatable({ key: 'error.fetch.cs' }, translate) ?? 'Missing CS id or endpoint URL')
+  const fetchCredentialSchema = useCallback(async () => {
+    if (!id || !VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA) {
+      setError(resolveTranslatable({ key: 'error.fetch.cs' }, translate) ?? 'Missing credential schema ID or endpoint')
       setLoading(false)
       return
     }
 
-    // Reset state when inputs change
     setError(null)
-    const url = `${getURL}/get/${id}`
+    setLoading(true)
     try {
-      setLoading(true)
-      const res = await fetch(url)
-      const json = await res.json()
-      if (!res.ok) {
+      const response = await fetch(`${VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA}/get/${id}`)
+      const json: unknown = await response.json()
+      if (!response.ok) {
         const { error, code } = json as ApiErrorResponse
-        setError(`Error ${code}: ${error}`)
-        return
+        throw new Error(`Error ${code}: ${error}`)
       }
-
-      type ResponseShape = { schema: RawSchema }
-      const resp = json as ResponseShape
-      const entry = resp.schema ?? (resp as RawSchema)
-
-      const id = entry.id ?? ''
-
-      setData({
-        id,
-        trId: entry.tr_id ?? '',
-        creator: entry.creator ?? '',
-        issuerGrantorValidationValidityPeriod: entry.issuer_grantor_validation_validity_period ?? 0,
-        verifierGrantorValidationValidityPeriod: entry.verifier_grantor_validation_validity_period ?? 0,
-        issuerValidationValidityPeriod: entry.issuer_validation_validity_period ?? 0,
-        verifierValidationValidityPeriod: entry.verifier_validation_validity_period ?? 0,
-        holderValidationValidityPeriod: entry.holder_validation_validity_period ?? 0,
-        issuerPermManagementMode: entry.issuer_perm_management_mode ?? 0,
-        verifierPermManagementMode: entry.verifier_perm_management_mode ?? 0,
-        jsonSchema: entry.json_schema ?? '',
-        title: entry.title,
-        description: entry.description,
-        state: entry.state,
-        archived: entry.archived ?? '',
-      })
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      setError(msg)
+      setCredentialSchema(parseCredentialSchemaResponse(json))
+    } catch (error) {
+      setError(error instanceof Error ? error.message : String(error))
     } finally {
       setLoading(false)
     }
-  }
+  }, [id])
 
   useEffect(() => {
-    fetchCS()
-  }, [])
+    void fetchCredentialSchema()
+  }, [fetchCredentialSchema])
 
-  return { csData, loading, errorCS, refetch: fetchCS }
+  return {
+    credentialSchema,
+    loading,
+    errorCredentialSchema,
+    refetch: fetchCredentialSchema,
+  }
 }

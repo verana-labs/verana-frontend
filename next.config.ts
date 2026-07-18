@@ -3,6 +3,11 @@ import { version } from './package.json'
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  redirects: async () => [
+    { source: '/tr', destination: '/ecosystems', permanent: false },
+    { source: '/tr/cs/:id', destination: '/credential-schemas/:id', permanent: false },
+    { source: '/tr/:id', destination: '/ecosystems/:id', permanent: false },
+  ],
   env: {
     NEXT_PUBLIC_APP_VERSION: version,
   },

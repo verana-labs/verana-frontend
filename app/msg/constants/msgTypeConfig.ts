@@ -5,26 +5,10 @@ import { I18nValues, Translatable } from '@/ui/dataview/types'
 const t = (key: string, values?: I18nValues): Translatable => ({ key, values })
 
 export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
-  MsgAddDID: {
-    label: t('messages.MsgAddDID.label'),
-    description: t('messages.MsgAddDID.description'),
-    cost: t('messages.MsgAddDID.cost'), // {value}
-  },
-  MsgRenewDID: {
-    label: t('messages.MsgRenewDID.label'),
-    description: t('messages.MsgRenewDID.description'),
-    cost: t('messages.MsgRenewDID.cost'), // {value}
-  },
-  MsgTouchDID: {
-    label: t('messages.MsgTouchDID.label'),
-    description: t('messages.MsgTouchDID.description'),
-    cost: t('messages.MsgTouchDID.cost'), // {value}
-  },
-  MsgRemoveDID: {
-    label: t('messages.MsgRemoveDID.label'),
-    description: t('messages.MsgRemoveDID.description'),
-    cost: t('messages.MsgRemoveDID.cost'), // {value} {td}
-    warning: t('messages.MsgRemoveDID.warning'),
+  MsgStoreDigest: {
+    label: t('messages.MsgStoreDigest.label'),
+    description: t('messages.MsgStoreDigest.description'),
+    cost: t('messages.MsgStoreDigest.cost'),
   },
 
   MsgReclaimTrustDepositYield: {
@@ -32,36 +16,31 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     description: t('messages.MsgReclaimTrustDepositYield.description'),
     cost: t('messages.MsgReclaimTrustDepositYield.cost'), // {value}
   },
-  MsgReclaimTrustDeposit: {
-    label: t('messages.MsgReclaimTrustDeposit.label'),
-    description: t('messages.MsgReclaimTrustDeposit.description'), // {addBalance} {burnRate}
-    cost: t('messages.MsgReclaimTrustDeposit.cost'), // {value}
-  },
   MsgRepaySlashedTrustDeposit: {
     label: t('messages.MsgRepaySlashedTrustDeposit.label'),
     description: t('messages.MsgRepaySlashedTrustDeposit.description'),
     cost: t('messages.MsgRepaySlashedTrustDeposit.cost'), // {value}
   },
 
-  MsgCreateTrustRegistry: {
-    label: t('messages.MsgCreateTrustRegistry.label'),
-    description: t('messages.MsgCreateTrustRegistry.description'),
-    cost: t('messages.MsgCreateTrustRegistry.cost'), // {value}
+  MsgCreateEcosystem: {
+    label: t('messages.MsgCreateEcosystem.label'),
+    description: t('messages.MsgCreateEcosystem.description'),
+    cost: t('messages.MsgCreateEcosystem.cost'), // {value}
   },
-  MsgUpdateTrustRegistry: {
-    label: t('messages.MsgUpdateTrustRegistry.label'),
-    description: t('messages.MsgUpdateTrustRegistry.description'),
-    cost: t('messages.MsgUpdateTrustRegistry.cost'), // {value}
+  MsgUpdateEcosystem: {
+    label: t('messages.MsgUpdateEcosystem.label'),
+    description: t('messages.MsgUpdateEcosystem.description'),
+    cost: t('messages.MsgUpdateEcosystem.cost'), // {value}
   },
-  MsgArchiveTrustRegistry: {
-    label: t('messages.MsgArchiveTrustRegistry.label'),
-    description: t('messages.MsgArchiveTrustRegistry.description'),
-    cost: t('messages.MsgArchiveTrustRegistry.cost'),
+  MsgArchiveEcosystem: {
+    label: t('messages.MsgArchiveEcosystem.label'),
+    description: t('messages.MsgArchiveEcosystem.description'),
+    cost: t('messages.MsgArchiveEcosystem.cost'),
   },
-  MsgUnarchiveTrustRegistry: {
-    label: t('messages.MsgUnarchiveTrustRegistry.label'),
-    description: t('messages.MsgUnarchiveTrustRegistry.description'),
-    cost: t('messages.MsgUnarchiveTrustRegistry.cost'),
+  MsgUnarchiveEcosystem: {
+    label: t('messages.MsgUnarchiveEcosystem.label'),
+    description: t('messages.MsgUnarchiveEcosystem.description'),
+    cost: t('messages.MsgUnarchiveEcosystem.cost'),
   },
   MsgAddGovernanceFrameworkDocument: {
     label: t('messages.MsgAddGovernanceFrameworkDocument.label'),
@@ -94,57 +73,72 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     description: t('messages.MsgUnarchiveCredentialSchema.description'),
     cost: t('messages.MsgUnarchiveCredentialSchema.cost'),
   },
-  MsgCancelPermissionVPLastRequest: {
-    label: t('messages.MsgCancelPermissionVPLastRequest.label'),
-    description: t('messages.MsgCancelPermissionVPLastRequest.description'),
-    cost: t('messages.MsgCancelPermissionVPLastRequest.cost'), // {value}
+  MsgCancelParticipantOPLastRequest: {
+    label: t('messages.MsgCancelParticipantOPLastRequest.label'),
+    description: t('messages.MsgCancelParticipantOPLastRequest.description'),
+    cost: t('messages.MsgCancelParticipantOPLastRequest.cost'), // {value}
   },
-  MsgRenewPermissionVP: {
-    label: t('messages.MsgRenewPermissionVP.label'),
-    description: t('messages.MsgRenewPermissionVP.description'),
-    cost: t('messages.MsgRenewPermissionVP.cost'), // {value}
+  MsgRenewParticipantOP: {
+    label: t('messages.MsgRenewParticipantOP.label'),
+    description: t('messages.MsgRenewParticipantOP.description'),
+    cost: t('messages.MsgRenewParticipantOP.cost'), // {value}
   },
-  MsgSetPermissionVPToValidated: {
-    label: t('messages.MsgSetPermissionVPToValidated.label'),
-    description: t('messages.MsgSetPermissionVPToValidated.description'),
-    cost: t('messages.MsgSetPermissionVPToValidated.cost'), // {value}
+  MsgSetParticipantOPToValidated: {
+    label: t('messages.MsgSetParticipantOPToValidated.label'),
+    description: t('messages.MsgSetParticipantOPToValidated.description'),
+    cost: t('messages.MsgSetParticipantOPToValidated.cost'), // {value}
   },
-  MsgExtendPermission: {
-    label: t('messages.MsgExtendPermission.label'),
-    description: t('messages.MsgExtendPermission.description'),
-    cost: t('messages.MsgExtendPermission.cost'), // {value}
+  MsgSetParticipantEffectiveUntil: {
+    label: t('messages.MsgSetParticipantEffectiveUntil.label'),
+    description: t('messages.MsgSetParticipantEffectiveUntil.description'),
+    cost: t('messages.MsgSetParticipantEffectiveUntil.cost'), // {value}
   },
-  MsgRevokePermission: {
-    label: t('messages.MsgRevokePermission.label'),
-    description: t('messages.MsgRevokePermission.description'),
-    cost: t('messages.MsgRevokePermission.cost'), // {value}
-    warning: t('messages.MsgRevokePermission.warning'),
+  MsgRevokeParticipant: {
+    label: t('messages.MsgRevokeParticipant.label'),
+    description: t('messages.MsgRevokeParticipant.description'),
+    cost: t('messages.MsgRevokeParticipant.cost'), // {value}
+    warning: t('messages.MsgRevokeParticipant.warning'),
   },
-  MsgSlashPermissionTrustDeposit: {
-    label: t('messages.MsgSlashPermissionTrustDeposit.label'),
-    description: t('messages.MsgSlashPermissionTrustDeposit.description'),
-    cost: t('messages.MsgSlashPermissionTrustDeposit.cost'), // {value}
-    warning: t('messages.MsgSlashPermissionTrustDeposit.warning'),
+  MsgCreateOrUpdateParticipantSession: {
+    label: t('messages.MsgCreateOrUpdateParticipantSession.label'),
+    description: t('messages.MsgCreateOrUpdateParticipantSession.description'),
+    cost: t('messages.MsgCreateOrUpdateParticipantSession.cost'),
   },
-  MsgRepayPermissionSlashedTrustDeposit: {
-    label: t('messages.MsgRepayPermissionSlashedTrustDeposit.label'),
-    description: t('messages.MsgRepayPermissionSlashedTrustDeposit.description'),
-    cost: t('messages.MsgRepayPermissionSlashedTrustDeposit.cost'), // {value}
+  MsgSlashParticipantTrustDeposit: {
+    label: t('messages.MsgSlashParticipantTrustDeposit.label'),
+    description: t('messages.MsgSlashParticipantTrustDeposit.description'),
+    cost: t('messages.MsgSlashParticipantTrustDeposit.cost'), // {value}
+    warning: t('messages.MsgSlashParticipantTrustDeposit.warning'),
   },
-  MsgCreateRootPermission: {
-    label: t('messages.MsgCreateRootPermission.label'),
-    description: t('messages.MsgCreateRootPermission.description'),
-    cost: t('messages.MsgCreateRootPermission.cost'), // {value}
+  MsgRepayParticipantSlashedTrustDeposit: {
+    label: t('messages.MsgRepayParticipantSlashedTrustDeposit.label'),
+    description: t('messages.MsgRepayParticipantSlashedTrustDeposit.description'),
+    cost: t('messages.MsgRepayParticipantSlashedTrustDeposit.cost'), // {value}
   },
-  MsgStartPermissionVP: {
-    label: t('messages.MsgStartPermissionVP.label'),
-    description: t('messages.MsgStartPermissionVP.description'),
-    cost: t('messages.MsgStartPermissionVP.cost'), // {value}
+  MsgCreateRootParticipant: {
+    label: t('messages.MsgCreateRootParticipant.label'),
+    description: t('messages.MsgCreateRootParticipant.description'),
+    cost: t('messages.MsgCreateRootParticipant.cost'), // {value}
   },
-  MsgCreatePermission: {
-    label: t('messages.MsgCreatePermission.label'),
-    description: t('messages.MsgCreatePermission.description'),
-    cost: t('messages.MsgCreatePermission.cost'), // {value}
+  MsgStartParticipantOP: {
+    label: t('messages.MsgStartParticipantOP.label'),
+    description: t('messages.MsgStartParticipantOP.description'),
+    cost: t('messages.MsgStartParticipantOP.cost'), // {value}
+  },
+  MsgSelfCreateParticipant: {
+    label: t('messages.MsgSelfCreateParticipant.label'),
+    description: t('messages.MsgSelfCreateParticipant.description'),
+    cost: t('messages.MsgSelfCreateParticipant.cost'), // {value}
+  },
+  MsgCreateCorporation: {
+    label: t('messages.MsgCreateCorporation.label'),
+    description: t('messages.MsgCreateCorporation.description'),
+    cost: t('messages.MsgCreateCorporation.cost'),
+  },
+  MsgGrantSelfOperatorAuthorization: {
+    label: t('messages.MsgGrantSelfOperatorAuthorization.label'),
+    description: t('messages.MsgGrantSelfOperatorAuthorization.description'),
+    cost: t('messages.MsgGrantSelfOperatorAuthorization.cost'),
   },
 }
 
@@ -164,26 +158,16 @@ export function getDescriptionMessage(template: string, addBalance: string | num
 }
 
 export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
-  MsgAddDID: {},
-  MsgRenewDID: {
-    button: 'bg-green-600 hover:bg-green-700',
-  },
-  MsgTouchDID: {
-    button: 'bg-blue-600 hover:bg-blue-700',
-  },
-  MsgRemoveDID: {
-    button: 'bg-red-600 hover:bg-red-700',
-  },
+  MsgStoreDigest: {},
   MsgReclaimTrustDepositYield: {},
-  MsgReclaimTrustDeposit: {},
   MsgRepaySlashedTrustDeposit: {},
-  MsgCreateTrustRegistry: {},
-  MsgUpdateTrustRegistry: {},
-  MsgArchiveTrustRegistry: {
+  MsgCreateEcosystem: {},
+  MsgUpdateEcosystem: {},
+  MsgArchiveEcosystem: {
     button: 'bg-gray-600 hover:bg-gray-700',
     icon: faBoxArchive,
   },
-  MsgUnarchiveTrustRegistry: {
+  MsgUnarchiveEcosystem: {
     button: 'bg-green-600 hover:bg-green-700',
     icon: faBoxArchive,
   },
@@ -205,24 +189,27 @@ export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
     button: 'bg-green-600 hover:bg-green-700',
     icon: faBoxArchive,
   },
-  MsgCancelPermissionVPLastRequest: {
+  MsgCancelParticipantOPLastRequest: {
     button: 'bg-gray-600 hover:bg-gray-700',
   },
-  MsgRenewPermissionVP: {},
-  MsgSetPermissionVPToValidated: {
+  MsgRenewParticipantOP: {},
+  MsgSetParticipantOPToValidated: {
     button: 'bg-green-600 hover:bg-green-700',
   },
-  MsgExtendPermission: {},
-  MsgRevokePermission: {
+  MsgSetParticipantEffectiveUntil: {},
+  MsgRevokeParticipant: {
     button: 'bg-red-600 hover:bg-red-700',
   },
-  MsgSlashPermissionTrustDeposit: {
+  MsgCreateOrUpdateParticipantSession: {},
+  MsgSlashParticipantTrustDeposit: {
     button: 'bg-red-600 hover:bg-red-700',
   },
-  MsgRepayPermissionSlashedTrustDeposit: {
+  MsgRepayParticipantSlashedTrustDeposit: {
     button: 'bg-green-600 hover:bg-green-700',
   },
-  MsgCreateRootPermission: {},
-  MsgCreatePermission: {},
-  MsgStartPermissionVP: {},
+  MsgCreateRootParticipant: {},
+  MsgSelfCreateParticipant: {},
+  MsgStartParticipantOP: {},
+  MsgCreateCorporation: {},
+  MsgGrantSelfOperatorAuthorization: {},
 }

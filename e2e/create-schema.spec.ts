@@ -13,13 +13,13 @@ const VALIDITY_FIELDS = [
   'Holder Validity Period',
 ]
 
-test('create a credential schema (real testnet broadcast)', async ({ page }) => {
+test('create a credential schema (real devnet broadcast)', async ({ page }) => {
   test.setTimeout(240_000)
   await connectWallet(page, { mnemonic: requireFundedMnemonic() })
 
   const stamp = randomUUID().replace(/-/g, '').slice(0, 8)
-  const did = `did:web:e2e-cs-${stamp}.testnet.verana.network`
-  const trId = await createEcosystem(page, { did, orgName: 'E2E Schema Ecosystem' })
+  const did = `did:web:e2e-cs-${stamp}.devnet.verana.network`
+  const ecosystemId = await createEcosystem(page, { did })
 
   const schemaTitle = `E2E Schema ${stamp}`
   const jsonSchema = JSON.stringify(
@@ -41,9 +41,8 @@ test('create a credential schema (real testnet broadcast)', async ({ page }) => 
     .click()
   await expect(page.getByRole('heading', { name: /create new credential schema/i })).toBeVisible({ timeout: 20_000 })
 
-  // permission mode option values: 1=OPEN, 2=GRANTOR_VALIDATION, 3=TRUST_REGISTRY_VALIDATION
-  await labelSelect(page, 'Issuer Permission Mode').selectOption('1')
-  await labelSelect(page, 'Verifier Permission Mode').selectOption('1')
+  await labelSelect(page, 'Issuer Onboarding Mode').selectOption('1')
+  await labelSelect(page, 'Verifier Onboarding Mode').selectOption('1')
   for (const field of VALIDITY_FIELDS) await labelInput(page, field).fill('0')
   await labelTextarea(page, 'JSON Schema').fill(jsonSchema)
 
@@ -53,5 +52,5 @@ test('create a credential schema (real testnet broadcast)', async ({ page }) => 
   const errorToast = page.locator('.notify-error')
   await expect(successToast.or(errorToast)).toBeVisible({ timeout: 120_000 })
   await expect(errorToast).toHaveCount(0)
-  console.log(`created schema "${schemaTitle}" on TR ${trId}`)
+  console.log(`created schema "${schemaTitle}" on ecosystem ${ecosystemId}`)
 })

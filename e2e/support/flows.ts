@@ -7,32 +7,23 @@ const DEFAULT_DOC_URL =
 
 export type EcosystemFormOptions = {
   did: string
-  aka?: string
   docUrl?: string
-  orgName?: string
-  serviceName?: string
 }
 
 export async function fillEcosystemForm(page: Page, opts: EcosystemFormOptions) {
-  const {
-    did,
-    aka = `https://${did.split(':').pop()}`,
-    docUrl = DEFAULT_DOC_URL,
-    orgName = 'E2E Ecosystem',
-    serviceName = 'E2E Trust Registry',
-  } = opts
+  const { did, docUrl = DEFAULT_DOC_URL } = opts
 
-  await page.goto('/tr')
+  if (new URL(page.url()).pathname !== '/ecosystems') {
+    await page.locator('a[href="/ecosystems"]').first().click()
+    await expect(page).toHaveURL(/\/ecosystems$/)
+  }
   await page
     .getByRole('button', { name: /create ecosystem/i })
     .first()
     .click()
   await expect(page.getByText(/basic information/i)).toBeVisible()
 
-  await page.getByPlaceholder('Healthcare Credentials Ecosystem').fill(orgName)
-  await page.getByPlaceholder('Healthcare Trust Registry').fill(serviceName)
   await page.getByPlaceholder('did:method:identifier').first().fill(did)
-  await labelInput(page, 'AKA').fill(aka)
   await page.getByPlaceholder(/search languages/i).fill('English')
   await page
     .getByRole('option', { name: /english/i })
@@ -41,13 +32,16 @@ export async function fillEcosystemForm(page: Page, opts: EcosystemFormOptions) 
   await labelInput(page, 'Document URL').fill(docUrl)
 }
 
-// Fills + broadcasts MsgCreateTrustRegistry, then returns the new TR id from the /tr/<id> redirect.
+// Broadcasts MsgCreateEcosystem and returns the indexed ID from the canonical redirect.
 export async function createEcosystem(page: Page, opts: EcosystemFormOptions): Promise<string> {
   const chainErrors = watchChainErrors(page)
   await fillEcosystemForm(page, opts)
   await page.locator('.btn-action-confirm').click()
 
-  const success = page.waitForURL(/\/tr\/\d+(\?|$)/, { timeout: 240_000 }).then(() => 'ok' as const)
+  const success = expect
+    .poll(() => page.url(), { timeout: 240_000 })
+    .toMatch(/\/ecosystems\/\d+(\?|$)/)
+    .then(() => 'ok' as const)
   const failure = new Promise<'error'>((resolve) => {
     const timer = setInterval(() => {
       if (chainErrors.error) {
@@ -57,11 +51,11 @@ export async function createEcosystem(page: Page, opts: EcosystemFormOptions): P
     }, 250)
   })
   if ((await Promise.race([success, failure])) === 'error') {
-    throw new Error(`testnet rejected the create-ecosystem tx: ${chainErrors.error}`)
+    throw new Error(`devnet rejected the create-ecosystem tx: ${chainErrors.error}`)
   }
 
   await expect(page.getByText(opts.did).first()).toBeVisible()
-  const trId = page.url().match(/\/tr\/(\d+)/)?.[1]
-  if (!trId) throw new Error('no trust registry id in the redirect URL')
-  return trId
+  const ecosystemId = page.url().match(/\/ecosystems\/(\d+)/)?.[1]
+  if (!ecosystemId) throw new Error('no ecosystem id in the redirect URL')
+  return ecosystemId
 }

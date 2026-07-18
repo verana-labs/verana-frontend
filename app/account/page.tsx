@@ -3,13 +3,14 @@
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useAccountTxCount } from '@/hooks/useAccountTxCount'
-import { useDIDsManaged } from '@/hooks/useDIDsManaged'
+import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
 import { RefreshState } from '@/msg/util/signerUtil'
 import { useAccountCtx } from '@/providers/api-rest-query-provider-context'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
-import DataView from '@/ui/common/data-view-columns'
+import { CorporationSetupCard } from '@/ui/common/corporation-setup-card'
+import ColumnsDataView from '@/ui/common/data-view-columns'
 import TitleAndButton from '@/ui/common/title-and-button'
 import { AccountData, accountSections } from '@/ui/dataview/datasections/account'
 import { resolveTranslatable } from '@/ui/dataview/types'
@@ -20,10 +21,15 @@ export default function AccountPage() {
   const openGetVNA = searchParams.get('getVNA') === 'true'
 
   // Custom hook to fetch account/trust deposit data
-  const accountCtx = useAccountCtx()
-  const { didCount, refetch: refetchDids } = useDIDsManaged()
+  const { accountData, refetch: refetchAccount } = useAccountCtx()
   const { txCount, refetch: refetchTxCount } = useAccountTxCount()
-
+  const {
+    corporation,
+    hasOperatorGrant,
+    loading: corporationLoading,
+    errorCorporation,
+    refetch: refetchCorporation,
+  } = useUserCorporation()
   // Refresh account/trust deposit data
   const [refresh, setRefresh] = useState<boolean>(true)
   const [refreshState, setRefreshState] = useState<RefreshState>({})
@@ -32,10 +38,10 @@ export default function AccountPage() {
   useEffect(() => {
     if (!refresh) return
     ;(async () => {
-      await Promise.all([accountCtx.refetch(), refetchDids(), refetchTxCount()])
+      await Promise.all([refetchAccount(), refetchCorporation(), refetchTxCount()])
       setRefresh(false)
     })()
-  }, [refresh])
+  }, [refresh, refetchAccount, refetchCorporation, refetchTxCount])
 
   useEffect(() => {
     if (refreshState.txHeight == null) return
@@ -52,22 +58,25 @@ export default function AccountPage() {
   const [data, setData] = useState<AccountData>()
 
   useEffect(() => {
-    if (accountCtx.accountData) {
+    if (accountData) {
       // Prepare constants and process fields for the UI
-      const accountData = accountCtx.accountData as AccountData
-      const claimableInterests = Number(accountData.claimableInterests) > 0 ? accountData.claimableInterests : null
+      const typedAccountData = accountData as AccountData
+      const claimableInterests =
+        Number(typedAccountData.claimableInterests) > 0 ? typedAccountData.claimableInterests : null
       const getVNA = 'GetVNATrustDeposit'
       const claimInterests = 'MsgReclaimTrustDepositYield'
       setData({
-        ...accountData,
+        ...typedAccountData,
         claimableInterests,
         getVNA,
         claimInterests,
-        didsManaged: didCount,
+        corporationId: corporation?.id ?? null,
+        policyAddress: corporation?.policyAddress ?? null,
+        operatorAuthorized: hasOperatorGrant,
         transactionsSent: txCount,
       })
     }
-  }, [accountCtx.accountData, didCount, txCount])
+  }, [accountData, corporation, hasOperatorGrant, txCount])
 
   return (
     <>
@@ -75,8 +84,15 @@ export default function AccountPage() {
         title={resolveTranslatable({ key: 'account.title' }, translate) ?? 'Account'}
         description={[resolveTranslatable({ key: 'account.desc' }, translate) ?? '']}
       />
+      <CorporationSetupCard
+        corporation={corporation}
+        hasOperatorGrant={hasOperatorGrant}
+        loading={corporationLoading}
+        error={errorCorporation}
+        onDone={() => void refetchCorporation()}
+      />
       {data && (
-        <DataView<AccountData>
+        <ColumnsDataView<AccountData>
           sectionsI18n={accountSections}
           data={data}
           onRefresh={(id?: string, txHeight?: number) => {
