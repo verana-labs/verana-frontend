@@ -1,12 +1,11 @@
 'use client'
 
 import { useChain } from '@cosmos-kit/react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_TRUST_DEPOSIT } from '@/config/env'
+import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
-import { translate } from '@/i18n/dataview'
-import { ApiErrorResponse } from '@/types/apiErrorResponse'
-import { resolveTranslatable } from '@/ui/dataview/types'
+import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 
 export type TrustDepositAccountData = {
   address: string | null
@@ -19,97 +18,148 @@ export type TrustDepositAccountData = {
   slashCount: number | null
 }
 
-/**
- * Hook to fetch and format trust deposit account data for the connected wallet.
- * Returns: { data, loading, error, address, isWalletConnected }
- */
+type ParsedTrustDeposit = Pick<
+  TrustDepositAccountData,
+  'totalTrustDeposit' | 'claimableInterests' | 'reclaimable' | 'slashCount'
+>
+
+const ZERO_TRUST_DEPOSIT: ParsedTrustDeposit = {
+  totalTrustDeposit: '0',
+  claimableInterests: '0',
+  reclaimable: '0',
+  slashCount: 0,
+}
+
+function record(value: unknown, path: string): Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error(`Invalid trust deposit response: ${path}`)
+  }
+  return value as Record<string, unknown>
+}
+
+function string(value: unknown, path: string): string {
+  if (typeof value !== 'string') throw new Error(`Invalid trust deposit response: ${path}`)
+  return value
+}
+
+function integer(value: unknown, path: string): number {
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
+    throw new Error(`Invalid trust deposit response: ${path}`)
+  }
+  return value
+}
+
+function scaledShare(value: unknown, path: string): number {
+  // The V4 indexer serializes the 1e18-scaled share as a JSON number, so it is legitimately above MAX_SAFE_INTEGER.
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
+    throw new Error(`Invalid trust deposit response: ${path}`)
+  }
+  return value
+}
+
+function nullableTimestamp(value: unknown, path: string): string | null {
+  if (value === null) return null
+  return string(value, path)
+}
+
+export function parseTrustDepositResponse(payload: unknown): ParsedTrustDeposit {
+  const envelope = record(payload, 'response')
+  const trustDeposit = record(envelope.trust_deposit, 'trust_deposit')
+  string(trustDeposit.corporation, 'trust_deposit.corporation')
+  const deposit = integer(trustDeposit.deposit, 'trust_deposit.deposit')
+  scaledShare(trustDeposit.share, 'trust_deposit.share')
+  const claimable = integer(trustDeposit.claimable, 'trust_deposit.claimable')
+  integer(trustDeposit.slashed_deposit, 'trust_deposit.slashed_deposit')
+  integer(trustDeposit.repaid_deposit, 'trust_deposit.repaid_deposit')
+  nullableTimestamp(trustDeposit.last_slashed, 'trust_deposit.last_slashed')
+  nullableTimestamp(trustDeposit.last_repaid, 'trust_deposit.last_repaid')
+  const slashCount = integer(trustDeposit.slash_count, 'trust_deposit.slash_count')
+  return {
+    totalTrustDeposit: String(deposit),
+    claimableInterests: String(claimable),
+    reclaimable: String(claimable),
+    slashCount,
+  }
+}
+
+export function trustDepositAccountUrl(endpoint: string, policyAddress: string): string {
+  return `${endpoint}/get/${encodeURIComponent(policyAddress)}`
+}
+
+const EMPTY_ACCOUNT_DATA: TrustDepositAccountData = {
+  address: null,
+  balance: null,
+  totalTrustDeposit: null,
+  claimableInterests: null,
+  reclaimable: null,
+  message: null,
+  network: null,
+  slashCount: null,
+}
+
 export function useTrustDepositAccountData() {
   const veranaChain = useVeranaChain()
   const { address, isWalletConnected, getStargateClient } = useChain(veranaChain.chain_name)
-
-  const getAccountURL = VERANA_REST_ENDPOINT_TRUST_DEPOSIT
-
-  const [accountData, setData] = useState<TrustDepositAccountData>({
-    address: null,
-    balance: null,
-    totalTrustDeposit: null,
-    claimableInterests: null,
-    reclaimable: null,
-    message: null,
-    network: null,
-    slashCount: null,
-  })
+  const getStargateClientRef = useRef(getStargateClient)
+  const { corporation, loading: corporationLoading } = useUserCorporation()
+  const corporationPolicyAddress = corporation?.policyAddress
+  const [accountData, setData] = useState<TrustDepositAccountData>(EMPTY_ACCOUNT_DATA)
   const [loading, setLoading] = useState(false)
   const [errorAccountData, setError] = useState<string | null>(null)
 
-  const fetchData = async () => {
-    if (!address || !isWalletConnected || !getStargateClient || !getAccountURL) {
-      setError(resolveTranslatable({ key: 'error.fetch.td.account' }, translate) ?? 'Wallet error or endpoint URL')
+  const fetchData = useCallback(async () => {
+    if (!address || !isWalletConnected) {
+      setData(EMPTY_ACCOUNT_DATA)
       setLoading(false)
       return
     }
+
     setLoading(true)
     setError(null)
-
-    let balance = null
-    let totalTrustDeposit = null
-    let claimableInterests = null
-    let reclaimable = null
-    let message = null
-    let slashCount: number | null = null
-    const network = veranaChain.chain_id
+    let balance: string | null = null
+    let trustDeposit = ZERO_TRUST_DEPOSIT
 
     try {
-      const client = await getStargateClient()
-      const balInfo = await client.getBalance(address, 'uvna')
-      balance = balInfo.amount
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
-    }
+      const client = await getStargateClientRef.current()
+      balance = (await client.getBalance(address, 'uvna')).amount
 
-    try {
-      const resp = await fetch(`${getAccountURL}/get/${address}`)
-      const json = await resp.json()
-      if (!resp.ok) {
-        const { error, code } = json as ApiErrorResponse
-        if (code === 404) {
-          totalTrustDeposit = '0'
-          claimableInterests = '0'
-          reclaimable = '0'
-          slashCount = 0
+      if (corporationPolicyAddress) {
+        if (!VERANA_REST_ENDPOINT_TRUST_DEPOSIT) throw new Error('Missing trust deposit endpoint URL')
+        const response = await fetch(
+          trustDepositAccountUrl(VERANA_REST_ENDPOINT_TRUST_DEPOSIT, corporationPolicyAddress)
+        )
+        const json: unknown = await response.json()
+        if (response.status === 404) {
+          trustDeposit = ZERO_TRUST_DEPOSIT
+        } else if (!response.ok) {
+          const { error, code } = json as ApiErrorResponse
+          throw new Error(`Error ${code}: ${error}`)
         } else {
-          setError(`Error ${code}: ${error}`)
-          // return;
+          trustDeposit = parseTrustDepositResponse(json)
         }
       }
-      if (json.trust_deposit) {
-        totalTrustDeposit = json.trust_deposit.amount
-        claimableInterests = '0'
-        reclaimable = json.trust_deposit.claimable
-        slashCount = json.trust_deposit.slash_count ?? 0
-      } else if (json.message) {
-        message = json.message
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
-    }
 
-    setData({
-      address,
-      balance,
-      totalTrustDeposit,
-      claimableInterests,
-      reclaimable,
-      message,
-      network,
-      slashCount,
-    })
-    setLoading(false)
-  }
+      setData({
+        address,
+        balance,
+        ...trustDeposit,
+        message: null,
+        network: veranaChain.chain_id,
+      })
+    } catch (error) {
+      setError(error instanceof Error ? error.message : String(error))
+    } finally {
+      setLoading(false)
+    }
+  }, [address, corporationPolicyAddress, isWalletConnected, veranaChain.chain_id])
 
   useEffect(() => {
-    fetchData()
-  }, [address])
+    getStargateClientRef.current = getStargateClient
+  }, [getStargateClient])
+
+  useEffect(() => {
+    if (!corporationLoading) void fetchData()
+  }, [corporationLoading, fetchData])
 
   return {
     accountData,

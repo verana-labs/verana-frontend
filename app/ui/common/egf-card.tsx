@@ -6,11 +6,11 @@ import Link from 'next/link'
 import { translate } from '@/i18n/dataview'
 import { useLanguageLabel } from '@/lib/language'
 import { formatLongDateUserLocale } from '@/util/util'
-import { TrData } from '../dataview/datasections/tr'
+import type { EcosystemData } from '../dataview/datasections/ecosystem'
 import { resolveTranslatable } from '../dataview/types'
 
 export type EgfCardProps = {
-  ecosystem: TrData
+  ecosystem: EcosystemData
   accepted: boolean
   onAcceptedChange: (next: boolean) => void
 }
@@ -20,7 +20,7 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
     .split('\n')
     .map((s) => s.trim())
     .filter(Boolean)
-  const version = ecosystem.versions?.find((x) => x.version === ecosystem.active_version)
+  const version = ecosystem.versions.find((item) => item.version === ecosystem.activeVersion)
   const egfDoc = version?.documents?.[0]
   const language = useLanguageLabel(egfDoc?.language)
   return (
@@ -31,7 +31,6 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
         </div>
         <div className="flex-1 min-w-0 break-all">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{ecosystem.did}</h3>
-          <p className="text-sm text-neutral-70 dark:text-neutral-70 mt-1">{ecosystem.aka}</p>
           <p className="text-xs font-mono text-neutral-70 dark:text-neutral-70 mt-2">{ecosystem.did}</p>
         </div>
       </div>
@@ -51,7 +50,7 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
           {resolveTranslatable({ key: 'join.egf.title' }, translate)}
         </h3>
         <p className="text-sm text-neutral-70 dark:text-neutral-70 mb-4">
-          {`${resolveTranslatable({ key: 'join.egf.version.label' }, translate)} ${ecosystem.active_version}  • ${resolveTranslatable(language, translate)} • ${resolveTranslatable({ key: 'join.egf.lastupdate.label' }, translate)} ${version?.active_since && formatLongDateUserLocale(version?.active_since)}`}
+          {`${resolveTranslatable({ key: 'join.egf.version.label' }, translate)} ${ecosystem.activeVersion}  • ${resolveTranslatable(language, translate)} • ${resolveTranslatable({ key: 'join.egf.lastupdate.label' }, translate)} ${version?.activeSince && formatLongDateUserLocale(version.activeSince)}`}
         </p>
         <Link
           href={egfDoc?.url ?? ''}

@@ -1,9 +1,9 @@
 import type { Page } from '@playwright/test'
-import { VERANA_TESTNET_CHAIN_INFO } from '../mocks/chainInfo'
+import { VERANA_DEVNET_CHAIN_INFO } from '../mocks/chainInfo'
 
 // The dApp swallows simulate/broadcast failures, so surface chain rejections from the RPC responses.
 export function watchChainErrors(page: Page) {
-  const host = new URL(VERANA_TESTNET_CHAIN_INFO.rpc).host
+  const host = new URL(VERANA_DEVNET_CHAIN_INFO.rpc).host
   const state: { error?: string } = {}
   page.on('response', async (resp) => {
     if (resp.request().method() !== 'POST' || !resp.url().includes(host)) return

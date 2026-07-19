@@ -3,9 +3,9 @@ import { translate } from '@/i18n/dataview'
 import { allowedOffline, getNavLinks } from '@/lib/navlinks'
 
 describe('getNavLinks', () => {
-  it('returns the five top-level destinations in order', () => {
+  it('returns the six top-level destinations in order', () => {
     const hrefs = getNavLinks().map((link) => link.href)
-    expect(hrefs).toEqual(['/dashboard', '/account', '/tr', '/discover', '/pendingtasks'])
+    expect(hrefs).toEqual(['/dashboard', '/account', '/digests', '/ecosystems', '/discover', '/pendingtasks'])
   })
 
   it('gives every link a non-empty name and an icon', () => {
@@ -19,28 +19,29 @@ describe('getNavLinks', () => {
     const byHref = new Map(getNavLinks().map((link) => [link.href, link.name]))
     expect(byHref.get('/dashboard')).toBe(translate('dashboard.title'))
     expect(byHref.get('/account')).toBe(translate('account.title'))
-    expect(byHref.get('/tr')).toBe(translate('trlist.title'))
+    expect(byHref.get('/digests')).toBe(translate('digest.title'))
+    expect(byHref.get('/ecosystems')).toBe(translate('ecosystemList.title'))
     expect(byHref.get('/discover')).toBe(translate('discover.title'))
     expect(byHref.get('/pendingtasks')).toBe(translate('task.title'))
   })
 
-  it('marks only dashboard and discover as available offline', () => {
+  it('marks dashboard, digests, and discover as available offline', () => {
     const offline = getNavLinks()
       .filter((link) => link.availableOffline === true)
       .map((link) => link.href)
-    expect(offline.sort()).toEqual(['/dashboard', '/discover'])
+    expect(offline.sort()).toEqual(['/dashboard', '/digests', '/discover'])
   })
 
   it('leaves availableOffline unset for online-only links', () => {
     const byHref = new Map(getNavLinks().map((link) => [link.href, link]))
     expect(byHref.get('/account')?.availableOffline).toBeUndefined()
-    expect(byHref.get('/tr')?.availableOffline).toBeUndefined()
+    expect(byHref.get('/ecosystems')?.availableOffline).toBeUndefined()
     expect(byHref.get('/pendingtasks')?.availableOffline).toBeUndefined()
   })
 
   it('flags the featured services and gives them descriptions', () => {
     const featured = getNavLinks().filter((link) => link.featuredService === true)
-    expect(featured.map((link) => link.href)).toEqual(['/tr', '/discover'])
+    expect(featured.map((link) => link.href)).toEqual(['/ecosystems', '/discover'])
     for (const link of featured) {
       expect(link.description).toBeTruthy()
     }
@@ -74,35 +75,30 @@ describe('getNavLinks', () => {
 describe('allowedOffline', () => {
   it('allows the exact static offline routes', () => {
     expect(allowedOffline('/dashboard')).toBe(true)
+    expect(allowedOffline('/digests')).toBe(true)
     expect(allowedOffline('/discover')).toBe(true)
   })
 
   it('rejects routes that are not in the offline allow-list', () => {
     expect(allowedOffline('/account')).toBe(false)
     expect(allowedOffline('/pendingtasks')).toBe(false)
-    expect(allowedOffline('/tr')).toBe(false)
+    expect(allowedOffline('/ecosystems')).toBe(false)
   })
 
-  it('allows a single trust-registry detail segment', () => {
-    expect(allowedOffline('/tr/abc123')).toBe(true)
-    expect(allowedOffline('/tr/did:example:1')).toBe(true)
+  it('allows a single ecosystem detail segment', () => {
+    expect(allowedOffline('/ecosystems/abc123')).toBe(true)
+    expect(allowedOffline('/ecosystems/did:example:1')).toBe(true)
   })
 
-  it('rejects deeper trust-registry paths beyond one segment', () => {
-    expect(allowedOffline('/tr/abc/extra')).toBe(false)
-    expect(allowedOffline('/tr/')).toBe(false)
+  it('rejects deeper ecosystem paths beyond one segment', () => {
+    expect(allowedOffline('/ecosystems/abc/extra')).toBe(false)
+    expect(allowedOffline('/ecosystems/')).toBe(false)
   })
 
-  it('allows a credential-schema detail segment under /tr/cs', () => {
-    expect(allowedOffline('/tr/cs/schema-1')).toBe(true)
-  })
-
-  it('allows bare /tr/cs because it also satisfies the single-segment /tr/:id pattern', () => {
-    expect(allowedOffline('/tr/cs')).toBe(true)
-  })
-
-  it('rejects /tr/cs/ with an empty trailing segment', () => {
-    expect(allowedOffline('/tr/cs/')).toBe(false)
+  it('allows a single credential-schema detail segment', () => {
+    expect(allowedOffline('/credential-schemas/schema-1')).toBe(true)
+    expect(allowedOffline('/credential-schemas')).toBe(false)
+    expect(allowedOffline('/credential-schemas/schema-1/extra')).toBe(false)
   })
 
   it('allows a single participant detail segment', () => {
@@ -116,8 +112,8 @@ describe('allowedOffline', () => {
 
   it('anchors the patterns so partial prefixes do not match', () => {
     expect(allowedOffline('/dashboard/settings')).toBe(false)
-    expect(allowedOffline('/x/tr/abc')).toBe(false)
-    expect(allowedOffline('tr/abc')).toBe(false)
+    expect(allowedOffline('/x/ecosystems/abc')).toBe(false)
+    expect(allowedOffline('ecosystems/abc')).toBe(false)
   })
 
   it('treats a trailing slash on a static route as a different path', () => {
@@ -130,7 +126,7 @@ describe('allowedOffline', () => {
   })
 
   it('does not strip query strings, so a suffix on a single-segment route still slips through', () => {
-    expect(allowedOffline('/tr/abc?tab=1')).toBe(true)
+    expect(allowedOffline('/ecosystems/abc?tab=1')).toBe(true)
   })
 
   it('rejects the empty path', () => {

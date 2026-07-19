@@ -41,7 +41,7 @@ export default function EcosystemsFilterBar({ value, onChange }: Props) {
               htmlFor="ecosystem-search"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
             >
-              {t('datatable.tr.filter.search.label', 'Search Ecosystems')}
+              {t('datatable.ecosystem.filter.search.label', 'Search Ecosystems')}
             </label>
             <div className="relative">
               <input
@@ -50,8 +50,8 @@ export default function EcosystemsFilterBar({ value, onChange }: Props) {
                 value={value.search}
                 onChange={(e) => set('search', e.target.value)}
                 placeholder={t(
-                  'datatable.tr.filter.search.placeholder',
-                  'Search by organization name, trust registry, or other attributes...'
+                  'datatable.ecosystem.filter.search.placeholder',
+                  'Search by organization name, ecosystem, or other attributes...'
                 )}
                 className="w-full px-4 py-2.5 pr-10 border border-neutral-20 dark:border-neutral-70 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-surface text-gray-900 dark:text-white"
               />
@@ -66,25 +66,25 @@ export default function EcosystemsFilterBar({ value, onChange }: Props) {
               id="show-archived"
               checked={value.showArchived}
               onChange={(v) => set('showArchived', v)}
-              label={t('datatable.tr.filter.showArchived', 'Show archived')}
+              label={t('datatable.ecosystem.filter.showArchived', 'Show archived')}
             />
             <Checkbox
               id="hide-owned"
               checked={value.hideOwned}
               onChange={(v) => set('hideOwned', v)}
-              label={t('datatable.tr.filter.hideOwned', 'Hide owned ecosystems')}
+              label={t('datatable.ecosystem.filter.hideOwned', 'Hide owned ecosystems')}
             />
             <Checkbox
               id="hide-participant"
               checked={value.hideParticipant}
               onChange={(v) => set('hideParticipant', v)}
-              label={t('datatable.tr.filter.hideParticipant', 'Hide participant ecosystems')}
+              label={t('datatable.ecosystem.filter.hideParticipant', 'Hide participant ecosystems')}
             />
             <Checkbox
               id="show-untrusted"
               checked={value.showUntrusted}
               onChange={(v) => set('showUntrusted', v)}
-              label={t('datatable.tr.filter.showUntrusted', 'Show untrusted ecosystems')}
+              label={t('datatable.ecosystem.filter.showUntrusted', 'Show untrusted ecosystems')}
             />
           </div>
         </div>

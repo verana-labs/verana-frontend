@@ -37,12 +37,13 @@ export default function ServiceProviderCard({ did }: ServiceProviderCardProps) {
   if (!hasContent) return null
 
   const sectionLabel =
-    resolveTranslatable({ key: 'dataview.tr.sections.serviceProvider' }, translate) ?? 'Service Provider'
-  const countryLabel = resolveTranslatable({ key: 'dataview.tr.fields.country' }, translate) ?? 'Country'
-  const addressLabel = resolveTranslatable({ key: 'dataview.tr.fields.address' }, translate) ?? 'Address'
-  const registryIdLabel = resolveTranslatable({ key: 'dataview.tr.fields.registryId' }, translate) ?? 'Registry ID'
+    resolveTranslatable({ key: 'dataview.ecosystem.sections.serviceProvider' }, translate) ?? 'Service Provider'
+  const countryLabel = resolveTranslatable({ key: 'dataview.ecosystem.fields.country' }, translate) ?? 'Country'
+  const addressLabel = resolveTranslatable({ key: 'dataview.ecosystem.fields.address' }, translate) ?? 'Address'
+  const registryIdLabel =
+    resolveTranslatable({ key: 'dataview.ecosystem.fields.registryId' }, translate) ?? 'Registry ID'
   const issuerLabel =
-    resolveTranslatable({ key: 'dataview.tr.fields.credentialIssuer' }, translate) ?? 'Credential Issuer'
+    resolveTranslatable({ key: 'dataview.ecosystem.fields.credentialIssuer' }, translate) ?? 'Credential Issuer'
 
   return (
     <section className="mb-8">

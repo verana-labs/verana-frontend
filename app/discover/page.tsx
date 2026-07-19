@@ -15,85 +15,66 @@ import { translate } from '@/i18n/dataview'
 import { useDiscoverCtx } from '@/providers/api-rest-query-provider-context'
 import CsCard from '@/ui/common/cs-card'
 import TitleAndButton from '@/ui/common/title-and-button'
-import { CsList } from '@/ui/datatable/columnslist/cs'
-import { TrList } from '@/ui/datatable/columnslist/tr'
+import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
 import { resolveTranslatable } from '@/ui/dataview/types'
-import { formatVNA } from '@/util/util'
+import { formatVNAFromUVNA } from '@/util/util'
 
 export default function DiscoverJoinPage() {
   const discoverCtx = useDiscoverCtx()
-  const [ecosystems, setEcosystems] = useState<TrList[]>()
   const loading = false
 
-  const csByTrId = useMemo(() => {
-    const map = new Map<string, CsList[]>()
-    if (!discoverCtx.csList) return map
-    for (const cs of discoverCtx.csList) {
-      const key = cs.trId
+  const credentialSchemasByEcosystemId = useMemo(() => {
+    const map = new Map<string, CredentialSchemaListItem[]>()
+    for (const credentialSchema of discoverCtx.credentialSchemas) {
+      const key = credentialSchema.ecosystemId
       const arr = map.get(key)
-      if (arr) arr.push(cs)
-      else map.set(key, [cs])
+      if (arr) arr.push(credentialSchema)
+      else map.set(key, [credentialSchema])
     }
     return map
-  }, [discoverCtx.csList])
+  }, [discoverCtx.credentialSchemas])
 
-  useEffect(() => {
-    if (!discoverCtx.discoverList) {
-      setEcosystems([])
-      return
-    }
-    setEcosystems(
-      discoverCtx.discoverList.map((tr) => ({
-        ...tr,
-        csList: csByTrId.get(String(tr.id)) ?? [],
-      }))
-    )
-  }, [discoverCtx.discoverList, csByTrId])
+  const ecosystems = useMemo(
+    () =>
+      discoverCtx.discoverList.map((ecosystem) => ({
+        ...ecosystem,
+        credentialSchemas: credentialSchemasByEcosystemId.get(ecosystem.id) ?? [],
+      })),
+    [discoverCtx.discoverList, credentialSchemasByEcosystemId]
+  )
 
   const [search, setSearch] = useState(discoverCtx.discoverSearch)
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase()
     if (!term) return ecosystems
-    return ecosystems?.filter((e) => e.did?.toLowerCase().includes(term))
+    return ecosystems.filter((ecosystem) => ecosystem.did.toLowerCase().includes(term))
   }, [search, ecosystems])
 
   const PAGE_SIZE = 5
   const [page, setPage] = useState(discoverCtx.discoverPage)
 
   const totalPages = useMemo(() => {
-    if (!filtered) return undefined
-    return Math.max(1, Math.ceil((filtered?.length ?? 0) / PAGE_SIZE))
+    return Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   }, [filtered])
 
   useEffect(() => {
-    if (totalPages == null) return
     setPage((p) => Math.min(Math.max(1, p), totalPages))
   }, [totalPages])
 
   const paginated = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE
-    return filtered?.slice(start, start + PAGE_SIZE)
+    return filtered.slice(start, start + PAGE_SIZE)
   }, [filtered, page])
 
   useEffect(() => {
     discoverCtx.setDiscoverSearch(search)
-  }, [search])
+  }, [discoverCtx.setDiscoverSearch, search])
 
   useEffect(() => {
     discoverCtx.setDiscoverPage(page)
     document.getElementById('app-scroll')?.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [page])
-
-  // Refresh trList and csList
-  const [refresh, setRefresh] = useState<boolean>(true)
-  useEffect(() => {
-    if (!refresh) return
-    ;(async () => {
-      await discoverCtx.refetch()
-      setRefresh(false)
-    })()
-  }, [refresh])
+  }, [discoverCtx.setDiscoverPage, page])
 
   return (
     <>
@@ -129,33 +110,39 @@ export default function DiscoverJoinPage() {
                 </div>
               </div>
             ))
-          : paginated?.map((eco, idx) => {
-              const egfUrl = eco.versions?.find((x) => x.version === eco.active_version)?.documents?.[0]?.url
+          : paginated.map((ecosystem) => {
+              const governanceFrameworkUrl = ecosystem.versions?.find(
+                (version) => version.version === ecosystem.activeVersion
+              )?.documents?.[0]?.url
               return (
                 <div
-                  key={eco.did + '-' + idx}
+                  key={ecosystem.id}
                   className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6"
                 >
                   <div className="mb-6">
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 break-all">{eco.did}</h2>
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 break-all">
+                          {ecosystem.did}
+                        </h2>
                         <div className="flex items-center space-x-4 text-sm text-neutral-70 dark:text-neutral-70">
                           <span>
                             <FontAwesomeIcon className="mr-1" aria-hidden="true" icon={faFileContract} />
-                            {eco.csList?.length} {resolveTranslatable({ key: 'discover.cs.label' }, translate)}
+                            {ecosystem.credentialSchemas.length}{' '}
+                            {resolveTranslatable({ key: 'discover.cs.label' }, translate)}
                           </span>
                           <span>
                             <FontAwesomeIcon className="mr-1" aria-hidden="true" icon={faCoins} />
-                            {resolveTranslatable({ key: 'discover.td.label' }, translate)} {formatVNA(eco.deposit)}
+                            {resolveTranslatable({ key: 'discover.td.label' }, translate)}{' '}
+                            {formatVNAFromUVNA(String(ecosystem.weight))}
                           </span>
                         </div>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-3">
-                      {egfUrl && (
+                      {governanceFrameworkUrl && (
                         <Link
-                          href={egfUrl}
+                          href={governanceFrameworkUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center px-4 py-2 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors text-sm font-medium"
@@ -166,7 +153,7 @@ export default function DiscoverJoinPage() {
                       )}
 
                       <Link
-                        href={`/tr/${eco.id}`}
+                        href={`/ecosystems/${ecosystem.id}`}
                         className="inline-flex items-center px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-sm font-medium"
                       >
                         <FontAwesomeIcon className="mr-2" aria-hidden="true" icon={faShieldHalved} />
@@ -176,8 +163,8 @@ export default function DiscoverJoinPage() {
                   </div>
 
                   <div className="space-y-4">
-                    {eco.csList?.map((schema) => (
-                      <CsCard key={schema.id} cs={schema} />
+                    {ecosystem.credentialSchemas.map((credentialSchema) => (
+                      <CsCard key={credentialSchema.id} credentialSchema={credentialSchema} />
                     ))}
                   </div>
                 </div>
@@ -185,7 +172,7 @@ export default function DiscoverJoinPage() {
             })}
       </section>
 
-      {filtered && filtered.length > 0 ? (
+      {filtered.length > 0 ? (
         <section id="pagination" className="mt-8 flex justify-center">
           <nav className="inline-flex rounded-lg shadow-sm" aria-label="Pagination">
             <button
@@ -253,8 +240,8 @@ export default function DiscoverJoinPage() {
 
             <button
               type="button"
-              disabled={totalPages == null || page === totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages ?? 1, p + 1))}
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               className={[
                 'px-3 py-2 text-sm font-medium bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-r-lg',
                 page === totalPages

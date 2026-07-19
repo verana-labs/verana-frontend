@@ -8,6 +8,7 @@ import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { translate } from '@/i18n/dataview'
 import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import { trustStateBadge } from '@/lib/trust-state'
+import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { countryCodeToFlag, formatNumber, formatVNAFromUVNA, roleBadgeClass, shortenDID } from '@/util/util'
 
@@ -31,30 +32,23 @@ function parseRoles(role: string | undefined | null): EcosystemRole[] {
   return [...seen]
 }
 
-export type EcosystemCardData = {
-  id: string
-  did: string
-  aka?: string
-  controller?: string
-  role?: string
-  archived?: string
-  active_schemas?: number | null
-  participants?: number | null
-  weight?: number | string | null
-  issued?: number | null
-  verified?: number | null
-  active_version?: number
-  versions?: Array<{
-    id: string
-    version: number
-    active_since: string
-    documents?: Array<{ id: string; url: string; language: string }>
-  }>
-}
+type EcosystemCardData = Pick<
+  EcosystemListItem,
+  | 'id'
+  | 'did'
+  | 'archived'
+  | 'activeVersion'
+  | 'activeSchemas'
+  | 'participants'
+  | 'weight'
+  | 'issued'
+  | 'verified'
+  | 'versions'
+> & { role?: string }
 
-function egfHrefFromTr(tr: EcosystemCardData): string | undefined {
-  const versions = tr.versions ?? []
-  const target = versions.find((v) => v.version === tr.active_version) ?? versions[0]
+function governanceFrameworkHref(ecosystem: EcosystemCardData): string | undefined {
+  const versions = ecosystem.versions ?? []
+  const target = versions.find((version) => version.version === ecosystem.activeVersion) ?? versions[0]
   return target?.documents?.[0]?.url
 }
 
@@ -67,17 +61,17 @@ export default function EcosystemCard({ ecosystem }: Props) {
   const { data: enrichment } = useDidTrustEnrichment(ecosystem.did)
 
   const trustBadge = trustStateBadge(enrichment?.trustStatus)
-  const trServiceName = enrichment?.serviceName ?? shortenDID(ecosystem.did) ?? ecosystem.did
-  const trDescription = enrichment?.serviceDescription
+  const ecosystemName = enrichment?.serviceName ?? shortenDID(ecosystem.did) ?? ecosystem.did
+  const ecosystemDescription = enrichment?.serviceDescription
   const orgName = enrichment?.organizationName ?? shortenDID(ecosystem.did) ?? ecosystem.did
   const flag = countryCodeToFlag(enrichment?.countryCode)
-  const egfHref = egfHrefFromTr(ecosystem)
+  const egfHref = governanceFrameworkHref(ecosystem)
   const roles = parseRoles(ecosystem.role)
   const visibleRoles = roles.slice(0, 2)
   const extraRoleCount = Math.max(0, roles.length - visibleRoles.length)
   const isArchived = Boolean(ecosystem.archived)
 
-  const handleClick = () => router.push(`/tr/${encodeURIComponent(ecosystem.id)}`)
+  const handleClick = () => router.push(`/ecosystems/${encodeURIComponent(ecosystem.id)}`)
 
   const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
 
@@ -98,7 +92,6 @@ export default function EcosystemCard({ ecosystem }: Props) {
       }`}
     >
       <div className={`${CARD_BODY_CLASS} ${isArchived ? 'archived-bg' : ''}`}>
-        {/* Trust Registry row */}
         <div className={CARD_HEADER_REGION_CLASS}>
           <img
             src={serviceIdenticonUrl(ecosystem.did)}
@@ -111,9 +104,9 @@ export default function EcosystemCard({ ecosystem }: Props) {
             <div className="flex items-start justify-between gap-2">
               <h3
                 className="line-clamp-2 text-base font-semibold text-gray-900 dark:text-white break-words"
-                title={trServiceName}
+                title={ecosystemName}
               >
-                {trServiceName}
+                {ecosystemName}
               </h3>
               <FontAwesomeIcon
                 icon={trustBadge.icon}
@@ -122,18 +115,17 @@ export default function EcosystemCard({ ecosystem }: Props) {
                 aria-label={trustBadge.label}
               />
             </div>
-            {trDescription ? (
+            {ecosystemDescription ? (
               <p
                 className="text-xs text-neutral-70 dark:text-neutral-70 mt-1 line-clamp-2 break-words"
-                title={trDescription}
+                title={ecosystemDescription}
               >
-                {trDescription}
+                {ecosystemDescription}
               </p>
             ) : null}
           </div>
         </div>
 
-        {/* Organization row */}
         <div className={CARD_ORG_REGION_CLASS}>
           <img
             src={serviceAvatarUrl(enrichment?.organizationName ?? ecosystem.did)}
@@ -158,7 +150,7 @@ export default function EcosystemCard({ ecosystem }: Props) {
                   onClick={(e) => e.stopPropagation()}
                   className="flex min-w-0 items-center space-x-1 text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
                 >
-                  <span className="truncate">{t('datatable.tr.card.egf', 'EGF')}</span>
+                  <span className="truncate">{t('datatable.ecosystem.card.egf', 'EGF')}</span>
                   <FontAwesomeIcon icon={faExternalLinkAlt} className="flex-shrink-0 text-xs" />
                 </a>
               ) : null}
@@ -166,7 +158,6 @@ export default function EcosystemCard({ ecosystem }: Props) {
           </div>
         </div>
 
-        {/* Role pills */}
         <div className={CARD_ROLES_REGION_CLASS}>
           {visibleRoles.length > 0 ? (
             visibleRoles.map((r) => (
@@ -175,7 +166,7 @@ export default function EcosystemCard({ ecosystem }: Props) {
               </span>
             ))
           ) : (
-            <span className="sr-only">{t('datatable.tr.card.noRoles', 'No roles')}</span>
+            <span className="sr-only">{t('datatable.ecosystem.card.noRoles', 'No roles')}</span>
           )}
           {extraRoleCount > 0 ? (
             <span
@@ -187,27 +178,26 @@ export default function EcosystemCard({ ecosystem }: Props) {
           ) : null}
         </div>
 
-        {/* Stats */}
         <div className="space-y-2 text-sm">
           <Stat
-            label={t('datatable.tr.card.activeSchemas', 'Active Schemas:')}
-            value={formatNumber(ecosystem.active_schemas, true)}
+            label={t('datatable.ecosystem.card.activeSchemas', 'Active Schemas:')}
+            value={formatNumber(ecosystem.activeSchemas, true)}
           />
           <Stat
-            label={t('datatable.tr.card.participants', 'Participants:')}
+            label={t('datatable.ecosystem.card.participants', 'Participants:')}
             value={formatNumber(ecosystem.participants, true)}
           />
           <Stat
-            label={t('datatable.tr.card.trustValue', 'Trust Value:')}
+            label={t('datatable.ecosystem.card.trustValue', 'Trust Value:')}
             value={formatVNAFromUVNA(ecosystem.weight == null ? null : String(ecosystem.weight))}
             mono
           />
           <Stat
-            label={t('datatable.tr.card.issuedCredentials', 'Issued Credentials:')}
+            label={t('datatable.ecosystem.card.issuedCredentials', 'Issued Credentials:')}
             value={formatNumber(ecosystem.issued, true)}
           />
           <Stat
-            label={t('datatable.tr.card.verifiedCredentials', 'Verified Credentials:')}
+            label={t('datatable.ecosystem.card.verifiedCredentials', 'Verified Credentials:')}
             value={formatNumber(ecosystem.verified, true)}
           />
         </div>

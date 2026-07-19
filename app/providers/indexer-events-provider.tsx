@@ -2,14 +2,9 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { VERANA_WEBSOCKET } from '@/config/env'
+import { parseIndexerBlockEvent } from '@/lib/indexer-event'
 import { logger } from '@/lib/logger'
 import { useComponentsVersion } from '@/providers/components-version-provider'
-
-type BlockIndexedEvent = {
-  type: 'block-indexed'
-  height: number
-  timestamp: string
-}
 
 type Waiting = {
   targetHeight: number
@@ -68,26 +63,27 @@ export function IndexerEventsProvider({ children }: { children: React.ReactNode 
 
       ws.onopen = () => {
         if (unmounted) return
+        ws.send(JSON.stringify({ action: 'subscribe', dids: [], corporationId: null }))
         setIsConnected(true)
         reconnectAttempts = 0
       }
 
       ws.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data) as BlockIndexedEvent
-          if (data.type !== 'block-indexed') return
-          latestProcessedHeightRef.current = data.height
-          latestProcessedTimestampRef.current = data.timestamp
-          setLatestProcessedHeight(data.height)
-          setLatestProcessedTimestamp(data.timestamp)
+          const block = parseIndexerBlockEvent(JSON.parse(event.data))
+          if (!block) return
+          latestProcessedHeightRef.current = block.height
+          latestProcessedTimestampRef.current = block.timestamp
+          setLatestProcessedHeight(block.height)
+          setLatestProcessedTimestamp(block.timestamp)
           setVersionState((prev) => ({
             ...prev,
-            indexer: { ...prev.indexer, lastProcessedBlock: data.height },
+            indexer: { ...prev.indexer, lastProcessedBlock: block.height },
           }))
           const ready: Waiting[] = []
           const pending: Waiting[] = []
           for (const waiting of waitingRef.current) {
-            if (data.height >= waiting.targetHeight) {
+            if (block.height >= waiting.targetHeight) {
               ready.push(waiting)
             } else {
               pending.push(waiting)
@@ -98,7 +94,7 @@ export function IndexerEventsProvider({ children }: { children: React.ReactNode 
             if (waiting.timeoutId) clearTimeout(waiting.timeoutId)
             logger.info('waitForBlock:resolved-from-event', {
               targetHeight: waiting.targetHeight,
-              latestProcessedHeight: data.height,
+              latestProcessedHeight: block.height,
               date: new Date().toLocaleTimeString(),
             })
             waiting.resolve()
@@ -137,9 +133,9 @@ export function IndexerEventsProvider({ children }: { children: React.ReactNode 
       waitingRef.current = []
       cleanupSocket()
     }
-  }, [])
+  }, [setVersionState])
 
-  const waitForBlock = useCallback((targetHeight: number, timeoutMs = 10000) => {
+  const waitForBlock = useCallback((targetHeight: number, timeoutMs = 30000) => {
     const currentHeight = latestProcessedHeightRef.current
     logger.info('waitForBlock:start', {
       targetHeight,

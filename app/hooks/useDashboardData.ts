@@ -1,27 +1,31 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { VERANA_REST_ENDPOINT_METRICS } from '@/config/env'
 import { translate } from '@/i18n/dataview'
-import { ApiErrorResponse } from '@/types/apiErrorResponse'
-import { DashboardData } from '@/ui/dataview/datasections/dashboard'
+import type { ApiErrorResponse } from '@/types/apiErrorResponse'
+import type { DashboardData } from '@/ui/dataview/datasections/dashboard'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
-type MetricsApiResponse = {
-  participants: number
-  active_trust_registries: number
-  archived_trust_registries: number
-  active_schemas: number
-  archived_schemas: number
-  weight: number
-  issued: number
-  verified: number
-  ecosystem_slash_events: number
-  ecosystem_slashed_amount: number
-  ecosystem_slashed_amount_repaid: number
-  network_slash_events: number
-  network_slashed_amount: number
-  network_slashed_amount_repaid: number
+function metric(value: unknown, field: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`Invalid V4 metrics response: ${field}`)
+  }
+  return value
+}
+
+export function parseDashboardMetricsResponse(payload: unknown): DashboardData {
+  if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) {
+    throw new Error('Invalid V4 metrics response')
+  }
+  const metrics = payload as Record<string, unknown>
+  return {
+    ecosystems: metric(metrics.active_ecosystems, 'active_ecosystems'),
+    schemas: metric(metrics.active_schemas, 'active_schemas'),
+    totalLockedTrustDeposit: metric(metrics.weight, 'weight'),
+    issuedCredentials: metric(metrics.issued, 'issued'),
+    verifiedCredentials: metric(metrics.verified, 'verified'),
+  }
 }
 
 export function useDashboardData() {
@@ -31,7 +35,7 @@ export function useDashboardData() {
   const [loading, setLoading] = useState(true)
   const [errorDashboardData, setError] = useState<string | null>(null)
 
-  const fetchMetrics = async () => {
+  const fetchMetrics = useCallback(async () => {
     try {
       if (!getURL) {
         setError(resolveTranslatable({ key: 'error.fetch.metrics' }, translate) ?? 'Missing metrics endpoint URL')
@@ -41,31 +45,23 @@ export function useDashboardData() {
       setLoading(true)
       setError(null)
       const res = await fetch(`${getURL}/all`)
-      const json = await res.json()
+      const json: unknown = await res.json()
       if (!res.ok) {
         const { error, code } = json as ApiErrorResponse
         setError(`Error ${code}: ${error}`)
         return
       }
-      const entry = json as MetricsApiResponse
-      setDashboardData({
-        ecosystems: entry.active_trust_registries,
-        schemas: entry.active_schemas,
-        totalLockedTrustDeposit: entry.weight,
-        issuedCredentials: entry.issued,
-        verifiedCredentials: entry.verified,
-      })
+      setDashboardData(parseDashboardMetricsResponse(json))
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
       setLoading(false)
     }
-  }
-
-  // Fetch metrics on mount
-  useEffect(() => {
-    fetchMetrics()
   }, [])
+
+  useEffect(() => {
+    void fetchMetrics()
+  }, [fetchMetrics])
 
   return {
     dashboardData,

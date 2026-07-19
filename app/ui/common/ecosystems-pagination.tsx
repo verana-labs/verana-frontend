@@ -36,18 +36,18 @@ export default function EcosystemsPagination({ page, pageCount, showing, total, 
   return (
     <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
       <div className="text-sm text-neutral-70 dark:text-neutral-70">
-        {t('datatable.tr.pagination.showing', 'Showing')}{' '}
+        {t('datatable.ecosystem.pagination.showing', 'Showing')}{' '}
         <span className="font-medium text-gray-900 dark:text-white">{showing}</span>{' '}
-        {t('datatable.tr.pagination.of', 'of')}{' '}
+        {t('datatable.ecosystem.pagination.of', 'of')}{' '}
         <span className="font-medium text-gray-900 dark:text-white">{total}</span>{' '}
-        {t('datatable.tr.pagination.ecosystems', 'ecosystems')}
+        {t('datatable.ecosystem.pagination.ecosystems', 'ecosystems')}
       </div>
       <div className="flex items-center space-x-2">
         <button
           type="button"
           disabled={page <= 1}
           onClick={() => onChange(Math.max(1, page - 1))}
-          aria-label={t('datatable.tr.pagination.previous', 'Previous page')}
+          aria-label={t('datatable.ecosystem.pagination.previous', 'Previous page')}
           className="px-3 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <FontAwesomeIcon icon={faChevronLeft} className="text-xs" />
@@ -79,7 +79,7 @@ export default function EcosystemsPagination({ page, pageCount, showing, total, 
           type="button"
           disabled={page >= pageCount}
           onClick={() => onChange(Math.min(pageCount, page + 1))}
-          aria-label={t('datatable.tr.pagination.next', 'Next page')}
+          aria-label={t('datatable.ecosystem.pagination.next', 'Next page')}
           className="px-3 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <FontAwesomeIcon icon={faChevronRight} className="text-xs" />

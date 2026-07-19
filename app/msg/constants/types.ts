@@ -2,33 +2,32 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import type { Translatable } from '@/ui/dataview/types'
 
 export type MessageType =
-  | 'MsgAddDID'
-  | 'MsgRenewDID'
-  | 'MsgTouchDID'
-  | 'MsgRemoveDID' // DID
+  | 'MsgStoreDigest' // DI
   | 'MsgReclaimTrustDepositYield'
-  | 'MsgReclaimTrustDeposit'
   | 'MsgRepaySlashedTrustDeposit' // TD
-  | 'MsgCreateTrustRegistry'
-  | 'MsgUpdateTrustRegistry'
-  | 'MsgArchiveTrustRegistry'
-  | 'MsgUnarchiveTrustRegistry' // TR
+  | 'MsgCreateEcosystem'
+  | 'MsgUpdateEcosystem'
+  | 'MsgArchiveEcosystem'
+  | 'MsgUnarchiveEcosystem' // EC
   | 'MsgAddGovernanceFrameworkDocument'
-  | 'MsgIncreaseActiveGovernanceFrameworkVersion' // TR
+  | 'MsgIncreaseActiveGovernanceFrameworkVersion' // GF
   | 'MsgCreateCredentialSchema'
   | 'MsgUpdateCredentialSchema'
   | 'MsgArchiveCredentialSchema'
   | 'MsgUnarchiveCredentialSchema' // CS
-  | 'MsgCancelPermissionVPLastRequest'
-  | 'MsgRenewPermissionVP'
-  | 'MsgSetPermissionVPToValidated'
-  | 'MsgStartPermissionVP' // VP PERM
-  | 'MsgExtendPermission'
-  | 'MsgRevokePermission'
-  | 'MsgSlashPermissionTrustDeposit'
-  | 'MsgRepayPermissionSlashedTrustDeposit' // PERM
-  | 'MsgCreateRootPermission'
-  | 'MsgCreatePermission' // PERM
+  | 'MsgCancelParticipantOPLastRequest'
+  | 'MsgRenewParticipantOP'
+  | 'MsgSetParticipantOPToValidated'
+  | 'MsgStartParticipantOP' // PP OP
+  | 'MsgSetParticipantEffectiveUntil'
+  | 'MsgRevokeParticipant'
+  | 'MsgCreateOrUpdateParticipantSession'
+  | 'MsgSlashParticipantTrustDeposit'
+  | 'MsgRepayParticipantSlashedTrustDeposit'
+  | 'MsgCreateRootParticipant'
+  | 'MsgSelfCreateParticipant' // PP
+  | 'MsgCreateCorporation'
+  | 'MsgGrantSelfOperatorAuthorization' // CO/DE bootstrap
 
 export interface MsgTypeInfoI18n {
   label: Translatable
