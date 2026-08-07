@@ -4,6 +4,7 @@ import { faChildReaching } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { serviceAvatarUrl } from '@/lib/resolverClient'
+import LogoImage from '@/ui/common/logo-image'
 import TrustBadge from '@/ui/common/trust-badge'
 
 export type EcosystemStatus = 'ARCHIVED'
@@ -28,12 +29,10 @@ export default function EcosystemHeader({ did, status }: EcosystemHeaderProps) {
       <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
           <div className="flex-shrink-0">
-            <img
-              src={serviceAvatarUrl(did)}
-              alt=""
-              loading="lazy"
-              referrerPolicy="no-referrer"
-              className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg"
+            <LogoImage
+              src={enrichment?.serviceLogoUrl}
+              fallbackSrc={serviceAvatarUrl(did)}
+              className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg object-contain"
             />
           </div>
 

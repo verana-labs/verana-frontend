@@ -8,6 +8,7 @@ import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { translate } from '@/i18n/dataview'
 import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import { trustStateBadge } from '@/lib/trust-state'
+import LogoImage from '@/ui/common/logo-image'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { countryCodeToFlag, formatNumber, formatVNAFromUVNA, roleBadgeClass, shortenDID } from '@/util/util'
 
@@ -100,12 +101,10 @@ export default function EcosystemCard({ ecosystem }: Props) {
       <div className={`${CARD_BODY_CLASS} ${isArchived ? 'archived-bg' : ''}`}>
         {/* Trust Registry row */}
         <div className={CARD_HEADER_REGION_CLASS}>
-          <img
-            src={serviceIdenticonUrl(ecosystem.did)}
-            alt=""
-            loading="lazy"
-            referrerPolicy="no-referrer"
-            className="w-12 h-12 rounded-lg flex-shrink-0"
+          <LogoImage
+            src={enrichment?.serviceLogoUrl}
+            fallbackSrc={serviceIdenticonUrl(ecosystem.did)}
+            className="w-12 h-12 rounded-lg flex-shrink-0 object-contain"
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
@@ -135,12 +134,10 @@ export default function EcosystemCard({ ecosystem }: Props) {
 
         {/* Organization row */}
         <div className={CARD_ORG_REGION_CLASS}>
-          <img
-            src={serviceAvatarUrl(enrichment?.organizationName ?? ecosystem.did)}
-            alt=""
-            loading="lazy"
-            referrerPolicy="no-referrer"
-            className="w-8 h-8 rounded flex-shrink-0"
+          <LogoImage
+            src={enrichment?.organizationLogoUrl}
+            fallbackSrc={serviceAvatarUrl(enrichment?.organizationName ?? ecosystem.did)}
+            className="w-8 h-8 rounded flex-shrink-0 object-contain"
           />
           <div className="flex-1 min-w-0">
             <h4 className="truncate text-sm font-medium text-gray-900 dark:text-white" title={orgName}>

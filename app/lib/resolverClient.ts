@@ -7,7 +7,9 @@ export interface DidEnrichment {
   trustStatus: DidTrustState
   serviceName?: string
   serviceDescription?: string
+  serviceLogoUrl?: string
   organizationName?: string
+  organizationLogoUrl?: string
   countryCode?: string
   organizationAddress?: string
   organizationRegistryId?: string
@@ -83,11 +85,13 @@ function mapResponse(did: string, raw: ResolverFullResult): DidEnrichment {
 
   const serviceName = pickString(service?.claims, 'name')
   const serviceDescription = pickString(service?.claims, 'description')
+  const serviceLogoUrl = pickString(service?.claims, 'logo')
   const serviceMinAge = pickStringOrNumber(service?.claims, 'minimumAgeRequired')
   const serviceTermsUrl = pickString(service?.claims, 'termsAndConditions')
   const servicePrivacyUrl = pickString(service?.claims, 'privacyPolicy')
 
   const organizationName = pickString(org?.claims, 'name')
+  const organizationLogoUrl = pickString(org?.claims, 'logo')
   const countryCode = pickString(org?.claims, 'countryCode')
   const organizationAddress = pickString(org?.claims, 'address') ?? pickString(org?.claims, 'streetAddress')
   const organizationRegistryId = pickString(org?.claims, 'registryId') ?? pickString(org?.claims, 'registrationNumber')
@@ -112,10 +116,12 @@ function mapResponse(did: string, raw: ResolverFullResult): DidEnrichment {
     trustStatus,
     serviceName,
     serviceDescription,
+    serviceLogoUrl,
     serviceMinAge,
     serviceTermsUrl,
     servicePrivacyUrl,
     organizationName,
+    organizationLogoUrl,
     countryCode,
     organizationAddress,
     organizationRegistryId,
