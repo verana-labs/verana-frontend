@@ -19,6 +19,7 @@ import { logger } from '@/lib/logger'
 import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { ActionFieldProps } from '@/ui/common/data-view-typed'
+import LogoImage from '@/ui/common/logo-image'
 import PermissionAttribute from '@/ui/common/permission-atrribute'
 import PermissionTimeline from '@/ui/common/permission-timeline'
 import { PermState, RefreshState, TreeNode } from '@/ui/common/permission-tree-types'
@@ -334,12 +335,10 @@ export default function PermissionCard({ selectedNode, path, csTitle, onRefresh 
                 {resolveTranslatable({ key: 'permissioncard.grantedservice.title' }, translate) ?? 'Granted Service'}
               </h3>
               <div className="flex items-start space-x-4">
-                <img
-                  src={serviceIdenticonUrl(did)}
-                  alt=""
-                  loading="lazy"
-                  referrerPolicy="no-referrer"
-                  className="w-16 h-16 rounded-lg flex-shrink-0"
+                <LogoImage
+                  src={enrichment?.serviceLogoUrl}
+                  fallbackSrc={serviceIdenticonUrl(did)}
+                  className="w-16 h-16 rounded-lg flex-shrink-0 object-contain"
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2 mb-2">
@@ -406,12 +405,10 @@ export default function PermissionCard({ selectedNode, path, csTitle, onRefresh 
                 {resolveTranslatable({ key: 'permissioncard.serviceprovider.title' }, translate) ?? 'Service Provider'}
               </h3>
               <div className="flex items-start space-x-3">
-                <img
-                  src={serviceAvatarUrl(did)}
-                  alt=""
-                  loading="lazy"
-                  referrerPolicy="no-referrer"
-                  className="w-6 h-6 rounded flex-shrink-0"
+                <LogoImage
+                  src={enrichment?.organizationLogoUrl}
+                  fallbackSrc={serviceAvatarUrl(did)}
+                  className="w-6 h-6 rounded flex-shrink-0 object-contain"
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2 mb-1">

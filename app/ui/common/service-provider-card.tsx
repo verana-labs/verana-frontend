@@ -4,6 +4,7 @@ import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { translate } from '@/i18n/dataview'
 import { serviceAvatarUrl } from '@/lib/resolverClient'
 import FieldRow from '@/ui/common/field-row'
+import LogoImage from '@/ui/common/logo-image'
 import TrustBadge from '@/ui/common/trust-badge'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { countryCodeToFlag } from '@/util/util'
@@ -51,12 +52,10 @@ export default function ServiceProviderCard({ did }: ServiceProviderCardProps) {
       <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
           <div className="flex-shrink-0">
-            <img
-              src={serviceAvatarUrl(did)}
-              alt=""
-              loading="lazy"
-              referrerPolicy="no-referrer"
-              className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg"
+            <LogoImage
+              src={enrichment?.organizationLogoUrl}
+              fallbackSrc={serviceAvatarUrl(did)}
+              className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-contain"
             />
           </div>
 

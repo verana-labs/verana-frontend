@@ -3,7 +3,7 @@
 # ============================================
 # Stage 1: Install dependencies
 # ============================================
-FROM node:22-alpine AS deps
+FROM node:24-alpine AS deps
 WORKDIR /app
 
 # Install build dependencies for native modules (bcrypt)

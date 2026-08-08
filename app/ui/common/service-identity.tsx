@@ -2,6 +2,7 @@
 
 import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { serviceAvatarUrl } from '@/lib/resolverClient'
+import LogoImage from '@/ui/common/logo-image'
 import { countryCodeToFlag, shortenDID } from '@/util/util'
 import TrustBadge from './trust-badge'
 
@@ -34,12 +35,10 @@ export default function ServiceIdentity({
 
   return (
     <span className={`inline-flex items-center gap-x-2 min-w-0 ${className}`}>
-      <img
-        src={serviceAvatarUrl(avatarSeed)}
-        alt=""
-        loading="lazy"
-        referrerPolicy="no-referrer"
-        className={`${avatarSizeClass} rounded flex-shrink-0`}
+      <LogoImage
+        src={enrichment?.serviceLogoUrl}
+        fallbackSrc={serviceAvatarUrl(avatarSeed)}
+        className={`${avatarSizeClass} rounded flex-shrink-0 object-contain`}
       />
       <span className="text-sm font-medium text-gray-900 dark:text-white break-all">{serviceLabel}</span>
       {showFlag ? (
