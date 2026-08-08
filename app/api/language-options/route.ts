@@ -23,9 +23,6 @@ const { createRequire } = process.getBuiltinModule('node:module')
 const { readFileSync, readdirSync } = process.getBuiltinModule('node:fs')
 const { dirname, join } = process.getBuiltinModule('node:path')
 
-const cldrRequire = createRequire(import.meta.url)
-const CLDR_MAIN = join(dirname(cldrRequire.resolve('cldr-localenames-full/package.json')), 'main')
-
 type LocaleDisplayNames = {
   languages?: Record<string, string>
   territories?: Record<string, string>
@@ -33,28 +30,53 @@ type LocaleDisplayNames = {
 }
 type CldrNamesFile = { main: Record<string, { localeDisplayNames: LocaleDisplayNames }> }
 
-function readDisplayNames(locale: string, kind: keyof LocaleDisplayNames): Record<string, string> {
-  const file = JSON.parse(readFileSync(join(CLDR_MAIN, locale, `${kind}.json`), 'utf8')) as CldrNamesFile
+// All cldr-localenames-full access is lazy: this module MUST NOT touch the
+// filesystem at module scope. The route is force-static (the response is
+// prerendered at build time, where node_modules is complete), but the runtime
+// still loads this module on request; in the standalone/Docker output the CLDR
+// data only exists because next.config.ts outputFileTracingIncludes copies it,
+// and a module-scope crash would turn the prerendered route into a 500.
+type CldrData = {
+  cldrMain: string
+  englishLanguages: Record<string, string>
+  englishTerritories: Record<string, string>
+  englishScripts: Record<string, string>
+  availableLocaleDirs: Set<string>
+  nativeLanguagesCache: Map<string, Record<string, string> | null>
+}
+
+let cldrData: CldrData | null = null
+
+function readDisplayNames(cldrMain: string, locale: string, kind: keyof LocaleDisplayNames): Record<string, string> {
+  const file = JSON.parse(readFileSync(join(cldrMain, locale, `${kind}.json`), 'utf8')) as CldrNamesFile
   return file.main[locale]?.localeDisplayNames[kind] ?? {}
 }
 
-const englishLanguages = readDisplayNames('en', 'languages')
-const englishTerritories = readDisplayNames('en', 'territories')
-const englishScripts = readDisplayNames('en', 'scripts')
+function loadCldrData(): CldrData {
+  if (cldrData) return cldrData
+  const cldrRequire = createRequire(import.meta.url)
+  const cldrMain = join(dirname(cldrRequire.resolve('cldr-localenames-full/package.json')), 'main')
+  cldrData = {
+    cldrMain,
+    englishLanguages: readDisplayNames(cldrMain, 'en', 'languages'),
+    englishTerritories: readDisplayNames(cldrMain, 'en', 'territories'),
+    englishScripts: readDisplayNames(cldrMain, 'en', 'scripts'),
+    availableLocaleDirs: new Set(readdirSync(cldrMain)),
+    nativeLanguagesCache: new Map(),
+  }
+  return cldrData
+}
 
-const availableLocaleDirs = new Set(readdirSync(CLDR_MAIN))
-const nativeLanguagesCache = new Map<string, Record<string, string> | null>()
-
-function nativeLanguages(dir: string): Record<string, string> | null {
-  const cached = nativeLanguagesCache.get(dir)
+function nativeLanguages(cldr: CldrData, dir: string): Record<string, string> | null {
+  const cached = cldr.nativeLanguagesCache.get(dir)
   if (cached !== undefined) return cached
   let result: Record<string, string> | null = null
   try {
-    result = readDisplayNames(dir, 'languages')
+    result = readDisplayNames(cldr.cldrMain, dir, 'languages')
   } catch {
     result = null
   }
-  nativeLanguagesCache.set(dir, result)
+  cldr.nativeLanguagesCache.set(dir, result)
   return result
 }
 
@@ -64,30 +86,30 @@ function capitalizeFirst(s: string): string {
   return chars[0].toUpperCase() + chars.slice(1).join('')
 }
 
-function englishLabel(loc: Intl.Locale): string | undefined {
-  const base = englishLanguages[loc.language] ?? ENGLISH_LANGUAGE_OVERRIDES[loc.language]
+function englishLabel(cldr: CldrData, loc: Intl.Locale): string | undefined {
+  const base = cldr.englishLanguages[loc.language] ?? ENGLISH_LANGUAGE_OVERRIDES[loc.language]
   if (!base) return undefined
 
   const qualifiers: string[] = []
   if (loc.script) {
-    const name = englishScripts[loc.script]
+    const name = cldr.englishScripts[loc.script]
     if (name) qualifiers.push(name)
   }
   if (loc.region) {
-    const name = englishTerritories[loc.region]
+    const name = cldr.englishTerritories[loc.region]
     if (name) qualifiers.push(name)
   }
 
   return qualifiers.length ? `${base} (${qualifiers.join(', ')})` : base
 }
 
-function autonym(loc: Intl.Locale): string | undefined {
+function autonym(cldr: CldrData, loc: Intl.Locale): string | undefined {
   const scriptDir = loc.script ? `${loc.language}-${loc.script}` : undefined
   const candidates = [loc.baseName, scriptDir, loc.language].filter(
-    (dir): dir is string => !!dir && availableLocaleDirs.has(dir)
+    (dir): dir is string => !!dir && cldr.availableLocaleDirs.has(dir)
   )
   for (const dir of candidates) {
-    const languages = nativeLanguages(dir)
+    const languages = nativeLanguages(cldr, dir)
     if (!languages) continue
     const name = languages[loc.baseName] ?? (scriptDir ? languages[scriptDir] : undefined) ?? languages[loc.language]
     if (name) return name
@@ -98,6 +120,7 @@ function autonym(loc: Intl.Locale): string | undefined {
 let cached: LanguageOption[] | null = null
 
 function buildLanguageOptions(): LanguageOption[] {
+  const cldr = loadCldrData()
   const tags = [
     ...new Set([...availableLocalesData.availableLocales.full, ...defaultContentData.defaultContent, ...PINNED_CODES]),
   ].filter((tag) => tag !== UNDETERMINED_LANGUAGE_TAG)
@@ -115,12 +138,12 @@ function buildLanguageOptions(): LanguageOption[] {
       unresolved.push(tag)
       continue
     }
-    const english = englishLabel(loc)
+    const english = englishLabel(cldr, loc)
     if (!english) {
       unresolved.push(tag)
       continue
     }
-    const native = autonym(loc)
+    const native = autonym(cldr, loc)
     const left = native ? capitalizeFirst(native) : undefined
     const label = left && !english.startsWith(left) ? `${left} — ${english} (${tag})` : `${english} (${tag})`
     entries.push({ value: tag, label, sortKey: english })
