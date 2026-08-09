@@ -14,7 +14,8 @@
 
   "discover.title": "Descubre y Únete",
   "discover.description": "Explora, descubre y únete a ecosistemas existentes.",
-  "discover.search.placeholder": "Buscar ecosistema por DID...",
+  "discover.search.placeholder": "Buscar ecosistemas por nombre o DID...",
+  "discover.empty": "No se encontraron ecosistemas verificables.",
   "discover.cs.label": "Esquemas de Credenciales",
   "discover.td.label": "Depósito de Confianza:",
   "discover.btn.egf": "EGF",
