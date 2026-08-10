@@ -14,7 +14,8 @@
 
   "discover.title": "Discover & Join",
   "discover.description": "Explore, discover and join existing ecosystems.",
-  "discover.search.placeholder": "Search ecosystems by DID...",
+  "discover.search.placeholder": "Search ecosystems by name or DID...",
+  "discover.empty": "No verifiable ecosystems found.",
   "discover.cs.label": "Credential Schemas",
   "discover.td.label": "Trust Deposit:",
   "discover.btn.egf": "EGF",
