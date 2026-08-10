@@ -1,6 +1,6 @@
 {
   "name": "verana-frontend",
-  "version": "0.14.1",
+  "version": "0.15.0",
   "private": true,
   "scripts": {
     "build": "next build",
@@ -55,8 +55,6 @@
     "react": "latest",
     "react-dom": "latest",
     "react-icons": "4.6.0",
-    "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1",
     "tailwindcss": "3.4.17",
     "typescript": "5.7.3",
     "use-debounce": "^10.0.4",

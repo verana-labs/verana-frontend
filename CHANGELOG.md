@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.15.0](https://github.com/verana-labs/verana-frontend/compare/v0.14.1...v0.15.0) (2026-08-10)
+
+
+### Features
+
+* identifiable, verifiable-only ecosystems on Discover & Join ([#432](https://github.com/verana-labs/verana-frontend/issues/432)) ([1368d1d](https://github.com/verana-labs/verana-frontend/commit/1368d1dbaed16ec761061333535b9e0eb18b16a4))
+* render EGF PDF/Markdown inline in the join popup, with download ([#430](https://github.com/verana-labs/verana-frontend/issues/430)) ([d6092f9](https://github.com/verana-labs/verana-frontend/commit/d6092f91db2ad89d31aed85dfde6b790ef927c14))
+
+
+### Bug Fixes
+
+* language-options API 500 in standalone (Docker) deployments ([#429](https://github.com/verana-labs/verana-frontend/issues/429)) ([eda46f7](https://github.com/verana-labs/verana-frontend/commit/eda46f73a40c705b3a16a367096906c4e1692d9a))
+
 ## [0.14.1](https://github.com/verana-labs/verana-frontend/compare/v0.14.0...v0.14.1) (2026-08-08)
 
 
