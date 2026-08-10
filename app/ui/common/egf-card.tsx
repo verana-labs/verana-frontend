@@ -2,9 +2,9 @@
 
 import { faShieldHalved } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import Link from 'next/link'
 import { translate } from '@/i18n/dataview'
 import { useLanguageLabel } from '@/lib/language'
+import GfDocumentViewer from '@/ui/common/gf-document-viewer'
 import { formatLongDateUserLocale } from '@/util/util'
 import { TrData } from '../dataview/datasections/tr'
 import { resolveTranslatable } from '../dataview/types'
@@ -45,22 +45,18 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
         </div>
       </div>
 
-      <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center mb-4">
-        <div className="text-6xl text-gray-400 dark:text-gray-500 mb-4">📄</div>
+      <div className="border border-neutral-20 dark:border-neutral-70 rounded-lg p-4 sm:p-6 text-center mb-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
           {resolveTranslatable({ key: 'join.egf.title' }, translate)}
         </h3>
         <p className="text-sm text-neutral-70 dark:text-neutral-70 mb-4">
           {`${resolveTranslatable({ key: 'join.egf.version.label' }, translate)} ${ecosystem.active_version}  • ${resolveTranslatable(language, translate)} • ${resolveTranslatable({ key: 'join.egf.lastupdate.label' }, translate)} ${version?.active_since && formatLongDateUserLocale(version?.active_since)}`}
         </p>
-        <Link
-          href={egfDoc?.url ?? ''}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-        >
-          {egfDoc?.url}
-        </Link>
+        {egfDoc?.url ? (
+          <GfDocumentViewer url={egfDoc.url} />
+        ) : (
+          <div className="text-6xl text-gray-400 dark:text-gray-500">📄</div>
+        )}
       </div>
 
       <div className="mb-6">
