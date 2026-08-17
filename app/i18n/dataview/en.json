@@ -60,10 +60,13 @@
   "participants.description": "Page for viewing/interacting with the participant tree of a given credential schema.",
   "participants.tree.title": "Participant Tree",
   "participants.btn.join": "join",
+  "participants.show.unresolvable": "Unresolvable services",
+  "participants.show.disabled": "Disabled participants",
   "participants.show.weight": "Weight",
   "participants.show.businessrules": "Business Rules",
   "participants.show.stats": "Stats",
   "participants.action.newperm": "New Ecosystem Participant",
+  "participants.filters.allhidden": "All participants are hidden by the current filters.",
 
   "task.title": "Pending Tasks",
   "task.description": "See your pending actions and pending actions of your grantees.",

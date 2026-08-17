@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
+import { DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
 import AddJoinPage from '@/participants/add/page'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { Permission } from '../dataview/datasections/perm'
@@ -13,6 +14,7 @@ import { resolveTranslatable } from '../dataview/types'
 import { renderActionComponent } from './data-view-typed'
 import { ModalAction } from './modal-action'
 import PermissionCard from './permission-card'
+import { collectPermissionDids, filterPermissionTree } from './permission-tree-filter'
 import { RefreshState, TreeNode } from './permission-tree-types'
 import SchemaHeader, { SchemaStatus } from './schema-header'
 import TreeNodeHeader from './tree-node-header'
@@ -144,6 +146,8 @@ export default function PermissionTree({
   onConnect,
   onRetryFetch,
 }: PermissionTreeProps) {
+  const [showUnresolvable, setShowUnresolvable] = useState(false)
+  const [showDisabled, setShowDisabled] = useState(false)
   const [showWeight, setShowWeight] = useState(false)
   const [showBusiness, setShowBusiness] = useState(false)
   const [showStats, setShowStats] = useState(false)
@@ -153,6 +157,38 @@ export default function PermissionTree({
   const [treeState, setTreeState] = useState<TreeNode[]>(tree)
   const [refreshState, setRefreshState] = useState<RefreshState>({})
   const { latestProcessedHeight } = useIndexerEvents()
+
+  // Trust-resolve the DIDs of loaded permission nodes so the unresolvable-services
+  // filter can be evaluated at tree level. Shares the resolver cache already
+  // populated by the per-node ServiceIdentity rows.
+  const [enrichmentByDid, setEnrichmentByDid] = useState<Record<string, DidEnrichment>>({})
+
+  useEffect(() => {
+    if (type !== 'participants') return
+    let cancelled = false
+    const pending = collectPermissionDids(treeState).filter((did) => !enrichmentByDid[did])
+    for (const did of pending) {
+      fetchDidEnrichment(did)
+        .catch((): DidEnrichment => ({ did, trustStatus: 'UNRESOLVED' }))
+        .then((enrichment) => {
+          if (cancelled) return
+          setEnrichmentByDid((prev) => (prev[did] ? prev : { ...prev, [did]: enrichment }))
+        })
+    }
+    return () => {
+      cancelled = true
+    }
+  }, [type, treeState, enrichmentByDid])
+
+  const visibleTree = useMemo(() => {
+    if (type !== 'participants') return treeState
+    const trustByDid = Object.fromEntries(Object.entries(enrichmentByDid).map(([did, e]) => [did, e.trustStatus]))
+    return filterPermissionTree(
+      treeState,
+      { includeUnresolvable: showUnresolvable, includeDisabled: showDisabled },
+      trustByDid
+    )
+  }, [type, treeState, enrichmentByDid, showUnresolvable, showDisabled])
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     const first = tree?.[0]?.nodeId
@@ -343,6 +379,28 @@ export default function PermissionTree({
                 <input
                   type="checkbox"
                   className="w-4 h-4 text-primary-600 border-neutral-20 rounded focus:ring-primary-500"
+                  checked={showUnresolvable}
+                  onChange={(e) => setShowUnresolvable(e.target.checked)}
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  {resolveTranslatable({ key: 'participants.show.unresolvable' }, translate)}
+                </span>
+              </label>
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 text-primary-600 border-neutral-20 rounded focus:ring-primary-500"
+                  checked={showDisabled}
+                  onChange={(e) => setShowDisabled(e.target.checked)}
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  {resolveTranslatable({ key: 'participants.show.disabled' }, translate)}
+                </span>
+              </label>
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 text-primary-600 border-neutral-20 rounded focus:ring-primary-500"
                   checked={showWeight}
                   onChange={(e) => setShowWeight(e.target.checked)}
                 />
@@ -377,9 +435,15 @@ export default function PermissionTree({
         </div>
 
         <div className="space-y-1">
+          {type === 'participants' && treeState.length > 0 && visibleTree.length === 0 ? (
+            <p className="p-2 text-sm text-neutral-70 dark:text-neutral-70">
+              {resolveTranslatable({ key: 'participants.filters.allhidden' }, translate) ??
+                'All participants are hidden by the current filters.'}
+            </p>
+          ) : null}
           <Tree
             type={type}
-            nodes={treeState}
+            nodes={visibleTree}
             onJoin={(node) => {
               setNodeRequestParams?.(undefined, undefined, undefined)
               setJoin(node)
