@@ -22,7 +22,6 @@ services:
       - NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT=https://idx.devnet.verana.network/v4/trust-deposit
       - NEXT_PUBLIC_VERANA_REST_ENDPOINT_CORPORATION=https://idx.devnet.verana.network/v4/corporation
       - NEXT_PUBLIC_VERANA_REST_ENDPOINT_DELEGATION=https://idx.devnet.verana.network/v4/delegation
-      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_GOVERNANCE_FRAMEWORK=https://idx.devnet.verana.network/v4/governance-framework
       - NEXT_PUBLIC_VERANA_REST_ENDPOINT_INDEXER=https://idx.devnet.verana.network/v4/indexer
       - NEXT_PUBLIC_VERANA_REST_ENDPOINT_METRICS=https://idx.devnet.verana.network/v4/metrics
       - NEXT_PUBLIC_VERANA_REST_ENDPOINT_RESOLVER=https://resolver.devnet.verana.network/v1

@@ -32,7 +32,6 @@ export async function fillEcosystemForm(page: Page, opts: EcosystemFormOptions) 
   await labelInput(page, 'Document URL').fill(docUrl)
 }
 
-// Broadcasts MsgCreateEcosystem and returns the indexed ID from the canonical redirect.
 export async function createEcosystem(page: Page, opts: EcosystemFormOptions): Promise<string> {
   const chainErrors = watchChainErrors(page)
   await fillEcosystemForm(page, opts)

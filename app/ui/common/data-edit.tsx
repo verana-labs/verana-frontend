@@ -359,19 +359,6 @@ export default function EditableDataView<T extends object>({
       {(basicSection?.name || basicSection?.nameCreate) && action === 'create' && (
         <h2 className="data-edit-section-title">{basicSection?.nameCreate ?? basicSection?.name}</h2>
       )}
-      {/* { basicSection?.name && action == 'edit' && withinView && (
-        <h3 className="data-view-section-title text-lg mb-6">{basicSection?.name}</h3>
-      )} */}
-
-      {/* {uiMsgType.description && (
-        <div className="form-copy">
-        { (messageType === 'MsgReclaimTrustDeposit' )? 
-            getDescriptionMessage(uiMsgType.description, (100 - burnRate), burnRate )
-            : uiMsgType.description
-          }
-        </div>
-      )} */}
-
       {actionCard && <ActionCard {...actionCard} />}
 
       {!noForm && normalInputs.length > 0 && (
