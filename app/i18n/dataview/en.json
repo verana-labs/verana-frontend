@@ -198,7 +198,7 @@
   "notconnected.nav.title": "Not Connected",
   "notconnected.nav.click": "Click to connect",
   "notconnected.dashboard.title": "Connect Your Wallet",
-  "notconnected.dashboard.msg": "Access your account, store digests, and create or join ecosystems.",
+  "notconnected.dashboard.msg": "Access your account and create or join ecosystems.",
   "wallet.nav.connect": "Connect",
   "wallet.dashboard.connect": "Connect Wallet",
   "wallet.wallet": "My Wallet",

@@ -30,7 +30,7 @@
 
 Verana is an open initiative building a decentralized trust layer for the internet with DIDs, verifiable credentials, governed ecosystems, and public trust resolution. The Verana network is a Cosmos SDK Layer 1 appchain that acts as a Verifiable Public Registry. Learn more at [docs.verana.io](https://docs.verana.io/).
 
-This repo is the web dashboard where participants connect a wallet and act on the network: create ecosystems, define credential schemas, manage participant roles, join ecosystems through onboarding processes, and store digests. Looking for the read-only explorer instead? See [verana-visualizer](https://github.com/verana-labs/verana-visualizer) (live at [vis.devnet.verana.network](https://vis.devnet.verana.network)).
+This repo is the web dashboard where participants connect a wallet and act on the network: create ecosystems, define credential schemas, manage participant roles, and join ecosystems through onboarding processes. Looking for the read-only explorer instead? See [verana-visualizer](https://github.com/verana-labs/verana-visualizer) (live at [vis.devnet.verana.network](https://vis.devnet.verana.network)).
 
 ---
 
@@ -67,7 +67,7 @@ flowchart TD
     rpc --> chain
 ```
 
-Queries use the strict V4 indexer contracts for ecosystems, credential schemas, participants, corporations, digests, trust deposits, metrics, and websocket block events. Writes go through Cosmos-Kit, which signs and broadcasts to the chain RPC. DID resolution goes through the universal resolver.
+Queries use the strict V4 indexer contracts for ecosystems, credential schemas, participants, corporations, trust deposits, metrics, and websocket block events. Writes go through Cosmos-Kit, which signs and broadcasts to the chain RPC. Trust resolution goes through the indexer's `/v4/verifiable-trust/resolve` route.
 
 ---
 
@@ -80,7 +80,6 @@ Queries use the strict V4 indexer contracts for ecosystems, credential schemas, 
 - Create, adjust, revoke, and validate issuer, verifier, grantor, and holder participants
 - Join ecosystems through onboarding processes
 - Track pending participant onboarding tasks
-- Store and resolve digests through the DI module
 - Trust deposit and topup flows
 - Live updates via the indexer websocket
 - Light and dark theme, responsive layout, basic i18n surface
@@ -150,16 +149,7 @@ Public runtime variables. Source of truth is `.env` at the repo root.
 | --- | --- | --- |
 | `NEXT_PUBLIC_VERANA_RPC_ENDPOINT` | CometBFT RPC | `https://rpc.devnet.verana.network` |
 | `NEXT_PUBLIC_VERANA_REST_ENDPOINT` | Verana REST API | `https://api.devnet.verana.network` |
-| `NEXT_PUBLIC_VERANA_REST_ENDPOINT_ECOSYSTEM` | V4 ecosystem indexer | `https://idx.devnet.verana.network/v4/ecosystem` |
-| `NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA` | V4 credential schema indexer | `https://idx.devnet.verana.network/v4/credential-schema` |
-| `NEXT_PUBLIC_VERANA_REST_ENDPOINT_PARTICIPANT` | V4 participant indexer | `https://idx.devnet.verana.network/v4/participant` |
-| `NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT` | V4 trust deposit indexer | `https://idx.devnet.verana.network/v4/trust-deposit` |
-| `NEXT_PUBLIC_VERANA_REST_ENDPOINT_CORPORATION` | V4 corporation indexer | `https://idx.devnet.verana.network/v4/corporation` |
-| `NEXT_PUBLIC_VERANA_REST_ENDPOINT_DELEGATION` | V4 delegation indexer | `https://idx.devnet.verana.network/v4/delegation` |
-| `NEXT_PUBLIC_VERANA_REST_ENDPOINT_INDEXER` | V4 indexer status | `https://idx.devnet.verana.network/v4/indexer` |
-| `NEXT_PUBLIC_VERANA_REST_ENDPOINT_METRICS` | V4 metrics | `https://idx.devnet.verana.network/v4/metrics` |
-| `NEXT_PUBLIC_VERANA_REST_ENDPOINT_RESOLVER` | DID resolver | `https://resolver.devnet.verana.network/v1` |
-| `NEXT_PUBLIC_VERANA_WEBSOCKET` | V4 indexer subscription | `wss://idx.devnet.verana.network/v4/indexer/subscribe` |
+| `NEXT_PUBLIC_VERANA_INDEXER_BASE_URL` | V4 indexer base URL, every `/v4/*` route and the `wss://.../v4/indexer/subscribe` socket derive from it | `https://idx.devnet.verana.network` |
 
 **Wallet provider (WalletConnect and Cosmos-Kit)**
 
@@ -187,6 +177,8 @@ Public runtime variables. Source of truth is `.env` at the repo root.
 | `NEXT_PUBLIC_VERANA_EXPLORER_URL` | Block explorer | `https://explorer.devnet.verana.network/Verana%20Devnet` |
 | `NEXT_PUBLIC_VERANA_VISUALIZER_URL` | Sister visualizer | `https://vis.devnet.verana.network` |
 | `NEXT_PUBLIC_VERANA_TOPUP_VS` | Faucet/topup verifiable service | `did:web:faucet-vs.devnet.verana.network` |
+
+Individual indexer modules can be overridden with `NEXT_PUBLIC_VERANA_REST_ENDPOINT_<MODULE>` (`ECOSYSTEM`, `CREDENTIAL_SCHEMA`, `PARTICIPANT`, `TRUST_DEPOSIT`, `CORPORATION`, `DELEGATION`, `GROUP`, `INDEXER`, `METRICS`, `VERIFIABLE_TRUST`) and the socket with `NEXT_PUBLIC_VERANA_WEBSOCKET`.
 
 All `NEXT_PUBLIC_*` values are exposed to the client by design (standard Next.js behavior). Override per environment via `.env.local` or container env vars.
 
@@ -258,7 +250,6 @@ app/
 │  └─ [id]/
 ├─ pendingtasks/      # Onboarding processes you participate in
 ├─ discover/          # Ecosystem discovery
-├─ digests/           # DI digest storage and lookup
 ├─ join/[id]/         # Ecosystem join flow
 ├─ tr/                # Narrow redirects for retired URLs
 ├─ account/           # Connected wallet, balance, low-balance warn
