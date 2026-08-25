@@ -88,7 +88,7 @@ export function useEcosystems(all = false, onlyActive = true) {
     setError(null)
     setLoading(true)
     try {
-      const params = new URLSearchParams({ response_max_size: '1024' })
+      const params = new URLSearchParams({ limit: '1024' })
       if (!all && corporationId) params.set('corporation_id', String(corporationId))
       if (onlyActive) params.set('archived', 'false')
       const response = await fetch(`${VERANA_REST_ENDPOINT_ECOSYSTEM}/list?${params.toString()}`)

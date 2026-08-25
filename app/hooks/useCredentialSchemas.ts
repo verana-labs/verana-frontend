@@ -136,7 +136,7 @@ export function useCredentialSchemas(ecosystemId?: string, all = true, onlyActiv
     setError(null)
     setLoading(true)
     try {
-      const params = new URLSearchParams({ response_max_size: '1024' })
+      const params = new URLSearchParams({ limit: '1024' })
       if (!all && ecosystemId) params.set('ecosystem_id', ecosystemId)
       if (onlyActive) params.set('archived', 'false')
       const response = await fetch(`${VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA}/list?${params.toString()}`)

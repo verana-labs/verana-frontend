@@ -63,9 +63,7 @@ export function useParticipantHistory(id?: string) {
       setError(null)
       setLoading(true)
       try {
-        const response = await fetch(
-          `${VERANA_REST_ENDPOINT_PARTICIPANT}/history/${participantId}?response_max_size=1000`
-        )
+        const response = await fetch(`${VERANA_REST_ENDPOINT_PARTICIPANT}/history/${participantId}?limit=1000`)
         const json: unknown = await response.json()
         if (!response.ok) {
           const { error, code } = json as ApiErrorResponse

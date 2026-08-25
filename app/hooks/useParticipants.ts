@@ -42,7 +42,7 @@ export function useParticipants(schemaId?: string, role?: string, validatorParti
       setError(null)
       setLoading(true)
       try {
-        const params = new URLSearchParams({ schema_id: schema, response_max_size: '1024', sort: '+id' })
+        const params = new URLSearchParams({ schema_id: schema, limit: '1024', sort: '+id' })
         if (participantRole) params.set('role', participantRole)
         if (validator) params.set('validator_participant_id', validator)
         const response = await fetch(`${VERANA_REST_ENDPOINT_PARTICIPANT}/list?${params.toString()}`)
