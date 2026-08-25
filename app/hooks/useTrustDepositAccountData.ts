@@ -82,8 +82,8 @@ export function parseTrustDepositResponse(payload: unknown): ParsedTrustDeposit 
   }
 }
 
-export function trustDepositAccountUrl(endpoint: string, policyAddress: string): string {
-  return `${endpoint}/get/${encodeURIComponent(policyAddress)}`
+export function trustDepositAccountUrl(endpoint: string, corporationId: number): string {
+  return `${endpoint}/get/${corporationId}`
 }
 
 const EMPTY_ACCOUNT_DATA: TrustDepositAccountData = {
@@ -102,7 +102,7 @@ export function useTrustDepositAccountData() {
   const { address, isWalletConnected, getStargateClient } = useChain(veranaChain.chain_name)
   const getStargateClientRef = useRef(getStargateClient)
   const { corporation, loading: corporationLoading } = useUserCorporation()
-  const corporationPolicyAddress = corporation?.policyAddress
+  const corporationId = corporation?.id
   const [accountData, setData] = useState<TrustDepositAccountData>(EMPTY_ACCOUNT_DATA)
   const [loading, setLoading] = useState(false)
   const [errorAccountData, setError] = useState<string | null>(null)
@@ -123,11 +123,9 @@ export function useTrustDepositAccountData() {
       const client = await getStargateClientRef.current()
       balance = (await client.getBalance(address, 'uvna')).amount
 
-      if (corporationPolicyAddress) {
+      if (corporationId !== undefined) {
         if (!VERANA_REST_ENDPOINT_TRUST_DEPOSIT) throw new Error('Missing trust deposit endpoint URL')
-        const response = await fetch(
-          trustDepositAccountUrl(VERANA_REST_ENDPOINT_TRUST_DEPOSIT, corporationPolicyAddress)
-        )
+        const response = await fetch(trustDepositAccountUrl(VERANA_REST_ENDPOINT_TRUST_DEPOSIT, corporationId))
         const json: unknown = await response.json()
         if (response.status === 404) {
           trustDeposit = ZERO_TRUST_DEPOSIT
@@ -151,7 +149,7 @@ export function useTrustDepositAccountData() {
     } finally {
       setLoading(false)
     }
-  }, [address, corporationPolicyAddress, isWalletConnected, veranaChain.chain_id])
+  }, [address, corporationId, isWalletConnected, veranaChain.chain_id])
 
   useEffect(() => {
     getStargateClientRef.current = getStargateClient

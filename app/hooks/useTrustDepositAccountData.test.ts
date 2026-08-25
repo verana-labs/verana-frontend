@@ -44,9 +44,7 @@ describe('trust deposit account parsing', () => {
     )
   })
 
-  it('queries by corporation policy address', () => {
-    expect(trustDepositAccountUrl('https://indexer/v4/trust-deposit', 'verana1policy')).toBe(
-      'https://indexer/v4/trust-deposit/get/verana1policy'
-    )
+  it('queries by corporation id', () => {
+    expect(trustDepositAccountUrl('https://indexer/v4/trust-deposit', 1)).toBe('https://indexer/v4/trust-deposit/get/1')
   })
 })
