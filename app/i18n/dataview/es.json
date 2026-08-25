@@ -607,6 +607,7 @@
   "dataview.participant.fields.digest": "Resumen",
   "dataview.participant.fields.reason": "Motivo",
   "error.msg.corporation.required": "Cree o seleccione una corporación antes de continuar.",
+  "error.msg.corporation.notauthorized": "Esta corporación no ha autorizado tu billetera para {msgType}.",
   "error.msg.corporation.grant.unverified": "La autorización del operador no fue indexada. Verifique la concesión de la corporación antes de continuar.",
   "notification.MsgCreateCorporation.success": "Corporación creada correctamente",
   "notification.MsgCreateCorporation.inprogress": "Creando corporación...",

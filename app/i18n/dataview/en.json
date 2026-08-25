@@ -607,6 +607,7 @@
   "dataview.participant.fields.digest": "Digest",
   "dataview.participant.fields.reason": "Reason",
   "error.msg.corporation.required": "Create or select a corporation before continuing.",
+  "error.msg.corporation.notauthorized": "This corporation has not authorized your wallet for {msgType}.",
   "error.msg.corporation.grant.unverified": "The operator authorization was not indexed. Verify the corporation grant before continuing.",
   "notification.MsgCreateCorporation.success": "Corporation successfully created",
   "notification.MsgCreateCorporation.inprogress": "Creating corporation...",

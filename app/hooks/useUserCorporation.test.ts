@@ -56,6 +56,7 @@ describe('resolveUserCorporation', () => {
         did: 'did:web:corporation.example',
       },
       hasOperatorGrant: true,
+      grantedMessageTypes: [...OPERATOR_GRANT_MESSAGE_TYPES],
     })
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
@@ -64,7 +65,7 @@ describe('resolveUserCorporation', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://indexer.example/v4/corporation/get/7')
   })
 
-  it('keeps the corporation but requires an upgrade for a partial operator authorization', async () => {
+  it('keeps a partial operator authorization as the granted message types', async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce({
@@ -99,7 +100,8 @@ describe('resolveUserCorporation', () => {
         policyAddress: 'verana1policy',
         did: 'did:web:corporation.example',
       },
-      hasOperatorGrant: false,
+      hasOperatorGrant: true,
+      grantedMessageTypes: OPERATOR_GRANT_MESSAGE_TYPES.filter((msgType) => msgType !== '/verana.di.v1.MsgStoreDigest'),
     })
   })
 

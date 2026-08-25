@@ -4,7 +4,6 @@ import { useChain } from '@cosmos-kit/react'
 import { useCallback, useEffect, useState } from 'react'
 import { VERANA_REST_ENDPOINT, VERANA_REST_ENDPOINT_CORPORATION, VERANA_REST_ENDPOINT_DELEGATION } from '@/config/env'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
-import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
 
 export interface UserCorporation {
   id: number
@@ -15,6 +14,7 @@ export interface UserCorporation {
 export interface UserCorporationResolution {
   corporation: UserCorporation | null
   hasOperatorGrant: boolean
+  grantedMessageTypes: string[]
 }
 
 function record(value: unknown, path: string): Record<string, unknown> {
@@ -74,8 +74,7 @@ async function resolveViaOperatorAuthorization(address: string): Promise<UserCor
 
   const authorization = record(authorizationsEnvelope.authorizations[0], 'authorizations[0]')
   const corporationId = number(authorization.corporation_id, 'authorizations[0].corporation_id')
-  const messageTypes = stringArray(authorization.msg_types, 'authorizations[0].msg_types')
-  const hasOperatorGrant = OPERATOR_GRANT_MESSAGE_TYPES.every((messageType) => messageTypes.includes(messageType))
+  const grantedMessageTypes = stringArray(authorization.msg_types, 'authorizations[0].msg_types')
   const corporationPayload = await fetchJson(
     `${VERANA_REST_ENDPOINT_CORPORATION}/get/${corporationId}`,
     'Unable to resolve corporation'
@@ -86,7 +85,8 @@ async function resolveViaOperatorAuthorization(address: string): Promise<UserCor
   }
   return {
     corporation: parseCorporation(corporationEnvelope.corporation, 'corporation'),
-    hasOperatorGrant,
+    hasOperatorGrant: grantedMessageTypes.length > 0,
+    grantedMessageTypes,
   }
 }
 
@@ -141,6 +141,7 @@ export async function resolveUserCorporation(address: string): Promise<UserCorpo
   return {
     corporation: await resolveViaGroupMembership(address),
     hasOperatorGrant: false,
+    grantedMessageTypes: [],
   }
 }
 
@@ -149,6 +150,7 @@ export function useUserCorporation() {
   const { address } = useChain(veranaChain.chain_name)
   const [corporation, setCorporation] = useState<UserCorporation | null>(null)
   const [hasOperatorGrant, setHasOperatorGrant] = useState(false)
+  const [grantedMessageTypes, setGrantedMessageTypes] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [errorCorporation, setError] = useState<string | null>(null)
 
@@ -156,6 +158,7 @@ export function useUserCorporation() {
     if (!address) {
       setCorporation(null)
       setHasOperatorGrant(false)
+      setGrantedMessageTypes([])
       setError(null)
       setLoading(false)
       return
@@ -167,9 +170,11 @@ export function useUserCorporation() {
       const resolution = await resolveUserCorporation(address)
       setCorporation(resolution.corporation)
       setHasOperatorGrant(resolution.hasOperatorGrant)
+      setGrantedMessageTypes(resolution.grantedMessageTypes)
     } catch (error) {
       setCorporation(null)
       setHasOperatorGrant(false)
+      setGrantedMessageTypes([])
       setError(error instanceof Error ? error.message : String(error))
     } finally {
       setLoading(false)
@@ -180,5 +185,5 @@ export function useUserCorporation() {
     void resolve()
   }, [resolve])
 
-  return { corporation, hasOperatorGrant, loading, errorCorporation, refetch: resolve }
+  return { corporation, hasOperatorGrant, grantedMessageTypes, loading, errorCorporation, refetch: resolve }
 }
