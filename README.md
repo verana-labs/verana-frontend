@@ -153,7 +153,6 @@ Public runtime variables. Source of truth is `.env` at the repo root.
 | `NEXT_PUBLIC_VERANA_REST_ENDPOINT_ECOSYSTEM` | V4 ecosystem indexer | `https://idx.devnet.verana.network/v4/ecosystem` |
 | `NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA` | V4 credential schema indexer | `https://idx.devnet.verana.network/v4/credential-schema` |
 | `NEXT_PUBLIC_VERANA_REST_ENDPOINT_PARTICIPANT` | V4 participant indexer | `https://idx.devnet.verana.network/v4/participant` |
-| `NEXT_PUBLIC_VERANA_REST_ENDPOINT_DIGEST` | V4 digest indexer | `https://idx.devnet.verana.network/v4/di` |
 | `NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT` | V4 trust deposit indexer | `https://idx.devnet.verana.network/v4/trust-deposit` |
 | `NEXT_PUBLIC_VERANA_REST_ENDPOINT_CORPORATION` | V4 corporation indexer | `https://idx.devnet.verana.network/v4/corporation` |
 | `NEXT_PUBLIC_VERANA_REST_ENDPOINT_DELEGATION` | V4 delegation indexer | `https://idx.devnet.verana.network/v4/delegation` |

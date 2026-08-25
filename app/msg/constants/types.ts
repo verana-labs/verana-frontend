@@ -2,7 +2,6 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import type { Translatable } from '@/ui/dataview/types'
 
 export type MessageType =
-  | 'MsgStoreDigest' // DI
   | 'MsgReclaimTrustDepositYield'
   | 'MsgRepaySlashedTrustDeposit' // TD
   | 'MsgCreateEcosystem'

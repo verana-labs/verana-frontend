@@ -27,7 +27,6 @@ export type MockChainOptions = {
   ecosystemId?: string
   corporationId?: number
   corporationPolicyAddress?: string
-  storedDigest?: string
   stubSri?: boolean
   stubCorporation?: boolean
 }
@@ -193,7 +192,6 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
     ecosystemId = '4242',
     corporationId = 7,
     corporationPolicyAddress = address,
-    storedDigest,
     stubSri = true,
     stubCorporation = true,
   } = opts
@@ -281,17 +279,6 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
     )
   }
 
-  const digestPattern = /\/v4\/di\/get\/[^/?]+(?:\?.*)?$/
-  if (storedDigest) {
-    await page.route(digestPattern, (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ digest: { digest: storedDigest, created: NOW } }),
-      })
-    )
-  }
-
   return {
     seenMethods: () => [...seen],
     teardown: async () => {
@@ -301,7 +288,6 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
         await page.unroute(delegationPattern)
         await page.unroute(corporationPattern)
       }
-      if (storedDigest) await page.unroute(digestPattern)
     },
   }
 }

@@ -18,7 +18,6 @@ services:
       - NEXT_PUBLIC_VERANA_REST_ENDPOINT_ECOSYSTEM=https://idx.devnet.verana.network/v4/ecosystem
       - NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA=https://idx.devnet.verana.network/v4/credential-schema
       - NEXT_PUBLIC_VERANA_REST_ENDPOINT_PARTICIPANT=https://idx.devnet.verana.network/v4/participant
-      - NEXT_PUBLIC_VERANA_REST_ENDPOINT_DIGEST=https://idx.devnet.verana.network/v4/di
       - NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT=https://idx.devnet.verana.network/v4/trust-deposit
       - NEXT_PUBLIC_VERANA_REST_ENDPOINT_CORPORATION=https://idx.devnet.verana.network/v4/corporation
       - NEXT_PUBLIC_VERANA_REST_ENDPOINT_DELEGATION=https://idx.devnet.verana.network/v4/delegation

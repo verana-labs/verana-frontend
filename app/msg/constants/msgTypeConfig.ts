@@ -5,12 +5,6 @@ import { I18nValues, Translatable } from '@/ui/dataview/types'
 const t = (key: string, values?: I18nValues): Translatable => ({ key, values })
 
 export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
-  MsgStoreDigest: {
-    label: t('messages.MsgStoreDigest.label'),
-    description: t('messages.MsgStoreDigest.description'),
-    cost: t('messages.MsgStoreDigest.cost'),
-  },
-
   MsgReclaimTrustDepositYield: {
     label: t('messages.MsgReclaimTrustDepositYield.label'),
     description: t('messages.MsgReclaimTrustDepositYield.description'),
@@ -158,7 +152,6 @@ export function getDescriptionMessage(template: string, addBalance: string | num
 }
 
 export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
-  MsgStoreDigest: {},
   MsgReclaimTrustDepositYield: {},
   MsgRepaySlashedTrustDeposit: {},
   MsgCreateEcosystem: {},

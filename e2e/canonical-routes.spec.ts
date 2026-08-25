@@ -5,7 +5,6 @@ test('connected navigation and retired links resolve to canonical V4 routes', as
   await connectWallet(page)
 
   await expect(page.locator('a[href="/ecosystems"]').first()).toBeVisible()
-  await expect(page.locator('a[href="/digests"]').first()).toBeVisible()
   await expect(page.locator('a[href^="/tr"]')).toHaveCount(0)
   await expect(page.locator('a[href^="/did"]')).toHaveCount(0)
 

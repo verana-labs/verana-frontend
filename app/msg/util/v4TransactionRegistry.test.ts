@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import { veranaAmino, veranaRegistry } from '@/config/veranaChain.sign.client'
 import { buildCreateCorporationMessage, buildGrantOperatorMessages } from '@/msg/actions_hooks/actionCorporation'
 import { buildCredentialSchemaMessage } from '@/msg/actions_hooks/actionCredentialSchema'
-import { buildStoreDigestMessage } from '@/msg/actions_hooks/actionDigest'
 import { buildEcosystemMessage } from '@/msg/actions_hooks/actionEcosystem'
 import { buildParticipantMessage } from '@/msg/actions_hooks/actionParticipant'
 import { buildTrustDepositMessage } from '@/msg/actions_hooks/actionTrustDeposit'
@@ -152,7 +151,6 @@ const messages: EncodeObject[] = [
   buildParticipantMessage({ msgType: 'MsgRepayParticipantSlashedTrustDeposit', id: 1 }, context),
   buildTrustDepositMessage({ msgType: 'MsgReclaimTrustDepositYield' }, context),
   buildTrustDepositMessage({ msgType: 'MsgRepaySlashedTrustDeposit', deposit: 11 }, context),
-  buildStoreDigestMessage('sha384-digest', context),
 ]
 
 describe('dev.25 transaction registries', () => {

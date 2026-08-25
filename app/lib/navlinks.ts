@@ -1,7 +1,6 @@
 import {
   faCircleUser,
   faCompass,
-  faFingerprint,
   faGaugeHigh,
   faShieldHalved,
   faTasks,
@@ -37,12 +36,6 @@ export function getNavLinks(pendingCount?: number): NavLink[] {
       icon: faCircleUser,
     },
     {
-      name: resolveTranslatable({ key: 'digest.title' }, translate) ?? 'Digest Registry',
-      href: '/digests',
-      icon: faFingerprint,
-      availableOffline: true,
-    },
-    {
       name: resolveTranslatable({ key: 'ecosystemList.title' }, translate) ?? 'My Ecosystems',
       href: '/ecosystems',
       icon: faShieldHalved,
@@ -72,7 +65,6 @@ export function getNavLinks(pendingCount?: number): NavLink[] {
 const offlineRoutesAllowed: (string | RegExp)[] = [
   '/dashboard',
   '/discover',
-  '/digests',
   /^\/ecosystems\/[^/]+$/,
   /^\/credential-schemas\/[^/]+$/,
   /^\/participants\/[^/]+$/,

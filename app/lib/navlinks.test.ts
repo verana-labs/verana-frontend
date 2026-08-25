@@ -3,9 +3,9 @@ import { translate } from '@/i18n/dataview'
 import { allowedOffline, getNavLinks } from '@/lib/navlinks'
 
 describe('getNavLinks', () => {
-  it('returns the six top-level destinations in order', () => {
+  it('returns the five top-level destinations in order', () => {
     const hrefs = getNavLinks().map((link) => link.href)
-    expect(hrefs).toEqual(['/dashboard', '/account', '/digests', '/ecosystems', '/discover', '/pendingtasks'])
+    expect(hrefs).toEqual(['/dashboard', '/account', '/ecosystems', '/discover', '/pendingtasks'])
   })
 
   it('gives every link a non-empty name and an icon', () => {
@@ -19,17 +19,16 @@ describe('getNavLinks', () => {
     const byHref = new Map(getNavLinks().map((link) => [link.href, link.name]))
     expect(byHref.get('/dashboard')).toBe(translate('dashboard.title'))
     expect(byHref.get('/account')).toBe(translate('account.title'))
-    expect(byHref.get('/digests')).toBe(translate('digest.title'))
     expect(byHref.get('/ecosystems')).toBe(translate('ecosystemList.title'))
     expect(byHref.get('/discover')).toBe(translate('discover.title'))
     expect(byHref.get('/pendingtasks')).toBe(translate('task.title'))
   })
 
-  it('marks dashboard, digests, and discover as available offline', () => {
+  it('marks dashboard and discover as available offline', () => {
     const offline = getNavLinks()
       .filter((link) => link.availableOffline === true)
       .map((link) => link.href)
-    expect(offline.sort()).toEqual(['/dashboard', '/digests', '/discover'])
+    expect(offline.sort()).toEqual(['/dashboard', '/discover'])
   })
 
   it('leaves availableOffline unset for online-only links', () => {
@@ -75,7 +74,6 @@ describe('getNavLinks', () => {
 describe('allowedOffline', () => {
   it('allows the exact static offline routes', () => {
     expect(allowedOffline('/dashboard')).toBe(true)
-    expect(allowedOffline('/digests')).toBe(true)
     expect(allowedOffline('/discover')).toBe(true)
   })
 
