@@ -69,7 +69,11 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
   const [discoverSearch, setDiscoverSearch] = useState<string>('')
   const [discoverPage, setDiscoverPage] = useState<number>(1)
   const { ecosystems: discoverList, loading: discoverLoading, refetch: refetchDiscoverList } = useEcosystems(true)
-  const { credentialSchemas, refetch: refetchCredentialSchemas } = useCredentialSchemas(undefined, true)
+  const {
+    credentialSchemas,
+    loading: credentialSchemasLoading,
+    refetch: refetchCredentialSchemas,
+  } = useCredentialSchemas(undefined, true)
 
   const refetchDiscover = React.useCallback(async () => {
     await Promise.all([refetchDiscoverList(), refetchCredentialSchemas()])
@@ -86,7 +90,7 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
   const discoverValue = useMemo(
     () => ({
       discoverList,
-      loading: discoverLoading,
+      loading: discoverLoading || credentialSchemasLoading,
       refetch: refetchDiscover,
       credentialSchemas,
       discoverSearch,
@@ -94,7 +98,15 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
       discoverPage,
       setDiscoverPage,
     }),
-    [discoverList, discoverLoading, credentialSchemas, refetchDiscover, discoverSearch, discoverPage]
+    [
+      discoverList,
+      discoverLoading,
+      credentialSchemas,
+      credentialSchemasLoading,
+      refetchDiscover,
+      discoverSearch,
+      discoverPage,
+    ]
   )
 
   const ecosystemsValue = useMemo(

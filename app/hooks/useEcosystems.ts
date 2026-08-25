@@ -38,6 +38,28 @@ function nullableString(value: unknown, path: string): string | null {
   return string(value, path)
 }
 
+function parseVersions(value: unknown, path: string): EcosystemListItem['versions'] {
+  if (value === undefined) return undefined
+  if (!Array.isArray(value)) throw new Error(`Invalid ecosystem response: ${path}`)
+  return value.map((entry, index) => {
+    const source = record(entry, `${path}[${index}]`)
+    const documents = Array.isArray(source.documents) ? source.documents : []
+    return {
+      id: String(number(source.id, `${path}[${index}].id`)),
+      version: number(source.version, `${path}[${index}].version`),
+      activeSince: nullableString(source.active_since, `${path}[${index}].active_since`),
+      documents: documents.map((document, documentIndex) => {
+        const doc = record(document, `${path}[${index}].documents[${documentIndex}]`)
+        return {
+          id: String(number(doc.id, `${path}[${index}].documents[${documentIndex}].id`)),
+          url: string(doc.url, `${path}[${index}].documents[${documentIndex}].url`),
+          language: string(doc.language, `${path}[${index}].documents[${documentIndex}].language`),
+        }
+      }),
+    }
+  })
+}
+
 function parseEcosystem(value: unknown, path: string): EcosystemListItem {
   const source = record(value, path)
   return {
@@ -47,6 +69,7 @@ function parseEcosystem(value: unknown, path: string): EcosystemListItem {
     created: string(source.created, `${path}.created`),
     modified: string(source.modified, `${path}.modified`),
     language: string(source.language, `${path}.language`),
+    versions: parseVersions(source.versions, `${path}.versions`),
     activeVersion: number(source.active_version, `${path}.active_version`),
     activeSchemas: number(source.active_schemas, `${path}.active_schemas`),
     participants: number(source.participants, `${path}.participants`),
@@ -89,7 +112,7 @@ export function useEcosystems(all = false, onlyActive = true) {
     setLoading(true)
     try {
       const params = new URLSearchParams({ limit: '1024' })
-      if (!all && corporationId) params.set('corporation_id', String(corporationId))
+      if (!all && corporationId) params.set('participant_corporation_id', String(corporationId))
       if (onlyActive) params.set('archived', 'false')
       const response = await fetch(`${VERANA_REST_ENDPOINT_ECOSYSTEM}/list?${params.toString()}`)
       const json: unknown = await response.json()

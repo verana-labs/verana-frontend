@@ -64,7 +64,7 @@ export function parsePendingParticipantsResponse(payload: unknown): PendingEcosy
 }
 
 export function pendingParticipantsUrl(endpoint: string, corporationId: number): string {
-  return `${endpoint}/pending/flat?corporation_id=${corporationId}`
+  return `${endpoint}/pending/flat?corporation_id=${corporationId}&limit=1024`
 }
 
 export function usePendingParticipants() {
