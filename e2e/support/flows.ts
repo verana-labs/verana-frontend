@@ -2,7 +2,7 @@ import { expect, type Page } from '@playwright/test'
 import { watchChainErrors } from './chain'
 import { labelInput } from './forms'
 
-const DEFAULT_DOC_URL =
+export const DEFAULT_DOC_URL =
   'https://raw.githubusercontent.com/verana-labs/mosip-playground/0835414ea1ec121153666c74538d4ff608d3c941/docs/egf/mosip-pilot-egf.md'
 
 export type EcosystemFormOptions = {
