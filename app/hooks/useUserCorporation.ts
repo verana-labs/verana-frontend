@@ -2,7 +2,11 @@
 
 import { useChain } from '@cosmos-kit/react'
 import { useCallback, useEffect, useState } from 'react'
-import { VERANA_REST_ENDPOINT, VERANA_REST_ENDPOINT_CORPORATION, VERANA_REST_ENDPOINT_DELEGATION } from '@/config/env'
+import {
+  VERANA_REST_ENDPOINT_CORPORATION,
+  VERANA_REST_ENDPOINT_DELEGATION,
+  VERANA_REST_ENDPOINT_GROUP,
+} from '@/config/env'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 
 export interface UserCorporation {
@@ -91,48 +95,30 @@ async function resolveViaOperatorAuthorization(address: string): Promise<UserCor
 }
 
 async function resolveViaGroupMembership(address: string): Promise<UserCorporation | null> {
-  if (!VERANA_REST_ENDPOINT || !VERANA_REST_ENDPOINT_CORPORATION) {
-    throw new Error('Missing chain REST or V4 corporation endpoint')
+  if (!VERANA_REST_ENDPOINT_GROUP || !VERANA_REST_ENDPOINT_CORPORATION) {
+    throw new Error('Missing V4 group or corporation endpoint')
   }
-  const groupsPayload = await fetchJson(
-    `${VERANA_REST_ENDPOINT}/cosmos/group/v1/groups_by_member/${encodeURIComponent(address)}`,
-    'Unable to resolve group memberships'
+  const membershipsPayload = await fetchJson(
+    `${VERANA_REST_ENDPOINT_GROUP}/corporations-by-member?account=${encodeURIComponent(address)}`,
+    'Unable to resolve corporation memberships'
   )
-  const groupsEnvelope = record(groupsPayload, 'groups response')
-  if (!Array.isArray(groupsEnvelope.groups)) throw new Error('Invalid corporation response: missing groups envelope')
-  if (groupsEnvelope.groups.length === 0) return null
-
-  const policyAddresses = new Set<string>()
-  for (const [index, entry] of groupsEnvelope.groups.entries()) {
-    const group = record(entry, `groups[${index}]`)
-    const groupId = string(group.id, `groups[${index}].id`)
-    const policiesPayload = await fetchJson(
-      `${VERANA_REST_ENDPOINT}/cosmos/group/v1/group_policies_by_group/${groupId}`,
-      'Unable to resolve group policies'
-    )
-    const policiesEnvelope = record(policiesPayload, `group policies response for ${groupId}`)
-    if (!Array.isArray(policiesEnvelope.group_policies)) {
-      throw new Error('Invalid corporation response: missing group_policies envelope')
-    }
-    for (const [policyIndex, policyEntry] of policiesEnvelope.group_policies.entries()) {
-      const policy = record(policyEntry, `group_policies[${policyIndex}]`)
-      policyAddresses.add(string(policy.address, `group_policies[${policyIndex}].address`))
-    }
+  const membershipsEnvelope = record(membershipsPayload, 'memberships response')
+  if (!Array.isArray(membershipsEnvelope.memberships)) {
+    throw new Error('Invalid corporation response: missing memberships envelope')
   }
-  if (policyAddresses.size === 0) return null
+  if (membershipsEnvelope.memberships.length === 0) return null
 
-  const corporationsPayload = await fetchJson(
-    `${VERANA_REST_ENDPOINT_CORPORATION}/list?limit=1024&gf_data=none`,
-    'Unable to resolve corporations'
+  const membership = record(membershipsEnvelope.memberships[0], 'memberships[0]')
+  const corporationId = number(membership.corporation_id, 'memberships[0].corporation_id')
+  const corporationPayload = await fetchJson(
+    `${VERANA_REST_ENDPOINT_CORPORATION}/get/${corporationId}`,
+    'Unable to resolve corporation'
   )
-  const corporationsEnvelope = record(corporationsPayload, 'corporations response')
-  if (!Array.isArray(corporationsEnvelope.corporations)) {
-    throw new Error('Invalid corporation response: missing corporations envelope')
+  const corporationEnvelope = record(corporationPayload, 'corporation response')
+  if (!('corporation' in corporationEnvelope)) {
+    throw new Error('Invalid corporation response: missing corporation envelope')
   }
-  const corporation = corporationsEnvelope.corporations
-    .map((entry, index) => parseCorporation(entry, `corporations[${index}]`))
-    .find((entry) => policyAddresses.has(entry.policyAddress))
-  return corporation ?? null
+  return parseCorporation(corporationEnvelope.corporation, 'corporation')
 }
 
 export async function resolveUserCorporation(address: string): Promise<UserCorporationResolution> {

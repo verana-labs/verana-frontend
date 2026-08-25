@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/config/env', () => ({
-  VERANA_REST_ENDPOINT: 'https://chain.example',
   VERANA_REST_ENDPOINT_CORPORATION: 'https://indexer.example/v4/corporation',
+  VERANA_REST_ENDPOINT_GROUP: 'https://indexer.example/v4/group',
   VERANA_REST_ENDPOINT_DELEGATION: 'https://indexer.example/v4/delegation',
 }))
 vi.mock('@/hooks/useVeranaChain', () => ({
@@ -103,6 +103,36 @@ describe('resolveUserCorporation', () => {
       hasOperatorGrant: true,
       grantedMessageTypes: OPERATOR_GRANT_MESSAGE_TYPES.filter((msgType) => msgType !== '/verana.di.v1.MsgStoreDigest'),
     })
+  })
+
+  it('falls back to group membership when the wallet has no operator authorization', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ authorizations: [] }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          memberships: [{ corporation_id: 7, weight: '1', metadata: '', added_at: '2026-08-25T00:00:00Z' }],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          corporation: { id: 7, policy_address: 'verana1policy', did: 'did:web:corporation.example' },
+        }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(resolveUserCorporation('verana1member')).resolves.toEqual({
+      corporation: { id: 7, policyAddress: 'verana1policy', did: 'did:web:corporation.example' },
+      hasOperatorGrant: false,
+      grantedMessageTypes: [],
+    })
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://indexer.example/v4/group/corporations-by-member?account=verana1member'
+    )
+    expect(fetchMock).toHaveBeenNthCalledWith(3, 'https://indexer.example/v4/corporation/get/7')
   })
 
   it('rejects malformed V4 operator authorization message types', async () => {
