@@ -63,15 +63,19 @@ export function parsePendingParticipantsResponse(payload: unknown): PendingEcosy
   })
 }
 
+export function pendingParticipantsUrl(endpoint: string, corporationId: number): string {
+  return `${endpoint}/pending/flat?corporation_id=${corporationId}`
+}
+
 export function usePendingParticipants() {
   const { corporation } = useUserCorporation()
-  const corporationAddress = corporation?.policyAddress
+  const corporationId = corporation?.id
   const [pendingParticipants, setPendingParticipants] = useState<PendingEcosystem[]>([])
   const [loading, setLoading] = useState(false)
   const [errorPendingParticipants, setError] = useState<string | null>(null)
 
   const fetchPendingParticipants = useCallback(async () => {
-    if (!corporationAddress || !VERANA_REST_ENDPOINT_PARTICIPANT) {
+    if (corporationId === undefined || !VERANA_REST_ENDPOINT_PARTICIPANT) {
       setPendingParticipants([])
       setLoading(false)
       return
@@ -80,9 +84,7 @@ export function usePendingParticipants() {
     setError(null)
     setLoading(true)
     try {
-      const response = await fetch(
-        `${VERANA_REST_ENDPOINT_PARTICIPANT}/pending/flat?account=${encodeURIComponent(corporationAddress)}`
-      )
+      const response = await fetch(pendingParticipantsUrl(VERANA_REST_ENDPOINT_PARTICIPANT, corporationId))
       const json: unknown = await response.json()
       if (!response.ok) {
         const { error, code } = json as ApiErrorResponse
@@ -94,11 +96,11 @@ export function usePendingParticipants() {
     } finally {
       setLoading(false)
     }
-  }, [corporationAddress])
+  }, [corporationId])
 
   useEffect(() => {
-    if (corporationAddress) void fetchPendingParticipants()
-  }, [corporationAddress, fetchPendingParticipants])
+    if (corporationId !== undefined) void fetchPendingParticipants()
+  }, [corporationId, fetchPendingParticipants])
 
   return { pendingParticipants, loading, errorPendingParticipants, refetch: fetchPendingParticipants }
 }

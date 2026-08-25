@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { parsePendingParticipantsResponse } from './usePendingParticipants'
+import { parsePendingParticipantsResponse, pendingParticipantsUrl } from './usePendingParticipants'
+
+describe('pendingParticipantsUrl', () => {
+  it('queries by corporation id', () => {
+    expect(pendingParticipantsUrl('https://indexer/v4/participant', 1)).toBe(
+      'https://indexer/v4/participant/pending/flat?corporation_id=1'
+    )
+  })
+})
 
 describe('parsePendingParticipantsResponse', () => {
   it('parses nested V4 pending participants', () => {
