@@ -1,7 +1,6 @@
 import type { EncodeObject } from '@cosmjs/proto-signing'
 import { describe, expect, it } from 'vitest'
 import { veranaAmino, veranaRegistry } from '@/config/veranaChain.sign.client'
-import { buildCreateCorporationMessage, buildGrantOperatorMessages } from '@/msg/actions_hooks/actionCorporation'
 import { buildCredentialSchemaMessage } from '@/msg/actions_hooks/actionCredentialSchema'
 import { buildEcosystemMessage } from '@/msg/actions_hooks/actionEcosystem'
 import { buildParticipantMessage } from '@/msg/actions_hooks/actionParticipant'
@@ -12,21 +11,6 @@ const effectiveFrom = new Date('2026-07-18T00:00:00.000Z')
 const effectiveUntil = new Date('2026-08-18T00:00:00.000Z')
 
 const messages: EncodeObject[] = [
-  buildCreateCorporationMessage(
-    {
-      did: 'did:web:corporation.example',
-      language: 'en',
-      docUrl: 'https://example.com/corporation.pdf',
-      fundingUvna: '1000',
-    },
-    'verana1operator',
-    'sha384-corporation'
-  ),
-  ...buildGrantOperatorMessages(
-    { id: 1, policyAddress: 'verana1policy', did: 'did:web:corporation.example' },
-    'verana1operator',
-    '1000'
-  ),
   buildEcosystemMessage(
     {
       msgType: 'MsgCreateEcosystem',

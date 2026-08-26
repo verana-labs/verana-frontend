@@ -25,8 +25,6 @@ export type MessageType =
   | 'MsgRepayParticipantSlashedTrustDeposit'
   | 'MsgCreateRootParticipant'
   | 'MsgSelfCreateParticipant' // PP
-  | 'MsgCreateCorporation'
-  | 'MsgGrantSelfOperatorAuthorization' // CO/DE bootstrap
 
 export interface MsgTypeInfoI18n {
   label: Translatable

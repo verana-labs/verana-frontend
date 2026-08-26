@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { toBase64, toHex } from '@cosmjs/encoding'
 import type { Page, Route } from '@playwright/test'
+import { veranaTypeUrls } from '@verana-labs/verana-types/signing'
 import { BaseAccount } from 'cosmjs-types/cosmos/auth/v1beta1/auth'
 import { QueryAccountResponse } from 'cosmjs-types/cosmos/auth/v1beta1/query'
 import { QueryBalanceResponse } from 'cosmjs-types/cosmos/bank/v1beta1/query'
@@ -8,7 +9,6 @@ import { GasInfo } from 'cosmjs-types/cosmos/base/abci/v1beta1/abci'
 import { Coin } from 'cosmjs-types/cosmos/base/v1beta1/coin'
 import { SimulateResponse } from 'cosmjs-types/cosmos/tx/v1beta1/service'
 import { Any } from 'cosmjs-types/google/protobuf/any'
-import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
 
 type JsonRpcRequest = {
   jsonrpc: '2.0'
@@ -258,7 +258,7 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
           authorizations: [
             {
               corporation_id: corporationId,
-              msg_types: [...OPERATOR_GRANT_MESSAGE_TYPES],
+              msg_types: Object.values(veranaTypeUrls),
             },
           ],
         }),

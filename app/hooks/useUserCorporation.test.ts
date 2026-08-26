@@ -12,8 +12,13 @@ vi.mock('@cosmos-kit/react', () => ({
   useChain: () => ({ address: undefined }),
 }))
 
-import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
 import { resolveUserCorporation } from './useUserCorporation'
+
+const GRANTED_MESSAGE_TYPES = [
+  '/verana.ec.v1.MsgCreateEcosystem',
+  '/verana.cs.v1.MsgCreateCredentialSchema',
+  '/verana.di.v1.MsgStoreDigest',
+]
 
 describe('resolveUserCorporation', () => {
   afterEach(() => {
@@ -31,7 +36,7 @@ describe('resolveUserCorporation', () => {
               id: 1,
               corporation_id: 7,
               operator: 'verana1operator',
-              msg_types: [...OPERATOR_GRANT_MESSAGE_TYPES],
+              msg_types: [...GRANTED_MESSAGE_TYPES],
             },
           ],
         }),
@@ -56,7 +61,7 @@ describe('resolveUserCorporation', () => {
         did: 'did:web:corporation.example',
       },
       hasOperatorGrant: true,
-      grantedMessageTypes: [...OPERATOR_GRANT_MESSAGE_TYPES],
+      grantedMessageTypes: [...GRANTED_MESSAGE_TYPES],
     })
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
@@ -76,7 +81,7 @@ describe('resolveUserCorporation', () => {
               id: 1,
               corporation_id: 7,
               operator: 'verana1operator',
-              msg_types: OPERATOR_GRANT_MESSAGE_TYPES.filter((msgType) => msgType !== '/verana.di.v1.MsgStoreDigest'),
+              msg_types: GRANTED_MESSAGE_TYPES.filter((msgType) => msgType !== '/verana.di.v1.MsgStoreDigest'),
             },
           ],
         }),
@@ -101,7 +106,7 @@ describe('resolveUserCorporation', () => {
         did: 'did:web:corporation.example',
       },
       hasOperatorGrant: true,
-      grantedMessageTypes: OPERATOR_GRANT_MESSAGE_TYPES.filter((msgType) => msgType !== '/verana.di.v1.MsgStoreDigest'),
+      grantedMessageTypes: GRANTED_MESSAGE_TYPES.filter((msgType) => msgType !== '/verana.di.v1.MsgStoreDigest'),
     })
   })
 

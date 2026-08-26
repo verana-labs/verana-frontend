@@ -124,16 +124,6 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     description: t('messages.MsgSelfCreateParticipant.description'),
     cost: t('messages.MsgSelfCreateParticipant.cost'), // {value}
   },
-  MsgCreateCorporation: {
-    label: t('messages.MsgCreateCorporation.label'),
-    description: t('messages.MsgCreateCorporation.description'),
-    cost: t('messages.MsgCreateCorporation.cost'),
-  },
-  MsgGrantSelfOperatorAuthorization: {
-    label: t('messages.MsgGrantSelfOperatorAuthorization.label'),
-    description: t('messages.MsgGrantSelfOperatorAuthorization.description'),
-    cost: t('messages.MsgGrantSelfOperatorAuthorization.cost'),
-  },
 }
 
 // Utility function to fill {value} in the cost message
@@ -203,6 +193,4 @@ export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
   MsgCreateRootParticipant: {},
   MsgSelfCreateParticipant: {},
   MsgStartParticipantOP: {},
-  MsgCreateCorporation: {},
-  MsgGrantSelfOperatorAuthorization: {},
 }
