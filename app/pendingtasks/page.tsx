@@ -11,15 +11,14 @@ import { participantAuthority, roleColorClass } from '@/util/util'
 
 function participantNode(participant: Participant, corporationId?: number): TreeNode {
   const isCorporation = participant.corporation_id === corporationId
-  const isValidator = !isCorporation
-  const authority = participantAuthority(isCorporation, isValidator, false)
+  const authority = participantAuthority(isCorporation, true, false)
   return {
     nodeId: participant.id,
     name: participant.did ?? participant.role,
     group: false,
     parentId: participant.validator_participant_id ?? undefined,
     isCorporation,
-    isValidator,
+    isValidator: true,
     roleColorClass: roleColorClass(participant.role),
     icon: authority.icon,
     iconColorClass: authority.iconColorClass,
