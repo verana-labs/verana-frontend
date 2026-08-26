@@ -20,7 +20,8 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
     .split('\n')
     .map((s) => s.trim())
     .filter(Boolean)
-  const version = ecosystem.versions.find((item) => item.version === ecosystem.activeVersion)
+  const version =
+    ecosystem.versions.find((item) => item.version === ecosystem.activeVersion) ?? ecosystem.versions.at(-1)
   const egfDoc = version?.documents?.[0]
   const language = useLanguageLabel(egfDoc?.language)
   return (
@@ -49,7 +50,15 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
           {resolveTranslatable({ key: 'join.egf.title' }, translate)}
         </h3>
         <p className="text-sm text-neutral-70 dark:text-neutral-70 mb-4">
-          {`${resolveTranslatable({ key: 'join.egf.version.label' }, translate)} ${ecosystem.activeVersion}  • ${resolveTranslatable(language, translate)} • ${resolveTranslatable({ key: 'join.egf.lastupdate.label' }, translate)} ${version?.activeSince && formatLongDateUserLocale(version.activeSince)}`}
+          {[
+            `${resolveTranslatable({ key: 'join.egf.version.label' }, translate)} ${version?.version ?? ecosystem.activeVersion}`,
+            resolveTranslatable(language, translate),
+            version?.activeSince
+              ? `${resolveTranslatable({ key: 'join.egf.lastupdate.label' }, translate)} ${formatLongDateUserLocale(version.activeSince)}`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(' • ')}
         </p>
         {egfDoc?.url ? (
           <GfDocumentViewer url={egfDoc.url} />
