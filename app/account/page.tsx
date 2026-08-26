@@ -9,6 +9,7 @@ import { logger } from '@/lib/logger'
 import { RefreshState } from '@/msg/util/signerUtil'
 import { useAccountCtx } from '@/providers/api-rest-query-provider-context'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
+import { CorporationSetupCard } from '@/ui/common/corporation-setup-card'
 import ColumnsDataView from '@/ui/common/data-view-columns'
 import TitleAndButton from '@/ui/common/title-and-button'
 import { AccountData, accountSections } from '@/ui/dataview/datasections/account'
@@ -22,7 +23,13 @@ export default function AccountPage() {
   // Custom hook to fetch account/trust deposit data
   const { accountData, refetch: refetchAccount } = useAccountCtx()
   const { txCount, refetch: refetchTxCount } = useAccountTxCount()
-  const { corporation, hasOperatorGrant, refetch: refetchCorporation } = useUserCorporation()
+  const {
+    corporation,
+    hasOperatorGrant,
+    loading: corporationLoading,
+    errorCorporation,
+    refetch: refetchCorporation,
+  } = useUserCorporation()
   // Refresh account/trust deposit data
   const [refresh, setRefresh] = useState<boolean>(true)
   const [refreshState, setRefreshState] = useState<RefreshState>({})
@@ -76,6 +83,13 @@ export default function AccountPage() {
       <TitleAndButton
         title={resolveTranslatable({ key: 'account.title' }, translate) ?? 'Account'}
         description={[resolveTranslatable({ key: 'account.desc' }, translate) ?? '']}
+      />
+      <CorporationSetupCard
+        corporation={corporation}
+        hasOperatorGrant={hasOperatorGrant}
+        loading={corporationLoading}
+        error={errorCorporation}
+        onDone={() => void refetchCorporation()}
       />
       {data && (
         <ColumnsDataView<AccountData>
