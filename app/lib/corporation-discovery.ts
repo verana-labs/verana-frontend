@@ -126,6 +126,14 @@ export async function discoverCorporations(address: string): Promise<Corporation
   return { memberships, error: failureReason([grantsResult, weightsResult, ...details]) }
 }
 
+export async function findCorporationMembership(
+  address: string,
+  corporationId: number
+): Promise<CorporationMembership | null> {
+  const { memberships } = await discoverCorporations(address)
+  return memberships.find((membership) => membership.corporation.id === corporationId) ?? null
+}
+
 const STORAGE_PREFIX = 'verana.acting-corporation:'
 
 interface StoredActing {

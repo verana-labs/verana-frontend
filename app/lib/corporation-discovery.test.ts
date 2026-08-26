@@ -11,6 +11,7 @@ import {
   type CorporationMembership,
   chooseActingMembership,
   discoverCorporations,
+  findCorporationMembership,
   forgetActingCorporationId,
   invalidatesActingSession,
   loadActingCorporationId,
@@ -187,6 +188,21 @@ describe('discoverCorporations', () => {
     })
 
     expect((await discoverCorporations('verana1operator')).error).toBe('Unable to resolve corporation: 502')
+  })
+})
+
+describe('findCorporationMembership', () => {
+  it('returns the membership of that corporation, null when the account cannot act for it', async () => {
+    stubFetch({
+      [AUTHORIZATIONS]: {
+        authorizations: [{ corporation_id: 7, msg_types: ['/verana.ec.v1.MsgCreateEcosystem'] }],
+      },
+      [MEMBERSHIPS]: { memberships: [] },
+      [`${CORPORATION}7`]: corporationPayload(7),
+    })
+
+    expect((await findCorporationMembership('verana1operator', 7))?.operator).toBe(true)
+    expect(await findCorporationMembership('verana1operator', 9)).toBeNull()
   })
 })
 
