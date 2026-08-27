@@ -37,11 +37,11 @@ export default function ColumnsDataView<T extends object>({
   activeActionField,
   loading,
 }: DataViewProps<T>) {
+  const archived = 'archived' in data && Boolean(data.archived)
   const sections = translateSections(sectionsI18n)
   let jsonField: { label: string; value: unknown } | null = null
   type ViewTitle = { title?: string; description?: string }
   const viewTitle = data as ViewTitle
-  const archived = 'archived' in data && Boolean(data.archived)
   const [showView, setShowView] = useState<boolean>(true)
 
   const [activeActionId, setActiveActionId] = useState<string | null>(() => {
@@ -145,128 +145,130 @@ export default function ColumnsDataView<T extends object>({
               ? (() => {
                   const actionRenders: React.ReactNode[] = []
                   return (
-                    <div className="mb-8">
-                      <div
-                        className={`${
-                          section.sectionBorder
-                            ? 'bg-white dark:bg-surface bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6'
-                            : !section.cardView && sectionIndex !== 0
-                              ? 'border-t border-neutral-20 dark:border-neutral-70'
-                              : ''
-                        } pt-6 mb-8`}
-                      >
-                        {/* Header is always the same for any section type */}
-                        {section.name?.trim() && (
-                          <div className="flex items-center justify-between mb-6">
-                            <h3 className="data-view-section-title text-lg">{section.name}</h3>
-                            {section.noEdit && archived ? (
-                              <span
-                                className={
-                                  'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300'
-                                }
-                              >
-                                {resolveTranslatable({ key: 'dataview.archived.label' }, translate)}
-                              </span>
-                            ) : null}
-
-                            {viewEditButton && onEdit && (
-                              <div className="actions-right gap-3">
-                                <IconLabelButton
-                                  icon={faEdit}
-                                  label={'Edit'}
-                                  onClick={() => onEdit?.()}
-                                  className="btn-link px-3 py-1.5"
-                                />
-                              </div>
-                            )}
-                          </div>
-                        )}
+                    <>
+                      <div className="mb-8">
                         <div
-                          className={`${showView || section.noEdit ? 'block' : 'hidden'} ${section.classFormEdit ?? 'grid grid-cols-1 md:grid-cols-2 gap-4'}`}
+                          className={`${
+                            section.sectionBorder
+                              ? 'bg-white dark:bg-surface bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6'
+                              : !section.cardView && sectionIndex !== 0
+                                ? 'border-t border-neutral-20 dark:border-neutral-70'
+                                : ''
+                          } pt-6 mb-8`}
                         >
-                          {visibleFieldsForMode(section.fields, 'view').map((field, fieldIndex) => {
-                            const value = data[field.name]
-                            if (isResolvedDataField(field) && value != null) {
-                              const jsonValue = isJson(value) // helper: returns object if valid JSON, otherwise null
-                              if (jsonValue) {
-                                jsonField = { label: field.label, value: jsonValue }
-                                return null
-                              }
-                              if (section.cardView && isResolvedDataField(field)) {
-                                return (
-                                  <CardView
-                                    key={section.name.concat(String(field.name))}
-                                    field={field}
-                                    data={data}
-                                    largeTexts={section.largeTexts}
+                          {/* Header is always the same for any section type */}
+                          {section.name?.trim() && (
+                            <div className="flex items-center justify-between mb-6">
+                              <h3 className="data-view-section-title text-lg">{section.name}</h3>
+                              {section.noEdit && archived ? (
+                                <span
+                                  className={
+                                    'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300'
+                                  }
+                                >
+                                  {resolveTranslatable({ key: 'dataview.archived.label' }, translate)}
+                                </span>
+                              ) : null}
+
+                              {viewEditButton && onEdit && (
+                                <div className="actions-right gap-3">
+                                  <IconLabelButton
+                                    icon={faEdit}
+                                    label={'Edit'}
+                                    onClick={() => onEdit?.()}
+                                    className="btn-link px-3 py-1.5"
                                   />
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          <div
+                            className={`${showView || section.noEdit ? 'block' : 'hidden'} ${section.classFormEdit ?? 'grid grid-cols-1 md:grid-cols-2 gap-4'}`}
+                          >
+                            {visibleFieldsForMode(section.fields, 'view').map((field, fieldIndex) => {
+                              const value = data[field.name]
+                              if (isResolvedDataField(field) && value != null) {
+                                const jsonValue = isJson(value) // helper: returns object if valid JSON, otherwise null
+                                if (jsonValue) {
+                                  jsonField = { label: field.label, value: jsonValue }
+                                  return null
+                                }
+                                if (section.cardView && isResolvedDataField(field)) {
+                                  return (
+                                    <CardView
+                                      key={section.name.concat(String(field.name))}
+                                      field={field}
+                                      data={data}
+                                      largeTexts={section.largeTexts}
+                                    />
+                                  )
+                                }
+                                return (
+                                  <div key={`${sectionIndex}-${fieldIndex}`}>
+                                    <label className="data-view-label">{field.label}</label>
+                                    {isResolvedDataField(field) && field.isHtml ? (
+                                      <p
+                                        className={field.classField ?? 'data-view-value'}
+                                        dangerouslySetInnerHTML={{
+                                          __html: field.format ? String(field.format(value)) : String(value),
+                                        }}
+                                      />
+                                    ) : (
+                                      <p className="data-view-value">{String(value)}</p>
+                                    )}
+                                  </div>
                                 )
                               }
-                              return (
-                                <div key={`${sectionIndex}-${fieldIndex}`}>
-                                  <label className="data-view-label">{field.label}</label>
-                                  {isResolvedDataField(field) && field.isHtml ? (
-                                    <p
-                                      className={field.classField ?? 'data-view-value'}
-                                      dangerouslySetInnerHTML={{
-                                        __html: field.format ? String(field.format(value)) : String(value),
-                                      }}
+
+                              // Collect actions Basic Section to render after the grid
+                              if (isResolvedActionField(field) && value != null) {
+                                const rowId = `${sectionIndex}-${fieldIndex}`
+                                const isActive = activeActionId === rowId
+                                const obj = { ...field, value: String(value) }
+                                actionRenders.push(
+                                  field.isEditButton ? (
+                                    <ActionFieldButton
+                                      type="button"
+                                      data={data}
+                                      field={obj as ActionFieldProps}
+                                      key={rowId}
+                                      onRefresh={onRefresh}
+                                      onClickButton={() => setShowView(false)}
+                                      onClose={() => setShowView(true)}
                                     />
                                   ) : (
-                                    <p className="data-view-value">{String(value)}</p>
-                                  )}
-                                </div>
-                              )
-                            }
-
-                            // Collect actions Basic Section to render after the grid
-                            if (isResolvedActionField(field) && value != null) {
-                              const rowId = `${sectionIndex}-${fieldIndex}`
-                              const isActive = activeActionId === rowId
-                              const obj = { ...field, value: String(value) }
-                              actionRenders.push(
-                                field.isEditButton ? (
-                                  <ActionFieldButton
-                                    type="button"
-                                    data={data}
-                                    field={obj as ActionFieldProps}
-                                    key={rowId}
-                                    onRefresh={onRefresh}
-                                    onClickButton={() => setShowView(false)}
-                                    onClose={() => setShowView(true)}
-                                  />
-                                ) : (
-                                  <ActionFieldButtonModal
-                                    isActive={isActive}
-                                    data={data}
-                                    field={obj as ActionFieldProps}
-                                    key={rowId}
-                                    onRefresh={onRefresh}
-                                    onClickButton={() => setActiveActionId(rowId)}
-                                    onClose={() => setActiveActionId(null)}
-                                  />
+                                    <ActionFieldButtonModal
+                                      isActive={isActive}
+                                      data={data}
+                                      field={obj as ActionFieldProps}
+                                      key={rowId}
+                                      onRefresh={onRefresh}
+                                      onClickButton={() => setActiveActionId(rowId)}
+                                      onClose={() => setActiveActionId(null)}
+                                    />
+                                  )
                                 )
-                              )
-                            }
+                              }
 
-                            return null
-                          })}
+                              return null
+                            })}
+                          </div>
+                          {/* Extra row: full width JSON pretty-printed */}
+                          {jsonField && (
+                            <>
+                              {/* span across both columns */}
+                              <label className="data-view-label">{jsonField.label}</label>
+                              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-neutral-20 dark:border-neutral-70">
+                                <JsonCodeBlock value={jsonField.value} className="data-view-label" />
+                              </div>
+                            </>
+                          )}
+
+                          {/* Render collected actions AFTER the section box */}
+                          {actionRenders.length ? <div className="space-y-4">{actionRenders}</div> : null}
                         </div>
-                        {/* Extra row: full width JSON pretty-printed */}
-                        {jsonField && (
-                          <>
-                            {/* span across both columns */}
-                            <label className="data-view-label">{jsonField.label}</label>
-                            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-neutral-20 dark:border-neutral-70">
-                              <JsonCodeBlock value={jsonField.value} className="data-view-label" />
-                            </div>
-                          </>
-                        )}
-
-                        {/* Render collected actions AFTER the section box */}
-                        {actionRenders.length ? <div className="space-y-4">{actionRenders}</div> : null}
                       </div>
-                    </div>
+                    </>
                   )
                 })()
               : null}
