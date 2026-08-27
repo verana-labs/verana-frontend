@@ -1,8 +1,6 @@
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 
-export type ParticipantStateBadge = 'ACTIVE' | 'INACTIVE' | 'REPAID' | 'SLASHED' | 'REVOKED' | 'EXPIRED' | 'FUTURE'
-
 export type TreeNode = {
   nodeId: string
   icon: IconDefinition

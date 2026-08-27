@@ -76,7 +76,7 @@ Queries use the strict V4 indexer contracts for ecosystems, credential schemas, 
 - Wallet connect via Cosmos-Kit (Keplr, Leap, WalletConnect)
 - Browse ecosystems and credential schemas
 - Participant tree with active, inactive, repaid, slashed, and future states
-- Create corporations, authorize operators, and create ecosystems
+- Create ecosystems and credential schemas as the operator of a corporation
 - Create, adjust, revoke, and validate issuer, verifier, grantor, and holder participants
 - Join ecosystems through onboarding processes
 - Track pending participant onboarding tasks
@@ -251,7 +251,6 @@ app/
 ├─ pendingtasks/      # Onboarding processes you participate in
 ├─ discover/          # Ecosystem discovery
 ├─ join/[id]/         # Ecosystem join flow
-├─ tr/                # Narrow redirects for retired URLs
 ├─ account/           # Connected wallet, balance, low-balance warn
 ├─ api/sri/           # Internal API route
 ├─ msg/               # Cosmos msg builders and tx flows
