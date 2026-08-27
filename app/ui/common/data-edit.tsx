@@ -180,6 +180,7 @@ export default function EditableDataView<T extends object>({
   }, [formData, hasInvalidData, hasInvalidRequiredFields, onSave, submitting])
 
   const handleSimulate = useCallback(async () => {
+    if (messageType === 'MsgReclaimTrustDepositYield') return
     if (onSimulate) {
       try {
         setSubmitting(true)
@@ -191,7 +192,7 @@ export default function EditableDataView<T extends object>({
         setSubmitting(false)
       }
     }
-  }, [formData, onSimulate])
+  }, [formData, messageType, onSimulate])
 
   useEffect(() => {
     if (!noForm) {
