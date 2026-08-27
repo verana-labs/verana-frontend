@@ -35,6 +35,7 @@ import {
 } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import {
+  countryCodeToFlag,
   formatDateTime,
   formatVNAFromUVNA,
   onboardingStateColor,
@@ -403,6 +404,12 @@ export default function ParticipantCard({
             <h4 className="text-base font-medium text-gray-900 dark:text-white break-words">
               {organizationLabel || '—'}
             </h4>
+            {!enrichment?.organizationName && did ? <span className="sr-only">Unverified organization</span> : null}
+            {enrichment?.countryCode ? (
+              <span className="text-lg flex-shrink-0" aria-hidden="true">
+                {countryCodeToFlag(enrichment.countryCode)}
+              </span>
+            ) : null}
             <TrustBadge state={enrichment?.trustStatus} size="lg" />
           </div>
         </div>
