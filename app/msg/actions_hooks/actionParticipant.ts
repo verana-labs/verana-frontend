@@ -129,10 +129,6 @@ function date(value: string | Date | undefined, field: string): Date | undefined
   return result
 }
 
-function defaultEffectiveFrom(): Date {
-  return new Date(Math.floor(Date.now() / 1000) * 1000 + 120_000)
-}
-
 function emptyVsOperatorAuthorization() {
   return {
     vsOperator: '',
@@ -169,7 +165,7 @@ export function buildParticipantMessage(params: ParticipantActionParams, context
           role: participantRole(params.role),
           validatorParticipantId: number(params.validatorParticipantId, 'validatorParticipantId'),
           did: params.did,
-          effectiveFrom: date(params.effectiveFrom, 'effectiveFrom') ?? defaultEffectiveFrom(),
+          effectiveFrom: date(params.effectiveFrom, 'effectiveFrom'),
           effectiveUntil: date(params.effectiveUntil, 'effectiveUntil'),
           validationFees: number(params.validationFees, 'validationFees'),
           verificationFees: number(params.verificationFees, 'verificationFees'),
@@ -183,7 +179,7 @@ export function buildParticipantMessage(params: ParticipantActionParams, context
           ...common,
           schemaId: number(params.schemaId, 'schemaId'),
           did: params.did,
-          effectiveFrom: date(params.effectiveFrom, 'effectiveFrom') ?? defaultEffectiveFrom(),
+          effectiveFrom: date(params.effectiveFrom, 'effectiveFrom'),
           effectiveUntil: date(params.effectiveUntil, 'effectiveUntil'),
           validationFees: number(params.validationFees, 'validationFees'),
           issuanceFees: number(params.issuanceFees, 'issuanceFees'),
