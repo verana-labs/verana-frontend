@@ -125,6 +125,24 @@ describe('buildParticipantMessage', () => {
     })
   })
 
+  it('omits effective_from when the form sends an empty value', () => {
+    const message = buildParticipantMessage(
+      {
+        msgType: 'MsgCreateRootParticipant',
+        schemaId: '7',
+        did: 'did:web:ecosystem-participant.example',
+        effectiveFrom: '',
+      },
+      context
+    )
+    const value = MsgCreateRootParticipant.decode(
+      MsgCreateRootParticipant.encode(message.value as MsgCreateRootParticipant).finish()
+    )
+
+    expect((message.value as MsgCreateRootParticipant).effectiveFrom).toBeUndefined()
+    expect(value.effectiveFrom).toBeUndefined()
+  })
+
   it('round-trips every V4 validation decision field', () => {
     const effectiveUntil = new Date('2026-08-18T00:00:00.000Z')
     const message = buildParticipantMessage(
