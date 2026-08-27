@@ -31,12 +31,12 @@ const ZERO_TRUST_DEPOSIT: ParsedTrustDeposit = {
   slashCount: 0,
 }
 
-const { record, string, integer, scaledShare, nullableTimestamp } = indexerValidators('trust deposit')
+const { record, integer, scaledShare, nullableTimestamp } = indexerValidators('trust deposit')
 
 export function parseTrustDepositResponse(payload: unknown): ParsedTrustDeposit {
   const envelope = record(payload, 'response')
   const trustDeposit = record(envelope.trust_deposit, 'trust_deposit')
-  string(trustDeposit.corporation, 'trust_deposit.corporation')
+  integer(trustDeposit.corporation_id, 'trust_deposit.corporation_id')
   const deposit = integer(trustDeposit.deposit, 'trust_deposit.deposit')
   scaledShare(trustDeposit.share, 'trust_deposit.share')
   const claimable = integer(trustDeposit.claimable, 'trust_deposit.claimable')

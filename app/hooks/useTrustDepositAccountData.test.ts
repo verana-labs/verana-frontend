@@ -6,7 +6,7 @@ describe('trust deposit account parsing', () => {
     expect(
       parseTrustDepositResponse({
         trust_deposit: {
-          corporation: 'verana1policy',
+          corporation_id: 12,
           deposit: 150,
           share: 100,
           claimable: 12,
@@ -24,7 +24,7 @@ describe('trust deposit account parsing', () => {
     expect(
       parseTrustDepositResponse({
         trust_deposit: {
-          corporation: 'verana1policy',
+          corporation_id: 12,
           deposit: 2,
           share: 2_000_000_000_000_000_000,
           claimable: 0,
@@ -40,7 +40,7 @@ describe('trust deposit account parsing', () => {
 
   it('rejects V3 field aliases', () => {
     expect(() => parseTrustDepositResponse({ trust_deposit: { amount: 150, claimable: 12, slash_count: 1 } })).toThrow(
-      'trust_deposit.corporation'
+      'trust_deposit.corporation_id'
     )
   })
 
