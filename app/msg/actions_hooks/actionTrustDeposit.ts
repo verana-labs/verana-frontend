@@ -3,10 +3,7 @@
 import type { EncodeObject } from '@cosmjs/proto-signing'
 import type { DeliverTxResponse } from '@cosmjs/stargate'
 import { useChain } from '@cosmos-kit/react'
-import {
-  MsgReclaimTrustDepositYield,
-  MsgRepaySlashedTrustDeposit,
-} from '@verana-labs/verana-types/codec/verana/td/v1/tx'
+import { MsgReclaimTrustDepositYield } from '@verana-labs/verana-types/codec/verana/td/v1/tx'
 import { useRef } from 'react'
 import { resolveUserCorporation, useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
@@ -29,22 +26,15 @@ type TrustDepositContext = {
   operator: string
 }
 
-export type TrustDepositActionParams =
-  | { msgType: 'MsgReclaimTrustDepositYield' }
-  | { msgType: 'MsgRepaySlashedTrustDeposit'; deposit: string | number }
+export type TrustDepositActionParams = { msgType: 'MsgReclaimTrustDepositYield' }
 
-export function buildTrustDepositMessage(params: TrustDepositActionParams, context: TrustDepositContext): EncodeObject {
-  if (params.msgType === 'MsgReclaimTrustDepositYield') {
-    return {
-      typeUrl: '/verana.td.v1.MsgReclaimTrustDepositYield',
-      value: MsgReclaimTrustDepositYield.fromPartial(context),
-    }
-  }
-  const deposit = Number(params.deposit)
-  if (!Number.isFinite(deposit) || deposit <= 0) throw new Error('deposit must be a positive number')
+export function buildTrustDepositMessage(
+  _params: TrustDepositActionParams,
+  context: TrustDepositContext
+): EncodeObject {
   return {
-    typeUrl: '/verana.td.v1.MsgRepaySlashedTrustDeposit',
-    value: MsgRepaySlashedTrustDeposit.fromPartial({ ...context, deposit }),
+    typeUrl: '/verana.td.v1.MsgReclaimTrustDepositYield',
+    value: MsgReclaimTrustDepositYield.fromPartial(context),
   }
 }
 

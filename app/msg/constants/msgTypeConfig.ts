@@ -10,11 +10,6 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     description: t('messages.MsgReclaimTrustDepositYield.description'),
     cost: t('messages.MsgReclaimTrustDepositYield.cost'), // {value}
   },
-  MsgRepaySlashedTrustDeposit: {
-    label: t('messages.MsgRepaySlashedTrustDeposit.label'),
-    description: t('messages.MsgRepaySlashedTrustDeposit.description'),
-    cost: t('messages.MsgRepaySlashedTrustDeposit.cost'), // {value}
-  },
 
   MsgCreateEcosystem: {
     label: t('messages.MsgCreateEcosystem.label'),
@@ -93,11 +88,6 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     cost: t('messages.MsgRevokeParticipant.cost'), // {value}
     warning: t('messages.MsgRevokeParticipant.warning'),
   },
-  MsgCreateOrUpdateParticipantSession: {
-    label: t('messages.MsgCreateOrUpdateParticipantSession.label'),
-    description: t('messages.MsgCreateOrUpdateParticipantSession.description'),
-    cost: t('messages.MsgCreateOrUpdateParticipantSession.cost'),
-  },
   MsgSlashParticipantTrustDeposit: {
     label: t('messages.MsgSlashParticipantTrustDeposit.label'),
     description: t('messages.MsgSlashParticipantTrustDeposit.description'),
@@ -143,7 +133,6 @@ export function getDescriptionMessage(template: string, addBalance: string | num
 
 export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
   MsgReclaimTrustDepositYield: {},
-  MsgRepaySlashedTrustDeposit: {},
   MsgCreateEcosystem: {},
   MsgUpdateEcosystem: {},
   MsgArchiveEcosystem: {
@@ -183,7 +172,6 @@ export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
   MsgRevokeParticipant: {
     button: 'bg-red-600 hover:bg-red-700',
   },
-  MsgCreateOrUpdateParticipantSession: {},
   MsgSlashParticipantTrustDeposit: {
     button: 'bg-red-600 hover:bg-red-700',
   },

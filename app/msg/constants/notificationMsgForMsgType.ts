@@ -3,7 +3,7 @@
 import { translate } from '@/i18n/dataview'
 import { I18nValues, resolveTranslatable, Translatable } from '@/ui/dataview/types'
 
-export type MsgTypeTD = 'MsgReclaimTrustDepositYield' | 'MsgRepaySlashedTrustDeposit'
+export type MsgTypeTD = 'MsgReclaimTrustDepositYield'
 
 // Supported Ecosystem actions
 export type MsgTypeEcosystem =
@@ -30,7 +30,6 @@ export type MsgTypeParticipant =
   | 'MsgCreateRootParticipant'
   | 'MsgSetParticipantEffectiveUntil'
   | 'MsgRevokeParticipant'
-  | 'MsgCreateOrUpdateParticipantSession'
   | 'MsgSlashParticipantTrustDeposit'
   | 'MsgRepayParticipantSlashedTrustDeposit'
   | 'MsgSelfCreateParticipant'
@@ -57,19 +56,15 @@ function t(key: string, values?: Record<string, unknown>): string {
 
 export const MSG_SUCCESS_ACTION_TD: Record<MsgTypeTD, (claimed?: string) => string> = {
   MsgReclaimTrustDepositYield: () => t('notification.MsgReclaimTrustDepositYield.success'),
-  MsgRepaySlashedTrustDeposit: () => t('notification.MsgRepaySlashedTrustDeposit.success'),
 }
 
 export const MSG_INPROGRESS_ACTION_TD: Record<MsgTypeTD, () => string> = {
   MsgReclaimTrustDepositYield: () => t('notification.MsgReclaimTrustDepositYield.inprogress'),
-  MsgRepaySlashedTrustDeposit: () => t('notification.MsgRepaySlashedTrustDeposit.inprogress'),
 }
 
 export const MSG_ERROR_ACTION_TD: Record<MsgTypeTD, (code?: number, msg?: string) => string> = {
   MsgReclaimTrustDepositYield: (code, msg) =>
     t('notification.MsgReclaimTrustDepositYield.error', { code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-  MsgRepaySlashedTrustDeposit: (code, msg) =>
-    t('notification.MsgRepaySlashedTrustDeposit.error', { code: code ? `(${code}) ` : '', msg: msg ?? '' }),
 }
 
 // ============================================================================
@@ -169,7 +164,6 @@ export const MSG_SUCCESS_ACTION_PARTICIPANT: Record<MsgTypeParticipant, (id: str
   MsgCreateRootParticipant: (id) => t('notification.MsgCreateRootParticipant.success', { id }),
   MsgSetParticipantEffectiveUntil: () => t('notification.MsgSetParticipantEffectiveUntil.success'),
   MsgRevokeParticipant: () => t('notification.MsgRevokeParticipant.success'),
-  MsgCreateOrUpdateParticipantSession: () => t('notification.MsgCreateOrUpdateParticipantSession.success'),
   MsgSlashParticipantTrustDeposit: () => t('notification.MsgSlashParticipantTrustDeposit.success'),
   MsgRepayParticipantSlashedTrustDeposit: () => t('notification.MsgRepayParticipantSlashedTrustDeposit.success'),
   MsgSelfCreateParticipant: (id) => t('notification.MsgSelfCreateParticipant.success', { id }),
@@ -186,7 +180,6 @@ export const MSG_INPROGRESS_ACTION_PARTICIPANT: Record<MsgTypeParticipant, () =>
   MsgCreateRootParticipant: () => t('notification.MsgCreateRootParticipant.inprogress'),
   MsgSetParticipantEffectiveUntil: () => t('notification.MsgSetParticipantEffectiveUntil.inprogress'),
   MsgRevokeParticipant: () => t('notification.MsgRevokeParticipant.inprogress'),
-  MsgCreateOrUpdateParticipantSession: () => t('notification.MsgCreateOrUpdateParticipantSession.inprogress'),
   MsgSlashParticipantTrustDeposit: () => t('notification.MsgSlashParticipantTrustDeposit.inprogress'),
   MsgRepayParticipantSlashedTrustDeposit: () => t('notification.MsgRepayParticipantSlashedTrustDeposit.inprogress'),
   MsgSelfCreateParticipant: () => t('notification.MsgSelfCreateParticipant.inprogress'),
@@ -213,8 +206,6 @@ export const MSG_ERROR_ACTION_PARTICIPANT: Record<
     t('notification.MsgSetParticipantEffectiveUntil.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
   MsgRevokeParticipant: (id, code, msg) =>
     t('notification.MsgRevokeParticipant.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
-  MsgCreateOrUpdateParticipantSession: (id, code, msg) =>
-    t('notification.MsgCreateOrUpdateParticipantSession.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
   MsgSlashParticipantTrustDeposit: (id, code, msg) =>
     t('notification.MsgSlashParticipantTrustDeposit.error', { id, code: code ? `(${code}) ` : '', msg: msg ?? '' }),
   MsgRepayParticipantSlashedTrustDeposit: (id, code, msg) =>

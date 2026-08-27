@@ -5,7 +5,6 @@ import type { DeliverTxResponse } from '@cosmjs/stargate'
 import { useChain } from '@cosmos-kit/react'
 import {
   MsgCancelParticipantOPLastRequest,
-  MsgCreateOrUpdateParticipantSession,
   MsgCreateRootParticipant,
   MsgRenewParticipantOP,
   MsgRepayParticipantSlashedTrustDeposit,
@@ -87,15 +86,6 @@ export type ParticipantActionParams =
       msgType: 'MsgSetParticipantEffectiveUntil'
       id: string | number
       effectiveUntil?: string | Date
-    }
-  | {
-      msgType: 'MsgCreateOrUpdateParticipantSession'
-      id: string
-      issuerParticipantId?: string | number
-      verifierParticipantId?: string | number
-      agentParticipantId?: string | number
-      walletAgentParticipantId?: string | number
-      digest: string
     }
   | {
       msgType: 'MsgSlashParticipantTrustDeposit'
@@ -239,19 +229,6 @@ export function buildParticipantMessage(params: ParticipantActionParams, context
       return {
         typeUrl: '/verana.pp.v1.MsgRevokeParticipant',
         value: MsgRevokeParticipant.fromPartial({ ...common, id: number(params.id, 'id') }),
-      }
-    case 'MsgCreateOrUpdateParticipantSession':
-      return {
-        typeUrl: '/verana.pp.v1.MsgCreateOrUpdateParticipantSession',
-        value: MsgCreateOrUpdateParticipantSession.fromPartial({
-          ...common,
-          id: params.id,
-          issuerParticipantId: number(params.issuerParticipantId, 'issuerParticipantId'),
-          verifierParticipantId: number(params.verifierParticipantId, 'verifierParticipantId'),
-          agentParticipantId: number(params.agentParticipantId, 'agentParticipantId'),
-          walletAgentParticipantId: number(params.walletAgentParticipantId, 'walletAgentParticipantId'),
-          digest: params.digest,
-        }),
       }
     case 'MsgSlashParticipantTrustDeposit':
       return {

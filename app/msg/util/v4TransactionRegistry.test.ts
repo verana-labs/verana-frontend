@@ -119,22 +119,9 @@ const messages: EncodeObject[] = [
   buildParticipantMessage({ msgType: 'MsgCancelParticipantOPLastRequest', id: 1 }, context),
   buildParticipantMessage({ msgType: 'MsgSetParticipantEffectiveUntil', id: 1, effectiveUntil }, context),
   buildParticipantMessage({ msgType: 'MsgRevokeParticipant', id: 1 }, context),
-  buildParticipantMessage(
-    {
-      msgType: 'MsgCreateOrUpdateParticipantSession',
-      id: 'session-1',
-      issuerParticipantId: 1,
-      verifierParticipantId: 2,
-      agentParticipantId: 3,
-      walletAgentParticipantId: 4,
-      digest: 'sha384-session',
-    },
-    context
-  ),
   buildParticipantMessage({ msgType: 'MsgSlashParticipantTrustDeposit', id: 1, amount: 11, reason: 'test' }, context),
   buildParticipantMessage({ msgType: 'MsgRepayParticipantSlashedTrustDeposit', id: 1 }, context),
   buildTrustDepositMessage({ msgType: 'MsgReclaimTrustDepositYield' }, context),
-  buildTrustDepositMessage({ msgType: 'MsgRepaySlashedTrustDeposit', deposit: 11 }, context),
 ]
 
 describe('dev.25 transaction registries', () => {

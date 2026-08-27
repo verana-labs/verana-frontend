@@ -2,8 +2,7 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import type { Translatable } from '@/ui/dataview/types'
 
 export type MessageType =
-  | 'MsgReclaimTrustDepositYield'
-  | 'MsgRepaySlashedTrustDeposit' // TD
+  | 'MsgReclaimTrustDepositYield' // TD
   | 'MsgCreateEcosystem'
   | 'MsgUpdateEcosystem'
   | 'MsgArchiveEcosystem'
@@ -20,7 +19,6 @@ export type MessageType =
   | 'MsgStartParticipantOP' // PP OP
   | 'MsgSetParticipantEffectiveUntil'
   | 'MsgRevokeParticipant'
-  | 'MsgCreateOrUpdateParticipantSession'
   | 'MsgSlashParticipantTrustDeposit'
   | 'MsgRepayParticipantSlashedTrustDeposit'
   | 'MsgCreateRootParticipant'

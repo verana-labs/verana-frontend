@@ -123,8 +123,7 @@ export function renderObjectList<I extends object>(args: {
 }
 
 // Define the valid actions for TD
-const validTDAction = (action: string): action is MsgTypeTD =>
-  ['MsgReclaimTrustDepositYield', 'MsgRepaySlashedTrustDeposit'].includes(action)
+const validTDAction = (action: string): action is MsgTypeTD => ['MsgReclaimTrustDepositYield'].includes(action)
 
 export const validGovernanceFrameworkAction = (action: string): action is MsgTypeEcosystem =>
   ['MsgAddGovernanceFrameworkDocument', 'MsgIncreaseActiveGovernanceFrameworkVersion'].includes(action)
@@ -140,7 +139,6 @@ export const validParticipantAction = (action: string): action is MsgTypePartici
     'MsgStartParticipantOP',
     'MsgSetParticipantEffectiveUntil',
     'MsgRevokeParticipant',
-    'MsgCreateOrUpdateParticipantSession',
     'MsgSlashParticipantTrustDeposit',
     'MsgRepayParticipantSlashedTrustDeposit',
     'MsgCreateRootParticipant',

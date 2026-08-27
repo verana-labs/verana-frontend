@@ -213,30 +213,6 @@ export function getParticipantActionSections(
       ])
     case 'MsgSetParticipantEffectiveUntil':
       return section([...identityFields(), ...dateFields({ until: true })])
-    case 'MsgCreateOrUpdateParticipantSession':
-      return section([
-        ...identityFields(),
-        ...(
-          ['issuerParticipantId', 'verifierParticipantId', 'agentParticipantId', 'walletAgentParticipantId'] as const
-        ).map((name) => ({
-          name,
-          label: t(`dataview.participant.fields.${name}`),
-          type: 'data' as const,
-          inputType: 'number' as const,
-          show: 'edit' as const,
-          required: false,
-          update: true,
-        })),
-        {
-          name: 'digest',
-          label: t('dataview.participant.fields.digest'),
-          type: 'data',
-          inputType: 'text',
-          show: 'edit',
-          required: true,
-          update: true,
-        },
-      ])
     case 'MsgSlashParticipantTrustDeposit':
       return section([
         ...identityFields(),

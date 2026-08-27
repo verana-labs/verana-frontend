@@ -99,17 +99,6 @@ export default function ParticipantActionPage({
           verificationFees: form.verificationFees,
         }
         break
-      case 'MsgCreateOrUpdateParticipantSession':
-        params = {
-          msgType: action,
-          id: participant.id,
-          issuerParticipantId: form.issuerParticipantId,
-          verifierParticipantId: form.verifierParticipantId,
-          agentParticipantId: form.agentParticipantId,
-          walletAgentParticipantId: form.walletAgentParticipantId,
-          digest: form.digest ?? '',
-        }
-        break
     }
     await submitParticipant(params)
   }

@@ -1,7 +1,6 @@
 import type { DeliverTxResponse } from '@cosmjs/stargate'
 import {
   MsgCancelParticipantOPLastRequest,
-  MsgCreateOrUpdateParticipantSession,
   MsgCreateRootParticipant,
   MsgRenewParticipantOP,
   MsgRepayParticipantSlashedTrustDeposit,
@@ -172,35 +171,6 @@ describe('buildParticipantMessage', () => {
 
     expect(message.typeUrl).toBe('/verana.pp.v1.MsgSetParticipantEffectiveUntil')
     expect(value).toEqual({ ...common, id: 7, effectiveUntil })
-  })
-
-  it('round-trips the V4 participant-session identifiers', () => {
-    const message = buildParticipantMessage(
-      {
-        msgType: 'MsgCreateOrUpdateParticipantSession',
-        id: 'session-7',
-        issuerParticipantId: '11',
-        verifierParticipantId: '12',
-        agentParticipantId: '13',
-        walletAgentParticipantId: '14',
-        digest: 'sha384-session',
-      },
-      context
-    )
-    const value = MsgCreateOrUpdateParticipantSession.decode(
-      MsgCreateOrUpdateParticipantSession.encode(message.value as MsgCreateOrUpdateParticipantSession).finish()
-    )
-
-    expect(message.typeUrl).toBe('/verana.pp.v1.MsgCreateOrUpdateParticipantSession')
-    expect(value).toEqual({
-      ...common,
-      id: 'session-7',
-      issuerParticipantId: 11,
-      verifierParticipantId: 12,
-      agentParticipantId: 13,
-      walletAgentParticipantId: 14,
-      digest: 'sha384-session',
-    })
   })
 
   it('round-trips the V4 participant slashing contract', () => {
