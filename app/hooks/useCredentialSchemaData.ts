@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA } from '@/config/env'
 import { translate } from '@/i18n/dataview'
+import { indexerValidators } from '@/lib/indexer-json'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type { CredentialSchemaData } from '@/ui/dataview/datasections/cs'
 import { resolveTranslatable } from '@/ui/dataview/types'
@@ -10,34 +11,12 @@ import { resolveTranslatable } from '@/ui/dataview/types'
 const ONBOARDING_MODES = new Set(['OPEN', 'ECOSYSTEM_ONBOARDING_PROCESS', 'GRANTOR_ONBOARDING_PROCESS'])
 const HOLDER_ONBOARDING_MODES = new Set(['ISSUER_ONBOARDING_PROCESS', 'PERMISSIONLESS'])
 
-function record(value: unknown, path: string): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw new Error(`Invalid credential schema response: ${path}`)
-  }
-  return value as Record<string, unknown>
-}
-
-function string(value: unknown, path: string): string {
-  if (typeof value !== 'string') throw new Error(`Invalid credential schema response: ${path}`)
-  return value
-}
-
-function number(value: unknown, path: string): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    throw new Error(`Invalid credential schema response: ${path}`)
-  }
-  return value
-}
+const { record, string, number, nullableString } = indexerValidators('credential schema')
 
 function mode(value: unknown, path: string, allowed: Set<string>): string {
   const result = string(value, path)
   if (!allowed.has(result)) throw new Error(`Invalid credential schema response: ${path}`)
   return result
-}
-
-function nullableString(value: unknown, path: string): string | null {
-  if (value === null) return null
-  return string(value, path)
 }
 
 export function parseCredentialSchemaResponse(payload: unknown): CredentialSchemaData {

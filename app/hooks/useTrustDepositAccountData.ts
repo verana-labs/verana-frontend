@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_TRUST_DEPOSIT } from '@/config/env'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
+import { indexerValidators } from '@/lib/indexer-json'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 
 export type TrustDepositAccountData = {
@@ -30,37 +31,7 @@ const ZERO_TRUST_DEPOSIT: ParsedTrustDeposit = {
   slashCount: 0,
 }
 
-function record(value: unknown, path: string): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw new Error(`Invalid trust deposit response: ${path}`)
-  }
-  return value as Record<string, unknown>
-}
-
-function string(value: unknown, path: string): string {
-  if (typeof value !== 'string') throw new Error(`Invalid trust deposit response: ${path}`)
-  return value
-}
-
-function integer(value: unknown, path: string): number {
-  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
-    throw new Error(`Invalid trust deposit response: ${path}`)
-  }
-  return value
-}
-
-function scaledShare(value: unknown, path: string): number {
-  // The V4 indexer serializes the 1e18-scaled share as a JSON number, so it is legitimately above MAX_SAFE_INTEGER.
-  if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
-    throw new Error(`Invalid trust deposit response: ${path}`)
-  }
-  return value
-}
-
-function nullableTimestamp(value: unknown, path: string): string | null {
-  if (value === null) return null
-  return string(value, path)
-}
+const { record, string, integer, scaledShare, nullableTimestamp } = indexerValidators('trust deposit')
 
 export function parseTrustDepositResponse(payload: unknown): ParsedTrustDeposit {
   const envelope = record(payload, 'response')

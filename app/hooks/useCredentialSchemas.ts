@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA } from '@/config/env'
 import { translate } from '@/i18n/dataview'
+import { indexerValidators } from '@/lib/indexer-json'
 import type { HolderOnboardingMode, ParticipantOnboardingMode } from '@/lib/participant-onboarding'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
@@ -11,30 +12,7 @@ import { resolveTranslatable } from '@/ui/dataview/types'
 const ONBOARDING_MODES = new Set(['OPEN', 'ECOSYSTEM_ONBOARDING_PROCESS', 'GRANTOR_ONBOARDING_PROCESS'])
 const HOLDER_ONBOARDING_MODES = new Set(['ISSUER_ONBOARDING_PROCESS', 'PERMISSIONLESS'])
 
-function record(value: unknown, path: string): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw new Error(`Invalid credential schema response: ${path}`)
-  }
-  return value as Record<string, unknown>
-}
-
-function string(value: unknown, path: string): string {
-  if (typeof value !== 'string') throw new Error(`Invalid credential schema response: ${path}`)
-  return value
-}
-
-function number(value: unknown, path: string): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    throw new Error(`Invalid credential schema response: ${path}`)
-  }
-  return value
-}
-
-function decimalAmount(value: unknown, path: string): string {
-  if (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) return String(value)
-  if (typeof value === 'string' && /^(0|[1-9]\d*)$/.test(value)) return value
-  throw new Error(`Invalid credential schema response: ${path}`)
-}
+const { record, string, number, decimalAmount, nullableString } = indexerValidators('credential schema')
 
 function onboardingMode(value: unknown, path: string): ParticipantOnboardingMode {
   const mode = string(value, path)
@@ -47,11 +25,6 @@ function holderOnboardingMode(value: unknown, path: string): HolderOnboardingMod
   const mode = string(value, path)
   if (!HOLDER_ONBOARDING_MODES.has(mode)) throw new Error(`Invalid credential schema response: ${path}`)
   return mode as HolderOnboardingMode
-}
-
-function nullableString(value: unknown, path: string): string | null {
-  if (value === null) return null
-  return string(value, path)
 }
 
 function schemaMetadata(jsonSchema: string): { title: string; description: string } {

@@ -3,6 +3,7 @@
 import deepEqual from 'fast-deep-equal'
 import { useCallback, useEffect, useState } from 'react'
 import { VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
+import { indexerValidators } from '@/lib/indexer-json'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type {
   OnboardingProcessState,
@@ -30,41 +31,7 @@ const PARTICIPANT_STATES = new Set<ParticipantState>([
 ])
 const OP_STATES = new Set<OnboardingProcessState>(['PENDING', 'VALIDATED', 'TERMINATED'])
 
-function record(value: unknown, path: string): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw new Error(`Invalid participant response: ${path}`)
-  }
-  return value as Record<string, unknown>
-}
-
-function string(value: unknown, path: string): string {
-  if (typeof value !== 'string') throw new Error(`Invalid participant response: ${path}`)
-  return value
-}
-
-function number(value: unknown, path: string): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    throw new Error(`Invalid participant response: ${path}`)
-  }
-  return value
-}
-
-function nullableString(value: unknown, path: string): string | null {
-  if (value === null) return null
-  return string(value, path)
-}
-
-function strings(value: unknown, path: string): string[] {
-  if (!Array.isArray(value) || !value.every((entry) => typeof entry === 'string')) {
-    throw new Error(`Invalid participant response: ${path}`)
-  }
-  return value
-}
-
-function optionalString(value: unknown, path: string): string | undefined {
-  if (value === undefined) return undefined
-  return string(value, path)
-}
+const { record, string, number, nullableString, optionalString, stringArray } = indexerValidators('participant')
 
 function optionalNullableString(value: unknown, path: string): string | null | undefined {
   if (value === undefined) return undefined
@@ -109,11 +76,11 @@ export function parseParticipantRecord(value: unknown, path = 'participant'): Pa
     did: nullableString(source.did, `${path}.did`),
     corporation_id: number(source.corporation_id, `${path}.corporation_id`),
     participant_state: state,
-    corporation_available_actions: strings(
+    corporation_available_actions: stringArray(
       source.corporation_available_actions,
       `${path}.corporation_available_actions`
     ),
-    validator_available_actions: strings(source.validator_available_actions, `${path}.validator_available_actions`),
+    validator_available_actions: stringArray(source.validator_available_actions, `${path}.validator_available_actions`),
     vs_operator: optionalNullableString(source.vs_operator, `${path}.vs_operator`),
     created: optionalString(source.created, `${path}.created`),
     modified: optionalString(source.modified, `${path}.modified`),

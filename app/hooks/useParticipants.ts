@@ -3,15 +3,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
 import { parseParticipantRecord } from '@/hooks/useParticipant'
+import { indexerValidators } from '@/lib/indexer-json'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 
-function record(value: unknown, path: string): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw new Error(`Invalid participants response: ${path}`)
-  }
-  return value as Record<string, unknown>
-}
+const { record } = indexerValidators('participants')
 
 export function parseParticipantsResponse(payload: unknown): Participant[] {
   const envelope = record(payload, 'response')

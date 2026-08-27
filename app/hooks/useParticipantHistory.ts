@@ -2,27 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
+import { indexerValidators } from '@/lib/indexer-json'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type { ParticipantHistory } from '@/ui/dataview/datasections/participant'
 
-function record(value: unknown, path: string): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw new Error(`Invalid participant history response: ${path}`)
-  }
-  return value as Record<string, unknown>
-}
-
-function string(value: unknown, path: string): string {
-  if (typeof value !== 'string') throw new Error(`Invalid participant history response: ${path}`)
-  return value
-}
-
-function number(value: unknown, path: string): number {
-  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
-    throw new Error(`Invalid participant history response: ${path}`)
-  }
-  return value
-}
+const { record, string, integer } = indexerValidators('participant history')
 
 export function parseParticipantHistoryResponse(payload: unknown): ParticipantHistory[] {
   const envelope = record(payload, 'response')
@@ -38,7 +22,7 @@ export function parseParticipantHistoryResponse(payload: unknown): ParticipantHi
       entity_id: string(activity.entity_id, `${path}.entity_id`),
       entity_type: string(activity.entity_type, `${path}.entity_type`),
       timestamp: string(activity.timestamp, `${path}.timestamp`),
-      block_height: number(activity.block_height, `${path}.block_height`),
+      block_height: integer(activity.block_height, `${path}.block_height`),
       msg: string(activity.msg, `${path}.msg`),
       changes: activity.changes === null ? null : record(activity.changes, `${path}.changes`),
       account: string(activity.account, `${path}.account`),

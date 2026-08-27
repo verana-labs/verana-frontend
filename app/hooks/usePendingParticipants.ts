@@ -4,27 +4,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
 import { parseParticipantRecord } from '@/hooks/useParticipant'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
+import { indexerValidators } from '@/lib/indexer-json'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type { PendingEcosystem } from '@/ui/dataview/datasections/participant'
 
-function record(value: unknown, path: string): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw new Error(`Invalid pending participants response: ${path}`)
-  }
-  return value as Record<string, unknown>
-}
-
-function number(value: unknown, path: string): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    throw new Error(`Invalid pending participants response: ${path}`)
-  }
-  return value
-}
-
-function string(value: unknown, path: string): string {
-  if (typeof value !== 'string') throw new Error(`Invalid pending participants response: ${path}`)
-  return value
-}
+const { record, string, number } = indexerValidators('pending participants')
 
 export function parsePendingParticipantsResponse(payload: unknown): PendingEcosystem[] {
   const envelope = record(payload, 'response')

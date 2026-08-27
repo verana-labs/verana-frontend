@@ -8,6 +8,7 @@ import {
   VERANA_REST_ENDPOINT_GROUP,
 } from '@/config/env'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
+import { indexerValidators } from '@/lib/indexer-json'
 
 export interface UserCorporation {
   id: number
@@ -21,31 +22,7 @@ export interface UserCorporationResolution {
   grantedMessageTypes: string[]
 }
 
-function record(value: unknown, path: string): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw new Error(`Invalid corporation response: ${path}`)
-  }
-  return value as Record<string, unknown>
-}
-
-function string(value: unknown, path: string): string {
-  if (typeof value !== 'string') throw new Error(`Invalid corporation response: ${path}`)
-  return value
-}
-
-function number(value: unknown, path: string): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    throw new Error(`Invalid corporation response: ${path}`)
-  }
-  return value
-}
-
-function stringArray(value: unknown, path: string): string[] {
-  if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string')) {
-    throw new Error(`Invalid corporation response: ${path}`)
-  }
-  return value
-}
+const { record, string, number, stringArray } = indexerValidators('corporation')
 
 async function fetchJson(url: string, context: string): Promise<unknown> {
   const response = await fetch(url)
