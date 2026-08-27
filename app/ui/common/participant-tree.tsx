@@ -227,6 +227,19 @@ export default function ParticipantTree({
 
   useEffect(() => {
     if (!selectedId) return
+    const { path } = findNodeAndPath(treeState, selectedId)
+    const parents = path.slice(0, -1)
+    if (!parents.length) return
+    setExpanded((current) => {
+      if (current[parents[parents.length - 1].nodeId]) return current
+      const next = { ...current }
+      for (const parent of parents) next[parent.nodeId] = true
+      return next
+    })
+  }, [treeState, selectedId])
+
+  useEffect(() => {
+    if (!selectedId) return
     detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [selectedId])
 
