@@ -85,12 +85,12 @@ export async function signAndBroadcastManualAmino({
 }
 
 function isSequenceMismatch(e: unknown): boolean {
-  const m = e instanceof Error ? e.message : String(e)
+  const m = String((e as any)?.message ?? e)
   return m.includes('account sequence mismatch') || m.includes('incorrect account sequence')
 }
 
 function parseSequenceMismatch(err: unknown): { expected?: number; got?: number } {
-  const msg = err instanceof Error ? err.message : String(err)
+  const msg = String((err as any)?.message ?? err)
   const m = msg.match(/expected\s+(\d+)\s*,\s*got\s+(\d+)/i)
   if (!m) return {}
   return {
