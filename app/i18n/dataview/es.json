@@ -60,10 +60,13 @@
   "participants.description": "Página para ver/interactuar con el árbol de participantes de un esquema de credenciales dado.",
   "participants.tree.title": "Árbol de Participantes",
   "participants.btn.join": "unirse",
+  "participants.show.unresolvable": "Servicios no resolubles",
+  "participants.show.disabled": "Participantes deshabilitados",
   "participants.show.weight": "Peso",
   "participants.show.businessrules": "Reglas de Negocio",
   "participants.show.stats": "Estadísticas",
   "participants.action.newperm": "Nuevo Participante de Ecosistema",
+  "participants.filters.allhidden": "Todos los participantes están ocultos por los filtros actuales.",
 
   "task.title": "Tareas Pendientes",
   "task.description": "Consulta tus tareas pendientes y las de tus otorgantes.",
