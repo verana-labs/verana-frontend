@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.0](https://github.com/verana-labs/verana-frontend/compare/v0.15.0...v0.16.0) (2026-08-28)
+
+
+### Features
+
+* unresolvable-services and disabled-participants filters on participant tree ([#433](https://github.com/verana-labs/verana-frontend/issues/433)) ([6c1fcc2](https://github.com/verana-labs/verana-frontend/commit/6c1fcc2f84a305528739f32b70a7422774ed16b3))
+
 ## [0.15.0](https://github.com/verana-labs/verana-frontend/compare/v0.14.1...v0.15.0) (2026-08-10)
 
 
