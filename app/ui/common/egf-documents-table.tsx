@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { ReactNode } from 'react'
 import { translate } from '@/i18n/dataview'
 import { getLanguageLabel, useLanguageData } from '@/lib/language'
-import { TrData } from '@/ui/dataview/datasections/tr'
+import type { EcosystemData } from '@/ui/dataview/datasections/ecosystem'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { formatDate } from '@/util/util'
 
@@ -17,7 +17,7 @@ function Th({ children }: { children: ReactNode }) {
   return <th className={HEADER_CELL_CLASS}>{children}</th>
 }
 
-type Versions = NonNullable<TrData['versions']>
+type Versions = EcosystemData['versions']
 
 export type EgfDocumentsTableProps = {
   versions: Versions
@@ -56,25 +56,31 @@ function buildRows(versions: Versions, activeVersion: number, resolveLabel: (val
       let statusText: string
 
       if (version.version === activeVersion) {
+        if (version.activeSince === null) {
+          throw new Error(`Governance framework version ${version.version} is active without an activation date`)
+        }
         state = 'active'
         statusText =
           resolveTranslatable(
-            { key: 'datalist.egf.status.activeSince', values: { date: formatDate(version.active_since) } },
+            { key: 'datalist.egf.status.activeSince', values: { date: formatDate(version.activeSince) } },
             translate
-          ) ?? `Active since ${formatDate(version.active_since)}`
+          ) ?? `Active since ${formatDate(version.activeSince)}`
       } else if (version.version > activeVersion) {
         state = 'draft'
         statusText = resolveTranslatable({ key: 'datalist.egf.status.draft' }, translate) ?? 'Draft'
       } else {
+        if (version.activeSince === null) {
+          throw new Error(`Governance framework version ${version.version} is inactive without an activation date`)
+        }
         state = 'inactive'
         const next = sorted[index + 1]
-        const fromDate = formatDate(version.active_since)
-        if (next?.active_since) {
+        const fromDate = formatDate(version.activeSince)
+        if (next?.activeSince) {
           statusText =
             resolveTranslatable(
-              { key: 'datalist.egf.status.range', values: { from: fromDate, to: formatDate(next.active_since) } },
+              { key: 'datalist.egf.status.range', values: { from: fromDate, to: formatDate(next.activeSince) } },
               translate
-            ) ?? `${fromDate} to ${formatDate(next.active_since)}`
+            ) ?? `${fromDate} to ${formatDate(next.activeSince)}`
         } else {
           statusText =
             resolveTranslatable({ key: 'datalist.egf.status.from', values: { from: fromDate } }, translate) ??

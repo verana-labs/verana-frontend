@@ -5,13 +5,9 @@ import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { logger } from '@/lib/logger'
 import { useComponentsVersion } from '@/providers/components-version-provider'
 
-/**
- * Fetches the chain version reported by the connected node.
- * Returns null until the version is successfully resolved.
- */
 export function useChainVersion() {
   const veranaChain = useVeranaChain()
-  const restEndpoint = veranaChain?.apis?.rest?.[0]?.address
+  const rpcEndpoint = veranaChain?.apis?.rpc?.[0]?.address
   const { setState } = useComponentsVersion()
 
   useEffect(() => {
@@ -20,14 +16,12 @@ export function useChainVersion() {
 
     const fetchVersion = async () => {
       try {
-        if (!restEndpoint) return
+        if (!rpcEndpoint) return
 
-        const response = await fetch(`${restEndpoint.replace(/\/$/, '')}/cosmos/base/tendermint/v1beta1/node_info`, {
-          signal: controller.signal,
-        })
+        const response = await fetch(`${rpcEndpoint.replace(/\/$/, '')}/abci_info`, { signal: controller.signal })
         if (!response.ok) throw new Error(`Failed to load version: ${response.status}`)
         const data = await response.json()
-        const remoteVersion = data?.application_version?.version ?? null
+        const remoteVersion = data?.result?.response?.version ?? null
         if (!ignore) {
           setState((prev) => ({
             ...prev,
@@ -62,5 +56,5 @@ export function useChainVersion() {
       ignore = true
       controller.abort()
     }
-  }, [restEndpoint, setState])
+  }, [rpcEndpoint, setState])
 }

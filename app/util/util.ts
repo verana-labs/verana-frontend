@@ -3,31 +3,28 @@
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faCrown, faEye } from '@fortawesome/free-solid-svg-icons'
 import { translate } from '@/i18n/dataview'
-import { PermState } from '@/ui/common/permission-tree-types'
 import { Role } from '@/ui/common/role-card'
-import { PermissionType, VpState } from '@/ui/dataview/datasections/perm'
+import type { OnboardingProcessState, ParticipantRole, ParticipantState } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
 export function formatNumber(value: unknown, defaultZero: boolean = false, withSeparators: boolean = false): string {
   if (value === null || value === undefined) return '0'
   const num = Number(value)
-  return isNaN(num) ? (defaultZero ? '0' : 'isNan') : withSeparators ? num.toLocaleString() : String(num)
+  return Number.isNaN(num) ? (defaultZero ? '0' : 'isNan') : withSeparators ? num.toLocaleString() : String(num)
 }
 
 export function formatVNA(amount: string | null, decimals?: number): string {
   if (!amount) return ''
   decimals = decimals ?? 6
-  return (
-    (Number(amount) / 10 ** decimals).toLocaleString(undefined, {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: decimals,
-    }) + ' VNA'
-  )
+  return `${(Number(amount) / 10 ** decimals).toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: decimals,
+  })} VNA`
 }
 
 export function formatVNAFromUVNA(amount: string | null): string {
   const s = amount == null ? '' : String(amount)
-  if (!s?.trim() || !Number.isFinite(Number(s))) return ''
+  if (!s.trim() || !Number.isFinite(Number(s))) return ''
   return formatVNA(String(Number(s)), 6)
 }
 
@@ -37,7 +34,7 @@ export function parseVNA(formatted: string, decimals: number = 6): string {
   const clean = formatted.replace(/[^\d.,-]/g, '').replace(/,/g, '')
   // Parse as float
   const floatValue = parseFloat(clean)
-  if (isNaN(floatValue)) return '0'
+  if (Number.isNaN(floatValue)) return '0'
   // Convert to microVNA (as integer string)
   const micro = Math.round(floatValue * 10 ** decimals)
   return micro.toString()
@@ -195,7 +192,7 @@ export function formatNetwork(network: string) {
   return htmlNetwork
 }
 
-export function roleBadgeClass(role: PermissionType) {
+export function roleBadgeClass(role: ParticipantRole) {
   switch (role) {
     case 'ECOSYSTEM':
       return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
@@ -253,124 +250,128 @@ export function roleJoinColorClass(type: string): string {
 export function roleLabel(type: string): string {
   switch (type) {
     case 'ECOSYSTEM':
-      return resolveTranslatable({ key: 'permission.labelrole.ecosystem' }, translate) ?? 'Ecosystems'
+      return resolveTranslatable({ key: 'participant.labelRole.ecosystem' }, translate) ?? 'Ecosystems'
     case 'ISSUER_GRANTOR':
-      return resolveTranslatable({ key: 'permission.labelrole.issuergrantor' }, translate) ?? 'Issuer Grantors'
+      return resolveTranslatable({ key: 'participant.labelRole.issuerGrantor' }, translate) ?? 'Issuer Grantors'
     case 'VERIFIER_GRANTOR':
-      return resolveTranslatable({ key: 'permission.labelrole.verifiergrantor' }, translate) ?? 'Verifier Grantors'
+      return resolveTranslatable({ key: 'participant.labelRole.verifierGrantor' }, translate) ?? 'Verifier Grantors'
     case 'ISSUER':
-      return resolveTranslatable({ key: 'permission.labelrole.issuer' }, translate) ?? 'Issuers'
+      return resolveTranslatable({ key: 'participant.labelRole.issuer' }, translate) ?? 'Issuers'
     case 'VERIFIER':
-      return resolveTranslatable({ key: 'permission.labelrole.verifier' }, translate) ?? 'Verifiers'
+      return resolveTranslatable({ key: 'participant.labelRole.verifier' }, translate) ?? 'Verifiers'
     case 'HOLDER':
-      return resolveTranslatable({ key: 'permission.labelrole.holder' }, translate) ?? 'Holders'
+      return resolveTranslatable({ key: 'participant.labelRole.holder' }, translate) ?? 'Holders'
     default:
       return ''
   }
 }
 
-export function permStateBadgeClass(
-  permState: PermState | undefined,
+export function participantStateBadgeClass(
+  participantState: ParticipantState | undefined,
   expireSoon: boolean,
   variant: 'tree' | 'header' = 'tree'
-): { labelPermState: string; classPermState: string } {
-  if (!permState) return { labelPermState: '', classPermState: '' }
+): { labelParticipantState: string; classParticipantState: string } {
+  if (!participantState) return { labelParticipantState: '', classParticipantState: '' }
   const activeClass =
     variant === 'header'
       ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
       : 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
-  const badge = ((): { labelPermState: string; classPermState: string } => {
-    switch (permState) {
+  const badge = ((): { labelParticipantState: string; classParticipantState: string } => {
+    switch (participantState) {
       case 'REPAID':
         return {
-          labelPermState: resolveTranslatable({ key: 'permission.labelpermstate.repaid' }, translate) ?? 'REPAID',
-          classPermState: 'bg-gray-100 text-red-800 dark:bg-gray-900/20 dark:text-red-300',
+          labelParticipantState: resolveTranslatable({ key: 'participant.labelstate.repaid' }, translate) ?? 'REPAID',
+          classParticipantState: 'bg-gray-100 text-red-800 dark:bg-gray-900/20 dark:text-red-300',
         }
       case 'SLASHED':
         return {
-          labelPermState: resolveTranslatable({ key: 'permission.labelpermstate.slashed' }, translate) ?? 'SLASHED',
-          classPermState: 'bg-red-900 text-red-100 dark:bg-red-300/20 dark:text-red-800',
+          labelParticipantState: resolveTranslatable({ key: 'participant.labelstate.slashed' }, translate) ?? 'SLASHED',
+          classParticipantState: 'bg-red-900 text-red-100 dark:bg-red-300/20 dark:text-red-800',
         }
       case 'FUTURE':
         return {
-          labelPermState: resolveTranslatable({ key: 'permission.labelpermstate.future' }, translate) ?? 'FUTURE',
-          classPermState: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300',
+          labelParticipantState: resolveTranslatable({ key: 'participant.labelstate.future' }, translate) ?? 'FUTURE',
+          classParticipantState: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300',
         }
       case 'ACTIVE':
         return expireSoon
           ? {
-              labelPermState:
-                resolveTranslatable({ key: 'permission.labelpermstate.expiresoon' }, translate) ?? 'EXPIRE SOON',
-              classPermState: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300',
+              labelParticipantState:
+                resolveTranslatable({ key: 'participant.labelstate.expiresoon' }, translate) ?? 'EXPIRE SOON',
+              classParticipantState: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300',
             }
           : {
-              labelPermState: resolveTranslatable({ key: 'permission.labelpermstate.active' }, translate) ?? 'ACTIVE',
-              classPermState: activeClass,
+              labelParticipantState:
+                resolveTranslatable({ key: 'participant.labelstate.active' }, translate) ?? 'ACTIVE',
+              classParticipantState: activeClass,
             }
       case 'INACTIVE':
         return {
-          labelPermState: resolveTranslatable({ key: 'permission.labelpermstate.inactive' }, translate) ?? 'INACTIVE',
-          classPermState: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300',
+          labelParticipantState:
+            resolveTranslatable({ key: 'participant.labelstate.inactive' }, translate) ?? 'INACTIVE',
+          classParticipantState: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300',
         }
       default:
         return {
-          labelPermState: permState,
-          classPermState: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300',
+          labelParticipantState: participantState,
+          classParticipantState: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300',
         }
     }
   })()
-  return variant === 'tree' ? { ...badge, labelPermState: badge.labelPermState.toLowerCase() } : badge
+  return variant === 'tree' ? { ...badge, labelParticipantState: badge.labelParticipantState.toLowerCase() } : badge
 }
 
-export function vpStateColor(
-  vpState: VpState,
-  vpExp: string,
+export function onboardingStateColor(
+  onboardingState: OnboardingProcessState | null | undefined,
+  onboardingExpiration: string | null | undefined,
   expireSoon: boolean
-): { labelVpState: string; classVpState: string } {
+): { labelOnboardingState: string; classOnboardingState: string } {
   const GRAY = 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300'
-  switch (vpState) {
+  switch (onboardingState) {
     case 'PENDING':
       return {
-        labelVpState:
-          resolveTranslatable({ key: 'permission.labelvpstate.pending' }, translate) ?? 'pending approbation',
-        classVpState: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300',
+        labelOnboardingState:
+          resolveTranslatable({ key: 'participant.labelopstate.pending' }, translate) ?? 'pending approval',
+        classOnboardingState: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300',
       }
     case 'TERMINATED':
       return {
-        labelVpState: resolveTranslatable({ key: 'permission.labelvpstate.terminated' }, translate) ?? 'terminated',
-        classVpState: GRAY,
+        labelOnboardingState:
+          resolveTranslatable({ key: 'participant.labelopstate.terminated' }, translate) ?? 'terminated',
+        classOnboardingState: GRAY,
       }
     case 'VALIDATED':
-      return isExpired(vpExp)
+      return (onboardingExpiration ? isExpired(onboardingExpiration) : false)
         ? {
-            labelVpState: resolveTranslatable({ key: 'permission.labelvpstate.expired' }, translate) ?? 'expired',
-            classVpState: GRAY,
+            labelOnboardingState:
+              resolveTranslatable({ key: 'participant.labelopstate.expired' }, translate) ?? 'expired',
+            classOnboardingState: GRAY,
           }
         : expireSoon
           ? {
-              labelVpState:
-                resolveTranslatable({ key: 'permission.labelvpstate.expiresoon' }, translate) ?? 'expire soon',
-              classVpState: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300',
+              labelOnboardingState:
+                resolveTranslatable({ key: 'participant.labelopstate.expiresoon' }, translate) ?? 'expire soon',
+              classOnboardingState: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300',
             }
           : {
-              labelVpState: resolveTranslatable({ key: 'permission.labelvpstate.validated' }, translate) ?? 'validated',
-              classVpState: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300',
+              labelOnboardingState:
+                resolveTranslatable({ key: 'participant.labelopstate.validated' }, translate) ?? 'validated',
+              classOnboardingState: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300',
             }
     default:
-      return { labelVpState: '', classVpState: '' } // labelVpState: String(vpState), classVpState: GRAY };
+      return { labelOnboardingState: '', classOnboardingState: '' }
   }
 }
 
-export function authorityPaticipants(
-  isGrantee: boolean,
+export function participantAuthority(
+  isCorporation: boolean,
   isValidator: boolean,
   isPredecessor: boolean
 ): { icon: IconDefinition; iconColorClass: string } {
   if (isValidator) {
     // validator
     return { icon: faCrown, iconColorClass: 'text-yellow-500' }
-  } else if (isGrantee) {
-    // grantee
+  } else if (isCorporation) {
     return { icon: faCrown, iconColorClass: 'text-green-500' }
   } else if (isPredecessor) {
     // predecessor
@@ -380,11 +381,11 @@ export function authorityPaticipants(
   }
 }
 
-export function rolesSchema(issuerPermManagementMode: string, verifierPermManagementMode: string): Role[] {
+export function rolesSchema(issuerOnboardingMode: string, verifierOnboardingMode: string): Role[] {
   const roles = new Set<Role>()
 
   // Issuance roles
-  if (issuerPermManagementMode === 'GRANTOR_VALIDATION') {
+  if (issuerOnboardingMode === 'GRANTOR_ONBOARDING_PROCESS') {
     roles.add('ISSUER_GRANTOR')
     roles.add('ISSUER')
   } else {
@@ -393,7 +394,7 @@ export function rolesSchema(issuerPermManagementMode: string, verifierPermManage
   }
 
   // Verification roles
-  if (verifierPermManagementMode === 'GRANTOR_VALIDATION') {
+  if (verifierOnboardingMode === 'GRANTOR_ONBOARDING_PROCESS') {
     roles.add('VERIFIER_GRANTOR')
     roles.add('VERIFIER')
   } else {
@@ -406,59 +407,59 @@ export function rolesSchema(issuerPermManagementMode: string, verifierPermManage
 }
 
 export function nodeChildRoles(
-  issuerPermManagementMode: string,
-  verifierPermManagementMode: string,
+  issuerOnboardingMode: string,
+  verifierOnboardingMode: string,
   role: string
 ): { role: Role; label: string; validation: boolean }[] {
   const roles = new Set<{ role: Role; label: string; validation: boolean }>()
 
   if (role === 'ECOSYSTEM') {
     // Issuance roles
-    if (issuerPermManagementMode === 'GRANTOR_VALIDATION') {
+    if (issuerOnboardingMode === 'GRANTOR_ONBOARDING_PROCESS') {
       roles.add({
         role: 'ISSUER_GRANTOR',
-        label: resolveTranslatable({ key: 'permission.labelrole.issuergrantor' }, translate) ?? 'Issuer Grantors',
+        label: resolveTranslatable({ key: 'participant.labelRole.issuerGrantor' }, translate) ?? 'Issuer Grantors',
         validation: true,
       })
     } else {
       // OPEN o ECOSYSTEM
       roles.add({
         role: 'ISSUER',
-        label: resolveTranslatable({ key: 'permission.labelrole.issuer' }, translate) ?? 'Issuers',
-        validation: issuerPermManagementMode === 'ECOSYSTEM',
+        label: resolveTranslatable({ key: 'participant.labelRole.issuer' }, translate) ?? 'Issuers',
+        validation: issuerOnboardingMode === 'ECOSYSTEM_ONBOARDING_PROCESS',
       })
     }
     // Verification roles
-    if (verifierPermManagementMode === 'GRANTOR_VALIDATION') {
+    if (verifierOnboardingMode === 'GRANTOR_ONBOARDING_PROCESS') {
       roles.add({
         role: 'VERIFIER_GRANTOR',
-        label: resolveTranslatable({ key: 'permission.labelrole.verifiergrantor' }, translate) ?? 'Verifier Grantors',
+        label: resolveTranslatable({ key: 'participant.labelRole.verifierGrantor' }, translate) ?? 'Verifier Grantors',
         validation: true,
       })
     } else {
       // OPEN o ECOSYSTEM
       roles.add({
         role: 'VERIFIER',
-        label: resolveTranslatable({ key: 'permission.labelrole.verifier' }, translate) ?? 'Verifiers',
-        validation: verifierPermManagementMode === 'ECOSYSTEM',
+        label: resolveTranslatable({ key: 'participant.labelRole.verifier' }, translate) ?? 'Verifiers',
+        validation: verifierOnboardingMode === 'ECOSYSTEM_ONBOARDING_PROCESS',
       })
     }
   } else if (role === 'ISSUER_GRANTOR') {
     roles.add({
       role: 'ISSUER',
-      label: resolveTranslatable({ key: 'permission.labelrole.issuer' }, translate) ?? 'Issuers',
+      label: resolveTranslatable({ key: 'participant.labelRole.issuer' }, translate) ?? 'Issuers',
       validation: true,
     })
   } else if (role === 'VERIFIER_GRANTOR') {
     roles.add({
       role: 'VERIFIER',
-      label: resolveTranslatable({ key: 'permission.labelrole.verifier' }, translate) ?? 'Verifiers',
+      label: resolveTranslatable({ key: 'participant.labelRole.verifier' }, translate) ?? 'Verifiers',
       validation: true,
     })
   } else if (role === 'ISSUER') {
     roles.add({
       role: 'HOLDER',
-      label: resolveTranslatable({ key: 'permission.labelrole.holder' }, translate) ?? 'Holders',
+      label: resolveTranslatable({ key: 'participant.labelRole.holder' }, translate) ?? 'Holders',
       validation: true,
     })
   }

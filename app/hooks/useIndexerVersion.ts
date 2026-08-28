@@ -5,6 +5,17 @@ import { VERANA_REST_ENDPOINT_INDEXER } from '@/config/env'
 import { logger } from '@/lib/logger'
 import { useComponentsVersion } from '@/providers/components-version-provider'
 
+export function parseIndexerVersionResponse(payload: unknown): string {
+  if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) {
+    throw new Error('Invalid indexer version response: response')
+  }
+  const version = (payload as Record<string, unknown>).app_version
+  if (typeof version !== 'string' || version.length === 0) {
+    throw new Error('Invalid indexer version response: app_version')
+  }
+  return version
+}
+
 export function useIndexerVersion() {
   const { setState } = useComponentsVersion()
 
@@ -19,13 +30,14 @@ export function useIndexerVersion() {
 
         const response = await fetch(`${indexerEndpoint}/version`, { signal: controller.signal })
         if (!response.ok) throw new Error(`Failed to load indexer version: ${response.status}`)
-        const data = await response.json()
+        const data: unknown = await response.json()
+        const version = parseIndexerVersionResponse(data)
         if (!ignore) {
           setState((prev) => ({
             ...prev,
             indexer: {
               ...prev.indexer,
-              version: data?.appVersion ?? null,
+              version,
             },
           }))
         }
@@ -50,5 +62,5 @@ export function useIndexerVersion() {
       ignore = true
       controller.abort()
     }
-  }, [])
+  }, [setState])
 }

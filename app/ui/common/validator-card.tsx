@@ -2,15 +2,15 @@
 
 import { faShieldHalved } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Permission } from '@/ui/dataview/datasections/perm'
-import { formatVNA } from '@/util/util'
+import type { Participant } from '@/ui/dataview/datasections/participant'
+import { formatVNAFromUVNA } from '@/util/util'
 
 function cn(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(' ')
 }
 
 export type ValidatorCardProps = {
-  validator: Permission
+  validator: Participant
   selected?: boolean
   onSelect?: () => void
 }
@@ -18,9 +18,9 @@ export type ValidatorCardProps = {
 export default function ValidatorCard({ validator, selected = false, onSelect }: ValidatorCardProps) {
   const feeLabel = validator.issuance_fees ? 'Issuance Fee' : 'Verification Fee'
   const feeValue = validator.issuance_fees
-    ? formatVNA(validator.issuance_fees)
+    ? formatVNAFromUVNA(String(validator.issuance_fees))
     : validator.verification_fees
-      ? formatVNA(validator.verification_fees)
+      ? formatVNAFromUVNA(String(validator.verification_fees))
       : '—'
 
   return (
@@ -61,23 +61,25 @@ export default function ValidatorCard({ validator, selected = false, onSelect }:
         <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
           <div>
             <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">Validator DID</label>
-            <p className="text-sm font-mono text-gray-900 dark:text-white break-all">{validator.did}</p>
+            <p className="text-sm font-mono text-gray-900 dark:text-white break-all">{validator.did ?? '—'}</p>
           </div>
 
           <div>
-            <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">Controller</label>
-            <p className="text-sm font-mono text-gray-900 dark:text-white break-all">{validator.grantee}</p>
+            <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">Corporation</label>
+            <p className="text-sm font-mono text-gray-900 dark:text-white break-all">{validator.corporation_id}</p>
           </div>
 
           <div>
             <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">Deposit</label>
-            <p className="text-sm font-mono text-gray-900 dark:text-white">{formatVNA(validator.deposit)}</p>
+            <p className="text-sm font-mono text-gray-900 dark:text-white">
+              {formatVNAFromUVNA(String(validator.deposit ?? 0))}
+            </p>
           </div>
 
           <div>
             <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">Validation Fee</label>
             <p className="text-sm font-mono text-gray-900 dark:text-white">
-              {validator.validation_fees ? formatVNA(validator.validation_fees) : '—'}
+              {validator.validation_fees ? formatVNAFromUVNA(String(validator.validation_fees)) : '—'}
             </p>
           </div>
 
@@ -87,8 +89,8 @@ export default function ValidatorCard({ validator, selected = false, onSelect }:
           </div>
 
           <div>
-            <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">Country</label>
-            <p className="text-sm text-gray-900 dark:text-white">{validator.country}</p>
+            <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">State</label>
+            <p className="text-sm text-gray-900 dark:text-white">{validator.participant_state}</p>
           </div>
         </div>
       </div>

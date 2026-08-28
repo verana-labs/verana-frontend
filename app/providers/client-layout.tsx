@@ -1,17 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { TrustDepositParams } from '@/lib/trustDepositParams'
+import type { ProtocolParams } from '@/lib/protocolParams'
+import { ProtocolParamsProvider } from '@/providers/protocol-params-context'
 import Providers from '@/providers/providers'
-import { TrustDepositParamsProvider } from '@/providers/trust-deposit-params-context'
 import NavBar from '@/ui/common/nav-bar'
 import SideNav from '@/ui/common/sidenav'
 
 export default function ClientLayout({
-  trustDepositParams,
+  protocolParams,
   children,
 }: {
-  trustDepositParams: TrustDepositParams
+  protocolParams: ProtocolParams
   children: React.ReactNode
 }) {
   const [mounted, setMounted] = useState(false)
@@ -36,13 +36,13 @@ export default function ClientLayout({
           </aside>
 
           {/* Content */}
-          <TrustDepositParamsProvider value={trustDepositParams}>
+          <ProtocolParamsProvider value={protocolParams}>
             <div className="app-content">
               <main id="app-scroll" className="app-content-inner h-full overflow-y-auto">
                 {children}
               </main>
             </div>
-          </TrustDepositParamsProvider>
+          </ProtocolParamsProvider>
         </div>
       </div>
     </Providers>

@@ -4,12 +4,12 @@ import { faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useState } from 'react'
 import { translate } from '@/i18n/dataview'
-import { CsList, getModeLabel } from '../datatable/columnslist/cs'
+import { type CredentialSchemaListItem, getModePillClass } from '../datatable/columnslist/cs'
 import { resolveTranslatable } from '../dataview/types'
 import JsonCodeBlock from './json-code-block'
 
 export type CsCardProps = {
-  cs: CsList
+  credentialSchema: CredentialSchemaListItem
   onSelect?: () => void
   selected?: boolean
 }
@@ -18,7 +18,7 @@ function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ')
 }
 
-export default function CsCard({ cs, onSelect, selected }: CsCardProps) {
+export default function CsCard({ credentialSchema, onSelect, selected }: CsCardProps) {
   const [showJsonSchemaModal, setShowJsonSchemaModal] = useState<boolean>(false)
 
   return (
@@ -47,9 +47,9 @@ export default function CsCard({ cs, onSelect, selected }: CsCardProps) {
 
           <div className="flex-1">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white">{cs.title}</h3>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">{credentialSchema.title}</h3>
               <span className="text-sm font-mono text-neutral-70 dark:text-neutral-70">
-                {resolveTranslatable({ key: 'dataview.cs.fields.id' }, translate)}: {cs.id}
+                {resolveTranslatable({ key: 'dataview.cs.fields.id' }, translate)}: {credentialSchema.id}
               </span>
             </div>
 
@@ -58,36 +58,50 @@ export default function CsCard({ cs, onSelect, selected }: CsCardProps) {
                 <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
                   {resolveTranslatable({ key: 'dataview.cs.fields.issuerValidationValidityPeriod' }, translate)}
                 </label>
-                <p className="text-sm text-gray-900 dark:text-white">{cs.issuerValidationValidityPeriod} days</p>
+                <p className="text-sm text-gray-900 dark:text-white">
+                  {credentialSchema.issuerValidationValidityPeriod} days
+                </p>
               </div>
 
               <div>
                 <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
                   {resolveTranslatable({ key: 'dataview.cs.fields.verifierValidationValidityPeriod' }, translate)}
                 </label>
-                <p className="text-sm text-gray-900 dark:text-white">{cs.verifierValidationValidityPeriod} days</p>
+                <p className="text-sm text-gray-900 dark:text-white">
+                  {credentialSchema.verifierValidationValidityPeriod} days
+                </p>
               </div>
 
               <div>
                 <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
-                  {resolveTranslatable({ key: 'dataview.cs.fields.issuerPermManagementMode' }, translate)}
+                  {resolveTranslatable({ key: 'dataview.cs.fields.issuerOnboardingMode' }, translate)}
                 </label>
-                <p dangerouslySetInnerHTML={{ __html: getModeLabel(String(cs.issuerPermManagementMode), '_ISSUER') }} />
-                {/* <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
-                {}
-              </span> */}
+                <p>
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getModePillClass(
+                      credentialSchema.issuerOnboardingMode,
+                      '_ISSUER'
+                    )}`}
+                  >
+                    {credentialSchema.issuerOnboardingMode}
+                  </span>
+                </p>
               </div>
 
               <div>
                 <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
-                  {resolveTranslatable({ key: 'dataview.cs.fields.verifierPermManagementMode' }, translate)}
+                  {resolveTranslatable({ key: 'dataview.cs.fields.verifierOnboardingMode' }, translate)}
                 </label>
-                <p
-                  dangerouslySetInnerHTML={{ __html: getModeLabel(String(cs.verifierPermManagementMode), '_VERIFIER') }}
-                />
-                {/* <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                {cs.verifierPermManagementMode}
-              </span> */}
+                <p>
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getModePillClass(
+                      credentialSchema.verifierOnboardingMode,
+                      '_VERIFIER'
+                    )}`}
+                  >
+                    {credentialSchema.verifierOnboardingMode}
+                  </span>
+                </p>
               </div>
             </div>
 
@@ -105,12 +119,10 @@ export default function CsCard({ cs, onSelect, selected }: CsCardProps) {
         </div>
       </div>
 
-      {/* render json schema modal */}
-      {showJsonSchemaModal && cs.jsonSchema && (
+      {showJsonSchemaModal && credentialSchema.jsonSchema && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-xl bg-gray-50 dark:bg-gray-900">
             <div className="flex items-center justify-between mb-6">
-              {/* <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{"detailTitle"}</h3> */}
               <button
                 onClick={() => setShowJsonSchemaModal(false)}
                 className="absolute top-4 right-4 text-neutral-70 hover:text-gray-500 dark:hover:text-gray-300"
@@ -119,7 +131,7 @@ export default function CsCard({ cs, onSelect, selected }: CsCardProps) {
                 <FontAwesomeIcon icon={faXmark} />
               </button>
             </div>
-            <JsonCodeBlock value={cs.jsonSchema} />
+            <JsonCodeBlock value={credentialSchema.jsonSchema} />
           </div>
         </div>
       )}

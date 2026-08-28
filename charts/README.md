@@ -41,19 +41,11 @@ Defined under `env` with devnet reference values; override per environment:
 - `NEXT_PUBLIC_VERANA_CHAIN_NAME`
 - `NEXT_PUBLIC_VERANA_RPC_ENDPOINT`
 - `NEXT_PUBLIC_VERANA_REST_ENDPOINT`
-- `NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT`
-- `NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID`
-- `NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY`
-- `NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA`
-- `NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM`
-- `NEXT_PUBLIC_VERANA_REST_ENDPOINT_INDEXER`
-- `NEXT_PUBLIC_VERANA_REST_ENDPOINT_METRICS`
-- `NEXT_PUBLIC_VERANA_REST_ENDPOINT_RESOLVER`
+- `NEXT_PUBLIC_VERANA_INDEXER_BASE_URL`
 - `NEXT_PUBLIC_VERANA_TOPUP_VS`
 - `NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE`
 - `NEXT_PUBLIC_SESSION_LIFETIME_SECONDS`
 - `NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA`
-- 'NEXT_PUBLIC_VERANA_WEBSOCKET'
 
 ### Quick examples
 
@@ -67,7 +59,7 @@ Install/upgrade (override image tag and a couple env vars):
 
 ```bash
 helm upgrade --install verana-frontend ./charts \
-  -n vna-testnet-1 \
-  --set env.NEXT_PUBLIC_BASE_URL=https://frontend.testnet.verana.network \
-  --set env.NEXT_PUBLIC_VERANA_CHAIN_ID=vna-testnet-1
+  -n vna-devnet-1 \
+  --set env.NEXT_PUBLIC_BASE_URL=https://app.devnet.verana.network \
+  --set env.NEXT_PUBLIC_VERANA_CHAIN_ID=vna-devnet-1
 ```

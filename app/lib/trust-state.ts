@@ -23,12 +23,12 @@ function badge(labelKey: string, fallbackLabel: string, icon: IconDefinition, ic
 export function trustStateBadge(state: DidTrustState | undefined | null): TrustStateBadge {
   switch (state) {
     case 'TRUSTED':
-      return badge('permission.labeltruststate.trusted', 'Trusted', faCertificate, 'text-green-500')
+      return badge('participant.labelTrustState.trusted', 'Trusted', faCertificate, 'text-green-500')
     case 'UNTRUSTED':
-      return badge('permission.labeltruststate.untrusted', 'Untrusted', faCircleExclamation, 'text-red-500')
+      return badge('participant.labelTrustState.untrusted', 'Untrusted', faCircleExclamation, 'text-red-500')
     default:
       return badge(
-        'permission.labeltruststate.unresolved',
+        'participant.labelTrustState.unresolved',
         'Unresolved',
         faCircleQuestion,
         'text-gray-400 dark:text-gray-500'
