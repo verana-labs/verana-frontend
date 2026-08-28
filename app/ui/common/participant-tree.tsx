@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
+import { type DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
 import AddJoinPage from '@/participants/add/page'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import EcosystemBreadcrumb from '@/ui/common/ecosystem-breadcrumb'
@@ -16,6 +17,7 @@ import { resolveTranslatable } from '@/ui/dataview/types'
 import { renderActionComponent } from './data-view-typed'
 import { ModalAction } from './modal-action'
 import ParticipantCard from './participant-card'
+import { collectParticipantDids, filterParticipantTree } from './participant-tree-filter'
 import TreeNodeHeader from './tree-node-header'
 
 type ParticipantTreeProps = {
@@ -173,6 +175,8 @@ export default function ParticipantTree({
   onConnect,
   onRetryFetch,
 }: ParticipantTreeProps) {
+  const [showUnresolvable, setShowUnresolvable] = useState(false)
+  const [showDisabled, setShowDisabled] = useState(false)
   const [showWeight, setShowWeight] = useState(false)
   const [showBusiness, setShowBusiness] = useState(false)
   const [showStats, setShowStats] = useState(false)
@@ -182,6 +186,34 @@ export default function ParticipantTree({
   const [refreshState, setRefreshState] = useState<ParticipantRefreshState>({})
   const detailRef = useRef<HTMLDivElement | null>(null)
   const { latestProcessedHeight } = useIndexerEvents()
+  const [enrichmentByDid, setEnrichmentByDid] = useState<Record<string, DidEnrichment>>({})
+
+  useEffect(() => {
+    if (type !== 'participants') return
+    let cancelled = false
+    const pending = collectParticipantDids(treeState).filter((did) => !enrichmentByDid[did])
+    for (const did of pending) {
+      fetchDidEnrichment(did)
+        .catch((): DidEnrichment => ({ did, trustStatus: 'UNRESOLVED' }))
+        .then((enrichment) => {
+          if (cancelled) return
+          setEnrichmentByDid((prev) => (prev[did] ? prev : { ...prev, [did]: enrichment }))
+        })
+    }
+    return () => {
+      cancelled = true
+    }
+  }, [type, treeState, enrichmentByDid])
+
+  const visibleTree = useMemo(() => {
+    if (type !== 'participants') return treeState
+    const trustByDid = Object.fromEntries(Object.entries(enrichmentByDid).map(([did, e]) => [did, e.trustStatus]))
+    return filterParticipantTree(
+      treeState,
+      { includeUnresolvable: showUnresolvable, includeDisabled: showDisabled },
+      trustByDid
+    )
+  }, [type, treeState, enrichmentByDid, showUnresolvable, showDisabled])
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => (tree[0] ? { [tree[0].nodeId]: true } : {}))
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -299,6 +331,8 @@ export default function ParticipantTree({
           {type === 'participants' ? (
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               {[
+                ['unresolvable', showUnresolvable, setShowUnresolvable],
+                ['disabled', showDisabled, setShowDisabled],
                 ['weight', showWeight, setShowWeight],
                 ['businessrules', showBusiness, setShowBusiness],
                 ['stats', showStats, setShowStats],
@@ -319,9 +353,15 @@ export default function ParticipantTree({
           ) : null}
         </div>
 
+        {type === 'participants' && treeState.length > 0 && visibleTree.length === 0 ? (
+          <p className="p-2 text-sm text-neutral-70 dark:text-neutral-70">
+            {resolveTranslatable({ key: 'participants.filters.allhidden' }, translate) ??
+              'All participants are hidden by the current filters.'}
+          </p>
+        ) : null}
         <Tree
           type={type}
-          nodes={treeState}
+          nodes={visibleTree}
           selectedId={selectedId}
           expanded={expanded}
           showWeight={showWeight}
