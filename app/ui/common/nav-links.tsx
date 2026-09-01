@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
+import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { getNavLinks } from '@/lib/navlinks'
 import { usePendingTasksCtx } from '@/providers/api-rest-query-provider-context'
@@ -23,13 +24,16 @@ export default function NavLinks() {
 
   const pendingTasksCtx = usePendingTasksCtx()
   const totalPendingTasks = pendingTasksCtx.pendingParticipants.reduce((total, item) => total + item.pending_tasks, 0)
-  const links = getNavLinks(totalPendingTasks)
+  const { actingCorporation, attention } = useUserCorporation()
+  const pendingVotes = actingCorporation ? (attention[actingCorporation.corporation.id]?.pendingVotes ?? 0) : 0
+  const links = getNavLinks(totalPendingTasks, pendingVotes)
 
   return (
     <nav className="mt-5 flex-1 px-2 space-y-1">
       {links.map((link, idx: number) => {
         const hasSubLinks = Array.isArray(link.links) && link.links.length > 0
         if (!isWalletConnected && !link.availableOffline) return null
+        if (link.requiresCorporation && !actingCorporation) return null
         return (
           <div key={link.name} className="relative w-full self-stretch justify-center items-center">
             <Link href={link.href} className={pathname === link.href ? 'nav-links-selected' : 'nav-links-link'}>

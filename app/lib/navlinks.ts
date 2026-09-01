@@ -1,4 +1,5 @@
 import {
+  faBuilding,
   faCircleUser,
   faCompass,
   faGaugeHigh,
@@ -19,10 +20,11 @@ interface NavLink {
   featuredService?: boolean
   description?: string
   availableOffline?: boolean
+  requiresCorporation?: boolean
   count?: number
 }
 
-export function getNavLinks(pendingCount?: number): NavLink[] {
+export function getNavLinks(pendingCount?: number, pendingVotes?: number): NavLink[] {
   return [
     {
       name: resolveTranslatable({ key: 'dashboard.title' }, translate) ?? 'Dashboard',
@@ -34,6 +36,13 @@ export function getNavLinks(pendingCount?: number): NavLink[] {
       name: resolveTranslatable({ key: 'account.title' }, translate) ?? 'Account',
       href: '/account',
       icon: faCircleUser,
+    },
+    {
+      name: resolveTranslatable({ key: 'corporation.page.title' }, translate) ?? 'Corporation',
+      href: '/corporation',
+      icon: faBuilding,
+      requiresCorporation: true,
+      count: pendingVotes,
     },
     {
       name: resolveTranslatable({ key: 'ecosystemList.title' }, translate) ?? 'My Ecosystems',
