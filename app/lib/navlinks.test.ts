@@ -3,9 +3,14 @@ import { translate } from '@/i18n/dataview'
 import { allowedOffline, getNavLinks } from '@/lib/navlinks'
 
 describe('getNavLinks', () => {
-  it('returns the five top-level destinations in order', () => {
+  it('returns the six top-level destinations in order', () => {
     const hrefs = getNavLinks().map((link) => link.href)
-    expect(hrefs).toEqual(['/dashboard', '/account', '/ecosystems', '/discover', '/pendingtasks'])
+    expect(hrefs).toEqual(['/dashboard', '/account', '/corporation', '/ecosystems', '/discover', '/pendingtasks'])
+  })
+
+  it('gates the corporation entry on an acting corporation', () => {
+    const byHref = new Map(getNavLinks().map((link) => [link.href, link]))
+    expect(byHref.get('/corporation')?.requiresCorporation).toBe(true)
   })
 
   it('gives every link a non-empty name and an icon', () => {
@@ -22,6 +27,7 @@ describe('getNavLinks', () => {
     expect(byHref.get('/ecosystems')).toBe(translate('ecosystemList.title'))
     expect(byHref.get('/discover')).toBe(translate('discover.title'))
     expect(byHref.get('/pendingtasks')).toBe(translate('task.title'))
+    expect(byHref.get('/corporation')).toBe(translate('corporation.page.title'))
   })
 
   it('marks dashboard and discover as available offline', () => {
