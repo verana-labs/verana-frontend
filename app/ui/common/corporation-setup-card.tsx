@@ -32,7 +32,7 @@ export function CorporationSetupCard({
     fundingUvna: '0',
   })
   const [submitting, setSubmitting] = useState(false)
-  const bootstrapCorporation = useActionCorporation(onDone)
+  const { bootstrap: bootstrapCorporation } = useActionCorporation(onDone)
 
   if (loading || (corporation && hasOperatorGrant)) return null
 
