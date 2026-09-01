@@ -20,7 +20,9 @@ async function activeGrants(address: string): Promise<Record<string, unknown>[]>
   return Array.isArray(payload.authorizations) ? (payload.authorizations as Record<string, unknown>[]) : []
 }
 
-test('bootstrap a corporation and self-grant the wallet as operator (real devnet broadcast)', async ({ page }) => {
+test('bootstrap a corporation through the wizard and self-grant the wallet (real devnet broadcast)', async ({
+  page,
+}) => {
   test.setTimeout(400_000)
   const wallet = await connectWallet(page, { mnemonic: requireFundedMnemonic() })
   const address = wallet.bech32Address
@@ -30,17 +32,36 @@ test('bootstrap a corporation and self-grant the wallet as operator (real devnet
   )
 
   const chainErrors = watchChainErrors(page)
-  await page.goto('/account')
-  await expect(page.getByRole('heading', { name: /corporation setup/i })).toBeVisible({ timeout: 30_000 })
+  await page.goto('/corporation')
+  await expect(page.getByRole('heading', { name: 'Create Corporation' })).toBeVisible({ timeout: 30_000 })
 
   const did = `did:web:e2e-corp-${randomUUID().replace(/-/g, '').slice(0, 8)}.devnet.verana.network`
   await page.getByLabel('Corporation DID').fill(did)
   await page.getByLabel('CGF language').fill('en')
   await page.getByLabel('CGF document URL').fill(DEFAULT_DOC_URL)
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('button', { name: 'Continue' }).click()
+
+  await expect(page.getByText(/you keep no personal privileges/)).toBeVisible()
   await page.getByLabel('Policy funding (uvna)').fill('200000000')
-  await page.getByRole('button', { name: /complete corporation setup/i }).click()
+  await page.getByRole('button', { name: 'Sign & create corporation' }).click()
 
   const errorToast = page.locator('.notify-error')
+  await expect
+    .poll(
+      async () => {
+        if (chainErrors.error) return chainErrors.error
+        if ((await errorToast.count()) > 0) return `toast: ${await errorToast.first().innerText()}`
+        return (await page.getByRole('button', { name: 'Grant me operator authorization' }).count()) > 0
+          ? 'created'
+          : 'pending'
+      },
+      { timeout: 180_000, intervals: [3_000] }
+    )
+    .toBe('created')
+
+  await page.getByRole('button', { name: 'Grant me operator authorization' }).click()
+
   await expect
     .poll(
       async () => {
