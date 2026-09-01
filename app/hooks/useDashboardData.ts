@@ -28,6 +28,15 @@ export function parseDashboardMetricsResponse(payload: unknown): DashboardData {
   }
 }
 
+export async function fetchMetricsResponse(getURL: string): Promise<Response> {
+  try {
+    return await fetch(`${getURL}/all`)
+  } catch {
+    // content blockers drop URLs containing /metrics/; the same-origin path sidesteps the filter lists
+    return fetch('/api/network-stats')
+  }
+}
+
 export function useDashboardData() {
   const getURL = VERANA_REST_ENDPOINT_METRICS
 
@@ -44,7 +53,7 @@ export function useDashboardData() {
       }
       setLoading(true)
       setError(null)
-      const res = await fetch(`${getURL}/all`)
+      const res = await fetchMetricsResponse(getURL)
       const json: unknown = await res.json()
       if (!res.ok) {
         const { error, code } = json as ApiErrorResponse
