@@ -25,7 +25,13 @@ export default function CorporationPage() {
   const searchParams = useSearchParams()
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
-  const { acting, loading: actingLoading, refetch: refetchCorporations, revalidate } = useUserCorporation()
+  const {
+    acting,
+    loading: actingLoading,
+    errorCorporation,
+    refetch: refetchCorporations,
+    revalidate,
+  } = useUserCorporation()
   const { details, loading, error, refetch } = useCorporationDetails(acting?.corporation.id)
   const refreshAfterTx = () => {
     void refetch()
@@ -67,6 +73,10 @@ export default function CorporationPage() {
 
   if (actingLoading || (acting && loading)) {
     return <p className="p-6 text-sm text-gray-500">{t('corporation.page.loading')}</p>
+  }
+
+  if (errorCorporation && !acting) {
+    return <div className="p-6 error-pane">{errorCorporation}</div>
   }
 
   if (!acting || creating) {
