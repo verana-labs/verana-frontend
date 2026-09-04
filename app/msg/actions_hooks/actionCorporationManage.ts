@@ -245,6 +245,9 @@ export function useCorporationManage(onDone?: () => void) {
   const { confirmTx } = useTxConfirm()
   const sendTx = useSendTxDetectingMode(veranaChain)
   const inFlight = useRef(false)
+  const actingRef = useRef(acting)
+  actingRef.current = acting
+  const actingId = () => actingRef.current?.corporation.id ?? null
 
   async function broadcast(
     notificationKey: string,
@@ -260,8 +263,13 @@ export function useCorporationManage(onDone?: () => void) {
       await notify(t('error.msg.pending.transaction'), 'error')
       return
     }
+    const actingBefore = actingId()
     const confirmed = await confirmTx({ ...preview, msgs })
     if (!confirmed) return
+    if (actingId() !== actingBefore) {
+      await notify(t('corporation.select.changed'), 'error')
+      return
+    }
     const rejection = {
       corporation: preview.corporationLabel ?? (acting ? shortenMiddle(acting.corporation.did, 32) : ''),
       msg: msgShortName(msgs[0]?.typeUrl ?? ''),

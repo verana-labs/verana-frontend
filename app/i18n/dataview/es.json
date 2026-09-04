@@ -820,5 +820,9 @@
   "account.corporations.notice.link": "Abrir Corporación",
   "txconfirm.warning.MsgArchiveEcosystem": "Esto cambia el estado de archivo del ecosistema para todos los participantes. Puede revertirse con otra acción de archivo.",
   "txconfirm.warning.MsgArchiveCredentialSchema": "Esto cambia el estado de archivo del esquema de credencial para todos los participantes. Puede revertirse con otra acción de archivo.",
-  "corporation.capability.none": "Tu billetera no tiene autorización para esta acción en la corporación activa."
+  "corporation.capability.none": "Tu billetera no tiene autorización para esta acción en la corporación activa.",
+  "corporation.lost.title": "Ya no puedes actuar por {corporation}",
+  "corporation.lost.desc": "Tu autorización de operador fue revocada o expiró y tu billetera salió de su grupo. No se envió nada con el contexto anterior.",
+  "corporation.lost.choose": "Elegir otra corporación",
+  "corporation.lost.guest": "Continuar sin corporación"
 }

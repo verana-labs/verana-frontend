@@ -25,9 +25,13 @@ export default function CorporationPage() {
   const searchParams = useSearchParams()
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
-  const { acting, loading: actingLoading, refetch: refetchCorporations } = useUserCorporation()
+  const { acting, loading: actingLoading, refetch: refetchCorporations, revalidate } = useUserCorporation()
   const { details, loading, error, refetch } = useCorporationDetails(acting?.corporation.id)
-  const manage = useCorporationManage(() => void refetch())
+  const refreshAfterTx = () => {
+    void refetch()
+    void revalidate()
+  }
+  const manage = useCorporationManage(refreshAfterTx)
   const rotate = useActionSigning('MsgUpdateCorporation')
   const [rotating, setRotating] = useState(false)
   const [composing, setComposing] = useState(false)
@@ -118,7 +122,7 @@ export default function CorporationPage() {
         membership={acting}
         policy={policy}
         members={members}
-        onDone={() => void refetch()}
+        onDone={refreshAfterTx}
         onClose={() => setComposing(false)}
       />
     ),
