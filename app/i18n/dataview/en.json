@@ -761,8 +761,6 @@
   "common.none": "None",
   "common.unknown": "Unknown",
   "corporation.page.modified": "Modified",
-  "account.corporation.moved": "Corporation setup and management moved to the Corporation page.",
-  "account.corporation.moved.link": "Open Corporation",
   "corporation.wizard.cost.funding": "Policy funding",
   "corporation.select.changed": "The acting corporation changed, review the action and submit it again.",
   "txconfirm.title.default": "Confirm transaction",
@@ -818,5 +816,9 @@
   "txconfirm.warning.MsgRevokeOperatorAuthorization": "Irreversible. The operator loses access as soon as the transaction is included.",
   "txconfirm.warning.MsgUpdateCorporation": "This changes the identity anchor of the corporation. Trust resolution restarts from the new DID.",
   "txconfirm.warning.MsgArchiveEcosystem": "This changes the archived state of the ecosystem for every participant. It can be reverted with another archive action.",
-  "txconfirm.warning.MsgArchiveCredentialSchema": "This changes the archived state of the credential schema for every participant. It can be reverted with another archive action."
+  "txconfirm.warning.MsgArchiveCredentialSchema": "This changes the archived state of the credential schema for every participant. It can be reverted with another archive action.",
+  "account.corporations.title": "Corporations",
+  "account.corporations.empty": "This wallet is not an operator or a member of any corporation yet.",
+  "account.corporations.notice": "Corporations are created and managed on the Corporation page.",
+  "account.corporations.notice.link": "Open Corporation"
 }
