@@ -17,6 +17,7 @@ import { type DelegableBuild, type DelegableMsgs, resolveDelegableMsgs } from '@
 import { useNotification } from '@/providers/notification-provider'
 import { useTxConfirm } from '@/providers/tx-confirm-provider'
 import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
+import { shortenMiddle } from '@/util/util'
 
 export interface DelegableMsgsArgs {
   typeUrl: string
@@ -70,9 +71,9 @@ export async function confirmDelegableMsgs(
     if (!simulate) await notify(t('error.msg.corporation.notauthorized', { msgType: msgShortName(typeUrl) }), 'error')
     return null
   }
-  const { mode } = resolution
+  const { mode, corporation } = resolution
   const msgs = resolution.build(proposalMetadata('', '', proposalTitle))
-  if (simulate) return { msgs, mode }
+  if (simulate) return { msgs, mode, corporation }
   const severity = txSeverity(typeUrl) ?? undefined
   const confirmed = await confirmTx({
     titleKey: 'txconfirm.title.default',
@@ -93,6 +94,7 @@ export async function confirmDelegableMsgs(
             granterAddress: actingCorporation.corporation.policyAddress,
           }
         : undefined,
+    corporationLabel: shortenMiddle(actingCorporation.corporation.did, 32),
     costLines,
   })
   if (!confirmed) return null
@@ -100,7 +102,7 @@ export async function confirmDelegableMsgs(
     await notify(t('corporation.select.changed'), 'error')
     return null
   }
-  return { msgs: confirmed.msgs, mode, granter: confirmed.granter }
+  return { msgs: confirmed.msgs, mode, corporation, granter: confirmed.granter }
 }
 
 export function useDelegableMsgs(): (args: DelegableMsgsArgs) => Promise<DelegableMsgs | null> {

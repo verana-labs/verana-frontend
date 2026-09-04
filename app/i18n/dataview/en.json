@@ -220,6 +220,7 @@
   "notification.msg.indexer.pending": "Confirmed on-chain at block {height}, but the indexer has not caught up yet. Displayed data may still be stale.",
   "notification.msg.failed.title": "Transaction failed",
   "notification.msg.connectwallet": "Connect wallet",
+  "notification.msg.chain.unauthorized": "The chain rejected {msg} for {corporation}: your wallet is not authorized.",
   "notification.MsgReclaimTrustDepositYield.success": "Yield successfully claimed",
   "notification.MsgReclaimTrustDepositYield.inprogress": "Claiming yield...",
   "notification.MsgReclaimTrustDepositYield.error": "Unable to claim yield. {code}{msg}",
