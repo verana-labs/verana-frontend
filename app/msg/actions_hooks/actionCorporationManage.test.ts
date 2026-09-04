@@ -18,6 +18,9 @@ vi.mock('@/hooks/useVeranaChain', () => ({ useVeranaChain: () => ({ chain_name: 
 vi.mock('@/providers/indexer-events-provider', () => ({ useIndexerEvents: () => ({ waitForBlock: vi.fn() }) }))
 vi.mock('@/providers/notification-provider', () => ({ useNotification: () => ({ notify: vi.fn() }) }))
 vi.mock('@/msg/util/sendTxDetectingMode', () => ({ useSendTxDetectingMode: () => vi.fn() }))
+vi.mock('@/providers/tx-confirm-provider', () => ({
+  useTxConfirm: () => ({ confirmTx: vi.fn().mockResolvedValue({}) }),
+}))
 
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import {
@@ -28,6 +31,8 @@ import {
   buildUpdateDecisionPolicyMessage,
   buildUpdateMembersMessage,
   corporationSigningMode,
+  delegablePreview,
+  proposalMeta,
   VOTE_OPTIONS,
   wrapInProposal,
 } from './actionCorporationManage'
@@ -159,6 +164,58 @@ describe('wrapInProposal', () => {
     const wrapped = MsgUpdateCorporation.decode(value.messages[0].value)
     expect(wrapped.corporation).toBe(POLICY)
     expect(wrapped.operator).toBe(POLICY)
+  })
+})
+
+describe('delegablePreview', () => {
+  it('describes an operator revoke as irreversible with its warning', () => {
+    const preview = delegablePreview(
+      '/verana.de.v1.MsgRevokeOperatorAuthorization',
+      'operator',
+      membership(),
+      'verana1me',
+      'Revoke',
+      { operator: 'verana1grantee' }
+    )
+    expect(preview.mode).toBe('operator')
+    expect(preview.payer).toBe('verana1me')
+    expect(preview.severity).toBe('irreversible')
+    expect(preview.warning).toMatch(/^Irreversible\./)
+    expect(preview.effect).toBe('Revoke the operator access of verana1grantee on did:web:corp.example.')
+    expect(preview.proposalTitle).toBeUndefined()
+  })
+
+  it('carries the proposal title only in proposal mode and leaves the repayment unflagged', () => {
+    const preview = delegablePreview(
+      '/verana.td.v1.MsgRepaySlashedTrustDeposit',
+      'proposal',
+      membership(),
+      'verana1me',
+      'Repay',
+      { amount: '2 VNA' }
+    )
+    expect(preview.mode).toBe('proposal')
+    expect(preview.severity).toBeUndefined()
+    expect(preview.warning).toBeUndefined()
+    expect(preview.proposalTitle).toBe('Repay')
+    expect(preview.effect).toBe('Repay 2 VNA of slashed trust deposit for did:web:corp.example.')
+  })
+})
+
+describe('proposalMeta', () => {
+  it('falls back to the default title and mirrors it into the summary', () => {
+    expect(proposalMeta({}, 'Rotate DID')).toEqual({ title: 'Rotate DID', summary: 'Rotate DID' })
+    expect(proposalMeta({ proposalTitle: '  ', proposalSummary: '' }, 'Rotate DID')).toEqual({
+      title: 'Rotate DID',
+      summary: 'Rotate DID',
+    })
+  })
+
+  it('keeps what the composer typed', () => {
+    expect(proposalMeta({ proposalTitle: 'Custom', proposalSummary: 'Why' }, 'Rotate DID')).toEqual({
+      title: 'Custom',
+      summary: 'Why',
+    })
   })
 })
 

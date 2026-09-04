@@ -1,6 +1,7 @@
 import { expect, type Page, test } from '@playwright/test'
 import { connectWallet } from './support/connect'
 import { installCorporationStubs, seedActingCorporation } from './support/corp-stubs'
+import { installMockChain } from './support/mock-chain'
 
 async function noHorizontalOverflow(page: Page) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
@@ -45,7 +46,7 @@ test('tabs, deep links and proposal actions', async ({ page }) => {
   await expect(page.getByText('/verana.de.v1.MsgGrantOperatorAuthorization').first()).toBeVisible()
   await expect(page.getByText('No votes recorded.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Vote yes' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Withdraw' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Withdraw', exact: true })).toBeVisible()
 
   await page.getByRole('button', { name: /#40/ }).click()
   await expect(page.getByText('/verana.co.v1.MsgUpdateCorporation').first()).toBeVisible()
@@ -92,7 +93,8 @@ test('a fresh wallet sees no corporation nav and lands on the wizard', async ({ 
 
 test('the creation wizard gates each step on valid input', async ({ page }) => {
   await installCorporationStubs(page, { fresh: true })
-  await connectWallet(page)
+  const wallet = await connectWallet(page)
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubCorporation: false })
   await page.goto('/corporation')
 
   const next = page.getByRole('button', { name: 'Continue' })
@@ -113,7 +115,9 @@ test('the creation wizard gates each step on valid input', async ({ page }) => {
   await page.getByRole('button', { name: 'Continue' }).click()
 
   await expect(page.getByText(/you keep no personal privileges/)).toBeVisible()
+  await expect(page.getByText('Network fee').locator('..')).toContainText(/VNA/, { timeout: 30_000 })
   await expect(page.getByRole('button', { name: 'Sign & create corporation' })).toBeEnabled()
+  await mock.teardown()
 })
 
 test('a missing trust deposit renders the empty state', async ({ page }) => {
@@ -187,4 +191,33 @@ test('the proposal composer gates each kind on valid input', async ({ page }) =>
   await expect(submit).toBeDisabled()
   await page.getByLabel('DID', { exact: true }).fill('did:web:next.example')
   await expect(submit).toBeEnabled()
+})
+
+test('a vote opens the confirmation, cancel broadcasts nothing and confirm broadcasts once', async ({ page }) => {
+  await installCorporationStubs(page)
+  await seedActingCorporation(page, 13)
+  const wallet = await connectWallet(page)
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubSri: false, stubCorporation: false })
+
+  await page.goto('/corporation?tab=proposals')
+  await expect(page.getByText('#41')).toBeVisible({ timeout: 15_000 })
+  await page.getByRole('button', { name: /#41/ }).click()
+  await page.getByRole('button', { name: 'Vote yes' }).click()
+
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toBeVisible()
+  await expect(dialog.getByText('Executes as')).toBeVisible()
+  await expect(dialog.getByText('Network fee')).toBeVisible()
+  await expect(dialog.getByText(/VNA/)).toBeVisible({ timeout: 30_000 })
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(dialog).toBeHidden()
+  expect(mock.seenMethods()).not.toContain('broadcast_tx_sync')
+
+  await page.getByRole('button', { name: 'Vote yes' }).click()
+  await expect(dialog.getByText(/VNA/)).toBeVisible({ timeout: 30_000 })
+  await dialog.getByRole('button', { name: 'Confirm' }).click()
+  await expect
+    .poll(() => mock.seenMethods().filter((method) => method === 'broadcast_tx_sync').length, { timeout: 30_000 })
+    .toBe(1)
+  await mock.teardown()
 })

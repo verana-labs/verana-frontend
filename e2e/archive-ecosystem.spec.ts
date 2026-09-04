@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { expect, type Page, test } from '@playwright/test'
 import { connectWallet } from './support/connect'
-import { createEcosystem } from './support/flows'
+import { confirmTransaction, createEcosystem } from './support/flows'
 import { requireFundedMnemonic } from './support/mnemonic'
 
 const confirmIfPresent = async (page: Page) => {
@@ -32,6 +32,7 @@ test('archive then unarchive an ecosystem (real devnet broadcast)', async ({ pag
       .getByRole('button', { name: /^archive$/i })
       .click()
     await confirmIfPresent(page)
+    await confirmTransaction(page)
     await expect(archivedPill(page)).toBeVisible({ timeout: 120_000 })
   })
 
@@ -40,6 +41,7 @@ test('archive then unarchive an ecosystem (real devnet broadcast)', async ({ pag
       .getByRole('button', { name: /^unarchive$/i })
       .click()
     await confirmIfPresent(page)
+    await confirmTransaction(page)
     await expect(archivedPill(page)).toHaveCount(0, { timeout: 120_000 })
     await expect(mutableSection(page).getByRole('button', { name: /^archive$/i })).toBeVisible({ timeout: 20_000 })
   })

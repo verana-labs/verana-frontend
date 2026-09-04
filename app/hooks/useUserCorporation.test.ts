@@ -12,8 +12,8 @@ import {
   type CorporationMembership,
   chooseActingMembership,
   discoverCorporations,
+  findCorporationMembership,
   loadActingCorporationId,
-  resolveUserCorporation,
   saveActingCorporationId,
 } from '@/lib/corporation-discovery'
 
@@ -176,8 +176,8 @@ describe('acting persistence edge cases', () => {
   })
 })
 
-describe('resolveUserCorporation', () => {
-  it('falls back to the first operator membership when nothing is persisted', async () => {
+describe('findCorporationMembership', () => {
+  it('returns the membership of the requested corporation only', async () => {
     stubFetch({
       'https://indexer.example/v4/delegation/operator-authorizations': {
         authorizations: [
@@ -191,58 +191,29 @@ describe('resolveUserCorporation', () => {
       'https://indexer.example/v4/corporation/get/9': corporationPayload(9),
     })
 
-    const resolution = await resolveUserCorporation('verana1operator')
+    const operator = await findCorporationMembership('verana1operator', 9)
+    const member = await findCorporationMembership('verana1operator', 7)
 
-    expect(resolution.corporation?.id).toBe(9)
-    expect(resolution.hasOperatorGrant).toBe(true)
-    expect(resolution.grantedMessageTypes).toEqual(['/verana.ec.v1.MsgCreateEcosystem'])
+    expect(operator?.corporation.id).toBe(9)
+    expect(operator?.grantedMessageTypes).toEqual(['/verana.ec.v1.MsgCreateEcosystem'])
+    expect(member?.grantedMessageTypes).toEqual([])
+    expect(await findCorporationMembership('verana1operator', 8)).toBeNull()
   })
 
-  it('returns an empty resolution when the account has no corporation', async () => {
+  it('returns null when the account has no membership at all', async () => {
     stubFetch({
       'https://indexer.example/v4/delegation/operator-authorizations': { authorizations: [] },
       'https://indexer.example/v4/group/corporations-by-member': { memberships: [] },
     })
 
-    const resolution = await resolveUserCorporation('verana1operator')
-
-    expect(resolution).toEqual({ corporation: null, hasOperatorGrant: false, grantedMessageTypes: [] })
+    expect(await findCorporationMembership('verana1operator', 9)).toBeNull()
   })
 
-  it('honors a persisted acting corporation over the operator-first fallback', async () => {
-    const store = new Map<string, string>()
-    vi.stubGlobal('window', {
-      localStorage: {
-        getItem: (key: string) => store.get(key) ?? null,
-        setItem: (key: string, value: string) => void store.set(key, value),
-        removeItem: (key: string) => void store.delete(key),
-      },
-    })
-    saveActingCorporationId('verana1operator', 7)
-    stubFetch({
-      'https://indexer.example/v4/delegation/operator-authorizations': {
-        authorizations: [
-          { id: 1, corporation_id: 9, operator: 'verana1operator', msg_types: ['/verana.ec.v1.MsgCreateEcosystem'] },
-        ],
-      },
-      'https://indexer.example/v4/group/corporations-by-member': {
-        memberships: [{ corporation_id: 7, weight: '1' }],
-      },
-      'https://indexer.example/v4/corporation/get/7': corporationPayload(7),
-      'https://indexer.example/v4/corporation/get/9': corporationPayload(9),
-    })
-
-    const resolution = await resolveUserCorporation('verana1operator')
-
-    expect(resolution.corporation?.id).toBe(7)
-    expect(resolution.hasOperatorGrant).toBe(false)
-  })
-
-  it('propagates a discovery failure instead of returning an empty resolution', async () => {
+  it('propagates a discovery failure instead of returning null', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({ ok: false, status: 502, json: async () => ({}) }))
     )
-    await expect(resolveUserCorporation('verana1operator')).rejects.toThrow('502')
+    await expect(findCorporationMembership('verana1operator', 9)).rejects.toThrow('502')
   })
 })

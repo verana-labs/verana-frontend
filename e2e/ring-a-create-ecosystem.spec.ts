@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { connectWallet } from './support/connect'
-import { fillEcosystemForm } from './support/flows'
+import { confirmTransaction, fillEcosystemForm } from './support/flows'
 import { installMockChain } from './support/mock-chain'
 
 const FAKE_ECOSYSTEM_ID = '777'
@@ -18,6 +18,7 @@ test('Ring A — create ecosystem reaches faked success without a real chain wri
     docUrl: `https://ring-a-${stamp}.example/egf.md`,
   })
   await page.locator('.btn-action-confirm').click()
+  await confirmTransaction(page)
 
   const ecosystemUrl = new RegExp(`/ecosystems/${FAKE_ECOSYSTEM_ID}(\\?|$)`)
   await expect.poll(() => page.url(), { timeout: 60_000 }).toMatch(ecosystemUrl)

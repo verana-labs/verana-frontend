@@ -21,12 +21,6 @@ export interface CorporationMembership {
   grantedMessageTypes: string[]
 }
 
-export interface UserCorporationResolution {
-  corporation: UserCorporation | null
-  hasOperatorGrant: boolean
-  grantedMessageTypes: string[]
-}
-
 const { record, string, number, stringArray, optionalString } = indexerValidators('corporation')
 
 async function fetchJson(url: string, context: string): Promise<unknown> {
@@ -166,22 +160,10 @@ export function chooseActingMembership(
   return null
 }
 
-export function toResolution(membership: CorporationMembership | null): UserCorporationResolution {
-  if (!membership) return { corporation: null, hasOperatorGrant: false, grantedMessageTypes: [] }
-  return {
-    corporation: membership.corporation,
-    hasOperatorGrant: membership.grantedMessageTypes.length > 0,
-    grantedMessageTypes: membership.grantedMessageTypes,
-  }
-}
-
-export async function resolveUserCorporation(address: string): Promise<UserCorporationResolution> {
+export async function findCorporationMembership(
+  address: string,
+  corporationId: number
+): Promise<CorporationMembership | null> {
   const memberships = await discoverCorporations(address)
-  const persistedId = typeof window === 'undefined' ? null : loadActingCorporationId(address)
-  const chosen =
-    chooseActingMembership(memberships, persistedId) ??
-    memberships.find((membership) => membership.operator) ??
-    memberships[0] ??
-    null
-  return toResolution(chosen)
+  return memberships.find((membership) => membership.corporation.id === corporationId) ?? null
 }

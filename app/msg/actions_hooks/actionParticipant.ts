@@ -17,14 +17,17 @@ import {
 } from '@verana-labs/verana-types/codec/verana/pp/v1/tx'
 import { type OptionalUInt64, ParticipantRole } from '@verana-labs/verana-types/codec/verana/pp/v1/types'
 import { useRef } from 'react'
-import { resolveUserCorporation, useUserCorporation } from '@/hooks/useUserCorporation'
+import { useDelegableMsgs } from '@/hooks/useDelegableMsgs'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
+import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import {
   MSG_ERROR_ACTION_PARTICIPANT,
   MSG_INPROGRESS_ACTION_PARTICIPANT,
+  MSG_NOTIFICATION_PROPOSAL,
   MSG_SUCCESS_ACTION_PARTICIPANT,
 } from '@/msg/constants/notificationMsgForMsgType'
+import { delegableTypeUrl, proposalTitleFrom } from '@/msg/util/delegable-msgs'
 import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
@@ -33,7 +36,8 @@ import { findEventAttribute } from '@/msg/util/txEvents'
 import { usePendingTasksCtx } from '@/providers/api-rest-query-provider-context'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
-import { resolveTranslatable } from '@/ui/dataview/types'
+import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
+import { formatVNAFromUVNA } from '@/util/util'
 
 type ParticipantContext = {
   corporation: string
@@ -261,10 +265,23 @@ function isDeliverTxResponse(result: DeliverTxResponse | SimulateResult): result
   return 'code' in result
 }
 
+function effectValues(params: ParticipantActionParams): I18nValues {
+  return {
+    id: 'id' in params ? String(params.id) : 'schemaId' in params ? String(params.schemaId) : null,
+    did: 'did' in params ? params.did : null,
+    role: 'role' in params ? params.role : null,
+    amount: params.msgType === 'MsgSlashParticipantTrustDeposit' ? formatVNAFromUVNA(String(params.amount)) : null,
+  }
+}
+
+function t(key: string, values?: I18nValues): string {
+  return resolveTranslatable({ key, values }, translate) ?? key
+}
+
 export function useActionParticipant(onCancel?: () => void, onRefresh?: (id?: string, txHeight?: number) => void) {
   const veranaChain = useVeranaChain()
   const { address, isWalletConnected } = useChain(veranaChain.chain_name)
-  const { corporation, grantedMessageTypes, loading: corporationLoading } = useUserCorporation()
+  const delegable = useDelegableMsgs()
   const { refetch: refetchPendingTasks } = usePendingTasksCtx()
   const { waitForBlock } = useIndexerEvents()
   const { notify } = useNotification()
@@ -276,60 +293,50 @@ export function useActionParticipant(onCancel?: () => void, onRefresh?: (id?: st
     simulate = false
   ): Promise<DeliverTxResponse | SimulateResult | undefined> => {
     if (!isWalletConnected || !address) {
-      await notify(resolveTranslatable({ key: 'notification.msg.connectwallet' }, translate) ?? '', 'error')
-      return
-    }
-    const authority =
-      corporation && !corporationLoading ? { corporation, grantedMessageTypes } : await resolveUserCorporation(address)
-    if (!authority.corporation) {
-      if (!simulate)
-        await notify(resolveTranslatable({ key: 'error.msg.corporation.required' }, translate) ?? '', 'error')
+      await notify(t('notification.msg.connectwallet'), 'error')
       return
     }
     if (inFlight.current) {
-      await notify(resolveTranslatable({ key: 'error.msg.pending.transaction' }, translate) ?? '', 'error')
+      await notify(t('error.msg.pending.transaction'), 'error')
       return
     }
 
     inFlight.current = true
     let id = 'id' in params ? String(params.id) : undefined
-    if (!simulate) {
-      void notify(
-        MSG_INPROGRESS_ACTION_PARTICIPANT[params.msgType](),
-        'inProgress',
-        resolveTranslatable({ key: 'notification.msg.inprogress.title' }, translate)
-      )
-    }
-
+    let mode: CorporationSigningMode = 'operator'
+    const errorMessage = (code?: number, msg?: string) =>
+      mode === 'proposal'
+        ? MSG_NOTIFICATION_PROPOSAL.error(code, msg)
+        : MSG_ERROR_ACTION_PARTICIPANT[params.msgType](id, code, msg)
     try {
-      const message = buildParticipantMessage(params, {
-        corporation: authority.corporation.policyAddress,
-        operator: address,
+      const typeUrl = delegableTypeUrl(params.msgType)
+      if (!typeUrl) throw new Error(`Unsupported message type: ${params.msgType}`)
+      const effect = t(`txconfirm.effect.${params.msgType}`, effectValues(params))
+      const resolved = await delegable({
+        typeUrl,
+        build: (corporation, operator) => buildParticipantMessage(params, { corporation, operator }),
+        effect,
+        proposalTitle: proposalTitleFrom(effect),
+        simulate,
       })
-      if (!authority.grantedMessageTypes.includes(message.typeUrl)) {
-        if (!simulate) {
-          await notify(
-            resolveTranslatable(
-              { key: 'error.msg.corporation.notauthorized', values: { msgType: params.msgType } },
-              translate
-            ) ?? '',
-            'error'
-          )
-        }
-        return
-      }
-      const result = await sendTx({ msgs: [message], memo: params.msgType, simulate })
+      if (!resolved) return
+      mode = resolved.mode
       if (simulate) {
+        const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType, simulate })
         if (isDeliverTxResponse(result)) throw new Error('Expected a simulation result')
         return result
       }
+      void notify(
+        mode === 'proposal'
+          ? MSG_NOTIFICATION_PROPOSAL.inprogress()
+          : MSG_INPROGRESS_ACTION_PARTICIPANT[params.msgType](),
+        'inProgress',
+        t('notification.msg.inprogress.title')
+      )
+      const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType })
       if (!isDeliverTxResponse(result)) throw new Error('Expected a transaction response')
       if (result.code !== 0) {
-        await notify(
-          MSG_ERROR_ACTION_PARTICIPANT[params.msgType](id, result.code, result.rawLog),
-          'error',
-          resolveTranslatable({ key: 'notification.msg.failed.title' }, translate)
-        )
+        await notify(errorMessage(result.code, result.rawLog), 'error', t('notification.msg.failed.title'))
         return result
       }
 
@@ -347,7 +354,7 @@ export function useActionParticipant(onCancel?: () => void, onRefresh?: (id?: st
         runAfterIndexerCatchesUp(waitForBlock, txHeight, refresh)
       }
       const notification = successfulTxNotification(
-        MSG_SUCCESS_ACTION_PARTICIPANT[params.msgType](id),
+        mode === 'proposal' ? MSG_NOTIFICATION_PROPOSAL.success() : MSG_SUCCESS_ACTION_PARTICIPANT[params.msgType](id),
         txHeight,
         indexed
       )
@@ -356,13 +363,9 @@ export function useActionParticipant(onCancel?: () => void, onRefresh?: (id?: st
       return result
     } catch (error) {
       await notify(
-        MSG_ERROR_ACTION_PARTICIPANT[params.msgType](
-          id,
-          undefined,
-          error instanceof Error ? error.message : String(error)
-        ),
+        errorMessage(undefined, error instanceof Error ? error.message : String(error)),
         'error',
-        resolveTranslatable({ key: 'notification.msg.failed.title' }, translate)
+        t('notification.msg.failed.title')
       )
     } finally {
       inFlight.current = false

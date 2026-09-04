@@ -4,9 +4,13 @@ import { MsgGrantOperatorAuthorization } from '@verana-labs/verana-types/codec/v
 import { MsgSend } from 'cosmjs-types/cosmos/bank/v1beta1/tx'
 import { MsgSubmitProposal } from 'cosmjs-types/cosmos/group/v1/tx'
 import { ThresholdDecisionPolicy } from 'cosmjs-types/cosmos/group/v1/types'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
-import { buildCreateCorporationMessage, buildGrantOperatorMessages } from './actionCorporation'
+import {
+  buildCreateCorporationMessage,
+  buildCreateCorporationMessages,
+  buildGrantOperatorMessages,
+} from './actionCorporation'
 
 describe('buildCreateCorporationMessage', () => {
   it('round-trips the V4 corporation bootstrap and Cosmos group policy', () => {
@@ -40,6 +44,35 @@ describe('buildCreateCorporationMessage', () => {
     expect(decisionPolicy.threshold).toBe('1')
     expect(decisionPolicy.windows?.votingPeriod?.seconds).toBe(BigInt(60))
     expect(decisionPolicy.windows?.minExecutionPeriod?.seconds).toBe(BigInt(0))
+  })
+})
+
+describe('buildCreateCorporationMessages', () => {
+  const params = { did: 'did:web:corporation.example', language: 'en', docUrl: 'https://example.com/corporation.pdf' }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('fetches the document digest and yields the single create message createOnly broadcasts', async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ sri: 'sha384-corporation' }) }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const messages = await buildCreateCorporationMessages(params, 'verana1signer')
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/sri?url=https%3A%2F%2Fexample.com%2Fcorporation.pdf')
+    expect(messages).toEqual([buildCreateCorporationMessage(params, 'verana1signer', 'sha384-corporation')])
+  })
+
+  it('rejects when the digest endpoint fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false }))
+    )
+
+    await expect(buildCreateCorporationMessages(params, 'verana1signer')).rejects.toThrow(
+      'Unable to calculate the document digest'
+    )
   })
 })
 
