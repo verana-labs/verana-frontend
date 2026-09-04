@@ -1,8 +1,17 @@
 import type { Page } from '@playwright/test'
+import {
+  ACME_DID,
+  ACME_POLICY_ADDRESS,
+  GROUP_MEMBERS,
+  HARNESS_ADDRESS,
+  HISTORY_13,
+  OPERATOR_AUTHORIZATIONS,
+  PLAIN_DID,
+  PROPOSALS,
+  VOTES,
+} from './corp-fixtures'
 
-export const HARNESS_ADDRESS = 'verana1dnucfytqvaat3a5m2tcc3dan0e3x8826h0fe6c'
-export const ACME_DID = 'did:web:acme-trust.ch'
-export const PLAIN_DID = 'did:web:keplr-maxime-0825.devnet.verana.network'
+export { ACME_DID, HARNESS_ADDRESS, PLAIN_DID } from './corp-fixtures'
 
 export type CorpStubOptions = {
   memberOnly?: boolean
@@ -22,34 +31,21 @@ export async function seedActingCorporation(page: Page, corporationId: number) {
 export async function installCorporationStubs(page: Page, opts: CorpStubOptions = {}) {
   const { memberOnly = false, trustDeposit404 = false, fresh = false } = opts
 
-  await page.route('**/v4/delegation/operator-authorizations*', (route) =>
-    route.fulfill({
+  await page.route('**/v4/delegation/operator-authorizations*', (route) => {
+    if (fresh || memberOnly) return route.fulfill({ json: { authorizations: [] } })
+    const params = new URL(route.request().url()).searchParams
+    const operator = params.get('operator')
+    const corporationId = params.get('corporation_id')
+    return route.fulfill({
       json: {
-        authorizations:
-          fresh || memberOnly
-            ? []
-            : [
-                {
-                  id: 1,
-                  corporation_id: 12,
-                  operator: HARNESS_ADDRESS,
-                  msg_types: ['/verana.ec.v1.MsgCreateEcosystem'],
-                },
-                {
-                  id: 2,
-                  corporation_id: 13,
-                  operator: HARNESS_ADDRESS,
-                  msg_types: [
-                    '/verana.co.v1.MsgUpdateCorporation',
-                    '/verana.de.v1.MsgGrantOperatorAuthorization',
-                    '/verana.de.v1.MsgRevokeOperatorAuthorization',
-                    '/verana.td.v1.MsgRepaySlashedTrustDeposit',
-                  ],
-                },
-              ],
+        authorizations: OPERATOR_AUTHORIZATIONS.filter(
+          (row) =>
+            (operator === null || row.operator === operator) &&
+            (corporationId === null || String(row.corporation_id) === corporationId)
+        ),
       },
     })
-  )
+  })
   await page.route('**/v4/group/corporations-by-member*', (route) =>
     route.fulfill({
       json: {
@@ -82,13 +78,19 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
         corporation: {
           id: 13,
           did: ACME_DID,
-          policy_address: 'verana10ezj2lmcj3flaacqwrzv278aled0pen8cnx257sggeng2fdel53q0929dj',
+          policy_address: ACME_POLICY_ADDRESS,
           language: 'de',
           created: '2026-09-01T10:00:00Z',
           modified: '2026-09-01T10:00:00Z',
         },
       },
     })
+  )
+  await page.route('**/v4/corporation/history/12*', (route) =>
+    route.fulfill({ json: { entity_type: 'Corporation', entity_id: '12', activity: [] } })
+  )
+  await page.route('**/v4/corporation/history/13*', (route) =>
+    route.fulfill({ json: { entity_type: 'Corporation', entity_id: '13', activity: HISTORY_13 } })
   )
   for (const id of [12, 13]) {
     await page.route(`**/v4/group/get/${id}`, (route) =>
@@ -98,7 +100,7 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
             corporation_id: id,
             group_id: id,
             version: 2,
-            total_weight: '5',
+            total_weight: '6',
             created_at: '2026-09-01T10:00:00Z',
             policy: {
               address: 'verana1policy',
@@ -109,14 +111,7 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
                 windows: { voting_period: '300s', min_execution_period: '0s' },
               },
             },
-            members: [
-              { address: HARNESS_ADDRESS, weight: '3', added_at: '2026-09-01T10:00:00Z' },
-              {
-                address: 'verana1h5m6c6a33kncyrm05rz4k4lj9u2q2t2dkzrnts',
-                weight: '2',
-                added_at: '2026-09-01T10:00:00Z',
-              },
-            ],
+            members: GROUP_MEMBERS,
           },
         },
       })
@@ -147,34 +142,12 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
     if (url.includes('pending_voter')) {
       return route.fulfill({ json: { proposals: url.includes('corporation_id=13') ? [{ id: 41 }] : [] } })
     }
-    return route.fulfill({
-      json: {
-        proposals: [
-          {
-            id: 41,
-            corporation_id: 13,
-            status: 'SUBMITTED',
-            submit_time: '2026-09-01T11:00:00Z',
-            voting_period_end: '2026-09-01T12:00:00Z',
-            executor_result: null,
-            proposers: [HARNESS_ADDRESS],
-            messages: [{ '@type': '/verana.de.v1.MsgGrantOperatorAuthorization', grantee: 'verana1grantee' }],
-          },
-          {
-            id: 40,
-            corporation_id: 13,
-            status: 'ACCEPTED',
-            submit_time: '2026-09-01T10:00:00Z',
-            voting_period_end: '2026-09-01T10:05:00Z',
-            executor_result: 'SUCCESS',
-            proposers: [HARNESS_ADDRESS],
-            messages: [{ '@type': '/verana.co.v1.MsgUpdateCorporation', did: ACME_DID }],
-          },
-        ],
-      },
-    })
+    return route.fulfill({ json: { proposals: PROPOSALS } })
   })
-  await page.route('**/v4/group/votes*', (route) => route.fulfill({ json: { votes: [] } }))
+  await page.route('**/v4/group/votes*', (route) => {
+    const proposalId = Number(new URL(route.request().url()).searchParams.get('proposal_id'))
+    return route.fulfill({ json: { votes: VOTES[proposalId] ?? [] } })
+  })
   await page.route('**/v4/delegation/vs-operator-authorizations*', (route) =>
     route.fulfill({ json: { authorizations: [] } })
   )

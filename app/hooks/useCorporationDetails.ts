@@ -66,6 +66,23 @@ export interface ProposalRow {
   messages: Record<string, unknown>[]
 }
 
+export interface ActivityRow {
+  id: number
+  timestamp: string
+  blockHeight: number
+  msg: string
+  account: string | null
+  changes: Record<string, unknown>
+}
+
+export interface ProposalTally {
+  yes: number
+  no: number
+  abstain: number
+  veto: number
+  total: number
+}
+
 export interface CorporationDetails {
   profile: CorporationProfile
   members: GroupMemberRow[]
@@ -74,6 +91,7 @@ export interface CorporationDetails {
   operatorAuthorizations: OperatorAuthorizationRow[]
   vsOperatorAuthorizations: VsOperatorAuthorizationRow[]
   proposals: ProposalRow[]
+  history: ActivityRow[]
 }
 
 async function fetchJson(url: string, context: string): Promise<unknown> {
@@ -201,6 +219,104 @@ export async function fetchProposalVotes(proposalId: number): Promise<VoteRow[]>
   })
 }
 
+function newestFirst(a: ActivityRow, b: ActivityRow): number {
+  const byTime = Date.parse(b.timestamp) - Date.parse(a.timestamp)
+  if (Number.isFinite(byTime) && byTime !== 0) return byTime
+  return b.blockHeight - a.blockHeight || b.id - a.id
+}
+
+export function parseHistory(payload: unknown): ActivityRow[] {
+  const envelope = record(payload, 'history response')
+  if (!Array.isArray(envelope.activity)) throw new Error('Invalid corporation page response: history.activity')
+  return envelope.activity
+    .map((entry, index) => {
+      const row = record(entry, `activity[${index}]`)
+      const changes = row.changes
+      return {
+        id: integer(row.id, `activity[${index}].id`),
+        timestamp: string(row.timestamp, `activity[${index}].timestamp`),
+        blockHeight: integer(row.block_height, `activity[${index}].block_height`),
+        msg: string(row.msg, `activity[${index}].msg`),
+        account: nullableString(row.account ?? null, `activity[${index}].account`),
+        changes: changes === undefined || changes === null ? {} : record(changes, `activity[${index}].changes`),
+      }
+    })
+    .sort(newestFirst)
+}
+
+export async function fetchCorporationHistory(corporationId: number): Promise<ActivityRow[]> {
+  try {
+    const payload = await fetchJson(
+      `${VERANA_REST_ENDPOINT_CORPORATION}/history/${corporationId}?limit=64`,
+      'Unable to fetch the history'
+    )
+    return parseHistory(payload)
+  } catch (cause) {
+    logger.error('corporation history', cause)
+    return []
+  }
+}
+
+type VoteBucket = Exclude<keyof ProposalTally, 'total'>
+
+const VOTE_BUCKETS = new Map<string, VoteBucket>([
+  ['YES', 'yes'],
+  ['NO', 'no'],
+  ['ABSTAIN', 'abstain'],
+  ['NO_WITH_VETO', 'veto'],
+])
+
+export function tallyVotes(votes: VoteRow[], members: GroupMemberRow[]): ProposalTally {
+  const weights = new Map(members.map((member) => [member.address, Number(member.weight)]))
+  const tally: ProposalTally = { yes: 0, no: 0, abstain: 0, veto: 0, total: 0 }
+  for (const vote of votes) {
+    const bucket = VOTE_BUCKETS.get(
+      vote.option
+        .trim()
+        .toUpperCase()
+        .replace(/^VOTE_OPTION_/, '')
+    )
+    if (!bucket) continue
+    const weight = weights.get(vote.voter) ?? 0
+    const counted = Number.isFinite(weight) ? weight : 0
+    tally[bucket] += counted
+    tally.total += counted
+  }
+  return tally
+}
+
+export function useProposalVotes(proposalIds: number[]) {
+  const key = proposalIds.join(',')
+  const [votes, setVotes] = useState<Record<number, VoteRow[]>>({})
+  const [loading, setLoading] = useState(proposalIds.length > 0)
+  const requestRef = useRef(0)
+
+  useEffect(() => {
+    const requestId = ++requestRef.current
+    const ids = key ? key.split(',').map(Number) : []
+    if (ids.length === 0) {
+      setVotes({})
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    void Promise.all(
+      ids.map((id) =>
+        fetchProposalVotes(id).catch((cause: unknown) => {
+          logger.error(`proposal ${id} votes`, cause)
+          return [] as VoteRow[]
+        })
+      )
+    ).then((results) => {
+      if (requestRef.current !== requestId) return
+      setVotes(Object.fromEntries(ids.map((id, index) => [id, results[index]])))
+      setLoading(false)
+    })
+  }, [key])
+
+  return { votes, loading }
+}
+
 export function useCorporationDetails(corporationId: number | undefined) {
   const [details, setDetails] = useState<CorporationDetails | null>(null)
   const [loading, setLoading] = useState(true)
@@ -230,7 +346,7 @@ export function useCorporationDetails(corporationId: number | undefined) {
           'Unable to fetch proposals'
         ),
       ])
-      const [trustDeposit, vsAuthorizations] = await Promise.all([
+      const [trustDeposit, vsAuthorizations, history] = await Promise.all([
         fetchJson(`${VERANA_REST_ENDPOINT_TRUST_DEPOSIT}/get/${corporationId}`, 'Unable to fetch the trust deposit')
           .then(parseTrustDeposit)
           .catch((cause: unknown) => {
@@ -246,6 +362,7 @@ export function useCorporationDetails(corporationId: number | undefined) {
             logger.error('vs operator authorizations', cause)
             return [] as VsOperatorAuthorizationRow[]
           }),
+        fetchCorporationHistory(corporationId),
       ])
       if (requestRef.current !== requestId) return
       const { members, policy } = parseGroup(groupPayload)
@@ -257,6 +374,7 @@ export function useCorporationDetails(corporationId: number | undefined) {
         operatorAuthorizations: parseOperatorAuthorizations(authPayload),
         vsOperatorAuthorizations: vsAuthorizations,
         proposals: parseProposals(proposalsPayload),
+        history,
       })
     } catch (cause) {
       if (requestRef.current !== requestId) return

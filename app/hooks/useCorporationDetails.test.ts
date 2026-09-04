@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/config/env', () => ({
   VERANA_REST_ENDPOINT_CORPORATION: 'https://indexer.example/v4/corporation',
@@ -7,13 +7,17 @@ vi.mock('@/config/env', () => ({
   VERANA_REST_ENDPOINT_TRUST_DEPOSIT: 'https://indexer.example/v4/trust-deposit',
 }))
 
+import { logger } from '@/lib/logger'
 import {
+  fetchCorporationHistory,
   parseGroup,
+  parseHistory,
   parseOperatorAuthorizations,
   parseProfile,
   parseProposals,
   parseTrustDeposit,
   parseVsOperatorAuthorizations,
+  tallyVotes,
 } from './useCorporationDetails'
 
 describe('parseProfile', () => {
@@ -190,5 +194,130 @@ describe('parseProposals', () => {
       proposers: [],
       messages: [],
     })
+  })
+})
+
+describe('parseHistory', () => {
+  it('reads the live activity shape newest first and tolerates a missing account', () => {
+    const rows = parseHistory({
+      entity_type: 'Corporation',
+      entity_id: '13',
+      activity: [
+        {
+          id: 1,
+          timestamp: '2026-08-30T09:00:00Z',
+          block_height: 404000,
+          entity_type: 'Corporation',
+          entity_id: '13',
+          msg: 'SlashTrustDeposit',
+          changes: null,
+        },
+        {
+          id: 3,
+          timestamp: '2026-09-01T11:00:00Z',
+          block_height: 405300,
+          entity_type: 'Corporation',
+          entity_id: '13',
+          msg: 'UpdateCorporation',
+          changes: { did: 'did:web:acme-trust.ch' },
+          account: 'verana1policy',
+        },
+        {
+          id: 2,
+          timestamp: '2026-09-01T10:00:00Z',
+          block_height: 405000,
+          entity_type: 'Corporation',
+          entity_id: '13',
+          msg: 'CreateCorporation',
+          changes: { did: 'did:web:old.example' },
+          account: 'verana1aaa',
+        },
+      ],
+    })
+    expect(rows.map((row) => row.msg)).toEqual(['UpdateCorporation', 'CreateCorporation', 'SlashTrustDeposit'])
+    expect(rows[2]).toEqual({
+      id: 1,
+      timestamp: '2026-08-30T09:00:00Z',
+      blockHeight: 404000,
+      msg: 'SlashTrustDeposit',
+      account: null,
+      changes: {},
+    })
+  })
+
+  it('rejects an envelope without the activity list', () => {
+    expect(() => parseHistory({ history: [] })).toThrow('activity')
+  })
+})
+
+describe('fetchCorporationHistory', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('requests the corporation history endpoint with the page limit', async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ entity_type: 'Corporation', entity_id: '13', activity: [] }),
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(fetchCorporationHistory(13)).resolves.toEqual([])
+    expect(fetchMock).toHaveBeenCalledWith('https://indexer.example/v4/corporation/history/13?limit=64')
+  })
+
+  it('degrades a 404 to an empty history and logs it', async () => {
+    const error = vi.spyOn(logger, 'error').mockImplementation(() => {})
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false, status: 404, json: async () => ({}) }))
+    )
+    await expect(fetchCorporationHistory(13)).resolves.toEqual([])
+    expect(error).toHaveBeenCalledOnce()
+  })
+
+  it('degrades a malformed payload to an empty history', async () => {
+    vi.spyOn(logger, 'error').mockImplementation(() => {})
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => ({ activity: [{ id: 'nope' }] }) }))
+    )
+    await expect(fetchCorporationHistory(13)).resolves.toEqual([])
+  })
+})
+
+describe('tallyVotes', () => {
+  const members = [
+    { address: 'verana1aaa', weight: '3', addedAt: null },
+    { address: 'verana1bbb', weight: '2', addedAt: null },
+    { address: 'verana1ccc', weight: '1', addedAt: null },
+  ]
+
+  it('sums member weights per option and accepts both option spellings', () => {
+    const tally = tallyVotes(
+      [
+        { voter: 'verana1aaa', option: 'YES', submitTime: null },
+        { voter: 'verana1bbb', option: 'VOTE_OPTION_NO', submitTime: null },
+        { voter: 'verana1ccc', option: 'no_with_veto', submitTime: null },
+      ],
+      members
+    )
+    expect(tally).toEqual({ yes: 3, no: 2, abstain: 0, veto: 1, total: 6 })
+  })
+
+  it('counts unknown voters and unknown options as zero', () => {
+    const tally = tallyVotes(
+      [
+        { voter: 'verana1zzz', option: 'YES', submitTime: null },
+        { voter: 'verana1aaa', option: 'VOTE_OPTION_ABSTAIN', submitTime: null },
+        { voter: 'verana1bbb', option: 'VOTE_OPTION_UNSPECIFIED', submitTime: null },
+      ],
+      members
+    )
+    expect(tally).toEqual({ yes: 0, no: 0, abstain: 3, veto: 0, total: 3 })
+  })
+
+  it('returns zeros without votes', () => {
+    expect(tallyVotes([], members)).toEqual({ yes: 0, no: 0, abstain: 0, veto: 0, total: 0 })
   })
 })
