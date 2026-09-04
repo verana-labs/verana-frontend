@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { expect, test } from '@playwright/test'
 import { connectWallet } from './support/connect'
-import { createEcosystem } from './support/flows'
+import { confirmTransaction, createEcosystem } from './support/flows'
 import { labelInput, labelSelect, labelTextarea } from './support/forms'
 import { requireFundedMnemonic } from './support/mnemonic'
 
@@ -47,6 +47,7 @@ test('create a credential schema (real devnet broadcast)', async ({ page }) => {
   await labelTextarea(page, 'JSON Schema').fill(jsonSchema)
 
   await page.locator('.btn-action-confirm').click()
+  await confirmTransaction(page)
 
   const successToast = page.locator('.notify-success')
   const errorToast = page.locator('.notify-error')
