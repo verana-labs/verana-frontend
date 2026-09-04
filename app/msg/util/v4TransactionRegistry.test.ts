@@ -17,7 +17,6 @@ const messages: EncodeObject[] = [
       did: 'did:web:corporation.example',
       language: 'en',
       docUrl: 'https://example.com/corporation.pdf',
-      fundingUvna: '1000',
     },
     'verana1operator',
     'sha384-corporation'

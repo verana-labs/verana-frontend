@@ -15,7 +15,6 @@ describe('buildCreateCorporationMessage', () => {
         did: 'did:web:corporation.example',
         language: 'en',
         docUrl: 'https://example.com/corporation.pdf',
-        fundingUvna: '1000',
       },
       'verana1signer',
       'sha384-corporation'

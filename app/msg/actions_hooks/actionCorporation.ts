@@ -9,18 +9,16 @@ import { MsgSend } from 'cosmjs-types/cosmos/bank/v1beta1/tx'
 import { Exec, MsgSubmitProposal } from 'cosmjs-types/cosmos/group/v1/tx'
 import { ThresholdDecisionPolicy } from 'cosmjs-types/cosmos/group/v1/types'
 import { useRef } from 'react'
-import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { findCorporationMembership, saveActingCorporationId, type UserCorporation } from '@/lib/corporation-discovery'
 import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
-import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
+import { successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import { extractTxHeight } from '@/msg/util/signerUtil'
 import { findEventAttribute } from '@/msg/util/txEvents'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
-import { resolveTranslatable } from '@/ui/dataview/types'
 import { isValidHttpUrl } from '@/util/validations'
 
 const GROUP_VOTING_PERIOD_SECONDS = 60
@@ -30,19 +28,17 @@ export interface CorporationMemberInput {
   weight: string
 }
 
-export interface BootstrapCorporationParams {
+export interface CreateCorporationParams {
   did: string
   language: string
   docUrl: string
-  fundingUvna: string
-  forceCreate?: boolean
   members?: CorporationMemberInput[]
   threshold?: string
   votingPeriodSeconds?: number
 }
 
 export function buildCreateCorporationMessage(
-  params: BootstrapCorporationParams,
+  params: CreateCorporationParams,
   signer: string,
   docDigestSri: string
 ): EncodeObject {
@@ -146,30 +142,23 @@ function txHeight(result: DeliverTxResponse): number {
   return height
 }
 
-function t(key: string): string {
-  return resolveTranslatable({ key }, translate) ?? key
-}
-
-export function useActionCorporation(onDone?: () => void) {
+export function useActionCorporation() {
   const veranaChain = useVeranaChain()
   const { address, isWalletConnected } = useChain(veranaChain.chain_name)
-  const { actingCorporation } = useUserCorporation()
   const { waitForBlock } = useIndexerEvents()
   const { notify } = useNotification()
   const sendTx = useSendTxDetectingMode(veranaChain)
   const inFlight = useRef(false)
 
-  async function ensureCorporation(params: BootstrapCorporationParams, operator: string): Promise<UserCorporation> {
-    if (!params.forceCreate && actingCorporation) return actingCorporation.corporation
-
-    void notify(t('notification.MsgCreateCorporation.inprogress'), 'inProgress')
+  async function createCorporation(params: CreateCorporationParams, operator: string): Promise<UserCorporation> {
+    void notify(translate('notification.MsgCreateCorporation.inprogress'), 'inProgress')
     const result = await sendTx({
       msgs: [buildCreateCorporationMessage(params, operator, await documentDigest(params.docUrl))],
       memo: 'MsgCreateCorporation',
     })
     if (!('code' in result)) throw new Error('Expected a transaction response')
     if (result.code !== 0)
-      throw new Error(`${t('notification.MsgCreateCorporation.error')} (${result.code}): ${result.rawLog}`)
+      throw new Error(`${translate('notification.MsgCreateCorporation.error')} (${result.code}): ${result.rawLog}`)
 
     const id = findEventAttribute(result.events, 'create_corporation', 'corporation_id')
     const policyAddress = findEventAttribute(result.events, 'create_corporation', 'policy_address')
@@ -177,7 +166,11 @@ export function useActionCorporation(onDone?: () => void) {
     saveActingCorporationId(operator, Number(id))
     const height = txHeight(result)
     const indexed = await waitForIndexerAfterTx(waitForBlock, height)
-    const notification = successfulTxNotification(t('notification.MsgCreateCorporation.success'), height, indexed)
+    const notification = successfulTxNotification(
+      translate('notification.MsgCreateCorporation.success'),
+      height,
+      indexed
+    )
     await notify(notification.message, notification.type, notification.title)
     return { id: Number(id), policyAddress, did: params.did }
   }
@@ -187,14 +180,16 @@ export function useActionCorporation(onDone?: () => void) {
     operator: string,
     fundingUvna: string
   ): Promise<'granted' | 'pending'> {
-    void notify(t('notification.MsgGrantSelfOperatorAuthorization.inprogress'), 'inProgress')
+    void notify(translate('notification.MsgGrantSelfOperatorAuthorization.inprogress'), 'inProgress')
     const result = await sendTx({
       msgs: buildGrantOperatorMessages(corporation, operator, fundingUvna),
       memo: 'MsgGrantSelfOperatorAuthorization',
     })
     if (!('code' in result)) throw new Error('Expected a transaction response')
     if (result.code !== 0) {
-      throw new Error(`${t('notification.MsgGrantSelfOperatorAuthorization.error')} (${result.code}): ${result.rawLog}`)
+      throw new Error(
+        `${translate('notification.MsgGrantSelfOperatorAuthorization.error')} (${result.code}): ${result.rawLog}`
+      )
     }
 
     const height = txHeight(result)
@@ -202,35 +197,31 @@ export function useActionCorporation(onDone?: () => void) {
     if (indexed) {
       const membership = await findCorporationMembership(operator, corporation.id)
       if (!membership?.operator) {
-        await notify(t('notification.MsgGrantSelfOperatorAuthorization.pending'), 'success')
+        await notify(translate('notification.MsgGrantSelfOperatorAuthorization.pending'), 'success')
         return 'pending'
       }
     }
     const notification = successfulTxNotification(
-      t('notification.MsgGrantSelfOperatorAuthorization.success'),
+      translate('notification.MsgGrantSelfOperatorAuthorization.success'),
       height,
       indexed
     )
     await notify(notification.message, notification.type, notification.title)
-    if (!indexed) {
-      runAfterIndexerCatchesUp(waitForBlock, height, () => onDone?.())
-      return 'pending'
-    }
-    return 'granted'
+    return indexed ? 'granted' : 'pending'
   }
 
-  async function createOnly(params: BootstrapCorporationParams): Promise<UserCorporation | null> {
+  async function createOnly(params: CreateCorporationParams): Promise<UserCorporation | null> {
     if (!isWalletConnected || !address) {
-      await notify(t('notification.msg.connectwallet'), 'error')
+      await notify(translate('notification.msg.connectwallet'), 'error')
       return null
     }
     if (inFlight.current) {
-      await notify(t('error.msg.pending.transaction'), 'error')
+      await notify(translate('error.msg.pending.transaction'), 'error')
       return null
     }
     inFlight.current = true
     try {
-      return await ensureCorporation(params, address)
+      return await createCorporation(params, address)
     } catch (error) {
       await notify(error instanceof Error ? error.message : String(error), 'error')
       return null
@@ -244,11 +235,11 @@ export function useActionCorporation(onDone?: () => void) {
     fundingUvna: string
   ): Promise<'granted' | 'pending' | 'failed'> {
     if (!isWalletConnected || !address) {
-      await notify(t('notification.msg.connectwallet'), 'error')
+      await notify(translate('notification.msg.connectwallet'), 'error')
       return 'failed'
     }
     if (inFlight.current) {
-      await notify(t('error.msg.pending.transaction'), 'error')
+      await notify(translate('error.msg.pending.transaction'), 'error')
       return 'failed'
     }
     inFlight.current = true
@@ -262,32 +253,5 @@ export function useActionCorporation(onDone?: () => void) {
     }
   }
 
-  const bootstrap = async (params: BootstrapCorporationParams): Promise<void> => {
-    if (!isWalletConnected || !address) {
-      await notify(t('notification.msg.connectwallet'), 'error')
-      return
-    }
-    if (inFlight.current) {
-      await notify(t('error.msg.pending.transaction'), 'error')
-      return
-    }
-
-    inFlight.current = true
-    try {
-      const existing = params.forceCreate ? null : actingCorporation
-      if (existing?.operator) {
-        onDone?.()
-        return
-      }
-      const corporation = existing?.corporation ?? (await ensureCorporation(params, address))
-      const status = await grantOperator(corporation, address, params.fundingUvna)
-      if (status === 'granted') onDone?.()
-    } catch (error) {
-      await notify(error instanceof Error ? error.message : String(error), 'error')
-    } finally {
-      inFlight.current = false
-    }
-  }
-
-  return { bootstrap, createOnly, grantFirstOperator }
+  return { createOnly, grantFirstOperator }
 }

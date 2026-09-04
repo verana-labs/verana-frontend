@@ -89,8 +89,6 @@ export function CorporationCreateWizard({ onDone }: { onDone: () => void }) {
         did: did.trim(),
         language,
         docUrl: docUrl.trim(),
-        fundingUvna,
-        forceCreate: true,
         members,
         threshold,
         votingPeriodSeconds: Number(votingPeriod),
