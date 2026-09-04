@@ -4,13 +4,13 @@ import { useCorporationContext } from '@/providers/corporation-provider'
 
 export {
   type CorporationMembership,
-  resolveUserCorporation,
+  findCorporationMembership,
   type UserCorporation,
-  type UserCorporationResolution,
 } from '@/lib/corporation-discovery'
 
 export function useUserCorporation() {
-  const { memberships, acting, needsSelection, loading, errorCorporation, setActing, refetch } = useCorporationContext()
+  const { memberships, acting, needsSelection, loading, errorCorporation, setActing, requestSelection, refetch } =
+    useCorporationContext()
   return {
     corporation: acting?.corporation ?? null,
     hasOperatorGrant: (acting?.grantedMessageTypes.length ?? 0) > 0,
@@ -21,6 +21,7 @@ export function useUserCorporation() {
     loading,
     errorCorporation,
     setActing,
+    requestSelection,
     refetch,
   }
 }

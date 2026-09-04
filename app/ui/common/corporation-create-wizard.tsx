@@ -1,15 +1,23 @@
 'use client'
 
+import type { EncodeObject } from '@cosmjs/proto-signing'
 import { useChain } from '@cosmos-kit/react'
 import { faCheck, faPlus, faTrash, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import { type TxSimulation, useTxSimulation } from '@/hooks/useTxSimulation'
 import type { UserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
-import { type CorporationMemberInput, useActionCorporation } from '@/msg/actions_hooks/actionCorporation'
+import {
+  type BootstrapCorporationParams,
+  buildCreateCorporationMessages,
+  buildGrantOperatorMessages,
+  type CorporationMemberInput,
+  useActionCorporation,
+} from '@/msg/actions_hooks/actionCorporation'
 import { resolveTranslatable } from '@/ui/dataview/types'
-import { shortenMiddle } from '@/util/util'
+import { formatVNAFromUVNA, shortenMiddle } from '@/util/util'
 import { isValidHttpUrl } from '@/util/validations'
 
 function t(key: string): string {
@@ -18,6 +26,13 @@ function t(key: string): string {
 
 const STEPS = ['identity', 'members', 'review', 'grant'] as const
 type WizardStep = (typeof STEPS)[number]
+
+type MessagePreview =
+  | { status: 'building' }
+  | { status: 'ready'; msgs: EncodeObject[] }
+  | { status: 'failed'; message: string }
+
+const PREVIEW_DEBOUNCE_MS = 300
 
 const inputClass =
   'mt-2 w-full px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface'
@@ -58,6 +73,113 @@ function StepDots({ current, created }: { current: WizardStep; created: boolean 
   )
 }
 
+function CostRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <dt className="shrink-0 text-gray-500 dark:text-gray-400">{label}</dt>
+      <dd className="text-right text-gray-900 dark:text-white break-all">{children}</dd>
+    </div>
+  )
+}
+
+function FeeValue({ simulation }: { simulation: TxSimulation }) {
+  if (simulation.status === 'simulating')
+    return <span className="animate-pulse text-gray-400">{t('txconfirm.fee.simulating')}</span>
+  if (simulation.status === 'failed')
+    return (
+      <span className="text-red-600 dark:text-red-400">
+        {t('txconfirm.fee.failed')}
+        <span className="block text-xs">{simulation.message}</span>
+      </span>
+    )
+  return <span>{simulation.fee}</span>
+}
+
+function CostBlock({
+  simulation,
+  payer,
+  fundingUvna,
+}: {
+  simulation: TxSimulation
+  payer: string
+  fundingUvna: string
+}) {
+  const funded = /^\d+$/.test(fundingUvna) && Number(fundingUvna) > 0
+  return (
+    <dl className="text-sm space-y-2 rounded-lg border border-neutral-20 dark:border-neutral-70 p-4">
+      <CostRow label={t('txconfirm.fee')}>
+        <FeeValue simulation={simulation} />
+      </CostRow>
+      <CostRow label={t('txconfirm.payer')}>
+        <span className="font-mono">{shortenMiddle(payer, 24)}</span> {t('txconfirm.payer.you')}
+      </CostRow>
+      {funded ? (
+        <CostRow label={t('corporation.wizard.cost.funding')}>
+          {formatVNAFromUVNA(fundingUvna)}
+          <span className="block text-xs text-gray-500 dark:text-gray-400">{fundingUvna} uvna</span>
+        </CostRow>
+      ) : null}
+    </dl>
+  )
+}
+
+function SimulatedCost({ msgs, payer, fundingUvna }: { msgs: EncodeObject[]; payer: string; fundingUvna: string }) {
+  const { simulation } = useTxSimulation(msgs)
+  return <CostBlock simulation={simulation} payer={payer} fundingUvna={fundingUvna} />
+}
+
+function CreateCost({
+  params,
+  payer,
+  fundingUvna,
+}: {
+  params: BootstrapCorporationParams
+  payer: string
+  fundingUvna: string
+}) {
+  const [preview, setPreview] = useState<MessagePreview>({ status: 'building' })
+
+  useEffect(() => {
+    let cancelled = false
+    setPreview({ status: 'building' })
+    const timer = setTimeout(() => {
+      buildCreateCorporationMessages(params, payer)
+        .then((msgs) => {
+          if (!cancelled) setPreview({ status: 'ready', msgs })
+        })
+        .catch((error: unknown) => {
+          if (cancelled) return
+          setPreview({ status: 'failed', message: error instanceof Error ? error.message : String(error) })
+        })
+    }, PREVIEW_DEBOUNCE_MS)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [params, payer])
+
+  if (preview.status === 'ready') return <SimulatedCost msgs={preview.msgs} payer={payer} fundingUvna={fundingUvna} />
+  const simulation: TxSimulation =
+    preview.status === 'building' ? { status: 'simulating' } : { status: 'failed', message: preview.message }
+  return <CostBlock simulation={simulation} payer={payer} fundingUvna={fundingUvna} />
+}
+
+function GrantCost({
+  corporation,
+  payer,
+  fundingUvna,
+}: {
+  corporation: UserCorporation
+  payer: string
+  fundingUvna: string
+}) {
+  const msgs = useMemo(
+    () => buildGrantOperatorMessages(corporation, payer, fundingUvna),
+    [corporation, payer, fundingUvna]
+  )
+  return <SimulatedCost msgs={msgs} payer={payer} fundingUvna={fundingUvna} />
+}
+
 export function CorporationCreateWizard({ onDone }: { onDone: () => void }) {
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
@@ -75,9 +197,24 @@ export function CorporationCreateWizard({ onDone }: { onDone: () => void }) {
   const [busy, setBusy] = useState(false)
   const [created, setCreated] = useState<UserCorporation | null>(null)
 
+  const members = useMemo<CorporationMemberInput[]>(
+    () => [{ address: address ?? '', weight: ownWeight }, ...extraMembers],
+    [address, ownWeight, extraMembers]
+  )
+  const createParams = useMemo<BootstrapCorporationParams>(
+    () => ({
+      did: did.trim(),
+      language: language.trim(),
+      docUrl: docUrl.trim(),
+      members,
+      threshold,
+      votingPeriodSeconds: Number(votingPeriod),
+    }),
+    [did, language, docUrl, members, threshold, votingPeriod]
+  )
+
   if (!address) return null
 
-  const members: CorporationMemberInput[] = [{ address, weight: ownWeight }, ...extraMembers]
   const identityValid = did.trim().startsWith('did:') && language.trim().length > 0 && isValidHttpUrl(docUrl.trim())
   const membersValid =
     members.every((member) => member.address.startsWith('verana1') && /^[1-9]\d*$/.test(member.weight)) &&
@@ -88,16 +225,7 @@ export function CorporationCreateWizard({ onDone }: { onDone: () => void }) {
   async function create() {
     setBusy(true)
     try {
-      const corporation = await createOnly({
-        did: did.trim(),
-        language: language.trim(),
-        docUrl: docUrl.trim(),
-        fundingUvna,
-        forceCreate: true,
-        members,
-        threshold,
-        votingPeriodSeconds: Number(votingPeriod),
-      })
+      const corporation = await createOnly({ ...createParams, fundingUvna })
       if (corporation) {
         setCreated(corporation)
         setStep('grant')
@@ -285,6 +413,7 @@ export function CorporationCreateWizard({ onDone }: { onDone: () => void }) {
             {t('corporation.setup.funding')}
             <input value={fundingUvna} onChange={(e) => setFundingUvna(e.target.value)} className={inputClass} />
           </label>
+          <CreateCost params={createParams} payer={address} fundingUvna={fundingUvna} />
           <div className="flex justify-between">
             <button type="button" onClick={() => setStep('members')} className={ghostButton}>
               {t('corporation.wizard.back')}
@@ -307,6 +436,7 @@ export function CorporationCreateWizard({ onDone }: { onDone: () => void }) {
             {t('corporation.wizard.created')} <span className="font-mono">#{created.id}</span>
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400">{t('corporation.wizard.grantdesc')}</p>
+          <GrantCost corporation={created} payer={address} fundingUvna={fundingUvna} />
           <div className="flex justify-between">
             <button type="button" onClick={onDone} className={ghostButton}>
               {t('corporation.wizard.skip')}

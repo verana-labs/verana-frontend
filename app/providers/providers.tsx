@@ -8,6 +8,7 @@ import { CorporationProvider } from '@/providers/corporation-provider'
 import { IndexerEventsProvider } from '@/providers/indexer-events-provider'
 import { NotificationProvider } from '@/providers/notification-provider'
 import RequireConnectedWallet from '@/providers/require-connected-wallet'
+import { TxConfirmProvider } from '@/providers/tx-confirm-provider'
 
 const VeranaChainProvider = dynamic(() => import('@/providers/verana-chain-provider'), { ssr: false })
 
@@ -20,7 +21,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             <RequireConnectedWallet>
               <CorporationProvider>
                 <NotificationProvider>
-                  <RestQueryProvider>{children}</RestQueryProvider>
+                  <TxConfirmProvider>
+                    <RestQueryProvider>{children}</RestQueryProvider>
+                  </TxConfirmProvider>
                 </NotificationProvider>
               </CorporationProvider>
             </RequireConnectedWallet>

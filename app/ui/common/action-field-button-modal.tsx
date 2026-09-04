@@ -2,6 +2,8 @@
 
 import clsx from 'clsx'
 import { useEffect, useState } from 'react'
+import { useActionSigning } from '@/hooks/useSigningMode'
+import { ActionLabel } from '@/ui/common/action-field-button'
 import { ActionFieldProps, renderActionComponent } from '@/ui/common/data-view-typed'
 import IconLabelButton from '@/ui/common/icon-label-button'
 import { ModalAction } from '@/ui/common/modal-action'
@@ -24,6 +26,7 @@ export default function ActionFieldButtonModal({
   isActive,
 }: ActionFieldButtonModalProps) {
   const [modalHidden, setModalHidden] = useState(true)
+  const { mode, disabled } = useActionSigning(field.value)
   // Reset internal state when the modal is closed / deactivated
   useEffect(() => {
     if (!isActive) setModalHidden(true)
@@ -32,13 +35,14 @@ export default function ActionFieldButtonModal({
   return (
     <section>
       <IconLabelButton
-        label={field.label}
+        label={<ActionLabel label={field.label} mode={mode} />}
         icon={field.icon}
         className={clsx(
-          'btn-action-confirm text-sm', // base
-          field.iconColorClass // specific
+          'btn-action-confirm text-sm disabled:opacity-50 disabled:cursor-not-allowed',
+          field.iconColorClass
         )}
         onClick={onClickButton}
+        disabled={disabled}
       />
 
       {field.value ? (

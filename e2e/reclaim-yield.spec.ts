@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { connectWallet } from './support/connect'
+import { confirmTransaction } from './support/flows'
 import { requireFundedMnemonic } from './support/mnemonic'
 
 test('reclaim yield from /account (MsgReclaimTrustDepositYield)', async ({ page }) => {
@@ -17,6 +18,7 @@ test('reclaim yield from /account (MsgReclaimTrustDepositYield)', async ({ page 
   const confirmBtn = page.locator('.btn-action-confirm')
   if (await confirmBtn.isVisible().catch(() => false)) {
     await confirmBtn.click()
+    await confirmTransaction(page)
     const successToast = page.locator('.notify-success')
     const errorToast = page.locator('.notify-error')
     await expect(successToast.or(errorToast)).toBeVisible({ timeout: 90_000 })

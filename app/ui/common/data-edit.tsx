@@ -4,6 +4,7 @@ import clsx from 'clsx'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { LOW_BALANCE_WARN_UVNA } from '@/config/env'
 import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
+import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { canonicalizeLanguageTag } from '@/lib/language'
 import { logger } from '@/lib/logger'
@@ -71,6 +72,8 @@ export default function EditableDataView<T extends object>({
   const [hasTriedSubmit, setHasTriedSubmit] = useState(false)
 
   const { notify } = useNotification()
+
+  const { loading: corporationLoading } = useUserCorporation()
   const [errorNotified, setErrorNotified] = useState(false)
 
   const validatedRequiredField = useCallback((field: ResolvedField<T>, value: unknown): boolean => {
@@ -483,7 +486,7 @@ export default function EditableDataView<T extends object>({
               msgTypeStyle[messageType].button // specific
             )}
             onClick={handleSave}
-            disabled={submitting}
+            disabled={submitting || corporationLoading}
           >
             {uiMsgType.label}
           </button>

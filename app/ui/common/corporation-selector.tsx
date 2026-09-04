@@ -20,7 +20,7 @@ function t(key: string): string {
   return resolveTranslatable({ key }, translate) ?? key
 }
 
-function useMembershipNames(memberships: CorporationMembership[]): Record<string, DidEnrichment> {
+export function useMembershipNames(memberships: CorporationMembership[]): Record<string, DidEnrichment> {
   const [names, setNames] = useState<Record<string, DidEnrichment>>({})
   const dids = memberships.map((membership) => membership.corporation.did).join(',')
 
@@ -50,12 +50,23 @@ function useMembershipNames(memberships: CorporationMembership[]): Record<string
   return names
 }
 
-function membershipDisplayName(membership: CorporationMembership, names: Record<string, DidEnrichment>): string | null {
+export function membershipDisplayName(
+  membership: CorporationMembership,
+  names: Record<string, DidEnrichment>
+): string | null {
   const enrichment = names[membership.corporation.did]
   return enrichment?.organizationName ?? enrichment?.serviceName ?? null
 }
 
-function KindBadges({ operator, member, weight }: { operator: boolean; member: boolean; weight: string | null }) {
+export function KindBadges({
+  operator,
+  member,
+  weight,
+}: {
+  operator: boolean
+  member: boolean
+  weight: string | null
+}) {
   return (
     <span className="flex items-center gap-1">
       {operator ? (
@@ -174,11 +185,11 @@ function ChooserModal({
 export function CorporationChooserGate() {
   const veranaChain = useVeranaChain()
   const { isWalletConnected } = useChain(veranaChain.chain_name)
-  const { memberships, needsSelection, setActing } = useCorporationContext()
+  const { memberships, needsSelection, selectionRequested, setActing } = useCorporationContext()
   const attention = useCorporationAttention(memberships)
   const names = useMembershipNames(memberships)
 
-  if (!isWalletConnected || !needsSelection) return null
+  if (!isWalletConnected || !(needsSelection || selectionRequested)) return null
   return <ChooserModal memberships={memberships} names={names} attention={attention} onPick={setActing} />
 }
 

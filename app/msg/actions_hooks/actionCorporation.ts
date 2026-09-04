@@ -9,7 +9,7 @@ import { MsgSend } from 'cosmjs-types/cosmos/bank/v1beta1/tx'
 import { Exec, MsgSubmitProposal } from 'cosmjs-types/cosmos/group/v1/tx'
 import { ThresholdDecisionPolicy } from 'cosmjs-types/cosmos/group/v1/types'
 import { useRef } from 'react'
-import { resolveUserCorporation, type UserCorporation } from '@/hooks/useUserCorporation'
+import { findCorporationMembership, type UserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { saveActingCorporationId } from '@/lib/corporation-discovery'
@@ -34,8 +34,7 @@ export interface BootstrapCorporationParams {
   did: string
   language: string
   docUrl: string
-  fundingUvna: string
-  forceCreate?: boolean
+  fundingUvna?: string
   members?: CorporationMemberInput[]
   threshold?: string
   votingPeriodSeconds?: number
@@ -140,6 +139,13 @@ async function documentDigest(docUrl: string): Promise<string> {
   return sri
 }
 
+export async function buildCreateCorporationMessages(
+  params: BootstrapCorporationParams,
+  signer: string
+): Promise<EncodeObject[]> {
+  return [buildCreateCorporationMessage(params, signer, await documentDigest(params.docUrl))]
+}
+
 function txHeight(result: DeliverTxResponse): number {
   const height = extractTxHeight(result)
   if (height === undefined) throw new Error('Successful transaction did not include a block height')
@@ -158,15 +164,10 @@ export function useActionCorporation(onDone?: () => void) {
   const sendTx = useSendTxDetectingMode(veranaChain)
   const inFlight = useRef(false)
 
-  async function ensureCorporation(params: BootstrapCorporationParams, operator: string): Promise<UserCorporation> {
-    if (!params.forceCreate) {
-      const existing = await resolveUserCorporation(operator)
-      if (existing.corporation) return existing.corporation
-    }
-
+  async function createCorporation(params: BootstrapCorporationParams, operator: string): Promise<UserCorporation> {
     void notify(t('notification.MsgCreateCorporation.inprogress'), 'inProgress')
     const result = await sendTx({
-      msgs: [buildCreateCorporationMessage(params, operator, await documentDigest(params.docUrl))],
+      msgs: await buildCreateCorporationMessages(params, operator),
       memo: 'MsgCreateCorporation',
     })
     if (!('code' in result)) throw new Error('Expected a transaction response')
@@ -202,8 +203,8 @@ export function useActionCorporation(onDone?: () => void) {
     const height = txHeight(result)
     const indexed = await waitForIndexerAfterTx(waitForBlock, height)
     if (indexed) {
-      const resolution = await resolveUserCorporation(operator)
-      if (!resolution.corporation || !resolution.hasOperatorGrant) {
+      const membership = await findCorporationMembership(operator, corporation.id)
+      if (!membership || membership.grantedMessageTypes.length === 0) {
         await notify(t('notification.MsgGrantSelfOperatorAuthorization.pending'), 'success')
         return 'pending'
       }
@@ -232,7 +233,7 @@ export function useActionCorporation(onDone?: () => void) {
     }
     inFlight.current = true
     try {
-      return await ensureCorporation(params, address)
+      return await createCorporation(params, address)
     } catch (error) {
       await notify(error instanceof Error ? error.message : String(error), 'error')
       return null
@@ -264,34 +265,5 @@ export function useActionCorporation(onDone?: () => void) {
     }
   }
 
-  const bootstrap = async (params: BootstrapCorporationParams): Promise<void> => {
-    if (!isWalletConnected || !address) {
-      await notify(t('notification.msg.connectwallet'), 'error')
-      return
-    }
-    if (inFlight.current) {
-      await notify(t('error.msg.pending.transaction'), 'error')
-      return
-    }
-
-    inFlight.current = true
-    try {
-      const resolution = params.forceCreate
-        ? { corporation: null, hasOperatorGrant: false }
-        : await resolveUserCorporation(address)
-      if (resolution.corporation && resolution.hasOperatorGrant) {
-        onDone?.()
-        return
-      }
-      const corporation = resolution.corporation ?? (await ensureCorporation(params, address))
-      const status = await grantOperator(corporation, address, params.fundingUvna)
-      if (status === 'granted') onDone?.()
-    } catch (error) {
-      await notify(error instanceof Error ? error.message : String(error), 'error')
-    } finally {
-      inFlight.current = false
-    }
-  }
-
-  return { bootstrap, createOnly, grantFirstOperator }
+  return { createOnly, grantFirstOperator }
 }

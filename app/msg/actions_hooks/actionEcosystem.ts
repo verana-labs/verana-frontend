@@ -14,14 +14,17 @@ import {
 } from '@verana-labs/verana-types/codec/verana/gf/v1/tx'
 import { useRouter } from 'next/navigation'
 import { useRef } from 'react'
-import { resolveUserCorporation, useUserCorporation } from '@/hooks/useUserCorporation'
+import { useDelegableMsgs } from '@/hooks/useDelegableMsgs'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
+import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import {
   MSG_ERROR_ACTION_ECOSYSTEM,
   MSG_INPROGRESS_ACTION_ECOSYSTEM,
+  MSG_NOTIFICATION_PROPOSAL,
   MSG_SUCCESS_ACTION_ECOSYSTEM,
 } from '@/msg/constants/notificationMsgForMsgType'
+import { delegableTypeUrl, proposalTitleFrom } from '@/msg/util/delegable-msgs'
 import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
@@ -29,7 +32,7 @@ import { extractTxHeight } from '@/msg/util/signerUtil'
 import { findEventAttribute } from '@/msg/util/txEvents'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
-import { resolveTranslatable } from '@/ui/dataview/types'
+import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 import { isValidHttpUrl } from '@/util/validations'
 
 type EcosystemContext = {
@@ -149,14 +152,43 @@ async function documentDigest(docUrl: string): Promise<string> {
   return sri
 }
 
+async function toMessageParams(params: EcosystemActionParams): Promise<EcosystemMessageParams> {
+  if (params.msgType === 'MsgCreateEcosystem') {
+    return { ...params, docDigestSri: await documentDigest(params.docUrl) }
+  }
+  if (params.msgType === 'MsgAddGovernanceFrameworkDocument') {
+    return {
+      msgType: params.msgType,
+      ecosystemId: params.ecosystemId,
+      targetVersion: params.currentVersion + 1,
+      docLanguage: params.docLanguage,
+      docUrl: params.docUrl,
+      docDigestSri: await documentDigest(params.docUrl),
+    }
+  }
+  return params
+}
+
+function effectValues(params: EcosystemMessageParams): I18nValues {
+  return {
+    id: 'id' in params ? String(params.id) : 'ecosystemId' in params ? String(params.ecosystemId) : null,
+    did: 'did' in params ? params.did : null,
+    version: 'targetVersion' in params ? params.targetVersion : null,
+  }
+}
+
 function isDeliverTxResponse(result: DeliverTxResponse | SimulateResult): result is DeliverTxResponse {
   return 'code' in result
+}
+
+function t(key: string, values?: I18nValues): string {
+  return resolveTranslatable({ key, values }, translate) ?? key
 }
 
 export function useActionEcosystem(onCancel?: () => void, onRefresh?: (id?: string, txHeight?: number) => void) {
   const veranaChain = useVeranaChain()
   const { address, isWalletConnected } = useChain(veranaChain.chain_name)
-  const { corporation, grantedMessageTypes, loading: corporationLoading } = useUserCorporation()
+  const delegable = useDelegableMsgs()
   const { waitForBlock } = useIndexerEvents()
   const router = useRouter()
   const { notify } = useNotification()
@@ -168,89 +200,69 @@ export function useActionEcosystem(onCancel?: () => void, onRefresh?: (id?: stri
     simulate = false
   ): Promise<DeliverTxResponse | SimulateResult | undefined> => {
     if (!isWalletConnected || !address) {
-      await notify(resolveTranslatable({ key: 'notification.msg.connectwallet' }, translate) ?? '', 'error')
-      return
-    }
-    const authority =
-      corporation && !corporationLoading ? { corporation, grantedMessageTypes } : await resolveUserCorporation(address)
-    if (!authority.corporation) {
-      if (!simulate)
-        await notify(resolveTranslatable({ key: 'error.msg.corporation.required' }, translate) ?? '', 'error')
+      await notify(t('notification.msg.connectwallet'), 'error')
       return
     }
     if (inFlight.current) {
-      await notify(resolveTranslatable({ key: 'error.msg.pending.transaction' }, translate) ?? '', 'error')
+      await notify(t('error.msg.pending.transaction'), 'error')
       return
     }
 
     inFlight.current = true
     let id = 'id' in params ? String(params.id) : 'ecosystemId' in params ? String(params.ecosystemId) : undefined
-    if (!simulate) {
-      void notify(
-        MSG_INPROGRESS_ACTION_ECOSYSTEM[params.msgType](),
-        'inProgress',
-        resolveTranslatable({ key: 'notification.msg.inprogress.title' }, translate)
-      )
-    }
-
+    let mode: CorporationSigningMode = 'operator'
+    const errorMessage = (code?: number, msg?: string) =>
+      mode === 'proposal'
+        ? MSG_NOTIFICATION_PROPOSAL.error(code, msg)
+        : MSG_ERROR_ACTION_ECOSYSTEM[params.msgType](id, code, msg)
     try {
-      let messageParams: EcosystemMessageParams
-      if (params.msgType === 'MsgCreateEcosystem') {
-        messageParams = { ...params, docDigestSri: await documentDigest(params.docUrl) }
-      } else if (params.msgType === 'MsgAddGovernanceFrameworkDocument') {
-        messageParams = {
-          msgType: params.msgType,
-          ecosystemId: params.ecosystemId,
-          targetVersion: params.currentVersion + 1,
-          docLanguage: params.docLanguage,
-          docUrl: params.docUrl,
-          docDigestSri: await documentDigest(params.docUrl),
-        }
-      } else {
-        messageParams = params
-      }
-
-      const message = buildEcosystemMessage(messageParams, {
-        corporation: authority.corporation.policyAddress,
-        operator: address,
+      const typeUrl = delegableTypeUrl(params.msgType)
+      if (!typeUrl) throw new Error(`Unsupported message type: ${params.msgType}`)
+      const messageParams = await toMessageParams(params)
+      const effect = t(`txconfirm.effect.${params.msgType}`, effectValues(messageParams))
+      const resolved = await delegable({
+        typeUrl,
+        build: (corporation, operator) => buildEcosystemMessage(messageParams, { corporation, operator }),
+        effect,
+        proposalTitle: proposalTitleFrom(effect),
+        simulate,
       })
-      if (!authority.grantedMessageTypes.includes(message.typeUrl)) {
-        if (!simulate) {
-          await notify(
-            resolveTranslatable(
-              { key: 'error.msg.corporation.notauthorized', values: { msgType: params.msgType } },
-              translate
-            ) ?? '',
-            'error'
-          )
-        }
-        return
-      }
-      const result = await sendTx({ msgs: [message], memo: params.msgType, simulate })
+      if (!resolved) return
+      mode = resolved.mode
       if (simulate) {
+        const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType, simulate })
         if (isDeliverTxResponse(result)) throw new Error('Expected a simulation result')
         return result
       }
+      void notify(
+        mode === 'proposal'
+          ? MSG_NOTIFICATION_PROPOSAL.inprogress()
+          : MSG_INPROGRESS_ACTION_ECOSYSTEM[params.msgType](),
+        'inProgress',
+        t('notification.msg.inprogress.title')
+      )
+      const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType })
       if (!isDeliverTxResponse(result)) throw new Error('Expected a transaction response')
       if (result.code !== 0) {
-        await notify(
-          MSG_ERROR_ACTION_ECOSYSTEM[params.msgType](id, result.code, result.rawLog),
-          'error',
-          resolveTranslatable({ key: 'notification.msg.failed.title' }, translate)
-        )
+        await notify(errorMessage(result.code, result.rawLog), 'error', t('notification.msg.failed.title'))
         return result
       }
 
-      if (params.msgType === 'MsgCreateEcosystem') {
+      const created = params.msgType === 'MsgCreateEcosystem' && mode === 'operator'
+      if (created) {
         id = findEventAttribute(result.events, 'create_ecosystem', 'ecosystem_id')
         if (!id) throw new Error('Create ecosystem transaction did not emit an ecosystem ID')
       }
       const txHeight = extractTxHeight(result)
       if (txHeight === undefined) throw new Error('Successful transaction did not include a block height')
       const indexed = await waitForIndexerAfterTx(waitForBlock, txHeight)
-      const notification = successfulTxNotification(MSG_SUCCESS_ACTION_ECOSYSTEM[params.msgType](), txHeight, indexed)
+      const notification = successfulTxNotification(
+        mode === 'proposal' ? MSG_NOTIFICATION_PROPOSAL.success() : MSG_SUCCESS_ACTION_ECOSYSTEM[params.msgType](),
+        txHeight,
+        indexed
+      )
       await notify(notification.message, notification.type, notification.title)
-      if (params.msgType === 'MsgCreateEcosystem') {
+      if (created) {
         if (indexed) {
           router.push(`/ecosystems/${id}`)
         } else {
@@ -268,13 +280,9 @@ export function useActionEcosystem(onCancel?: () => void, onRefresh?: (id?: stri
       return result
     } catch (error) {
       await notify(
-        MSG_ERROR_ACTION_ECOSYSTEM[params.msgType](
-          id,
-          undefined,
-          error instanceof Error ? error.message : String(error)
-        ),
+        errorMessage(undefined, error instanceof Error ? error.message : String(error)),
         'error',
-        resolveTranslatable({ key: 'notification.msg.failed.title' }, translate)
+        t('notification.msg.failed.title')
       )
     } finally {
       inFlight.current = false
