@@ -818,5 +818,6 @@
   "account.corporations.notice": "Corporations are created and managed on the Corporation page.",
   "account.corporations.notice.link": "Open Corporation",
   "txconfirm.warning.MsgArchiveEcosystem": "This changes the archived state of the ecosystem for every participant. It can be reverted with another archive action.",
-  "txconfirm.warning.MsgArchiveCredentialSchema": "This changes the archived state of the credential schema for every participant. It can be reverted with another archive action."
+  "txconfirm.warning.MsgArchiveCredentialSchema": "This changes the archived state of the credential schema for every participant. It can be reverted with another archive action.",
+  "corporation.capability.none": "Your wallet holds no authorization for this action on the acting corporation."
 }

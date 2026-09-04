@@ -11,6 +11,7 @@ import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObje
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { useLanguageLabel } from '@/lib/language'
+import { EntityActionButton } from '@/ui/common/capability-button'
 import CsSummaryCard from '@/ui/common/cs-summary-card'
 import { renderActionComponent } from '@/ui/common/data-view-typed'
 import EcosystemHeader from '@/ui/common/ecosystem-header'
@@ -27,7 +28,7 @@ export default function EcosystemViewPage() {
   const params = useParams<{ id: string }>()
   const id = params?.id ?? ''
   const router = useRouter()
-  const { corporation, hasOperatorGrant } = useUserCorporation()
+  const { corporation } = useUserCorporation()
   const { ecosystem, errorEcosystem, refetch: refetchEcosystem } = useEcosystemData(id)
   const {
     credentialSchemas,
@@ -88,13 +89,13 @@ export default function EcosystemViewPage() {
     )
   }
 
-  const canManage = corporation?.id === ecosystem.corporationId && hasOperatorGrant
+  const owner = corporation?.id === ecosystem.corporationId
   const isArchived = Boolean(ecosystem.archived)
   const lastVersion = ecosystem.versions.reduce(
     (latest, version) => Math.max(latest, version.version),
     ecosystem.activeVersion
   )
-  const canIncreaseGovernanceFramework = canManage && lastVersion > ecosystem.activeVersion
+  const canIncreaseGovernanceFramework = lastVersion > ecosystem.activeVersion
   const archiveMessageType = isArchived ? 'MsgUnarchiveEcosystem' : 'MsgArchiveEcosystem'
   const archiveTitleKey = isArchived
     ? 'dataview.ecosystem.actions.unarchiveEcosystem'
@@ -168,30 +169,28 @@ export default function EcosystemViewPage() {
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
             {t('dataview.section.mutable', 'Mutable Configuration')}
           </h2>
-          {canManage && !editMode ? (
+          {owner && !editMode ? (
             <div className="flex flex-col sm:flex-row gap-2">
-              <button
-                type="button"
+              <EntityActionButton
+                msgType="MsgUpdateEcosystem"
+                icon={faPenToSquare}
+                label={t('dataview.ecosystem.actions.updateEcosystem', 'Edit Configuration')}
                 onClick={startEdit}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors"
-              >
-                <FontAwesomeIcon icon={faPenToSquare} />
-                <span>{t('dataview.ecosystem.actions.updateEcosystem', 'Edit Configuration')}</span>
-              </button>
-              <button
-                type="button"
+              />
+              <EntityActionButton
+                msgType={archiveMessageType}
+                icon={faBoxArchive}
+                label={
+                  isArchived
+                    ? t('dataview.ecosystem.actions.unarchiveEcosystem', 'Unarchive')
+                    : t('dataview.ecosystem.actions.archiveEcosystem', 'Archive')
+                }
                 onClick={() => setArchiveActive(true)}
                 className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors ${
                   isArchived ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600 hover:bg-gray-700'
                 }`}
-              >
-                <FontAwesomeIcon icon={faBoxArchive} />
-                <span>
-                  {isArchived
-                    ? t('dataview.ecosystem.actions.unarchiveEcosystem', 'Unarchive')
-                    : t('dataview.ecosystem.actions.archiveEcosystem', 'Archive')}
-                </span>
-              </button>
+              />
             </div>
           ) : null}
         </div>
@@ -251,30 +250,26 @@ export default function EcosystemViewPage() {
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
             {t('datalist.egf.title', 'Governance Framework Documents')}
           </h2>
-          {canManage ? (
+          {owner ? (
             <div className="flex flex-col sm:flex-row gap-2">
-              <button
-                type="button"
+              <EntityActionButton
+                msgType="MsgAddGovernanceFrameworkDocument"
+                icon={faPlus}
+                label={t('dataview.ecosystem.actions.addGovernanceFrameworkDocument', 'Add New Document')}
                 onClick={() => setGovernanceFrameworkAction('MsgAddGovernanceFrameworkDocument')}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium"
-              >
-                <FontAwesomeIcon icon={faPlus} />
-                <span>{t('dataview.ecosystem.actions.addGovernanceFrameworkDocument', 'Add New Document')}</span>
-              </button>
+              />
               {canIncreaseGovernanceFramework ? (
-                <button
-                  type="button"
+                <EntityActionButton
+                  msgType="MsgIncreaseActiveGovernanceFrameworkVersion"
+                  icon={faArrowUp}
+                  label={t(
+                    'dataview.ecosystem.actions.increaseActiveGovernanceFrameworkVersion',
+                    'Increase Active Version'
+                  )}
                   onClick={() => setGovernanceFrameworkAction('MsgIncreaseActiveGovernanceFrameworkVersion')}
                   className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium"
-                >
-                  <FontAwesomeIcon icon={faArrowUp} />
-                  <span>
-                    {t(
-                      'dataview.ecosystem.actions.increaseActiveGovernanceFrameworkVersion',
-                      'Increase Active Version'
-                    )}
-                  </span>
-                </button>
+                />
               ) : null}
             </div>
           ) : null}
@@ -300,15 +295,14 @@ export default function EcosystemViewPage() {
               </span>
             </label>
           </div>
-          {canManage ? (
-            <button
-              type="button"
+          {owner ? (
+            <EntityActionButton
+              msgType="MsgCreateCredentialSchema"
+              icon={faPlus}
+              label={t('button.cs.add', 'New Schema')}
               onClick={() => setAddCredentialSchema(true)}
               className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium"
-            >
-              <FontAwesomeIcon icon={faPlus} />
-              <span>{t('button.cs.add', 'New Schema')}</span>
-            </button>
+            />
           ) : null}
         </div>
         {errorCredentialSchemas ? <div className="error-pane mb-4">{errorCredentialSchemas}</div> : null}

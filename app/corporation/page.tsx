@@ -4,6 +4,7 @@ import { useChain } from '@cosmos-kit/react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { useCorporationDetails, useProposalVotes } from '@/hooks/useCorporationDetails'
+import { useActionSigning } from '@/hooks/useSigningMode'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { logger } from '@/lib/logger'
@@ -27,6 +28,7 @@ export default function CorporationPage() {
   const { acting, loading: actingLoading, refetch: refetchCorporations } = useUserCorporation()
   const { details, loading, error, refetch } = useCorporationDetails(acting?.corporation.id)
   const manage = useCorporationManage(() => void refetch())
+  const rotate = useActionSigning('MsgUpdateCorporation')
   const [rotating, setRotating] = useState(false)
   const [composing, setComposing] = useState(false)
   const [enrichment, setEnrichment] = useState<DidEnrichment | null>(null)
@@ -93,8 +95,8 @@ export default function CorporationPage() {
     walletAddress: address,
     openProposals,
     unrepaidSlash,
+    rotate,
     modes: {
-      update: corporationSigningMode('/verana.co.v1.MsgUpdateCorporation', acting),
       grant: corporationSigningMode('/verana.de.v1.MsgGrantOperatorAuthorization', acting),
       revoke: corporationSigningMode('/verana.de.v1.MsgRevokeOperatorAuthorization', acting),
       repay: corporationSigningMode('/verana.td.v1.MsgRepaySlashedTrustDeposit', acting),

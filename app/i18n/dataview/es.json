@@ -818,5 +818,6 @@
   "account.corporations.notice": "Las corporaciones se crean y gestionan en la página Corporación.",
   "account.corporations.notice.link": "Abrir Corporación",
   "txconfirm.warning.MsgArchiveEcosystem": "Esto cambia el estado de archivo del ecosistema para todos los participantes. Puede revertirse con otra acción de archivo.",
-  "txconfirm.warning.MsgArchiveCredentialSchema": "Esto cambia el estado de archivo del esquema de credencial para todos los participantes. Puede revertirse con otra acción de archivo."
+  "txconfirm.warning.MsgArchiveCredentialSchema": "Esto cambia el estado de archivo del esquema de credencial para todos los participantes. Puede revertirse con otra acción de archivo.",
+  "corporation.capability.none": "Tu billetera no tiene autorización para esta acción en la corporación activa."
 }

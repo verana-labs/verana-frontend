@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react'
 import type { CorporationDetails } from '@/hooks/useCorporationDetails'
+import type { ActionSigning } from '@/hooks/useSigningMode'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import type { DidEnrichment } from '@/lib/resolverClient'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
@@ -24,8 +25,8 @@ export interface CorporationView {
   walletAddress: string | undefined
   openProposals: number
   unrepaidSlash: number
+  rotate: ActionSigning
   modes: {
-    update: CorporationSigningMode | null
     grant: CorporationSigningMode | null
     revoke: CorporationSigningMode | null
     repay: CorporationSigningMode | null
@@ -125,11 +126,11 @@ export function TabsLayout({
       <CorporationHeader
         profile={view.details.profile}
         enrichment={view.enrichment}
-        updateMode={view.modes.update}
+        rotate={view.rotate}
         rotating={view.rotating}
         onToggleRotate={view.onToggleRotate}
         onCreate={view.onCreate}
-        rotateForm={view.modes.update ? <RotateDidForm mode={view.modes.update} onSubmit={view.onRotate} /> : null}
+        rotateForm={view.rotate.mode ? <RotateDidForm mode={view.rotate.mode} onSubmit={view.onRotate} /> : null}
         nav={nav}
       />
       {section(view, tab)}
