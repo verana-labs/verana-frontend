@@ -1,7 +1,13 @@
 import { expect, type Page, test } from '@playwright/test'
 import { connectWallet } from './support/connect'
 import { GRANTEE, REPLACEMENT_MEMBER } from './support/corp-fixtures'
-import { HARNESS_MNEMONIC, installCorporationStubs, seedActingCorporation } from './support/corp-stubs'
+import {
+  dropDiscoveryStubs,
+  HARNESS_MNEMONIC,
+  installCorporationStubs,
+  installEcosystemStubs,
+  seedActingCorporation,
+} from './support/corp-stubs'
 import { installMockChain } from './support/mock-chain'
 
 async function noHorizontalOverflow(page: Page) {
@@ -58,7 +64,7 @@ test('tabs, deep links and proposal actions', async ({ page }) => {
 
   await page.getByRole('button', { name: /#40/ }).click()
   await expect(page.getByText('/verana.co.v1.MsgUpdateCorporation').first()).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Execute' })).toBeHidden()
+  await expect(page.getByRole('button', { name: 'Execute', exact: true })).toBeHidden()
 
   await page.getByRole('button', { name: 'Members', exact: true }).click()
   await expect(page).toHaveURL(/tab=members/)
@@ -83,6 +89,53 @@ test('a member without grants gets the proposal signing mode everywhere', async 
   await page.getByRole('button', { name: 'Trust Deposit', exact: true }).click()
   const repay = page.getByRole('button', { name: /Repay Slashed Deposit/ })
   await expect(repay.getByLabel('Opens a governance proposal')).toBeVisible()
+})
+
+test('a member without grants gets the proposal fallback on an owned ecosystem', async ({ page }) => {
+  await installCorporationStubs(page, { memberOnly: true })
+  await installEcosystemStubs(page)
+  await seedActingCorporation(page, 13)
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubSri: false, stubCorporation: false })
+
+  await page.goto('/ecosystems/13')
+  const archive = page.getByRole('button', { name: /^Archive/ })
+  await expect(archive).toBeVisible({ timeout: 15_000 })
+  await expect(archive).toBeEnabled()
+  await expect(archive.getByLabel('Opens a governance proposal')).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: /^Edit Configuration/ }).getByLabel('Opens a governance proposal')
+  ).toBeVisible()
+
+  await archive.click()
+  const dialog = page.getByRole('dialog', { name: 'Confirm transaction' })
+  await expect(dialog).toBeVisible({ timeout: 30_000 })
+  await expect(dialog.getByText('Governance proposal', { exact: true })).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Submit proposal' })).toBeVisible()
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(dialog).toBeHidden()
+  expect(mock.seenMethods()).not.toContain('broadcast_tx_sync')
+  await mock.teardown()
+})
+
+test('losing the acting corporation mid-session blocks and returns to guest mode', async ({ page }) => {
+  await installCorporationStubs(page)
+  await seedActingCorporation(page, 13)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  await page.goto('/corporation')
+  await expect(page.getByRole('heading', { name: /Acme Trust AG/ })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('link', { name: 'Ecosystems' })).toBeVisible()
+
+  await dropDiscoveryStubs(page)
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
+
+  await expect(page.getByText(/You can no longer act for/)).toBeVisible({ timeout: 15_000 })
+  await page.getByRole('button', { name: 'Continue without a corporation' }).click()
+  await expect(page.getByText(/You can no longer act for/)).toBeHidden()
+  await expect(page.getByRole('button', { name: 'No corporation' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Ecosystems' })).toBeHidden()
+  await expect(page.getByRole('link', { name: 'Corporation' })).toBeHidden()
 })
 
 test('a fresh wallet sees no corporation nav and lands on the wizard', async ({ page }) => {
