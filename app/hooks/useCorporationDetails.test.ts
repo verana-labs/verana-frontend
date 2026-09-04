@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/config/env', () => ({
   VERANA_REST_ENDPOINT_CORPORATION: 'https://indexer.example/v4/corporation',
@@ -7,8 +7,11 @@ vi.mock('@/config/env', () => ({
   VERANA_REST_ENDPOINT_TRUST_DEPOSIT: 'https://indexer.example/v4/trust-deposit',
 }))
 
+import { logger } from '@/lib/logger'
 import {
+  fetchCorporationHistory,
   parseGroup,
+  parseHistory,
   parseOperatorAuthorizations,
   parseProfile,
   parseProposals,
@@ -126,27 +129,50 @@ describe('parseOperatorAuthorizations', () => {
 })
 
 describe('parseVsOperatorAuthorizations', () => {
-  it('accepts vs_operator or operator keys and missing optional fields', () => {
+  it('flattens the participant records nested under each VS operator', () => {
     const rows = parseVsOperatorAuthorizations({
       authorizations: [
         {
+          id: 12,
+          corporation_id: 6,
           vs_operator: 'verana1vs',
-          participant_id: 42,
-          msg_types: ['/verana.pp.v1.MsgRenewParticipantOP'],
-          expiration: null,
+          records: [
+            {
+              participant_id: 102,
+              msg_types: ['/verana.pp.v1.MsgTriggerResolver'],
+              with_feegrant: true,
+              expiration: '2026-08-27T12:11:01.742Z',
+            },
+            {
+              participant_id: 98,
+              msg_types: ['/verana.pp.v1.MsgCreateOrUpdateParticipantSession'],
+              with_feegrant: true,
+            },
+          ],
         },
-        { operator: 'verana1legacy' },
+        { id: 11, corporation_id: 6, vs_operator: 'verana1idle', records: [] },
       ],
     })
     expect(rows).toEqual([
       {
         vsOperator: 'verana1vs',
-        participantId: 42,
-        msgTypes: ['/verana.pp.v1.MsgRenewParticipantOP'],
+        participantId: 102,
+        msgTypes: ['/verana.pp.v1.MsgTriggerResolver'],
+        expiration: '2026-08-27T12:11:01.742Z',
+      },
+      {
+        vsOperator: 'verana1vs',
+        participantId: 98,
+        msgTypes: ['/verana.pp.v1.MsgCreateOrUpdateParticipantSession'],
         expiration: null,
       },
-      { vsOperator: 'verana1legacy', participantId: null, msgTypes: [], expiration: null },
     ])
+  })
+
+  it('rejects a record without its participant', () => {
+    expect(() =>
+      parseVsOperatorAuthorizations({ authorizations: [{ vs_operator: 'verana1vs', records: [{ msg_types: [] }] }] })
+    ).toThrow('participant_id')
   })
 })
 
@@ -167,6 +193,8 @@ describe('parseProposals', () => {
           voting_period_end: '2026-08-25T20:35:46.407Z',
           executor_result: 'SUCCESS',
           messages: [{ '@type': '/verana.de.v1.MsgGrantOperatorAuthorization', grantee: 'verana1aaa' }],
+          final_tally_result: { no_count: '0', yes_count: '3', abstain_count: '0', no_with_veto_count: '0' },
+          tally: { yes_count: '3', no_count: '0', abstain_count: '0', no_with_veto_count: '0' },
         },
       ],
     })
@@ -175,12 +203,14 @@ describe('parseProposals', () => {
       status: 'ACCEPTED',
       executorResult: 'SUCCESS',
       proposers: ['verana1aaa'],
+      tally: { yes: 3, no: 0, abstain: 0, veto: 0 },
     })
     expect(rows[0].messages[0]['@type']).toBe('/verana.de.v1.MsgGrantOperatorAuthorization')
   })
 
   it('defaults a missing status and tolerates absent optional fields', () => {
-    const rows = parseProposals({ proposals: [{ id: 9 }] })
+    const tally = { yes_count: '0', no_count: '2', abstain_count: '1', no_with_veto_count: '0' }
+    const rows = parseProposals({ proposals: [{ id: 9, tally }] })
     expect(rows[0]).toEqual({
       id: 9,
       status: 'UNKNOWN',
@@ -189,6 +219,100 @@ describe('parseProposals', () => {
       executorResult: null,
       proposers: [],
       messages: [],
+      tally: { yes: 0, no: 2, abstain: 1, veto: 0 },
     })
+  })
+
+  it('rejects a proposal without its running tally', () => {
+    expect(() => parseProposals({ proposals: [{ id: 9 }] })).toThrow('tally')
+  })
+})
+
+describe('parseHistory', () => {
+  it('reads the live activity shape newest first and tolerates a missing account', () => {
+    const rows = parseHistory({
+      entity_type: 'Corporation',
+      entity_id: '13',
+      activity: [
+        {
+          id: 1,
+          timestamp: '2026-08-30T09:00:00Z',
+          block_height: 404000,
+          entity_type: 'Corporation',
+          entity_id: '13',
+          msg: 'SlashTrustDeposit',
+          changes: null,
+        },
+        {
+          id: 3,
+          timestamp: '2026-09-01T11:00:00Z',
+          block_height: 405300,
+          entity_type: 'Corporation',
+          entity_id: '13',
+          msg: 'UpdateCorporation',
+          changes: { did: 'did:web:acme-trust.ch' },
+          account: 'verana1policy',
+        },
+        {
+          id: 2,
+          timestamp: '2026-09-01T10:00:00Z',
+          block_height: 405000,
+          entity_type: 'Corporation',
+          entity_id: '13',
+          msg: 'CreateCorporation',
+          changes: { did: 'did:web:old.example' },
+          account: 'verana1aaa',
+        },
+      ],
+    })
+    expect(rows.map((row) => row.msg)).toEqual(['UpdateCorporation', 'CreateCorporation', 'SlashTrustDeposit'])
+    expect(rows[2]).toEqual({
+      id: 1,
+      timestamp: '2026-08-30T09:00:00Z',
+      blockHeight: 404000,
+      msg: 'SlashTrustDeposit',
+      account: null,
+      changes: {},
+    })
+  })
+
+  it('rejects an envelope without the activity list', () => {
+    expect(() => parseHistory({ history: [] })).toThrow('activity')
+  })
+})
+
+describe('fetchCorporationHistory', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('requests the corporation history endpoint with the page limit', async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ entity_type: 'Corporation', entity_id: '13', activity: [] }),
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(fetchCorporationHistory(13)).resolves.toEqual([])
+    expect(fetchMock).toHaveBeenCalledWith('https://indexer.example/v4/corporation/history/13?limit=64')
+  })
+
+  it('degrades a 404 to an empty history and logs it', async () => {
+    const error = vi.spyOn(logger, 'error').mockImplementation(() => {})
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false, status: 404, json: async () => ({}) }))
+    )
+    await expect(fetchCorporationHistory(13)).resolves.toEqual([])
+    expect(error).toHaveBeenCalledOnce()
+  })
+
+  it('degrades a malformed payload to an empty history', async () => {
+    vi.spyOn(logger, 'error').mockImplementation(() => {})
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => ({ activity: [{ id: 'nope' }] }) }))
+    )
+    await expect(fetchCorporationHistory(13)).resolves.toEqual([])
   })
 })

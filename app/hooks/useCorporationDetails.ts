@@ -10,7 +10,8 @@ import {
 import { indexerValidators } from '@/lib/indexer-json'
 import { logger } from '@/lib/logger'
 
-const { record, string, integer, optionalString, nullableString, stringArray } = indexerValidators('corporation page')
+const { record, string, integer, optionalString, nullableString, stringArray, decimalAmount } =
+  indexerValidators('corporation page')
 
 export interface CorporationProfile {
   id: number
@@ -51,9 +52,16 @@ export interface OperatorAuthorizationRow {
 
 export interface VsOperatorAuthorizationRow {
   vsOperator: string
-  participantId: number | null
+  participantId: number
   msgTypes: string[]
   expiration: string | null
+}
+
+export interface ProposalTally {
+  yes: number
+  no: number
+  abstain: number
+  veto: number
 }
 
 export interface ProposalRow {
@@ -64,6 +72,16 @@ export interface ProposalRow {
   executorResult: string | null
   proposers: string[]
   messages: Record<string, unknown>[]
+  tally: ProposalTally
+}
+
+export interface ActivityRow {
+  id: number
+  timestamp: string
+  blockHeight: number
+  msg: string
+  account: string | null
+  changes: Record<string, unknown>
 }
 
 export interface CorporationDetails {
@@ -74,6 +92,7 @@ export interface CorporationDetails {
   operatorAuthorizations: OperatorAuthorizationRow[]
   vsOperatorAuthorizations: VsOperatorAuthorizationRow[]
   proposals: ProposalRow[]
+  history: ActivityRow[]
 }
 
 async function fetchJson(url: string, context: string): Promise<unknown> {
@@ -149,16 +168,33 @@ export function parseOperatorAuthorizations(payload: unknown): OperatorAuthoriza
 export function parseVsOperatorAuthorizations(payload: unknown): VsOperatorAuthorizationRow[] {
   const envelope = record(payload, 'vs authorizations response')
   const rows = Array.isArray(envelope.authorizations) ? envelope.authorizations : []
-  return rows.map((entry, index) => {
-    const row = record(entry, `vs_authorizations[${index}]`)
-    const participant = row.participant_id
-    return {
-      vsOperator: string(row.vs_operator ?? row.operator, `vs_authorizations[${index}].vs_operator`),
-      participantId: typeof participant === 'number' ? participant : null,
-      msgTypes: Array.isArray(row.msg_types) ? stringArray(row.msg_types, `vs_authorizations[${index}].msg_types`) : [],
-      expiration: nullableString(row.expiration ?? null, `vs_authorizations[${index}].expiration`),
-    }
+  return rows.flatMap((entry, index) => {
+    const path = `vs_authorizations[${index}]`
+    const row = record(entry, path)
+    const vsOperator = string(row.vs_operator, `${path}.vs_operator`)
+    const records = Array.isArray(row.records) ? row.records : []
+    return records.map((item, recordIndex) => {
+      const recordPath = `${path}.records[${recordIndex}]`
+      const authorization = record(item, recordPath)
+      return {
+        vsOperator,
+        participantId: integer(authorization.participant_id, `${recordPath}.participant_id`),
+        msgTypes: stringArray(authorization.msg_types, `${recordPath}.msg_types`),
+        expiration: nullableString(authorization.expiration ?? null, `${recordPath}.expiration`),
+      }
+    })
   })
+}
+
+function parseTally(value: unknown, path: string): ProposalTally {
+  const tally = record(value, path)
+  const count = (field: string) => Number(decimalAmount(tally[field], `${path}.${field}`))
+  return {
+    yes: count('yes_count'),
+    no: count('no_count'),
+    abstain: count('abstain_count'),
+    veto: count('no_with_veto_count'),
+  }
 }
 
 export function parseProposals(payload: unknown): ProposalRow[] {
@@ -174,6 +210,7 @@ export function parseProposals(payload: unknown): ProposalRow[] {
       executorResult: nullableString(row.executor_result ?? null, `proposals[${index}].executor_result`),
       proposers: Array.isArray(row.proposers) ? stringArray(row.proposers, `proposals[${index}].proposers`) : [],
       messages: Array.isArray(row.messages) ? row.messages.map((message) => record(message, 'proposal message')) : [],
+      tally: parseTally(row.tally, `proposals[${index}].tally`),
     }
   })
 }
@@ -199,6 +236,65 @@ export async function fetchProposalVotes(proposalId: number): Promise<VoteRow[]>
       submitTime: nullableString(row.submit_time ?? null, `votes[${index}].submit_time`),
     }
   })
+}
+
+function newestFirst(a: ActivityRow, b: ActivityRow): number {
+  const byTime = Date.parse(b.timestamp) - Date.parse(a.timestamp)
+  if (Number.isFinite(byTime) && byTime !== 0) return byTime
+  return b.blockHeight - a.blockHeight || b.id - a.id
+}
+
+export function parseHistory(payload: unknown): ActivityRow[] {
+  const envelope = record(payload, 'history response')
+  if (!Array.isArray(envelope.activity)) throw new Error('Invalid corporation page response: history.activity')
+  return envelope.activity
+    .map((entry, index) => {
+      const row = record(entry, `activity[${index}]`)
+      const changes = row.changes
+      return {
+        id: integer(row.id, `activity[${index}].id`),
+        timestamp: string(row.timestamp, `activity[${index}].timestamp`),
+        blockHeight: integer(row.block_height, `activity[${index}].block_height`),
+        msg: string(row.msg, `activity[${index}].msg`),
+        account: nullableString(row.account ?? null, `activity[${index}].account`),
+        changes: changes === undefined || changes === null ? {} : record(changes, `activity[${index}].changes`),
+      }
+    })
+    .sort(newestFirst)
+}
+
+export async function fetchCorporationHistory(corporationId: number): Promise<ActivityRow[]> {
+  try {
+    const payload = await fetchJson(
+      `${VERANA_REST_ENDPOINT_CORPORATION}/history/${corporationId}?limit=64`,
+      'Unable to fetch the history'
+    )
+    return parseHistory(payload)
+  } catch (cause) {
+    logger.error('corporation history', cause)
+    return []
+  }
+}
+
+export function useProposalVotes(proposalId: number): VoteRow[] | undefined {
+  const [votes, setVotes] = useState<VoteRow[]>()
+
+  useEffect(() => {
+    let cancelled = false
+    fetchProposalVotes(proposalId)
+      .then((rows) => {
+        if (!cancelled) setVotes(rows)
+      })
+      .catch((cause: unknown) => {
+        logger.error(`proposal ${proposalId} votes`, cause)
+        if (!cancelled) setVotes([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [proposalId])
+
+  return votes
 }
 
 export function useCorporationDetails(corporationId: number | undefined) {
@@ -230,7 +326,7 @@ export function useCorporationDetails(corporationId: number | undefined) {
           'Unable to fetch proposals'
         ),
       ])
-      const [trustDeposit, vsAuthorizations] = await Promise.all([
+      const [trustDeposit, vsAuthorizations, history] = await Promise.all([
         fetchJson(`${VERANA_REST_ENDPOINT_TRUST_DEPOSIT}/get/${corporationId}`, 'Unable to fetch the trust deposit')
           .then(parseTrustDeposit)
           .catch((cause: unknown) => {
@@ -246,6 +342,7 @@ export function useCorporationDetails(corporationId: number | undefined) {
             logger.error('vs operator authorizations', cause)
             return [] as VsOperatorAuthorizationRow[]
           }),
+        fetchCorporationHistory(corporationId),
       ])
       if (requestRef.current !== requestId) return
       const { members, policy } = parseGroup(groupPayload)
@@ -257,6 +354,7 @@ export function useCorporationDetails(corporationId: number | undefined) {
         operatorAuthorizations: parseOperatorAuthorizations(authPayload),
         vsOperatorAuthorizations: vsAuthorizations,
         proposals: parseProposals(proposalsPayload),
+        history,
       })
     } catch (cause) {
       if (requestRef.current !== requestId) return
@@ -268,6 +366,7 @@ export function useCorporationDetails(corporationId: number | undefined) {
   }, [corporationId])
 
   useEffect(() => {
+    setDetails(null)
     void load()
   }, [load])
 
