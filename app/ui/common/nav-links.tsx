@@ -25,7 +25,7 @@ export default function NavLinks() {
 
   const pendingTasksCtx = usePendingTasksCtx()
   const totalPendingTasks = pendingTasksCtx.pendingParticipants.reduce((total, item) => total + item.pending_tasks, 0)
-  const { acting } = useCorporationContext()
+  const { acting, memberships, requestSelection } = useCorporationContext()
   const attention = useCorporationAttention(acting ? [acting] : [])
   const pendingVotes = acting ? (attention[acting.corporation.id]?.pendingVotes ?? 0) : 0
   const links = getNavLinks(totalPendingTasks + pendingVotes)
@@ -35,10 +35,22 @@ export default function NavLinks() {
       {links.map((link, idx: number) => {
         const hasSubLinks = Array.isArray(link.links) && link.links.length > 0
         if (!isWalletConnected && !link.availableOffline) return null
-        if (link.requiresCorporation && !acting) return null
+        const needsCorporation = link.requiresCorporation === true && !acting
+        if (needsCorporation && memberships.length === 0) return null
         return (
           <div key={link.name} className="relative w-full self-stretch justify-center items-center">
-            <Link href={link.href} className={pathname === link.href ? 'nav-links-selected' : 'nav-links-link'}>
+            <Link
+              href={link.href}
+              onClick={
+                needsCorporation
+                  ? (event) => {
+                      event.preventDefault()
+                      requestSelection()
+                    }
+                  : undefined
+              }
+              className={pathname === link.href ? 'nav-links-selected' : 'nav-links-link'}
+            >
               <FontAwesomeIcon
                 icon={link.icon}
                 className={pathname === link.href ? 'nav-links-icon-selected' : 'nav-links-icon'}

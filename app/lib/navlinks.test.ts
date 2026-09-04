@@ -8,9 +8,11 @@ describe('getNavLinks', () => {
     expect(hrefs).toEqual(['/dashboard', '/account', '/corporation', '/ecosystems', '/discover', '/pendingtasks'])
   })
 
-  it('gates the corporation entry on an acting corporation', () => {
-    const byHref = new Map(getNavLinks().map((link) => [link.href, link]))
-    expect(byHref.get('/corporation')?.requiresCorporation).toBe(true)
+  it('gates the corporation-bound entries on an acting corporation', () => {
+    const gated = getNavLinks()
+      .filter((link) => link.requiresCorporation === true)
+      .map((link) => link.href)
+    expect(gated).toEqual(['/corporation', '/ecosystems', '/pendingtasks'])
   })
 
   it('gives every link a non-empty name and an icon', () => {

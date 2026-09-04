@@ -50,6 +50,7 @@ export function getNavLinks(pendingCount?: number): NavLink[] {
       iconClass: 'bg-gradient-to-br from-orange-500 to-orange-700 text-white',
       featuredService: true,
       description: resolveTranslatable({ key: 'ecosystemList.description' }, translate),
+      requiresCorporation: true,
     },
     {
       name: resolveTranslatable({ key: 'discover.title' }, translate) ?? 'Discover & Join',
@@ -66,6 +67,7 @@ export function getNavLinks(pendingCount?: number): NavLink[] {
       icon: faTasks,
       className: 'bg-red-500',
       count: pendingCount,
+      requiresCorporation: true,
     },
   ]
 }
