@@ -20,6 +20,7 @@ import { useRef } from 'react'
 import { useDelegableMsgs } from '@/hooks/useDelegableMsgs'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
+import { notifyChainRejection } from '@/lib/chain-error'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import {
   MSG_ERROR_ACTION_PARTICIPANT,
@@ -37,7 +38,7 @@ import { usePendingTasksCtx } from '@/providers/api-rest-query-provider-context'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
 import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
-import { formatVNAFromUVNA } from '@/util/util'
+import { formatVNAFromUVNA, shortenMiddle } from '@/util/util'
 
 type ParticipantContext = {
   corporation: string
@@ -304,6 +305,8 @@ export function useActionParticipant(onCancel?: () => void, onRefresh?: (id?: st
     inFlight.current = true
     let id = 'id' in params ? String(params.id) : undefined
     let mode: CorporationSigningMode = 'operator'
+    let corporation = ''
+    const rejection = () => ({ corporation: shortenMiddle(corporation, 32), msg: params.msgType })
     const errorMessage = (code?: number, msg?: string) =>
       mode === 'proposal'
         ? MSG_NOTIFICATION_PROPOSAL.error(code, msg)
@@ -321,6 +324,7 @@ export function useActionParticipant(onCancel?: () => void, onRefresh?: (id?: st
       })
       if (!resolved) return
       mode = resolved.mode
+      corporation = resolved.corporation
       if (simulate) {
         const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType, simulate })
         if (isDeliverTxResponse(result)) throw new Error('Expected a simulation result')
@@ -336,7 +340,13 @@ export function useActionParticipant(onCancel?: () => void, onRefresh?: (id?: st
       const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType })
       if (!isDeliverTxResponse(result)) throw new Error('Expected a transaction response')
       if (result.code !== 0) {
-        await notify(errorMessage(result.code, result.rawLog), 'error', t('notification.msg.failed.title'))
+        await notifyChainRejection(
+          notify,
+          result.rawLog,
+          errorMessage(result.code, result.rawLog),
+          rejection(),
+          t('notification.msg.failed.title')
+        )
         return result
       }
 
@@ -362,9 +372,12 @@ export function useActionParticipant(onCancel?: () => void, onRefresh?: (id?: st
       onCancel?.()
       return result
     } catch (error) {
-      await notify(
-        errorMessage(undefined, error instanceof Error ? error.message : String(error)),
-        'error',
+      const message = error instanceof Error ? error.message : String(error)
+      await notifyChainRejection(
+        notify,
+        message,
+        errorMessage(undefined, message),
+        rejection(),
         t('notification.msg.failed.title')
       )
     } finally {

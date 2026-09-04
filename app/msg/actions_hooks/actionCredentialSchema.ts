@@ -14,6 +14,7 @@ import { useRef } from 'react'
 import { useDelegableMsgs } from '@/hooks/useDelegableMsgs'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
+import { notifyChainRejection } from '@/lib/chain-error'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import {
   MSG_ERROR_ACTION_CS,
@@ -32,6 +33,7 @@ import { useNotification } from '@/providers/notification-provider'
 import { useProtocolParams } from '@/providers/protocol-params-context'
 import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 import { normalizeJsonSchema, validateJSONSchemaReturn } from '@/util/json_schema_util'
+import { shortenMiddle } from '@/util/util'
 
 const DEFAULT_HOLDER_ONBOARDING_MODE = HolderOnboardingMode.HOLDER_ONBOARDING_MODE_PERMISSIONLESS
 const DEFAULT_PRICING_ASSET_TYPE = PricingAssetType.COIN
@@ -175,6 +177,8 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
     inFlight.current = true
     let id = 'id' in params ? String(params.id) : undefined
     let mode: CorporationSigningMode = 'operator'
+    let corporation = ''
+    const rejection = () => ({ corporation: shortenMiddle(corporation, 32), msg: params.msgType })
     const errorMessage = (code?: number, msg?: string) =>
       mode === 'proposal'
         ? MSG_NOTIFICATION_PROPOSAL.error(code, msg)
@@ -192,6 +196,7 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
       })
       if (!resolved) return
       mode = resolved.mode
+      corporation = resolved.corporation
       if (simulate) {
         const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType, simulate })
         if (isDeliverTxResponse(result)) throw new Error('Expected a simulation result')
@@ -205,7 +210,13 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
       const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType })
       if (!isDeliverTxResponse(result)) throw new Error('Expected a transaction response')
       if (result.code !== 0) {
-        await notify(errorMessage(result.code, result.rawLog), 'error', t('notification.msg.failed.title'))
+        await notifyChainRejection(
+          notify,
+          result.rawLog,
+          errorMessage(result.code, result.rawLog),
+          rejection(),
+          t('notification.msg.failed.title')
+        )
         return result
       }
 
@@ -230,9 +241,12 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
       onCancel?.()
       return result
     } catch (error) {
-      await notify(
-        errorMessage(undefined, error instanceof Error ? error.message : String(error)),
-        'error',
+      const message = error instanceof Error ? error.message : String(error)
+      await notifyChainRejection(
+        notify,
+        message,
+        errorMessage(undefined, message),
+        rejection(),
         t('notification.msg.failed.title')
       )
     } finally {

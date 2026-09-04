@@ -13,6 +13,7 @@ export type DelegableBuild = (corporation: string, operator: string) => EncodeOb
 export interface DelegableMsgs {
   msgs: EncodeObject[]
   mode: CorporationSigningMode
+  corporation: string
 }
 
 export function resolveDelegableMsgs({
@@ -32,11 +33,12 @@ export function resolveDelegableMsgs({
 }): DelegableMsgs | null {
   const mode = corporationSigningMode(typeUrl, membership)
   if (!mode) return null
-  const policy = membership.corporation.policyAddress
-  if (mode === 'operator') return { msgs: [build(policy, address)], mode }
+  const { policyAddress: policy, did: corporation } = membership.corporation
+  if (mode === 'operator') return { msgs: [build(policy, address)], mode, corporation }
   return {
     msgs: [wrapInProposal(membership, address, build(policy, policy), proposalTitle, proposalSummary)],
     mode,
+    corporation,
   }
 }
 
