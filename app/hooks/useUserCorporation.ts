@@ -9,8 +9,17 @@ export {
 } from '@/lib/corporation-discovery'
 
 export function useUserCorporation() {
-  const { memberships, acting, needsSelection, loading, errorCorporation, setActing, requestSelection, refetch } =
-    useCorporationContext()
+  const {
+    memberships,
+    acting,
+    needsSelection,
+    loading,
+    errorCorporation,
+    setActing,
+    requestSelection,
+    refetch,
+    revalidate,
+  } = useCorporationContext()
   return {
     corporation: acting?.corporation ?? null,
     hasOperatorGrant: (acting?.grantedMessageTypes.length ?? 0) > 0,
@@ -23,5 +32,6 @@ export function useUserCorporation() {
     setActing,
     requestSelection,
     refetch,
+    revalidate,
   }
 }

@@ -160,6 +160,16 @@ export function chooseActingMembership(
   return null
 }
 
+export function lostActingCorporation(
+  actingId: number | null,
+  previous: CorporationMembership[],
+  discovered: CorporationMembership[]
+): UserCorporation | null {
+  if (actingId === null) return null
+  if (discovered.some((membership) => membership.corporation.id === actingId)) return null
+  return previous.find((membership) => membership.corporation.id === actingId)?.corporation ?? null
+}
+
 export async function findCorporationMembership(
   address: string,
   corporationId: number

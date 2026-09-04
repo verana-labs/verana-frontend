@@ -13,6 +13,8 @@ import { type CorporationMembership, operatorOnlyMode } from '@/lib/corporation-
 import { logger } from '@/lib/logger'
 import { type DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
 import { useCorporationContext } from '@/providers/corporation-provider'
+import { ChooserShell } from '@/ui/common/chooser-shell'
+import { CorporationLostModal } from '@/ui/common/corporation-lost-modal'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { countryCodeToFlag, shortenMiddle } from '@/util/util'
 
@@ -156,40 +158,39 @@ function ChooserModal({
   onPick: (corporationId: number) => void
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-xl border border-neutral-20 dark:border-neutral-70 bg-white dark:bg-surface p-6 shadow-xl">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{t('corporation.chooser.title')}</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t('corporation.chooser.desc')}</p>
-        <div className="space-y-2">
-          {memberships.map((membership) => (
-            <button
-              key={membership.corporation.id}
-              type="button"
-              onClick={() => onPick(membership.corporation.id)}
-              className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-left text-sm border border-neutral-20 dark:border-neutral-70 hover:bg-surface-muted dark:hover:bg-neutral-70/30"
-            >
-              <MembershipRow
-                membership={membership}
-                names={names}
-                isActing={false}
-                counts={attention[membership.corporation.id]}
-              />
-            </button>
-          ))}
-        </div>
+    <ChooserShell title={t('corporation.chooser.title')} description={t('corporation.chooser.desc')}>
+      <div className="space-y-2">
+        {memberships.map((membership) => (
+          <button
+            key={membership.corporation.id}
+            type="button"
+            onClick={() => onPick(membership.corporation.id)}
+            className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-left text-sm border border-neutral-20 dark:border-neutral-70 hover:bg-surface-muted dark:hover:bg-neutral-70/30"
+          >
+            <MembershipRow
+              membership={membership}
+              names={names}
+              isActing={false}
+              counts={attention[membership.corporation.id]}
+            />
+          </button>
+        ))}
       </div>
-    </div>
+    </ChooserShell>
   )
 }
 
 export function CorporationChooserGate() {
   const veranaChain = useVeranaChain()
   const { isWalletConnected } = useChain(veranaChain.chain_name)
-  const { memberships, needsSelection, selectionRequested, setActing } = useCorporationContext()
+  const { memberships, lost, needsSelection, selectionRequested, setActing, dismissLost } = useCorporationContext()
   const attention = useCorporationAttention(memberships)
   const names = useMembershipNames(memberships)
 
-  if (!isWalletConnected || !(needsSelection || selectionRequested)) return null
+  if (!isWalletConnected) return null
+  if (lost)
+    return <CorporationLostModal corporation={lost} canChoose={memberships.length > 0} onDismiss={dismissLost} />
+  if (!(needsSelection || selectionRequested)) return null
   return <ChooserModal memberships={memberships} names={names} attention={attention} onPick={setActing} />
 }
 

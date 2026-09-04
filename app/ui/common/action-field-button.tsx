@@ -10,11 +10,20 @@ import { ActionFieldProps, renderActionComponent } from '@/ui/common/data-view-t
 import IconLabelButton from '@/ui/common/icon-label-button'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 
-export function ActionLabel({ label, mode }: { label: ReactNode; mode: CorporationSigningMode | null }) {
+export function ActionLabel({
+  label,
+  mode,
+  reason,
+}: {
+  label: ReactNode
+  mode: CorporationSigningMode | null
+  reason?: string
+}) {
   return (
     <span className="inline-flex items-center gap-2">
       {label}
       <SigningModeIcon mode={mode} />
+      {reason ? <span className="sr-only">{reason}</span> : null}
     </span>
   )
 }
@@ -39,7 +48,7 @@ export default function ActionFieldButton({
   isActive = false,
 }: ActionFieldButtonProps) {
   const [active, setActive] = useState<boolean>(isActive)
-  const { mode, disabled } = useActionSigning(field.value)
+  const { mode, disabled, reason } = useActionSigning(field.value)
 
   const toggle = () => {
     const next = !active
@@ -56,7 +65,7 @@ export default function ActionFieldButton({
     <div>
       {type === 'button' && !active && (
         <IconLabelButton
-          label={<ActionLabel label={field.label} mode={mode} />}
+          label={<ActionLabel label={field.label} mode={mode} reason={reason} />}
           icon={field.icon}
           className={clsx(
             'btn-action-confirm text-sm disabled:opacity-50 disabled:cursor-not-allowed',
@@ -64,6 +73,7 @@ export default function ActionFieldButton({
           )}
           onClick={toggle}
           disabled={disabled}
+          title={reason}
         />
       )}
 
@@ -72,6 +82,7 @@ export default function ActionFieldButton({
           type="button"
           onClick={toggle}
           disabled={disabled}
+          title={reason}
           className={clsx(
             'w-full px-6 py-4 text-left flex items-center justify-between transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
             field.isWarning ? 'hover:bg-red-50 dark:hover:bg-red-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
@@ -85,7 +96,7 @@ export default function ActionFieldButton({
             )}
             <div>
               <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-                <ActionLabel label={field.label} mode={mode} />
+                <ActionLabel label={field.label} mode={mode} reason={reason} />
               </h4>
               <p className="text-sm text-neutral-70 dark:text-neutral-70">{field.description}</p>
             </div>

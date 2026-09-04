@@ -220,6 +220,7 @@
   "notification.msg.indexer.pending": "Confirmada en la cadena en el bloque {height}, pero el indexador aún no se ha puesto al día. Los datos mostrados pueden seguir desactualizados.",
   "notification.msg.failed.title": "Transacción fallida",
   "notification.msg.connectwallet": "Conecta tu billetera",
+  "notification.msg.chain.unauthorized": "La cadena rechazó {msg} para {corporation}: tu billetera no está autorizada.",
   "notification.MsgReclaimTrustDepositYield.success": "Intereses reclamados correctamente.",
   "notification.MsgReclaimTrustDepositYield.inprogress": "Reclamando intereses...",
   "notification.MsgReclaimTrustDepositYield.error": "Error al reclamar los intereses. {code}{msg}",
@@ -818,5 +819,10 @@
   "account.corporations.notice": "Las corporaciones se crean y gestionan en la página Corporación.",
   "account.corporations.notice.link": "Abrir Corporación",
   "txconfirm.warning.MsgArchiveEcosystem": "Esto cambia el estado de archivo del ecosistema para todos los participantes. Puede revertirse con otra acción de archivo.",
-  "txconfirm.warning.MsgArchiveCredentialSchema": "Esto cambia el estado de archivo del esquema de credencial para todos los participantes. Puede revertirse con otra acción de archivo."
+  "txconfirm.warning.MsgArchiveCredentialSchema": "Esto cambia el estado de archivo del esquema de credencial para todos los participantes. Puede revertirse con otra acción de archivo.",
+  "corporation.capability.none": "Tu billetera no tiene autorización para esta acción en la corporación activa.",
+  "corporation.lost.title": "Ya no puedes actuar por {corporation}",
+  "corporation.lost.desc": "Tu autorización de operador fue revocada o expiró y tu billetera salió de su grupo. No se envió nada con el contexto anterior.",
+  "corporation.lost.choose": "Elegir otra corporación",
+  "corporation.lost.guest": "Continuar sin corporación"
 }

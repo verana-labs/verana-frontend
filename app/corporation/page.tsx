@@ -4,6 +4,7 @@ import { useChain } from '@cosmos-kit/react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { useCorporationDetails, useProposalVotes } from '@/hooks/useCorporationDetails'
+import { useActionSigning } from '@/hooks/useSigningMode'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { logger } from '@/lib/logger'
@@ -24,9 +25,20 @@ export default function CorporationPage() {
   const searchParams = useSearchParams()
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
-  const { acting, loading: actingLoading, refetch: refetchCorporations } = useUserCorporation()
+  const {
+    acting,
+    loading: actingLoading,
+    errorCorporation,
+    refetch: refetchCorporations,
+    revalidate,
+  } = useUserCorporation()
   const { details, loading, error, refetch } = useCorporationDetails(acting?.corporation.id)
-  const manage = useCorporationManage(() => void refetch())
+  const refreshAfterTx = () => {
+    void refetch()
+    void revalidate()
+  }
+  const manage = useCorporationManage(refreshAfterTx)
+  const rotate = useActionSigning('MsgUpdateCorporation')
   const [rotating, setRotating] = useState(false)
   const [composing, setComposing] = useState(false)
   const [enrichment, setEnrichment] = useState<DidEnrichment | null>(null)
@@ -63,6 +75,10 @@ export default function CorporationPage() {
     return <p className="p-6 text-sm text-gray-500">{t('corporation.page.loading')}</p>
   }
 
+  if (errorCorporation && !acting) {
+    return <div className="p-6 error-pane">{errorCorporation}</div>
+  }
+
   if (!acting || creating) {
     return (
       <>
@@ -93,8 +109,8 @@ export default function CorporationPage() {
     walletAddress: address,
     openProposals,
     unrepaidSlash,
+    rotate,
     modes: {
-      update: corporationSigningMode('/verana.co.v1.MsgUpdateCorporation', acting),
       grant: corporationSigningMode('/verana.de.v1.MsgGrantOperatorAuthorization', acting),
       revoke: corporationSigningMode('/verana.de.v1.MsgRevokeOperatorAuthorization', acting),
       repay: corporationSigningMode('/verana.td.v1.MsgRepaySlashedTrustDeposit', acting),
@@ -116,7 +132,7 @@ export default function CorporationPage() {
         membership={acting}
         policy={policy}
         members={members}
-        onDone={() => void refetch()}
+        onDone={refreshAfterTx}
         onClose={() => setComposing(false)}
       />
     ),
