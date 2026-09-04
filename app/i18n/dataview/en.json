@@ -819,5 +819,9 @@
   "account.corporations.empty": "This wallet is not an operator or a member of any corporation yet.",
   "account.corporations.notice": "Corporations are created and managed on the Corporation page.",
   "account.corporations.notice.link": "Open Corporation",
-  "corporation.capability.none": "Your wallet holds no authorization for this action on the acting corporation."
+  "corporation.capability.none": "Your wallet holds no authorization for this action on the acting corporation.",
+  "corporation.lost.title": "You can no longer act for {corporation}",
+  "corporation.lost.desc": "Your operator authorization was revoked or expired and your wallet left its group. Nothing was submitted under the old context.",
+  "corporation.lost.choose": "Choose another corporation",
+  "corporation.lost.guest": "Continue without a corporation"
 }
