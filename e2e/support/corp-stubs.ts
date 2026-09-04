@@ -13,6 +13,8 @@ import {
 
 export { ACME_DID, HARNESS_ADDRESS, PLAIN_DID } from './corp-fixtures'
 
+export const ACME_ECOSYSTEM_DID = 'did:web:acme-eco.example'
+
 export type CorpStubOptions = {
   memberOnly?: boolean
   trustDeposit404?: boolean
@@ -26,6 +28,46 @@ export async function seedActingCorporation(page: Page, corporationId: number) {
     },
     JSON.stringify({ address: HARNESS_ADDRESS, corporationId, expiresAt: Date.now() + 3_600_000 })
   )
+}
+
+export async function installEcosystemStubs(page: Page) {
+  await page.route('**/v4/ecosystem/get/13', (route) =>
+    route.fulfill({
+      json: {
+        ecosystem: {
+          id: 13,
+          did: ACME_ECOSYSTEM_DID,
+          corporation_id: 13,
+          created: '2026-09-01T10:30:00Z',
+          modified: '2026-09-01T10:30:00Z',
+          archived: null,
+          language: 'en',
+          active_version: 1,
+          versions: [
+            {
+              id: 1,
+              version: 1,
+              active_since: '2026-09-01T10:30:00Z',
+              documents: [{ id: 1, url: 'https://acme-trust.ch/egf.md', language: 'en', digest_sri: 'sha384-acme' }],
+            },
+          ],
+          participants: 0,
+          active_schemas: 0,
+          weight: 0,
+          issued: 0,
+          verified: 0,
+        },
+      },
+    })
+  )
+  await page.route('**/v4/credential-schema/list*', (route) => route.fulfill({ json: { schemas: [] } }))
+}
+
+export async function dropDiscoveryStubs(page: Page) {
+  await page.route('**/v4/delegation/operator-authorizations*', (route) =>
+    route.fulfill({ json: { authorizations: [] } })
+  )
+  await page.route('**/v4/group/corporations-by-member*', (route) => route.fulfill({ json: { memberships: [] } }))
 }
 
 export async function installCorporationStubs(page: Page, opts: CorpStubOptions = {}) {
