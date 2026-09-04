@@ -817,5 +817,6 @@
   "account.corporations.title": "Corporations",
   "account.corporations.empty": "This wallet is not an operator or a member of any corporation yet.",
   "account.corporations.notice": "Corporations are created and managed on the Corporation page.",
-  "account.corporations.notice.link": "Open Corporation"
+  "account.corporations.notice.link": "Open Corporation",
+  "corporation.capability.none": "Your wallet holds no authorization for this action on the acting corporation."
 }
