@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react'
 import { useCredentialSchemas } from '@/hooks/useCredentialSchemas'
 import { useEcosystemData } from '@/hooks/useEcosystemData'
 import { useParticipants } from '@/hooks/useParticipants'
+import { useActionSigning } from '@/hooks/useSigningMode'
 import { translate } from '@/i18n/dataview'
 import { getParticipantOnboardingDecision, type JoinableParticipantRole } from '@/lib/participant-onboarding'
 import { isNativePricing } from '@/lib/pricing-asset'
@@ -14,6 +15,7 @@ import { trustCostLines } from '@/lib/trust-costs'
 import { useActionParticipant } from '@/msg/actions_hooks/actionParticipant'
 import { useNotification } from '@/providers/notification-provider'
 import { useProtocolParams } from '@/providers/protocol-params-context'
+import { CapabilityButton } from '@/ui/common/capability-button'
 import CsCard from '@/ui/common/cs-card'
 import EcosystemCard from '@/ui/common/ecosystem-card'
 import EgfCard from '@/ui/common/egf-card'
@@ -87,6 +89,7 @@ export default function JoinEcosystemWizard() {
   const { participants: validators, errorParticipants } = useParticipants(selectedSchema?.id, validatorRole)
   const activeValidators = validators.filter((participant) => participant.participant_state === 'ACTIVE')
 
+  const joinSigning = useActionSigning(decision?.messageType ?? '')
   const protocolParams = useProtocolParams()
   const submitParticipant = useActionParticipant(() => setCurrentStep(7))
   const activeStep = STEPS.find((step) => step.id === currentStep)
@@ -372,20 +375,34 @@ export default function JoinEcosystemWizard() {
                 {resolveTranslatable({ key: 'join.btn.back' }, translate) ?? 'Back'}
               </button>
             ) : null}
-            <button
-              type="button"
-              onClick={continueWizard}
-              disabled={!canContinue}
-              className={classes(
-                'px-6 py-3 rounded-lg font-medium',
-                canContinue
-                  ? 'bg-primary-600 text-white hover:bg-primary-700'
-                  : 'bg-gray-300 dark:bg-gray-600 text-gray-500 cursor-not-allowed'
-              )}
-            >
-              {resolveTranslatable({ key: currentStep === 6 ? 'join.btn.join' : 'join.btn.continue' }, translate) ??
-                (currentStep === 6 ? 'Join' : 'Continue')}
-            </button>
+            {currentStep === 6 ? (
+              <CapabilityButton
+                signing={joinSigning}
+                disabled={!canContinue}
+                label={resolveTranslatable({ key: 'join.btn.join' }, translate) ?? 'Join'}
+                onClick={continueWizard}
+                className={classes(
+                  'inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium',
+                  canContinue && !joinSigning.disabled
+                    ? 'bg-primary-600 text-white hover:bg-primary-700'
+                    : 'bg-gray-300 dark:bg-gray-600 text-gray-500'
+                )}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={continueWizard}
+                disabled={!canContinue}
+                className={classes(
+                  'px-6 py-3 rounded-lg font-medium',
+                  canContinue
+                    ? 'bg-primary-600 text-white hover:bg-primary-700'
+                    : 'bg-gray-300 dark:bg-gray-600 text-gray-500 cursor-not-allowed'
+                )}
+              >
+                {resolveTranslatable({ key: 'join.btn.continue' }, translate) ?? 'Continue'}
+              </button>
+            )}
           </div>
         </section>
       ) : null}

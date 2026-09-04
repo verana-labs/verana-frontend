@@ -901,5 +901,7 @@
   "participantcard.feedistribution.failed": "The fee distribution could not be loaded from the indexer.",
   "pricing.unsupported.short": "Pricing asset not yet supported",
   "pricing.unsupported.notice": "Pricing asset not yet supported: this schema is priced in {asset}. Fee-bearing actions (start or renew an onboarding process, self-create, validate) stay disabled until the console supports assets other than the native coin (VNA). Browsing is unaffected.",
-  "pricing.unknown.short": "Schema pricing could not be read"
+  "pricing.unknown.short": "Schema pricing could not be read",
+  "corporation.capability.none": "Your wallet holds no authorization for this action and is not a member of the acting corporation.",
+  "corporation.capability.select": "Create or select a corporation before continuing."
 }
