@@ -48,6 +48,11 @@ export function indexerValidators(label: string) {
     return value
   }
 
+  function optionalStringArray(value: unknown, path: string): string[] {
+    if (value === undefined || value === null) return []
+    return stringArray(value, path)
+  }
+
   return {
     record,
     string,
@@ -59,5 +64,6 @@ export function indexerValidators(label: string) {
     nullableTimestamp: nullableString,
     optionalString,
     stringArray,
+    optionalStringArray,
   }
 }

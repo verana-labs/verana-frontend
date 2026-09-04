@@ -23,10 +23,18 @@ describe('parseParticipantResponse', () => {
     })
   })
 
-  it('rejects missing action arrays', () => {
+  it('defaults missing or null action arrays to empty lists', () => {
+    const parsed = parseParticipantResponse({
+      participant: { ...participant, corporation_available_actions: undefined, validator_available_actions: null },
+    })
+    expect(parsed.corporation_available_actions).toEqual([])
+    expect(parsed.validator_available_actions).toEqual([])
+  })
+
+  it('rejects an action list that is not a string array', () => {
     expect(() =>
       parseParticipantResponse({
-        participant: { ...participant, corporation_available_actions: undefined },
+        participant: { ...participant, corporation_available_actions: 'RevokeParticipant' },
       })
     ).toThrow('participant.corporation_available_actions')
   })
