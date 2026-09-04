@@ -44,7 +44,7 @@ function InlineActionField<T extends object>({
   onRefresh?: (id?: string, txHeight?: number) => void
   onBack?: () => void
 }) {
-  const { mode, disabled } = useActionSigning(value)
+  const { mode, disabled, reason } = useActionSigning(value)
   return (
     <div
       className={clsx(
@@ -56,6 +56,7 @@ function InlineActionField<T extends object>({
         type="button"
         onClick={onToggle}
         disabled={disabled}
+        title={reason}
         className={clsx(
           'w-full px-6 py-4 text-left flex items-center justify-between transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
           field.isWarning ? 'hover:bg-red-50 dark:hover:bg-red-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
@@ -69,7 +70,7 @@ function InlineActionField<T extends object>({
           )}
           <div>
             <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-              <ActionLabel label={field.label} mode={mode} />
+              <ActionLabel label={field.label} mode={mode} reason={reason} />
             </h4>
             <p className="text-sm text-neutral-70 dark:text-neutral-70">{field.description}</p>
           </div>

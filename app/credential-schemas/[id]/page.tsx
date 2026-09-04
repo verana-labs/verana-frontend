@@ -6,9 +6,11 @@ import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useCredentialSchemaData } from '@/hooks/useCredentialSchemaData'
 import { useEcosystemData } from '@/hooks/useEcosystemData'
+import { useActionSigning } from '@/hooks/useSigningMode'
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
+import { CapabilityButton, EntityActionButton } from '@/ui/common/capability-button'
 import { renderActionComponent } from '@/ui/common/data-view-typed'
 import EcosystemBreadcrumb from '@/ui/common/ecosystem-breadcrumb'
 import JsonCodeBlock from '@/ui/common/json-code-block'
@@ -106,6 +108,7 @@ export default function CredentialSchemaViewPage() {
   const ecosystemId = credentialSchema ? String(credentialSchema.ecosystemId) : ''
   const { ecosystem } = useEcosystemData(ecosystemId)
   const { actingCorporation } = useUserCorporation()
+  const update = useActionSigning('MsgUpdateCredentialSchema')
 
   const [mode, setMode] = useState<'view' | 'edit'>('view')
   const [editValues, setEditValues] = useState<ValidityValues | null>(null)
@@ -117,18 +120,16 @@ export default function CredentialSchemaViewPage() {
   }
   const { submitTx } = useSubmitTxMsgTypeFromObject(() => setMode('view'), refresh)
 
-  const canManage =
-    credentialSchema !== null &&
-    ecosystem !== null &&
-    actingCorporation?.corporation.id === ecosystem.corporationId &&
-    actingCorporation.operator
+  const owner =
+    credentialSchema !== null && ecosystem !== null && actingCorporation?.corporation.id === ecosystem.corporationId
+  const editable = owner && update.reason === undefined
 
   useEffect(() => {
-    if (!canManage && mode === 'edit') {
+    if (!editable && mode === 'edit') {
       setMode('view')
       setEditValues(null)
     }
-  }, [canManage, mode])
+  }, [editable, mode])
 
   if (!credentialSchema) {
     if (errorCredentialSchema) {
@@ -221,28 +222,26 @@ export default function CredentialSchemaViewPage() {
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
             {t('dataview.section.mutable', 'Mutable Configuration')}
           </h2>
-          {canManage && mode === 'view' ? (
+          {owner && mode === 'view' ? (
             <div className="flex flex-col sm:flex-row gap-2">
-              <button
-                type="button"
+              <CapabilityButton
+                signing={update}
+                icon={faPenToSquare}
+                label={t('dataview.cs.button.editConfiguration', 'Edit Configuration')}
                 onClick={startEdit}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium"
-              >
-                <FontAwesomeIcon icon={faPenToSquare} />
-                <span>{t('dataview.cs.button.editConfiguration', 'Edit Configuration')}</span>
-              </button>
-              <button
-                type="button"
+              />
+              <EntityActionButton
+                msgType={archiveMessageType}
+                icon={faBoxArchive}
+                label={
+                  isArchived
+                    ? t('dataview.cs.button.unarchive', 'Unarchive')
+                    : t('dataview.cs.button.archive', 'Archive')
+                }
                 onClick={() => setArchiveActive(true)}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium"
-              >
-                <FontAwesomeIcon icon={faBoxArchive} />
-                <span>
-                  {isArchived
-                    ? t('dataview.cs.button.unarchive', 'Unarchive')
-                    : t('dataview.cs.button.archive', 'Archive')}
-                </span>
-              </button>
+              />
             </div>
           ) : null}
         </div>

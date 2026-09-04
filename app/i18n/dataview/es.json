@@ -820,5 +820,6 @@
   "account.corporations.title": "Corporaciones",
   "account.corporations.empty": "Esta billetera todavía no es operadora ni miembro de ninguna corporación.",
   "account.corporations.notice": "Las corporaciones se crean y gestionan en la página Corporación.",
-  "account.corporations.notice.link": "Abrir Corporación"
+  "account.corporations.notice.link": "Abrir Corporación",
+  "corporation.capability.none": "Tu billetera no tiene autorización para esta acción en la corporación activa."
 }
