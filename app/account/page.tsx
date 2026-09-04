@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useAccountTxCount } from '@/hooks/useAccountTxCount'
@@ -10,6 +9,8 @@ import { logger } from '@/lib/logger'
 import { RefreshState } from '@/msg/util/signerUtil'
 import { useAccountCtx } from '@/providers/api-rest-query-provider-context'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
+import { AccountAddress } from '@/ui/account/account-address'
+import { AccountCorporations } from '@/ui/account/account-corporations'
 import ColumnsDataView from '@/ui/common/data-view-columns'
 import TitleAndButton from '@/ui/common/title-and-button'
 import { AccountData, accountSections } from '@/ui/dataview/datasections/account'
@@ -78,25 +79,20 @@ export default function AccountPage() {
         title={resolveTranslatable({ key: 'account.title' }, translate) ?? 'Account'}
         description={[resolveTranslatable({ key: 'account.desc' }, translate) ?? '']}
       />
-      <p className="mb-6 -mt-2 text-sm text-gray-500 dark:text-gray-400">
-        {resolveTranslatable({ key: 'account.corporation.moved' }, translate)}{' '}
-        <Link
-          href="/corporation"
-          className="font-medium text-primary-700 dark:text-primary-300 underline underline-offset-2"
-        >
-          {resolveTranslatable({ key: 'account.corporation.moved.link' }, translate)}
-        </Link>
-      </p>
+      <AccountAddress />
       {data && (
-        <ColumnsDataView<AccountData>
-          sectionsI18n={accountSections}
-          data={data}
-          onRefresh={(id?: string, txHeight?: number) => {
-            setRefreshState({ id, txHeight })
-          }}
-          activeActionField={openGetVNA ? 'getVNA' : undefined}
-          loading={false}
-        />
+        <>
+          <ColumnsDataView<AccountData>
+            sectionsI18n={accountSections}
+            data={data}
+            onRefresh={(id?: string, txHeight?: number) => {
+              setRefreshState({ id, txHeight })
+            }}
+            activeActionField={openGetVNA ? 'getVNA' : undefined}
+            loading={false}
+          />
+          <AccountCorporations />
+        </>
       )}
     </>
   )

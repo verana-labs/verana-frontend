@@ -761,8 +761,6 @@
   "common.none": "Ninguno",
   "common.unknown": "Desconocido",
   "corporation.page.modified": "Modificada",
-  "account.corporation.moved": "La configuración y gestión de la corporación se movieron a la página Corporación.",
-  "account.corporation.moved.link": "Abrir Corporación",
   "corporation.wizard.cost.funding": "Fondos de la política",
   "corporation.select.changed": "La corporación activa cambió, revisa la acción y vuelve a enviarla.",
   "txconfirm.title.default": "Confirmar transacción",
@@ -815,5 +813,9 @@
   "txconfirm.warning.MsgRevokeOperatorAuthorization": "Irreversible. El operador pierde el acceso en cuanto la transacción se incluye.",
   "txconfirm.warning.MsgUpdateCorporation": "Esto cambia el ancla de identidad de la corporación. La resolución de confianza se reinicia desde el nuevo DID.",
   "txconfirm.warning.MsgArchiveEcosystem": "Esto cambia el estado de archivo del ecosistema para todos los participantes. Puede revertirse con otra acción de archivo.",
-  "txconfirm.warning.MsgArchiveCredentialSchema": "Esto cambia el estado de archivo del esquema de credencial para todos los participantes. Puede revertirse con otra acción de archivo."
+  "txconfirm.warning.MsgArchiveCredentialSchema": "Esto cambia el estado de archivo del esquema de credencial para todos los participantes. Puede revertirse con otra acción de archivo.",
+  "account.corporations.title": "Corporaciones",
+  "account.corporations.empty": "Esta billetera todavía no es operadora ni miembro de ninguna corporación.",
+  "account.corporations.notice": "Las corporaciones se crean y gestionan en la página Corporación.",
+  "account.corporations.notice.link": "Abrir Corporación"
 }
