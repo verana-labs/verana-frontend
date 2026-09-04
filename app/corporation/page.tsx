@@ -25,12 +25,12 @@ export default function CorporationPage() {
   const searchParams = useSearchParams()
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
-  const { actingCorporation, loading: actingLoading, refetch: refetchCorporations } = useUserCorporation()
+  const { actingCorporation, loading: actingLoading, refetch: refetchCorporations, revalidate } = useUserCorporation()
   const { details, loading, error, refetch } = useCorporationDetails(actingCorporation?.corporation.id)
   const [votesVersion, setVotesVersion] = useState(0)
   const refreshAfterTx = () => {
     void refetch()
-    void refetchCorporations()
+    void revalidate()
     setVotesVersion((version) => version + 1)
   }
   const manage = useCorporationManage(refreshAfterTx)
