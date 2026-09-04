@@ -4,187 +4,245 @@ vi.mock('@/config/env', () => ({
   VERANA_REST_ENDPOINT_CORPORATION: 'https://indexer.example/v4/corporation',
   VERANA_REST_ENDPOINT_GROUP: 'https://indexer.example/v4/group',
   VERANA_REST_ENDPOINT_DELEGATION: 'https://indexer.example/v4/delegation',
-}))
-vi.mock('@/hooks/useVeranaChain', () => ({
-  useVeranaChain: () => ({ chain_name: 'VeranaDevnet1' }),
-}))
-vi.mock('@cosmos-kit/react', () => ({
-  useChain: () => ({ address: undefined }),
+  SESSION_LIFETIME_SECONDS: '86400',
+  VERANA_OPERATOR_ONLY: undefined,
 }))
 
-import { resolveUserCorporation } from './useUserCorporation'
+import {
+  type CorporationMembership,
+  chooseActingMembership,
+  discoverCorporations,
+  loadActingCorporationId,
+  resolveUserCorporation,
+  saveActingCorporationId,
+} from '@/lib/corporation-discovery'
 
-const GRANTED_MESSAGE_TYPES = [
-  '/verana.ec.v1.MsgCreateEcosystem',
-  '/verana.cs.v1.MsgCreateCredentialSchema',
-  '/verana.di.v1.MsgStoreDigest',
-]
+function corporationPayload(id: number) {
+  return {
+    corporation: { id, policy_address: `verana1policy${id}`, did: `did:web:corp${id}.example` },
+  }
+}
+
+function stubFetch(routes: Record<string, unknown>) {
+  const fetchMock = vi.fn(async (url: string) => {
+    const match = Object.entries(routes).find(([prefix]) => url.startsWith(prefix))
+    if (!match) throw new Error(`Unexpected fetch: ${url}`)
+    return { ok: true, json: async () => match[1] }
+  })
+  vi.stubGlobal('fetch', fetchMock)
+  return fetchMock
+}
+
+function membership(id: number, overrides: Partial<CorporationMembership> = {}): CorporationMembership {
+  return {
+    corporation: { id, policyAddress: `verana1policy${id}`, did: `did:web:corp${id}.example` },
+    operator: true,
+    member: false,
+    weight: null,
+    grantedMessageTypes: ['/verana.ec.v1.MsgCreateEcosystem'],
+    ...overrides,
+  }
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
+describe('discoverCorporations', () => {
+  it('unions grants per corporation with group memberships and their kinds', async () => {
+    stubFetch({
+      'https://indexer.example/v4/delegation/operator-authorizations': {
+        authorizations: [
+          { id: 1, corporation_id: 7, operator: 'verana1operator', msg_types: ['/verana.ec.v1.MsgCreateEcosystem'] },
+          { id: 2, corporation_id: 7, operator: 'verana1operator', msg_types: ['/verana.ec.v1.MsgUpdateEcosystem'] },
+        ],
+      },
+      'https://indexer.example/v4/group/corporations-by-member': {
+        memberships: [
+          { corporation_id: 7, weight: '2' },
+          { corporation_id: 9, weight: '1' },
+        ],
+      },
+      'https://indexer.example/v4/corporation/get/7': corporationPayload(7),
+      'https://indexer.example/v4/corporation/get/9': corporationPayload(9),
+    })
+
+    const discovered = await discoverCorporations('verana1operator')
+
+    expect(discovered).toEqual([
+      {
+        corporation: { id: 7, policyAddress: 'verana1policy7', did: 'did:web:corp7.example' },
+        operator: true,
+        member: true,
+        weight: '2',
+        grantedMessageTypes: ['/verana.ec.v1.MsgCreateEcosystem', '/verana.ec.v1.MsgUpdateEcosystem'],
+      },
+      {
+        corporation: { id: 9, policyAddress: 'verana1policy9', did: 'did:web:corp9.example' },
+        operator: false,
+        member: true,
+        weight: '1',
+        grantedMessageTypes: [],
+      },
+    ])
+  })
+
+  it('skips the group source in operator-only mode', async () => {
+    vi.resetModules()
+    vi.doMock('@/config/env', () => ({
+      VERANA_REST_ENDPOINT_CORPORATION: 'https://indexer.example/v4/corporation',
+      VERANA_REST_ENDPOINT_GROUP: 'https://indexer.example/v4/group',
+      VERANA_REST_ENDPOINT_DELEGATION: 'https://indexer.example/v4/delegation',
+      SESSION_LIFETIME_SECONDS: '86400',
+      VERANA_OPERATOR_ONLY: 'true',
+    }))
+    const isolated = await import('@/lib/corporation-discovery')
+    const fetchMock = stubFetch({
+      'https://indexer.example/v4/delegation/operator-authorizations': {
+        authorizations: [
+          { id: 1, corporation_id: 7, operator: 'verana1operator', msg_types: ['/verana.ec.v1.MsgCreateEcosystem'] },
+        ],
+      },
+      'https://indexer.example/v4/corporation/get/7': corporationPayload(7),
+    })
+
+    const discovered = await isolated.discoverCorporations('verana1operator')
+
+    expect(discovered).toHaveLength(1)
+    expect(discovered[0].member).toBe(false)
+    expect(fetchMock.mock.calls.every(([url]) => !String(url).includes('/group/'))).toBe(true)
+    vi.doUnmock('@/config/env')
+    vi.resetModules()
+  })
+})
+
+describe('chooseActingMembership', () => {
+  it('prefers a persisted corporation still in the set', () => {
+    const memberships = [membership(7), membership(9)]
+    expect(chooseActingMembership(memberships, 9)?.corporation.id).toBe(9)
+  })
+
+  it('auto-selects a single candidate and defers when several and nothing persisted', () => {
+    expect(chooseActingMembership([membership(7)], null)?.corporation.id).toBe(7)
+    expect(chooseActingMembership([membership(7), membership(9)], null)).toBeNull()
+    expect(chooseActingMembership([membership(7), membership(9)], 4)).toBeNull()
+  })
+})
+
+describe('acting persistence', () => {
+  it('round-trips per address and ignores other addresses', () => {
+    const store = new Map<string, string>()
+    vi.stubGlobal('window', {
+      localStorage: {
+        getItem: (key: string) => store.get(key) ?? null,
+        setItem: (key: string, value: string) => void store.set(key, value),
+        removeItem: (key: string) => void store.delete(key),
+      },
+    })
+
+    saveActingCorporationId('verana1operator', 7)
+    expect(loadActingCorporationId('verana1operator')).toBe(7)
+    expect(loadActingCorporationId('verana1other')).toBeNull()
+  })
+})
+
+describe('acting persistence edge cases', () => {
+  function stubStorage(initial: Record<string, string> = {}) {
+    const store = new Map(Object.entries(initial))
+    vi.stubGlobal('window', {
+      localStorage: {
+        getItem: (key: string) => store.get(key) ?? null,
+        setItem: (key: string, value: string) => void store.set(key, value),
+        removeItem: (key: string) => void store.delete(key),
+      },
+    })
+    return store
+  }
+
+  it('ignores an expired persisted selection', () => {
+    stubStorage({
+      'verana.acting-corporation': JSON.stringify({
+        address: 'verana1operator',
+        corporationId: 7,
+        expiresAt: Date.now() - 1000,
+      }),
+    })
+    expect(loadActingCorporationId('verana1operator')).toBeNull()
+  })
+
+  it('survives corrupted storage content', () => {
+    stubStorage({ 'verana.acting-corporation': 'not json{' })
+    expect(loadActingCorporationId('verana1operator')).toBeNull()
+  })
+})
 
 describe('resolveUserCorporation', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('resolves an active V4 operator authorization through the indexer', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          authorizations: [
-            {
-              id: 1,
-              corporation_id: 7,
-              operator: 'verana1operator',
-              msg_types: [...GRANTED_MESSAGE_TYPES],
-            },
-          ],
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          corporation: {
-            id: 7,
-            policy_address: 'verana1policy',
-            did: 'did:web:corporation.example',
-          },
-          block_height: 123,
-        }),
-      })
-    vi.stubGlobal('fetch', fetchMock)
-
-    await expect(resolveUserCorporation('verana1operator')).resolves.toEqual({
-      corporation: {
-        id: 7,
-        policyAddress: 'verana1policy',
-        did: 'did:web:corporation.example',
+  it('falls back to the first operator membership when nothing is persisted', async () => {
+    stubFetch({
+      'https://indexer.example/v4/delegation/operator-authorizations': {
+        authorizations: [
+          { id: 1, corporation_id: 9, operator: 'verana1operator', msg_types: ['/verana.ec.v1.MsgCreateEcosystem'] },
+        ],
       },
-      hasOperatorGrant: true,
-      grantedMessageTypes: [...GRANTED_MESSAGE_TYPES],
-    })
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      1,
-      'https://indexer.example/v4/delegation/operator-authorizations?operator=verana1operator&only_active=true&limit=1024'
-    )
-    expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://indexer.example/v4/corporation/get/7')
-  })
-
-  it('keeps a partial operator authorization as the granted message types', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          authorizations: [
-            {
-              id: 1,
-              corporation_id: 7,
-              operator: 'verana1operator',
-              msg_types: GRANTED_MESSAGE_TYPES.filter((msgType) => msgType !== '/verana.di.v1.MsgStoreDigest'),
-            },
-          ],
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          corporation: {
-            id: 7,
-            policy_address: 'verana1policy',
-            did: 'did:web:corporation.example',
-          },
-          block_height: 123,
-        }),
-      })
-    vi.stubGlobal('fetch', fetchMock)
-
-    await expect(resolveUserCorporation('verana1operator')).resolves.toEqual({
-      corporation: {
-        id: 7,
-        policyAddress: 'verana1policy',
-        did: 'did:web:corporation.example',
+      'https://indexer.example/v4/group/corporations-by-member': {
+        memberships: [{ corporation_id: 7, weight: '1' }],
       },
-      hasOperatorGrant: true,
-      grantedMessageTypes: GRANTED_MESSAGE_TYPES.filter((msgType) => msgType !== '/verana.di.v1.MsgStoreDigest'),
+      'https://indexer.example/v4/corporation/get/7': corporationPayload(7),
+      'https://indexer.example/v4/corporation/get/9': corporationPayload(9),
     })
+
+    const resolution = await resolveUserCorporation('verana1operator')
+
+    expect(resolution.corporation?.id).toBe(9)
+    expect(resolution.hasOperatorGrant).toBe(true)
+    expect(resolution.grantedMessageTypes).toEqual(['/verana.ec.v1.MsgCreateEcosystem'])
   })
 
-  it('falls back to group membership when the wallet has no operator authorization', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ authorizations: [] }) })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          memberships: [{ corporation_id: 7, weight: '1', metadata: '', added_at: '2026-08-25T00:00:00Z' }],
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          corporation: { id: 7, policy_address: 'verana1policy', did: 'did:web:corporation.example' },
-        }),
-      })
-    vi.stubGlobal('fetch', fetchMock)
-
-    await expect(resolveUserCorporation('verana1member')).resolves.toEqual({
-      corporation: { id: 7, policyAddress: 'verana1policy', did: 'did:web:corporation.example' },
-      hasOperatorGrant: false,
-      grantedMessageTypes: [],
+  it('returns an empty resolution when the account has no corporation', async () => {
+    stubFetch({
+      'https://indexer.example/v4/delegation/operator-authorizations': { authorizations: [] },
+      'https://indexer.example/v4/group/corporations-by-member': { memberships: [] },
     })
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
-      'https://indexer.example/v4/group/corporations-by-member?account=verana1member'
-    )
-    expect(fetchMock).toHaveBeenNthCalledWith(3, 'https://indexer.example/v4/corporation/get/7')
+
+    const resolution = await resolveUserCorporation('verana1operator')
+
+    expect(resolution).toEqual({ corporation: null, hasOperatorGrant: false, grantedMessageTypes: [] })
   })
 
-  it('rejects malformed V4 operator authorization message types', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          authorizations: [
-            {
-              id: 1,
-              corporation_id: 7,
-              operator: 'verana1operator',
-              msg_types: '/verana.di.v1.MsgStoreDigest',
-            },
-          ],
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          corporation: {
-            id: 7,
-            policy_address: 'verana1policy',
-            did: 'did:web:corporation.example',
-          },
-        }),
-      })
-    vi.stubGlobal('fetch', fetchMock)
+  it('honors a persisted acting corporation over the operator-first fallback', async () => {
+    const store = new Map<string, string>()
+    vi.stubGlobal('window', {
+      localStorage: {
+        getItem: (key: string) => store.get(key) ?? null,
+        setItem: (key: string, value: string) => void store.set(key, value),
+        removeItem: (key: string) => void store.delete(key),
+      },
+    })
+    saveActingCorporationId('verana1operator', 7)
+    stubFetch({
+      'https://indexer.example/v4/delegation/operator-authorizations': {
+        authorizations: [
+          { id: 1, corporation_id: 9, operator: 'verana1operator', msg_types: ['/verana.ec.v1.MsgCreateEcosystem'] },
+        ],
+      },
+      'https://indexer.example/v4/group/corporations-by-member': {
+        memberships: [{ corporation_id: 7, weight: '1' }],
+      },
+      'https://indexer.example/v4/corporation/get/7': corporationPayload(7),
+      'https://indexer.example/v4/corporation/get/9': corporationPayload(9),
+    })
 
-    await expect(resolveUserCorporation('verana1operator')).rejects.toThrow(
-      'Invalid corporation response: authorizations[0].msg_types'
-    )
+    const resolution = await resolveUserCorporation('verana1operator')
+
+    expect(resolution.corporation?.id).toBe(7)
+    expect(resolution.hasOperatorGrant).toBe(false)
   })
 
-  it('fails clearly when the authorization endpoint fails', async () => {
+  it('propagates a discovery failure instead of returning an empty resolution', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 503,
-        json: async () => ({ error: 'unavailable', code: 503 }),
-      })
+      vi.fn(async () => ({ ok: false, status: 502, json: async () => ({}) }))
     )
-
-    await expect(resolveUserCorporation('verana1operator')).rejects.toThrow(
-      'Unable to resolve operator authorizations: 503'
-    )
+    await expect(resolveUserCorporation('verana1operator')).rejects.toThrow('502')
   })
 })

@@ -31,7 +31,7 @@ const PARTICIPANT_STATES = new Set<ParticipantState>([
 ])
 const OP_STATES = new Set<OnboardingProcessState>(['PENDING', 'VALIDATED', 'TERMINATED'])
 
-const { record, string, number, nullableString, optionalString, stringArray } = indexerValidators('participant')
+const { record, string, number, nullableString, optionalString, optionalStringArray } = indexerValidators('participant')
 
 function optionalNullableString(value: unknown, path: string): string | null | undefined {
   if (value === undefined) return undefined
@@ -76,11 +76,14 @@ export function parseParticipantRecord(value: unknown, path = 'participant'): Pa
     did: nullableString(source.did, `${path}.did`),
     corporation_id: number(source.corporation_id, `${path}.corporation_id`),
     participant_state: state,
-    corporation_available_actions: stringArray(
+    corporation_available_actions: optionalStringArray(
       source.corporation_available_actions,
       `${path}.corporation_available_actions`
     ),
-    validator_available_actions: stringArray(source.validator_available_actions, `${path}.validator_available_actions`),
+    validator_available_actions: optionalStringArray(
+      source.validator_available_actions,
+      `${path}.validator_available_actions`
+    ),
     vs_operator: optionalNullableString(source.vs_operator, `${path}.vs_operator`),
     created: optionalString(source.created, `${path}.created`),
     modified: optionalString(source.modified, `${path}.modified`),
