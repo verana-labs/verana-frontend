@@ -54,6 +54,13 @@ function t(key: string, values?: Record<string, unknown>): string {
   return resolveTranslatable(tr, translate) ?? key
 }
 
+export const MSG_NOTIFICATION_PROPOSAL = {
+  inprogress: () => t('notification.MsgSubmitProposal.inprogress'),
+  success: () => t('notification.MsgSubmitProposal.success'),
+  error: (code?: number, msg?: string) =>
+    `${t('notification.MsgSubmitProposal.error')} ${code ? `(${code}) ` : ''}${msg ?? ''}`.trim(),
+}
+
 export const MSG_SUCCESS_ACTION_TD: Record<MsgTypeTD, (claimed?: string) => string> = {
   MsgReclaimTrustDepositYield: () => t('notification.MsgReclaimTrustDepositYield.success'),
 }
