@@ -12,6 +12,7 @@ import { useRef } from 'react'
 import { findCorporationMembership, type UserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
+import { notifyChainRejection } from '@/lib/chain-error'
 import { saveActingCorporationId } from '@/lib/corporation-discovery'
 import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
 import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
@@ -21,6 +22,7 @@ import { findEventAttribute } from '@/msg/util/txEvents'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
 import { resolveTranslatable } from '@/ui/dataview/types'
+import { shortenMiddle } from '@/util/util'
 import { isValidHttpUrl } from '@/util/validations'
 
 const GROUP_VOTING_PERIOD_SECONDS = 60
@@ -235,7 +237,11 @@ export function useActionCorporation(onDone?: () => void) {
     try {
       return await createCorporation(params, address)
     } catch (error) {
-      await notify(error instanceof Error ? error.message : String(error), 'error')
+      const message = error instanceof Error ? error.message : String(error)
+      await notifyChainRejection(notify, message, message, {
+        corporation: shortenMiddle(params.did, 32),
+        msg: 'MsgCreateCorporation',
+      })
       return null
     } finally {
       inFlight.current = false
@@ -258,7 +264,11 @@ export function useActionCorporation(onDone?: () => void) {
     try {
       return await grantOperator(corporation, address, fundingUvna)
     } catch (error) {
-      await notify(error instanceof Error ? error.message : String(error), 'error')
+      const message = error instanceof Error ? error.message : String(error)
+      await notifyChainRejection(notify, message, message, {
+        corporation: shortenMiddle(corporation.did, 32),
+        msg: 'MsgGrantOperatorAuthorization',
+      })
       return 'failed'
     } finally {
       inFlight.current = false

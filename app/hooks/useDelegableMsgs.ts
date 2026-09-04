@@ -12,6 +12,7 @@ import { type DelegableBuild, type DelegableMsgs, resolveDelegableMsgs } from '@
 import { useNotification } from '@/providers/notification-provider'
 import { useTxConfirm } from '@/providers/tx-confirm-provider'
 import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
+import { shortenMiddle } from '@/util/util'
 
 export interface DelegableMsgsArgs {
   typeUrl: string
@@ -87,6 +88,7 @@ export async function confirmDelegableMsgs(
     severity,
     warning: severity ? warningFor(typeUrl) : undefined,
     proposalTitle: resolved.mode === 'proposal' ? proposalTitle : undefined,
+    corporationLabel: shortenMiddle(acting.corporation.did, 32),
     costLines,
   })
   if (!confirmed) return null

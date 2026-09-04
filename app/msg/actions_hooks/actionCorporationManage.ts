@@ -21,9 +21,10 @@ import {
 import { ThresholdDecisionPolicy, VoteOption } from 'cosmjs-types/cosmos/group/v1/types'
 import { useRef } from 'react'
 import { veranaRegistry } from '@/config/veranaChain.sign.client'
-import type { CorporationMembership } from '@/hooks/useUserCorporation'
+import { type CorporationMembership, useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
+import { notifyChainRejection } from '@/lib/chain-error'
 import { msgShortName, type TxConfirmRequest, type TxConfirmResult, txSeverity } from '@/lib/tx-preview'
 import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
@@ -238,6 +239,7 @@ function accountPreview(effect: string, payer: string): TxPreview {
 export function useCorporationManage(onDone?: () => void) {
   const veranaChain = useVeranaChain()
   const { address, isWalletConnected } = useChain(veranaChain.chain_name)
+  const { acting } = useUserCorporation()
   const { waitForBlock } = useIndexerEvents()
   const { notify } = useNotification()
   const { confirmTx } = useTxConfirm()
@@ -260,13 +262,24 @@ export function useCorporationManage(onDone?: () => void) {
     }
     const confirmed = await confirmTx({ ...preview, msgs })
     if (!confirmed) return
+    const rejection = {
+      corporation: preview.corporationLabel ?? (acting ? shortenMiddle(acting.corporation.did, 32) : ''),
+      msg: msgShortName(msgs[0]?.typeUrl ?? ''),
+    }
     inFlight.current = true
     try {
       void notify(t(`notification.${notificationKey}.inprogress`), 'inProgress')
       const result = await sendTx({ msgs: finalize ? finalize(confirmed) : msgs, memo: notificationKey })
       if (!('code' in result)) throw new Error('Expected a transaction response')
-      if (result.code !== 0)
-        throw new Error(`${t(`notification.${notificationKey}.error`)} (${result.code}): ${result.rawLog}`)
+      if (result.code !== 0) {
+        await notifyChainRejection(
+          notify,
+          result.rawLog,
+          `${t(`notification.${notificationKey}.error`)} (${result.code}): ${result.rawLog}`,
+          rejection
+        )
+        return
+      }
       const height = txHeight(result)
       const indexed = await waitForIndexerAfterTx(waitForBlock, height)
       const notification = successfulTxNotification(t(`notification.${notificationKey}.success`), height, indexed)
@@ -274,7 +287,8 @@ export function useCorporationManage(onDone?: () => void) {
       if (indexed) onDone?.()
       else runAfterIndexerCatchesUp(waitForBlock, height, () => onDone?.())
     } catch (error) {
-      await notify(error instanceof Error ? error.message : String(error), 'error')
+      const message = error instanceof Error ? error.message : String(error)
+      await notifyChainRejection(notify, message, message, rejection)
     } finally {
       inFlight.current = false
     }

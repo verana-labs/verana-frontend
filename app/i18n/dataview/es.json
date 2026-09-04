@@ -220,6 +220,7 @@
   "notification.msg.indexer.pending": "Confirmada en la cadena en el bloque {height}, pero el indexador aún no se ha puesto al día. Los datos mostrados pueden seguir desactualizados.",
   "notification.msg.failed.title": "Transacción fallida",
   "notification.msg.connectwallet": "Conecta tu billetera",
+  "notification.msg.chain.unauthorized": "La cadena rechazó {msg} para {corporation}: tu billetera no está autorizada.",
   "notification.MsgReclaimTrustDepositYield.success": "Intereses reclamados correctamente.",
   "notification.MsgReclaimTrustDepositYield.inprogress": "Reclamando intereses...",
   "notification.MsgReclaimTrustDepositYield.error": "Error al reclamar los intereses. {code}{msg}",
