@@ -824,5 +824,7 @@
   "corporation.lost.title": "You can no longer act for {corporation}",
   "corporation.lost.desc": "Your operator authorization was revoked or expired and your wallet left its group. Nothing was submitted under the old context.",
   "corporation.lost.choose": "Choose another corporation",
-  "corporation.lost.guest": "Continue without a corporation"
+  "corporation.lost.guest": "Continue without a corporation",
+  "pricing.unsupported.short": "Pricing asset not yet supported",
+  "pricing.unsupported.notice": "Pricing asset not yet supported: this schema is priced in {asset}. Fee-bearing actions (start or renew an onboarding process, self-create, validate) stay disabled until the console supports assets other than the native coin (VNA). Browsing is unaffected."
 }

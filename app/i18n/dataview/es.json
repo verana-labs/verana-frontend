@@ -824,5 +824,7 @@
   "corporation.lost.title": "Ya no puedes actuar por {corporation}",
   "corporation.lost.desc": "Tu autorización de operador fue revocada o expiró y tu billetera salió de su grupo. No se envió nada con el contexto anterior.",
   "corporation.lost.choose": "Elegir otra corporación",
-  "corporation.lost.guest": "Continuar sin corporación"
+  "corporation.lost.guest": "Continuar sin corporación",
+  "pricing.unsupported.short": "Activo de precio aún no soportado",
+  "pricing.unsupported.notice": "Activo de precio aún no soportado: este esquema se cotiza en {asset}. Las acciones con tarifas (iniciar o renovar un proceso de incorporación, autocrear, validar) permanecen deshabilitadas hasta que la consola soporte activos distintos de la moneda nativa (VNA). La consulta no se ve afectada."
 }

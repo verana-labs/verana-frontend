@@ -11,22 +11,25 @@ interface CapabilityButtonProps {
   label: string
   icon?: IconDefinition
   className: string
+  blockedReason?: string
   onClick: () => void
 }
 
-export function CapabilityButton({ signing, label, icon, className, onClick }: CapabilityButtonProps) {
+export function CapabilityButton({ signing, label, icon, className, blockedReason, onClick }: CapabilityButtonProps) {
+  const reason = blockedReason ?? signing.reason
+  const disabled = signing.disabled || Boolean(blockedReason)
   return (
     <button
       type="button"
       onClick={onClick}
-      disabled={signing.disabled}
-      title={signing.reason}
+      disabled={disabled}
+      title={reason}
       className={clsx(className, 'disabled:opacity-50 disabled:cursor-not-allowed')}
     >
       {icon ? <FontAwesomeIcon icon={icon} /> : null}
       <span>{label}</span>
       <SigningModeIcon mode={signing.mode} />
-      {signing.reason ? <span className="sr-only">{signing.reason}</span> : null}
+      {reason ? <span className="sr-only">{reason}</span> : null}
     </button>
   )
 }

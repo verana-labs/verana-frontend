@@ -15,6 +15,7 @@ type ActionFieldButtonModalProps = {
   onClose: () => void
   onRefresh?: (id?: string, txHeight?: number) => void
   isActive: boolean
+  blockedReason?: string
 }
 
 export default function ActionFieldButtonModal({
@@ -24,9 +25,12 @@ export default function ActionFieldButtonModal({
   onClose,
   onRefresh,
   isActive,
+  blockedReason,
 }: ActionFieldButtonModalProps) {
   const [modalHidden, setModalHidden] = useState(true)
-  const { mode, disabled, reason } = useActionSigning(field.value)
+  const signing = useActionSigning(field.value)
+  const reason = blockedReason ?? signing.reason
+  const disabled = signing.disabled || Boolean(blockedReason)
   // Reset internal state when the modal is closed / deactivated
   useEffect(() => {
     if (!isActive) setModalHidden(true)
@@ -35,7 +39,7 @@ export default function ActionFieldButtonModal({
   return (
     <section>
       <IconLabelButton
-        label={<ActionLabel label={field.label} mode={mode} reason={reason} />}
+        label={<ActionLabel label={field.label} mode={signing.mode} reason={reason} />}
         icon={field.icon}
         className={clsx(
           'btn-action-confirm text-sm disabled:opacity-50 disabled:cursor-not-allowed',

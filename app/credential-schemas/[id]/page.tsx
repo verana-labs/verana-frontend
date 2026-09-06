@@ -10,11 +10,13 @@ import { useActionSigning } from '@/hooks/useSigningMode'
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
+import { isNativePricing } from '@/lib/pricing-asset'
 import { CapabilityButton, EntityActionButton } from '@/ui/common/capability-button'
 import { renderActionComponent } from '@/ui/common/data-view-typed'
 import EcosystemBreadcrumb from '@/ui/common/ecosystem-breadcrumb'
 import JsonCodeBlock from '@/ui/common/json-code-block'
 import { ModalAction } from '@/ui/common/modal-action'
+import { PricingNotice } from '@/ui/common/pricing-notice'
 import SchemaHeader, { type SchemaStatus } from '@/ui/common/schema-header'
 import type { CredentialSchemaData } from '@/ui/dataview/datasections/cs'
 import { resolveTranslatable } from '@/ui/dataview/types'
@@ -216,6 +218,8 @@ export default function CredentialSchemaViewPage() {
           </button>
         }
       />
+
+      {isNativePricing(credentialSchema) ? null : <PricingNotice schema={credentialSchema} className="mb-8" />}
 
       <section className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
