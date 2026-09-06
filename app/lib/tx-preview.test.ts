@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { confirmLabelKey, formatStdFee, modeLabelKey, msgShortName, txSeverity } from './tx-preview'
+import {
+  composerMsgs,
+  confirmLabelKey,
+  formatStdFee,
+  modeLabelKey,
+  msgShortName,
+  proposalMeta,
+  txSeverity,
+} from './tx-preview'
 
 describe('txSeverity', () => {
   it('flags revocations and slashes as irreversible', () => {
@@ -46,5 +54,37 @@ describe('labels', () => {
 
   it('shortens a type url to its message name', () => {
     expect(msgShortName('/verana.co.v1.MsgUpdateCorporation')).toBe('MsgUpdateCorporation')
+  })
+})
+
+describe('proposalMeta', () => {
+  it('falls back to the default title and mirrors it into the summary', () => {
+    expect(proposalMeta({}, 'Rotate DID')).toEqual({ title: 'Rotate DID', summary: 'Rotate DID' })
+    expect(proposalMeta({ title: '  ', summary: '' }, 'Rotate DID')).toEqual({
+      title: 'Rotate DID',
+      summary: 'Rotate DID',
+    })
+  })
+
+  it('keeps what the composer typed', () => {
+    expect(proposalMeta({ title: 'Custom', summary: 'Why' }, 'Rotate DID')).toEqual({ title: 'Custom', summary: 'Why' })
+  })
+})
+
+describe('composerMsgs', () => {
+  const msgs = [{ typeUrl: '/cosmos.group.v1.MsgSubmitProposal', value: { title: 'Rotate DID' } }]
+
+  it('returns the previewed set untouched when the request cannot rebuild', () => {
+    expect(composerMsgs({ msgs, proposalTitle: 'Rotate DID' }, { title: 'Custom' })).toBe(msgs)
+  })
+
+  it('rebuilds the envelope from the trimmed draft with the default title as fallback', () => {
+    const rebuild = (meta: { title: string; summary: string }) => [{ typeUrl: 'rebuilt', value: meta }]
+    expect(composerMsgs({ msgs, proposalTitle: 'Rotate DID', rebuild }, { title: ' Custom ', summary: 'Why' })).toEqual(
+      [{ typeUrl: 'rebuilt', value: { title: 'Custom', summary: 'Why' } }]
+    )
+    expect(composerMsgs({ msgs, proposalTitle: 'Rotate DID', rebuild }, { title: '', summary: '' })).toEqual([
+      { typeUrl: 'rebuilt', value: { title: 'Rotate DID', summary: 'Rotate DID' } },
+    ])
   })
 })

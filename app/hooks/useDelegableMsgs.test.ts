@@ -40,10 +40,15 @@ function build(corporation: string, operator: string) {
   }
 }
 
-function deps(overrides: Partial<DelegableMsgsDeps> = {}, confirmResult: TxConfirmResult | null = {}) {
+const accept = (request: TxConfirmRequest): TxConfirmResult => ({ msgs: request.msgs })
+
+function deps(
+  overrides: Partial<DelegableMsgsDeps> = {},
+  confirm: (request: TxConfirmRequest) => TxConfirmResult | null = accept
+) {
   const actingCorporation = 'actingCorporation' in overrides ? (overrides.actingCorporation ?? null) : membership()
   const notify = vi.fn(async () => {})
-  const confirmTx = vi.fn(async (_request: TxConfirmRequest) => confirmResult)
+  const confirmTx = vi.fn(async (request: TxConfirmRequest) => confirm(request))
   const value: DelegableMsgsDeps = {
     address: ME,
     actingCorporation,
@@ -116,7 +121,7 @@ describe('confirmDelegableMsgs', () => {
   })
 
   it('has no side effects when the user cancels', async () => {
-    const { deps: d, notify } = deps({}, null)
+    const { deps: d, notify } = deps({}, () => null)
     expect(await confirmDelegableMsgs(d, args)).toBeNull()
     expect(notify).not.toHaveBeenCalled()
   })
@@ -136,7 +141,9 @@ describe('confirmDelegableMsgs', () => {
     expect(request.severity).toBeUndefined()
     expect(request.warning).toBeUndefined()
     expect(request.proposalTitle).toBeUndefined()
+    expect(request.rebuild).toBeUndefined()
     expect(request.costLines).toBe(costLines)
+    expect(resolved?.msgs).toBe(request.msgs)
   })
 
   it('carries the severity and the existing warning copy of a revocation', async () => {
@@ -154,21 +161,33 @@ describe('confirmDelegableMsgs', () => {
     expect(request.warning).toMatch(/cannot be undone/)
   })
 
-  it('falls back to a proposal and applies the composer title and summary', async () => {
-    const { deps: d, confirmTx } = deps(
-      { actingCorporation: membership({ grantedMessageTypes: [] }) },
-      { proposalTitle: 'Custom', proposalSummary: 'Why' }
-    )
+  it('falls back to a proposal and broadcasts exactly the envelope the composer simulated', async () => {
+    let rebuilt: TxConfirmResult['msgs'] = []
+    const { deps: d, confirmTx } = deps({ actingCorporation: membership({ grantedMessageTypes: [] }) }, (request) => {
+      rebuilt = request.rebuild?.({ title: 'Custom', summary: 'Why' }) ?? []
+      return { msgs: rebuilt }
+    })
     const resolved = await confirmDelegableMsgs(d, args)
     expect(resolved?.mode).toBe('proposal')
     expect(confirmTx.mock.calls[0][0]).toMatchObject({ mode: 'proposal', proposalTitle: 'Create an ecosystem' })
     expect(confirmTx.mock.calls[0][0].costLines).toBe(costLines)
+    expect(resolved?.msgs).toBe(rebuilt)
     const proposal = MsgSubmitProposal.decode(
       MsgSubmitProposal.encode(resolved?.msgs[0].value as MsgSubmitProposal).finish()
     )
     expect(proposal.title).toBe('Custom')
     expect(proposal.summary).toBe('Why')
     expect(proposal.messages[0].typeUrl).toBe(CREATE)
+  })
+
+  it('previews the default proposal envelope with the title as summary', async () => {
+    const { deps: d, confirmTx } = deps({ actingCorporation: membership({ grantedMessageTypes: [] }) })
+    await confirmDelegableMsgs(d, args)
+    const proposal = MsgSubmitProposal.decode(
+      MsgSubmitProposal.encode(confirmTx.mock.calls[0][0].msgs[0].value as MsgSubmitProposal).finish()
+    )
+    expect(proposal.title).toBe('Create an ecosystem')
+    expect(proposal.summary).toBe('Create an ecosystem')
   })
 
   it('refuses to broadcast when the acting corporation changed while confirming', async () => {

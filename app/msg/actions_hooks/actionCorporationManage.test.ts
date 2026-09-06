@@ -34,7 +34,6 @@ import {
   buildVoteMessage,
   corporationSigningMode,
   delegablePreview,
-  proposalMeta,
   VOTE_OPTIONS,
   wrapInProposal,
 } from './actionCorporationManage'
@@ -213,23 +212,6 @@ describe('delegablePreview', () => {
     expect(preview.warning).toBeUndefined()
     expect(preview.proposalTitle).toBe('Repay')
     expect(preview.effect).toBe('Repay 2 VNA of slashed trust deposit for did:web:corp.example.')
-  })
-})
-
-describe('proposalMeta', () => {
-  it('falls back to the default title and mirrors it into the summary', () => {
-    expect(proposalMeta({}, 'Rotate DID')).toEqual({ title: 'Rotate DID', summary: 'Rotate DID' })
-    expect(proposalMeta({ proposalTitle: '  ', proposalSummary: '' }, 'Rotate DID')).toEqual({
-      title: 'Rotate DID',
-      summary: 'Rotate DID',
-    })
-  })
-
-  it('keeps what the composer typed', () => {
-    expect(proposalMeta({ proposalTitle: 'Custom', proposalSummary: 'Why' }, 'Rotate DID')).toEqual({
-      title: 'Custom',
-      summary: 'Why',
-    })
   })
 })
 

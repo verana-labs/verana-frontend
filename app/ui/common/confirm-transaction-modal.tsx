@@ -4,15 +4,17 @@ import type { EncodeObject } from '@cosmjs/proto-signing'
 import { useChain } from '@cosmos-kit/react'
 import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { type ReactNode, useEffect, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { type TxSimulation, useTxSimulation } from '@/hooks/useTxSimulation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { classifyChainError, unauthorizedRejectionText } from '@/lib/chain-error'
 import {
+  composerMsgs,
   confirmLabelKey,
   modeLabelKey,
   msgShortName,
+  proposalMeta,
   type TxConfirmRequest,
   type TxConfirmResult,
   type TxSeverity,
@@ -76,9 +78,14 @@ export function ConfirmTransactionModal({
 }) {
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
-  const { simulation, simulate } = useTxSimulation(request.msgs)
+  const [msgs, setMsgs] = useState(request.msgs)
+  const { simulation, simulate } = useTxSimulation(msgs)
   const [title, setTitle] = useState(request.proposalTitle ?? '')
   const [summary, setSummary] = useState('')
+  const [rebuilding, setRebuilding] = useState(false)
+  const built = useRef(proposalMeta({ title: request.proposalTitle }, request.proposalTitle ?? ''))
+  const proposal = request.mode === 'proposal'
+  const composing = proposal && request.composer === true
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -88,8 +95,21 @@ export function ConfirmTransactionModal({
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [onCancel])
 
-  const proposal = request.mode === 'proposal'
-  const composing = proposal && request.composer === true
+  useEffect(() => {
+    if (!composing) return
+    const next = proposalMeta({ title, summary }, request.proposalTitle ?? '')
+    if (next.title === built.current.title && next.summary === built.current.summary) {
+      setRebuilding(false)
+      return
+    }
+    setRebuilding(true)
+    const timer = window.setTimeout(() => {
+      built.current = next
+      setMsgs(composerMsgs(request, next))
+      setRebuilding(false)
+    }, 400)
+    return () => window.clearTimeout(timer)
+  }, [composing, request, summary, title])
   const labelClass = 'text-sm font-medium text-gray-700 dark:text-gray-300 block'
   const corporationLabel = request.corporationLabel ?? shortenMiddle(proposalPolicy(request.msgs), 24)
   const unauthorized = simulation.status === 'failed' && classifyChainError(simulation.message) === 'unauthorized'
@@ -175,8 +195,8 @@ export function ConfirmTransactionModal({
           <button
             type="button"
             className="btn-action-confirm flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={simulation.status !== 'ready'}
-            onClick={() => onConfirm(composing ? { proposalTitle: title, proposalSummary: summary } : {})}
+            disabled={rebuilding || simulation.status !== 'ready'}
+            onClick={() => onConfirm({ msgs })}
           >
             {t(confirmLabelKey(request.mode))}
           </button>

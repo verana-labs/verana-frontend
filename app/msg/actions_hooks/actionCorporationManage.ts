@@ -27,7 +27,7 @@ import { translate } from '@/i18n/dataview'
 import { notifyChainRejection } from '@/lib/chain-error'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import { trustCostLines } from '@/lib/trust-costs'
-import { type CostLine, msgShortName, type TxConfirmRequest, type TxConfirmResult, txSeverity } from '@/lib/tx-preview'
+import { type CostLine, msgShortName, type ProposalMeta, type TxConfirmRequest, txSeverity } from '@/lib/tx-preview'
 import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import { extractTxHeight } from '@/msg/util/signerUtil'
@@ -239,11 +239,6 @@ export function delegablePreview(
   }
 }
 
-export function proposalMeta(result: TxConfirmResult, fallbackTitle: string): { title: string; summary: string } {
-  const title = result.proposalTitle?.trim() || fallbackTitle
-  return { title, summary: result.proposalSummary?.trim() || title }
-}
-
 function accountPreview(effect: string, payer: string): TxPreview {
   return { titleKey: 'txconfirm.title.default', effect, mode: 'account', payer }
 }
@@ -262,12 +257,7 @@ export function useCorporationManage(onDone?: () => void) {
   actingCorporationRef.current = actingCorporation
   const actingCorporationId = () => actingCorporationRef.current?.corporation.id ?? null
 
-  async function broadcast(
-    notificationKey: string,
-    msgs: EncodeObject[],
-    preview: TxPreview,
-    finalize?: (confirmed: TxConfirmResult) => EncodeObject[]
-  ): Promise<boolean> {
+  async function broadcast(notificationKey: string, msgs: EncodeObject[], preview: TxPreview): Promise<boolean> {
     if (!isWalletConnected || !address) {
       await notify(translate('notification.msg.connectwallet'), 'error')
       return false
@@ -291,7 +281,7 @@ export function useCorporationManage(onDone?: () => void) {
     inFlight.current = true
     try {
       void notify(translate(`notification.${notificationKey}.inprogress`), 'inProgress')
-      const result = await sendTx({ msgs: finalize ? finalize(confirmed) : msgs, memo: notificationKey })
+      const result = await sendTx({ msgs: confirmed.msgs, memo: notificationKey })
       if (!('code' in result)) throw new Error('Expected a transaction response')
       if (result.code !== 0) {
         await notifyChainRejection(
@@ -343,15 +333,11 @@ export function useCorporationManage(onDone?: () => void) {
     const preview = { ...delegablePreview(typeUrl, mode, membership, address, proposalTitle, effectValues), costLines }
     if (mode === 'operator') return broadcast(notificationKey, [build(address)], preview)
     const inner = build(membership.corporation.policyAddress)
-    return broadcast(
-      'MsgSubmitProposal',
-      [wrapInProposal(membership, address, inner, proposalTitle, proposalTitle)],
-      preview,
-      (confirmed) => {
-        const { title, summary } = proposalMeta(confirmed, proposalTitle)
-        return [wrapInProposal(membership, address, inner, title, summary)]
-      }
-    )
+    const envelope = ({ title, summary }: ProposalMeta) => [wrapInProposal(membership, address, inner, title, summary)]
+    return broadcast('MsgSubmitProposal', envelope({ title: proposalTitle, summary: proposalTitle }), {
+      ...preview,
+      rebuild: envelope,
+    })
   }
 
   return {

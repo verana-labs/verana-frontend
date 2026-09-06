@@ -7,7 +7,6 @@ import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import { type CostLine, msgShortName, type TxConfirmRequest, type TxConfirmResult, txSeverity } from '@/lib/tx-preview'
-import { proposalMeta } from '@/msg/actions_hooks/actionCorporationManage'
 import { type DelegableBuild, type DelegableMsgs, resolveDelegableMsgs } from '@/msg/util/delegable-msgs'
 import { useNotification } from '@/providers/notification-provider'
 import { useTxConfirm } from '@/providers/tx-confirm-provider'
@@ -77,6 +76,7 @@ export async function confirmDelegableMsgs(
   }
   if (simulate) return resolved
   const severity = txSeverity(typeUrl) ?? undefined
+  const proposal = resolved.mode === 'proposal'
   const confirmed = await confirmTx({
     titleKey: 'txconfirm.title.default',
     effect,
@@ -85,7 +85,8 @@ export async function confirmDelegableMsgs(
     payer: address,
     severity,
     warning: severity ? warningFor(typeUrl) : undefined,
-    proposalTitle: resolved.mode === 'proposal' ? proposalTitle : undefined,
+    proposalTitle: proposal ? proposalTitle : undefined,
+    rebuild: proposal ? ({ title, summary }) => resolve(title, summary)?.msgs ?? resolved.msgs : undefined,
     corporationLabel: shortenMiddle(actingCorporation.corporation.did, 32),
     costLines,
   })
@@ -94,9 +95,7 @@ export async function confirmDelegableMsgs(
     await notify(t('corporation.select.changed'), 'error')
     return null
   }
-  if (resolved.mode === 'operator') return resolved
-  const { title, summary } = proposalMeta(confirmed, proposalTitle)
-  return resolve(title, summary)
+  return { ...resolved, msgs: confirmed.msgs }
 }
 
 export function useDelegableMsgs(): (args: DelegableMsgsArgs) => Promise<DelegableMsgs | null> {
