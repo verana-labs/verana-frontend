@@ -8,22 +8,33 @@ import { resolveTranslatable } from '@/ui/dataview/types'
 
 export type ProtocolParams = {
   trustUnitPrice: number | null
+  ecosystemTrustDeposit: number | null
   trustDepositReclaimBurnRate: number | null
   trustDepositRate: number | null
+  trustDepositShareValue: number | null
+  userAgentRewardRate: number | null
+  walletUserAgentRewardRate: number | null
   credentialSchemaSchemaMaxSize: number | null
+  credentialSchemaTrustDeposit: number | null
 }
 
 export const protocolParamsInitialState: ProtocolParams = {
   trustUnitPrice: null,
+  ecosystemTrustDeposit: null,
   trustDepositReclaimBurnRate: null,
   trustDepositRate: null,
+  trustDepositShareValue: null,
+  userAgentRewardRate: null,
+  walletUserAgentRewardRate: null,
   credentialSchemaSchemaMaxSize: null,
+  credentialSchemaTrustDeposit: null,
 }
 
 type ParamConfig = {
   key: keyof ProtocolParams
   responseKey: string
   endpoint: string | undefined
+  optional?: boolean
   transform?: (value: number) => number
 }
 
@@ -32,6 +43,12 @@ const CONFIGS: ParamConfig[] = [
     key: 'trustUnitPrice',
     responseKey: 'trust_unit_price',
     endpoint: VERANA_REST_ENDPOINT_ECOSYSTEM,
+  },
+  {
+    key: 'ecosystemTrustDeposit',
+    responseKey: 'ecosystem_trust_deposit',
+    endpoint: VERANA_REST_ENDPOINT_ECOSYSTEM,
+    optional: true,
   },
   {
     key: 'trustDepositReclaimBurnRate',
@@ -45,8 +62,28 @@ const CONFIGS: ParamConfig[] = [
     endpoint: VERANA_REST_ENDPOINT_TRUST_DEPOSIT,
   },
   {
+    key: 'trustDepositShareValue',
+    responseKey: 'trust_deposit_share_value',
+    endpoint: VERANA_REST_ENDPOINT_TRUST_DEPOSIT,
+  },
+  {
+    key: 'userAgentRewardRate',
+    responseKey: 'user_agent_reward_rate',
+    endpoint: VERANA_REST_ENDPOINT_TRUST_DEPOSIT,
+  },
+  {
+    key: 'walletUserAgentRewardRate',
+    responseKey: 'wallet_user_agent_reward_rate',
+    endpoint: VERANA_REST_ENDPOINT_TRUST_DEPOSIT,
+  },
+  {
     key: 'credentialSchemaSchemaMaxSize',
     responseKey: 'credential_schema_schema_max_size',
+    endpoint: VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA,
+  },
+  {
+    key: 'credentialSchemaTrustDeposit',
+    responseKey: 'credential_schema_trust_deposit',
     endpoint: VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA,
   },
 ]
@@ -91,14 +128,17 @@ export async function getProtocolParams(): Promise<ProtocolParamsResult> {
   }
 
   await Promise.all(
-    CONFIGS.map(async ({ key, responseKey, endpoint, transform }) => {
+    CONFIGS.map(async ({ key, responseKey, endpoint, optional, transform }) => {
       if (!endpoint) {
         errors.push(`${resolveTranslatable({ key: 'error.fetch.td.param.missing' }, translate)} ${responseKey}`)
         return
       }
       try {
         const responseParams = await load(endpoint)
-        if (!(responseKey in responseParams)) throw new Error(`${responseKey} not found in response`)
+        if (!(responseKey in responseParams)) {
+          if (optional) return
+          throw new Error(`${responseKey} not found in response`)
+        }
         const value = numeric(responseParams[responseKey], responseKey)
         params[key] = value === null ? null : (transform?.(value) ?? value)
       } catch (error) {
