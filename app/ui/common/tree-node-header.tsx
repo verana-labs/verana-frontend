@@ -33,6 +33,7 @@ export type TreeNodeHeaderProps = {
   onToggle: (id: string, role?: string, validatorId?: string) => void
   onSelect: (id: string) => void
   onJoin: (node: TreeNode) => void
+  joinBlockedReason?: string
   onConnect?: () => void
 }
 
@@ -46,6 +47,7 @@ export default function TreeNodeHeader({
   onToggle,
   onSelect,
   onJoin,
+  joinBlockedReason,
   onConnect,
 }: TreeNodeHeaderProps) {
   const hasChildren = Boolean(node.children?.length)
@@ -93,7 +95,9 @@ export default function TreeNodeHeader({
           {node.enabledJoin ? (
             <button
               type="button"
-              className="hover:text-purple-600 cursor-pointer whitespace-nowrap"
+              className="hover:text-purple-600 cursor-pointer whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={Boolean(joinBlockedReason)}
+              title={joinBlockedReason}
               onClick={(event) => {
                 event.stopPropagation()
                 if (node.onboardingAction === 'LinkDID') {
@@ -109,6 +113,7 @@ export default function TreeNodeHeader({
             >
               <FontAwesomeIcon icon={faHandshake} className="mr-1" />
               {resolveTranslatable({ key: 'participants.btn.join' }, translate)}
+              {joinBlockedReason ? <span className="sr-only">{joinBlockedReason}</span> : null}
             </button>
           ) : null}
         </div>

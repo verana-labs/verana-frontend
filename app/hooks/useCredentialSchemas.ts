@@ -72,6 +72,8 @@ function parseCredentialSchema(value: unknown, path: string): CredentialSchemaLi
     issuerOnboardingMode: onboardingMode(source.issuer_onboarding_mode, `${path}.issuer_onboarding_mode`),
     verifierOnboardingMode: onboardingMode(source.verifier_onboarding_mode, `${path}.verifier_onboarding_mode`),
     holderOnboardingMode: holderOnboardingMode(source.holder_onboarding_mode, `${path}.holder_onboarding_mode`),
+    pricingAssetType: nullableString(source.pricing_asset_type, `${path}.pricing_asset_type`),
+    pricingAsset: nullableString(source.pricing_asset, `${path}.pricing_asset`),
     title: typeof source.title === 'string' ? source.title : metadata.title,
     description: typeof source.description === 'string' ? source.description : metadata.description,
     participants: number(source.participants, `${path}.participants`),

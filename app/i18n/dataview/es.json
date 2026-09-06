@@ -894,5 +894,7 @@
   "participantcard.feedistribution.verification": "Tarifas de confianza que este verificador paga por credencial verificada, por beneficiario del árbol de participantes",
   "participantcard.feedistribution.total": "Total de tarifas de confianza",
   "participantcard.feedistribution.deposit": "Depósito de confianza del pagador ({rate}% de las tarifas)",
-  "participantcard.feedistribution.failed": "No se pudo cargar la distribución de tarifas desde el indexador."
+  "participantcard.feedistribution.failed": "No se pudo cargar la distribución de tarifas desde el indexador.",
+  "pricing.unsupported.short": "Activo de precio aún no soportado",
+  "pricing.unsupported.notice": "Activo de precio aún no soportado: este esquema se cotiza en {asset}. Las acciones con tarifas (iniciar o renovar un proceso de incorporación, autocrear, validar) permanecen deshabilitadas hasta que la consola soporte activos distintos de la moneda nativa (VNA). La consulta no se ve afectada."
 }
