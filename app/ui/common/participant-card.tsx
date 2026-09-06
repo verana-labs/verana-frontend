@@ -11,10 +11,12 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCredentialSchemaData } from '@/hooks/useCredentialSchemaData'
 import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { mergeParticipantDetailActions, refreshParticipantSources, useParticipant } from '@/hooks/useParticipant'
 import { useParticipantHistory } from '@/hooks/useParticipantHistory'
 import { translate } from '@/i18n/dataview'
+import { FEE_BEARING_PARTICIPANT_ACTIONS, isNativePricing } from '@/lib/pricing-asset'
 import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import ActionFieldButtonModal from '@/ui/common/action-field-button-modal'
 import type { ActionFieldProps } from '@/ui/common/data-view-typed'
@@ -22,6 +24,7 @@ import LogoImage from '@/ui/common/logo-image'
 import ParticipantAttribute from '@/ui/common/participant-attribute'
 import ParticipantTimeline from '@/ui/common/participant-timeline'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
+import { unsupportedPricingReason } from '@/ui/common/pricing-notice'
 import TrustBadge from '@/ui/common/trust-badge'
 import {
   type Participant,
@@ -253,6 +256,9 @@ export default function ParticipantCard({
   const { data: enrichment } = useDidTrustEnrichment(did)
   const { participant: refreshedParticipant, refetch } = useParticipant(participantId)
   const { participantHistory, refetch: refetchHistory } = useParticipantHistory(participantId)
+  const { credentialSchema } = useCredentialSchemaData(participant?.schema_id ?? '')
+  const feeBlockedReason =
+    credentialSchema && !isNativePricing(credentialSchema) ? unsupportedPricingReason() : undefined
   const [activeActionId, setActiveActionId] = useState<string | null>(null)
   const participantRef = useRef(participant)
   participantRef.current = participant
@@ -317,6 +323,7 @@ export default function ParticipantCard({
             }
             onClickButton={() => setActiveActionId(activeActionId === action.name ? null : action.name)}
             onClose={() => setActiveActionId(null)}
+            blockedReason={FEE_BEARING_PARTICIPANT_ACTIONS.has(action.name) ? feeBlockedReason : undefined}
           />
         )
       })
