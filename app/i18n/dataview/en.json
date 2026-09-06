@@ -830,5 +830,10 @@
   "txconfirm.cost.validationfees": "Validation fees",
   "txconfirm.cost.trustdeposit": "Trust deposit",
   "txconfirm.cost.repay": "Repaid deposit",
-  "txconfirm.cost.yield": "Claimed yield"
+  "txconfirm.cost.yield": "Claimed yield",
+  "participantcard.feedistribution.title": "Fee distribution",
+  "participantcard.feedistribution.issuance": "Trust fees this issuer pays per credential issued, per beneficiary of the participant tree",
+  "participantcard.feedistribution.verification": "Trust fees this verifier pays per credential verified, per beneficiary of the participant tree",
+  "participantcard.feedistribution.total": "Total trust fees",
+  "participantcard.feedistribution.deposit": "Payer trust deposit ({rate}% of the fees)"
 }

@@ -830,5 +830,10 @@
   "txconfirm.cost.validationfees": "Tarifas de validación",
   "txconfirm.cost.trustdeposit": "Depósito de confianza",
   "txconfirm.cost.repay": "Depósito reembolsado",
-  "txconfirm.cost.yield": "Rendimiento reclamado"
+  "txconfirm.cost.yield": "Rendimiento reclamado",
+  "participantcard.feedistribution.title": "Distribución de tarifas",
+  "participantcard.feedistribution.issuance": "Tarifas de confianza que este emisor paga por credencial emitida, por beneficiario del árbol de participantes",
+  "participantcard.feedistribution.verification": "Tarifas de confianza que este verificador paga por credencial verificada, por beneficiario del árbol de participantes",
+  "participantcard.feedistribution.total": "Total de tarifas de confianza",
+  "participantcard.feedistribution.deposit": "Depósito de confianza del pagador ({rate}% de las tarifas)"
 }
