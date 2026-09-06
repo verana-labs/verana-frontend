@@ -6,7 +6,7 @@ import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
-import { msgShortName, type TxConfirmRequest, type TxConfirmResult, txSeverity } from '@/lib/tx-preview'
+import { type CostLine, msgShortName, type TxConfirmRequest, type TxConfirmResult, txSeverity } from '@/lib/tx-preview'
 import { proposalMeta } from '@/msg/actions_hooks/actionCorporationManage'
 import { type DelegableBuild, type DelegableMsgs, resolveDelegableMsgs } from '@/msg/util/delegable-msgs'
 import { useNotification } from '@/providers/notification-provider'
@@ -20,7 +20,7 @@ export interface DelegableMsgsArgs {
   effect: string
   proposalTitle: string
   simulate: boolean
-  costLines?: { label: string; value: string }[]
+  costLines?: CostLine[]
 }
 
 export interface DelegableMsgsDeps {

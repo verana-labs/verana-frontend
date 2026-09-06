@@ -826,5 +826,9 @@
   "corporation.lost.choose": "Choose another corporation",
   "corporation.lost.guest": "Continue without a corporation",
   "pricing.unsupported.short": "Pricing asset not yet supported",
-  "pricing.unsupported.notice": "Pricing asset not yet supported: this schema is priced in {asset}. Fee-bearing actions (start or renew an onboarding process, self-create, validate) stay disabled until the console supports assets other than the native coin (VNA). Browsing is unaffected."
+  "pricing.unsupported.notice": "Pricing asset not yet supported: this schema is priced in {asset}. Fee-bearing actions (start or renew an onboarding process, self-create, validate) stay disabled until the console supports assets other than the native coin (VNA). Browsing is unaffected.",
+  "txconfirm.cost.validationfees": "Validation fees",
+  "txconfirm.cost.trustdeposit": "Trust deposit",
+  "txconfirm.cost.repay": "Repaid deposit",
+  "txconfirm.cost.yield": "Claimed yield"
 }

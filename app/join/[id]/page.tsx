@@ -128,6 +128,7 @@ export default function JoinEcosystemWizard() {
         role: selectedRole,
         validatorParticipantId: selectedValidator.id,
         did: serviceDid,
+        validatorValidationFees: selectedValidator.validation_fees,
       })
     } finally {
       setSubmitting(false)

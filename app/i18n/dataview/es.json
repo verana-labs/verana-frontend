@@ -826,5 +826,9 @@
   "corporation.lost.choose": "Elegir otra corporación",
   "corporation.lost.guest": "Continuar sin corporación",
   "pricing.unsupported.short": "Activo de precio aún no soportado",
-  "pricing.unsupported.notice": "Activo de precio aún no soportado: este esquema se cotiza en {asset}. Las acciones con tarifas (iniciar o renovar un proceso de incorporación, autocrear, validar) permanecen deshabilitadas hasta que la consola soporte activos distintos de la moneda nativa (VNA). La consulta no se ve afectada."
+  "pricing.unsupported.notice": "Activo de precio aún no soportado: este esquema se cotiza en {asset}. Las acciones con tarifas (iniciar o renovar un proceso de incorporación, autocrear, validar) permanecen deshabilitadas hasta que la consola soporte activos distintos de la moneda nativa (VNA). La consulta no se ve afectada.",
+  "txconfirm.cost.validationfees": "Tarifas de validación",
+  "txconfirm.cost.trustdeposit": "Depósito de confianza",
+  "txconfirm.cost.repay": "Depósito reembolsado",
+  "txconfirm.cost.yield": "Rendimiento reclamado"
 }

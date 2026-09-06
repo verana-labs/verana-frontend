@@ -21,6 +21,7 @@ import { useDelegableMsgs } from '@/hooks/useDelegableMsgs'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { notifyChainRejection } from '@/lib/chain-error'
+import { type TrustCostSubject, trustCostLines } from '@/lib/trust-costs'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import {
   MSG_ERROR_ACTION_PARTICIPANT,
@@ -37,6 +38,7 @@ import { findEventAttribute } from '@/msg/util/txEvents'
 import { usePendingTasksCtx } from '@/providers/api-rest-query-provider-context'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
+import { useProtocolParams } from '@/providers/protocol-params-context'
 import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 import { formatVNAFromUVNA, shortenMiddle } from '@/util/util'
 
@@ -59,6 +61,7 @@ export type ParticipantActionParams =
       role: ParticipantRoleName
       validatorParticipantId: string | number
       did: string
+      validatorValidationFees?: string | number
     } & FeeFields)
   | ({
       msgType: 'MsgSelfCreateParticipant'
@@ -76,7 +79,12 @@ export type ParticipantActionParams =
       effectiveUntil?: string | Date
     } & FeeFields)
   | {
-      msgType: 'MsgRenewParticipantOP' | 'MsgCancelParticipantOPLastRequest' | 'MsgRevokeParticipant'
+      msgType: 'MsgRenewParticipantOP'
+      id: string | number
+      validatorValidationFees?: string | number
+    }
+  | {
+      msgType: 'MsgCancelParticipantOPLastRequest' | 'MsgRevokeParticipant'
       id: string | number
     }
   | ({
@@ -101,6 +109,7 @@ export type ParticipantActionParams =
   | {
       msgType: 'MsgRepayParticipantSlashedTrustDeposit'
       id: string | number
+      amount?: string | number
     }
 
 function participantRole(role: ParticipantRoleName): ParticipantRole {
@@ -266,6 +275,18 @@ function isDeliverTxResponse(result: DeliverTxResponse | SimulateResult): result
   return 'code' in result
 }
 
+function costSubject(params: ParticipantActionParams): TrustCostSubject | null {
+  switch (params.msgType) {
+    case 'MsgStartParticipantOP':
+    case 'MsgRenewParticipantOP':
+      return { msgType: params.msgType, validationFees: params.validatorValidationFees }
+    case 'MsgRepayParticipantSlashedTrustDeposit':
+      return { msgType: params.msgType, amount: params.amount }
+    default:
+      return null
+  }
+}
+
 function effectValues(params: ParticipantActionParams): I18nValues {
   return {
     id: 'id' in params ? String(params.id) : 'schemaId' in params ? String(params.schemaId) : null,
@@ -283,6 +304,7 @@ export function useActionParticipant(onCancel?: () => void, onRefresh?: (id?: st
   const veranaChain = useVeranaChain()
   const { address, isWalletConnected } = useChain(veranaChain.chain_name)
   const delegable = useDelegableMsgs()
+  const rates = useProtocolParams()
   const { refetch: refetchPendingTasks } = usePendingTasksCtx()
   const { waitForBlock } = useIndexerEvents()
   const { notify } = useNotification()
@@ -315,12 +337,14 @@ export function useActionParticipant(onCancel?: () => void, onRefresh?: (id?: st
       const typeUrl = delegableTypeUrl(params.msgType)
       if (!typeUrl) throw new Error(`Unsupported message type: ${params.msgType}`)
       const effect = t(`txconfirm.effect.${params.msgType}`, effectValues(params))
+      const subject = costSubject(params)
       const resolved = await delegable({
         typeUrl,
         build: (corporation, operator) => buildParticipantMessage(params, { corporation, operator }),
         effect,
         proposalTitle: proposalTitleFrom(effect),
         simulate,
+        costLines: subject ? trustCostLines(subject, rates) : undefined,
       })
       if (!resolved) return
       mode = resolved.mode

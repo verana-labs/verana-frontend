@@ -5,6 +5,12 @@ import { formatVNAFromUVNA } from '@/util/util'
 export type TxConfirmMode = 'operator' | 'proposal' | 'account'
 export type TxSeverity = 'irreversible' | 'notice'
 
+export interface CostLine {
+  label: string
+  value: string
+  debitUvna?: number
+}
+
 export interface TxConfirmRequest {
   titleKey: string
   effect: string
@@ -13,7 +19,7 @@ export interface TxConfirmRequest {
   payer: string
   severity?: TxSeverity
   warning?: string
-  costLines?: { label: string; value: string }[]
+  costLines?: CostLine[]
   composer?: boolean
   proposalTitle?: string
   corporationLabel?: string

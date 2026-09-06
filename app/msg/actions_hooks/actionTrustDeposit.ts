@@ -9,6 +9,7 @@ import { useDelegableMsgs } from '@/hooks/useDelegableMsgs'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { notifyChainRejection } from '@/lib/chain-error'
+import { trustCostLines } from '@/lib/trust-costs'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import {
   MSG_ERROR_ACTION_TD,
@@ -23,6 +24,7 @@ import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
 import { extractTxHeight } from '@/msg/util/signerUtil'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
+import { useProtocolParams } from '@/providers/protocol-params-context'
 import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 import { shortenMiddle } from '@/util/util'
 
@@ -31,7 +33,7 @@ type TrustDepositContext = {
   operator: string
 }
 
-export type TrustDepositActionParams = { msgType: 'MsgReclaimTrustDepositYield' }
+export type TrustDepositActionParams = { msgType: 'MsgReclaimTrustDepositYield'; claimable?: string | null }
 
 export function buildTrustDepositMessage(
   _params: TrustDepositActionParams,
@@ -55,6 +57,7 @@ export function useActionTrustDeposit(onCancel?: () => void, onRefresh?: (id?: s
   const veranaChain = useVeranaChain()
   const { address, isWalletConnected } = useChain(veranaChain.chain_name)
   const delegable = useDelegableMsgs()
+  const rates = useProtocolParams()
   const { waitForBlock } = useIndexerEvents()
   const { notify } = useNotification()
   const sendTx = useSendTxDetectingMode(veranaChain)
@@ -89,6 +92,7 @@ export function useActionTrustDeposit(onCancel?: () => void, onRefresh?: (id?: s
         effect,
         proposalTitle: proposalTitleFrom(effect),
         simulate,
+        costLines: trustCostLines({ msgType: params.msgType, claimable: params.claimable }, rates),
       })
       if (!resolved) return
       mode = resolved.mode
