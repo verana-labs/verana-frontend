@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type TrustCostRates, totalDebitUvna, trustCostLines } from './trust-costs'
+import { balanceWarning, type TrustCostRates, totalDebitUvna, trustCostLines } from './trust-costs'
 
 const RATES: TrustCostRates = {
   trustDepositRate: 0.05,
@@ -47,6 +47,16 @@ describe('trustCostLines', () => {
       { label: 'Repaid deposit', value: '2 VNA', debitUvna: 2_000_000 },
     ])
     expect(trustCostLines({ msgType: 'MsgRepayParticipantSlashedTrustDeposit', amount: '0' }, RATES)).toEqual([])
+  })
+
+  it('warns when the fee plus the trust costs exceed the balance and only flags a low balance otherwise', () => {
+    const lines = trustCostLines({ msgType: 'MsgStartParticipantOP', validationFees: 2_000_000 }, RATES)
+    expect(balanceWarning('2000000', 90_000, lines, '1000000')).toBe('shortfall')
+    expect(balanceWarning('2200000', 90_000, lines, '1000000')).toBeNull()
+    expect(balanceWarning('900000', 90_000, [], '1000000')).toBe('low')
+    expect(balanceWarning('900000', 90_000, undefined, '1000000')).toBe('low')
+    expect(balanceWarning('2000000', null, lines, '1000000')).toBeNull()
+    expect(balanceWarning(null, 90_000, lines, '1000000')).toBeNull()
   })
 
   it('shows the claimed yield without counting it as a debit', () => {

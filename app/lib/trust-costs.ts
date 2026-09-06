@@ -1,6 +1,7 @@
 import { translate } from '@/i18n/dataview'
 import type { ProtocolParams } from '@/lib/protocolParams'
 import type { CostLine } from '@/lib/tx-preview'
+import { getBalanceWarningState } from '@/ui/common/no-form-transaction'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { formatVNAFromUVNA } from '@/util/util'
 
@@ -64,4 +65,19 @@ export function trustCostLines(subject: TrustCostSubject, rates: TrustCostRates)
 
 export function totalDebitUvna(lines: CostLine[]): number {
   return lines.reduce((sum, line) => sum + (line.debitUvna ?? 0), 0)
+}
+
+export type BalanceWarning = 'shortfall' | 'low' | null
+
+export function balanceWarning(
+  balance: string | null,
+  feeUvna: number | null,
+  costLines: CostLine[] | undefined,
+  lowBalanceThreshold: string
+): BalanceWarning {
+  const required = feeUvna === null ? null : feeUvna + totalDebitUvna(costLines ?? [])
+  const state = getBalanceWarningState(balance, required, lowBalanceThreshold)
+  if (state.balanceLessThanFee) return 'shortfall'
+  if (state.lowBalance) return 'low'
+  return null
 }

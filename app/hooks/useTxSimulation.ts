@@ -9,7 +9,7 @@ import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 
 export type TxSimulation =
   | { status: 'simulating' }
-  | { status: 'ready'; fee: string }
+  | { status: 'ready'; fee: string; feeUvna: number }
   | { status: 'failed'; message: string }
 
 export function useTxSimulation(msgs: EncodeObject[]): { simulation: TxSimulation; simulate: () => () => void } {
@@ -26,8 +26,9 @@ export function useTxSimulation(msgs: EncodeObject[]): { simulation: TxSimulatio
       .current({ msgs, simulate: true })
       .then((result) => {
         if (cancelled) return
-        if ('gas' in result && 'amount' in result) setSimulation({ status: 'ready', fee: formatStdFee(result) })
-        else setSimulation({ status: 'failed', message: 'Expected a simulated fee' })
+        if ('gas' in result && 'amount' in result) {
+          setSimulation({ status: 'ready', fee: formatStdFee(result), feeUvna: Number(result.amount[0]?.amount ?? 0) })
+        } else setSimulation({ status: 'failed', message: 'Expected a simulated fee' })
       })
       .catch((error: unknown) => {
         if (cancelled) return

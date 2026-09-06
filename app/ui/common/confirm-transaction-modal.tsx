@@ -5,10 +5,13 @@ import { useChain } from '@cosmos-kit/react'
 import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
+import { LOW_BALANCE_WARN_UVNA } from '@/config/env'
+import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
 import { type TxSimulation, useTxSimulation } from '@/hooks/useTxSimulation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { classifyChainError, unauthorizedRejectionText } from '@/lib/chain-error'
+import { balanceWarning, totalDebitUvna } from '@/lib/trust-costs'
 import {
   composerMsgs,
   confirmLabelKey,
@@ -22,6 +25,8 @@ import {
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 import { shortenMiddle } from '@/util/util'
+
+const UVNA_PER_VNA = 1_000_000
 
 function t(key: string, values?: I18nValues): string {
   return resolveTranslatable({ key, values }, translate) ?? key
@@ -49,6 +54,30 @@ function FeeValue({ simulation }: { simulation: TxSimulation }) {
   if (simulation.status === 'failed')
     return <span className="text-red-600 dark:text-red-400">{t('txconfirm.fee.failed')}</span>
   return <span>{simulation.fee}</span>
+}
+
+function BalanceWarning({
+  balance,
+  feeUvna,
+  request,
+}: {
+  balance: string | null
+  feeUvna: number | null
+  request: TxConfirmRequest
+}) {
+  const warning = balanceWarning(balance, feeUvna, request.costLines, LOW_BALANCE_WARN_UVNA ?? '0')
+  if (!warning) return null
+  const required = (feeUvna ?? 0) + totalDebitUvna(request.costLines ?? [])
+  const html = t(warning === 'shortfall' ? 'messages.balanceLessThanFee' : 'messages.lowbalance', {
+    value: Number(balance) / UVNA_PER_VNA,
+    fee: required / UVNA_PER_VNA,
+  })
+  return (
+    <div role="alert" className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 flex gap-3">
+      <FontAwesomeIcon icon={faTriangleExclamation} className="text-red-600 dark:text-red-400 mt-0.5" />
+      <p className="text-sm text-red-700 dark:text-red-300" dangerouslySetInnerHTML={{ __html: html }} />
+    </div>
+  )
 }
 
 function WarningBox({ severity, children }: { severity: TxSeverity | undefined; children: ReactNode }) {
@@ -80,6 +109,7 @@ export function ConfirmTransactionModal({
   const { address } = useChain(veranaChain.chain_name)
   const [msgs, setMsgs] = useState(request.msgs)
   const { simulation, simulate } = useTxSimulation(msgs)
+  const { accountData } = useTrustDepositAccountData()
   const [title, setTitle] = useState(request.proposalTitle ?? '')
   const [summary, setSummary] = useState('')
   const [rebuilding, setRebuilding] = useState(false)
@@ -172,6 +202,13 @@ export function ConfirmTransactionModal({
           </div>
         ) : null}
         {request.warning ? <WarningBox severity={request.severity}>{request.warning}</WarningBox> : null}
+        {request.payer === address ? (
+          <BalanceWarning
+            balance={accountData.balance}
+            feeUvna={simulation.status === 'ready' ? simulation.feeUvna : null}
+            request={request}
+          />
+        ) : null}
         {simulation.status === 'failed' ? (
           <WarningBox severity="irreversible">
             {unauthorized ? (
