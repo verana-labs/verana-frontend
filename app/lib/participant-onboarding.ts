@@ -13,6 +13,25 @@ export type ParticipantOnboardingDecision = {
   validatorRole: 'ECOSYSTEM' | 'ISSUER_GRANTOR' | 'VERIFIER_GRANTOR' | 'ISSUER' | null
 }
 
+export function participantOnboardingMode(
+  role: string,
+  schema: { issuerOnboardingMode: string; verifierOnboardingMode: string; holderOnboardingMode: string | null }
+): string {
+  switch (role) {
+    case 'ISSUER_GRANTOR':
+    case 'VERIFIER_GRANTOR':
+      return 'GRANTOR_ONBOARDING_PROCESS'
+    case 'ISSUER':
+      return schema.issuerOnboardingMode
+    case 'VERIFIER':
+      return schema.verifierOnboardingMode
+    case 'HOLDER':
+      return schema.holderOnboardingMode ?? 'ISSUER_ONBOARDING_PROCESS'
+    default:
+      return ''
+  }
+}
+
 export function getParticipantJoinMessage(
   onboardingMode: ParticipantOnboardingMode
 ): 'MsgSelfCreateParticipant' | 'MsgStartParticipantOP' {

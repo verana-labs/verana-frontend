@@ -91,7 +91,8 @@ export default function TreeNodeHeader({
               type="button"
               className="hover:text-purple-600 cursor-pointer whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={Boolean(joinBlockedReason)}
-              title={joinBlockedReason}
+              title={joinBlockedReason ?? node.onboardingLabel}
+              aria-label={`${resolveTranslatable({ key: 'participants.btn.join' }, translate)} (${node.onboardingLabel ?? ''})`}
               onClick={(event) => {
                 event.stopPropagation()
                 if (node.onboardingAction === 'LinkDID') {
@@ -155,6 +156,14 @@ export default function TreeNodeHeader({
             <>
               <FontAwesomeIcon icon={node.icon} className={`${node.iconColorClass} text-sm`} />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300 break-all">{node.name}</span>
+              {node.badgeCount !== undefined ? (
+                <span
+                  className="text-sm text-neutral-70 dark:text-neutral-30"
+                  title={resolveTranslatable({ key: 'participants.tree.members' }, translate)}
+                >
+                  ({node.badgeCount})
+                </span>
+              ) : null}
             </>
           )
         ) : (

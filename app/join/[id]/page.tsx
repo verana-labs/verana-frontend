@@ -27,6 +27,8 @@ import { resolveTranslatable } from '@/ui/dataview/types'
 import { rolesSchema } from '@/util/util'
 import { isValidDID } from '@/util/validations'
 
+const VALIDATOR_LIST_SIZE = 1024
+
 type WizardStep = 1 | 2 | 3 | 4 | 5 | 6 | 7
 
 const STEPS = [
@@ -87,7 +89,14 @@ export default function JoinEcosystemWizard() {
   }, [selectedRole, selectedSchema])
 
   const validatorRole = decision?.validatorRole ?? undefined
-  const { participants: validators, errorParticipants } = useParticipants(selectedSchema?.id, validatorRole)
+  const { participants: validators, errorParticipants } = useParticipants(
+    selectedSchema?.id,
+    validatorRole,
+    undefined,
+    {
+      pageSize: VALIDATOR_LIST_SIZE,
+    }
+  )
   const activeValidators = validators.filter((participant) => participant.participant_state === 'ACTIVE')
 
   const submitParticipant = useActionParticipant(() => setCurrentStep(7))

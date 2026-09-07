@@ -277,6 +277,12 @@ export interface Participant {
   op_exp?: string | null
   op_validator_deposit?: string | number
   participants?: string | number
+  participants_ecosystem?: string | number
+  participants_issuer_grantor?: string | number
+  participants_issuer?: string | number
+  participants_verifier_grantor?: string | number
+  participants_verifier?: string | number
+  participants_holder?: string | number
   weight?: string | number
   issued?: string | number
   verified?: string | number

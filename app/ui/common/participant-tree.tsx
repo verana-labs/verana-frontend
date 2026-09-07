@@ -1,6 +1,7 @@
 'use client'
 
 import { faPlus } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { translate } from '@/i18n/dataview'
@@ -35,7 +36,7 @@ type ParticipantTreeProps = {
   unsupportedPricing?: SchemaPricing
   isEcosystemController?: boolean
   viewerCorporationId?: number
-  setNodeRequestParams?: (nodeId?: string, role?: string, validatorId?: string) => void
+  setNodeRequestParams?: (nodeId?: string, role?: string, validatorId?: string, afterId?: string) => void
   refreshRoot?: () => void
   onConnect?: () => void
   onRetryFetch?: () => void
@@ -97,6 +98,7 @@ function Tree({
   onSelect,
   onToggle,
   onJoin,
+  onShowMore,
   joinBlockedReason,
   onConnect,
   depth = 0,
@@ -111,6 +113,7 @@ function Tree({
   onSelect: (id: string) => void
   onToggle: (id: string, role?: string, validatorId?: string) => void
   onJoin: (node: TreeNode) => void
+  onShowMore: (node: TreeNode) => void
   joinBlockedReason?: string
   onConnect?: () => void
   depth?: number
@@ -118,6 +121,20 @@ function Tree({
   return (
     <div className="space-y-1">
       {nodes.map((node) => {
+        if (node.loadMore) {
+          return (
+            <div key={node.nodeId} style={{ marginLeft: depth * 24 }}>
+              <button
+                type="button"
+                onClick={() => onShowMore(node)}
+                className="flex items-center space-x-2 p-2 text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+              >
+                <FontAwesomeIcon icon={node.icon} className={`${node.iconColorClass} text-sm`} />
+                <span>{resolveTranslatable({ key: 'participants.tree.showmore' }, translate)}</span>
+              </button>
+            </div>
+          )
+        }
         const isExpanded = expanded[node.nodeId] ?? false
         return (
           <div key={node.nodeId}>
@@ -151,6 +168,7 @@ function Tree({
                 onSelect={onSelect}
                 onToggle={onToggle}
                 onJoin={onJoin}
+                onShowMore={onShowMore}
                 joinBlockedReason={joinBlockedReason}
                 onConnect={onConnect}
                 depth={depth + 1}
@@ -362,6 +380,10 @@ export default function ParticipantTree({
           onJoin={(node) => {
             setNodeRequestParams?.()
             setJoinNode(node)
+          }}
+          onShowMore={(node) => {
+            const cursor = node.loadMore
+            if (cursor) setNodeRequestParams?.(cursor.nodeId, cursor.role, cursor.validatorId, cursor.afterId)
           }}
           joinBlockedReason={joinBlockedReason}
           onConnect={onConnect}

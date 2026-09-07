@@ -1,5 +1,35 @@
 import { describe, expect, it } from 'vitest'
-import { getParticipantJoinMessage, getParticipantOnboardingDecision } from './participant-onboarding'
+import {
+  getParticipantJoinMessage,
+  getParticipantOnboardingDecision,
+  participantOnboardingMode,
+} from './participant-onboarding'
+
+describe('participantOnboardingMode', () => {
+  const schema = {
+    issuerOnboardingMode: 'OPEN',
+    verifierOnboardingMode: 'ECOSYSTEM_ONBOARDING_PROCESS',
+    holderOnboardingMode: null,
+  }
+
+  it('labels grantor folders with the grantor process and leaf roles with the schema mode', () => {
+    expect(participantOnboardingMode('ISSUER_GRANTOR', schema)).toBe('GRANTOR_ONBOARDING_PROCESS')
+    expect(participantOnboardingMode('VERIFIER_GRANTOR', schema)).toBe('GRANTOR_ONBOARDING_PROCESS')
+    expect(participantOnboardingMode('ISSUER', schema)).toBe('OPEN')
+    expect(participantOnboardingMode('VERIFIER', schema)).toBe('ECOSYSTEM_ONBOARDING_PROCESS')
+  })
+
+  it('falls back to the issuer process for holders without a configured mode', () => {
+    expect(participantOnboardingMode('HOLDER', schema)).toBe('ISSUER_ONBOARDING_PROCESS')
+    expect(participantOnboardingMode('HOLDER', { ...schema, holderOnboardingMode: 'PERMISSIONLESS' })).toBe(
+      'PERMISSIONLESS'
+    )
+  })
+
+  it('has no mode for roles that are never joined through a folder', () => {
+    expect(participantOnboardingMode('ECOSYSTEM', schema)).toBe('')
+  })
+})
 
 describe('getParticipantJoinMessage', () => {
   it.each([

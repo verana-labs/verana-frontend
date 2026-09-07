@@ -113,6 +113,18 @@ export function parseParticipantRecord(value: unknown, path = 'participant'): Pa
     op_exp: optionalNullableString(source.op_exp, `${path}.op_exp`),
     op_validator_deposit: optionalAmount(source.op_validator_deposit, `${path}.op_validator_deposit`),
     participants: optionalAmount(source.participants, `${path}.participants`),
+    participants_ecosystem: optionalAmount(source.participants_ecosystem, `${path}.participants_ecosystem`),
+    participants_issuer_grantor: optionalAmount(
+      source.participants_issuer_grantor,
+      `${path}.participants_issuer_grantor`
+    ),
+    participants_issuer: optionalAmount(source.participants_issuer, `${path}.participants_issuer`),
+    participants_verifier_grantor: optionalAmount(
+      source.participants_verifier_grantor,
+      `${path}.participants_verifier_grantor`
+    ),
+    participants_verifier: optionalAmount(source.participants_verifier, `${path}.participants_verifier`),
+    participants_holder: optionalAmount(source.participants_holder, `${path}.participants_holder`),
     weight: optionalAmount(source.weight, `${path}.weight`),
     issued: optionalAmount(source.issued, `${path}.issued`),
     verified: optionalAmount(source.verified, `${path}.verified`),

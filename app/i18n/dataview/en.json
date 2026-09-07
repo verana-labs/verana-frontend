@@ -892,5 +892,9 @@
   "datatable.ecosystem.filter.membership.label": "Membership",
   "datatable.ecosystem.filter.membership.all": "Controlled and joined",
   "datatable.ecosystem.filter.membership.controlled": "Controlled only",
-  "datatable.ecosystem.filter.membership.joined": "Joined only"
+  "datatable.ecosystem.filter.membership.joined": "Joined only",
+  "dataview.cs.managementMode.ISSUER_ONBOARDING_PROCESS": "Issuer Onboarding Process",
+  "dataview.cs.managementMode.PERMISSIONLESS": "Permissionless",
+  "participants.tree.showmore": "Show more",
+  "participants.tree.members": "Active members"
 }

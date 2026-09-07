@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { parseParticipantsResponse, participantListQuery } from '@/hooks/useParticipants'
+import { parseParticipantsResponse, participantListQuery, siblingRequest } from '@/hooks/useParticipants'
+import { keysetWindow } from '@/lib/keyset'
 
 const participant = {
   id: 1,
@@ -13,10 +14,29 @@ const participant = {
 }
 
 describe('participantListQuery', () => {
-  it('asks for the full trust data of every node in the requested folder', () => {
+  it('over-fetches a window of 25 siblings with full trust data and no state filter', () => {
     expect(participantListQuery('26', 'ISSUER', '105').toString()).toBe(
-      'schema_id=26&limit=1024&sort=%2Bid&trust_data=full&role=ISSUER&validator_participant_id=105'
+      'limit=26&sort=%2Bid&schema_id=26&trust_data=full&role=ISSUER&validator_participant_id=105'
     )
+  })
+
+  it('continues after the last loaded sibling with an inclusive min_id', () => {
+    expect(participantListQuery('26', 'ISSUER', '105', { afterId: '140' }).toString()).toBe(
+      'limit=26&sort=%2Bid&min_id=141&schema_id=26&trust_data=full&role=ISSUER&validator_participant_id=105'
+    )
+  })
+
+  it('honours a caller page size', () => {
+    expect(participantListQuery('26', 'ECOSYSTEM', undefined, { pageSize: 1024 }).get('limit')).toBe('1025')
+  })
+})
+
+describe('siblingRequest', () => {
+  it('flags a further page only when the window overflows', () => {
+    const rows = Array.from({ length: 26 }, (_, index) => ({ id: index + 1 }))
+    expect(keysetWindow(siblingRequest(), rows)).toMatchObject({ hasNext: true })
+    expect(keysetWindow(siblingRequest(), rows.slice(0, 25))).toMatchObject({ hasNext: false })
+    expect(keysetWindow(siblingRequest(), rows).rows).toHaveLength(25)
   })
 })
 

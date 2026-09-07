@@ -892,5 +892,9 @@
   "datatable.ecosystem.filter.membership.label": "Membresía",
   "datatable.ecosystem.filter.membership.all": "Controlados y unidos",
   "datatable.ecosystem.filter.membership.controlled": "Solo controlados",
-  "datatable.ecosystem.filter.membership.joined": "Solo unidos"
+  "datatable.ecosystem.filter.membership.joined": "Solo unidos",
+  "dataview.cs.managementMode.ISSUER_ONBOARDING_PROCESS": "Proceso de incorporación del emisor",
+  "dataview.cs.managementMode.PERMISSIONLESS": "Sin permiso",
+  "participants.tree.showmore": "Mostrar más",
+  "participants.tree.members": "Miembros activos"
 }

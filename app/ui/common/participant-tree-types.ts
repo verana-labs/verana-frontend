@@ -23,6 +23,14 @@ export type TreeNode = {
   serviceTrust?: DidEnrichment | null
   serviceTitle?: string
   badgeCount?: number
+  loadMore?: SiblingCursor
+}
+
+export type SiblingCursor = {
+  nodeId: string
+  role: string
+  validatorId?: string
+  afterId: string
 }
 
 export type ParticipantRefreshState = {

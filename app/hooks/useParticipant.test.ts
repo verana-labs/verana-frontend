@@ -30,6 +30,12 @@ describe('parseParticipantResponse', () => {
       })
     ).toThrow('participant.corporation_available_actions')
   })
+
+  it('reads the per-role member counters', () => {
+    expect(
+      parseParticipantResponse({ participant: { ...participant, participants_issuer: 5, participants_holder: '2' } })
+    ).toMatchObject({ participants_issuer: 5, participants_holder: '2' })
+  })
 })
 
 describe('mergeParticipantDetailActions', () => {
