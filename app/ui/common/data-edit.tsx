@@ -4,6 +4,7 @@ import clsx from 'clsx'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { LOW_BALANCE_WARN_UVNA } from '@/config/env'
 import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
+import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { canonicalizeLanguageTag } from '@/lib/language'
 import { logger } from '@/lib/logger'
@@ -66,6 +67,7 @@ export default function EditableDataView<T extends object>({
   const [formData, setFormData] = useState<T>(data)
   const [errorFields, setErrorFields] = useState<FieldValidationError[]>([])
   const [submitting, setSubmitting] = useState(false)
+  const { loading: corporationLoading } = useUserCorporation()
   const uiMsgType = resolveMsgCopy(messageType)
   const action = id ? 'edit' : 'create'
   const [hasTriedSubmit, setHasTriedSubmit] = useState(false)
@@ -471,7 +473,7 @@ export default function EditableDataView<T extends object>({
                 isModal ? 'flex-1' : ''
               )}
               onClick={handleCancel}
-              disabled={submitting}
+              disabled={submitting || corporationLoading}
             >
               {resolveTranslatable({ key: 'messages.cancel' }, translate)}
             </button>
@@ -483,7 +485,7 @@ export default function EditableDataView<T extends object>({
               msgTypeStyle[messageType].button // specific
             )}
             onClick={handleSave}
-            disabled={submitting}
+            disabled={submitting || corporationLoading}
           >
             {uiMsgType.label}
           </button>

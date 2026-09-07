@@ -5,7 +5,7 @@ import type { DeliverTxResponse } from '@cosmjs/stargate'
 import { useChain } from '@cosmos-kit/react'
 import { MsgReclaimTrustDepositYield } from '@verana-labs/verana-types/codec/verana/td/v1/tx'
 import { useRef } from 'react'
-import { resolveUserCorporation, useUserCorporation } from '@/hooks/useUserCorporation'
+import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import {
@@ -45,7 +45,7 @@ function isDeliverTxResponse(result: DeliverTxResponse | SimulateResult): result
 export function useActionTrustDeposit(onCancel?: () => void, onRefresh?: (id?: string, txHeight?: number) => void) {
   const veranaChain = useVeranaChain()
   const { address, isWalletConnected } = useChain(veranaChain.chain_name)
-  const { corporation, grantedMessageTypes, loading: corporationLoading } = useUserCorporation()
+  const { actingCorporation, loading: corporationLoading } = useUserCorporation()
   const { waitForBlock } = useIndexerEvents()
   const { notify } = useNotification()
   const sendTx = useSendTxDetectingMode(veranaChain)
@@ -59,9 +59,11 @@ export function useActionTrustDeposit(onCancel?: () => void, onRefresh?: (id?: s
       await notify(resolveTranslatable({ key: 'notification.msg.connectwallet' }, translate) ?? '', 'error')
       return
     }
-    const authority =
-      corporation && !corporationLoading ? { corporation, grantedMessageTypes } : await resolveUserCorporation(address)
-    if (!authority.corporation) {
+    if (corporationLoading) {
+      if (!simulate) await notify(resolveTranslatable({ key: 'corporation.select.loading' }, translate) ?? '', 'error')
+      return
+    }
+    if (!actingCorporation) {
       if (!simulate)
         await notify(resolveTranslatable({ key: 'error.msg.corporation.required' }, translate) ?? '', 'error')
       return
@@ -81,10 +83,10 @@ export function useActionTrustDeposit(onCancel?: () => void, onRefresh?: (id?: s
     }
     try {
       const message = buildTrustDepositMessage(params, {
-        corporation: authority.corporation.policyAddress,
+        corporation: actingCorporation.corporation.policyAddress,
         operator: address,
       })
-      if (!authority.grantedMessageTypes.includes(message.typeUrl)) {
+      if (!actingCorporation.grantedMessageTypes.includes(message.typeUrl)) {
         if (!simulate) {
           await notify(
             resolveTranslatable(

@@ -247,37 +247,7 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
     )
   }
 
-  const delegationPattern = /\/v4\/delegation\/operator-authorizations(?:\?.*)?$/
-  const corporationPattern = new RegExp(`/v4/corporation/get/${corporationId}(?:\\?.*)?$`)
-  if (stubCorporation) {
-    await page.route(delegationPattern, (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          authorizations: [
-            {
-              corporation_id: corporationId,
-              msg_types: Object.values(veranaTypeUrls),
-            },
-          ],
-        }),
-      })
-    )
-    await page.route(corporationPattern, (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          corporation: {
-            id: corporationId,
-            policy_address: corporationPolicyAddress,
-            did: 'did:web:ring-a-corporation.devnet.verana.network',
-          },
-        }),
-      })
-    )
-  }
+  if (stubCorporation) await stubCorporationRoutes(page, corporationId, corporationPolicyAddress)
 
   return {
     seenMethods: () => [...seen],
@@ -285,11 +255,52 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
       await page.unroute(rpcPattern)
       if (stubSri) await page.unroute('**/api/sri**')
       if (stubCorporation) {
-        await page.unroute(delegationPattern)
-        await page.unroute(corporationPattern)
+        for (const pattern of corporationRoutePatterns(corporationId)) await page.unroute(pattern)
       }
     },
   }
+}
+
+const delegationPattern = /\/v4\/delegation\/operator-authorizations(?:\?.*)?$/
+const membershipsPattern = /\/v4\/group\/corporations-by-member(?:\?.*)?$/
+const pendingPattern = /\/v4\/participant\/pending\/flat(?:\?.*)?$/
+const proposalsPattern = /\/v4\/group\/proposals(?:\?.*)?$/
+
+function corporationRoutePatterns(corporationId: number): RegExp[] {
+  return [
+    delegationPattern,
+    new RegExp(`/v4/corporation/get/${corporationId}(?:\\?.*)?$`),
+    membershipsPattern,
+    pendingPattern,
+    proposalsPattern,
+  ]
+}
+
+async function jsonRoute(page: Page, pattern: RegExp, body: unknown): Promise<void> {
+  await page.route(pattern, (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
+  )
+}
+
+export async function stubCorporationRoutes(
+  page: Page,
+  corporationId = 7,
+  policyAddress = 'verana1ringacorporationpolicy'
+): Promise<void> {
+  const [delegation, corporation, memberships, pending, proposals] = corporationRoutePatterns(corporationId)
+  await jsonRoute(page, delegation, {
+    authorizations: [{ corporation_id: corporationId, msg_types: Object.values(veranaTypeUrls) }],
+  })
+  await jsonRoute(page, corporation, {
+    corporation: {
+      id: corporationId,
+      policy_address: policyAddress,
+      did: 'did:web:ring-a-corporation.devnet.verana.network',
+    },
+  })
+  await jsonRoute(page, memberships, { memberships: [] })
+  await jsonRoute(page, pending, { ecosystems: [] })
+  await jsonRoute(page, proposals, { proposals: [] })
 }
 
 function escapeRegExp(s: string): string {

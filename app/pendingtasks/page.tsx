@@ -57,12 +57,12 @@ function buildTree(ecosystems: PendingEcosystem[], corporationId?: number): Tree
 }
 
 export default function PendingTasksPage() {
-  const { corporation } = useUserCorporation()
+  const { actingCorporation } = useUserCorporation()
   const { pendingParticipants, refetch } = usePendingTasksCtx()
   const [refreshRoot, setRefreshRoot] = useState(true)
   const participantTree = useMemo(
-    () => buildTree(pendingParticipants, corporation?.id),
-    [corporation?.id, pendingParticipants]
+    () => buildTree(pendingParticipants, actingCorporation?.corporation.id),
+    [actingCorporation?.corporation.id, pendingParticipants]
   )
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export default function PendingTasksPage() {
     <ParticipantTree
       tree={participantTree}
       type="tasks"
-      viewerCorporationId={corporation?.id}
+      viewerCorporationId={actingCorporation?.corporation.id}
       refreshRoot={() => setRefreshRoot(true)}
     />
   )

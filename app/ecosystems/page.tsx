@@ -53,7 +53,7 @@ export default function EcosystemsPage() {
     onlyActiveEcosystem,
     setOnlyActiveEcosystem,
   } = useEcosystemsCtx()
-  const { corporation } = useUserCorporation()
+  const { actingCorporation } = useUserCorporation()
 
   const [filters, setFilters] = useState<EcosystemsFilterState>({
     ...INITIAL_ECOSYSTEMS_FILTER,
@@ -96,7 +96,7 @@ export default function EcosystemsPage() {
   const filtered = useMemo(() => {
     return ecosystemsList.filter((ecosystem) => {
       if (!filters.showArchived && ecosystem.archived) return false
-      const isOwned = ecosystem.corporationId === corporation?.id || isOwnedRole(ecosystem.role)
+      const isOwned = ecosystem.corporationId === actingCorporation?.corporation.id || isOwnedRole(ecosystem.role)
       if (filters.hideOwned && isOwned) return false
       if (filters.hideParticipant && hasParticipantRole(ecosystem.role)) return false
       if (!matchesSearch(ecosystem, filters.search)) return false
@@ -105,7 +105,7 @@ export default function EcosystemsPage() {
       }
       return true
     })
-  }, [corporation?.id, ecosystemsList, enrichments, filters])
+  }, [actingCorporation?.corporation.id, ecosystemsList, enrichments, filters])
 
   const total = filtered.length
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))

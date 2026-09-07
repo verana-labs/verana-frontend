@@ -72,13 +72,16 @@ export function useTrustDepositAccountData() {
   const veranaChain = useVeranaChain()
   const { address, isWalletConnected, getStargateClient } = useChain(veranaChain.chain_name)
   const getStargateClientRef = useRef(getStargateClient)
-  const { corporation, loading: corporationLoading } = useUserCorporation()
-  const corporationId = corporation?.id
+  const { actingCorporation, loading: corporationLoading } = useUserCorporation()
+  const corporationId = actingCorporation?.corporation.id
   const [accountData, setData] = useState<TrustDepositAccountData>(EMPTY_ACCOUNT_DATA)
   const [loading, setLoading] = useState(false)
   const [errorAccountData, setError] = useState<string | null>(null)
 
+  const requestRef = useRef(0)
+
   const fetchData = useCallback(async () => {
+    const request = ++requestRef.current
     if (!address || !isWalletConnected) {
       setData(EMPTY_ACCOUNT_DATA)
       setLoading(false)
@@ -108,6 +111,7 @@ export function useTrustDepositAccountData() {
         }
       }
 
+      if (request !== requestRef.current) return
       setData({
         address,
         balance,
@@ -116,9 +120,9 @@ export function useTrustDepositAccountData() {
         network: veranaChain.chain_id,
       })
     } catch (error) {
-      setError(error instanceof Error ? error.message : String(error))
+      if (request === requestRef.current) setError(error instanceof Error ? error.message : String(error))
     } finally {
-      setLoading(false)
+      if (request === requestRef.current) setLoading(false)
     }
   }, [address, corporationId, isWalletConnected, veranaChain.chain_id])
 

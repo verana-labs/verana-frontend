@@ -50,7 +50,7 @@ export default function ParticipantsPage() {
   const schemaId = params?.id as string
   const veranaChain = useVeranaChain()
   const { isWalletConnected, connect } = useChain(veranaChain.chain_name)
-  const { corporation } = useUserCorporation()
+  const { actingCorporation } = useUserCorporation()
   const ownedIds = useRef<Set<string>>(new Set())
   const predecessorIds = useRef<Set<string>>(new Set())
 
@@ -97,7 +97,7 @@ export default function ParticipantsPage() {
   const toTreeNode = useCallback(
     (node: BuiltParticipant, childRoles: ChildRole[]): TreeNode => {
       const validatorParticipantId = node.validator_participant_id ?? ''
-      const isCorporation = corporation?.id === node.corporation_id
+      const isCorporation = actingCorporation?.corporation.id === node.corporation_id
       const isValidator = ownedIds.current.has(validatorParticipantId)
       const isPredecessor = predecessorIds.current.has(validatorParticipantId)
       if (isCorporation) ownedIds.current.add(node.id)
@@ -117,7 +117,7 @@ export default function ParticipantsPage() {
         children: foldersByRole(node, childRoles),
       }
     },
-    [corporation?.id, foldersByRole]
+    [actingCorporation?.corporation.id, foldersByRole]
   )
 
   const setNodeRequestParams = useCallback((nodeId?: string, requestedRole?: string, requestedValidatorId?: string) => {
@@ -175,8 +175,8 @@ export default function ParticipantsPage() {
       ecosystemTitle={ecosystem?.did ?? ''}
       schemaId={credentialSchema?.id != null ? String(credentialSchema.id) : undefined}
       ecosystemId={ecosystemId || undefined}
-      isEcosystemController={corporation?.id === ecosystem?.corporationId}
-      viewerCorporationId={corporation?.id}
+      isEcosystemController={actingCorporation?.corporation.id === ecosystem?.corporationId}
+      viewerCorporationId={actingCorporation?.corporation.id}
       setNodeRequestParams={setNodeRequestParams}
       refreshRoot={() => setRefreshRoot(true)}
       onConnect={!isWalletConnected ? connect : undefined}

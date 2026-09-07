@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { ThemeProvider } from 'next-themes'
 import { RestQueryProvider } from '@/providers/api-rest-query-provider-context'
 import { ComponentsVersionProvider } from '@/providers/components-version-provider'
+import { CorporationProvider } from '@/providers/corporation-provider'
 import { IndexerEventsProvider } from '@/providers/indexer-events-provider'
 import { NotificationProvider } from '@/providers/notification-provider'
 import RequireConnectedWallet from '@/providers/require-connected-wallet'
@@ -17,9 +18,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <ComponentsVersionProvider>
           <IndexerEventsProvider>
             <RequireConnectedWallet>
-              <NotificationProvider>
-                <RestQueryProvider>{children}</RestQueryProvider>
-              </NotificationProvider>
+              <CorporationProvider>
+                <NotificationProvider>
+                  <RestQueryProvider>{children}</RestQueryProvider>
+                </NotificationProvider>
+              </CorporationProvider>
             </RequireConnectedWallet>
           </IndexerEventsProvider>
         </ComponentsVersionProvider>

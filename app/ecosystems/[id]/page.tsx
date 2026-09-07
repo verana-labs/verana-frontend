@@ -27,7 +27,7 @@ export default function EcosystemViewPage() {
   const params = useParams<{ id: string }>()
   const id = params?.id ?? ''
   const router = useRouter()
-  const { corporation, hasOperatorGrant } = useUserCorporation()
+  const { actingCorporation } = useUserCorporation()
   const { ecosystem, errorEcosystem, refetch: refetchEcosystem } = useEcosystemData(id)
   const {
     credentialSchemas,
@@ -88,7 +88,7 @@ export default function EcosystemViewPage() {
     )
   }
 
-  const canManage = corporation?.id === ecosystem.corporationId && hasOperatorGrant
+  const canManage = actingCorporation?.corporation.id === ecosystem.corporationId && actingCorporation.operator
   const isArchived = Boolean(ecosystem.archived)
   const lastVersion = ecosystem.versions.reduce(
     (latest, version) => Math.max(latest, version.version),

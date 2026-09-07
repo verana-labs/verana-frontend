@@ -598,5 +598,6 @@
   "ecosystem.credentialSchema.add.title": "New Credential Schema",
   "error.cs.notfound": "Credential schema not found.",
   "notconnected.title": "Not Connected",
-  "notconnected.msg": "Connect a compatible wallet to interact with the Verana network."
+  "notconnected.msg": "Connect a compatible wallet to interact with the Verana network.",
+  "corporation.select.loading": "Corporation discovery is still running, retry in a moment."
 }

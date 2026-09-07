@@ -598,5 +598,6 @@
   "ecosystem.credentialSchema.add.title": "Nuevo esquema de credenciales",
   "error.cs.notfound": "No se encontró el esquema de credenciales.",
   "notconnected.title": "Sin conexión",
-  "notconnected.msg": "Conecte una cartera compatible para interactuar con la red Verana."
+  "notconnected.msg": "Conecte una cartera compatible para interactuar con la red Verana.",
+  "corporation.select.loading": "La detección de corporaciones sigue en curso, inténtalo de nuevo en un momento."
 }
