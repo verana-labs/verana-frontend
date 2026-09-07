@@ -2,18 +2,28 @@
 
 import { faDownload, faUpRightFromSquare } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { translate } from '@/i18n/dataview'
-import { documentFileName, fetchableDocumentUrl, kindFromContentType, kindFromUrl } from '@/lib/gf-document'
+import { type DocumentVerification, verifyDocument } from '@/lib/document-verification'
+import {
+  documentFileName,
+  type GfDocument,
+  type GfDocumentKind,
+  kindFromContentType,
+  kindFromUrl,
+} from '@/lib/gf-document'
+import { getLanguageLabel, useLanguageData } from '@/lib/language'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
-type ViewerState =
-  | { status: 'loading' }
-  | { status: 'pdf'; objectUrl: string; blob: Blob }
-  | { status: 'markdown'; text: string; blob: Blob }
-  | { status: 'unavailable' }
+export type ViewerState = DocumentVerification['state'] | 'verifying'
+
+export type GfDocumentViewerProps = {
+  documents: GfDocument[]
+  initialDocumentId?: string
+  onStateChange?: (state: ViewerState) => void
+}
 
 const MARKDOWN_WRAPPER_CLASS = [
   'max-h-[28rem] overflow-y-auto rounded-lg border border-neutral-20 dark:border-neutral-70',
@@ -33,155 +43,216 @@ const MARKDOWN_WRAPPER_CLASS = [
   '[&_img]:max-w-full',
 ].join(' ')
 
-export type GfDocumentViewerProps = {
-  /** URL of the governance framework document, as registered on-chain. */
-  url: string
+const FRAME_CLASS = 'w-full h-[28rem] rounded-lg border border-neutral-20 dark:border-neutral-70 bg-white'
+
+const BADGE_CLASS: Record<ViewerState, string> = {
+  verifying: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  verified: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
+  mismatch: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
+  unverified: 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400',
 }
 
-/**
- * Inline viewer for a governance framework document. PDF and Markdown
- * documents are rendered directly in the component; other formats fall back
- * to a placeholder. The document can always be opened in a new tab or
- * downloaded.
- *
- * The document is fetched (CORS) rather than iframed from its origin: hosts
- * such as raw.githubusercontent.com send `X-Frame-Options: deny` but allow
- * cross-origin reads, so a blob URL is the only way to display them inline.
- */
-export default function GfDocumentViewer({ url }: GfDocumentViewerProps) {
-  const [state, setState] = useState<ViewerState>({ status: 'loading' })
+const NOTICE_CLASS: Record<Exclude<ViewerState, 'verifying' | 'verified'>, string> = {
+  mismatch: 'border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300',
+  unverified:
+    'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300',
+}
 
+const MEDIA_TYPES: Record<GfDocumentKind, string> = {
+  pdf: 'application/pdf',
+  markdown: 'text/markdown',
+  html: 'text/html',
+}
+
+function t(key: string): string {
+  return resolveTranslatable({ key }, translate) ?? key
+}
+
+export function VerificationBadge({ state }: { state: ViewerState }) {
+  return (
+    <span
+      role="status"
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${BADGE_CLASS[state]}`}
+    >
+      {t(`gfdoc.state.${state}`)}
+    </span>
+  )
+}
+
+function useVerification(url: string | undefined, digest: string | undefined): DocumentVerification | null {
+  const [result, setResult] = useState<DocumentVerification | null>(null)
   useEffect(() => {
+    setResult(null)
+    if (!url) return
     let cancelled = false
-    let objectUrl: string | undefined
-    setState({ status: 'loading' })
-
-    const load = async () => {
-      const response = await fetch(fetchableDocumentUrl(url))
-      if (!response.ok) throw new Error(`Failed to load document: ${response.status}`)
-      const kind = kindFromUrl(url) ?? kindFromContentType(response.headers.get('content-type'))
-      if (kind === 'pdf') {
-        const raw = await response.blob()
-        // Re-type: hosts like raw.githubusercontent.com serve PDFs as
-        // application/octet-stream, which an iframe downloads instead of
-        // displaying.
-        const blob = raw.type === 'application/pdf' ? raw : new Blob([raw], { type: 'application/pdf' })
-        objectUrl = URL.createObjectURL(blob)
-        if (!cancelled) setState({ status: 'pdf', objectUrl, blob })
-      } else if (kind === 'markdown') {
-        const text = await response.text()
-        if (!cancelled) setState({ status: 'markdown', text, blob: new Blob([text], { type: 'text/markdown' }) })
-      } else if (!cancelled) {
-        setState({ status: 'unavailable' })
-      }
-    }
-
-    load().catch(() => {
-      if (!cancelled) setState({ status: 'unavailable' })
+    void verifyDocument(url, digest).then((value) => {
+      if (!cancelled) setResult(value)
     })
-
     return () => {
       cancelled = true
-      if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
-  }, [url])
+  }, [url, digest])
+  return result
+}
 
-  const title = resolveTranslatable({ key: 'join.egf.title' }, translate) ?? 'Ecosystem Governance Framework'
-
-  const download = () => {
-    const saveBlob = (blob: Blob) => {
-      const kind = state.status === 'markdown' ? 'markdown' : 'pdf'
-      const link = document.createElement('a')
-      link.href = URL.createObjectURL(blob)
-      link.download = documentFileName(url, kind)
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      URL.revokeObjectURL(link.href)
-    }
-    if (state.status === 'pdf' || state.status === 'markdown') {
-      saveBlob(state.blob)
+function useObjectUrl(bytes: Uint8Array | undefined, type: string): string | undefined {
+  const [objectUrl, setObjectUrl] = useState<string>()
+  useEffect(() => {
+    if (!bytes) {
+      setObjectUrl(undefined)
       return
     }
-    fetch(fetchableDocumentUrl(url))
-      .then((response) => {
-        if (!response.ok) throw new Error(`Failed to download document: ${response.status}`)
-        return response.blob()
-      })
-      .then(saveBlob)
-      .catch(() => {
-        window.open(url, '_blank', 'noopener,noreferrer')
-      })
+    const url = URL.createObjectURL(new Blob([bytes], { type }))
+    setObjectUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [bytes, type])
+  return objectUrl
+}
+
+function saveBytes(bytes: Uint8Array, type: string, name: string) {
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(new Blob([bytes], { type }))
+  link.download = name
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(link.href)
+}
+
+function VerifiedContent({
+  kind,
+  text,
+  pdfUrl,
+  title,
+}: {
+  kind: GfDocumentKind | undefined
+  text: string | undefined
+  pdfUrl: string | undefined
+  title: string
+}) {
+  if (kind === 'pdf' && pdfUrl) return <iframe src={pdfUrl} title={title} className={FRAME_CLASS} />
+  if (kind === 'html' && text !== undefined) {
+    return <iframe sandbox="" srcDoc={text} referrerPolicy="no-referrer" title={title} className={FRAME_CLASS} />
+  }
+  if (kind === 'markdown' && text !== undefined) {
+    return (
+      <div className={MARKDOWN_WRAPPER_CLASS}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            a: ({ children, href }) => (
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-600 dark:text-primary-400 underline"
+              >
+                {children}
+              </a>
+            ),
+          }}
+        >
+          {text}
+        </ReactMarkdown>
+      </div>
+    )
+  }
+  return (
+    <div className="rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 p-8 text-center">
+      <p className="text-sm text-neutral-70 dark:text-neutral-70">{t('gfdoc.downloadonly')}</p>
+    </div>
+  )
+}
+
+export default function GfDocumentViewer({ documents, initialDocumentId, onStateChange }: GfDocumentViewerProps) {
+  const languages = useLanguageData()
+  const [selectedId, setSelectedId] = useState(initialDocumentId ?? documents[0]?.id)
+  const selected = documents.find((doc) => doc.id === selectedId) ?? documents[0]
+  const result = useVerification(selected?.url, selected?.digestSri)
+  const state: ViewerState = !selected ? 'unverified' : (result?.state ?? 'verifying')
+  const verifiedBytes = result?.state === 'verified' ? result.bytes : undefined
+  const mediaType = result?.state === 'verified' ? result.mediaType : null
+  const kind = selected ? (kindFromUrl(selected.url) ?? kindFromContentType(mediaType)) : undefined
+  const pdfUrl = useObjectUrl(kind === 'pdf' ? verifiedBytes : undefined, MEDIA_TYPES.pdf)
+  const text = useMemo(
+    () =>
+      verifiedBytes && (kind === 'markdown' || kind === 'html') ? new TextDecoder().decode(verifiedBytes) : undefined,
+    [verifiedBytes, kind]
+  )
+
+  useEffect(() => {
+    onStateChange?.(state)
+  }, [state, onStateChange])
+
+  if (!selected) return <p className="text-sm text-neutral-70 dark:text-neutral-70">{t('gfdoc.empty')}</p>
+
+  const languageLabel = (doc: GfDocument) => getLanguageLabel(languages, doc.language) || doc.language
+  const title = `${t('gfdoc.title')} (${languageLabel(selected)})`
+  const download = () => {
+    if (!verifiedBytes) return
+    const type = kind ? MEDIA_TYPES[kind] : (mediaType ?? 'application/octet-stream')
+    saveBytes(verifiedBytes, type, documentFileName(selected.url, kind))
   }
 
   return (
-    <div>
-      {state.status === 'loading' ? (
-        <div className="flex items-center justify-center h-40 rounded-lg border border-neutral-20 dark:border-neutral-70 animate-pulse">
-          <p className="text-sm text-neutral-70 dark:text-neutral-70">
-            {resolveTranslatable({ key: 'join.egf.doc.loading' }, translate) ?? 'Loading document…'}
-          </p>
-        </div>
-      ) : null}
-
-      {state.status === 'pdf' ? (
-        <iframe
-          src={state.objectUrl}
-          title={title}
-          className="w-full h-[28rem] rounded-lg border border-neutral-20 dark:border-neutral-70 bg-white"
-        />
-      ) : null}
-
-      {state.status === 'markdown' ? (
-        <div className={MARKDOWN_WRAPPER_CLASS}>
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-              a: ({ children, href }) => (
-                <a
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary-600 dark:text-primary-400 underline"
-                >
-                  {children}
-                </a>
-              ),
-            }}
+    <div className="text-left">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <span>{t('gfdoc.language.label')}</span>
+          <select
+            value={selected.id}
+            onChange={(event) => setSelectedId(event.target.value)}
+            className="px-3 py-1.5 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface text-sm"
           >
-            {state.text}
-          </ReactMarkdown>
+            {documents.map((doc) => (
+              <option key={doc.id} value={doc.id}>
+                {languageLabel(doc)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <VerificationBadge state={state} />
+      </div>
+
+      <p className="mb-3 text-xs font-mono text-neutral-70 dark:text-neutral-70 break-all">
+        {t('gfdoc.digest.label')}: {selected.digestSri ?? t('gfdoc.digest.none')}
+      </p>
+
+      {state === 'verifying' ? (
+        <div className="flex items-center justify-center h-40 rounded-lg border border-neutral-20 dark:border-neutral-70 animate-pulse">
+          <p className="text-sm text-neutral-70 dark:text-neutral-70">{t('gfdoc.verifying.text')}</p>
         </div>
       ) : null}
 
-      {state.status === 'unavailable' ? (
-        <div className="rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 p-8 text-center">
-          <div className="text-6xl text-gray-400 dark:text-gray-500 mb-4">📄</div>
-          <p className="text-sm text-neutral-70 dark:text-neutral-70">
-            {resolveTranslatable({ key: 'join.egf.doc.previewunavailable' }, translate) ??
-              'Preview is not available for this document. Use the buttons below to open or download it.'}
-          </p>
+      {result?.state === 'verified' ? <VerifiedContent kind={kind} text={text} pdfUrl={pdfUrl} title={title} /> : null}
+
+      {result?.state === 'mismatch' || result?.state === 'unverified' ? (
+        <div className={`rounded-lg border p-4 ${NOTICE_CLASS[result.state]}`}>
+          <p className="text-sm font-medium">{t(`gfdoc.${result.state}.text`)}</p>
+          <p className="mt-1 text-xs opacity-80 break-all">{result.reason}</p>
         </div>
       ) : null}
 
       <div className="flex flex-wrap justify-center gap-3 mt-4">
         <a
-          href={url}
+          href={selected.url}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
         >
           <FontAwesomeIcon icon={faUpRightFromSquare} className="text-xs" />
-          {resolveTranslatable({ key: 'join.egf.doc.open' }, translate) ?? 'Open in new tab'}
+          {t('gfdoc.open')}
         </a>
-        <button
-          type="button"
-          onClick={download}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
-        >
-          <FontAwesomeIcon icon={faDownload} className="text-xs" />
-          {resolveTranslatable({ key: 'join.egf.doc.download' }, translate) ?? 'Download'}
-        </button>
+        {verifiedBytes ? (
+          <button
+            type="button"
+            onClick={download}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
+          >
+            <FontAwesomeIcon icon={faDownload} className="text-xs" />
+            {t('gfdoc.download')}
+          </button>
+        ) : null}
       </div>
     </div>
   )

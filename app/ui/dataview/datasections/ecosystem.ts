@@ -1,4 +1,5 @@
 import { faBoxArchive, faEdit } from '@fortawesome/free-solid-svg-icons'
+import type { GfVersion } from '@/lib/gf-document'
 import type { Section } from '@/ui/dataview/types'
 import type { CredentialSchemaData } from './cs'
 
@@ -18,17 +19,7 @@ export interface EcosystemData {
   weight: string
   issued: number
   verified: number
-  versions: {
-    id: string
-    version: number
-    activeSince: string | null
-    documents: {
-      id: string
-      url: string
-      language: string
-      digestSri?: string
-    }[]
-  }[]
+  versions: GfVersion[]
   docUrl?: string
   role?: string
   schemas?: string

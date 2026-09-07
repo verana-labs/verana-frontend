@@ -8,6 +8,7 @@ import { useCredentialSchemas } from '@/hooks/useCredentialSchemas'
 import { useEcosystemData } from '@/hooks/useEcosystemData'
 import { useParticipants } from '@/hooks/useParticipants'
 import { translate } from '@/i18n/dataview'
+import { displayedVersion } from '@/lib/gf-document'
 import { getParticipantOnboardingDecision, type JoinableParticipantRole } from '@/lib/participant-onboarding'
 import { isNativePricing } from '@/lib/pricing-asset'
 import { useActionParticipant } from '@/msg/actions_hooks/actionParticipant'
@@ -15,6 +16,7 @@ import { useNotification } from '@/providers/notification-provider'
 import CsCard from '@/ui/common/cs-card'
 import EcosystemCard from '@/ui/common/ecosystem-card'
 import EgfCard from '@/ui/common/egf-card'
+import GfDocumentViewer from '@/ui/common/gf-document-viewer'
 import { PricingNotice } from '@/ui/common/pricing-notice'
 import RoleCard from '@/ui/common/role-card'
 import ValidatorCard from '@/ui/common/validator-card'
@@ -234,7 +236,19 @@ export default function JoinEcosystemWizard() {
             <p className="text-sm text-neutral-70 mt-1">{activeStep.description}</p>
           </div>
 
-          {currentStep === 1 ? <EcosystemCard ecosystem={{ ...ecosystem, role: ecosystem.role ?? '' }} /> : null}
+          {currentStep === 1 ? (
+            <>
+              <EcosystemCard ecosystem={{ ...ecosystem, role: ecosystem.role ?? '' }} />
+              <section className="mt-6 mb-6 border border-neutral-20 dark:border-neutral-70 rounded-xl p-4 sm:p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  {resolveTranslatable({ key: 'join.egf.title' }, translate) ?? 'Ecosystem Governance Framework'}
+                </h3>
+                <GfDocumentViewer
+                  documents={displayedVersion(ecosystem.versions, ecosystem.activeVersion)?.documents ?? []}
+                />
+              </section>
+            </>
+          ) : null}
 
           {currentStep === 2 ? (
             <div className="space-y-4 mb-6">

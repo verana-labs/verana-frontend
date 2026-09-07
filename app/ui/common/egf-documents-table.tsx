@@ -2,10 +2,11 @@
 
 import { faUpRightFromSquare } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { ReactNode } from 'react'
+import { type ReactNode, useState } from 'react'
 import { translate } from '@/i18n/dataview'
+import type { GfVersion } from '@/lib/gf-document'
 import { getLanguageLabel, useLanguageData } from '@/lib/language'
-import type { EcosystemData } from '@/ui/dataview/datasections/ecosystem'
+import GfDocumentViewer from '@/ui/common/gf-document-viewer'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { formatDate } from '@/util/util'
 
@@ -17,10 +18,8 @@ function Th({ children }: { children: ReactNode }) {
   return <th className={HEADER_CELL_CLASS}>{children}</th>
 }
 
-type Versions = EcosystemData['versions']
-
 export type EgfDocumentsTableProps = {
-  versions: Versions
+  versions: GfVersion[]
   activeVersion: number
 }
 
@@ -28,6 +27,8 @@ type RowState = 'active' | 'draft' | 'inactive'
 
 type Row = {
   key: string
+  versionId: string
+  documentId: string
   version: number
   url: string
   language: string
@@ -45,7 +46,7 @@ function statusPillClass(state: RowState): string {
   return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
 }
 
-function buildRows(versions: Versions, activeVersion: number, resolveLabel: (value: string) => string): Row[] {
+function buildRows(versions: GfVersion[], activeVersion: number, resolveLabel: (value: string) => string): Row[] {
   const sorted = [...versions].sort((a, b) => a.version - b.version)
 
   const rows: Row[] = []
@@ -90,6 +91,8 @@ function buildRows(versions: Versions, activeVersion: number, resolveLabel: (val
 
       rows.push({
         key: `${version.id}-${doc.id}`,
+        versionId: version.id,
+        documentId: doc.id,
         version: version.version,
         url: doc.url,
         language: resolveLabel(doc.language),
@@ -109,11 +112,14 @@ function buildRows(versions: Versions, activeVersion: number, resolveLabel: (val
 export default function EgfDocumentsTable({ versions, activeVersion }: EgfDocumentsTableProps) {
   const state = useLanguageData()
   const rows = buildRows(versions, activeVersion, (value) => getLanguageLabel(state, value))
+  const [viewing, setViewing] = useState<{ versionId: string; documentId: string } | null>(null)
+  const viewingVersion = viewing ? versions.find((version) => version.id === viewing.versionId) : undefined
 
   const versionHeader = resolveTranslatable({ key: 'datalist.egf.header.version' }, translate) ?? 'Version'
   const uriHeader = resolveTranslatable({ key: 'datalist.egf.header.uri' }, translate) ?? 'URI'
   const languageHeader = resolveTranslatable({ key: 'datalist.egf.header.language' }, translate) ?? 'Language'
   const statusHeader = resolveTranslatable({ key: 'datalist.egf.header.status' }, translate) ?? 'Status'
+  const actionsHeader = resolveTranslatable({ key: 'datalist.egf.header.actions' }, translate) ?? 'Actions'
 
   return (
     <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 overflow-hidden">
@@ -125,6 +131,7 @@ export default function EgfDocumentsTable({ versions, activeVersion }: EgfDocume
               <Th>{uriHeader}</Th>
               <Th>{languageHeader}</Th>
               <Th>{statusHeader}</Th>
+              <Th>{actionsHeader}</Th>
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-surface divide-y divide-neutral-20 dark:divide-neutral-70">
@@ -157,11 +164,41 @@ export default function EgfDocumentsTable({ versions, activeVersion }: EgfDocume
                     {row.statusText}
                   </span>
                 </td>
+                <td className={`${BODY_CELL_CLASS} whitespace-nowrap`}>
+                  <button
+                    type="button"
+                    onClick={() => setViewing({ versionId: row.versionId, documentId: row.documentId })}
+                    className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                  >
+                    {resolveTranslatable({ key: 'datalist.egf.view' }, translate) ?? 'View'}
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {viewing && viewingVersion ? (
+        <div className="border-t border-neutral-20 dark:border-neutral-70 p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+              {versionHeader} {viewingVersion.version}
+            </h3>
+            <button
+              type="button"
+              onClick={() => setViewing(null)}
+              className="text-sm text-neutral-70 dark:text-neutral-70 hover:text-gray-900 dark:hover:text-white"
+            >
+              {resolveTranslatable({ key: 'datalist.egf.viewer.close' }, translate) ?? 'Close'}
+            </button>
+          </div>
+          <GfDocumentViewer
+            key={`${viewing.versionId}-${viewing.documentId}`}
+            documents={viewingVersion.documents}
+            initialDocumentId={viewing.documentId}
+          />
+        </div>
+      ) : null}
     </div>
   )
 }

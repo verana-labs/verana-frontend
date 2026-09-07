@@ -2,9 +2,10 @@
 
 import { faShieldHalved } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useState } from 'react'
 import { translate } from '@/i18n/dataview'
-import { useLanguageLabel } from '@/lib/language'
-import GfDocumentViewer from '@/ui/common/gf-document-viewer'
+import { displayedVersion } from '@/lib/gf-document'
+import GfDocumentViewer, { type ViewerState } from '@/ui/common/gf-document-viewer'
 import { formatLongDateUserLocale } from '@/util/util'
 import type { EcosystemData } from '../dataview/datasections/ecosystem'
 import { resolveTranslatable } from '../dataview/types'
@@ -15,15 +16,22 @@ export type EgfCardProps = {
   onAcceptedChange: (next: boolean) => void
 }
 
+const BANNER_CLASS: Record<ViewerState, string> = {
+  verifying: 'bg-gray-50 dark:bg-gray-800/50 border-neutral-20 dark:border-neutral-70 text-gray-700 dark:text-gray-300',
+  verified:
+    'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300',
+  mismatch: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300',
+  unverified:
+    'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300',
+}
+
 export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCardProps) {
+  const [state, setState] = useState<ViewerState>('verifying')
   const keyPoints = (resolveTranslatable({ key: 'join.egf.keypoints' }, translate) as string)
     .split('\n')
     .map((s) => s.trim())
     .filter(Boolean)
-  const version =
-    ecosystem.versions.find((item) => item.version === ecosystem.activeVersion) ?? ecosystem.versions.at(-1)
-  const egfDoc = version?.documents?.[0]
-  const language = useLanguageLabel(egfDoc?.language)
+  const version = displayedVersion(ecosystem.versions, ecosystem.activeVersion)
   return (
     <div className="border border-neutral-20 dark:border-neutral-70 rounded-xl p-6 mb-6">
       <div className="flex items-start space-x-4 mb-6">
@@ -36,23 +44,17 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
         </div>
       </div>
 
-      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
-        <div className="flex items-center space-x-2">
-          <span>✅</span>
-          <p className="text-sm font-medium text-green-800 dark:text-green-300">
-            {resolveTranslatable({ key: 'join.egf.verifiedtext' }, translate)}
-          </p>
-        </div>
+      <div className={`border rounded-lg p-4 mb-6 ${BANNER_CLASS[state]}`}>
+        <p className="text-sm font-medium">{resolveTranslatable({ key: `gfdoc.${state}.text` }, translate)}</p>
       </div>
 
-      <div className="border border-neutral-20 dark:border-neutral-70 rounded-lg p-4 sm:p-6 text-center mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+      <div className="border border-neutral-20 dark:border-neutral-70 rounded-lg p-4 sm:p-6 mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 text-center">
           {resolveTranslatable({ key: 'join.egf.title' }, translate)}
         </h3>
-        <p className="text-sm text-neutral-70 dark:text-neutral-70 mb-4">
+        <p className="text-sm text-neutral-70 dark:text-neutral-70 mb-4 text-center">
           {[
             `${resolveTranslatable({ key: 'join.egf.version.label' }, translate)} ${version?.version ?? ecosystem.activeVersion}`,
-            resolveTranslatable(language, translate),
             version?.activeSince
               ? `${resolveTranslatable({ key: 'join.egf.lastupdate.label' }, translate)} ${formatLongDateUserLocale(version.activeSince)}`
               : null,
@@ -60,11 +62,7 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
             .filter(Boolean)
             .join(' • ')}
         </p>
-        {egfDoc?.url ? (
-          <GfDocumentViewer url={egfDoc.url} />
-        ) : (
-          <div className="text-6xl text-gray-400 dark:text-gray-500">📄</div>
-        )}
+        <GfDocumentViewer documents={version?.documents ?? []} onStateChange={setState} />
       </div>
 
       <div className="mb-6">
