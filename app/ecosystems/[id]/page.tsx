@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react'
 import AddCredentialSchemaPage from '@/credential-schemas/add/add'
 import { useCredentialSchemas } from '@/hooks/useCredentialSchemas'
 import { useEcosystemData } from '@/hooks/useEcosystemData'
+import { useEntityHistory } from '@/hooks/useEntityHistory'
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
@@ -19,10 +20,13 @@ import EgfDocumentsTable from '@/ui/common/egf-documents-table'
 import FieldRow from '@/ui/common/field-row'
 import { ModalAction } from '@/ui/common/modal-action'
 import ServiceProviderCard from '@/ui/common/service-provider-card'
+import { ActivityTimeline } from '@/ui/corporation/activity'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { isValidDID } from '@/util/validations'
 
 type GovernanceFrameworkAction = 'MsgAddGovernanceFrameworkDocument' | 'MsgIncreaseActiveGovernanceFrameworkVersion'
+
+const ECOSYSTEM_CHANGE_KEYS = ['did', 'archived', 'active_version', 'language', 'corporation_id'] as const
 
 export default function EcosystemViewPage() {
   const params = useParams<{ id: string }>()
@@ -30,6 +34,7 @@ export default function EcosystemViewPage() {
   const router = useRouter()
   const { actingCorporation } = useUserCorporation()
   const { ecosystem, errorEcosystem, refetch: refetchEcosystem } = useEcosystemData(id)
+  const { history, refetch: refetchHistory } = useEntityHistory('ecosystem', id)
   const {
     credentialSchemas,
     errorCredentialSchemas,
@@ -46,6 +51,7 @@ export default function EcosystemViewPage() {
 
   const refreshEcosystem = () => {
     void refetchEcosystem()
+    void refetchHistory()
   }
   const refreshCredentialSchemas = () => {
     void refetchCredentialSchemas()
@@ -322,6 +328,15 @@ export default function EcosystemViewPage() {
             ))}
           </div>
         )}
+      </section>
+
+      <section id="ecosystem-activity" className="mb-8">
+        <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4">
+          {t('entity.activity.title', 'Activity timeline')}
+        </h2>
+        <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-4 sm:p-6">
+          <ActivityTimeline rows={history} summaryKeys={ECOSYSTEM_CHANGE_KEYS} />
+        </div>
       </section>
 
       <ModalAction isActive={archiveActive} titleKey={archiveTitleKey} onClose={() => setArchiveActive(false)}>

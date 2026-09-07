@@ -5,7 +5,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useCredentialSchemaData } from '@/hooks/useCredentialSchemaData'
+import { useCredentialSchemaJson } from '@/hooks/useCredentialSchemaJson'
 import { useEcosystemData } from '@/hooks/useEcosystemData'
+import { useEntityHistory } from '@/hooks/useEntityHistory'
 import { useActionSigning } from '@/hooks/useSigningMode'
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
@@ -18,8 +20,22 @@ import JsonCodeBlock from '@/ui/common/json-code-block'
 import { ModalAction } from '@/ui/common/modal-action'
 import { PricingNotice } from '@/ui/common/pricing-notice'
 import SchemaHeader, { type SchemaStatus } from '@/ui/common/schema-header'
+import { ActivityTimeline } from '@/ui/corporation/activity'
 import type { CredentialSchemaData } from '@/ui/dataview/datasections/cs'
 import { resolveTranslatable } from '@/ui/dataview/types'
+
+const SCHEMA_CHANGE_KEYS = [
+  'title',
+  'archived',
+  'issuer_onboarding_mode',
+  'verifier_onboarding_mode',
+  'holder_onboarding_mode',
+  'issuer_grantor_validation_validity_period',
+  'verifier_grantor_validation_validity_period',
+  'issuer_validation_validity_period',
+  'verifier_validation_validity_period',
+  'holder_validation_validity_period',
+] as const
 
 type ValidityField = keyof Pick<
   CredentialSchemaData,
@@ -107,6 +123,8 @@ export default function CredentialSchemaViewPage() {
   const id = params?.id ?? ''
   const router = useRouter()
   const { credentialSchema, errorCredentialSchema, refetch: refetchCredentialSchema } = useCredentialSchemaData(id)
+  const canonicalJsonSchema = useCredentialSchemaJson(id)
+  const { history, refetch: refetchHistory } = useEntityHistory('credential-schema', id)
   const ecosystemId = credentialSchema ? String(credentialSchema.ecosystemId) : ''
   const { ecosystem } = useEcosystemData(ecosystemId)
   const { actingCorporation } = useUserCorporation()
@@ -119,6 +137,7 @@ export default function CredentialSchemaViewPage() {
 
   const refresh = () => {
     void refetchCredentialSchema()
+    void refetchHistory()
   }
   const { submitTx } = useSubmitTxMsgTypeFromObject(() => setMode('view'), refresh)
 
@@ -297,7 +316,16 @@ export default function CredentialSchemaViewPage() {
           {t('dataview.cs.fields.jsonSchema', 'JSON Schema')}
         </h2>
         <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-4 sm:p-6">
-          <JsonCodeBlock value={credentialSchema.jsonSchema} />
+          <JsonCodeBlock value={canonicalJsonSchema ?? credentialSchema.jsonSchema} />
+        </div>
+      </section>
+
+      <section id="schema-activity" className="mb-8">
+        <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4">
+          {t('entity.activity.title', 'Activity timeline')}
+        </h2>
+        <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-4 sm:p-6">
+          <ActivityTimeline rows={history} summaryKeys={SCHEMA_CHANGE_KEYS} />
         </div>
       </section>
 

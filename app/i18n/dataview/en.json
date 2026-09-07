@@ -896,5 +896,6 @@
   "dataview.cs.managementMode.ISSUER_ONBOARDING_PROCESS": "Issuer Onboarding Process",
   "dataview.cs.managementMode.PERMISSIONLESS": "Permissionless",
   "participants.tree.showmore": "Show more",
-  "participants.tree.members": "Active members"
+  "participants.tree.members": "Active members",
+  "entity.activity.title": "Activity timeline"
 }
