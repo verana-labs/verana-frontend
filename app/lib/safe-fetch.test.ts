@@ -1,4 +1,9 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const { assertPublicTarget } = vi.hoisted(() => ({ assertPublicTarget: vi.fn(async (_url: URL) => {}) }))
+
+vi.mock('@/lib/ssrf-guard', () => ({ assertPublicTarget }))
+
 import {
   parseHttpUrl,
   SAFE_FETCH_MAX_BYTES,
@@ -49,6 +54,43 @@ describe('parseHttpUrl', () => {
 })
 
 describe('safeFetch', () => {
+  beforeEach(() => {
+    assertPublicTarget.mockReset()
+    assertPublicTarget.mockResolvedValue(undefined)
+  })
+
+  it('checks the target before the first request and before every redirect hop', async () => {
+    const { impl } = fetchFrom({
+      'https://x.example/old': redirect('https://y.example/moved'),
+      'https://y.example/moved': body('done'),
+    })
+    await safeFetch('https://x.example/old', impl)
+    expect(assertPublicTarget.mock.calls.map(([target]) => String(target))).toEqual([
+      'https://x.example/old',
+      'https://y.example/moved',
+    ])
+  })
+
+  it('refuses a target the guard rejects without fetching', async () => {
+    assertPublicTarget.mockRejectedValueOnce(new SafeFetchError('Target host is not allowed', 400))
+    const { impl, calls } = fetchFrom({ 'http://localhost/doc': body('secret') })
+    const error = await failure(safeFetch('http://localhost/doc', impl))
+    expect(error.status).toBe(400)
+    expect(calls).toHaveLength(0)
+  })
+
+  it('refuses a redirect the guard rejects', async () => {
+    assertPublicTarget.mockResolvedValueOnce(undefined)
+    assertPublicTarget.mockRejectedValueOnce(new SafeFetchError('Target host resolves to a private address', 400))
+    const { impl, calls } = fetchFrom({
+      'https://x.example/old': redirect('http://169.254.169.254/latest'),
+      'http://169.254.169.254/latest': body('secret'),
+    })
+    const error = await failure(safeFetch('https://x.example/old', impl))
+    expect(error.status).toBe(400)
+    expect(calls.map((call) => call.url)).toEqual(['https://x.example/old'])
+  })
+
   it('rejects non-http(s) urls before fetching', async () => {
     const { impl, calls } = fetchFrom({})
     const error = await failure(safeFetch('file:///etc/passwd', impl))

@@ -1,18 +1,13 @@
+import { SafeFetchError } from '@/lib/safe-fetch-error'
+import { assertPublicTarget } from '@/lib/ssrf-guard'
+
+export { SafeFetchError }
+
 export const SAFE_FETCH_MAX_BYTES = 10 * 1024 * 1024
 export const SAFE_FETCH_TIMEOUT_MS = 15_000
 export const SAFE_FETCH_MAX_REDIRECTS = 3
 
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308])
-
-export class SafeFetchError extends Error {
-  readonly status: number
-
-  constructor(message: string, status: number) {
-    super(message)
-    this.name = 'SafeFetchError'
-    this.status = status
-  }
-}
 
 export interface SafeFetchResult {
   bytes: Uint8Array
@@ -80,6 +75,7 @@ async function readCapped(response: Response, signal: AbortSignal): Promise<Uint
 export async function safeFetch(url: string, fetchImpl: typeof fetch = fetch): Promise<SafeFetchResult> {
   let target = parseHttpUrl(url)
   if (!target) throw new SafeFetchError('Only http and https URLs are allowed', 400)
+  await assertPublicTarget(target)
   const signal = AbortSignal.timeout(SAFE_FETCH_TIMEOUT_MS)
   for (let hop = 0; ; hop++) {
     let response: Response
@@ -96,6 +92,7 @@ export async function safeFetch(url: string, fetchImpl: typeof fetch = fetch): P
       if (hop >= SAFE_FETCH_MAX_REDIRECTS) throw new SafeFetchError('Too many redirects', 502)
       const next = nextHop(response.headers.get('location'), target)
       if (!next) throw new SafeFetchError('Redirect to a non-http(s) location', 502)
+      await assertPublicTarget(next)
       target = next
       continue
     }
