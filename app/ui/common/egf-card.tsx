@@ -2,10 +2,10 @@
 
 import { faShieldHalved } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { translate } from '@/i18n/dataview'
 import { displayedVersion } from '@/lib/gf-document'
-import GfDocumentViewer, { type ViewerState } from '@/ui/common/gf-document-viewer'
+import GfDocumentViewer, { VerificationBadge, type ViewerState } from '@/ui/common/gf-document-viewer'
 import { formatLongDateUserLocale } from '@/util/util'
 import type { EcosystemData } from '../dataview/datasections/ecosystem'
 import { resolveTranslatable } from '../dataview/types'
@@ -14,6 +14,7 @@ export type EgfCardProps = {
   ecosystem: EcosystemData
   accepted: boolean
   onAcceptedChange: (next: boolean) => void
+  onVerificationChange?: (state: ViewerState) => void
 }
 
 const BANNER_CLASS: Record<ViewerState, string> = {
@@ -25,8 +26,17 @@ const BANNER_CLASS: Record<ViewerState, string> = {
     'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300',
 }
 
-export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCardProps) {
+export default function EgfCard({ ecosystem, accepted, onAcceptedChange, onVerificationChange }: EgfCardProps) {
   const [state, setState] = useState<ViewerState>('verifying')
+  const blocked = state === 'mismatch'
+  const onViewerState = useCallback(
+    (next: ViewerState) => {
+      setState(next)
+      onVerificationChange?.(next)
+      if (next === 'mismatch') onAcceptedChange(false)
+    },
+    [onAcceptedChange, onVerificationChange]
+  )
   const keyPoints = (resolveTranslatable({ key: 'join.egf.keypoints' }, translate) as string)
     .split('\n')
     .map((s) => s.trim())
@@ -62,7 +72,7 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
             .filter(Boolean)
             .join(' • ')}
         </p>
-        <GfDocumentViewer documents={version?.documents ?? []} onStateChange={setState} />
+        <GfDocumentViewer documents={version?.documents ?? []} onStateChange={onViewerState} />
       </div>
 
       <div className="mb-6">
@@ -85,13 +95,23 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
           id="egf-accept"
           type="checkbox"
           checked={accepted}
+          disabled={blocked}
           onChange={(e) => onAcceptedChange(e.target.checked)}
-          className="mt-1 w-4 h-4 text-primary-600 bg-white dark:bg-surface border-neutral-20 dark:border-neutral-70 rounded focus:ring-primary-500"
+          className="mt-1 w-4 h-4 text-primary-600 bg-white dark:bg-surface border-neutral-20 dark:border-neutral-70 rounded focus:ring-primary-500 disabled:opacity-50"
         />
-        <label htmlFor="egf-accept" className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+        <label
+          htmlFor="egf-accept"
+          className={`text-sm text-gray-700 dark:text-gray-300 ${blocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+        >
           {resolveTranslatable({ key: 'join.egf.acceptancemessage' }, translate)}
         </label>
+        {state === 'unverified' ? <VerificationBadge state="unverified" /> : null}
       </div>
+      {blocked ? (
+        <p className="mt-2 text-sm text-red-700 dark:text-red-300">
+          {resolveTranslatable({ key: 'egf.accept.blocked' }, translate)}
+        </p>
+      ) : null}
     </div>
   )
 }

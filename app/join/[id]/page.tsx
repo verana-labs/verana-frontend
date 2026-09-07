@@ -16,7 +16,7 @@ import { useNotification } from '@/providers/notification-provider'
 import CsCard from '@/ui/common/cs-card'
 import EcosystemCard from '@/ui/common/ecosystem-card'
 import EgfCard from '@/ui/common/egf-card'
-import GfDocumentViewer from '@/ui/common/gf-document-viewer'
+import GfDocumentViewer, { type ViewerState } from '@/ui/common/gf-document-viewer'
 import { PricingNotice } from '@/ui/common/pricing-notice'
 import RoleCard from '@/ui/common/role-card'
 import ValidatorCard from '@/ui/common/validator-card'
@@ -68,6 +68,7 @@ export default function JoinEcosystemWizard() {
   const [selectedSchema, setSelectedSchema] = useState<CredentialSchemaListItem | null>(null)
   const [selectedRole, setSelectedRole] = useState<JoinableParticipantRole | null>(null)
   const [acceptedGovernanceFramework, setAcceptedGovernanceFramework] = useState(false)
+  const [egfState, setEgfState] = useState<ViewerState>('verifying')
   const [selectedValidator, setSelectedValidator] = useState<Participant | null>(null)
   const [serviceDid, setServiceDid] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -100,7 +101,7 @@ export default function JoinEcosystemWizard() {
       case 3:
         return selectedRole !== null && !unsupportedPricing
       case 4:
-        return acceptedGovernanceFramework
+        return acceptedGovernanceFramework && egfState !== 'mismatch'
       case 5:
         return decision?.validatorRole === null || selectedValidator !== null
       case 6:
@@ -293,6 +294,7 @@ export default function JoinEcosystemWizard() {
               ecosystem={ecosystem}
               accepted={acceptedGovernanceFramework}
               onAcceptedChange={setAcceptedGovernanceFramework}
+              onVerificationChange={setEgfState}
             />
           ) : null}
 

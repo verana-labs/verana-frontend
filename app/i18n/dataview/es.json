@@ -33,6 +33,7 @@
   "join.egf.lastupdate.label": "Última actualización: ",
   "join.egf.keypoints.label": "Puntos Clave de Gobernanza",
   "join.egf.acceptancemessage": "He leído y acepto el Marco de Gobernanza del Ecosistema y me comprometo a cumplir con todos los requisitos de gobernanza",
+  "egf.accept.blocked": "Este documento no coincide con su digest en cadena, no se puede aceptar.",
   "gfdoc.title": "Documento del marco de gobernanza",
   "gfdoc.state.verifying": "Verificando",
   "gfdoc.state.verified": "Verificado",

@@ -33,6 +33,7 @@
   "join.egf.lastupdate.label": "Last updated: ",
   "join.egf.keypoints.label": "Key Governance Points",
   "join.egf.acceptancemessage": "I have read and accept the Ecosystem Governance Framework and agree to comply with all governance requirements",
+  "egf.accept.blocked": "This document does not match its on-chain digest, it cannot be accepted.",
   "gfdoc.title": "Governance framework document",
   "gfdoc.state.verifying": "Verifying",
   "gfdoc.state.verified": "Verified",
