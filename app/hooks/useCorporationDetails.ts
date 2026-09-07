@@ -7,6 +7,7 @@ import {
   VERANA_REST_ENDPOINT_GROUP,
   VERANA_REST_ENDPOINT_TRUST_DEPOSIT,
 } from '@/config/env'
+import type { GfVersion } from '@/lib/gf-document'
 import { indexerValidators } from '@/lib/indexer-json'
 import { logger } from '@/lib/logger'
 
@@ -90,8 +91,14 @@ export interface DegradedSections {
   proposals: boolean
 }
 
+export interface CorporationGovernance {
+  activeVersion: number
+  versions: GfVersion[]
+}
+
 export interface CorporationDetails {
   profile: CorporationProfile
+  governance: CorporationGovernance
   members: GroupMemberRow[]
   policy: GroupPolicy
   trustDeposit: CorporationTrustDeposit | null
@@ -137,6 +144,35 @@ export function parseProfile(payload: unknown): CorporationProfile {
     language: optionalString(corporation.language, 'corporation.language') ?? '',
     created: nullableString(corporation.created ?? null, 'corporation.created'),
     modified: nullableString(corporation.modified ?? null, 'corporation.modified'),
+  }
+}
+
+export function parseGovernance(payload: unknown): CorporationGovernance {
+  const envelope = record(payload, 'corporation response')
+  const corporation = record(envelope.corporation, 'corporation')
+  const versions = Array.isArray(corporation.versions) ? corporation.versions : []
+  return {
+    activeVersion:
+      corporation.active_version === undefined ? 0 : integer(corporation.active_version, 'corporation.active_version'),
+    versions: versions.map((entry, index) => {
+      const path = `corporation.versions[${index}]`
+      const version = record(entry, path)
+      const documents = Array.isArray(version.documents) ? version.documents : []
+      return {
+        id: String(integer(version.id, `${path}.id`)),
+        version: integer(version.version, `${path}.version`),
+        activeSince: nullableString(version.active_since ?? null, `${path}.active_since`),
+        documents: documents.map((document, documentIndex) => {
+          const doc = record(document, `${path}.documents[${documentIndex}]`)
+          return {
+            id: String(integer(doc.id, `${path}.documents[${documentIndex}].id`)),
+            url: string(doc.url, `${path}.documents[${documentIndex}].url`),
+            language: string(doc.language, `${path}.documents[${documentIndex}].language`),
+            digestSri: optionalString(doc.digest_sri, `${path}.documents[${documentIndex}].digest_sri`),
+          }
+        }),
+      }
+    }),
   }
 }
 
@@ -367,7 +403,10 @@ export function useCorporationDetails(corporationId: number | undefined) {
         fetchCorporationHistory(corporationId),
       ])
       const [profilePayload, groupPayload] = await Promise.all([
-        fetchJson(`${VERANA_REST_ENDPOINT_CORPORATION}/get/${corporationId}`, 'Unable to fetch the corporation'),
+        fetchJson(
+          `${VERANA_REST_ENDPOINT_CORPORATION}/get/${corporationId}?gf_data=all`,
+          'Unable to fetch the corporation'
+        ),
         fetchJson(`${VERANA_REST_ENDPOINT_GROUP}/get/${corporationId}`, 'Unable to fetch the group'),
       ])
       const [authorizations, proposals, trustDeposit, vsAuthorizations, history] = await degrading
@@ -375,6 +414,7 @@ export function useCorporationDetails(corporationId: number | undefined) {
       const { members, policy } = parseGroup(groupPayload)
       setDetails({
         profile: parseProfile(profilePayload),
+        governance: parseGovernance(profilePayload),
         members,
         policy,
         trustDeposit: trustDeposit.value,

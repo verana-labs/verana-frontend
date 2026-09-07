@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test'
 import {
   ACME_DID,
   ACME_POLICY_ADDRESS,
+  CGF_VERSIONS,
   GROUP_MEMBERS,
   HARNESS_ADDRESS,
   HISTORY_13,
@@ -11,7 +12,16 @@ import {
   VOTES,
 } from './corp-fixtures'
 
-export { ACME_DID, HARNESS_ADDRESS, HARNESS_MNEMONIC, PLAIN_DID } from './corp-fixtures'
+export {
+  ACME_DID,
+  CGF_DIGEST,
+  CGF_DRAFT_URL,
+  CGF_MARKDOWN,
+  CGF_URL,
+  HARNESS_ADDRESS,
+  HARNESS_MNEMONIC,
+  PLAIN_DID,
+} from './corp-fixtures'
 
 export const ACME_ECOSYSTEM_DID = 'did:web:acme-eco.example'
 
@@ -106,7 +116,7 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
       },
     })
   )
-  await page.route('**/v4/corporation/get/12', (route) =>
+  await page.route(/\/v4\/corporation\/get\/12(?:\?.*)?$/, (route) =>
     route.fulfill({
       json: {
         corporation: {
@@ -114,13 +124,15 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
           did: PLAIN_DID,
           policy_address: 'verana1wfse3z8akyw3pmn8x0htzq6l5wwfgqmc2jgnhxtzm96h4ywhhr0qpua4w7',
           language: 'en',
+          active_version: 1,
           created: '2026-08-25T20:34:20Z',
           modified: '2026-08-25T20:34:20Z',
+          versions: [],
         },
       },
     })
   )
-  await page.route('**/v4/corporation/get/13', (route) =>
+  await page.route(/\/v4\/corporation\/get\/13(?:\?.*)?$/, (route) =>
     route.fulfill({
       json: {
         corporation: {
@@ -128,8 +140,10 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
           did: ACME_DID,
           policy_address: ACME_POLICY_ADDRESS,
           language: 'de',
+          active_version: 1,
           created: '2026-09-01T10:00:00Z',
           modified: '2026-09-01T10:00:00Z',
+          versions: CGF_VERSIONS,
         },
       },
     })

@@ -6,8 +6,9 @@ import type { ActionSigning } from '@/hooks/useSigningMode'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import type { DidEnrichment } from '@/lib/resolverClient'
-import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
+import type { CorporationSigningMode, GovernanceDocumentDraft } from '@/msg/actions_hooks/actionCorporationManage'
 import { ActivityTimeline } from './activity'
+import { GovernanceSection } from './governance'
 import { CorporationHeader, RotateDidForm } from './header'
 import { MembersSection } from './members'
 import { OperatorsSection } from './operators'
@@ -16,7 +17,7 @@ import { type ProposalContext, ProposalsSection } from './proposals'
 import { Card, SectionTitle } from './shared'
 import { TrustDepositSection } from './trust-deposit'
 
-export const TABS = ['overview', 'members', 'deposit', 'operators', 'proposals'] as const
+export const TABS = ['overview', 'members', 'deposit', 'operators', 'governance', 'proposals'] as const
 export type CorporationTab = (typeof TABS)[number]
 
 export interface CorporationView {
@@ -31,6 +32,8 @@ export interface CorporationView {
     grant: CorporationSigningMode | null
     revoke: CorporationSigningMode | null
     repay: CorporationSigningMode | null
+    addDocument: CorporationSigningMode | null
+    increaseVersion: CorporationSigningMode | null
   }
   rotating: boolean
   onToggleRotate: () => void
@@ -39,6 +42,8 @@ export interface CorporationView {
   onGrant: (grantee: string, msgTypes: string[]) => void
   onRevoke: (operator: string) => void
   onRepay: () => void
+  onAddDocument: (draft: GovernanceDocumentDraft) => void
+  onIncreaseVersion: (version: number) => void
   composing: boolean
   onCompose: () => void
   composer: ReactNode
@@ -71,6 +76,16 @@ function section(view: CorporationView, tab: CorporationTab) {
           degraded={details.degraded.operatorAuthorizations}
           onRevoke={view.onRevoke}
           onGrant={view.onGrant}
+        />
+      )
+    case 'governance':
+      return (
+        <GovernanceSection
+          governance={details.governance}
+          addMode={view.modes.addDocument}
+          increaseMode={view.modes.increaseVersion}
+          onAddDocument={view.onAddDocument}
+          onIncreaseVersion={view.onIncreaseVersion}
         />
       )
     case 'proposals':

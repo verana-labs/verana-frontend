@@ -113,6 +113,11 @@ export default function CorporationPage() {
       grant: corporationSigningMode('/verana.de.v1.MsgGrantOperatorAuthorization', actingCorporation),
       revoke: corporationSigningMode('/verana.de.v1.MsgRevokeOperatorAuthorization', actingCorporation),
       repay: corporationSigningMode('/verana.td.v1.MsgRepaySlashedTrustDeposit', actingCorporation),
+      addDocument: corporationSigningMode('/verana.gf.v1.MsgAddGovernanceFrameworkDocument', actingCorporation),
+      increaseVersion: corporationSigningMode(
+        '/verana.gf.v1.MsgIncreaseActiveGovernanceFrameworkVersion',
+        actingCorporation
+      ),
     },
     rotating,
     onToggleRotate: () => setRotating(!rotating),
@@ -125,6 +130,8 @@ export default function CorporationPage() {
     onGrant: (grantee, msgTypes) => void manage.grantOperator(actingCorporation, grantee, msgTypes),
     onRevoke: (operator) => void manage.revokeOperator(actingCorporation, operator),
     onRepay: () => void manage.repaySlashed(actingCorporation, unrepaidSlash),
+    onAddDocument: (draft) => void manage.addGovernanceDocument(actingCorporation, draft),
+    onIncreaseVersion: (version) => void manage.increaseGovernanceVersion(actingCorporation, version),
     composing,
     onCompose: () => setComposing(true),
     composer: (

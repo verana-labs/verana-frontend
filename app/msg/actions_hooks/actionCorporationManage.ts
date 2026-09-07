@@ -8,6 +8,10 @@ import {
   MsgGrantOperatorAuthorization,
   MsgRevokeOperatorAuthorization,
 } from '@verana-labs/verana-types/codec/verana/de/v1/tx'
+import {
+  MsgAddGovernanceFrameworkDocument,
+  MsgIncreaseActiveGovernanceFrameworkVersion,
+} from '@verana-labs/verana-types/codec/verana/gf/v1/tx'
 import { MsgRepaySlashedTrustDeposit } from '@verana-labs/verana-types/codec/verana/td/v1/tx'
 import {
   Exec,
@@ -26,6 +30,7 @@ import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { notifyChainRejection } from '@/lib/chain-error'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
+import { fetchDocumentDigest } from '@/lib/document-digest'
 import { trustCostLines } from '@/lib/trust-costs'
 import { type CostLine, msgShortName, type ProposalMeta, type TxConfirmRequest, txSeverity } from '@/lib/tx-preview'
 import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
@@ -114,6 +119,45 @@ export function buildRepaySlashedMessage(
       corporation: membership.corporation.policyAddress,
       operator,
       deposit: depositUvna,
+    }),
+  }
+}
+
+export interface GovernanceDocumentDraft {
+  version: number
+  language: string
+  url: string
+}
+
+export function buildAddGovernanceDocumentMessage(
+  membership: CorporationMembership,
+  draft: GovernanceDocumentDraft & { digestSri: string },
+  operator: string
+): EncodeObject {
+  return {
+    typeUrl: '/verana.gf.v1.MsgAddGovernanceFrameworkDocument',
+    value: MsgAddGovernanceFrameworkDocument.fromPartial({
+      corporation: membership.corporation.policyAddress,
+      operator,
+      ecosystemId: 0,
+      version: draft.version,
+      docLanguage: draft.language,
+      docUrl: draft.url,
+      docDigestSri: draft.digestSri,
+    }),
+  }
+}
+
+export function buildIncreaseGovernanceVersionMessage(
+  membership: CorporationMembership,
+  operator: string
+): EncodeObject {
+  return {
+    typeUrl: '/verana.gf.v1.MsgIncreaseActiveGovernanceFrameworkVersion',
+    value: MsgIncreaseActiveGovernanceFrameworkVersion.fromPartial({
+      corporation: membership.corporation.policyAddress,
+      operator,
+      ecosystemId: 0,
     }),
   }
 }
@@ -220,13 +264,14 @@ export function delegablePreview(
   membership: CorporationMembership,
   payer: string,
   proposalTitle: string,
-  effectValues: I18nValues
+  effectValues: I18nValues,
+  effectKey = `txconfirm.effect.${msgShortName(typeUrl)}`
 ): TxPreview {
   const name = msgShortName(typeUrl)
   const severity = txSeverity(typeUrl) ?? undefined
   return {
     titleKey: 'txconfirm.title.default',
-    effect: translate(`txconfirm.effect.${name}`, {
+    effect: translate(effectKey, {
       corporation: shortenMiddle(membership.corporation.did, 32),
       ...effectValues,
     }),
@@ -318,7 +363,8 @@ export function useCorporationManage(onDone?: () => void) {
     notificationKey: string,
     proposalTitle: string,
     effectValues: I18nValues = {},
-    costLines?: CostLine[]
+    costLines?: CostLine[],
+    effectKey?: string
   ): Promise<boolean> {
     if (!address) {
       await notify(translate('notification.msg.connectwallet'), 'error')
@@ -330,7 +376,10 @@ export function useCorporationManage(onDone?: () => void) {
       await notify(translate('error.msg.corporation.notauthorized', { msgType: typeUrl }), 'error')
       return false
     }
-    const preview = { ...delegablePreview(typeUrl, mode, membership, address, proposalTitle, effectValues), costLines }
+    const preview = {
+      ...delegablePreview(typeUrl, mode, membership, address, proposalTitle, effectValues, effectKey),
+      costLines,
+    }
     if (mode === 'operator') return broadcast(notificationKey, [build(address)], preview)
     const inner = build(membership.corporation.policyAddress)
     const envelope = ({ title, summary }: ProposalMeta) => [wrapInProposal(membership, address, inner, title, summary)]
@@ -373,6 +422,34 @@ export function useCorporationManage(onDone?: () => void) {
         'Repay the slashed trust deposit',
         { amount: formatVNAFromUVNA(String(depositUvna)) },
         trustCostLines({ msgType: 'MsgRepaySlashedTrustDeposit', amount: depositUvna }, rates)
+      ),
+    addGovernanceDocument: async (membership: CorporationMembership, draft: GovernanceDocumentDraft) => {
+      let digestSri: string
+      try {
+        digestSri = await fetchDocumentDigest(draft.url)
+      } catch (error) {
+        await notify(error instanceof Error ? error.message : String(error), 'error')
+        return false
+      }
+      return sendDelegable(
+        membership,
+        (operator) => buildAddGovernanceDocumentMessage(membership, { ...draft, digestSri }, operator),
+        'MsgAddGovernanceFrameworkDocument.cgf',
+        `Add governance framework document (${draft.language}) as version ${draft.version}`,
+        { version: draft.version, language: draft.language },
+        undefined,
+        'txconfirm.effect.MsgAddGovernanceFrameworkDocument.cgf'
+      )
+    },
+    increaseGovernanceVersion: (membership: CorporationMembership, version: number) =>
+      sendDelegable(
+        membership,
+        (operator) => buildIncreaseGovernanceVersionMessage(membership, operator),
+        'MsgIncreaseActiveGovernanceFrameworkVersion.cgf',
+        `Activate governance framework version ${version}`,
+        { version },
+        undefined,
+        'txconfirm.effect.MsgIncreaseActiveGovernanceFrameworkVersion.cgf'
       ),
     propose: async (membership: CorporationMembership, message: EncodeObject, title: string): Promise<boolean> => {
       if (!membership.member) {

@@ -18,6 +18,7 @@ import { useDelegableMsgs } from '@/hooks/useDelegableMsgs'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { notifyChainRejection } from '@/lib/chain-error'
+import { fetchDocumentDigest } from '@/lib/document-digest'
 import { trustCostLines } from '@/lib/trust-costs'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import {
@@ -37,7 +38,6 @@ import { useNotification } from '@/providers/notification-provider'
 import { useProtocolParams } from '@/providers/protocol-params-context'
 import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 import { shortenMiddle } from '@/util/util'
-import { isValidHttpUrl } from '@/util/validations'
 
 type EcosystemContext = {
   corporation: string
@@ -143,22 +143,9 @@ export function buildEcosystemMessage(params: EcosystemMessageParams, context: E
   }
 }
 
-async function documentDigest(docUrl: string): Promise<string> {
-  if (!isValidHttpUrl(docUrl)) throw new Error('Invalid document URL')
-  const response = await fetch(`/api/sri?url=${encodeURIComponent(docUrl)}`)
-  if (!response.ok) throw new Error('Unable to calculate the document digest')
-  const payload: unknown = await response.json()
-  if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) {
-    throw new Error('Invalid document digest response')
-  }
-  const sri = (payload as Record<string, unknown>).sri
-  if (typeof sri !== 'string' || sri.length === 0) throw new Error('Invalid document digest response')
-  return sri
-}
-
 async function toMessageParams(params: EcosystemActionParams): Promise<EcosystemMessageParams> {
   if (params.msgType === 'MsgCreateEcosystem') {
-    return { ...params, docDigestSri: await documentDigest(params.docUrl) }
+    return { ...params, docDigestSri: await fetchDocumentDigest(params.docUrl) }
   }
   if (params.msgType === 'MsgAddGovernanceFrameworkDocument') {
     return {
@@ -167,7 +154,7 @@ async function toMessageParams(params: EcosystemActionParams): Promise<Ecosystem
       targetVersion: params.currentVersion + 1,
       docLanguage: params.docLanguage,
       docUrl: params.docUrl,
-      docDigestSri: await documentDigest(params.docUrl),
+      docDigestSri: await fetchDocumentDigest(params.docUrl),
     }
   }
   return params

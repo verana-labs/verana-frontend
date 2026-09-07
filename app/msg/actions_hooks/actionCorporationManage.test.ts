@@ -3,6 +3,10 @@ import {
   MsgGrantOperatorAuthorization,
   MsgRevokeOperatorAuthorization,
 } from '@verana-labs/verana-types/codec/verana/de/v1/tx'
+import {
+  MsgAddGovernanceFrameworkDocument,
+  MsgIncreaseActiveGovernanceFrameworkVersion,
+} from '@verana-labs/verana-types/codec/verana/gf/v1/tx'
 import { MsgRepaySlashedTrustDeposit } from '@verana-labs/verana-types/codec/verana/td/v1/tx'
 import {
   Exec,
@@ -25,7 +29,9 @@ vi.mock('@/providers/tx-confirm-provider', () => ({
 
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import {
+  buildAddGovernanceDocumentMessage,
   buildGrantOperatorMessage,
+  buildIncreaseGovernanceVersionMessage,
   buildRepaySlashedMessage,
   buildRevokeOperatorMessage,
   buildUpdateCorporationMessage,
@@ -223,5 +229,60 @@ describe('VOTE_OPTIONS', () => {
       abstain: VoteOption.VOTE_OPTION_ABSTAIN,
       veto: VoteOption.VOTE_OPTION_NO_WITH_VETO,
     })
+  })
+})
+
+describe('governance framework builders', () => {
+  it('targets the corporation CGF by leaving ecosystem_id at zero', () => {
+    const message = buildAddGovernanceDocumentMessage(
+      membership(),
+      { version: 2, language: 'de', url: 'https://example.com/cgf.md', digestSri: 'sha384-abc' },
+      'verana1operator'
+    )
+    expect(message.typeUrl).toBe('/verana.gf.v1.MsgAddGovernanceFrameworkDocument')
+    expect(message.value).toEqual(
+      MsgAddGovernanceFrameworkDocument.fromPartial({
+        corporation: POLICY,
+        operator: 'verana1operator',
+        ecosystemId: 0,
+        version: 2,
+        docLanguage: 'de',
+        docUrl: 'https://example.com/cgf.md',
+        docDigestSri: 'sha384-abc',
+      })
+    )
+  })
+
+  it('activates the next corporation CGF version without an ecosystem', () => {
+    const message = buildIncreaseGovernanceVersionMessage(membership(), POLICY)
+    expect(message.typeUrl).toBe('/verana.gf.v1.MsgIncreaseActiveGovernanceFrameworkVersion')
+    expect(message.value).toEqual(
+      MsgIncreaseActiveGovernanceFrameworkVersion.fromPartial({ corporation: POLICY, operator: POLICY, ecosystemId: 0 })
+    )
+  })
+})
+
+describe('delegablePreview effect key', () => {
+  it('uses the message key by default and accepts a dedicated one', () => {
+    const base = delegablePreview(
+      '/verana.gf.v1.MsgIncreaseActiveGovernanceFrameworkVersion',
+      'operator',
+      membership(),
+      'verana1me',
+      'title',
+      { version: 2 }
+    )
+    expect(base.effect).toContain('ecosystem')
+    const cgf = delegablePreview(
+      '/verana.gf.v1.MsgIncreaseActiveGovernanceFrameworkVersion',
+      'operator',
+      membership(),
+      'verana1me',
+      'title',
+      { version: 2 },
+      'txconfirm.effect.MsgIncreaseActiveGovernanceFrameworkVersion.cgf'
+    )
+    expect(cgf.effect).toContain('corporation')
+    expect(cgf.effect).not.toContain('ecosystem')
   })
 })

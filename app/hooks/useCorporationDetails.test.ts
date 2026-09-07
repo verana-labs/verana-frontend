@@ -10,6 +10,7 @@ vi.mock('@/config/env', () => ({
 import { logger } from '@/lib/logger'
 import {
   fetchCorporationHistory,
+  parseGovernance,
   parseGroup,
   parseHistory,
   parseOperatorAuthorizations,
@@ -43,6 +44,63 @@ describe('parseProfile', () => {
 
   it('rejects a payload without the corporation envelope', () => {
     expect(() => parseProfile({})).toThrow('corporation')
+  })
+})
+
+describe('parseGovernance', () => {
+  it('reads the gf_data=all shape of the live indexer', () => {
+    expect(
+      parseGovernance({
+        corporation: {
+          id: 13,
+          active_version: 1,
+          versions: [
+            {
+              id: 15,
+              corporation_id: 13,
+              ecosystem_id: null,
+              version: 1,
+              created: '2026-09-01T08:38:50.104Z',
+              active_since: '2026-09-01T08:38:50.104Z',
+              gfv_id: 35,
+              documents: [
+                {
+                  id: 15,
+                  gfv_id: 15,
+                  language: 'en',
+                  url: 'https://example.com/cgf.md',
+                  digest_sri: 'sha384-abc',
+                  created: '2026-09-01T08:38:50.104Z',
+                  gfd_id: 35,
+                },
+              ],
+            },
+            { id: 16, version: 2, active_since: null, documents: [] },
+          ],
+        },
+      })
+    ).toEqual({
+      activeVersion: 1,
+      versions: [
+        {
+          id: '15',
+          version: 1,
+          activeSince: '2026-09-01T08:38:50.104Z',
+          documents: [{ id: '15', url: 'https://example.com/cgf.md', language: 'en', digestSri: 'sha384-abc' }],
+        },
+        { id: '16', version: 2, activeSince: null, documents: [] },
+      ],
+    })
+  })
+
+  it('defaults to no versions when the payload carries none', () => {
+    expect(parseGovernance({ corporation: { id: 12 } })).toEqual({ activeVersion: 0, versions: [] })
+  })
+
+  it('rejects a malformed document', () => {
+    expect(() =>
+      parseGovernance({ corporation: { active_version: 1, versions: [{ id: 1, version: 1, documents: [{ id: 1 }] }] } })
+    ).toThrow('corporation.versions[0].documents[0].url')
   })
 })
 

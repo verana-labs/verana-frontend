@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto'
+
 export const HARNESS_MNEMONIC =
   'fire inner worth basket annual click random life will style science wolf notice village hand curve urge rifle only attract tilt way strong cover'
 export const HARNESS_ADDRESS = 'verana1pjluhuuyzgdey0syket0xqthv2usmjfe4pta2s'
@@ -8,6 +10,43 @@ export const PLAIN_DID = 'did:web:keplr-maxime-0825.devnet.verana.network'
 export const ACME_POLICY_ADDRESS = 'verana10ezj2lmcj3flaacqwrzv278aled0pen8cnx257sggeng2fdel53q0929dj'
 export const GRANTEE = 'verana1enndx0fjq23urqc9fpf66y7xwvhe2ajhme498v'
 export const REPLACEMENT_MEMBER = 'verana1y6hjwe5kpmuvw920cn5gje9mk7smgcgeuj4jdf'
+
+export const CGF_URL = 'https://acme-trust.ch/cgf.md'
+export const CGF_DRAFT_URL = 'https://acme-trust.ch/cgf-v2.md'
+export const CGF_MARKDOWN = '# Acme Trust AG governance framework\n\nVersion 1. Members vote with weight.\n'
+export const CGF_DIGEST = `sha384-${createHash('sha384').update(CGF_MARKDOWN).digest('base64')}`
+
+export const CGF_VERSIONS = [
+  {
+    id: 15,
+    corporation_id: 13,
+    ecosystem_id: null,
+    version: 1,
+    created: '2026-09-01T10:00:00Z',
+    active_since: '2026-09-01T10:00:00Z',
+    documents: [
+      { id: 15, gfv_id: 15, language: 'en', url: CGF_URL, digest_sri: CGF_DIGEST, created: '2026-09-01T10:00:00Z' },
+    ],
+  },
+  {
+    id: 16,
+    corporation_id: 13,
+    ecosystem_id: null,
+    version: 2,
+    created: '2026-09-02T10:00:00Z',
+    active_since: null,
+    documents: [
+      {
+        id: 16,
+        gfv_id: 16,
+        language: 'de',
+        url: CGF_DRAFT_URL,
+        digest_sri: CGF_DIGEST,
+        created: '2026-09-02T10:00:00Z',
+      },
+    ],
+  },
+]
 
 export const OPERATOR_GRANT_MESSAGE_TYPES = [
   '/verana.co.v1.MsgUpdateCorporation',
