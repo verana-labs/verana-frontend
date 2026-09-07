@@ -3,6 +3,7 @@ import {
   faCircleUser,
   faCompass,
   faGaugeHigh,
+  faGear,
   faShieldHalved,
   faTasks,
   IconDefinition,
@@ -70,12 +71,19 @@ export function getNavLinks(pendingCount?: number, pendingVotes?: number): NavLi
       count: pendingCount,
       requiresCorporation: true,
     },
+    {
+      name: resolveTranslatable({ key: 'navbar.settings.title' }, translate) ?? 'Settings',
+      href: '/settings',
+      icon: faGear,
+      availableOffline: true,
+    },
   ]
 }
 
 const offlineRoutesAllowed: (string | RegExp)[] = [
   '/dashboard',
   '/discover',
+  '/settings',
   /^\/ecosystems\/[^/]+$/,
   /^\/credential-schemas\/[^/]+$/,
   /^\/participants\/[^/]+$/,

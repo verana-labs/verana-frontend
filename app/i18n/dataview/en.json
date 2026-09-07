@@ -871,5 +871,21 @@
   "notification.MsgIncreaseActiveGovernanceFrameworkVersion.cgf.error": "Unable to activate the governance framework version.",
   "corporation.tab.governance": "Governance",
   "txconfirm.effect.MsgAddGovernanceFrameworkDocument.cgf": "Add a governance framework document ({language}) as version {version} of the corporation {corporation}.",
-  "txconfirm.effect.MsgIncreaseActiveGovernanceFrameworkVersion.cgf": "Activate governance framework version {version} of the corporation {corporation}."
+  "txconfirm.effect.MsgIncreaseActiveGovernanceFrameworkVersion.cgf": "Activate governance framework version {version} of the corporation {corporation}.",
+  "meta.settings.title": "Settings",
+  "meta.settings.description": "Choose the language and theme of the console and review the connected network.",
+  "settings.title": "Settings",
+  "settings.description": "Stored in this browser and applied with or without a wallet.",
+  "settings.locale.title": "Language",
+  "settings.locale.name.en": "English",
+  "settings.locale.name.es": "Español",
+  "settings.theme.title": "Theme",
+  "settings.theme.light": "Light",
+  "settings.theme.dark": "Dark",
+  "settings.theme.system": "System",
+  "settings.network.title": "Network",
+  "settings.network.chainid": "Chain ID",
+  "settings.network.rpc": "RPC endpoint",
+  "settings.network.rest": "REST endpoint",
+  "settings.network.indexer": "Indexer"
 }

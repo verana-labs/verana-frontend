@@ -1,12 +1,15 @@
 /** biome-ignore-all lint/correctness/noUnusedVariables: legacy code */
 'use client'
 
-import { faBars, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faBars, faGear, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react'
+import Link from 'next/link'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
+import { translate } from '@/i18n/dataview'
 import NavLinks from '@/ui/common/nav-links'
 import VeranaLog from '@/ui/common/verana-logo'
+import { resolveTranslatable } from '@/ui/dataview/types'
 import { formatNetwork } from '@/util/util'
 import AccountZone from './account-zone'
 import { CorporationSelector } from './corporation-selector'
@@ -41,9 +44,15 @@ export default function NavBar() {
                   dangerouslySetInnerHTML={{ __html: formatNetwork(veranaChain.chain_id) }}
                 />
 
-                {/* Settings 
-                <IconLabelButton icon={faGear} title={resolveTranslatable({key: 'navbar.settings.title'}, translate)} className='navbar-icon' />
-*/}
+                <Link
+                  id="settings-link"
+                  href="/settings"
+                  className="navbar-icon"
+                  title={resolveTranslatable({ key: 'navbar.settings.title' }, translate)}
+                  aria-label={resolveTranslatable({ key: 'navbar.settings.title' }, translate)}
+                >
+                  <FontAwesomeIcon icon={faGear} />
+                </Link>
                 {/* Theme Toggle 
                 <ToggleTheme />
 */}

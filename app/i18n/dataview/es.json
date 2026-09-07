@@ -871,5 +871,21 @@
   "notification.MsgIncreaseActiveGovernanceFrameworkVersion.cgf.error": "No se pudo activar la versión del marco de gobernanza.",
   "corporation.tab.governance": "Gobernanza",
   "txconfirm.effect.MsgAddGovernanceFrameworkDocument.cgf": "Añadir un documento del marco de gobernanza ({language}) como versión {version} de la corporación {corporation}.",
-  "txconfirm.effect.MsgIncreaseActiveGovernanceFrameworkVersion.cgf": "Activar la versión {version} del marco de gobernanza de la corporación {corporation}."
+  "txconfirm.effect.MsgIncreaseActiveGovernanceFrameworkVersion.cgf": "Activar la versión {version} del marco de gobernanza de la corporación {corporation}.",
+  "meta.settings.title": "Configuración",
+  "meta.settings.description": "Elige el idioma y el tema de la consola y revisa la red conectada.",
+  "settings.title": "Configuración",
+  "settings.description": "Se guardan en este navegador y se aplican con o sin billetera.",
+  "settings.locale.title": "Idioma",
+  "settings.locale.name.en": "English",
+  "settings.locale.name.es": "Español",
+  "settings.theme.title": "Tema",
+  "settings.theme.light": "Claro",
+  "settings.theme.dark": "Oscuro",
+  "settings.theme.system": "Sistema",
+  "settings.network.title": "Red",
+  "settings.network.chainid": "ID de cadena",
+  "settings.network.rpc": "Endpoint RPC",
+  "settings.network.rest": "Endpoint REST",
+  "settings.network.indexer": "Indexador"
 }
