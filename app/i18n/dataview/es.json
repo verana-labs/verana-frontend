@@ -599,5 +599,16 @@
   "error.cs.notfound": "No se encontró el esquema de credenciales.",
   "notconnected.title": "Sin conexión",
   "notconnected.msg": "Conecte una cartera compatible para interactuar con la red Verana.",
+  "corporation.chooser.title": "Elige tu corporación activa",
+  "corporation.chooser.desc": "Esta billetera puede actuar por varias corporaciones. Elige con cuál trabajar; puedes cambiar en cualquier momento desde la cabecera.",
+  "corporation.selector.title": "Corporación activa",
+  "corporation.selector.choose": "Elige una corporación",
+  "corporation.selector.none": "Sin corporación",
+  "corporation.selector.empty": "Esta billetera aún no opera ninguna corporación.",
+  "corporation.selector.operator": "Operador",
+  "corporation.selector.member": "Miembro",
+  "corporation.selector.pendingtasks": "Tareas de validador pendientes",
+  "corporation.selector.pendingvotes": "Propuestas a la espera de tu voto",
+  "corporation.selector.error": "Fallo de detección",
   "corporation.select.loading": "La detección de corporaciones sigue en curso, inténtalo de nuevo en un momento."
 }

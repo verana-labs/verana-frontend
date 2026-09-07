@@ -599,5 +599,16 @@
   "error.cs.notfound": "Credential schema not found.",
   "notconnected.title": "Not Connected",
   "notconnected.msg": "Connect a compatible wallet to interact with the Verana network.",
+  "corporation.chooser.title": "Choose your acting corporation",
+  "corporation.chooser.desc": "This wallet can act for several corporations. Pick the one to work as; you can switch anytime from the header.",
+  "corporation.selector.title": "Acting corporation",
+  "corporation.selector.choose": "Choose a corporation",
+  "corporation.selector.none": "No corporation",
+  "corporation.selector.empty": "This wallet operates no corporation yet.",
+  "corporation.selector.operator": "Operator",
+  "corporation.selector.member": "Member",
+  "corporation.selector.pendingtasks": "Pending validator tasks",
+  "corporation.selector.pendingvotes": "Proposals awaiting your vote",
+  "corporation.selector.error": "Discovery failed",
   "corporation.select.loading": "Corporation discovery is still running, retry in a moment."
 }
