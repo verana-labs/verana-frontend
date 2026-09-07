@@ -52,6 +52,7 @@ export default function TreeNodeHeader({
     participant?.op_exp,
     participant?.expire_soon ?? false
   )
+  const joinLabel = resolveTranslatable({ key: 'participants.btn.join' }, translate) ?? 'join'
 
   let participantMetrics: ReactNode = null
   if (type === 'participants') {
@@ -92,7 +93,7 @@ export default function TreeNodeHeader({
               className="hover:text-purple-600 cursor-pointer whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={Boolean(joinBlockedReason)}
               title={joinBlockedReason ?? node.onboardingLabel}
-              aria-label={`${resolveTranslatable({ key: 'participants.btn.join' }, translate)} (${node.onboardingLabel ?? ''})`}
+              aria-label={node.onboardingLabel ? `${joinLabel} · ${node.onboardingLabel}` : joinLabel}
               onClick={(event) => {
                 event.stopPropagation()
                 if (node.onboardingAction === 'LinkDID') {
@@ -107,7 +108,7 @@ export default function TreeNodeHeader({
               }}
             >
               <FontAwesomeIcon icon={faHandshake} className="mr-1" />
-              {resolveTranslatable({ key: 'participants.btn.join' }, translate)}
+              {joinLabel}
               {joinBlockedReason ? <span className="sr-only">{joinBlockedReason}</span> : null}
             </button>
           ) : null}

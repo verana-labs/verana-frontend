@@ -40,6 +40,7 @@ const SHOW_DEFAULT = { includeUnresolvable: false, includeDisabled: false }
 const TRUST: Record<string, DidTrustState | undefined> = {
   'did:ex:trusted': 'TRUSTED',
   'did:ex:untrusted': 'UNTRUSTED',
+  'did:ex:unresolved': 'UNRESOLVED',
 }
 
 describe('collectTrustStates', () => {
@@ -80,8 +81,13 @@ describe('filterParticipantTree', () => {
     }
   })
 
+  it('shows a service whose trust was never evaluated inline', () => {
+    const tree = [node({ id: '1', did: 'did:ex:unknown', participantState: 'ACTIVE' })]
+    expect(filterParticipantTree(tree, SHOW_DEFAULT, TRUST)).toHaveLength(1)
+  })
+
   it('hides untrusted, unresolved and DID-less services unless unresolvable services are included', () => {
-    for (const did of ['did:ex:untrusted', 'did:ex:unknown', undefined]) {
+    for (const did of ['did:ex:untrusted', 'did:ex:unresolved', undefined]) {
       const tree = [node({ id: '1', did, participantState: 'ACTIVE' })]
       expect(filterParticipantTree(tree, SHOW_DEFAULT, TRUST)).toHaveLength(0)
       expect(filterParticipantTree(tree, { ...SHOW_DEFAULT, includeUnresolvable: true }, TRUST)).toHaveLength(1)

@@ -35,7 +35,8 @@ function isNodeVisible(
 
   const stateOk = options.includeDisabled || node.participant?.participant_state === 'ACTIVE'
   const did = node.participant?.did
-  const trustOk = options.includeUnresolvable || (!!did && trustByDid[did] === 'TRUSTED')
+  const evaluation = did ? trustByDid[did] : undefined
+  const trustOk = options.includeUnresolvable || (!!did && (evaluation === undefined || evaluation === 'TRUSTED'))
   return stateOk && trustOk
 }
 
@@ -44,9 +45,6 @@ function isNodeVisible(
  * kept — they carry the join affordance. A filtered-out participant node is
  * pruned together with its whole subtree: children are lazy-loaded, so a
  * hidden node's descendants cannot be evaluated independently.
- *
- * A DID whose trust state is still being resolved (absent from `trustByDid`)
- * counts as unresolvable until the resolution lands.
  */
 export function filterParticipantTree(
   nodes: TreeNode[],
