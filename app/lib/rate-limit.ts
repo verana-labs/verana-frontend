@@ -25,6 +25,10 @@ export function createRateLimiter(limit: number, windowMs: number, now: () => nu
 }
 
 export function clientKey(headers: Headers): string {
-  const forwarded = headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-  return forwarded || headers.get('x-real-ip') || 'unknown'
+  const forwarded = headers
+    .get('x-forwarded-for')
+    ?.split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+  return forwarded?.at(-1) || headers.get('x-real-ip')?.trim() || 'unknown'
 }

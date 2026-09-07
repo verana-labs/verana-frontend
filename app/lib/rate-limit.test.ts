@@ -16,11 +16,20 @@ describe('createRateLimiter', () => {
 })
 
 describe('clientKey', () => {
-  it('prefers the first forwarded address, then the real ip, then unknown', () => {
-    expect(clientKey(new Headers({ 'x-forwarded-for': '203.0.113.9, 10.0.0.1', 'x-real-ip': '10.0.0.2' }))).toBe(
-      '203.0.113.9'
-    )
-    expect(clientKey(new Headers({ 'x-real-ip': '10.0.0.2' }))).toBe('10.0.0.2')
+  it('keys on the proxy-appended forwarded address, then the remote address header, then unknown', () => {
+    expect(clientKey(new Headers({ 'x-forwarded-for': '203.0.113.9', 'x-real-ip': '10.0.0.2' }))).toBe('203.0.113.9')
+    expect(clientKey(new Headers({ 'x-forwarded-for': ' 1.2.3.4 ,203.0.113.9 , ' }))).toBe('203.0.113.9')
+    expect(clientKey(new Headers({ 'x-real-ip': ' 10.0.0.2 ' }))).toBe('10.0.0.2')
+    expect(clientKey(new Headers({ 'x-forwarded-for': ' , ' }))).toBe('unknown')
     expect(clientKey(new Headers())).toBe('unknown')
+  })
+
+  it('ignores client-supplied leftmost entries so a spoofed header shares one budget', () => {
+    const limiter = createRateLimiter(2, 60_000, () => 0)
+    const spoofed = (fake: string) => clientKey(new Headers({ 'x-forwarded-for': `${fake}, 198.51.100.7` }))
+    expect(limiter.allow(spoofed('10.0.0.1'))).toBe(true)
+    expect(limiter.allow(spoofed('10.0.0.2'))).toBe(true)
+    expect(limiter.allow(spoofed('10.0.0.3'))).toBe(false)
+    expect(spoofed('anything')).toBe('198.51.100.7')
   })
 })
