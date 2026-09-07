@@ -5,32 +5,19 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useRouter } from 'next/navigation'
 
 import { translate } from '@/i18n/dataview'
+import { type EcosystemMembership, ecosystemRoles } from '@/lib/ecosystem-membership'
 import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import { trustStateBadge } from '@/lib/trust-state'
 import LogoImage from '@/ui/common/logo-image'
+import { MembershipBadges } from '@/ui/common/membership-badges'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { resolveTranslatable } from '@/ui/dataview/types'
-import { countryCodeToFlag, formatNumber, formatVNAFromUVNA, roleBadgeClass, shortenDID } from '@/util/util'
-
-const ECOSYSTEM_ROLES = ['ECOSYSTEM', 'ISSUER_GRANTOR', 'VERIFIER_GRANTOR', 'ISSUER', 'VERIFIER', 'HOLDER'] as const
-type EcosystemRole = (typeof ECOSYSTEM_ROLES)[number]
+import { countryCodeToFlag, formatNumber, formatVNAFromUVNA, shortenDID } from '@/util/util'
 
 export const CARD_BODY_CLASS = 'grid h-full min-h-[20.25rem] grid-rows-[5rem_3.25rem_1.5rem_1fr] gap-3 p-4 sm:p-6'
 const CARD_HEADER_REGION_CLASS = 'flex min-h-0 min-w-0 items-start space-x-3 overflow-hidden'
 const CARD_ORG_REGION_CLASS = 'flex min-h-0 min-w-0 items-start space-x-2 overflow-hidden'
 const CARD_ROLES_REGION_CLASS = 'flex min-h-0 min-w-0 items-start gap-2 overflow-hidden'
-const ROLE_PILL_CLASS = 'inline-flex min-w-0 max-w-[8.5rem] items-center rounded-full px-2.5 py-0.5 text-xs font-medium'
-
-function parseRoles(role: string | undefined | null): EcosystemRole[] {
-  if (!role) return []
-  const valid = new Set<EcosystemRole>(ECOSYSTEM_ROLES)
-  const seen = new Set<EcosystemRole>()
-  for (const r of role.split(/[,\s]+/)) {
-    const up = r.trim().toUpperCase() as EcosystemRole
-    if (valid.has(up)) seen.add(up)
-  }
-  return [...seen]
-}
 
 type EcosystemCardData = Pick<
   EcosystemListItem,
@@ -55,9 +42,10 @@ function governanceFrameworkHref(ecosystem: EcosystemCardData): string | undefin
 
 type Props = {
   ecosystem: EcosystemCardData
+  membership?: EcosystemMembership | null
 }
 
-export default function EcosystemCard({ ecosystem }: Props) {
+export default function EcosystemCard({ ecosystem, membership = null }: Props) {
   const router = useRouter()
   const enrichment = ecosystem.trust
 
@@ -67,9 +55,7 @@ export default function EcosystemCard({ ecosystem }: Props) {
   const orgName = enrichment?.organizationName ?? shortenDID(ecosystem.did) ?? ecosystem.did
   const flag = countryCodeToFlag(enrichment?.countryCode)
   const egfHref = governanceFrameworkHref(ecosystem)
-  const roles = parseRoles(ecosystem.role)
-  const visibleRoles = roles.slice(0, 2)
-  const extraRoleCount = Math.max(0, roles.length - visibleRoles.length)
+  const roles = ecosystemRoles(ecosystem)
   const isArchived = Boolean(ecosystem.archived)
 
   const handleClick = () => router.push(`/ecosystems/${encodeURIComponent(ecosystem.id)}`)
@@ -156,23 +142,11 @@ export default function EcosystemCard({ ecosystem }: Props) {
         </div>
 
         <div className={CARD_ROLES_REGION_CLASS}>
-          {visibleRoles.length > 0 ? (
-            visibleRoles.map((r) => (
-              <span key={r} className={`${ROLE_PILL_CLASS} ${roleBadgeClass(r)}`} title={r}>
-                <span className="truncate">{r}</span>
-              </span>
-            ))
+          {membership || roles.length > 0 ? (
+            <MembershipBadges membership={membership} roles={roles} maxRoles={2} />
           ) : (
             <span className="sr-only">{t('datatable.ecosystem.card.noRoles', 'No roles')}</span>
           )}
-          {extraRoleCount > 0 ? (
-            <span
-              className="inline-flex flex-shrink-0 items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
-              title={roles.slice(visibleRoles.length).join(', ')}
-            >
-              +{extraRoleCount}
-            </span>
-          ) : null}
         </div>
 
         <div className="space-y-2 text-sm">

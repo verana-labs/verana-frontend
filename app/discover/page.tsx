@@ -4,13 +4,16 @@ import { faCoins, faFileContract, faScaleBalanced, faShieldHalved } from '@forta
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
+import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { byTrustThenLockedValue } from '@/lib/discover-order'
+import { ecosystemMembership, ecosystemRoles } from '@/lib/ecosystem-membership'
 import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import { useDiscoverCtx } from '@/providers/api-rest-query-provider-context'
 import CsCard from '@/ui/common/cs-card'
 import { KeysetPager, LoadedWindowNote } from '@/ui/common/keyset-pager'
 import LogoImage from '@/ui/common/logo-image'
+import { MembershipBadges } from '@/ui/common/membership-badges'
 import TitleAndButton from '@/ui/common/title-and-button'
 import TrustBadge from '@/ui/common/trust-badge'
 import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
@@ -19,6 +22,7 @@ import { countryCodeToFlag, formatVNAFromUVNA, shortenDID } from '@/util/util'
 
 export default function DiscoverJoinPage() {
   const discoverCtx = useDiscoverCtx()
+  const { actingCorporation } = useUserCorporation()
 
   const credentialSchemasByEcosystemId = useMemo(() => {
     const map = new Map<string, CredentialSchemaListItem[]>()
@@ -125,6 +129,8 @@ export default function DiscoverJoinPage() {
             const serviceName = enrichment?.serviceName ?? shortenDID(eco.did) ?? eco.did
             const orgName = enrichment?.organizationName ?? shortenDID(eco.did) ?? eco.did
             const flag = countryCodeToFlag(enrichment?.countryCode)
+            const membership = ecosystemMembership(eco, actingCorporation?.corporation.id)
+            const roles = ecosystemRoles(eco)
             return (
               <div
                 key={eco.id}
@@ -182,6 +188,12 @@ export default function DiscoverJoinPage() {
                       {formatVNAFromUVNA(String(eco.weight))}
                     </span>
                   </div>
+
+                  {membership || roles.length > 0 ? (
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                      <MembershipBadges membership={membership} roles={roles} />
+                    </div>
+                  ) : null}
 
                   <div className="flex flex-wrap gap-3">
                     {egfUrl && (

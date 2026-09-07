@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react'
 import AddEcosystemPage from '@/ecosystems/add/add'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
+import { ecosystemMembership } from '@/lib/ecosystem-membership'
 import { useEcosystemsCtx } from '@/providers/api-rest-query-provider-context'
 import { EntityActionButton } from '@/ui/common/capability-button'
 import EcosystemCard from '@/ui/common/ecosystem-card'
@@ -33,22 +34,6 @@ function matchesSearch(ecosystem: EcosystemListItem, search: string): boolean {
   ].some((value) => value != null && String(value).toLowerCase().includes(q))
 }
 
-function roleTokens(role: string | undefined | null): string[] {
-  if (!role) return []
-  return role
-    .split(/[,\s]+/)
-    .map((r) => r.trim().toUpperCase())
-    .filter(Boolean)
-}
-
-function isOwnedRole(role: string | undefined | null): boolean {
-  return roleTokens(role).some((r) => r === 'ECOSYSTEM')
-}
-
-function hasParticipantRole(role: string | undefined | null): boolean {
-  return roleTokens(role).some((r) => r !== 'ECOSYSTEM')
-}
-
 export default function EcosystemsPage() {
   const {
     ecosystemsList,
@@ -69,12 +54,13 @@ export default function EcosystemsPage() {
   const filtered = useMemo(() => {
     return ecosystemsList.filter((ecosystem) => {
       if (!filters.showArchived && ecosystem.archived) return false
-      const isOwned = ecosystem.corporationId === actingCorporation?.corporation.id || isOwnedRole(ecosystem.role)
-      if (filters.hideOwned && isOwned) return false
-      if (filters.hideParticipant && hasParticipantRole(ecosystem.role)) return false
-      if (!matchesSearch(ecosystem, filters.search)) return false
-      if (!filters.showUntrusted && ecosystem.trust?.trustStatus === 'UNTRUSTED') return false
-      return true
+      if (
+        filters.membership !== 'all' &&
+        ecosystemMembership(ecosystem, actingCorporation?.corporation.id) !== filters.membership
+      ) {
+        return false
+      }
+      return matchesSearch(ecosystem, filters.search)
     })
   }, [actingCorporation?.corporation.id, ecosystemsList, filters])
 
@@ -129,7 +115,11 @@ export default function EcosystemsPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                 {filtered.map((ecosystem) => (
-                  <EcosystemCard key={ecosystem.id} ecosystem={ecosystem} />
+                  <EcosystemCard
+                    key={ecosystem.id}
+                    ecosystem={ecosystem}
+                    membership={ecosystemMembership(ecosystem, actingCorporation?.corporation.id)}
+                  />
                 ))}
               </div>
             )}

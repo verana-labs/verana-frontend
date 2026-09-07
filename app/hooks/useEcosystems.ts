@@ -1,9 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { VERANA_REST_ENDPOINT_ECOSYSTEM } from '@/config/env'
+import { VERANA_REST_ENDPOINT_ECOSYSTEM, VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
+import { ecosystemRolesQuery, parseEcosystemRoles } from '@/lib/ecosystem-membership'
 import { indexerValidators } from '@/lib/indexer-json'
 import {
   EMPTY_WINDOW,
@@ -17,6 +18,7 @@ import {
   keysetQuery,
   keysetWindow,
 } from '@/lib/keyset'
+import { logger } from '@/lib/logger'
 import { parseTrustData } from '@/lib/resolverClient'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
@@ -100,6 +102,25 @@ export type EcosystemListOptions = {
 
 const idOf = (ecosystem: EcosystemListItem) => Number(ecosystem.id)
 
+async function fetchRoles(corporationId: number, ecosystem: EcosystemListItem): Promise<string> {
+  if (!VERANA_REST_ENDPOINT_PARTICIPANT) return ''
+  try {
+    const params = ecosystemRolesQuery(corporationId, ecosystem.id)
+    const response = await fetch(`${VERANA_REST_ENDPOINT_PARTICIPANT}/list?${params.toString()}`)
+    if (!response.ok) throw new Error(`Unable to fetch the roles: ${response.status}`)
+    return parseEcosystemRoles(await response.json()).join(',')
+  } catch (cause) {
+    logger.error(`ecosystem ${ecosystem.id} roles`, cause)
+    return ''
+  }
+}
+
+async function attachRoles(rows: EcosystemListItem[], corporationId: number | undefined): Promise<EcosystemListItem[]> {
+  if (corporationId === undefined) return rows
+  const roles = await Promise.all(rows.map((row) => fetchRoles(corporationId, row)))
+  return rows.map((row, index) => ({ ...row, role: roles[index] }))
+}
+
 export function useEcosystems({ all = false, onlyActive = true, pageSize = 9 }: EcosystemListOptions = {}) {
   const { actingCorporation, loading: corporationLoading } = useUserCorporation()
   const corporationId = actingCorporation?.corporation.id
@@ -137,8 +158,10 @@ export function useEcosystems({ all = false, onlyActive = true, pageSize = 9 }: 
           const { error, code } = json as ApiErrorResponse
           throw new Error(`Error ${code}: ${error}`)
         }
+        const window = keysetWindow(target, parseEcosystemsResponse(json))
+        const rows = await attachRoles(window.rows, corporationId)
         if (requestRef.current !== requestId) return
-        setWindow(keysetWindow(target, parseEcosystemsResponse(json)))
+        setWindow({ ...window, rows })
         setRequest(target)
       } catch (error) {
         if (requestRef.current !== requestId) return

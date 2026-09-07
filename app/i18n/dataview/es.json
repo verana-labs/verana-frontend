@@ -453,9 +453,6 @@
   "datatable.ecosystem.filter.search.label": "Buscar Ecosistemas",
   "datatable.ecosystem.filter.search.placeholder": "Buscar por nombre de organización, Ecosistema u otros atributos...",
   "datatable.ecosystem.filter.showArchived": "Mostrar archivados",
-  "datatable.ecosystem.filter.hideOwned": "Ocultar ecosistemas propios",
-  "datatable.ecosystem.filter.hideParticipant": "Ocultar ecosistemas en los que participo",
-  "datatable.ecosystem.filter.showUntrusted": "Mostrar ecosistemas no confiables",
   "datatable.ecosystem.card.egf": "EGF",
   "datatable.ecosystem.card.activeSchemas": "Esquemas Activos:",
   "datatable.ecosystem.card.participants": "Participantes:",
@@ -889,5 +886,11 @@
   "list.pager.previous": "Página anterior",
   "list.pager.next": "Página siguiente",
   "list.scoped": "Los filtros y el orden se aplican solo a los resultados cargados.",
-  "discover.show.untrusted": "Mostrar ecosistemas no confiables"
+  "discover.show.untrusted": "Mostrar ecosistemas no confiables",
+  "datatable.ecosystem.card.controlled": "Controlado",
+  "datatable.ecosystem.card.joined": "Unido",
+  "datatable.ecosystem.filter.membership.label": "Membresía",
+  "datatable.ecosystem.filter.membership.all": "Controlados y unidos",
+  "datatable.ecosystem.filter.membership.controlled": "Solo controlados",
+  "datatable.ecosystem.filter.membership.joined": "Solo unidos"
 }
