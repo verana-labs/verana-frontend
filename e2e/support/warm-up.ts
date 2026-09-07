@@ -10,6 +10,7 @@ const ROUTES = [
   '/discover',
   '/join/13',
   '/pendingtasks',
+  '/settings',
 ]
 
 export default async function warmUp() {
