@@ -5,7 +5,7 @@ vi.mock('@/config/env', () => ({
   VERANA_REST_ENDPOINT_PARTICIPANT: 'https://indexer.test/v4/participant',
 }))
 
-import { fetchDidEnrichment, invalidateDid, mapResolveResult } from '@/lib/resolverClient'
+import { fetchDidEnrichment, invalidateDid, mapResolveResult, parseTrustData } from '@/lib/resolverClient'
 
 const DID = 'did:web:service.example'
 const ISSUER_DID = 'did:web:ecs.example'
@@ -123,5 +123,49 @@ describe('mapResolveResult', () => {
   it('treats a never-expiring evaluation as trusted', () => {
     const raw = { ...resolveResponse(), expiresAtTime: null }
     expect(mapResolveResult(DID, raw).trustStatus).toBe('TRUSTED')
+  })
+})
+
+describe('parseTrustData', () => {
+  it('returns null when the indexer attached no trust payload', () => {
+    expect(parseTrustData(null, DID)).toBeNull()
+    expect(parseTrustData(undefined, DID)).toBeNull()
+    expect(parseTrustData('trusted', DID)).toBeNull()
+  })
+
+  it('maps a summary payload to the trust state alone', () => {
+    const enrichment = parseTrustData(
+      { did: DID, trusted: true, evaluatedAtBlock: 7, expiresAtTime: null, corporationId: 3 },
+      DID
+    )
+    expect(enrichment).toMatchObject({ did: DID, trustStatus: 'TRUSTED', evaluatedAtBlock: 7 })
+    expect(enrichment?.serviceName).toBeUndefined()
+    expect(enrichment?.organizationName).toBeUndefined()
+  })
+
+  it('maps a full payload like a resolve response, without the issuer lookup', () => {
+    const enrichment = parseTrustData(resolveResponse(), DID)
+    expect(enrichment).toMatchObject({
+      trustStatus: 'TRUSTED',
+      serviceName: 'Acme Portal',
+      serviceLogoUrl: 'https://service.example/logo.png',
+      organizationName: 'Acme Corp',
+      countryCode: 'BE',
+      organizationRegistryId: 'BE0123456789',
+    })
+    expect(enrichment?.credentialIssuerDid).toBeUndefined()
+  })
+
+  it('reports untrusted for a negative or expired evaluation', () => {
+    expect(parseTrustData({ did: DID, trusted: false }, DID)?.trustStatus).toBe('UNTRUSTED')
+    expect(parseTrustData(resolveResponse({ expiresAtTime: '2020-01-01T00:00:00.000Z' }), DID)?.trustStatus).toBe(
+      'UNTRUSTED'
+    )
+  })
+
+  it('ignores malformed credential entries', () => {
+    const enrichment = parseTrustData({ trusted: true, ecsCredentials: ['nope', null, { ecsSchema: 42 }] }, DID)
+    expect(enrichment).toMatchObject({ trustStatus: 'TRUSTED' })
+    expect(enrichment?.serviceName).toBeUndefined()
   })
 })

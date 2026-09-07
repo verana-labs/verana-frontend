@@ -8,18 +8,18 @@ export type ParticipantTreeFilterOptions = {
   includeDisabled: boolean
 }
 
-/** Collect the unique participant DIDs present in the (loaded part of the) tree. */
-export function collectParticipantDids(nodes: TreeNode[]): string[] {
-  const dids = new Set<string>()
+export function collectTrustStates(nodes: TreeNode[]): Record<string, DidTrustState | undefined> {
+  const states: Record<string, DidTrustState | undefined> = {}
   const walk = (list: TreeNode[]) => {
     for (const node of list) {
       const did = node.participant?.did
-      if (did && !node.group) dids.add(did)
+      const trust = node.participant?.trust
+      if (did && !node.group && trust !== undefined) states[did] = trust?.trustStatus ?? 'UNRESOLVED'
       if (node.children?.length) walk(node.children)
     }
   }
   walk(nodes)
-  return [...dids]
+  return states
 }
 
 function isNodeVisible(

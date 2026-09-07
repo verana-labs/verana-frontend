@@ -1,11 +1,10 @@
 'use client'
 
 import { faPlus } from '@fortawesome/free-solid-svg-icons'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import AddEcosystemPage from '@/ecosystems/add/add'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
-import { DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
 import { useEcosystemsCtx } from '@/providers/api-rest-query-provider-context'
 import { EntityActionButton } from '@/ui/common/capability-button'
 import EcosystemCard from '@/ui/common/ecosystem-card'
@@ -24,9 +23,14 @@ const SKELETON_COUNT = 9
 function matchesSearch(ecosystem: EcosystemListItem, search: string): boolean {
   const q = search.trim().toLowerCase()
   if (!q) return true
-  return [ecosystem.did, ecosystem.corporationId, ecosystem.role, ecosystem.id].some(
-    (value) => value != null && String(value).toLowerCase().includes(q)
-  )
+  return [
+    ecosystem.did,
+    ecosystem.corporationId,
+    ecosystem.role,
+    ecosystem.id,
+    ecosystem.trust?.serviceName,
+    ecosystem.trust?.organizationName,
+  ].some((value) => value != null && String(value).toLowerCase().includes(q))
 }
 
 function roleTokens(role: string | undefined | null): string[] {
@@ -61,37 +65,6 @@ export default function EcosystemsPage() {
     showArchived: !onlyActiveEcosystem,
   })
   const [addEcosystem, setAddEcosystem] = useState(false)
-  const [enrichmentState, setEnrichmentState] = useState<{
-    key: string
-    map: Record<string, DidEnrichment>
-  }>({ key: '', map: {} })
-
-  const didsKey = useMemo(() => ecosystemsList.map((ecosystem) => ecosystem.did).join('|'), [ecosystemsList])
-
-  useEffect(() => {
-    const dids = didsKey ? didsKey.split('|') : []
-    if (dids.length === 0) {
-      setEnrichmentState({ key: didsKey, map: {} })
-      return
-    }
-    let cancelled = false
-    Promise.allSettled(dids.map((did) => fetchDidEnrichment(did))).then((results) => {
-      if (cancelled) return
-      const next: Record<string, DidEnrichment> = {}
-      results.forEach((result, idx) => {
-        if (result.status === 'fulfilled') {
-          next[dids[idx]] = result.value
-        }
-      })
-      setEnrichmentState({ key: didsKey, map: next })
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [didsKey])
-
-  const enrichments = enrichmentState.map
-  const enrichmentsReady = enrichmentState.key === didsKey
 
   const filtered = useMemo(() => {
     return ecosystemsList.filter((ecosystem) => {
@@ -100,18 +73,14 @@ export default function EcosystemsPage() {
       if (filters.hideOwned && isOwned) return false
       if (filters.hideParticipant && hasParticipantRole(ecosystem.role)) return false
       if (!matchesSearch(ecosystem, filters.search)) return false
-      if (!filters.showUntrusted && enrichments[ecosystem.did]?.trustStatus === 'UNTRUSTED') {
-        return false
-      }
+      if (!filters.showUntrusted && ecosystem.trust?.trustStatus === 'UNTRUSTED') return false
       return true
     })
-  }, [actingCorporation?.corporation.id, ecosystemsList, enrichments, filters])
+  }, [actingCorporation?.corporation.id, ecosystemsList, filters])
 
   const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
 
-  const enrichmentGateActive = !filters.showUntrusted
-  const hasEcosystems = ecosystemsList.length > 0
-  const gridLoading = (ecosystemsLoading && !hasEcosystems) || (enrichmentGateActive && !enrichmentsReady)
+  const gridLoading = ecosystemsLoading && ecosystemsList.length === 0
 
   return (
     <>

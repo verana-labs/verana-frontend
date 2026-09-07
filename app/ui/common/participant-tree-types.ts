@@ -1,4 +1,5 @@
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import type { DidEnrichment } from '@/lib/resolverClient'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 
 export type TreeNode = {
@@ -19,6 +20,7 @@ export type TreeNode = {
   onboardingAction?: 'MsgStartParticipantOP' | 'MsgSelfCreateParticipant' | 'LinkDID' | 'Connect'
   enabledJoin?: boolean
   serviceDid?: string
+  serviceTrust?: DidEnrichment | null
   serviceTitle?: string
   badgeCount?: number
 }

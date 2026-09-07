@@ -142,6 +142,7 @@ export default function TreeNodeHeader({
             <>
               <ServiceIdentity
                 did={node.serviceDid}
+                enrichment={node.serviceTrust}
                 fallbackName={node.serviceTitle ?? node.name}
                 showFlag={Boolean(node.serviceDid)}
                 showTrust={Boolean(node.serviceDid)}
@@ -166,7 +167,11 @@ export default function TreeNodeHeader({
               }}
               className="cursor-pointer min-w-0 inline-flex items-center"
             >
-              <ServiceIdentity did={participant?.did ?? undefined} fallbackName={node.name} />
+              <ServiceIdentity
+                did={participant?.did ?? undefined}
+                enrichment={participant?.trust}
+                fallbackName={node.name}
+              />
             </button>
             <FontAwesomeIcon icon={faCrown} className="text-yellow-500 text-sm" aria-hidden="true" />
           </>

@@ -4,7 +4,6 @@ import { faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useRouter } from 'next/navigation'
 
-import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { translate } from '@/i18n/dataview'
 import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import { trustStateBadge } from '@/lib/trust-state'
@@ -45,6 +44,7 @@ type EcosystemCardData = Pick<
   | 'issued'
   | 'verified'
   | 'versions'
+  | 'trust'
 > & { role?: string }
 
 function governanceFrameworkHref(ecosystem: EcosystemCardData): string | undefined {
@@ -59,7 +59,7 @@ type Props = {
 
 export default function EcosystemCard({ ecosystem }: Props) {
   const router = useRouter()
-  const { data: enrichment } = useDidTrustEnrichment(ecosystem.did)
+  const enrichment = ecosystem.trust
 
   const trustBadge = trustStateBadge(enrichment?.trustStatus)
   const ecosystemName = enrichment?.serviceName ?? shortenDID(ecosystem.did) ?? ecosystem.did

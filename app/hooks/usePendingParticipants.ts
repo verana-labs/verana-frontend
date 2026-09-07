@@ -5,6 +5,7 @@ import { VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
 import { parseParticipantRecord } from '@/hooks/useParticipant'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { indexerValidators } from '@/lib/indexer-json'
+import { parseTrustData } from '@/lib/resolverClient'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type { PendingEcosystem } from '@/ui/dataview/datasections/participant'
 
@@ -22,9 +23,11 @@ export function parsePendingParticipantsResponse(payload: unknown): PendingEcosy
     if (!Array.isArray(ecosystem.schemas)) {
       throw new Error(`Invalid pending participants response: ${path}.schemas`)
     }
+    const did = ecosystem.did === null ? null : string(ecosystem.did, `${path}.did`)
     return {
       id: String(number(ecosystem.id, `${path}.id`)),
-      did: ecosystem.did === null ? null : string(ecosystem.did, `${path}.did`),
+      did,
+      trust: did === null ? null : parseTrustData(ecosystem.trust_data, did),
       pending_tasks: number(ecosystem.pending_tasks, `${path}.pending_tasks`),
       participants: number(ecosystem.participants, `${path}.participants`),
       schemas: ecosystem.schemas.map((value, schemaIndex) => {
@@ -48,7 +51,7 @@ export function parsePendingParticipantsResponse(payload: unknown): PendingEcosy
 }
 
 export function pendingParticipantsUrl(endpoint: string, corporationId: number): string {
-  return `${endpoint}/pending/flat?corporation_id=${corporationId}&limit=1024`
+  return `${endpoint}/pending/flat?corporation_id=${corporationId}&limit=1024&trust_data=summary`
 }
 
 export function usePendingParticipants() {

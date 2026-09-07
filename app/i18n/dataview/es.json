@@ -888,5 +888,6 @@
   "list.pager.loaded": "{n} cargados",
   "list.pager.previous": "Página anterior",
   "list.pager.next": "Página siguiente",
-  "list.scoped": "Los filtros y el orden se aplican solo a los resultados cargados."
+  "list.scoped": "Los filtros y el orden se aplican solo a los resultados cargados.",
+  "discover.show.untrusted": "Mostrar ecosistemas no confiables"
 }

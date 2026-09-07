@@ -5,7 +5,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { translate } from '@/i18n/dataview'
-import { DidEnrichment, fetchDidEnrichment, serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
+import { byTrustThenLockedValue } from '@/lib/discover-order'
+import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import { useDiscoverCtx } from '@/providers/api-rest-query-provider-context'
 import CsCard from '@/ui/common/cs-card'
 import { KeysetPager, LoadedWindowNote } from '@/ui/common/keyset-pager'
@@ -39,44 +40,19 @@ export default function DiscoverJoinPage() {
     [discoverCtx.discoverList, credentialSchemasByEcosystemId]
   )
 
-  const [enrichmentByDid, setEnrichmentByDid] = useState<Record<string, DidEnrichment>>({})
-
-  useEffect(() => {
-    let cancelled = false
-    const pending = [...new Set(ecosystems.map((e) => e.did).filter(Boolean))].filter((did) => !enrichmentByDid[did])
-    for (const did of pending) {
-      fetchDidEnrichment(did)
-        .catch((): DidEnrichment => ({ did, trustStatus: 'UNRESOLVED' }))
-        .then((enrichment) => {
-          if (cancelled) return
-          setEnrichmentByDid((prev) => (prev[did] ? prev : { ...prev, [did]: enrichment }))
-        })
-    }
-    return () => {
-      cancelled = true
-    }
-  }, [ecosystems, enrichmentByDid])
-
-  const verifiable = useMemo(
-    () => ecosystems.filter((e) => enrichmentByDid[e.did]?.trustStatus === 'TRUSTED'),
-    [ecosystems, enrichmentByDid]
-  )
-
-  const resolving = useMemo(
-    () => ecosystems.some((e) => e.did && !enrichmentByDid[e.did]),
-    [ecosystems, enrichmentByDid]
-  )
-
+  const [showUntrusted, setShowUntrusted] = useState(false)
   const [search, setSearch] = useState(discoverCtx.discoverSearch)
 
   const filtered = useMemo(() => {
+    const candidates = showUntrusted ? ecosystems : ecosystems.filter((e) => e.trust?.trustStatus === 'TRUSTED')
     const term = search.trim().toLowerCase()
-    if (!term) return verifiable
-    return verifiable.filter((e) => {
-      const enrichment = enrichmentByDid[e.did]
-      return [e.did, enrichment?.serviceName, enrichment?.organizationName].some((v) => v?.toLowerCase().includes(term))
-    })
-  }, [search, verifiable, enrichmentByDid])
+    const matching = term
+      ? candidates.filter((e) =>
+          [e.did, e.trust?.serviceName, e.trust?.organizationName].some((v) => v?.toLowerCase().includes(term))
+        )
+      : candidates
+    return [...matching].sort(byTrustThenLockedValue)
+  }, [ecosystems, search, showUntrusted])
 
   useEffect(() => {
     discoverCtx.setDiscoverSearch(search)
@@ -90,8 +66,6 @@ export default function DiscoverJoinPage() {
     return { ...discoverCtx.paging, next: scrolled(discoverCtx.paging.next), prev: scrolled(discoverCtx.paging.prev) }
   }, [discoverCtx.paging])
 
-  const loading = discoverCtx.loading || (resolving && filtered.length === 0)
-
   return (
     <>
       <TitleAndButton title={resolveTranslatable({ key: 'discover.title' }, translate) ?? 'Discover & Join'} />
@@ -100,7 +74,7 @@ export default function DiscoverJoinPage() {
         id="search-form"
         className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6 mb-6"
       >
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex-1">
             <input
               type="text"
@@ -111,13 +85,23 @@ export default function DiscoverJoinPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+          <label className="flex items-center space-x-2 cursor-pointer" htmlFor="discover-show-untrusted">
+            <input
+              id="discover-show-untrusted"
+              type="checkbox"
+              checked={showUntrusted}
+              onChange={(e) => setShowUntrusted(e.target.checked)}
+              className="w-4 h-4 text-primary-600 border-neutral-20 dark:border-neutral-70 rounded focus:ring-2 focus:ring-primary-500"
+            />
+            <span className="text-sm text-gray-700 dark:text-gray-300">{translate('discover.show.untrusted')}</span>
+          </label>
         </div>
       </section>
 
       <LoadedWindowNote partial={discoverCtx.paging.partial} />
 
       <section id="ecosystem-list" className="space-y-6">
-        {loading ? (
+        {discoverCtx.loading ? (
           [...Array(3)].map((_, i) => (
             <div key={i} className="skeleton-card rounded-xl border border-neutral-20 dark:border-neutral-70">
               <div className="skeleton-title mb-2 w-1/2" />
@@ -137,7 +121,7 @@ export default function DiscoverJoinPage() {
         ) : (
           filtered.map((eco) => {
             const egfUrl = eco.versions?.find((x) => x.version === eco.activeVersion)?.documents?.[0]?.url
-            const enrichment = enrichmentByDid[eco.did]
+            const enrichment = eco.trust
             const serviceName = enrichment?.serviceName ?? shortenDID(eco.did) ?? eco.did
             const orgName = enrichment?.organizationName ?? shortenDID(eco.did) ?? eco.did
             const flag = countryCodeToFlag(enrichment?.countryCode)

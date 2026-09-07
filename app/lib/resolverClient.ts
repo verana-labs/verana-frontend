@@ -103,6 +103,34 @@ export function mapResolveResult(did: string, raw: ResolveResult, credentialIssu
   }
 }
 
+function toCredential(entry: unknown): ResolvedCredential[] {
+  if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) return []
+  const raw = entry as Record<string, unknown>
+  const subject = raw.credentialSubject
+  return [
+    {
+      ecsSchema: typeof raw.ecsSchema === 'string' ? raw.ecsSchema : null,
+      issuerParticipantId: typeof raw.issuerParticipantId === 'number' ? raw.issuerParticipantId : null,
+      credentialSubject:
+        typeof subject === 'object' && subject !== null && !Array.isArray(subject)
+          ? (subject as Record<string, unknown>)
+          : undefined,
+    },
+  ]
+}
+
+export function parseTrustData(value: unknown, did: string): DidEnrichment | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null
+  const raw = value as Record<string, unknown>
+  return mapResolveResult(did, {
+    did,
+    trusted: raw.trusted === true,
+    evaluatedAtBlock: typeof raw.evaluatedAtBlock === 'number' ? raw.evaluatedAtBlock : undefined,
+    expiresAtTime: typeof raw.expiresAtTime === 'string' ? raw.expiresAtTime : null,
+    ecsCredentials: Array.isArray(raw.ecsCredentials) ? raw.ecsCredentials.flatMap(toCredential) : [],
+  })
+}
+
 async function fetchWithTimeout(url: string, init?: RequestInit): Promise<Response> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)

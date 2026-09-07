@@ -17,6 +17,7 @@ import {
   keysetQuery,
   keysetWindow,
 } from '@/lib/keyset'
+import { parseTrustData } from '@/lib/resolverClient'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { resolveTranslatable } from '@/ui/dataview/types'
@@ -47,9 +48,11 @@ function parseVersions(value: unknown, path: string): EcosystemListItem['version
 
 function parseEcosystem(value: unknown, path: string): EcosystemListItem {
   const source = record(value, path)
+  const did = string(source.did, `${path}.did`)
   return {
     id: String(number(source.id, `${path}.id`)),
-    did: string(source.did, `${path}.did`),
+    did,
+    trust: parseTrustData(source.trust_data, did),
     corporationId: number(source.corporation_id, `${path}.corporation_id`),
     created: string(source.created, `${path}.created`),
     modified: string(source.modified, `${path}.modified`),
@@ -85,6 +88,7 @@ export function ecosystemListQuery(request: KeysetRequest, scope: EcosystemListS
   if (scope.corporationId !== undefined) params.set('participant_corporation_id', String(scope.corporationId))
   if (scope.onlyActive) params.set('archived', 'false')
   if (scope.withSchemas) params.set('min_active_schemas', '1')
+  params.set('trust_data', 'full')
   return params
 }
 

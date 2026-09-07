@@ -1,3 +1,4 @@
+import type { DidEnrichment } from '@/lib/resolverClient'
 import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
 import type { Column, Filter } from '@/ui/datatable/types'
 import type { I18nValues, Translatable } from '@/ui/dataview/types'
@@ -13,6 +14,7 @@ export interface EcosystemListItem {
   modified: string
   language: string
   role: string
+  trust: DidEnrichment | null
   versions?: {
     id: string
     version: number

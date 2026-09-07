@@ -19,6 +19,17 @@ export function parseParticipantsResponse(payload: unknown): Participant[] {
   )
 }
 
+export function participantListQuery(
+  schemaId: string,
+  role?: string,
+  validatorParticipantId?: string
+): URLSearchParams {
+  const params = new URLSearchParams({ schema_id: schemaId, limit: '1024', sort: '+id', trust_data: 'full' })
+  if (role) params.set('role', role)
+  if (validatorParticipantId) params.set('validator_participant_id', validatorParticipantId)
+  return params
+}
+
 export function useParticipants(schemaId?: string, role?: string, validatorParticipantId?: string) {
   const [participants, setParticipants] = useState<Participant[]>([])
   const [loading, setLoading] = useState(false)
@@ -38,9 +49,7 @@ export function useParticipants(schemaId?: string, role?: string, validatorParti
       setError(null)
       setLoading(true)
       try {
-        const params = new URLSearchParams({ schema_id: schema, limit: '1024', sort: '+id' })
-        if (participantRole) params.set('role', participantRole)
-        if (validator) params.set('validator_participant_id', validator)
+        const params = participantListQuery(schema, participantRole, validator)
         const response = await fetch(`${VERANA_REST_ENDPOINT_PARTICIPANT}/list?${params.toString()}`)
         const json: unknown = await response.json()
         if (!response.ok) {

@@ -888,5 +888,6 @@
   "list.pager.loaded": "{n} loaded",
   "list.pager.previous": "Previous page",
   "list.pager.next": "Next page",
-  "list.scoped": "Filters and sorting apply to the loaded results only."
+  "list.scoped": "Filters and sorting apply to the loaded results only.",
+  "discover.show.untrusted": "Show untrusted ecosystems"
 }

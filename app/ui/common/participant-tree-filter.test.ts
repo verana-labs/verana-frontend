@@ -1,13 +1,14 @@
 import { faFolder } from '@fortawesome/free-solid-svg-icons'
 import { describe, expect, it } from 'vitest'
-import type { DidTrustState } from '@/lib/resolverClient'
-import { collectParticipantDids, filterParticipantTree } from '@/ui/common/participant-tree-filter'
+import type { DidEnrichment, DidTrustState } from '@/lib/resolverClient'
+import { collectTrustStates, filterParticipantTree } from '@/ui/common/participant-tree-filter'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import type { OnboardingProcessState, Participant } from '@/ui/dataview/datasections/participant'
 
 type NodeSpec = {
   id: string
   did?: string
+  trust?: DidEnrichment | null
   participantState?: string
   opState?: OnboardingProcessState
   group?: boolean
@@ -27,6 +28,7 @@ function node(spec: NodeSpec): TreeNode {
       : ({
           id: spec.id,
           did: spec.did,
+          trust: spec.trust,
           participant_state: spec.participantState ?? 'ACTIVE',
           op_state: spec.opState,
         } as unknown as Participant),
@@ -40,26 +42,27 @@ const TRUST: Record<string, DidTrustState | undefined> = {
   'did:ex:untrusted': 'UNTRUSTED',
 }
 
-describe('collectParticipantDids', () => {
-  it('collects unique participant DIDs recursively, ignoring group nodes', () => {
+describe('collectTrustStates', () => {
+  it('reads the inline trust state of every participant node recursively, ignoring group nodes', () => {
     const tree = [
       node({
         id: '1',
         did: 'did:ex:a',
+        trust: { did: 'did:ex:a', trustStatus: 'TRUSTED' },
         children: [
           {
             id: 'g',
             group: true,
             children: [
-              { id: '2', did: 'did:ex:b' },
-              { id: '3', did: 'did:ex:a' },
+              { id: '2', did: 'did:ex:b', trust: null },
+              { id: '3', did: 'did:ex:c' },
             ],
           },
-          { id: '4' },
+          { id: '4', trust: { did: 'did:ex:d', trustStatus: 'UNTRUSTED' } },
         ],
       }),
     ]
-    expect(collectParticipantDids(tree).sort()).toEqual(['did:ex:a', 'did:ex:b'])
+    expect(collectTrustStates(tree)).toEqual({ 'did:ex:a': 'TRUSTED', 'did:ex:b': 'UNRESOLVED' })
   })
 })
 

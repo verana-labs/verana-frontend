@@ -6,7 +6,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
 import type { SchemaPricing } from '@/lib/pricing-asset'
-import { type DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
 import AddJoinPage from '@/participants/add/page'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { EntityActionButton } from '@/ui/common/capability-button'
@@ -19,7 +18,7 @@ import { resolveTranslatable } from '@/ui/dataview/types'
 import { renderActionComponent } from './data-view-typed'
 import { ModalAction } from './modal-action'
 import ParticipantCard from './participant-card'
-import { collectParticipantDids, filterParticipantTree } from './participant-tree-filter'
+import { collectTrustStates, filterParticipantTree } from './participant-tree-filter'
 import TreeNodeHeader from './tree-node-header'
 
 type ParticipantTreeProps = {
@@ -194,35 +193,16 @@ export default function ParticipantTree({
   const [refreshState, setRefreshState] = useState<ParticipantRefreshState>({})
   const detailRef = useRef<HTMLDivElement | null>(null)
   const { latestProcessedHeight } = useIndexerEvents()
-  const [enrichmentByDid, setEnrichmentByDid] = useState<Record<string, DidEnrichment>>({})
   const joinBlockedReason = unsupportedPricing ? unsupportedPricingReason() : undefined
-
-  useEffect(() => {
-    if (type !== 'participants') return
-    let cancelled = false
-    const pending = collectParticipantDids(treeState).filter((did) => !enrichmentByDid[did])
-    for (const did of pending) {
-      fetchDidEnrichment(did)
-        .catch((): DidEnrichment => ({ did, trustStatus: 'UNRESOLVED' }))
-        .then((enrichment) => {
-          if (cancelled) return
-          setEnrichmentByDid((prev) => (prev[did] ? prev : { ...prev, [did]: enrichment }))
-        })
-    }
-    return () => {
-      cancelled = true
-    }
-  }, [type, treeState, enrichmentByDid])
 
   const visibleTree = useMemo(() => {
     if (type !== 'participants') return treeState
-    const trustByDid = Object.fromEntries(Object.entries(enrichmentByDid).map(([did, e]) => [did, e.trustStatus]))
     return filterParticipantTree(
       treeState,
       { includeUnresolvable: showUnresolvable, includeDisabled: showDisabled },
-      trustByDid
+      collectTrustStates(treeState)
     )
-  }, [type, treeState, enrichmentByDid, showUnresolvable, showDisabled])
+  }, [type, treeState, showUnresolvable, showDisabled])
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => (tree[0] ? { [tree[0].nodeId]: true } : {}))
   const pathname = usePathname()
   const searchParams = useSearchParams()

@@ -38,6 +38,7 @@ function buildTree(ecosystems: PendingEcosystem[], corporationId?: number): Tree
     icon: faFolder,
     iconColorClass: 'text-purple-300',
     serviceDid: ecosystem.did ?? undefined,
+    serviceTrust: ecosystem.trust,
     badgeCount: ecosystem.pending_tasks,
     children: ecosystem.schemas.map((schema) => ({
       nodeId: `schema:${schema.id}`,

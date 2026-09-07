@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useParams, useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import { useCredentialSchemas } from '@/hooks/useCredentialSchemas'
+import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { useEcosystemData } from '@/hooks/useEcosystemData'
 import { useParticipants } from '@/hooks/useParticipants'
 import { translate } from '@/i18n/dataview'
@@ -62,6 +63,7 @@ export default function JoinEcosystemWizard() {
   const router = useRouter()
   const { notify } = useNotification()
   const { ecosystem, errorEcosystem } = useEcosystemData(ecosystemId)
+  const { data: ecosystemTrust } = useDidTrustEnrichment(ecosystem?.did)
   const { credentialSchemas, errorCredentialSchemas } = useCredentialSchemas(ecosystemId, false, true)
 
   const [currentStep, setCurrentStep] = useState<WizardStep>(1)
@@ -239,7 +241,7 @@ export default function JoinEcosystemWizard() {
 
           {currentStep === 1 ? (
             <>
-              <EcosystemCard ecosystem={{ ...ecosystem, role: ecosystem.role ?? '' }} />
+              <EcosystemCard ecosystem={{ ...ecosystem, role: ecosystem.role ?? '', trust: ecosystemTrust }} />
               <section className="mt-6 mb-6 border border-neutral-20 dark:border-neutral-70 rounded-xl p-4 sm:p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   {resolveTranslatable({ key: 'join.egf.title' }, translate) ?? 'Ecosystem Governance Framework'}

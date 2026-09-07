@@ -1,15 +1,14 @@
 'use client'
 
 import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
-import { serviceAvatarUrl } from '@/lib/resolverClient'
+import { type DidEnrichment, serviceAvatarUrl } from '@/lib/resolverClient'
 import LogoImage from '@/ui/common/logo-image'
 import { countryCodeToFlag, shortenDID } from '@/util/util'
 import TrustBadge from './trust-badge'
 
 export type ServiceIdentityProps = {
-  /** DID used both as resolver lookup key and avatar seed. */
   did: string | undefined
-  /** Used as avatar seed + label when no DID is available (e.g. synthetic nodes). */
+  enrichment?: DidEnrichment | null
   fallbackName?: string
   size?: 'sm' | 'md'
   showFlag?: boolean
@@ -19,24 +18,26 @@ export type ServiceIdentityProps = {
 
 export default function ServiceIdentity({
   did,
+  enrichment,
   fallbackName,
   size = 'md',
   showFlag = true,
   showTrust = true,
   className = '',
 }: ServiceIdentityProps) {
-  const { data: enrichment } = useDidTrustEnrichment(did)
+  const resolved = useDidTrustEnrichment(enrichment === undefined ? did : undefined)
+  const identity = enrichment === undefined ? resolved.data : enrichment
 
   const fallbackLabel = did ? shortenDID(did) : (fallbackName ?? '')
-  const serviceLabel = enrichment?.serviceName ?? fallbackLabel
-  const countryCode = enrichment?.countryCode
+  const serviceLabel = identity?.serviceName ?? fallbackLabel
+  const countryCode = identity?.countryCode
   const avatarSeed = did ?? fallbackName ?? ''
   const avatarSizeClass = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'
 
   return (
     <span className={`inline-flex items-center gap-x-2 min-w-0 ${className}`}>
       <LogoImage
-        src={enrichment?.serviceLogoUrl}
+        src={identity?.serviceLogoUrl}
         fallbackSrc={serviceAvatarUrl(avatarSeed)}
         className={`${avatarSizeClass} rounded flex-shrink-0 object-contain`}
       />
@@ -46,7 +47,7 @@ export default function ServiceIdentity({
           {countryCodeToFlag(countryCode)}
         </span>
       ) : null}
-      {showTrust ? <TrustBadge state={enrichment?.trustStatus} size={size} /> : null}
+      {showTrust ? <TrustBadge state={identity?.trustStatus} size={size} /> : null}
     </span>
   )
 }
