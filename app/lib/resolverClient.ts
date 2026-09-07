@@ -1,4 +1,4 @@
-import { VERANA_REST_ENDPOINT_RESOLVER } from '@/config/env'
+import { VERANA_REST_ENDPOINT_PARTICIPANT, VERANA_REST_ENDPOINT_VERIFIABLE_TRUST } from '@/config/env'
 
 export type DidTrustState = 'TRUSTED' | 'UNTRUSTED' | 'UNRESOLVED'
 
@@ -21,20 +21,18 @@ export interface DidEnrichment {
   servicePrivacyUrl?: string
 }
 
-interface ResolverCredential {
-  ecsType?: string | null
-  issuedBy?: string | null
-  claims?: Record<string, unknown>
+interface ResolvedCredential {
+  ecsSchema?: string | null
+  issuerParticipantId?: number | null
+  credentialSubject?: Record<string, unknown>
 }
 
-interface ResolverFullResult {
+interface ResolveResult {
   did: string
-  trustStatus: string
+  trusted?: boolean
   evaluatedAtBlock?: number
-  expiresAt?: string
-  credentials?: ResolverCredential[]
-  failedCredentials?: unknown[]
-  dereferenceErrors?: unknown[]
+  expiresAtTime?: string | null
+  ecsCredentials?: ResolvedCredential[]
 }
 
 const SUCCESS_TTL_MS = 60_000
@@ -44,10 +42,6 @@ const MAX_CACHE_ENTRIES = 200
 
 const cache = new Map<string, { value: DidEnrichment; expires: number }>()
 const inflight = new Map<string, Promise<DidEnrichment>>()
-
-function resolverBaseUrl(): string | undefined {
-  return VERANA_REST_ENDPOINT_RESOLVER
-}
 
 function unresolved(did: string): DidEnrichment {
   return { did, trustStatus: 'UNRESOLVED' }
@@ -78,77 +72,73 @@ function rememberCacheEntry(did: string, value: DidEnrichment, ttlMs: number): v
   cache.set(did, { value, expires: Date.now() + ttlMs })
 }
 
-function mapResponse(did: string, raw: ResolverFullResult): DidEnrichment {
-  const credentials = Array.isArray(raw.credentials) ? raw.credentials : []
-  const service = credentials.find((c) => c.ecsType === 'ECS-SERVICE')
-  const org = credentials.find((c) => c.ecsType === 'ECS-ORG')
+function trustState(raw: ResolveResult, now: number): DidTrustState {
+  if (raw.trusted !== true) return 'UNTRUSTED'
+  if (raw.expiresAtTime && Date.parse(raw.expiresAtTime) <= now) return 'UNTRUSTED'
+  return 'TRUSTED'
+}
 
-  const serviceName = pickString(service?.claims, 'name')
-  const serviceDescription = pickString(service?.claims, 'description')
-  const serviceLogoUrl = pickString(service?.claims, 'logo')
-  const serviceMinAge = pickStringOrNumber(service?.claims, 'minimumAgeRequired')
-  const serviceTermsUrl = pickString(service?.claims, 'termsAndConditions')
-  const servicePrivacyUrl = pickString(service?.claims, 'privacyPolicy')
-
-  const organizationName = pickString(org?.claims, 'name')
-  const organizationLogoUrl = pickString(org?.claims, 'logo')
-  const countryCode = pickString(org?.claims, 'countryCode')
-  const organizationAddress = pickString(org?.claims, 'address') ?? pickString(org?.claims, 'streetAddress')
-  const organizationRegistryId = pickString(org?.claims, 'registryId') ?? pickString(org?.claims, 'registrationNumber')
-  const credentialIssuerDid = typeof org?.issuedBy === 'string' && org.issuedBy.length > 0 ? org.issuedBy : undefined
-
-  const hasResolverEvidence =
-    credentials.length > 0 ||
-    (Array.isArray(raw.failedCredentials) && raw.failedCredentials.length > 0) ||
-    (Array.isArray(raw.dereferenceErrors) && raw.dereferenceErrors.length > 0)
-
-  let trustStatus: DidTrustState
-  if (raw.trustStatus === 'TRUSTED') {
-    trustStatus = 'TRUSTED'
-  } else if (raw.trustStatus === 'UNTRUSTED') {
-    trustStatus = hasResolverEvidence ? 'UNTRUSTED' : 'UNRESOLVED'
-  } else {
-    trustStatus = 'UNRESOLVED'
-  }
+export function mapResolveResult(did: string, raw: ResolveResult, credentialIssuerDid?: string): DidEnrichment {
+  const credentials = Array.isArray(raw.ecsCredentials) ? raw.ecsCredentials : []
+  const service = credentials.find((c) => c.ecsSchema === 'ServiceCredential')?.credentialSubject
+  const org = credentials.find((c) => c.ecsSchema === 'OrganizationCredential')?.credentialSubject
 
   return {
     did,
-    trustStatus,
-    serviceName,
-    serviceDescription,
-    serviceLogoUrl,
-    serviceMinAge,
-    serviceTermsUrl,
-    servicePrivacyUrl,
-    organizationName,
-    organizationLogoUrl,
-    countryCode,
-    organizationAddress,
-    organizationRegistryId,
+    trustStatus: trustState(raw, Date.now()),
+    serviceName: pickString(service, 'name'),
+    serviceDescription: pickString(service, 'description'),
+    serviceLogoUrl: pickString(service, 'logoUri'),
+    serviceMinAge: pickStringOrNumber(service, 'minimumAgeRequired'),
+    serviceTermsUrl: pickString(service, 'termsAndConditionsUri'),
+    servicePrivacyUrl: pickString(service, 'privacyPolicyUri'),
+    organizationName: pickString(org, 'name'),
+    organizationLogoUrl: pickString(org, 'logoUri'),
+    countryCode: pickString(org, 'countryCode'),
+    organizationAddress: pickString(org, 'address'),
+    organizationRegistryId: pickString(org, 'registryId'),
     credentialIssuerDid,
     evaluatedAtBlock: raw.evaluatedAtBlock,
-    expiresAt: raw.expiresAt,
+    expiresAt: raw.expiresAtTime ?? undefined,
   }
 }
 
-async function fetchFromResolver(did: string): Promise<DidEnrichment> {
-  const baseUrl = resolverBaseUrl()
-  if (!baseUrl) return unresolved(did)
-
-  const url = `${baseUrl.replace(/\/$/, '')}/trust/resolve?did=${encodeURIComponent(did)}&detail=full`
+async function fetchWithTimeout(url: string, init?: RequestInit): Promise<Response> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
   try {
-    const response = await fetch(url, { signal: controller.signal })
-    if (response.status === 404) return unresolved(did)
-    if (!response.ok) {
-      throw new Error(`Resolver responded ${response.status} for ${did}`)
-    }
-    const json = (await response.json()) as ResolverFullResult
-    return mapResponse(did, json)
+    return await fetch(url, { ...init, signal: controller.signal })
   } finally {
     clearTimeout(timeoutId)
   }
+}
+
+async function issuerDid(raw: ResolveResult): Promise<string | undefined> {
+  const org = raw.ecsCredentials?.find((c) => c.ecsSchema === 'OrganizationCredential')
+  const participantId = org?.issuerParticipantId
+  if (typeof participantId !== 'number' || !VERANA_REST_ENDPOINT_PARTICIPANT) return undefined
+  try {
+    const response = await fetchWithTimeout(`${VERANA_REST_ENDPOINT_PARTICIPANT}/get/${participantId}`)
+    if (!response.ok) return undefined
+    const json = (await response.json()) as { participant?: { did?: unknown } }
+    return typeof json.participant?.did === 'string' ? json.participant.did : undefined
+  } catch {
+    return undefined
+  }
+}
+
+async function fetchFromIndexer(did: string): Promise<DidEnrichment> {
+  if (!VERANA_REST_ENDPOINT_VERIFIABLE_TRUST) return unresolved(did)
+
+  const response = await fetchWithTimeout(`${VERANA_REST_ENDPOINT_VERIFIABLE_TRUST}/resolve`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ did, ecsCredentials: true }),
+  })
+  if (response.status === 404) return unresolved(did)
+  if (!response.ok) throw new Error(`Trust resolution responded ${response.status} for ${did}`)
+  const raw = (await response.json()) as ResolveResult
+  return mapResolveResult(did, raw, await issuerDid(raw))
 }
 
 export async function fetchDidEnrichment(did: string, options?: { force?: boolean }): Promise<DidEnrichment> {
@@ -163,7 +153,7 @@ export async function fetchDidEnrichment(did: string, options?: { force?: boolea
   const existing = inflight.get(did)
   if (existing) return existing
 
-  const promise = fetchFromResolver(did)
+  const promise = fetchFromIndexer(did)
     .then((value) => {
       rememberCacheEntry(did, value, SUCCESS_TTL_MS)
       return value

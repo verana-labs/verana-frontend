@@ -1,24 +1,34 @@
 'use client'
 
-import { Chain } from '@chain-registry/types'
+import type { Chain } from '@chain-registry/types'
 import type { EncodeObject } from '@cosmjs/proto-signing'
-import { DeliverTxResponse } from '@cosmjs/stargate'
+import type { DeliverTxResponse } from '@cosmjs/stargate'
 import { useChain } from '@cosmos-kit/react'
 import { useCallback } from 'react'
 import { VERANA_SIGN_DIRECT_MODE } from '@/config/env'
 import { veranaGasAdjustment, veranaGasPrice, veranaRegistry } from '@/config/veranaChain.sign.client'
 import { useCalculateFee } from '@/hooks/useCalculateFee'
 import { logger } from '@/lib/logger'
-import { SimulateResult, signAndBroadcastManualAmino } from '@/msg/util//signAndBroadcastManualAmino'
+import { type SimulateResult, signAndBroadcastManualAmino } from '@/msg/util/signAndBroadcastManualAmino'
 import { signAndBroadcastManualDirect } from '@/msg/util/signAndBroadcastManualDirect'
 import { isAminoOnlySigner, isDirectSigner } from '@/msg/util/signerUtil'
 
 type SendTxParams = { msgs: EncodeObject[]; memo?: string; simulate?: boolean }
 
+function resolveRpcEndpoint(value: unknown): string | undefined {
+  if (typeof value === 'string') return value
+  if (typeof value !== 'object' || value === null) return undefined
+
+  const endpoint = value as Record<string, unknown>
+  if (typeof endpoint.url === 'string') return endpoint.url
+  return typeof endpoint.address === 'string' ? endpoint.address : undefined
+}
+
 export function useSendTxDetectingMode(chain: Chain) {
   const { address, getOfflineSignerDirect, getOfflineSignerAmino, getRpcEndpoint, isWalletConnected } = useChain(
     chain.chain_name
   )
+  const { fee: fallbackSimulationFee } = useCalculateFee()
 
   return useCallback(
     async (params: SendTxParams): Promise<DeliverTxResponse | SimulateResult> => {
@@ -29,27 +39,14 @@ export function useSendTxDetectingMode(chain: Chain) {
         throw new Error('Wallet not connected')
       }
 
-      // Resolve RPC (string | ExtendedHttpEndpoint -> string)
-      const rpcRaw = await getRpcEndpoint()
-      const rpcEndpoint =
-        typeof rpcRaw === 'string'
-          ? rpcRaw
-          : // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
-            rpcRaw && typeof (rpcRaw as any).url === 'string'
-            ? // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
-              (rpcRaw as any).url
-            : // biome-ignore lint/suspicious/noExplicitAny: legacy any usage
-              (rpcRaw as any)?.address
+      const rpcEndpoint = resolveRpcEndpoint(await getRpcEndpoint())
 
       if (!rpcEndpoint) {
         throw new Error('RPC endpoint not available')
       }
 
-      const veranaDirectMode = VERANA_SIGN_DIRECT_MODE
-
-      // Get signer from cosmos-kit (multi-wallet safe)
       const signer =
-        veranaDirectMode && veranaDirectMode === 'true'
+        VERANA_SIGN_DIRECT_MODE === 'true'
           ? ((await getOfflineSignerDirect?.()) ?? (await getOfflineSignerAmino?.()))
           : await getOfflineSignerAmino?.()
 
@@ -57,7 +54,6 @@ export function useSendTxDetectingMode(chain: Chain) {
         throw new Error('No signer from wallet')
       }
 
-      // --- DIRECT PATH (manual flow) ---
       if (isDirectSigner(signer)) {
         logger.info('*** Using DIRECT signer → manual flow ***')
         try {
@@ -71,13 +67,13 @@ export function useSendTxDetectingMode(chain: Chain) {
             gasPrice: veranaGasPrice,
             gasAdjustment: veranaGasAdjustment,
             memo: safeMemo,
+            simulate,
           })
         } catch (e) {
           throw new Error(`Direct signing failed: ${e instanceof Error ? e.message : String(e)}`)
         }
       }
 
-      // --- AMINO PATH (fallback) ---
       if (isAminoOnlySigner(signer)) {
         logger.info('*** Using AMINO signer → fallback ***')
         try {
@@ -95,7 +91,7 @@ export function useSendTxDetectingMode(chain: Chain) {
           const error = new Error(`Amino signing failed: ${e instanceof Error ? e.message : String(e)}`)
           if (simulate) {
             logger.error('signAndBroadcastManualAmino', error)
-            return useCalculateFee().fee as SimulateResult
+            return fallbackSimulationFee as SimulateResult
           }
           throw error
         }
@@ -103,6 +99,14 @@ export function useSendTxDetectingMode(chain: Chain) {
 
       throw new Error('Signer does not support Direct or Amino')
     },
-    [address, getRpcEndpoint, getOfflineSignerDirect, getOfflineSignerAmino, isWalletConnected, chain?.chain_id]
+    [
+      address,
+      chain.chain_id,
+      fallbackSimulationFee,
+      getOfflineSignerAmino,
+      getOfflineSignerDirect,
+      getRpcEndpoint,
+      isWalletConnected,
+    ]
   )
 }

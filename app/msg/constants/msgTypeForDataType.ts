@@ -3,14 +3,14 @@
 import { MessageType } from '@/msg/constants/types'
 
 // Allowed data types
-export type DataType = 'CsData'
+export type DataType = 'CredentialSchemaData'
 
 // Allowed actions
 export type Action = 'create' | 'update' | 'archive'
 
 // Shape of each config entry
 export interface MsgTypeDataTypeInfo {
-  name: DataType // the data type (e.g., "CsData")
+  name: DataType
   action: Action // the action performed (e.g., "create")
   msgType: MessageType // the corresponding MessageType
 }
@@ -20,10 +20,10 @@ type DataTypeActionConfig = Record<DataType, Record<Action, MsgTypeDataTypeInfo>
 
 // Configuration map: define which MessageType corresponds to each action of a DataType
 export const msgTypeDataTypeConfig: DataTypeActionConfig = {
-  CsData: {
-    create: { name: 'CsData', action: 'create', msgType: 'MsgCreateCredentialSchema' },
-    update: { name: 'CsData', action: 'update', msgType: 'MsgUpdateCredentialSchema' },
-    archive: { name: 'CsData', action: 'archive', msgType: 'MsgArchiveCredentialSchema' },
+  CredentialSchemaData: {
+    create: { name: 'CredentialSchemaData', action: 'create', msgType: 'MsgCreateCredentialSchema' },
+    update: { name: 'CredentialSchemaData', action: 'update', msgType: 'MsgUpdateCredentialSchema' },
+    archive: { name: 'CredentialSchemaData', action: 'archive', msgType: 'MsgArchiveCredentialSchema' },
   },
 }
 

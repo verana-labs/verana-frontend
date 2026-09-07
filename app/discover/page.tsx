@@ -18,50 +18,38 @@ import CsCard from '@/ui/common/cs-card'
 import LogoImage from '@/ui/common/logo-image'
 import TitleAndButton from '@/ui/common/title-and-button'
 import TrustBadge from '@/ui/common/trust-badge'
-import { CsList } from '@/ui/datatable/columnslist/cs'
-import { TrList } from '@/ui/datatable/columnslist/tr'
+import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
 import { resolveTranslatable } from '@/ui/dataview/types'
-import { countryCodeToFlag, formatVNA, shortenDID } from '@/util/util'
+import { countryCodeToFlag, formatVNAFromUVNA, shortenDID } from '@/util/util'
 
 export default function DiscoverJoinPage() {
   const discoverCtx = useDiscoverCtx()
-  const [ecosystems, setEcosystems] = useState<TrList[]>()
 
-  const csByTrId = useMemo(() => {
-    const map = new Map<string, CsList[]>()
-    if (!discoverCtx.csList) return map
-    for (const cs of discoverCtx.csList) {
-      const key = cs.trId
+  const credentialSchemasByEcosystemId = useMemo(() => {
+    const map = new Map<string, CredentialSchemaListItem[]>()
+    for (const credentialSchema of discoverCtx.credentialSchemas) {
+      const key = credentialSchema.ecosystemId
       const arr = map.get(key)
-      if (arr) arr.push(cs)
-      else map.set(key, [cs])
+      if (arr) arr.push(credentialSchema)
+      else map.set(key, [credentialSchema])
     }
     return map
-  }, [discoverCtx.csList])
+  }, [discoverCtx.credentialSchemas])
 
-  useEffect(() => {
-    if (!discoverCtx.discoverList) {
-      setEcosystems(undefined)
-      return
-    }
-    setEcosystems(
-      discoverCtx.discoverList.map((tr) => ({
-        ...tr,
-        csList: csByTrId.get(String(tr.id)) ?? [],
-      }))
-    )
-  }, [discoverCtx.discoverList, csByTrId])
+  const ecosystems = useMemo(
+    () =>
+      discoverCtx.discoverList.map((ecosystem) => ({
+        ...ecosystem,
+        credentialSchemas: credentialSchemasByEcosystemId.get(ecosystem.id) ?? [],
+      })),
+    [discoverCtx.discoverList, credentialSchemasByEcosystemId]
+  )
 
-  // Ecosystems without credential schemas are never listed.
-  const withSchemas = useMemo(() => ecosystems?.filter((e) => (e.csList?.length ?? 0) > 0), [ecosystems])
+  const withSchemas = useMemo(() => ecosystems.filter((e) => e.credentialSchemas.length > 0), [ecosystems])
 
-  // Trust-resolve every candidate ecosystem DID. An ecosystem is only shown
-  // once its DID resolves as TRUSTED; while its state is unknown (resolution
-  // pending or failed) it stays hidden.
   const [enrichmentByDid, setEnrichmentByDid] = useState<Record<string, DidEnrichment>>({})
 
   useEffect(() => {
-    if (!withSchemas) return
     let cancelled = false
     const pending = [...new Set(withSchemas.map((e) => e.did).filter(Boolean))].filter((did) => !enrichmentByDid[did])
     for (const did of pending) {
@@ -78,12 +66,12 @@ export default function DiscoverJoinPage() {
   }, [withSchemas, enrichmentByDid])
 
   const verifiable = useMemo(
-    () => withSchemas?.filter((e) => enrichmentByDid[e.did]?.trustStatus === 'TRUSTED'),
+    () => withSchemas.filter((e) => enrichmentByDid[e.did]?.trustStatus === 'TRUSTED'),
     [withSchemas, enrichmentByDid]
   )
 
   const resolving = useMemo(
-    () => (withSchemas ?? []).some((e) => e.did && !enrichmentByDid[e.did]),
+    () => withSchemas.some((e) => e.did && !enrichmentByDid[e.did]),
     [withSchemas, enrichmentByDid]
   )
 
@@ -92,7 +80,7 @@ export default function DiscoverJoinPage() {
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase()
     if (!term) return verifiable
-    return verifiable?.filter((e) => {
+    return verifiable.filter((e) => {
       const enrichment = enrichmentByDid[e.did]
       return [e.did, enrichment?.serviceName, enrichment?.organizationName].some((v) => v?.toLowerCase().includes(term))
     })
@@ -101,41 +89,27 @@ export default function DiscoverJoinPage() {
   const PAGE_SIZE = 5
   const [page, setPage] = useState(discoverCtx.discoverPage)
 
-  const totalPages = useMemo(() => {
-    if (!filtered) return undefined
-    return Math.max(1, Math.ceil((filtered?.length ?? 0) / PAGE_SIZE))
-  }, [filtered])
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)), [filtered])
 
   useEffect(() => {
-    if (totalPages == null) return
     setPage((p) => Math.min(Math.max(1, p), totalPages))
   }, [totalPages])
 
   const paginated = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE
-    return filtered?.slice(start, start + PAGE_SIZE)
+    return filtered.slice(start, start + PAGE_SIZE)
   }, [filtered, page])
 
   useEffect(() => {
     discoverCtx.setDiscoverSearch(search)
-  }, [search])
+  }, [discoverCtx.setDiscoverSearch, search])
 
   useEffect(() => {
     discoverCtx.setDiscoverPage(page)
     document.getElementById('app-scroll')?.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [page])
+  }, [discoverCtx.setDiscoverPage, page])
 
-  // Refresh trList and csList
-  const [refresh, setRefresh] = useState<boolean>(true)
-  useEffect(() => {
-    if (!refresh) return
-    ;(async () => {
-      await discoverCtx.refetch()
-      setRefresh(false)
-    })()
-  }, [refresh])
-
-  const loading = ecosystems === undefined || (resolving && (filtered?.length ?? 0) === 0)
+  const loading = discoverCtx.loading || (resolving && filtered.length === 0)
 
   return (
     <>
@@ -171,26 +145,25 @@ export default function DiscoverJoinPage() {
               </div>
             </div>
           ))
-        ) : (filtered?.length ?? 0) === 0 ? (
+        ) : filtered.length === 0 ? (
           <div className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-8 text-center">
             <p className="text-sm text-neutral-70 dark:text-neutral-70">
               {resolveTranslatable({ key: 'discover.empty' }, translate) ?? 'No verifiable ecosystems found.'}
             </p>
           </div>
         ) : (
-          paginated?.map((eco, idx) => {
-            const egfUrl = eco.versions?.find((x) => x.version === eco.active_version)?.documents?.[0]?.url
+          paginated.map((eco) => {
+            const egfUrl = eco.versions?.find((x) => x.version === eco.activeVersion)?.documents?.[0]?.url
             const enrichment = enrichmentByDid[eco.did]
             const serviceName = enrichment?.serviceName ?? shortenDID(eco.did) ?? eco.did
             const orgName = enrichment?.organizationName ?? shortenDID(eco.did) ?? eco.did
             const flag = countryCodeToFlag(enrichment?.countryCode)
             return (
               <div
-                key={`${eco.did}-${idx}`}
+                key={eco.id}
                 className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6"
               >
                 <div className="mb-6">
-                  {/* Ecosystem service identity */}
                   <div className="flex items-start space-x-3 mb-3">
                     <LogoImage
                       src={enrichment?.serviceLogoUrl}
@@ -215,7 +188,6 @@ export default function DiscoverJoinPage() {
                     </div>
                   </div>
 
-                  {/* Controller organization identity */}
                   <div className="flex items-start space-x-2 mb-4">
                     <LogoImage
                       src={enrichment?.organizationLogoUrl}
@@ -235,11 +207,12 @@ export default function DiscoverJoinPage() {
                   <div className="flex items-center space-x-4 text-sm text-neutral-70 dark:text-neutral-70 mb-4">
                     <span>
                       <FontAwesomeIcon className="mr-1" aria-hidden="true" icon={faFileContract} />
-                      {eco.csList?.length} {resolveTranslatable({ key: 'discover.cs.label' }, translate)}
+                      {eco.credentialSchemas.length} {resolveTranslatable({ key: 'discover.cs.label' }, translate)}
                     </span>
                     <span>
                       <FontAwesomeIcon className="mr-1" aria-hidden="true" icon={faCoins} />
-                      {resolveTranslatable({ key: 'discover.td.label' }, translate)} {formatVNA(eco.deposit)}
+                      {resolveTranslatable({ key: 'discover.td.label' }, translate)}{' '}
+                      {formatVNAFromUVNA(String(eco.weight))}
                     </span>
                   </div>
 
@@ -257,7 +230,7 @@ export default function DiscoverJoinPage() {
                     )}
 
                     <Link
-                      href={`/tr/${eco.id}`}
+                      href={`/ecosystems/${eco.id}`}
                       className="inline-flex items-center px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-sm font-medium"
                     >
                       <FontAwesomeIcon className="mr-2" aria-hidden="true" icon={faShieldHalved} />
@@ -267,8 +240,8 @@ export default function DiscoverJoinPage() {
                 </div>
 
                 <div className="space-y-4">
-                  {eco.csList?.map((schema) => (
-                    <CsCard key={schema.id} cs={schema} />
+                  {eco.credentialSchemas.map((schema) => (
+                    <CsCard key={schema.id} credentialSchema={schema} />
                   ))}
                 </div>
               </div>
@@ -277,7 +250,7 @@ export default function DiscoverJoinPage() {
         )}
       </section>
 
-      {filtered && filtered.length > 0 ? (
+      {filtered.length > 0 ? (
         <section id="pagination" className="mt-8 flex justify-center">
           <nav className="inline-flex rounded-lg shadow-sm" aria-label="Pagination">
             <button
@@ -296,7 +269,6 @@ export default function DiscoverJoinPage() {
             </button>
 
             {(() => {
-              if (totalPages == null) return null
               const maxVisible = 6
               const pages: (number | 'ellipsis')[] = []
 
@@ -345,8 +317,8 @@ export default function DiscoverJoinPage() {
 
             <button
               type="button"
-              disabled={totalPages == null || page === totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages ?? 1, p + 1))}
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               className={[
                 'px-3 py-2 text-sm font-medium bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-r-lg',
                 page === totalPages

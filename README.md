@@ -17,7 +17,7 @@
 
   <br/><br/>
 
-  <a href="https://app.testnet.verana.network/dashboard"><b>Try the live demo →</b></a>
+  <a href="https://app.devnet.verana.network/dashboard"><b>Try the devnet app →</b></a>
 </div>
 
 <div align="center">
@@ -28,9 +28,9 @@
 
 ### What is this?
 
-Verana is an open initiative building a decentralized trust layer for the internet: DIDs, verifiable credentials, and public permissionless trust registries. The Verana network is a Cosmos SDK Layer 1 appchain that acts as a Verifiable Public Registry, a registry of trust registries. Learn more at [docs.verana.io](https://docs.verana.io/).
+Verana is an open initiative building a decentralized trust layer for the internet with DIDs, verifiable credentials, governed ecosystems, and public trust resolution. The Verana network is a Cosmos SDK Layer 1 appchain that acts as a Verifiable Public Registry. Learn more at [docs.verana.io](https://docs.verana.io/).
 
-This repo is the web dashboard where participants connect a wallet and act on the network: create trust registries, define credential schemas, manage issuer and verifier permissions, join ecosystems, and track validation processes. Looking for the read-only explorer instead? See [verana-visualizer](https://github.com/verana-labs/verana-visualizer) (live at [vis.testnet.verana.network](https://vis.testnet.verana.network)).
+This repo is the web dashboard where participants connect a wallet and act on the network: create ecosystems, define credential schemas, manage participant roles, and join ecosystems through onboarding processes. Looking for the read-only explorer instead? See [verana-visualizer](https://github.com/verana-labs/verana-visualizer) (live at [vis.devnet.verana.network](https://vis.devnet.verana.network)).
 
 ---
 
@@ -58,29 +58,28 @@ flowchart TD
     user["User<br/>(browser)"]
     user --> fe["verana-frontend<br/>Next.js"]
     fe --> wallet["Cosmos-Kit<br/>wallet"]
-    fe --> rest["REST API<br/>api.testnet.verana.network"]
-    fe --> idx["Indexer<br/>idx.testnet.verana.network"]
-    fe --> resolver["DID Resolver<br/>resolver.testnet.verana.network"]
-    wallet --> rpc["Verana RPC<br/>rpc.testnet.verana.network"]
+    fe --> rest["REST API<br/>api.devnet.verana.network"]
+    fe --> idx["V4 Indexer<br/>idx.devnet.verana.network"]
+    fe --> resolver["DID Resolver<br/>resolver.devnet.verana.network"]
+    wallet --> rpc["Verana RPC<br/>rpc.devnet.verana.network"]
     rest --> chain[("Verana Chain<br/>Cosmos SDK appchain")]
     idx --> chain
     rpc --> chain
 ```
 
-Queries go through the REST API (high-level reads) and the indexer (permissions, ecosystem state, websocket events). Writes go through Cosmos-Kit, which signs and broadcasts to the chain's RPC. DID resolution goes through the universal resolver.
+Queries use the strict V4 indexer contracts for ecosystems, credential schemas, participants, corporations, trust deposits, metrics, and websocket block events. Writes go through Cosmos-Kit, which signs and broadcasts to the chain RPC. Trust resolution goes through the indexer's `/v4/verifiable-trust/resolve` route.
 
 ---
 
 ### Features
 
 - Wallet connect via Cosmos-Kit (Keplr, Leap, WalletConnect)
-- Browse trust registries, credential schemas, and ecosystems
-- Permission tree per ecosystem with active, inactive, repaid, slashed, and future states
-- Create trust registries and credential schemas
-- Issue, grant, and revoke permissions for issuers, verifiers, grantors, and holders
-- Join ecosystems through validation processes
-- Track pending tasks for processes you participate in
-- DID directory backed by the universal resolver
+- Browse ecosystems and credential schemas
+- Participant tree with active, inactive, repaid, slashed, and future states
+- Create ecosystems and credential schemas as the operator of a corporation
+- Create, adjust, revoke, and validate issuer, verifier, grantor, and holder participants
+- Join ecosystems through onboarding processes
+- Track pending participant onboarding tasks
 - Trust deposit and topup flows
 - Live updates via the indexer websocket
 - Light and dark theme, responsive layout, basic i18n surface
@@ -93,11 +92,11 @@ A few of the main screens:
 
 <table>
 <tr>
-<td align="center"><img src="public/screenshots/trust-registry.png" alt="Trust registry detail" width="420"/><br/><sub>Trust registry detail</sub></td>
+<td align="center"><img src="public/screenshots/ecosystem.png" alt="Ecosystem detail" width="420"/><br/><sub>Ecosystem detail</sub></td>
 <td align="center"><img src="public/screenshots/credential-schema.png" alt="Credential schema" width="420"/><br/><sub>Credential schema</sub></td>
 </tr>
 <tr>
-<td align="center" colspan="2"><img src="public/screenshots/permission-tree.png" alt="Permission tree" width="420"/><br/><sub>Permission tree</sub></td>
+<td align="center" colspan="2"><img src="public/screenshots/participant-tree.png" alt="Participant tree" width="420"/><br/><sub>Participant tree</sub></td>
 </tr>
 </table>
 
@@ -129,7 +128,7 @@ pnpm dev
 
 Open http://localhost:3000
 
-The repo ships an `.env` with testnet defaults. To point at a different chain or environment, override the relevant `NEXT_PUBLIC_VERANA_*` variables in `.env.local`.
+The repo ships an `.env` with `vna-devnet-1` and live V4 indexer defaults. To point at a different chain or environment, override the relevant `NEXT_PUBLIC_VERANA_*` variables in `.env.local`.
 
 ---
 
@@ -141,24 +140,16 @@ Public runtime variables. Source of truth is `.env` at the repo root.
 
 | Variable | Description | Example |
 | --- | --- | --- |
-| `NEXT_PUBLIC_VERANA_CHAIN_ID` | Cosmos chain ID | `vna-testnet-1` |
-| `NEXT_PUBLIC_VERANA_CHAIN_NAME` | Display name | `VeranaTestnet1` |
+| `NEXT_PUBLIC_VERANA_CHAIN_ID` | Cosmos chain ID | `vna-devnet-1` |
+| `NEXT_PUBLIC_VERANA_CHAIN_NAME` | Display name | `VeranaDevnet1` |
 
 **RPC and REST endpoints**
 
 | Variable | Description | Example |
 | --- | --- | --- |
-| `NEXT_PUBLIC_VERANA_RPC_ENDPOINT` | Tendermint RPC | `https://rpc.testnet.verana.network` |
-| `NEXT_PUBLIC_VERANA_REST_ENDPOINT` | Verana REST API | `https://api.testnet.verana.network` |
-| `NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_REGISTRY` | Trust registry module | `https://idx.testnet.verana.network/verana/tr/v1` |
-| `NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA` | Credential schema module | `https://idx.testnet.verana.network/verana/cs/v1` |
-| `NEXT_PUBLIC_VERANA_REST_ENDPOINT_DID` | DID module | `https://idx.testnet.verana.network/verana/dd/v1` |
-| `NEXT_PUBLIC_VERANA_REST_ENDPOINT_PERM` | Permission module | `https://idx.testnet.verana.network/verana/perm/v1` |
-| `NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT` | Trust deposit module | `https://idx.testnet.verana.network/verana/td/v1` |
-| `NEXT_PUBLIC_VERANA_REST_ENDPOINT_INDEXER` | Indexer high-level | `https://idx.testnet.verana.network/verana/indexer/v1` |
-| `NEXT_PUBLIC_VERANA_REST_ENDPOINT_METRICS` | Metrics | `https://idx.testnet.verana.network/verana/metrics/v1` |
-| `NEXT_PUBLIC_VERANA_REST_ENDPOINT_RESOLVER` | DID resolver | `https://resolver.testnet.verana.network/v1` |
-| `NEXT_PUBLIC_VERANA_WEBSOCKET` | Indexer events | `wss://idx.testnet.verana.network/verana/indexer/v1/events` |
+| `NEXT_PUBLIC_VERANA_RPC_ENDPOINT` | CometBFT RPC | `https://rpc.devnet.verana.network` |
+| `NEXT_PUBLIC_VERANA_REST_ENDPOINT` | Verana REST API | `https://api.devnet.verana.network` |
+| `NEXT_PUBLIC_VERANA_INDEXER_BASE_URL` | V4 indexer base URL, every `/v4/*` route and the `wss://.../v4/indexer/subscribe` socket derive from it | `https://idx.devnet.verana.network` |
 
 **Wallet provider (WalletConnect and Cosmos-Kit)**
 
@@ -175,7 +166,7 @@ Public runtime variables. Source of truth is `.env` at the repo root.
 
 | Variable | Description | Example |
 | --- | --- | --- |
-| `NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE` | Force Direct sign mode (false leaves Amino fallback) | `false` |
+| `NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE` | Use Direct signing | `true` |
 | `NEXT_PUBLIC_SESSION_LIFETIME_SECONDS` | Auth session lifetime | `86400` |
 | `NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA` | Low balance warning threshold in uvna | `1000000` |
 
@@ -183,9 +174,11 @@ Public runtime variables. Source of truth is `.env` at the repo root.
 
 | Variable | Description | Example |
 | --- | --- | --- |
-| `NEXT_PUBLIC_VERANA_EXPLORER_URL` | Block explorer | `https://explorer.testnet.verana.network/Verana%20Testnet` |
-| `NEXT_PUBLIC_VERANA_VISUALIZER_URL` | Sister visualizer | `https://vis.testnet.verana.network` |
-| `NEXT_PUBLIC_VERANA_TOPUP_VS` | Faucet/topup verifiable service | `did:web:faucet-vs.testnet.verana.network` |
+| `NEXT_PUBLIC_VERANA_EXPLORER_URL` | Block explorer | `https://explorer.devnet.verana.network/Verana%20Devnet` |
+| `NEXT_PUBLIC_VERANA_VISUALIZER_URL` | Sister visualizer | `https://vis.devnet.verana.network` |
+| `NEXT_PUBLIC_VERANA_TOPUP_VS` | Faucet/topup verifiable service | `did:web:faucet-vs.devnet.verana.network` |
+
+Individual indexer modules can be overridden with `NEXT_PUBLIC_VERANA_REST_ENDPOINT_<MODULE>` (`ECOSYSTEM`, `CREDENTIAL_SCHEMA`, `PARTICIPANT`, `TRUST_DEPOSIT`, `CORPORATION`, `DELEGATION`, `GROUP`, `INDEXER`, `METRICS`, `VERIFIABLE_TRUST`) and the socket with `NEXT_PUBLIC_VERANA_WEBSOCKET`.
 
 All `NEXT_PUBLIC_*` values are exposed to the client by design (standard Next.js behavior). Override per environment via `.env.local` or container env vars.
 
@@ -205,10 +198,10 @@ Run (override the relevant env vars for your chain):
 
 ```bash
 docker run --rm -p 3000:3000 \
-  -e NEXT_PUBLIC_VERANA_CHAIN_ID=vna-testnet-1 \
-  -e NEXT_PUBLIC_VERANA_CHAIN_NAME=VeranaTestnet1 \
-  -e NEXT_PUBLIC_VERANA_RPC_ENDPOINT=https://rpc.testnet.verana.network \
-  -e NEXT_PUBLIC_VERANA_REST_ENDPOINT=https://api.testnet.verana.network \
+  -e NEXT_PUBLIC_VERANA_CHAIN_ID=vna-devnet-1 \
+  -e NEXT_PUBLIC_VERANA_CHAIN_NAME=VeranaDevnet1 \
+  -e NEXT_PUBLIC_VERANA_RPC_ENDPOINT=https://rpc.devnet.verana.network \
+  -e NEXT_PUBLIC_VERANA_REST_ENDPOINT=https://api.devnet.verana.network \
   verana/verana-frontend:local
 ```
 
@@ -251,14 +244,12 @@ Common overrides (see [charts/README.md](charts/README.md) for the full values r
 ```
 app/
 ├─ dashboard/         # Overview and entry KPIs
-├─ tr/                # Trust registries (list, detail, add)
-│  ├─ cs/             # Credential schemas under a TR
-│  └─ [id]/           # TR detail
-├─ participants/      # Permission tree per ecosystem
+├─ ecosystems/        # Ecosystem list, detail, and creation
+├─ credential-schemas/# Credential schema detail and creation
+├─ participants/      # Participant tree per credential schema
 │  └─ [id]/
-├─ pendingtasks/      # Validation processes you participate in
+├─ pendingtasks/      # Onboarding processes you participate in
 ├─ discover/          # Ecosystem discovery
-├─ did/               # DID directory and lookup
 ├─ join/[id]/         # Ecosystem join flow
 ├─ account/           # Connected wallet, balance, low-balance warn
 ├─ api/sri/           # Internal API route

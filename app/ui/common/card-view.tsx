@@ -3,7 +3,7 @@
 import { faCheckCircle, faCoins, faLock } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import clsx from 'clsx'
-import { useTrustDepositParams } from '@/providers/trust-deposit-params-context'
+import { useProtocolParams } from '@/providers/protocol-params-context'
 import { formatUSDfromUVNA } from '@/util/util'
 import { ResolvedDataField } from '../dataview/types'
 
@@ -15,7 +15,7 @@ type CardViewProps<T> = {
 
 export default function CardView<T>({ field, data, largeTexts }: CardViewProps<T>) {
   const value = field.format ? String(field.format(data[field.name])) : String(data[field.name])
-  const trustUnitPrice = useTrustDepositParams().trustUnitPrice
+  const trustUnitPrice = useProtocolParams().trustUnitPrice
   const conversionFactorUSDfromVNA = trustUnitPrice ? 1_000_000 / Number(trustUnitPrice) : 0
   const valueUSD = field.usdValue ? formatUSDfromUVNA(value.split('VNA')[0], conversionFactorUSDfromVNA) : null
   const iconWrapperClass = field.iconClass ?? ''

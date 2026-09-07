@@ -358,8 +358,8 @@ describe('withCurrentLocalTimePlusOneMinute', () => {
 })
 
 describe('rolesSchema', () => {
-  it('adds grantor roles only under GRANTOR_VALIDATION mode', () => {
-    expect(rolesSchema('GRANTOR_VALIDATION', 'GRANTOR_VALIDATION')).toEqual([
+  it('adds grantor roles only under the V4 grantor onboarding mode', () => {
+    expect(rolesSchema('GRANTOR_ONBOARDING_PROCESS', 'GRANTOR_ONBOARDING_PROCESS')).toEqual([
       'ISSUER_GRANTOR',
       'ISSUER',
       'VERIFIER_GRANTOR',
@@ -368,13 +368,22 @@ describe('rolesSchema', () => {
     ])
   })
 
-  it('omits grantor roles for OPEN/ECOSYSTEM modes', () => {
+  it('omits grantor roles for OPEN and ecosystem onboarding modes', () => {
     expect(rolesSchema('OPEN', 'OPEN')).toEqual(['ISSUER', 'VERIFIER', 'HOLDER'])
-    expect(rolesSchema('ECOSYSTEM', 'ECOSYSTEM')).toEqual(['ISSUER', 'VERIFIER', 'HOLDER'])
+    expect(rolesSchema('ECOSYSTEM_ONBOARDING_PROCESS', 'ECOSYSTEM_ONBOARDING_PROCESS')).toEqual([
+      'ISSUER',
+      'VERIFIER',
+      'HOLDER',
+    ])
   })
 
   it('handles mixed issuer and verifier modes', () => {
-    expect(rolesSchema('GRANTOR_VALIDATION', 'OPEN')).toEqual(['ISSUER_GRANTOR', 'ISSUER', 'VERIFIER', 'HOLDER'])
+    expect(rolesSchema('GRANTOR_ONBOARDING_PROCESS', 'OPEN')).toEqual([
+      'ISSUER_GRANTOR',
+      'ISSUER',
+      'VERIFIER',
+      'HOLDER',
+    ])
   })
 
   it('always includes HOLDER', () => {

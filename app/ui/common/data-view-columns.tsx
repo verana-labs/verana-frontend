@@ -24,7 +24,7 @@ import {
 import { isJson } from '@/util/util'
 import DataViewSkeleton from './data-view-skeleton'
 
-export default function DataView<T extends object>({
+export default function ColumnsDataView<T extends object>({
   sectionsI18n,
   data,
   viewEditButton = true,
@@ -37,6 +37,7 @@ export default function DataView<T extends object>({
   activeActionField,
   loading,
 }: DataViewProps<T>) {
+  const archived = 'archived' in data && Boolean(data.archived)
   const sections = translateSections(sectionsI18n)
   let jsonField: { label: string; value: unknown } | null = null
   type ViewTitle = { title?: string; description?: string }
@@ -159,7 +160,7 @@ export default function DataView<T extends object>({
                           {section.name?.trim() && (
                             <div className="flex items-center justify-between mb-6">
                               <h3 className="data-view-section-title text-lg">{section.name}</h3>
-                              {section.noEdit && (data as any).archived ? (
+                              {section.noEdit && archived ? (
                                 <span
                                   className={
                                     'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300'

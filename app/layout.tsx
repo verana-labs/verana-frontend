@@ -6,7 +6,7 @@ import { PublicEnvScript } from 'next-runtime-env'
 import type { ReactNode } from 'react'
 import ClientLayout from '@/providers/client-layout'
 import '@/init-long'
-import { getTrustDepositParams } from '@/lib/trustDepositParams'
+import { getProtocolParams } from '@/lib/protocolParams'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
 import { getDictionary } from '@/i18n/dataview'
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const trustDepositParamsResult = await getTrustDepositParams() // 1 fetch for request (dedupe + ISR)
+  const protocolParamsResult = await getProtocolParams()
 
   return (
     <html lang="en" className={`${inter.variable}`}>
@@ -45,7 +45,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <PublicEnvScript />
       </head>
       <body className="app-body">
-        <ClientLayout trustDepositParams={trustDepositParamsResult.params}>{children}</ClientLayout>
+        <ClientLayout protocolParams={protocolParamsResult.params}>{children}</ClientLayout>
       </body>
     </html>
   )

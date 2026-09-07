@@ -1,9 +1,12 @@
 import { Buffer } from 'node:buffer'
 import { toBase64, toHex } from '@cosmjs/encoding'
 import type { Page, Route } from '@playwright/test'
+import { veranaTypeUrls } from '@verana-labs/verana-types/signing'
 import { BaseAccount } from 'cosmjs-types/cosmos/auth/v1beta1/auth'
 import { QueryAccountResponse } from 'cosmjs-types/cosmos/auth/v1beta1/query'
+import { QueryBalanceResponse } from 'cosmjs-types/cosmos/bank/v1beta1/query'
 import { GasInfo } from 'cosmjs-types/cosmos/base/abci/v1beta1/abci'
+import { Coin } from 'cosmjs-types/cosmos/base/v1beta1/coin'
 import { SimulateResponse } from 'cosmjs-types/cosmos/tx/v1beta1/service'
 import { Any } from 'cosmjs-types/google/protobuf/any'
 
@@ -21,8 +24,11 @@ export type MockChainOptions = {
   accountNumber?: number
   sequence?: number
   gasUsed?: number
-  trustRegistryId?: string
+  ecosystemId?: string
+  corporationId?: number
+  corporationPolicyAddress?: string
   stubSri?: boolean
+  stubCorporation?: boolean
 }
 
 const NOW = '2026-01-01T00:00:00.000000000Z'
@@ -109,6 +115,24 @@ const simulateQueryResult = (gasUsed: number) => {
   }
 }
 
+const balanceQueryResult = () => {
+  const value = QueryBalanceResponse.encode(
+    QueryBalanceResponse.fromPartial({ balance: Coin.fromPartial({ denom: 'uvna', amount: '1000000000' }) })
+  ).finish()
+  return {
+    response: {
+      code: 0,
+      log: '',
+      info: '',
+      index: '0',
+      key: null,
+      value: toBase64(value),
+      height: '1000',
+      codespace: '',
+    },
+  }
+}
+
 const broadcastSyncResult = () => ({
   code: 0,
   data: '',
@@ -117,8 +141,7 @@ const broadcastSyncResult = () => ({
   hash: FAKE_TX_HASH_HEX,
 })
 
-// the create_trust_registry event is what the app reads to build the /tr/<id> redirect
-const txSearchResult = (trustRegistryId: string) => ({
+const txSearchResult = (ecosystemId: string) => ({
   txs: [
     {
       hash: FAKE_TX_HASH_HEX,
@@ -133,9 +156,9 @@ const txSearchResult = (trustRegistryId: string) => ({
         gas_used: '200000',
         events: [
           {
-            type: 'create_trust_registry',
+            type: 'create_ecosystem',
             attributes: [
-              { key: 'trust_registry_id', value: trustRegistryId, index: true },
+              { key: 'ecosystem_id', value: ecosystemId, index: true },
               { key: 'creator', value: 'e2e', index: true },
             ],
           },
@@ -160,14 +183,17 @@ function parseRequest(route: Route): JsonRpcRequest | null {
 // Intercepts the Tendermint RPC so client-side signing runs end-to-end but nothing broadcasts.
 export async function installMockChain(page: Page, opts: MockChainOptions) {
   const {
-    rpcEndpoint = process.env.NEXT_PUBLIC_VERANA_RPC_ENDPOINT ?? 'https://rpc.testnet.verana.network',
-    chainId = process.env.NEXT_PUBLIC_VERANA_CHAIN_ID ?? 'vna-testnet-1',
+    rpcEndpoint = process.env.NEXT_PUBLIC_VERANA_RPC_ENDPOINT ?? 'https://rpc.devnet.verana.network',
+    chainId = process.env.NEXT_PUBLIC_VERANA_CHAIN_ID ?? 'vna-devnet-1',
     address,
     accountNumber = 12,
     sequence = 7,
     gasUsed = 200_000,
-    trustRegistryId = '4242',
+    ecosystemId = '4242',
+    corporationId = 7,
+    corporationPolicyAddress = address,
     stubSri = true,
+    stubCorporation = true,
   } = opts
 
   const seen: string[] = []
@@ -196,13 +222,14 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
       case 'abci_query': {
         if (path.includes('Service/Simulate')) return fulfill(simulateQueryResult(gasUsed))
         if (path.includes('Query/Account')) return fulfill(accountQueryResult(address, accountNumber, sequence))
+        if (path.includes('Query/Balance')) return fulfill(balanceQueryResult())
         return fulfill(accountQueryResult(address, accountNumber, sequence))
       }
       case 'broadcast_tx_sync':
       case 'broadcast_tx_async':
         return fulfill(broadcastSyncResult())
       case 'tx_search':
-        return fulfill(txSearchResult(trustRegistryId))
+        return fulfill(txSearchResult(ecosystemId))
       case 'health':
         return fulfill({})
       default:
@@ -220,11 +247,47 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
     )
   }
 
+  const delegationPattern = /\/v4\/delegation\/operator-authorizations(?:\?.*)?$/
+  const corporationPattern = new RegExp(`/v4/corporation/get/${corporationId}(?:\\?.*)?$`)
+  if (stubCorporation) {
+    await page.route(delegationPattern, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          authorizations: [
+            {
+              corporation_id: corporationId,
+              msg_types: Object.values(veranaTypeUrls),
+            },
+          ],
+        }),
+      })
+    )
+    await page.route(corporationPattern, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          corporation: {
+            id: corporationId,
+            policy_address: corporationPolicyAddress,
+            did: 'did:web:ring-a-corporation.devnet.verana.network',
+          },
+        }),
+      })
+    )
+  }
+
   return {
     seenMethods: () => [...seen],
     teardown: async () => {
       await page.unroute(rpcPattern)
       if (stubSri) await page.unroute('**/api/sri**')
+      if (stubCorporation) {
+        await page.unroute(delegationPattern)
+        await page.unroute(corporationPattern)
+      }
     },
   }
 }

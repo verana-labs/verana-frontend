@@ -1,8 +1,8 @@
-export const VERANA_TESTNET_CHAIN_INFO = {
-  chainId: 'vna-testnet-1',
-  chainName: 'VeranaTestnet1',
-  rpc: 'https://rpc.testnet.verana.network',
-  rest: 'https://api.testnet.verana.network',
+export const VERANA_DEVNET_CHAIN_INFO = {
+  chainId: 'vna-devnet-1',
+  chainName: 'VeranaDevnet1',
+  rpc: 'https://rpc.devnet.verana.network',
+  rest: 'https://api.devnet.verana.network',
   bip44: { coinType: 118 },
   bech32Config: {
     bech32PrefixAccAddr: 'verana',
@@ -25,4 +25,4 @@ export const VERANA_TESTNET_CHAIN_INFO = {
   features: [],
 } as const
 
-export type VeranaChainInfo = typeof VERANA_TESTNET_CHAIN_INFO
+export type VeranaChainInfo = typeof VERANA_DEVNET_CHAIN_INFO

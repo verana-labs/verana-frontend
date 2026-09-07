@@ -15,6 +15,7 @@ import { createVeranaRegistry } from '@verana-labs/verana-types'
 import { TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import Long from 'long'
 import { logger } from '@/lib/logger'
+import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
 
 export function makeRegistry(): Registry {
   return createVeranaRegistry()
@@ -31,6 +32,7 @@ type ManualSignOptions = {
   gasAdjustment?: number // e.g. 1.2 (20% safety buffer)
   memo?: string // Optional memo
   timeoutHeight?: number | Long // Optional timeout
+  simulate?: boolean
   // feeGranter?: string;           // Feegrant (optional)
   // feePayer?: string;             // Fee payer (optional)
 }
@@ -46,9 +48,10 @@ export async function signAndBroadcastManualDirect({
   gasAdjustment = 2,
   memo = '',
   timeoutHeight,
+  simulate = false,
   // feeGranter,
   // feePayer,
-}: ManualSignOptions): Promise<DeliverTxResponse> {
+}: ManualSignOptions): Promise<DeliverTxResponse | SimulateResult> {
   const anys = messages.map((m) => registry.encodeAsAny(m))
   logger.log('Any.typeUrl:', anys[0].typeUrl)
   logger.log('Any.value(hex):', toHex(anys[0].value))
@@ -60,6 +63,7 @@ export async function signAndBroadcastManualDirect({
   const simulated = await client.simulate(address, messages, memo)
   const gasLimit = Math.ceil(simulated * gasAdjustment)
   const fee = calculateFee(gasLimit, GasPrice.fromString(gasPrice))
+  if (simulate) return fee
 
   // Create TxBody with your messages
   const body = TxBody.fromPartial({

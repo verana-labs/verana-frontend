@@ -13,10 +13,11 @@ export interface AccountData {
   message: string | null
   getVNA?: string // action type
   claimInterests?: string // action type
-  reclaimDeposit?: string // action type
   address: string | null
   network: string | null
-  didsManaged: number | null
+  corporationId: number | null
+  policyAddress: string | null
+  operatorAuthorized: boolean
   transactionsSent: number | null
   slashCount: number | null
 }
@@ -93,11 +94,13 @@ export const accountSections: Section<AccountData>[] = [
         format: (value) => formatNetwork(String(value)),
       },
       {
-        name: 'didsManaged',
-        label: t('dataview.account.fields.didsManaged'),
+        name: 'corporationId',
+        label: t('dataview.account.fields.corporationId'),
         type: 'data',
         format: (value) => (value == null ? '' : formatNumber(value, false, true)),
       },
+      { name: 'policyAddress', label: t('dataview.account.fields.policyAddress'), type: 'data' },
+      { name: 'operatorAuthorized', label: t('dataview.account.fields.operatorAuthorized'), type: 'data' },
       {
         name: 'transactionsSent',
         label: t('dataview.account.fields.transactionsSent'),

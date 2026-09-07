@@ -6,19 +6,21 @@ import { MSG_SCHEMA_ID } from '@/util/json_schema_util'
 
 const t = (key: string, values?: I18nValues) => ({ key, values })
 
-//CredentialSchema data
-export interface CsData {
-  creator: string
+export interface CredentialSchemaData {
   id: string | number
-  trId: string | number
+  ecosystemId: string | number
   issuerGrantorValidationValidityPeriod: number
   verifierGrantorValidationValidityPeriod: number
   issuerValidationValidityPeriod: number
   verifierValidationValidityPeriod: number
   holderValidationValidityPeriod: number
-  issuerPermManagementMode: string | number
-  verifierPermManagementMode: string | number
-  archived?: string
+  issuerOnboardingMode: string | number
+  verifierOnboardingMode: string | number
+  holderOnboardingMode: string | number | null
+  pricingAssetType: string | number | null
+  pricingAsset: string | null
+  digestAlgorithm: string | null
+  archived: string | null
   jsonSchema: string
   updateCredentialSchema?: string // action type
   archiveCredentialSchema?: string // action type
@@ -28,16 +30,15 @@ export interface CsData {
   description?: string
 }
 
-export const CsDataToken = typeOf<CsData>('CsData')
+export const CredentialSchemaDataToken = typeOf<CredentialSchemaData>('CredentialSchemaData')
 
-export const managementModeOptions = [
+export const onboardingModeOptions = [
   { value: 1, label: t('dataview.cs.managementMode.OPEN') },
-  { value: 2, label: t('dataview.cs.managementMode.GRANTOR_VALIDATION') },
-  { value: 3, label: t('dataview.cs.managementMode.TRUST_REGISTRY_VALIDATION') },
+  { value: 2, label: t('dataview.cs.managementMode.ECOSYSTEM_ONBOARDING_PROCESS') },
+  { value: 3, label: t('dataview.cs.managementMode.GRANTOR_ONBOARDING_PROCESS') },
 ]
 
-// Sections configuration for CsData
-export const csSections: Section<CsData>[] = [
+export const credentialSchemaSections: Section<CredentialSchemaData>[] = [
   {
     name: t('dataview.cs.sections.main'),
     type: 'basic',
@@ -63,31 +64,50 @@ export const csSections: Section<CsData>[] = [
         // description: t("dataview.cs.descriptions.id"),
       },
       {
-        name: 'issuerPermManagementMode',
-        label: t('dataview.cs.fields.issuerPermManagementMode'),
+        name: 'issuerOnboardingMode',
+        label: t('dataview.cs.fields.issuerOnboardingMode'),
         type: 'data',
         required: true,
         update: false,
         inputType: 'select',
-        options: managementModeOptions,
+        options: onboardingModeOptions,
         format: (value) => getModeLabel(String(value), '_ISSUER'),
         isHtml: true,
-        // description: t("dataview.cs.descriptions.issuerPermManagementMode"),
       },
       {
-        name: 'verifierPermManagementMode',
-        label: t('dataview.cs.fields.verifierPermManagementMode'),
+        name: 'verifierOnboardingMode',
+        label: t('dataview.cs.fields.verifierOnboardingMode'),
         type: 'data',
         required: true,
         update: false,
         inputType: 'select',
-        options: managementModeOptions,
+        options: onboardingModeOptions,
         format: (value) => getModeLabel(String(value), '_VERIFIER'),
         isHtml: true,
-        // description: t("dataview.cs.descriptions.verifierPermManagementMode"),
       },
-      { name: 'creator', label: t('dataview.cs.fields.creator'), type: 'data', show: 'none' },
-      { name: 'trId', label: t('dataview.cs.fields.trId'), type: 'data', show: 'none' },
+      {
+        name: 'holderOnboardingMode',
+        label: t('dataview.cs.fields.holderOnboardingMode'),
+        type: 'data',
+        update: false,
+        show: 'view',
+      },
+      {
+        name: 'pricingAssetType',
+        label: t('dataview.cs.fields.pricingAssetType'),
+        type: 'data',
+        update: false,
+        show: 'view',
+      },
+      { name: 'pricingAsset', label: t('dataview.cs.fields.pricingAsset'), type: 'data', update: false, show: 'view' },
+      {
+        name: 'digestAlgorithm',
+        label: t('dataview.cs.fields.digestAlgorithm'),
+        type: 'data',
+        update: false,
+        show: 'view',
+      },
+      { name: 'ecosystemId', label: t('dataview.cs.fields.ecosystemId'), type: 'data', show: 'none' },
       {
         name: 'archiveCredentialSchema',
         label: t('dataview.cs.actions.archiveCredentialSchema'),
@@ -160,30 +180,28 @@ export const csSections: Section<CsData>[] = [
         // description: t("dataview.cs.descriptions.holderValidationValidityPeriod"),
       },
       {
-        name: 'issuerPermManagementMode',
-        label: t('dataview.cs.fields.issuerPermManagementMode'),
+        name: 'issuerOnboardingMode',
+        label: t('dataview.cs.fields.issuerOnboardingMode'),
         type: 'data',
         required: true,
         update: false,
         inputType: 'select',
-        options: managementModeOptions,
+        options: onboardingModeOptions,
         format: (value) => getModeLabel(String(value), '_ISSUER'),
         isHtml: true,
         show: 'create',
-        // description: t("dataview.cs.descriptions.issuerPermManagementMode"),
       },
       {
-        name: 'verifierPermManagementMode',
-        label: t('dataview.cs.fields.verifierPermManagementMode'),
+        name: 'verifierOnboardingMode',
+        label: t('dataview.cs.fields.verifierOnboardingMode'),
         type: 'data',
         required: true,
         update: false,
         inputType: 'select',
-        options: managementModeOptions,
+        options: onboardingModeOptions,
         format: (value) => getModeLabel(String(value), '_VERIFIER'),
         isHtml: true,
         show: 'create',
-        // description: t("dataview.cs.descriptions.verifierPermManagementMode"),
       },
       {
         name: 'jsonSchema',
@@ -196,8 +214,7 @@ export const csSections: Section<CsData>[] = [
         validation: { type: 'JSON_SCHEMA' },
         show: 'create',
       },
-      { name: 'creator', label: t('dataview.cs.fields.creator'), type: 'data', show: 'none' },
-      { name: 'trId', label: t('dataview.cs.fields.trId'), type: 'data', show: 'none' },
+      { name: 'ecosystemId', label: t('dataview.cs.fields.ecosystemId'), type: 'data', show: 'none' },
       {
         name: 'updateCredentialSchema',
         label: t('dataview.cs.actions.updateCredentialSchema'),
