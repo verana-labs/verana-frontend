@@ -1,4 +1,8 @@
-import { readEnv } from '@/config/env'
+import {
+  VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA,
+  VERANA_REST_ENDPOINT_ECOSYSTEM,
+  VERANA_REST_ENDPOINT_TRUST_DEPOSIT,
+} from '@/config/env'
 import { translate } from '@/i18n/dataview'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
@@ -19,7 +23,7 @@ export const protocolParamsInitialState: ProtocolParams = {
 type ParamConfig = {
   key: keyof ProtocolParams
   responseKey: string
-  envKey: string
+  endpoint: string | undefined
   transform?: (value: number) => number
 }
 
@@ -27,23 +31,23 @@ const CONFIGS: ParamConfig[] = [
   {
     key: 'trustUnitPrice',
     responseKey: 'trust_unit_price',
-    envKey: 'NEXT_PUBLIC_VERANA_REST_ENDPOINT_ECOSYSTEM',
+    endpoint: VERANA_REST_ENDPOINT_ECOSYSTEM,
   },
   {
     key: 'trustDepositReclaimBurnRate',
     responseKey: 'trust_deposit_reclaim_burn_rate',
-    envKey: 'NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT',
+    endpoint: VERANA_REST_ENDPOINT_TRUST_DEPOSIT,
     transform: (value) => value * 100,
   },
   {
     key: 'trustDepositRate',
     responseKey: 'trust_deposit_rate',
-    envKey: 'NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT',
+    endpoint: VERANA_REST_ENDPOINT_TRUST_DEPOSIT,
   },
   {
     key: 'credentialSchemaSchemaMaxSize',
     responseKey: 'credential_schema_schema_max_size',
-    envKey: 'NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA',
+    endpoint: VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA,
   },
 ]
 
@@ -87,14 +91,13 @@ export async function getProtocolParams(): Promise<ProtocolParamsResult> {
   }
 
   await Promise.all(
-    CONFIGS.map(async ({ key, responseKey, envKey, transform }) => {
-      const base = readEnv(envKey)
-      if (!base) {
-        errors.push(`${resolveTranslatable({ key: 'error.fetch.td.param.missing' }, translate)} ${envKey}`)
+    CONFIGS.map(async ({ key, responseKey, endpoint, transform }) => {
+      if (!endpoint) {
+        errors.push(`${resolveTranslatable({ key: 'error.fetch.td.param.missing' }, translate)} ${responseKey}`)
         return
       }
       try {
-        const responseParams = await load(base)
+        const responseParams = await load(endpoint)
         if (!(responseKey in responseParams)) throw new Error(`${responseKey} not found in response`)
         const value = numeric(responseParams[responseKey], responseKey)
         params[key] = value === null ? null : (transform?.(value) ?? value)

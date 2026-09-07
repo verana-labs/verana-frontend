@@ -1,15 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockEnv } = vi.hoisted(() => ({ mockEnv: vi.fn<(key: string) => string | undefined>() }))
-vi.mock('next-runtime-env', () => ({ env: mockEnv }))
+vi.mock('@/config/env', () => ({
+  VERANA_REST_ENDPOINT_ECOSYSTEM: 'https://indexer/v4/ecosystem',
+  VERANA_REST_ENDPOINT_TRUST_DEPOSIT: 'https://indexer/v4/trust-deposit',
+  VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA: 'https://indexer/v4/credential-schema',
+}))
 
 import { getProtocolParams, protocolParamsInitialState } from './protocolParams'
-
-const BASES: Record<string, string> = {
-  NEXT_PUBLIC_VERANA_REST_ENDPOINT_ECOSYSTEM: 'https://indexer/v4/ecosystem',
-  NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT: 'https://indexer/v4/trust-deposit',
-  NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA: 'https://indexer/v4/credential-schema',
-}
 
 const PARAMS: Record<string, Record<string, unknown>> = {
   'https://indexer/v4/ecosystem': { trust_unit_price: 1_000_000 },
@@ -21,7 +18,6 @@ const PARAMS: Record<string, Record<string, unknown>> = {
 }
 
 beforeEach(() => {
-  mockEnv.mockImplementation((key) => BASES[key])
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: string | URL) => {
@@ -33,7 +29,6 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals()
-  mockEnv.mockReset()
 })
 
 describe('getProtocolParams', () => {

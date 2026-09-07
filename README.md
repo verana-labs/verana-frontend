@@ -178,7 +178,7 @@ Public runtime variables. Source of truth is `.env` at the repo root.
 | `NEXT_PUBLIC_VERANA_VISUALIZER_URL` | Sister visualizer | `https://vis.devnet.verana.network` |
 | `NEXT_PUBLIC_VERANA_TOPUP_VS` | Faucet/topup verifiable service | `did:web:faucet-vs.devnet.verana.network` |
 
-Individual indexer modules can be overridden with `NEXT_PUBLIC_VERANA_REST_ENDPOINT_<MODULE>` (`ECOSYSTEM`, `CREDENTIAL_SCHEMA`, `PARTICIPANT`, `TRUST_DEPOSIT`, `CORPORATION`, `DELEGATION`, `GROUP`, `INDEXER`, `METRICS`, `VERIFIABLE_TRUST`) and the socket with `NEXT_PUBLIC_VERANA_WEBSOCKET`.
+Every indexer route, REST and socket alike, derives from `NEXT_PUBLIC_VERANA_INDEXER_BASE_URL`. The legacy `NEXT_PUBLIC_VERANA_REST_ENDPOINT_<MODULE>` and `NEXT_PUBLIC_VERANA_WEBSOCKET` variables are ignored, so a stale value can no longer point one network's frontend at another network's indexer.
 
 All `NEXT_PUBLIC_*` values are exposed to the client by design (standard Next.js behavior). Override per environment via `.env.local` or container env vars.
 
