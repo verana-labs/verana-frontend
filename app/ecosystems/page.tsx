@@ -14,12 +14,12 @@ import EcosystemsFilterBar, {
   EcosystemsFilterState,
   INITIAL_ECOSYSTEMS_FILTER,
 } from '@/ui/common/ecosystems-filter-bar'
-import EcosystemsPagination from '@/ui/common/ecosystems-pagination'
+import { KeysetPager, LoadedWindowNote } from '@/ui/common/keyset-pager'
 import { ModalAction } from '@/ui/common/modal-action'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
-const PAGE_SIZE = 9
+const SKELETON_COUNT = 9
 
 function matchesSearch(ecosystem: EcosystemListItem, search: string): boolean {
   const q = search.trim().toLowerCase()
@@ -50,6 +50,7 @@ export default function EcosystemsPage() {
     ecosystemsList,
     ecosystemsLoading,
     refetch: refetchEcosystems,
+    paging,
     onlyActiveEcosystem,
     setOnlyActiveEcosystem,
   } = useEcosystemsCtx()
@@ -59,7 +60,6 @@ export default function EcosystemsPage() {
     ...INITIAL_ECOSYSTEMS_FILTER,
     showArchived: !onlyActiveEcosystem,
   })
-  const [page, setPage] = useState<number>(1)
   const [addEcosystem, setAddEcosystem] = useState(false)
   const [enrichmentState, setEnrichmentState] = useState<{
     key: string
@@ -107,16 +107,6 @@ export default function EcosystemsPage() {
     })
   }, [actingCorporation?.corporation.id, ecosystemsList, enrichments, filters])
 
-  const total = filtered.length
-  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
-  const safePage = Math.min(page, pageCount)
-  const pageStart = (safePage - 1) * PAGE_SIZE
-  const pageItems = filtered.slice(pageStart, pageStart + PAGE_SIZE)
-
-  useEffect(() => {
-    if (page > pageCount) setPage(pageCount)
-  }, [page, pageCount])
-
   const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
 
   const enrichmentGateActive = !filters.showUntrusted
@@ -150,38 +140,32 @@ export default function EcosystemsPage() {
         onChange={(nextFilters) => {
           setFilters(nextFilters)
           setOnlyActiveEcosystem(!nextFilters.showArchived)
-          setPage(1)
         }}
       />
 
       <section id="ecosystems-grid" className="mb-8">
+        <LoadedWindowNote partial={paging.partial} />
         {gridLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-            {[...Array(PAGE_SIZE)].map((_, i) => (
+            {[...Array(SKELETON_COUNT)].map((_, i) => (
               <EcosystemCardSkeleton key={i} />
             ))}
           </div>
         ) : (
           <>
-            {pageItems.length === 0 ? (
+            {filtered.length === 0 ? (
               <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-8 text-center text-sm text-neutral-70 dark:text-neutral-70">
                 {t('datatable.ecosystem.empty', 'No ecosystems match your filters.')}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                {pageItems.map((ecosystem) => (
+                {filtered.map((ecosystem) => (
                   <EcosystemCard key={ecosystem.id} ecosystem={ecosystem} />
                 ))}
               </div>
             )}
 
-            <EcosystemsPagination
-              page={safePage}
-              pageCount={pageCount}
-              showing={pageItems.length}
-              total={total}
-              onChange={setPage}
-            />
+            <KeysetPager paging={paging} showing={ecosystemsList.length} loading={ecosystemsLoading} />
           </>
         )}
       </section>

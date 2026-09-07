@@ -462,11 +462,6 @@
   "datatable.ecosystem.card.trustValue": "Trust Value:",
   "datatable.ecosystem.card.issuedCredentials": "Issued Credentials:",
   "datatable.ecosystem.card.verifiedCredentials": "Verified Credentials:",
-  "datatable.ecosystem.pagination.showing": "Showing",
-  "datatable.ecosystem.pagination.of": "of",
-  "datatable.ecosystem.pagination.ecosystems": "ecosystems",
-  "datatable.ecosystem.pagination.previous": "Previous page",
-  "datatable.ecosystem.pagination.next": "Next page",
   "datatable.ecosystem.header.id": "Id",
   "datatable.ecosystem.header.did": "DID",
   "datatable.ecosystem.header.corporation": "Corporation",
@@ -888,5 +883,10 @@
   "settings.network.rpc": "RPC endpoint",
   "settings.network.rest": "REST endpoint",
   "settings.network.indexer": "Indexer",
-  "navbar.theme.title": "Toggle theme"
+  "navbar.theme.title": "Toggle theme",
+  "list.pager.label": "Pagination",
+  "list.pager.loaded": "{n} loaded",
+  "list.pager.previous": "Previous page",
+  "list.pager.next": "Next page",
+  "list.scoped": "Filters and sorting apply to the loaded results only."
 }

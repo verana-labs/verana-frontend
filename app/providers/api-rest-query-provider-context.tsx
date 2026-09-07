@@ -6,10 +6,14 @@ import { useDashboardData } from '@/hooks/useDashboardData'
 import { useEcosystems } from '@/hooks/useEcosystems'
 import { usePendingParticipants } from '@/hooks/usePendingParticipants'
 import { TrustDepositAccountData, useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
+import type { KeysetPaging } from '@/lib/keyset'
 import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { DashboardData } from '@/ui/dataview/datasections/dashboard'
 import type { PendingEcosystem } from '@/ui/dataview/datasections/participant'
+
+const ECOSYSTEMS_PAGE_SIZE = 9
+const DISCOVER_PAGE_SIZE = 5
 
 type PendingTasksCtxValue = {
   pendingParticipants: PendingEcosystem[]
@@ -21,20 +25,18 @@ type DiscoverCtxValue = {
   credentialSchemas: CredentialSchemaListItem[]
   loading: boolean
   refetch: () => Promise<void>
+  paging: KeysetPaging
   discoverSearch: string
   setDiscoverSearch: React.Dispatch<React.SetStateAction<string>>
-  discoverPage: number
-  setDiscoverPage: React.Dispatch<React.SetStateAction<number>>
 }
 
 type EcosystemsCtxValue = {
   ecosystemsList: EcosystemListItem[]
   ecosystemsLoading: boolean
   refetch: () => Promise<void>
+  paging: KeysetPaging
   onlyActiveEcosystem: boolean
   setOnlyActiveEcosystem: React.Dispatch<React.SetStateAction<boolean>>
-  ecosystemFilters: Record<string, string | boolean>
-  setEcosystemFilters: React.Dispatch<React.SetStateAction<Record<string, string | boolean>>>
 }
 
 type AccountCtxValue = {
@@ -59,16 +61,20 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
   const { pendingParticipants, refetch: refetchPendingParticipants } = usePendingParticipants()
 
   const [onlyActiveEcosystem, setOnlyActiveEcosystem] = useState(true)
-  const [ecosystemFilters, setEcosystemFilters] = useState<Record<string, string | boolean>>({})
   const {
     ecosystems: ecosystemsList,
     loading: ecosystemsLoading,
     refetch: refetchEcosystems,
-  } = useEcosystems(false, onlyActiveEcosystem)
+    paging: ecosystemsPaging,
+  } = useEcosystems({ all: false, onlyActive: onlyActiveEcosystem, pageSize: ECOSYSTEMS_PAGE_SIZE })
 
   const [discoverSearch, setDiscoverSearch] = useState<string>('')
-  const [discoverPage, setDiscoverPage] = useState<number>(1)
-  const { ecosystems: discoverList, loading: discoverLoading, refetch: refetchDiscoverList } = useEcosystems(true)
+  const {
+    ecosystems: discoverList,
+    loading: discoverLoading,
+    refetch: refetchDiscoverList,
+    paging: discoverPaging,
+  } = useEcosystems({ all: true, onlyActive: true, pageSize: DISCOVER_PAGE_SIZE })
   const {
     credentialSchemas,
     loading: credentialSchemasLoading,
@@ -92,20 +98,19 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
       discoverList,
       loading: discoverLoading || credentialSchemasLoading,
       refetch: refetchDiscover,
+      paging: discoverPaging,
       credentialSchemas,
       discoverSearch,
       setDiscoverSearch,
-      discoverPage,
-      setDiscoverPage,
     }),
     [
       discoverList,
       discoverLoading,
+      discoverPaging,
       credentialSchemas,
       credentialSchemasLoading,
       refetchDiscover,
       discoverSearch,
-      discoverPage,
     ]
   )
 
@@ -114,12 +119,11 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
       ecosystemsList,
       ecosystemsLoading,
       refetch: refetchEcosystems,
+      paging: ecosystemsPaging,
       onlyActiveEcosystem,
       setOnlyActiveEcosystem,
-      ecosystemFilters,
-      setEcosystemFilters,
     }),
-    [ecosystemsList, ecosystemsLoading, refetchEcosystems, onlyActiveEcosystem, ecosystemFilters]
+    [ecosystemsList, ecosystemsLoading, refetchEcosystems, ecosystemsPaging, onlyActiveEcosystem]
   )
 
   const accountValue = useMemo(

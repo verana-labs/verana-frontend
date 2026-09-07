@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import { parseEcosystemsResponse } from './useEcosystems'
+import { firstPage } from '@/lib/keyset'
+import { ecosystemListQuery, parseEcosystemsResponse } from './useEcosystems'
+
+describe('ecosystemListQuery', () => {
+  it('scopes the acting corporation list to non-archived ecosystems with the keyset cursor', () => {
+    const params = ecosystemListQuery(
+      { limit: 9, sort: '-id', direction: 'forward', boundary: 20 },
+      { corporationId: 13, onlyActive: true, withSchemas: false }
+    )
+    expect(params.toString()).toBe('limit=10&sort=-id&max_id=20&participant_corporation_id=13&archived=false')
+  })
+
+  it('asks for every non-archived ecosystem with at least one active schema on discover', () => {
+    const params = ecosystemListQuery(firstPage(5), { onlyActive: true, withSchemas: true })
+    expect(params.toString()).toBe('limit=6&sort=-id&archived=false&min_active_schemas=1')
+  })
+})
 
 describe('parseEcosystemsResponse', () => {
   it('accepts the V4 ecosystems envelope', () => {

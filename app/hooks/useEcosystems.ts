@@ -1,10 +1,22 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_ECOSYSTEM } from '@/config/env'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { indexerValidators } from '@/lib/indexer-json'
+import {
+  EMPTY_WINDOW,
+  firstPage,
+  isPartial,
+  type KeysetPaging,
+  type KeysetRequest,
+  type KeysetWindow,
+  keysetNext,
+  keysetPrev,
+  keysetQuery,
+  keysetWindow,
+} from '@/lib/keyset'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { resolveTranslatable } from '@/ui/dataview/types'
@@ -62,50 +74,100 @@ export function parseEcosystemsResponse(payload: unknown): EcosystemListItem[] {
   return envelope.ecosystems.map((value, index) => parseEcosystem(value, `ecosystems[${index}]`))
 }
 
-export function useEcosystems(all = false, onlyActive = true) {
+export type EcosystemListScope = {
+  corporationId?: number
+  onlyActive: boolean
+  withSchemas: boolean
+}
+
+export function ecosystemListQuery(request: KeysetRequest, scope: EcosystemListScope): URLSearchParams {
+  const params = new URLSearchParams(keysetQuery(request))
+  if (scope.corporationId !== undefined) params.set('participant_corporation_id', String(scope.corporationId))
+  if (scope.onlyActive) params.set('archived', 'false')
+  if (scope.withSchemas) params.set('min_active_schemas', '1')
+  return params
+}
+
+export type EcosystemListOptions = {
+  all?: boolean
+  onlyActive?: boolean
+  pageSize?: number
+}
+
+const idOf = (ecosystem: EcosystemListItem) => Number(ecosystem.id)
+
+export function useEcosystems({ all = false, onlyActive = true, pageSize = 9 }: EcosystemListOptions = {}) {
   const { actingCorporation, loading: corporationLoading } = useUserCorporation()
   const corporationId = actingCorporation?.corporation.id
-  const [ecosystems, setEcosystems] = useState<EcosystemListItem[]>([])
+  const [request, setRequest] = useState<KeysetRequest>(() => firstPage(pageSize))
+  const [window, setWindow] = useState<KeysetWindow<EcosystemListItem>>(EMPTY_WINDOW)
   const [loading, setLoading] = useState(true)
   const [errorEcosystems, setError] = useState<string | null>(null)
   const requestRef = useRef(0)
 
-  const fetchEcosystems = useCallback(async () => {
-    const request = ++requestRef.current
-    if (!VERANA_REST_ENDPOINT_ECOSYSTEM) {
-      setError(resolveTranslatable({ key: 'error.fetch.ecosystem' }, translate) ?? 'Missing ecosystem endpoint URL')
-      setLoading(false)
-      return
-    }
-    if (!all && !corporationId) {
-      setEcosystems([])
-      setLoading(corporationLoading)
-      return
-    }
-
-    setError(null)
-    setLoading(true)
-    try {
-      const params = new URLSearchParams({ limit: '1024' })
-      if (!all && corporationId) params.set('participant_corporation_id', String(corporationId))
-      if (onlyActive) params.set('archived', 'false')
-      const response = await fetch(`${VERANA_REST_ENDPOINT_ECOSYSTEM}/list?${params.toString()}`)
-      const json: unknown = await response.json()
-      if (!response.ok) {
-        const { error, code } = json as ApiErrorResponse
-        throw new Error(`Error ${code}: ${error}`)
+  const fetchWindow = useCallback(
+    async (target: KeysetRequest) => {
+      const requestId = ++requestRef.current
+      if (!VERANA_REST_ENDPOINT_ECOSYSTEM) {
+        setError(resolveTranslatable({ key: 'error.fetch.ecosystem' }, translate) ?? 'Missing ecosystem endpoint URL')
+        setLoading(false)
+        return
       }
-      if (request === requestRef.current) setEcosystems(parseEcosystemsResponse(json))
-    } catch (error) {
-      if (request === requestRef.current) setError(error instanceof Error ? error.message : String(error))
-    } finally {
-      if (request === requestRef.current) setLoading(false)
-    }
-  }, [all, corporationId, corporationLoading, onlyActive])
+      if (!all && corporationId === undefined) {
+        setWindow(EMPTY_WINDOW)
+        setLoading(corporationLoading)
+        return
+      }
+
+      setError(null)
+      setLoading(true)
+      try {
+        const params = ecosystemListQuery(target, {
+          corporationId: all ? undefined : corporationId,
+          onlyActive,
+          withSchemas: all,
+        })
+        const response = await fetch(`${VERANA_REST_ENDPOINT_ECOSYSTEM}/list?${params.toString()}`)
+        const json: unknown = await response.json()
+        if (!response.ok) {
+          const { error, code } = json as ApiErrorResponse
+          throw new Error(`Error ${code}: ${error}`)
+        }
+        if (requestRef.current !== requestId) return
+        setWindow(keysetWindow(target, parseEcosystemsResponse(json)))
+        setRequest(target)
+      } catch (error) {
+        if (requestRef.current !== requestId) return
+        setError(error instanceof Error ? error.message : String(error))
+      } finally {
+        if (requestRef.current === requestId) setLoading(false)
+      }
+    },
+    [all, corporationId, corporationLoading, onlyActive]
+  )
 
   useEffect(() => {
-    void fetchEcosystems()
-  }, [fetchEcosystems])
+    void fetchWindow(firstPage(pageSize))
+  }, [fetchWindow, pageSize])
 
-  return { ecosystems, loading, errorEcosystems, refetch: fetchEcosystems }
+  const refetch = useCallback(() => fetchWindow(request), [fetchWindow, request])
+
+  const paging = useMemo<KeysetPaging>(
+    () => ({
+      hasPrev: window.hasPrev,
+      hasNext: window.hasNext,
+      partial: isPartial(window),
+      next: () => {
+        const target = keysetNext(request, window, idOf)
+        if (target) void fetchWindow(target)
+      },
+      prev: () => {
+        const target = keysetPrev(request, window, idOf)
+        if (target) void fetchWindow(target)
+      },
+    }),
+    [fetchWindow, request, window]
+  )
+
+  return { ecosystems: window.rows, loading, errorEcosystems, refetch, paging }
 }

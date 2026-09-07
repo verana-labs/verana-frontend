@@ -1,13 +1,6 @@
 'use client'
 
-import {
-  faChevronLeft,
-  faChevronRight,
-  faCoins,
-  faFileContract,
-  faScaleBalanced,
-  faShieldHalved,
-} from '@fortawesome/free-solid-svg-icons'
+import { faCoins, faFileContract, faScaleBalanced, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
@@ -15,6 +8,7 @@ import { translate } from '@/i18n/dataview'
 import { DidEnrichment, fetchDidEnrichment, serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import { useDiscoverCtx } from '@/providers/api-rest-query-provider-context'
 import CsCard from '@/ui/common/cs-card'
+import { KeysetPager, LoadedWindowNote } from '@/ui/common/keyset-pager'
 import LogoImage from '@/ui/common/logo-image'
 import TitleAndButton from '@/ui/common/title-and-button'
 import TrustBadge from '@/ui/common/trust-badge'
@@ -45,13 +39,11 @@ export default function DiscoverJoinPage() {
     [discoverCtx.discoverList, credentialSchemasByEcosystemId]
   )
 
-  const withSchemas = useMemo(() => ecosystems.filter((e) => e.credentialSchemas.length > 0), [ecosystems])
-
   const [enrichmentByDid, setEnrichmentByDid] = useState<Record<string, DidEnrichment>>({})
 
   useEffect(() => {
     let cancelled = false
-    const pending = [...new Set(withSchemas.map((e) => e.did).filter(Boolean))].filter((did) => !enrichmentByDid[did])
+    const pending = [...new Set(ecosystems.map((e) => e.did).filter(Boolean))].filter((did) => !enrichmentByDid[did])
     for (const did of pending) {
       fetchDidEnrichment(did)
         .catch((): DidEnrichment => ({ did, trustStatus: 'UNRESOLVED' }))
@@ -63,16 +55,16 @@ export default function DiscoverJoinPage() {
     return () => {
       cancelled = true
     }
-  }, [withSchemas, enrichmentByDid])
+  }, [ecosystems, enrichmentByDid])
 
   const verifiable = useMemo(
-    () => withSchemas.filter((e) => enrichmentByDid[e.did]?.trustStatus === 'TRUSTED'),
-    [withSchemas, enrichmentByDid]
+    () => ecosystems.filter((e) => enrichmentByDid[e.did]?.trustStatus === 'TRUSTED'),
+    [ecosystems, enrichmentByDid]
   )
 
   const resolving = useMemo(
-    () => withSchemas.some((e) => e.did && !enrichmentByDid[e.did]),
-    [withSchemas, enrichmentByDid]
+    () => ecosystems.some((e) => e.did && !enrichmentByDid[e.did]),
+    [ecosystems, enrichmentByDid]
   )
 
   const [search, setSearch] = useState(discoverCtx.discoverSearch)
@@ -86,28 +78,17 @@ export default function DiscoverJoinPage() {
     })
   }, [search, verifiable, enrichmentByDid])
 
-  const PAGE_SIZE = 5
-  const [page, setPage] = useState(discoverCtx.discoverPage)
-
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)), [filtered])
-
-  useEffect(() => {
-    setPage((p) => Math.min(Math.max(1, p), totalPages))
-  }, [totalPages])
-
-  const paginated = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE
-    return filtered.slice(start, start + PAGE_SIZE)
-  }, [filtered, page])
-
   useEffect(() => {
     discoverCtx.setDiscoverSearch(search)
   }, [discoverCtx.setDiscoverSearch, search])
 
-  useEffect(() => {
-    discoverCtx.setDiscoverPage(page)
-    document.getElementById('app-scroll')?.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [discoverCtx.setDiscoverPage, page])
+  const paging = useMemo(() => {
+    const scrolled = (turn: () => void) => () => {
+      turn()
+      document.getElementById('app-scroll')?.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+    return { ...discoverCtx.paging, next: scrolled(discoverCtx.paging.next), prev: scrolled(discoverCtx.paging.prev) }
+  }, [discoverCtx.paging])
 
   const loading = discoverCtx.loading || (resolving && filtered.length === 0)
 
@@ -133,6 +114,8 @@ export default function DiscoverJoinPage() {
         </div>
       </section>
 
+      <LoadedWindowNote partial={discoverCtx.paging.partial} />
+
       <section id="ecosystem-list" className="space-y-6">
         {loading ? (
           [...Array(3)].map((_, i) => (
@@ -152,7 +135,7 @@ export default function DiscoverJoinPage() {
             </p>
           </div>
         ) : (
-          paginated.map((eco) => {
+          filtered.map((eco) => {
             const egfUrl = eco.versions?.find((x) => x.version === eco.activeVersion)?.documents?.[0]?.url
             const enrichment = enrichmentByDid[eco.did]
             const serviceName = enrichment?.serviceName ?? shortenDID(eco.did) ?? eco.did
@@ -250,88 +233,7 @@ export default function DiscoverJoinPage() {
         )}
       </section>
 
-      {filtered.length > 0 ? (
-        <section id="pagination" className="mt-8 flex justify-center">
-          <nav className="inline-flex rounded-lg shadow-sm" aria-label="Pagination">
-            <button
-              type="button"
-              disabled={page === 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className={[
-                'px-3 py-2 text-sm font-medium bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-l-lg',
-                page === 1
-                  ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                  : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800',
-              ].join(' ')}
-              aria-label="Previous page"
-            >
-              <FontAwesomeIcon icon={faChevronLeft} />
-            </button>
-
-            {(() => {
-              const maxVisible = 6
-              const pages: (number | 'ellipsis')[] = []
-
-              if (totalPages <= maxVisible) {
-                for (let i = 1; i <= totalPages; i++) pages.push(i)
-              } else {
-                if (page <= 3) {
-                  pages.push(1, 2, 3, 4, 5, 'ellipsis', totalPages)
-                } else if (page >= totalPages - 2) {
-                  pages.push(1, 'ellipsis', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
-                } else {
-                  pages.push(1, 'ellipsis', page - 1, page, page + 1, 'ellipsis', totalPages)
-                }
-              }
-
-              return pages.map((item, idx) => {
-                if (item === 'ellipsis') {
-                  return (
-                    <span
-                      key={`ellipsis-${idx}`}
-                      className="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400"
-                    >
-                      ...
-                    </span>
-                  )
-                }
-
-                const isActive = item === page
-                return (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => setPage(item)}
-                    aria-current={isActive ? 'page' : undefined}
-                    className={
-                      isActive
-                        ? 'px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-primary-600'
-                        : 'px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 hover:bg-gray-50 dark:hover:bg-gray-800'
-                    }
-                  >
-                    {item}
-                  </button>
-                )
-              })
-            })()}
-
-            <button
-              type="button"
-              disabled={page === totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className={[
-                'px-3 py-2 text-sm font-medium bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-r-lg',
-                page === totalPages
-                  ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                  : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800',
-              ].join(' ')}
-              aria-label="Next page"
-            >
-              <FontAwesomeIcon icon={faChevronRight} />
-            </button>
-          </nav>
-        </section>
-      ) : null}
+      <KeysetPager paging={paging} showing={ecosystems.length} loading={discoverCtx.loading} />
     </>
   )
 }
