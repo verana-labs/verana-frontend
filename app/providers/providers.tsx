@@ -7,6 +7,7 @@ import { ComponentsVersionProvider } from '@/providers/components-version-provid
 import { CorporationProvider } from '@/providers/corporation-provider'
 import { IndexerEventsProvider } from '@/providers/indexer-events-provider'
 import { NotificationProvider } from '@/providers/notification-provider'
+import { LocaleBoundary, PreferencesProvider } from '@/providers/preferences-provider'
 import RequireConnectedWallet from '@/providers/require-connected-wallet'
 import { TxConfirmProvider } from '@/providers/tx-confirm-provider'
 import { CorporationChooser } from '@/ui/common/corporation-chooser'
@@ -17,23 +18,27 @@ const VeranaChainProvider = dynamic(() => import('@/providers/verana-chain-provi
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider attribute="class" forcedTheme="light" enableSystem={false} defaultTheme="light">
-      <VeranaChainProvider>
-        <ComponentsVersionProvider>
-          <IndexerEventsProvider>
-            <CorporationProvider>
-              <CorporationChooser />
-              <CorporationLostModal />
-              <RequireConnectedWallet>
-                <NotificationProvider>
-                  <TxConfirmProvider>
-                    <RestQueryProvider>{children}</RestQueryProvider>
-                  </TxConfirmProvider>
-                </NotificationProvider>
-              </RequireConnectedWallet>
-            </CorporationProvider>
-          </IndexerEventsProvider>
-        </ComponentsVersionProvider>
-      </VeranaChainProvider>
+      <PreferencesProvider>
+        <VeranaChainProvider>
+          <ComponentsVersionProvider>
+            <IndexerEventsProvider>
+              <CorporationProvider>
+                <CorporationChooser />
+                <CorporationLostModal />
+                <RequireConnectedWallet>
+                  <NotificationProvider>
+                    <TxConfirmProvider>
+                      <RestQueryProvider>
+                        <LocaleBoundary>{children}</LocaleBoundary>
+                      </RestQueryProvider>
+                    </TxConfirmProvider>
+                  </NotificationProvider>
+                </RequireConnectedWallet>
+              </CorporationProvider>
+            </IndexerEventsProvider>
+          </ComponentsVersionProvider>
+        </VeranaChainProvider>
+      </PreferencesProvider>
     </ThemeProvider>
   )
 }

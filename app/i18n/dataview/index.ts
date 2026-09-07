@@ -13,6 +13,12 @@ const dictionaries: Record<Locale, FlatDict> = {
   es: es as FlatDict,
 }
 
+export const SUPPORTED_LOCALES = Object.keys(dictionaries) as readonly Locale[]
+
+export function isLocale(value: string): value is Locale {
+  return SUPPORTED_LOCALES.some((locale) => locale === value)
+}
+
 function interpolate(template: string, values?: TemplateValues): string {
   if (!values) return template
   return template.replace(/\{(\w+)\}/g, (_, k) => {
