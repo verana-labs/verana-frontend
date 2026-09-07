@@ -18,7 +18,6 @@ export interface AccountData {
   corporationId: number | null
   policyAddress: string | null
   operatorAuthorized: boolean
-  transactionsSent: number | null
   slashCount: number | null
 }
 
@@ -100,12 +99,6 @@ export const accountSections: Section<AccountData>[] = [
       },
       { name: 'policyAddress', label: t('dataview.account.fields.policyAddress'), type: 'data' },
       { name: 'operatorAuthorized', label: t('dataview.account.fields.operatorAuthorized'), type: 'data' },
-      {
-        name: 'transactionsSent',
-        label: t('dataview.account.fields.transactionsSent'),
-        type: 'data',
-        format: (value) => (value == null ? '' : formatNumber(value, false, true)),
-      },
       {
         name: 'slashCount',
         label: t('dataview.account.fields.slashCount'),

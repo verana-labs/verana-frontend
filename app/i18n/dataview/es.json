@@ -326,7 +326,6 @@
   "dataview.account.fields.address": "Dirección de la Billetera",
   "dataview.account.fields.network": "Red",
   "dataview.account.fields.didsManaged": "DIDs gestionados",
-  "dataview.account.fields.transactionsSent": "Transacciones enviadas",
   "dataview.account.fields.slashCount": "Eventos de slashing",
   "dataview.account.actions.getVNA.label": "Obtener tokens VNA",
   "dataview.account.actions.getVNA.desc": "Recarga el saldo de tu cuenta",
