@@ -226,3 +226,120 @@ export const HISTORY_13 = [
   ),
   activity(1, '2026-08-30T09:00:00Z', 404000, 'SlashTrustDeposit', { slashed_deposit: 2_000_000, slash_count: 1 }),
 ]
+
+export const LIST_ECOSYSTEM_COUNT = 12
+
+export function listEcosystemDid(id: number) {
+  return `did:web:eco-${id}.example`
+}
+
+function listTimestamp(id: number) {
+  return `2026-08-${String(id).padStart(2, '0')}T10:00:00Z`
+}
+
+function listController(id: number) {
+  return id >= 3 ? 13 : 12
+}
+
+export function listEcosystemRoles(ecosystemId: number, corporationId: number): string[] {
+  if (corporationId !== 13) return []
+  if (ecosystemId === 2) return ['ISSUER']
+  return ecosystemId >= 3 ? ['ECOSYSTEM'] : []
+}
+
+export function listEcosystemTrust(id: number, mode: string | null) {
+  if (mode === null) return null
+  const trusted = id % 2 === 0
+  const summary = {
+    did: listEcosystemDid(id),
+    trusted,
+    evaluatedAtTime: '2026-09-01T12:00:00Z',
+    evaluatedAtBlock: 405000,
+    expiresAtTime: null,
+    corporationId: listController(id),
+  }
+  if (mode === 'summary') return summary
+  return {
+    ...summary,
+    ecsCredentials: trusted
+      ? [
+          {
+            ecsSchema: 'ServiceCredential',
+            credentialSubject: { name: `Eco ${id} Registry`, description: `Registry ${id}` },
+          },
+          { ecsSchema: 'OrganizationCredential', credentialSubject: { name: `Org ${id}`, countryCode: 'CH' } },
+        ]
+      : [],
+  }
+}
+
+export function listEcosystem(id: number) {
+  const created = listTimestamp(id)
+  return {
+    id,
+    did: listEcosystemDid(id),
+    corporation_id: listController(id),
+    created,
+    modified: created,
+    archived: null,
+    language: 'en',
+    active_version: 1,
+    versions: [
+      {
+        id,
+        ecosystem_id: id,
+        created,
+        version: 1,
+        active_since: created,
+        documents: [
+          {
+            id,
+            gfv_id: id,
+            created,
+            language: 'en',
+            url: `https://eco-${id}.example/egf.md`,
+            digest_sri: 'sha384-eco',
+          },
+        ],
+      },
+    ],
+    participants: id,
+    active_schemas: 1,
+    weight: String(id * 1_000_000),
+    issued: id * 2,
+    verified: id,
+  }
+}
+
+export function listSchema(ecosystemId: number) {
+  const created = listTimestamp(ecosystemId)
+  return {
+    id: 100 + ecosystemId,
+    ecosystem_id: ecosystemId,
+    json_schema: JSON.stringify({
+      $id: `vpr:verana:e2e:cs:${100 + ecosystemId}`,
+      title: `Schema ${ecosystemId}`,
+      description: 'E2E schema',
+      type: 'object',
+      properties: {},
+    }),
+    issuer_grantor_validation_validity_period: 365,
+    verifier_grantor_validation_validity_period: 365,
+    issuer_validation_validity_period: 365,
+    verifier_validation_validity_period: 365,
+    holder_validation_validity_period: 365,
+    issuer_onboarding_mode: 'OPEN',
+    verifier_onboarding_mode: 'OPEN',
+    holder_onboarding_mode: 'PERMISSIONLESS',
+    pricing_asset_type: 'COIN',
+    pricing_asset: 'uvna',
+    digest_algorithm: 'sha384',
+    archived: null,
+    created,
+    modified: created,
+    participants: 0,
+    weight: '0',
+    issued: 0,
+    verified: 0,
+  }
+}

@@ -6,6 +6,11 @@ import {
   GROUP_MEMBERS,
   HARNESS_ADDRESS,
   HISTORY_13,
+  LIST_ECOSYSTEM_COUNT,
+  listEcosystem,
+  listEcosystemRoles,
+  listEcosystemTrust,
+  listSchema,
   OPERATOR_AUTHORIZATIONS,
   PLAIN_DID,
   PROPOSALS,
@@ -245,4 +250,61 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
       },
     })
   })
+}
+
+export type EcosystemListStubOptions = {
+  count?: number
+}
+
+export async function installEcosystemListStubs(page: Page, opts: EcosystemListStubOptions = {}) {
+  const ecosystems = Array.from({ length: opts.count ?? LIST_ECOSYSTEM_COUNT }, (_, index) => listEcosystem(index + 1))
+  const listRequests: string[] = []
+  const resolvedDids: string[] = []
+
+  await page.route('**/v4/ecosystem/list*', (route) => {
+    const url = new URL(route.request().url())
+    listRequests.push(url.search)
+    const params = url.searchParams
+    const corporationId = params.get('participant_corporation_id')
+    const minId = params.get('min_id')
+    const maxId = params.get('max_id')
+    const minActiveSchemas = Number(params.get('min_active_schemas') ?? '0')
+    const descending = params.get('sort') !== '+id'
+    const rows = ecosystems
+      .filter(
+        (eco) =>
+          corporationId === null ||
+          String(eco.corporation_id) === corporationId ||
+          listEcosystemRoles(eco.id, Number(corporationId)).length > 0
+      )
+      .filter((eco) => eco.active_schemas >= minActiveSchemas)
+      .filter((eco) => (minId === null || eco.id >= Number(minId)) && (maxId === null || eco.id < Number(maxId)))
+      .sort((a, b) => (descending ? b.id - a.id : a.id - b.id))
+      .slice(0, Number(params.get('limit') ?? '64'))
+      .map((eco) => ({ ...eco, trust_data: listEcosystemTrust(eco.id, params.get('trust_data')) }))
+    return route.fulfill({ json: { ecosystems: rows } })
+  })
+
+  await page.route('**/v4/participant/list*', (route) => {
+    const params = new URL(route.request().url()).searchParams
+    const roles = listEcosystemRoles(Number(params.get('ecosystem_id')), Number(params.get('corporation_id')))
+    return route.fulfill({
+      json: { participants: roles.map((role, index) => ({ id: index + 1, role, participant_state: 'ACTIVE' })) },
+    })
+  })
+
+  await page.route('**/v4/credential-schema/list*', (route) =>
+    route.fulfill({ json: { schemas: ecosystems.filter((eco) => eco.id % 2 === 0).map((eco) => listSchema(eco.id)) } })
+  )
+
+  await page.route('**/v4/verifiable-trust/resolve', (route) => {
+    const body = JSON.parse(route.request().postData() ?? '{}') as { did?: string }
+    if (body.did) resolvedDids.push(body.did)
+    return route.fallback()
+  })
+
+  return {
+    listRequests: () => [...listRequests],
+    resolvedDids: () => [...resolvedDids],
+  }
 }
