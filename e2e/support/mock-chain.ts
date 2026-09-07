@@ -44,6 +44,10 @@ const jsonRpcResult = (id: number | string, result: unknown) => ({
 })
 
 // CometBFT 0.38 status; version must start with "0.38." or CosmJS connectComet rejects it
+const abciInfoResult = () => ({
+  response: { data: 'verana', version: '0.10.3', app_version: '1', last_block_height: '1', last_block_app_hash: '' },
+})
+
 const statusResult = (chainId: string) => ({
   node_info: {
     protocol_version: { p2p: '8', block: '11', app: '0' },
@@ -201,10 +205,25 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
   const rpcPattern = new RegExp(`^${escapeRegExp(rpcEndpoint.replace(/\/+$/, ''))}/?(\\?.*)?$`)
 
   await page.route(rpcPattern, async (route) => {
-    if (route.request().method() !== 'POST') return route.continue()
+    if (route.request().method() !== 'POST') {
+      const pathname = new URL(route.request().url()).pathname
+      const json = (result: unknown) =>
+        route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(jsonRpcResult(-1, result)) })
+      if (pathname.endsWith('/abci_info')) return json(abciInfoResult())
+      if (pathname.endsWith('/status')) return json(statusResult(chainId))
+      if (pathname.endsWith('/health')) return json({})
+      console.log(`[mock-chain] unmocked ${route.request().method()} ${route.request().url()}`)
+      return route.fulfill({ status: 404, contentType: 'application/json', body: '{}' })
+    }
 
     const req = parseRequest(route)
-    if (!req) return route.continue()
+    if (!req) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } }),
+      })
+    }
 
     seen.push(req.method)
     const path = typeof req.params?.path === 'string' ? (req.params.path as string) : ''
@@ -233,7 +252,16 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
       case 'health':
         return fulfill({})
       default:
-        return route.continue()
+        console.log(`[mock-chain] unmocked rpc method ${req.method}`)
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: req.id,
+            error: { code: -32601, message: `unmocked ${req.method}` },
+          }),
+        })
     }
   })
 
