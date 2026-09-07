@@ -897,5 +897,22 @@
   "dataview.cs.managementMode.PERMISSIONLESS": "Sin permiso",
   "participants.tree.showmore": "Mostrar más",
   "participants.tree.members": "Miembros activos",
-  "entity.activity.title": "Cronología de actividad"
+  "entity.activity.title": "Cronología de actividad",
+  "dataview.dashboard.fields.participants": "Participantes",
+  "dashboard.health.title": "Componentes",
+  "dashboard.health.chain": "Cadena",
+  "dashboard.health.indexer": "Indexador",
+  "dashboard.health.frontend": "Frontend",
+  "dashboard.health.version": "Versión",
+  "dashboard.health.node": "Nodo",
+  "dashboard.health.network": "Red",
+  "dashboard.health.height": "Último bloque",
+  "dashboard.health.indexed": "Último bloque indexado",
+  "dashboard.health.indexedat": "Indexado el",
+  "dashboard.health.stoppedat": "Detenido",
+  "dashboard.health.running": "En marcha",
+  "dashboard.health.stalled": "Detenido",
+  "dashboard.health.catchingup": "Sincronizando",
+  "dashboard.health.synced": "Sincronizada",
+  "dashboard.health.unknown": "No disponible"
 }

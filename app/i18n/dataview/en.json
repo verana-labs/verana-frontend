@@ -897,5 +897,22 @@
   "dataview.cs.managementMode.PERMISSIONLESS": "Permissionless",
   "participants.tree.showmore": "Show more",
   "participants.tree.members": "Active members",
-  "entity.activity.title": "Activity timeline"
+  "entity.activity.title": "Activity timeline",
+  "dataview.dashboard.fields.participants": "Participants",
+  "dashboard.health.title": "Components",
+  "dashboard.health.chain": "Chain",
+  "dashboard.health.indexer": "Indexer",
+  "dashboard.health.frontend": "Frontend",
+  "dashboard.health.version": "Version",
+  "dashboard.health.node": "Node",
+  "dashboard.health.network": "Network",
+  "dashboard.health.height": "Latest block",
+  "dashboard.health.indexed": "Last indexed block",
+  "dashboard.health.indexedat": "Indexed at",
+  "dashboard.health.stoppedat": "Stopped",
+  "dashboard.health.running": "Running",
+  "dashboard.health.stalled": "Stalled",
+  "dashboard.health.catchingup": "Catching up",
+  "dashboard.health.synced": "Synced",
+  "dashboard.health.unknown": "Unavailable"
 }

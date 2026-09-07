@@ -5,6 +5,7 @@ import {
   faCubes,
   faFileLines,
   faShieldHalved,
+  faUsers,
 } from '@fortawesome/free-solid-svg-icons'
 import { Section } from '@/ui/dataview/types'
 import { formatNumber, formatVNAFromUVNA } from '@/util/util'
@@ -16,6 +17,7 @@ export interface DashboardData {
   blockHeight?: number | null
   ecosystems?: number | null
   schemas?: number | null
+  participants?: number | null
   totalLockedTrustDeposit?: number | null
   issuedCredentials?: number | null
   verifiedCredentials?: number | null
@@ -53,6 +55,15 @@ export const dashboardSections: Section<DashboardData>[] = [
         icon: faFileLines,
         iconClass: 'bg-slate-100 dark:bg-slate-900/20',
         iconColorClass: 'text-slate-600 dark:text-slate-400 text-xl',
+        format: (value) => formatNumber(String(value), true, true),
+      },
+      {
+        name: 'participants',
+        label: t('dataview.dashboard.fields.participants'),
+        type: 'data',
+        icon: faUsers,
+        iconClass: 'bg-teal-100 dark:bg-teal-900/20',
+        iconColorClass: 'text-teal-600 dark:text-teal-400 text-xl',
         format: (value) => formatNumber(String(value), true, true),
       },
       {

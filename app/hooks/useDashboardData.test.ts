@@ -7,6 +7,7 @@ describe('parseDashboardMetricsResponse', () => {
       parseDashboardMetricsResponse({
         active_ecosystems: 1,
         active_schemas: 2,
+        participants: 64,
         weight: 3,
         issued: 4,
         verified: 5,
@@ -14,6 +15,7 @@ describe('parseDashboardMetricsResponse', () => {
     ).toEqual({
       ecosystems: 1,
       schemas: 2,
+      participants: 64,
       totalLockedTrustDeposit: 3,
       issuedCredentials: 4,
       verifiedCredentials: 5,
@@ -25,10 +27,17 @@ describe('parseDashboardMetricsResponse', () => {
       parseDashboardMetricsResponse({
         active_trust_registries: 1,
         active_schemas: 2,
+        participants: 64,
         weight: 3,
         issued: 4,
         verified: 5,
       })
     ).toThrow('active_ecosystems')
+  })
+
+  it('requires the participants metric', () => {
+    expect(() =>
+      parseDashboardMetricsResponse({ active_ecosystems: 1, active_schemas: 2, weight: 3, issued: 4, verified: 5 })
+    ).toThrow('participants')
   })
 })

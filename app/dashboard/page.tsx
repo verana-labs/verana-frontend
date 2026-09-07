@@ -8,6 +8,7 @@ import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { useDashboardCtx } from '@/providers/api-rest-query-provider-context'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
+import { ComponentHealth } from '@/ui/common/component-health'
 import DashboardFooter from '@/ui/common/dashboard-footer'
 import DataView from '@/ui/common/data-view-columns'
 import FeaturedServices from '@/ui/common/featured-services'
@@ -52,6 +53,8 @@ export default function Page() {
       />
 
       <DataView<DashboardData> sectionsI18n={dashboardSections} data={dashboardData} id="" loading={false} />
+
+      <ComponentHealth />
 
       {/* Wallet Connection CTA */}
       {!isWalletConnected && (
