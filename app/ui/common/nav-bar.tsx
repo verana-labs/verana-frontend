@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import NavLinks from '@/ui/common/nav-links'
+import { ToggleTheme } from '@/ui/common/toggle-theme'
 import VeranaLog from '@/ui/common/verana-logo'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { formatNetwork } from '@/util/util'
@@ -53,9 +54,7 @@ export default function NavBar() {
                 >
                   <FontAwesomeIcon icon={faGear} />
                 </Link>
-                {/* Theme Toggle 
                 <ToggleTheme />
-*/}
                 <CorporationSelector />
 
                 {/* Account Zone */}

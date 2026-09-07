@@ -40,7 +40,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const protocolParamsResult = await getProtocolParams()
 
   return (
-    <html lang="en" className={`${inter.variable}`}>
+    <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
       <head>
         <PublicEnvScript />
       </head>

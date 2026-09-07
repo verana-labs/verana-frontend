@@ -17,7 +17,7 @@ const VeranaChainProvider = dynamic(() => import('@/providers/verana-chain-provi
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider attribute="class" forcedTheme="light" enableSystem={false} defaultTheme="light">
+    <ThemeProvider attribute="class" enableSystem defaultTheme="system">
       <PreferencesProvider>
         <VeranaChainProvider>
           <ComponentsVersionProvider>

@@ -82,8 +82,8 @@ const config: Config = {
           70: '#8B94A5',
         },
         surface: {
-          DEFAULT: '#f8fafc',
-          muted: '#f1f5f9',
+          DEFAULT: 'rgb(var(--color-surface) / <alpha-value>)',
+          muted: 'rgb(var(--color-surface-muted) / <alpha-value>)',
         },
         verana: {
           50: '#f5f3ff',

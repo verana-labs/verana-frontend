@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-surface: 248 250 252;
+  --color-surface-muted: 241 245 249;
+}
+
+.dark {
+  --color-surface: 31 41 55;
+  --color-surface-muted: 55 65 81;
+}
+
 
 /* Archived ecosystem watermark — ref: spec-v4/ecosystems.html */
 .archived-watermark {
