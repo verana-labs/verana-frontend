@@ -25,15 +25,15 @@ This chart deploys the Verana frontend (Next.js) as a Deployment with a Service,
 | `service.port` | Service port | `3000` |
 | `service.targetPort` | Container port | `3000` |
 | `nodeSelector` | Node selector map | `kubernetes.io/hostname: cluster-utc-node-07efe5` |
-| `env` | Required env vars (see below) | devnet defaults |
+| `env` | Env vars (see below); the network ones have no default | required |
 | `extraEnv` | Additional env entries (`[{name, value}]`) | `[]` |
 | `resources` | Pod resources | `{}` |
 | `ingress.enabled` | Enable ingress | `false` |
 > **Note:** The image tag should match the Chart version by default to ensure deployment consistency. It can be overridden for debugging purposes if needed.
 
-### Required environment variables
+### Environment variables
 
-Defined under `env` with devnet reference values; override per environment:
+Defined under `env`. The network values have no default and rendering fails when one is missing, so every deploy passes `values-devnet.yaml`, `values-testnet.yaml` or its own file:
 
 - `NEXT_PUBLIC_PORT`
 - `NEXT_PUBLIC_BASE_URL`
@@ -52,14 +52,14 @@ Defined under `env` with devnet reference values; override per environment:
 Render:
 
 ```bash
-helm template ./charts
+helm template ./charts -f ./charts/values-devnet.yaml
 ```
 
-Install/upgrade (override image tag and a couple env vars):
+Install/upgrade on devnet (override the image tag if needed):
 
 ```bash
 helm upgrade --install verana-frontend ./charts \
   -n vna-devnet-1 \
-  --set env.NEXT_PUBLIC_BASE_URL=https://app.devnet.verana.network \
-  --set env.NEXT_PUBLIC_VERANA_CHAIN_ID=vna-devnet-1
+  -f ./charts/values-devnet.yaml \
+  --set image.tag=v0.16.0
 ```

@@ -1,0 +1,13 @@
+global:
+  domain: testnet.verana.network
+
+env:
+  NEXT_PUBLIC_BASE_URL: "https://app.testnet.verana.network"
+  NEXT_PUBLIC_VERANA_CHAIN_ID: "vna-testnet-1"
+  NEXT_PUBLIC_VERANA_CHAIN_NAME: "VeranaTestnet1"
+  NEXT_PUBLIC_VERANA_RPC_ENDPOINT: "https://rpc.testnet.verana.network"
+  NEXT_PUBLIC_VERANA_REST_ENDPOINT: "https://api.testnet.verana.network"
+  NEXT_PUBLIC_VERANA_INDEXER_BASE_URL: "https://idx.testnet.verana.network"
+  NEXT_PUBLIC_VERANA_EXPLORER_URL: "https://explorer.testnet.verana.network/Verana%20Testnet"
+  NEXT_PUBLIC_VERANA_VISUALIZER_URL: "https://vis.testnet.verana.network"
+  NEXT_PUBLIC_VERANA_TOPUP_VS: "did:web:faucet-vs.testnet.verana.network"
