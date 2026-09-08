@@ -1,0 +1,13 @@
+global:
+  domain: devnet.verana.network
+
+env:
+  NEXT_PUBLIC_BASE_URL: "https://app.devnet.verana.network"
+  NEXT_PUBLIC_VERANA_CHAIN_ID: "vna-devnet-1"
+  NEXT_PUBLIC_VERANA_CHAIN_NAME: "VeranaDevnet1"
+  NEXT_PUBLIC_VERANA_RPC_ENDPOINT: "https://rpc.devnet.verana.network"
+  NEXT_PUBLIC_VERANA_REST_ENDPOINT: "https://api.devnet.verana.network"
+  NEXT_PUBLIC_VERANA_INDEXER_BASE_URL: "https://idx.devnet.verana.network"
+  NEXT_PUBLIC_VERANA_EXPLORER_URL: "https://explorer.devnet.verana.network/Verana%20Devnet"
+  NEXT_PUBLIC_VERANA_VISUALIZER_URL: "https://vis.devnet.verana.network"
+  NEXT_PUBLIC_VERANA_TOPUP_VS: "did:web:faucet-vs.devnet.verana.network"

@@ -1,3 +1,8 @@
+{{- $network := list "NEXT_PUBLIC_BASE_URL" "NEXT_PUBLIC_VERANA_CHAIN_ID" "NEXT_PUBLIC_VERANA_CHAIN_NAME" "NEXT_PUBLIC_VERANA_RPC_ENDPOINT" "NEXT_PUBLIC_VERANA_REST_ENDPOINT" "NEXT_PUBLIC_VERANA_INDEXER_BASE_URL" "NEXT_PUBLIC_VERANA_EXPLORER_URL" "NEXT_PUBLIC_VERANA_VISUALIZER_URL" "NEXT_PUBLIC_VERANA_TOPUP_VS" }}
+{{- range $key := $network }}
+{{- $_ := required (printf "env.%s is not set: pass values-devnet.yaml or values-testnet.yaml" $key) (index $.Values.env $key) }}
+{{- end }}
+{{- $_ := required "global.domain is not set: pass values-devnet.yaml or values-testnet.yaml" .Values.global.domain }}
 apiVersion: v1
 kind: Service
 metadata:

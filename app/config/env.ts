@@ -16,41 +16,23 @@ export const VERANA_SIGN_DIRECT_MODE = read('NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE
 
 export const VERANA_INDEXER_BASE_URL = read('NEXT_PUBLIC_VERANA_INDEXER_BASE_URL')?.replace(/\/$/, '')
 
-const indexerEndpoint = (key: string, path: string): string | undefined =>
-  read(key) || (VERANA_INDEXER_BASE_URL ? `${VERANA_INDEXER_BASE_URL}/v4/${path}` : undefined)
+const indexerEndpoint = (path: string): string | undefined =>
+  VERANA_INDEXER_BASE_URL ? `${VERANA_INDEXER_BASE_URL}/v4/${path}` : undefined
 
-export const VERANA_REST_ENDPOINT_ECOSYSTEM = indexerEndpoint('NEXT_PUBLIC_VERANA_REST_ENDPOINT_ECOSYSTEM', 'ecosystem')
-export const VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA = indexerEndpoint(
-  'NEXT_PUBLIC_VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA',
-  'credential-schema'
-)
-export const VERANA_REST_ENDPOINT_PARTICIPANT = indexerEndpoint(
-  'NEXT_PUBLIC_VERANA_REST_ENDPOINT_PARTICIPANT',
-  'participant'
-)
-export const VERANA_REST_ENDPOINT_TRUST_DEPOSIT = indexerEndpoint(
-  'NEXT_PUBLIC_VERANA_REST_ENDPOINT_TRUST_DEPOSIT',
-  'trust-deposit'
-)
-export const VERANA_REST_ENDPOINT_CORPORATION = indexerEndpoint(
-  'NEXT_PUBLIC_VERANA_REST_ENDPOINT_CORPORATION',
-  'corporation'
-)
-export const VERANA_REST_ENDPOINT_DELEGATION = indexerEndpoint(
-  'NEXT_PUBLIC_VERANA_REST_ENDPOINT_DELEGATION',
-  'delegation'
-)
-export const VERANA_REST_ENDPOINT_GROUP = indexerEndpoint('NEXT_PUBLIC_VERANA_REST_ENDPOINT_GROUP', 'group')
-export const VERANA_REST_ENDPOINT_INDEXER = indexerEndpoint('NEXT_PUBLIC_VERANA_REST_ENDPOINT_INDEXER', 'indexer')
-export const VERANA_REST_ENDPOINT_METRICS = indexerEndpoint('NEXT_PUBLIC_VERANA_REST_ENDPOINT_METRICS', 'metrics')
-export const VERANA_REST_ENDPOINT_VERIFIABLE_TRUST = indexerEndpoint(
-  'NEXT_PUBLIC_VERANA_REST_ENDPOINT_VERIFIABLE_TRUST',
-  'verifiable-trust'
-)
+export const VERANA_REST_ENDPOINT_ECOSYSTEM = indexerEndpoint('ecosystem')
+export const VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA = indexerEndpoint('credential-schema')
+export const VERANA_REST_ENDPOINT_PARTICIPANT = indexerEndpoint('participant')
+export const VERANA_REST_ENDPOINT_TRUST_DEPOSIT = indexerEndpoint('trust-deposit')
+export const VERANA_REST_ENDPOINT_CORPORATION = indexerEndpoint('corporation')
+export const VERANA_REST_ENDPOINT_DELEGATION = indexerEndpoint('delegation')
+export const VERANA_REST_ENDPOINT_GROUP = indexerEndpoint('group')
+export const VERANA_REST_ENDPOINT_INDEXER = indexerEndpoint('indexer')
+export const VERANA_REST_ENDPOINT_METRICS = indexerEndpoint('metrics')
+export const VERANA_REST_ENDPOINT_VERIFIABLE_TRUST = indexerEndpoint('verifiable-trust')
 
-export const VERANA_WEBSOCKET =
-  read('NEXT_PUBLIC_VERANA_WEBSOCKET') ||
-  (VERANA_INDEXER_BASE_URL ? `${VERANA_INDEXER_BASE_URL.replace(/^http/, 'ws')}/v4/indexer/subscribe` : undefined)
+export const VERANA_WEBSOCKET = VERANA_INDEXER_BASE_URL
+  ? `${VERANA_INDEXER_BASE_URL.replace(/^http/, 'ws')}/v4/indexer/subscribe`
+  : undefined
 
 export const VERANA_CHAIN_PROVIDER_PROJECT_ID = read('NEXT_PUBLIC_VERANA_CHAIN_PROVIDER_PROJECT_ID')
 export const VERANA_CHAIN_PROVIDER_RELAY_URL = read('NEXT_PUBLIC_VERANA_CHAIN_PROVIDER_RELAY_URL')
