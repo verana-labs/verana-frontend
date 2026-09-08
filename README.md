@@ -211,13 +211,7 @@ Compose files in `docker-compose/` cover dev (`docker-dev`, `docker-dev-no-envir
 
 ### Kubernetes
 
-Apply the provided manifest:
-
-```bash
-kubectl apply -f kubernetes/verana-frontend-deployment.yaml
-```
-
-Edit env vars under `spec.template.spec.containers[0].env` for your chain.
+The chart is the only source of the manifests. Render them with `helm template ./charts -f ./charts/values-devnet.yaml` (or the testnet file) instead of keeping a hand-written manifest around.
 
 ---
 
@@ -264,7 +258,7 @@ app/
 └─ styles/            # Tailwind and globals
 ```
 
-Plus top-level: `charts/`, `kubernetes/`, `docker-compose/`, `public/`, `Dockerfile`, `next.config.ts`, `biome.json`, `tsconfig.json`.
+Plus top-level: `charts/`, `docker-compose/`, `public/`, `Dockerfile`, `next.config.ts`, `biome.json`, `tsconfig.json`.
 
 ---
 
