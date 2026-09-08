@@ -659,6 +659,7 @@
   "corporation.page.proposals.empty": "Aún no hay propuestas.",
   "corporation.proposals.executor": "ejecutor",
   "corporation.proposals.votes": "Votos",
+  "corporation.proposals.voteserror": "No se pudieron cargar los votos.",
   "corporation.proposals.novotes": "Sin votos registrados.",
   "corporation.proposals.voteyes": "Votar sí",
   "corporation.proposals.voteno": "Votar no",

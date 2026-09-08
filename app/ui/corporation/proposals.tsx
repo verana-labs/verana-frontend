@@ -89,7 +89,7 @@ function ProposalDetail({ proposal, ctx }: { proposal: ProposalRow; ctx: Proposa
   const votes = useProposalVotes(proposal.id)
   const open = ctx.isMember && proposal.status === 'SUBMITTED'
   const votable = open && !hasEnded(proposal.votingPeriodEnd)
-  const voted = votes === undefined || votes.some((vote) => vote.voter === ctx.walletAddress)
+  const voted = votes == null || votes.some((vote) => vote.voter === ctx.walletAddress)
   const withdrawable = open && ctx.walletAddress !== undefined && proposal.proposers.includes(ctx.walletAddress)
   const executable = ctx.isMember && proposal.status === 'ACCEPTED' && proposal.executorResult !== 'SUCCESS'
 
@@ -109,6 +109,8 @@ function ProposalDetail({ proposal, ctx }: { proposal: ProposalRow; ctx: Proposa
         </p>
         {votes === undefined ? (
           <p className="text-sm text-gray-500">…</p>
+        ) : votes === null ? (
+          <p className="text-sm text-red-600 dark:text-red-400">{translate('corporation.proposals.voteserror')}</p>
         ) : votes.length === 0 ? (
           <p className="text-sm text-gray-500">{translate('corporation.proposals.novotes')}</p>
         ) : (

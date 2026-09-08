@@ -276,8 +276,8 @@ export async function fetchCorporationHistory(corporationId: number): Promise<Ac
   }
 }
 
-export function useProposalVotes(proposalId: number): VoteRow[] | undefined {
-  const [votes, setVotes] = useState<VoteRow[]>()
+export function useProposalVotes(proposalId: number): VoteRow[] | null | undefined {
+  const [votes, setVotes] = useState<VoteRow[] | null>()
 
   useEffect(() => {
     let cancelled = false
@@ -287,7 +287,7 @@ export function useProposalVotes(proposalId: number): VoteRow[] | undefined {
       })
       .catch((cause: unknown) => {
         logger.error(`proposal ${proposalId} votes`, cause)
-        if (!cancelled) setVotes([])
+        if (!cancelled) setVotes(null)
       })
     return () => {
       cancelled = true

@@ -27,11 +27,12 @@ export default function CorporationPage() {
   const { actingCorporation, loading: actingLoading, refetch: refetchCorporations } = useUserCorporation()
   const { details, loading, error, refetch } = useCorporationDetails(actingCorporation?.corporation.id)
   const [votesVersion, setVotesVersion] = useState(0)
-  const manage = useCorporationManage(() => {
+  const refreshAfterTx = () => {
     void refetch()
     void refetchCorporations()
     setVotesVersion((version) => version + 1)
-  })
+  }
+  const manage = useCorporationManage(refreshAfterTx)
   const [rotating, setRotating] = useState(false)
   const [composing, setComposing] = useState(false)
   const [enrichment, setEnrichment] = useState<DidEnrichment | null>(null)
@@ -119,7 +120,7 @@ export default function CorporationPage() {
         membership={actingCorporation}
         policy={policy}
         members={members}
-        onDone={() => void refetch()}
+        onDone={refreshAfterTx}
         onClose={() => setComposing(false)}
       />
     ),
