@@ -47,6 +47,13 @@ test('tabs, deep links and proposal actions', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Vote yes' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Withdraw', exact: true })).toBeVisible()
 
+  await page.getByRole('button', { name: /#41/ }).click()
+  await page.getByRole('button', { name: /#42/ }).click()
+  await expect(page.getByText('/verana.ec.v1.MsgArchiveEcosystem').first()).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Vote yes' })).toBeHidden()
+  await expect(page.getByRole('button', { name: 'Withdraw', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: /#42/ }).click()
+
   await page.getByRole('button', { name: /#40/ }).click()
   await expect(page.getByText('/verana.co.v1.MsgUpdateCorporation').first()).toBeVisible()
   await expect(page.getByRole('button', { name: 'Execute' })).toBeHidden()

@@ -56,6 +56,8 @@ function tally(yes = 0, no = 0) {
   return { yes_count: String(yes), no_count: String(no), abstain_count: '0', no_with_veto_count: '0' }
 }
 
+const OPEN_VOTING_PERIOD_END = new Date(Date.now() + 3_600_000).toISOString()
+
 export const PROPOSALS = [
   {
     id: 42,
@@ -73,7 +75,7 @@ export const PROPOSALS = [
     corporation_id: 13,
     status: 'SUBMITTED',
     submit_time: '2026-09-01T11:00:00Z',
-    voting_period_end: '2026-09-01T12:00:00Z',
+    voting_period_end: OPEN_VOTING_PERIOD_END,
     executor_result: 'NOT_RUN',
     proposers: [HARNESS_ADDRESS],
     messages: [{ '@type': '/verana.de.v1.MsgGrantOperatorAuthorization', grantee: 'verana1grantee' }],
