@@ -32,7 +32,7 @@ export default function Page() {
   useEffect(() => {
     setDashboardData((prev) => ({
       ...dashboardCtx.dashboardData,
-      blockHeight: latestProcessedHeight,
+      blockHeight: latestProcessedHeight || null,
     }))
   }, [latestProcessedHeight, dashboardCtx.dashboardData])
 

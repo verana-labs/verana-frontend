@@ -1,8 +1,8 @@
 'use client'
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { VERANA_WEBSOCKET } from '@/config/env'
-import { parseIndexerBlockEvent } from '@/lib/indexer-event'
+import { VERANA_REST_ENDPOINT_INDEXER, VERANA_WEBSOCKET } from '@/config/env'
+import { type IndexerBlockEvent, parseIndexerBlockEvent, parseIndexerBlockHeight } from '@/lib/indexer-event'
 import { logger } from '@/lib/logger'
 import { useComponentsVersion } from '@/providers/components-version-provider'
 
@@ -35,6 +35,55 @@ export function IndexerEventsProvider({ children }: { children: React.ReactNode 
   const [latestProcessedTimestamp, setLatestProcessedTimestamp] = useState<string | null>(null)
 
   const { setState: setVersionState } = useComponentsVersion()
+
+  const applyBlock = useCallback(
+    (block: IndexerBlockEvent) => {
+      latestProcessedHeightRef.current = block.height
+      latestProcessedTimestampRef.current = block.timestamp
+      setLatestProcessedHeight(block.height)
+      setLatestProcessedTimestamp(block.timestamp)
+      setVersionState((prev) => ({
+        ...prev,
+        indexer: { ...prev.indexer, lastProcessedBlock: block.height },
+      }))
+      const ready: Waiting[] = []
+      const pending: Waiting[] = []
+      for (const waiting of waitingRef.current) {
+        if (block.height >= waiting.targetHeight) {
+          ready.push(waiting)
+        } else {
+          pending.push(waiting)
+        }
+      }
+      waitingRef.current = pending
+      for (const waiting of ready) {
+        if (waiting.timeoutId) clearTimeout(waiting.timeoutId)
+        logger.info('waitForBlock:resolved-from-event', {
+          targetHeight: waiting.targetHeight,
+          latestProcessedHeight: block.height,
+          date: new Date().toLocaleTimeString(),
+        })
+        waiting.resolve()
+      }
+    },
+    [setVersionState]
+  )
+
+  useEffect(() => {
+    if (!VERANA_REST_ENDPOINT_INDEXER) return
+    const controller = new AbortController()
+    fetch(`${VERANA_REST_ENDPOINT_INDEXER}/block-height`, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        const block = parseIndexerBlockHeight(await response.json())
+        if (block && latestProcessedHeightRef.current === 0) applyBlock(block)
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        logger.error('Failed to seed the indexer height', error)
+      })
+    return () => controller.abort()
+  }, [applyBlock])
 
   useEffect(() => {
     let unmounted = false
@@ -71,34 +120,7 @@ export function IndexerEventsProvider({ children }: { children: React.ReactNode 
       ws.onmessage = (event) => {
         try {
           const block = parseIndexerBlockEvent(JSON.parse(event.data))
-          if (!block) return
-          latestProcessedHeightRef.current = block.height
-          latestProcessedTimestampRef.current = block.timestamp
-          setLatestProcessedHeight(block.height)
-          setLatestProcessedTimestamp(block.timestamp)
-          setVersionState((prev) => ({
-            ...prev,
-            indexer: { ...prev.indexer, lastProcessedBlock: block.height },
-          }))
-          const ready: Waiting[] = []
-          const pending: Waiting[] = []
-          for (const waiting of waitingRef.current) {
-            if (block.height >= waiting.targetHeight) {
-              ready.push(waiting)
-            } else {
-              pending.push(waiting)
-            }
-          }
-          waitingRef.current = pending
-          for (const waiting of ready) {
-            if (waiting.timeoutId) clearTimeout(waiting.timeoutId)
-            logger.info('waitForBlock:resolved-from-event', {
-              targetHeight: waiting.targetHeight,
-              latestProcessedHeight: block.height,
-              date: new Date().toLocaleTimeString(),
-            })
-            waiting.resolve()
-          }
+          if (block) applyBlock(block)
         } catch (error) {
           logger.error('Failed to parse indexer websocket event:', error)
         }
@@ -133,7 +155,7 @@ export function IndexerEventsProvider({ children }: { children: React.ReactNode 
       waitingRef.current = []
       cleanupSocket()
     }
-  }, [setVersionState])
+  }, [applyBlock])
 
   const waitForBlock = useCallback((targetHeight: number, timeoutMs = 30000) => {
     const currentHeight = latestProcessedHeightRef.current
