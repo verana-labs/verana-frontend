@@ -11,7 +11,7 @@ import {
   VOTES,
 } from './corp-fixtures'
 
-export { ACME_DID, HARNESS_ADDRESS, PLAIN_DID } from './corp-fixtures'
+export { ACME_DID, HARNESS_ADDRESS, HARNESS_MNEMONIC, PLAIN_DID } from './corp-fixtures'
 
 export type CorpStubOptions = {
   memberOnly?: boolean

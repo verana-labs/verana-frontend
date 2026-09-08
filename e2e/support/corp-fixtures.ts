@@ -1,4 +1,6 @@
-export const HARNESS_ADDRESS = 'verana1dnucfytqvaat3a5m2tcc3dan0e3x8826h0fe6c'
+export const HARNESS_MNEMONIC =
+  'fire inner worth basket annual click random life will style science wolf notice village hand curve urge rifle only attract tilt way strong cover'
+export const HARNESS_ADDRESS = 'verana1pjluhuuyzgdey0syket0xqthv2usmjfe4pta2s'
 export const OTHER_MEMBER = 'verana1h5m6c6a33kncyrm05rz4k4lj9u2q2t2dkzrnts'
 export const SECOND_OPERATOR = 'verana1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq'
 export const ACME_DID = 'did:web:acme-trust.ch'

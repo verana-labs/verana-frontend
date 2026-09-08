@@ -1,6 +1,6 @@
 import { expect, type Page, test } from '@playwright/test'
 import { connectWallet } from './support/connect'
-import { installCorporationStubs, seedActingCorporation } from './support/corp-stubs'
+import { HARNESS_MNEMONIC, installCorporationStubs, seedActingCorporation } from './support/corp-stubs'
 
 async function noHorizontalOverflow(page: Page) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
@@ -9,7 +9,7 @@ async function noHorizontalOverflow(page: Page) {
 
 test('first-connect chooser, persistence and picker re-scoping', async ({ page }) => {
   await installCorporationStubs(page)
-  await connectWallet(page)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
 
   await expect(page.getByText('Choose your acting corporation')).toBeVisible({ timeout: 15_000 })
   await page.getByRole('button', { name: /Acme Trust AG/ }).click()
@@ -36,7 +36,7 @@ test('first-connect chooser, persistence and picker re-scoping', async ({ page }
 test('tabs, deep links and proposal actions', async ({ page }) => {
   await installCorporationStubs(page)
   await seedActingCorporation(page, 13)
-  await connectWallet(page)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
 
   await page.goto('/corporation?tab=proposals')
   await expect(page.getByText('#41')).toBeVisible({ timeout: 15_000 })
@@ -64,7 +64,7 @@ test('tabs, deep links and proposal actions', async ({ page }) => {
 test('a member without grants gets the proposal signing mode everywhere', async ({ page }) => {
   await installCorporationStubs(page, { memberOnly: true })
   await seedActingCorporation(page, 13)
-  await connectWallet(page)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
 
   await page.goto('/corporation?tab=operators')
   const grant = page.getByRole('button', { name: /Grant$/ })
@@ -78,7 +78,7 @@ test('a member without grants gets the proposal signing mode everywhere', async 
 
 test('a fresh wallet sees no corporation nav and lands on the wizard', async ({ page }) => {
   await installCorporationStubs(page, { fresh: true })
-  await connectWallet(page)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
 
   await expect(page.getByRole('link', { name: 'Corporation' })).toBeHidden()
 
@@ -92,7 +92,7 @@ test('a fresh wallet sees no corporation nav and lands on the wizard', async ({ 
 
 test('the creation wizard gates each step on valid input', async ({ page }) => {
   await installCorporationStubs(page, { fresh: true })
-  await connectWallet(page)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
   await page.goto('/corporation')
 
   const next = page.getByRole('button', { name: 'Continue' })
@@ -119,7 +119,7 @@ test('the creation wizard gates each step on valid input', async ({ page }) => {
 test('a missing trust deposit renders the empty state', async ({ page }) => {
   await installCorporationStubs(page, { trustDeposit404: true })
   await seedActingCorporation(page, 13)
-  await connectWallet(page)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
 
   await page.goto('/corporation?tab=deposit')
   await expect(page.getByText('No trust deposit recorded for this corporation yet.')).toBeVisible({ timeout: 15_000 })
@@ -128,7 +128,7 @@ test('a missing trust deposit renders the empty state', async ({ page }) => {
 test('the corporation page and picker hold at mobile and tablet widths', async ({ page }) => {
   await installCorporationStubs(page)
   await seedActingCorporation(page, 13)
-  await connectWallet(page)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
 
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/corporation')
@@ -155,7 +155,7 @@ test('the corporation page and picker hold at mobile and tablet widths', async (
 test('the proposal composer gates each kind on valid input', async ({ page }) => {
   await installCorporationStubs(page)
   await seedActingCorporation(page, 13)
-  await connectWallet(page)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
 
   await page.goto('/corporation?tab=proposals')
   await page.getByRole('button', { name: 'New proposal' }).click()
