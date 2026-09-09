@@ -612,6 +612,7 @@
   "corporation.selector.member": "Miembro",
   "corporation.selector.pendingtasks": "Tareas de validador pendientes",
   "corporation.selector.pendingvotes": "Propuestas a la espera de tu voto",
+  "corporation.selector.refresh": "Actualizar corporaciones",
   "corporation.selector.error": "Fallo de detección",
   "corporation.select.loading": "La detección de corporaciones sigue en curso, inténtalo de nuevo en un momento."
 }

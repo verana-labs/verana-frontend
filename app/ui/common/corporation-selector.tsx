@@ -1,7 +1,7 @@
 'use client'
 
 import { useChain } from '@cosmos-kit/react'
-import { faBuilding, faChevronDown } from '@fortawesome/free-solid-svg-icons'
+import { faBuilding, faChevronDown, faRotateRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
@@ -13,11 +13,11 @@ import { CorporationMembershipRow, corporationDisplayName } from '@/ui/common/co
 export function CorporationSelector() {
   const veranaChain = useVeranaChain()
   const { isWalletConnected } = useChain(veranaChain.chain_name)
-  const { memberships, actingCorporation, needsSelection, loading, error, attention, setActingCorporation } =
+  const { memberships, actingCorporation, needsSelection, loading, error, attention, setActingCorporation, refetch } =
     useUserCorporation()
   const { data: actingEnrichment } = useDidTrustEnrichment(actingCorporation?.corporation.did)
 
-  if (!isWalletConnected || loading) return null
+  if (!isWalletConnected || (loading && memberships.length === 0)) return null
 
   const label = actingCorporation
     ? (corporationDisplayName(actingEnrichment) ?? actingCorporation.corporation.did)
@@ -70,6 +70,18 @@ export function CorporationSelector() {
             </button>
           </MenuItem>
         ))}
+        <div className="my-1 border-t border-neutral-20 dark:border-neutral-70" />
+        <MenuItem>
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => void refetch()}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm disabled:opacity-50 data-[focus]:bg-surface-muted dark:data-[focus]:bg-neutral-70/30"
+          >
+            <FontAwesomeIcon icon={faRotateRight} className="text-xs opacity-70" />
+            {translate('corporation.selector.refresh')}
+          </button>
+        </MenuItem>
       </MenuItems>
     </Menu>
   )

@@ -612,6 +612,7 @@
   "corporation.selector.member": "Member",
   "corporation.selector.pendingtasks": "Pending validator tasks",
   "corporation.selector.pendingvotes": "Proposals awaiting your vote",
+  "corporation.selector.refresh": "Refresh corporations",
   "corporation.selector.error": "Discovery failed",
   "corporation.select.loading": "Corporation discovery is still running, retry in a moment."
 }
