@@ -93,10 +93,12 @@ function isRejected(result: PromiseSettledResult<unknown>): result is PromiseRej
   return result.status === 'rejected'
 }
 
-function firstError(results: PromiseSettledResult<unknown>[]): string | null {
-  const rejected = results.find(isRejected)
-  if (!rejected) return null
-  return rejected.reason instanceof Error ? rejected.reason.message : String(rejected.reason)
+function failureReason(results: PromiseSettledResult<unknown>[]): string | null {
+  const reasons = results
+    .filter(isRejected)
+    .map((result) => (result.reason instanceof Error ? result.reason.message : String(result.reason)))
+  const distinct = [...new Set(reasons)]
+  return distinct.length > 0 ? distinct.join('; ') : null
 }
 
 export async function discoverCorporations(address: string): Promise<CorporationDiscovery> {
@@ -121,7 +123,7 @@ export async function discoverCorporations(address: string): Promise<Corporation
         ]
       : []
   )
-  return { memberships, error: firstError([grantsResult, weightsResult, ...details]) }
+  return { memberships, error: failureReason([grantsResult, weightsResult, ...details]) }
 }
 
 const STORAGE_PREFIX = 'verana.acting-corporation:'

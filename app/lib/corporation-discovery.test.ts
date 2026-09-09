@@ -161,6 +161,33 @@ describe('discoverCorporations', () => {
     expect(discovered.memberships.map((entry) => entry.corporation.id)).toEqual([9])
     expect(discovered.error).toBe('Unable to resolve corporation: 502')
   })
+
+  it('reports both reasons when both sources fail', async () => {
+    stubFetch({ [AUTHORIZATIONS]: null, [MEMBERSHIPS]: null })
+
+    const discovered = await discoverCorporations('verana1operator')
+
+    expect(discovered.memberships).toEqual([])
+    expect(discovered.error).toBe(
+      'Unable to resolve operator authorizations: 502; Unable to resolve corporation memberships: 502'
+    )
+  })
+
+  it('reports a repeated detail failure once', async () => {
+    stubFetch({
+      [AUTHORIZATIONS]: { authorizations: [] },
+      [MEMBERSHIPS]: {
+        memberships: [
+          { corporation_id: 7, weight: '1' },
+          { corporation_id: 9, weight: '1' },
+        ],
+      },
+      [`${CORPORATION}7`]: null,
+      [`${CORPORATION}9`]: null,
+    })
+
+    expect((await discoverCorporations('verana1operator')).error).toBe('Unable to resolve corporation: 502')
+  })
 })
 
 describe('chooseActingMembership', () => {

@@ -50,7 +50,15 @@ export function CorporationSelector() {
         <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
           {translate('corporation.selector.title')}
         </p>
-        {memberships.length === 0 ? (
+        {error ? (
+          <div className="px-3 py-2">
+            <p className="text-xs font-semibold text-red-700 dark:text-red-300">
+              {translate('corporation.selector.error')}
+            </p>
+            <p className="mt-0.5 break-all text-xs text-gray-600 dark:text-gray-300">{error}</p>
+          </div>
+        ) : null}
+        {memberships.length === 0 && !error ? (
           <p className="px-3 py-2 text-sm text-gray-600 dark:text-gray-300">
             {translate('corporation.selector.empty')}
           </p>
