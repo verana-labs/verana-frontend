@@ -10,7 +10,7 @@ import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessa
 import { AddressIssueNote, addressIssue } from '@/ui/common/address-issue'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 import { groupMsgTypes, MODULE_LABELS } from './msg-type-groups'
-import { Card, formatDate, SectionTitle, YouBadge } from './shared'
+import { Card, formatDate, SectionTitle, SectionUnavailable, YouBadge } from './shared'
 
 const CHIP = 'text-xs px-2 py-1 rounded-md border max-w-full break-all text-left'
 const CHIP_ON =
@@ -210,6 +210,7 @@ export function OperatorsSection({
   revokeMode,
   grantMode,
   walletAddress,
+  degraded,
   onRevoke,
   onGrant,
 }: {
@@ -218,6 +219,7 @@ export function OperatorsSection({
   revokeMode: CorporationSigningMode | null
   grantMode: CorporationSigningMode | null
   walletAddress: string | undefined
+  degraded: boolean
   onRevoke: (operator: string) => void
   onGrant: (grantee: string, msgTypes: string[]) => void
 }) {
@@ -238,7 +240,9 @@ export function OperatorsSection({
             />
           ))}
           {authorizations.length === 0 ? (
-            <li className="py-2 text-sm text-gray-500">{translate('corporation.page.operators.empty')}</li>
+            <li className="py-2 text-sm text-gray-500">
+              {degraded ? <SectionUnavailable /> : translate('corporation.page.operators.empty')}
+            </li>
           ) : null}
         </ul>
         {grantMode ? <GrantOperatorForm mode={grantMode} onGrant={onGrant} /> : null}

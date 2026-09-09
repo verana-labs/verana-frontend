@@ -18,6 +18,10 @@ export function SectionTitle({ children }: { children: ReactNode }) {
   return <h2 className="text-lg font-bold text-gray-900 dark:text-white">{children}</h2>
 }
 
+export function SectionUnavailable() {
+  return <p className="text-sm text-amber-700 dark:text-amber-300">{translate('corporation.page.section.error')}</p>
+}
+
 export function Fact({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div>

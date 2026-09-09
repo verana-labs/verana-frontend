@@ -5,17 +5,19 @@ import { translate } from '@/i18n/dataview'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 import { formatVNAFromUVNA } from '@/util/util'
-import { Card, Fact, formatDate } from './shared'
+import { Card, Fact, formatDate, SectionUnavailable } from './shared'
 
 export function TrustDepositSection({
   trustDeposit,
   unrepaidSlash,
   repayMode,
+  degraded,
   onRepay,
 }: {
   trustDeposit: CorporationTrustDeposit | null
   unrepaidSlash: number
   repayMode: CorporationSigningMode | null
+  degraded: boolean
   onRepay: () => void
 }) {
   return (
@@ -52,6 +54,8 @@ export function TrustDepositSection({
             {translate('corporation.page.trustdeposit.note')}
           </p>
         </>
+      ) : degraded ? (
+        <SectionUnavailable />
       ) : (
         <p className="text-sm text-gray-500">{translate('corporation.page.trustdeposit.empty')}</p>
       )}

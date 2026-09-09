@@ -7,7 +7,7 @@ import { type GroupPolicy, type ProposalRow, type ProposalTally, useProposalVote
 import { translate } from '@/i18n/dataview'
 import type { VoteChoice } from '@/msg/actions_hooks/actionCorporationManage'
 import { shortenMiddle } from '@/util/util'
-import { Card, formatDate, formatRelative, SectionTitle, StatusBadge } from './shared'
+import { Card, formatDate, formatRelative, SectionTitle, SectionUnavailable, StatusBadge } from './shared'
 
 const FILTERS = ['all', 'SUBMITTED', 'ACCEPTED', 'REJECTED', 'ABORTED', 'WITHDRAWN'] as const
 type Filter = (typeof FILTERS)[number]
@@ -206,12 +206,14 @@ export function ProposalsSection({
   proposals,
   ctx,
   composing,
+  degraded,
   onCompose,
   composer,
 }: {
   proposals: ProposalRow[]
   ctx: ProposalContext
   composing: boolean
+  degraded: boolean
   onCompose: () => void
   composer: ReactNode
 }) {
@@ -254,7 +256,9 @@ export function ProposalsSection({
           )
         })}
       </div>
-      {visible.length === 0 ? (
+      {degraded ? (
+        <SectionUnavailable />
+      ) : visible.length === 0 ? (
         <p className="text-sm text-gray-500">{translate('corporation.page.proposals.empty')}</p>
       ) : (
         <div className="space-y-3">

@@ -751,6 +751,7 @@
   "corporation.proposals.voteabstain": "Abstain",
   "corporation.proposals.voteveto": "Veto",
   "corporation.proposals.tally": "{yes} of {total} yes · threshold {threshold}",
+  "corporation.page.section.error": "This section could not be loaded, the rest of the page is unaffected.",
   "corporation.address.invalid": "Enter a valid verana account address.",
   "corporation.address.duplicate": "This account is already listed.",
   "corporation.threshold.total": "Total member weight {total}.",

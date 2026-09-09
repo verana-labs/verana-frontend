@@ -84,6 +84,12 @@ export interface ActivityRow {
   changes: Record<string, unknown>
 }
 
+export interface DegradedSections {
+  trustDeposit: boolean
+  operatorAuthorizations: boolean
+  proposals: boolean
+}
+
 export interface CorporationDetails {
   profile: CorporationProfile
   members: GroupMemberRow[]
@@ -93,12 +99,32 @@ export interface CorporationDetails {
   vsOperatorAuthorizations: VsOperatorAuthorizationRow[]
   proposals: ProposalRow[]
   history: ActivityRow[]
+  degraded: DegradedSections
 }
 
 async function fetchJson(url: string, context: string): Promise<unknown> {
   const response = await fetch(url)
   if (!response.ok) throw new Error(`${context}: ${response.status}`)
   return response.json()
+}
+
+interface Degradable<T> {
+  value: T
+  failed: boolean
+}
+
+async function degrade<T>(context: string, fallback: T, task: () => Promise<T>): Promise<Degradable<T>> {
+  try {
+    return { value: await task(), failed: false }
+  } catch (cause) {
+    logger.error(context, cause)
+    return { value: fallback, failed: true }
+  }
+}
+
+function nullWhenMissing(cause: unknown): null {
+  if (cause instanceof Error && cause.message.endsWith(': 404')) return null
+  throw cause
 }
 
 export function parseProfile(payload: unknown): CorporationProfile {
@@ -314,47 +340,53 @@ export function useCorporationDetails(corporationId: number | undefined) {
     setLoading(true)
     setError(null)
     try {
-      const [profilePayload, groupPayload, authPayload, proposalsPayload] = await Promise.all([
-        fetchJson(`${VERANA_REST_ENDPOINT_CORPORATION}/get/${corporationId}`, 'Unable to fetch the corporation'),
-        fetchJson(`${VERANA_REST_ENDPOINT_GROUP}/get/${corporationId}`, 'Unable to fetch the group'),
-        fetchJson(
-          `${VERANA_REST_ENDPOINT_DELEGATION}/operator-authorizations?corporation_id=${corporationId}&only_active=true&limit=1024`,
-          'Unable to fetch operator authorizations'
+      const degrading = Promise.all([
+        degrade('operator authorizations', [] as OperatorAuthorizationRow[], () =>
+          fetchJson(
+            `${VERANA_REST_ENDPOINT_DELEGATION}/operator-authorizations?corporation_id=${corporationId}&only_active=true&limit=1024`,
+            'Unable to fetch operator authorizations'
+          ).then(parseOperatorAuthorizations)
         ),
-        fetchJson(
-          `${VERANA_REST_ENDPOINT_GROUP}/proposals?corporation_id=${corporationId}&limit=1024`,
-          'Unable to fetch proposals'
+        degrade('proposals', [] as ProposalRow[], () =>
+          fetchJson(
+            `${VERANA_REST_ENDPOINT_GROUP}/proposals?corporation_id=${corporationId}&limit=1024`,
+            'Unable to fetch proposals'
+          ).then(parseProposals)
         ),
-      ])
-      const [trustDeposit, vsAuthorizations, history] = await Promise.all([
-        fetchJson(`${VERANA_REST_ENDPOINT_TRUST_DEPOSIT}/get/${corporationId}`, 'Unable to fetch the trust deposit')
-          .then(parseTrustDeposit)
-          .catch((cause: unknown) => {
-            if (cause instanceof Error && cause.message.endsWith(': 404')) return null
-            throw cause
-          }),
-        fetchJson(
-          `${VERANA_REST_ENDPOINT_DELEGATION}/vs-operator-authorizations?corporation_id=${corporationId}&only_active=true&limit=1024`,
-          'Unable to fetch VS operator authorizations'
-        )
-          .then(parseVsOperatorAuthorizations)
-          .catch((cause: unknown) => {
-            logger.error('vs operator authorizations', cause)
-            return [] as VsOperatorAuthorizationRow[]
-          }),
+        degrade('trust deposit', null as CorporationTrustDeposit | null, () =>
+          fetchJson(`${VERANA_REST_ENDPOINT_TRUST_DEPOSIT}/get/${corporationId}`, 'Unable to fetch the trust deposit')
+            .then(parseTrustDeposit)
+            .catch(nullWhenMissing)
+        ),
+        degrade('vs operator authorizations', [] as VsOperatorAuthorizationRow[], () =>
+          fetchJson(
+            `${VERANA_REST_ENDPOINT_DELEGATION}/vs-operator-authorizations?corporation_id=${corporationId}&only_active=true&limit=1024`,
+            'Unable to fetch VS operator authorizations'
+          ).then(parseVsOperatorAuthorizations)
+        ),
         fetchCorporationHistory(corporationId),
       ])
+      const [profilePayload, groupPayload] = await Promise.all([
+        fetchJson(`${VERANA_REST_ENDPOINT_CORPORATION}/get/${corporationId}`, 'Unable to fetch the corporation'),
+        fetchJson(`${VERANA_REST_ENDPOINT_GROUP}/get/${corporationId}`, 'Unable to fetch the group'),
+      ])
+      const [authorizations, proposals, trustDeposit, vsAuthorizations, history] = await degrading
       if (requestRef.current !== requestId) return
       const { members, policy } = parseGroup(groupPayload)
       setDetails({
         profile: parseProfile(profilePayload),
         members,
         policy,
-        trustDeposit,
-        operatorAuthorizations: parseOperatorAuthorizations(authPayload),
-        vsOperatorAuthorizations: vsAuthorizations,
-        proposals: parseProposals(proposalsPayload),
+        trustDeposit: trustDeposit.value,
+        operatorAuthorizations: authorizations.value,
+        vsOperatorAuthorizations: vsAuthorizations.value,
+        proposals: proposals.value,
         history,
+        degraded: {
+          trustDeposit: trustDeposit.failed,
+          operatorAuthorizations: authorizations.failed,
+          proposals: proposals.failed,
+        },
       })
     } catch (cause) {
       if (requestRef.current !== requestId) return

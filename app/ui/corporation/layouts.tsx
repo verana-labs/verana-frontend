@@ -55,6 +55,7 @@ function section(view: CorporationView, tab: CorporationTab) {
           trustDeposit={details.trustDeposit}
           unrepaidSlash={view.unrepaidSlash}
           repayMode={view.modes.repay}
+          degraded={details.degraded.trustDeposit}
           onRepay={view.onRepay}
         />
       )
@@ -66,6 +67,7 @@ function section(view: CorporationView, tab: CorporationTab) {
           revokeMode={view.modes.revoke}
           grantMode={view.modes.grant}
           walletAddress={view.walletAddress}
+          degraded={details.degraded.operatorAuthorizations}
           onRevoke={view.onRevoke}
           onGrant={view.onGrant}
         />
@@ -76,6 +78,7 @@ function section(view: CorporationView, tab: CorporationTab) {
           proposals={details.proposals}
           ctx={view.proposalCtx}
           composing={view.composing}
+          degraded={details.degraded.proposals}
           onCompose={view.onCompose}
           composer={view.composer}
         />
