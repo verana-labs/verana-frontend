@@ -12,6 +12,7 @@ import { useRef } from 'react'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { findCorporationMembership, saveActingCorporationId, type UserCorporation } from '@/lib/corporation-discovery'
+import { logger } from '@/lib/logger'
 import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
 import { successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
@@ -142,6 +143,14 @@ function txHeight(result: DeliverTxResponse): number {
   return height
 }
 
+async function persistWhenDiscoverable(operator: string, corporationId: number): Promise<void> {
+  try {
+    if (await findCorporationMembership(operator, corporationId)) saveActingCorporationId(operator, corporationId)
+  } catch (error) {
+    logger.warn('Acting corporation left unpersisted, discovery did not see it yet', { corporationId, error })
+  }
+}
+
 export function useActionCorporation() {
   const veranaChain = useVeranaChain()
   const { address, isWalletConnected } = useChain(veranaChain.chain_name)
@@ -163,9 +172,9 @@ export function useActionCorporation() {
     const id = findEventAttribute(result.events, 'create_corporation', 'corporation_id')
     const policyAddress = findEventAttribute(result.events, 'create_corporation', 'policy_address')
     if (!id || !policyAddress) throw new Error('Create corporation transaction did not emit its identifiers')
-    saveActingCorporationId(operator, Number(id))
     const height = txHeight(result)
     const indexed = await waitForIndexerAfterTx(waitForBlock, height)
+    await persistWhenDiscoverable(operator, Number(id))
     const notification = successfulTxNotification(
       translate('notification.MsgCreateCorporation.success'),
       height,
@@ -196,6 +205,7 @@ export function useActionCorporation() {
     const indexed = await waitForIndexerAfterTx(waitForBlock, height)
     if (indexed) {
       const membership = await findCorporationMembership(operator, corporation.id)
+      if (membership) saveActingCorporationId(operator, corporation.id)
       if (!membership?.operator) {
         await notify(translate('notification.MsgGrantSelfOperatorAuthorization.pending'), 'success')
         return 'pending'
