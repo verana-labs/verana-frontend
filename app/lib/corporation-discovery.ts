@@ -209,6 +209,17 @@ export function chooseActingMembership(
   return memberships.length === 1 ? memberships[0] : null
 }
 
+export function claimIntendedMembership(
+  address: string,
+  memberships: CorporationMembership[],
+  intendedId: number | null
+): CorporationMembership | null {
+  const intended = memberships.find((membership) => membership.corporation.id === intendedId)
+  if (!intended) return null
+  saveActingCorporationId(address, intended.corporation.id)
+  return intended
+}
+
 export interface ActingRestore {
   membership: CorporationMembership | null
   lost: boolean

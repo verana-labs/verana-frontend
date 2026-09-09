@@ -9,12 +9,12 @@ import { MsgSend } from 'cosmjs-types/cosmos/bank/v1beta1/tx'
 import { Exec, MsgSubmitProposal } from 'cosmjs-types/cosmos/group/v1/tx'
 import { ThresholdDecisionPolicy } from 'cosmjs-types/cosmos/group/v1/types'
 import { useRef } from 'react'
+import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
-import { findCorporationMembership, saveActingCorporationId, type UserCorporation } from '@/lib/corporation-discovery'
-import { logger } from '@/lib/logger'
+import { findCorporationMembership, type UserCorporation } from '@/lib/corporation-discovery'
 import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
-import { successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
+import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import { extractTxHeight } from '@/msg/util/signerUtil'
 import { findEventAttribute } from '@/msg/util/txEvents'
@@ -143,21 +143,19 @@ function txHeight(result: DeliverTxResponse): number {
   return height
 }
 
-async function persistWhenDiscoverable(operator: string, corporationId: number): Promise<void> {
-  try {
-    if (await findCorporationMembership(operator, corporationId)) saveActingCorporationId(operator, corporationId)
-  } catch (error) {
-    logger.warn('Acting corporation left unpersisted, discovery did not see it yet', { corporationId, error })
-  }
-}
-
 export function useActionCorporation() {
   const veranaChain = useVeranaChain()
   const { address, isWalletConnected } = useChain(veranaChain.chain_name)
   const { waitForBlock } = useIndexerEvents()
+  const { actAsOnceDiscovered } = useUserCorporation()
   const { notify } = useNotification()
   const sendTx = useSendTxDetectingMode(veranaChain)
   const inFlight = useRef(false)
+
+  function adoptActingCorporation(corporationId: number, height: number, indexed: boolean): void {
+    actAsOnceDiscovered(corporationId)
+    if (!indexed) runAfterIndexerCatchesUp(waitForBlock, height, () => actAsOnceDiscovered(corporationId))
+  }
 
   async function createCorporation(params: CreateCorporationParams, operator: string): Promise<UserCorporation> {
     void notify(translate('notification.MsgCreateCorporation.inprogress'), 'inProgress')
@@ -174,7 +172,7 @@ export function useActionCorporation() {
     if (!id || !policyAddress) throw new Error('Create corporation transaction did not emit its identifiers')
     const height = txHeight(result)
     const indexed = await waitForIndexerAfterTx(waitForBlock, height)
-    await persistWhenDiscoverable(operator, Number(id))
+    adoptActingCorporation(Number(id), height, indexed)
     const notification = successfulTxNotification(
       translate('notification.MsgCreateCorporation.success'),
       height,
@@ -203,9 +201,9 @@ export function useActionCorporation() {
 
     const height = txHeight(result)
     const indexed = await waitForIndexerAfterTx(waitForBlock, height)
+    adoptActingCorporation(corporation.id, height, indexed)
     if (indexed) {
       const membership = await findCorporationMembership(operator, corporation.id)
-      if (membership) saveActingCorporationId(operator, corporation.id)
       if (!membership?.operator) {
         await notify(translate('notification.MsgGrantSelfOperatorAuthorization.pending'), 'success')
         return 'pending'
