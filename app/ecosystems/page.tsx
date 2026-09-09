@@ -1,13 +1,13 @@
 'use client'
 
 import { faPlus } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useEffect, useMemo, useState } from 'react'
 import AddEcosystemPage from '@/ecosystems/add/add'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
 import { useEcosystemsCtx } from '@/providers/api-rest-query-provider-context'
+import { EntityActionButton } from '@/ui/common/capability-button'
 import EcosystemCard from '@/ui/common/ecosystem-card'
 import EcosystemCardSkeleton from '@/ui/common/ecosystem-card-skeleton'
 import EcosystemsFilterBar, {
@@ -134,14 +134,13 @@ export default function EcosystemsPage() {
             </p>
           </div>
           <div className="flex-shrink-0">
-            <button
-              type="button"
+            <EntityActionButton
+              msgType="MsgCreateEcosystem"
+              icon={faPlus}
+              label={t('datatable.ecosystem.add', 'Create Ecosystem')}
               onClick={() => setAddEcosystem(true)}
-              className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
-            >
-              <FontAwesomeIcon icon={faPlus} className="mr-2" />
-              {t('datatable.ecosystem.add', 'Create Ecosystem')}
-            </button>
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
+            />
           </div>
         </div>
       </section>
