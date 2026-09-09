@@ -17,6 +17,7 @@ export type CorpStubOptions = {
   memberOnly?: boolean
   trustDeposit404?: boolean
   fresh?: boolean
+  sectionsDown?: boolean
 }
 
 export async function seedActingCorporation(page: Page, corporationId: number) {
@@ -32,13 +33,15 @@ export async function seedActingCorporation(page: Page, corporationId: number) {
 }
 
 export async function installCorporationStubs(page: Page, opts: CorpStubOptions = {}) {
-  const { memberOnly = false, trustDeposit404 = false, fresh = false } = opts
+  const { memberOnly = false, trustDeposit404 = false, fresh = false, sectionsDown = false } = opts
+  const unavailable = { status: 502, json: { error: 'indexer unavailable', code: 502 } }
 
   await page.route('**/v4/delegation/operator-authorizations*', (route) => {
     if (fresh || memberOnly) return route.fulfill({ json: { authorizations: [] } })
     const params = new URL(route.request().url()).searchParams
     const operator = params.get('operator')
     const corporationId = params.get('corporation_id')
+    if (sectionsDown && corporationId !== null) return route.fulfill(unavailable)
     return route.fulfill({
       json: {
         authorizations: OPERATOR_AUTHORIZATIONS.filter(
@@ -119,8 +122,9 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
         },
       })
     )
-    await page.route(`**/v4/trust-deposit/get/${id}`, (route) =>
-      trustDeposit404
+    await page.route(`**/v4/trust-deposit/get/${id}`, (route) => {
+      if (sectionsDown) return route.fulfill(unavailable)
+      return trustDeposit404
         ? route.fulfill({ status: 404, json: { error: 'not found', code: 404 } })
         : route.fulfill({
             json: {
@@ -138,13 +142,14 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
               },
             },
           })
-    )
+    })
   }
   await page.route('**/v4/group/proposals*', (route) => {
     const url = route.request().url()
     if (url.includes('pending_voter')) {
       return route.fulfill({ json: { proposals: url.includes('corporation_id=13') ? [{ id: 41 }] : [] } })
     }
+    if (sectionsDown) return route.fulfill(unavailable)
     return route.fulfill({ json: { proposals: PROPOSALS } })
   })
   await page.route('**/v4/group/votes*', (route) => {

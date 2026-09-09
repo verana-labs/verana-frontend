@@ -133,6 +133,19 @@ test('a missing trust deposit renders the empty state', async ({ page }) => {
   await expect(page.getByText('No trust deposit recorded for this corporation yet.')).toBeVisible({ timeout: 15_000 })
 })
 
+test('the overview reads unknown for every stat whose source failed', async ({ page }) => {
+  await installCorporationStubs(page, { sectionsDown: true })
+  await seedActingCorporation(page, 13)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  await page.goto('/corporation')
+  await expect(page.getByText('This section could not be loaded, the rest of the page is unaffected.')).toBeVisible({
+    timeout: 15_000,
+  })
+  await expect(page.getByText('Unknown', { exact: true })).toHaveCount(3)
+  await expect(page.getByText('0 (0 open)')).toBeHidden()
+})
+
 test('the corporation page and picker hold at mobile and tablet widths', async ({ page }) => {
   await installCorporationStubs(page)
   await seedActingCorporation(page, 13)
