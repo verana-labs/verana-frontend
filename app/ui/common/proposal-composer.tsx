@@ -17,6 +17,7 @@ import {
   useCorporationManage,
 } from '@/msg/actions_hooks/actionCorporationManage'
 import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
+import { AddressIssueNote, addressIssue } from '@/ui/common/address-issue'
 import { ThresholdHint } from '@/ui/common/threshold-hint'
 import { isValidDID } from '@/util/validations'
 
@@ -52,11 +53,22 @@ export function ProposalComposer({
   const [submitting, setSubmitting] = useState(false)
 
   const policyAddress = membership.corporation.policyAddress
-  const granteeValid = grantee.trim().startsWith('verana1')
+  const target = grantee.trim()
+  const granteeIssue = addressIssue(target, [])
+  const granteeValid = target.length > 0 && granteeIssue === null
+  const trimmedUpdates = memberUpdates.map((update) => ({ ...update, address: update.address.trim() }))
+  const updateIssues = trimmedUpdates.map((update, index) =>
+    addressIssue(
+      update.address,
+      trimmedUpdates.slice(0, index).map((listed) => listed.address)
+    )
+  )
   const membersValid =
-    memberUpdates.length > 0 &&
-    memberUpdates.every((update) => update.address.startsWith('verana1') && /^\d+$/.test(update.weight)) &&
-    memberUpdates.some((update) => update.weight !== '0')
+    trimmedUpdates.length > 0 &&
+    trimmedUpdates.every(
+      (update, index) => update.address.length > 0 && updateIssues[index] === null && /^\d+$/.test(update.weight)
+    ) &&
+    trimmedUpdates.some((update) => update.weight !== '0')
   const policyValid = /^[1-9]\d*$/.test(threshold) && /^[1-9]\d*$/.test(votingPeriod)
 
   const ready =
@@ -71,7 +83,6 @@ export function ProposalComposer({
             : isValidDID(did.trim())
 
   function compose(): { message: EncodeObject; title: string } {
-    const target = grantee.trim()
     switch (kind) {
       case 'grant':
         return {
@@ -85,7 +96,7 @@ export function ProposalComposer({
         }
       case 'members':
         return {
-          message: buildUpdateMembersMessage(membership, policy.groupId, memberUpdates),
+          message: buildUpdateMembersMessage(membership, policy.groupId, trimmedUpdates),
           title: 'Update the group members',
         }
       case 'policy':
@@ -141,6 +152,7 @@ export function ProposalComposer({
             placeholder="verana1…"
             className={inputClass}
           />
+          <AddressIssueNote issue={granteeIssue} />
         </label>
       ) : null}
 
@@ -174,37 +186,42 @@ export function ProposalComposer({
       {kind === 'members' ? (
         <div className="mt-3 space-y-2">
           {memberUpdates.map((update, index) => (
-            <div key={`update-${index}-${update.address}`} className="flex items-center gap-2 text-sm">
-              <input
-                value={update.address}
-                onChange={(event) =>
-                  setMemberUpdates(
-                    memberUpdates.map((entry, i) => (i === index ? { ...entry, address: event.target.value } : entry))
-                  )
-                }
-                placeholder="verana1…"
-                className="grow px-2 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface font-mono"
-              />
-              <label className="text-gray-500 dark:text-gray-400">
-                {translate('corporation.page.weight')}
+            <div key={`update-${index}`}>
+              <div className="flex items-center gap-2 text-sm">
                 <input
-                  value={update.weight}
+                  value={update.address}
                   onChange={(event) =>
                     setMemberUpdates(
-                      memberUpdates.map((entry, i) => (i === index ? { ...entry, weight: event.target.value } : entry))
+                      memberUpdates.map((entry, i) => (i === index ? { ...entry, address: event.target.value } : entry))
                     )
                   }
-                  className="ml-2 w-16 px-2 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface"
+                  placeholder="verana1…"
+                  className="grow px-2 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface font-mono"
                 />
-              </label>
-              <button
-                type="button"
-                aria-label={translate('corporation.wizard.removemember')}
-                onClick={() => setMemberUpdates(memberUpdates.filter((_, i) => i !== index))}
-                className="text-red-500 px-2"
-              >
-                <FontAwesomeIcon icon={faTrash} />
-              </button>
+                <label className="text-gray-500 dark:text-gray-400">
+                  {translate('corporation.page.weight')}
+                  <input
+                    value={update.weight}
+                    onChange={(event) =>
+                      setMemberUpdates(
+                        memberUpdates.map((entry, i) =>
+                          i === index ? { ...entry, weight: event.target.value } : entry
+                        )
+                      )
+                    }
+                    className="ml-2 w-16 px-2 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface"
+                  />
+                </label>
+                <button
+                  type="button"
+                  aria-label={translate('corporation.wizard.removemember')}
+                  onClick={() => setMemberUpdates(memberUpdates.filter((_, i) => i !== index))}
+                  className="text-red-500 px-2"
+                >
+                  <FontAwesomeIcon icon={faTrash} />
+                </button>
+              </div>
+              <AddressIssueNote issue={updateIssues[index]} />
             </div>
           ))}
           <button

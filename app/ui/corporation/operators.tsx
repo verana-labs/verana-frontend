@@ -7,6 +7,7 @@ import type { OperatorAuthorizationRow, VsOperatorAuthorizationRow } from '@/hoo
 import { translate } from '@/i18n/dataview'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
+import { AddressIssueNote, addressIssue } from '@/ui/common/address-issue'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 import { groupMsgTypes, MODULE_LABELS } from './msg-type-groups'
 import { Card, formatDate, SectionTitle, YouBadge } from './shared'
@@ -122,6 +123,9 @@ export function GrantOperatorForm({
   const [grantee, setGrantee] = useState('')
   const [selected, setSelected] = useState(() => new Set<string>(OPERATOR_GRANT_MESSAGE_TYPES))
   const [showTypes, setShowTypes] = useState(false)
+  const target = grantee.trim()
+  const granteeIssue = addressIssue(target, [])
+  const canSubmit = target.length > 0 && granteeIssue === null && selected.size > 0
 
   function toggle(typeUrl: string) {
     setSelected((previous) => {
@@ -137,8 +141,8 @@ export function GrantOperatorForm({
       className="mt-4 space-y-3"
       onSubmit={(event) => {
         event.preventDefault()
-        if (grantee.trim() && selected.size > 0) {
-          onGrant(grantee.trim(), [...selected])
+        if (canSubmit) {
+          onGrant(target, [...selected])
           setGrantee('')
         }
       }}
@@ -155,13 +159,14 @@ export function GrantOperatorForm({
         </label>
         <button
           type="submit"
-          disabled={!grantee.trim() || selected.size === 0}
+          disabled={!canSubmit}
           className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium disabled:opacity-60 flex items-center gap-2"
         >
           <SigningModeIcon mode={mode} />
           {translate('corporation.page.grant.submit')}
         </button>
       </div>
+      <AddressIssueNote issue={granteeIssue} />
       <button
         type="button"
         onClick={() => setShowTypes(!showTypes)}

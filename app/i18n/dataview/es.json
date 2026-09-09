@@ -751,6 +751,8 @@
   "corporation.proposals.voteabstain": "Abstenerse",
   "corporation.proposals.voteveto": "Veto",
   "corporation.proposals.tally": "{yes} de {total} sí · umbral {threshold}",
+  "corporation.address.invalid": "Introduce una dirección de cuenta verana válida.",
+  "corporation.address.duplicate": "Esta cuenta ya está en la lista.",
   "corporation.threshold.total": "Peso total de los miembros {total}.",
   "corporation.threshold.unanimity": "Un umbral de {threshold} exige que todos los miembros voten sí.",
   "corporation.time.in": "termina en {value}",

@@ -2,10 +2,12 @@ export const HARNESS_MNEMONIC =
   'fire inner worth basket annual click random life will style science wolf notice village hand curve urge rifle only attract tilt way strong cover'
 export const HARNESS_ADDRESS = 'verana1pjluhuuyzgdey0syket0xqthv2usmjfe4pta2s'
 export const OTHER_MEMBER = 'verana1h5m6c6a33kncyrm05rz4k4lj9u2q2t2dkzrnts'
-export const SECOND_OPERATOR = 'verana1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq'
+export const SECOND_OPERATOR = 'verana1uvdtvs7yfaaqajpykkw3r9xkpkkrxssqs8nnu7'
 export const ACME_DID = 'did:web:acme-trust.ch'
 export const PLAIN_DID = 'did:web:keplr-maxime-0825.devnet.verana.network'
 export const ACME_POLICY_ADDRESS = 'verana10ezj2lmcj3flaacqwrzv278aled0pen8cnx257sggeng2fdel53q0929dj'
+export const GRANTEE = 'verana1enndx0fjq23urqc9fpf66y7xwvhe2ajhme498v'
+export const REPLACEMENT_MEMBER = 'verana1y6hjwe5kpmuvw920cn5gje9mk7smgcgeuj4jdf'
 
 export const OPERATOR_GRANT_MESSAGE_TYPES = [
   '/verana.co.v1.MsgUpdateCorporation',
@@ -78,7 +80,7 @@ export const PROPOSALS = [
     voting_period_end: OPEN_VOTING_PERIOD_END,
     executor_result: 'NOT_RUN',
     proposers: [HARNESS_ADDRESS],
-    messages: [{ '@type': '/verana.de.v1.MsgGrantOperatorAuthorization', grantee: 'verana1grantee' }],
+    messages: [{ '@type': '/verana.de.v1.MsgGrantOperatorAuthorization', grantee: GRANTEE }],
     tally: tally(),
   },
   {

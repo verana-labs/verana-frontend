@@ -751,6 +751,8 @@
   "corporation.proposals.voteabstain": "Abstain",
   "corporation.proposals.voteveto": "Veto",
   "corporation.proposals.tally": "{yes} of {total} yes · threshold {threshold}",
+  "corporation.address.invalid": "Enter a valid verana account address.",
+  "corporation.address.duplicate": "This account is already listed.",
   "corporation.threshold.total": "Total member weight {total}.",
   "corporation.threshold.unanimity": "A threshold of {threshold} needs every member to vote yes.",
   "corporation.time.in": "ends in {value}",

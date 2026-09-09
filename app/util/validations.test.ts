@@ -7,6 +7,7 @@ import {
   isValidField,
   isValidHttpUrl,
   isValidLanguageTag,
+  isValidVeranaAddress,
 } from '@/util/validations'
 
 const dataField = (
@@ -30,6 +31,23 @@ describe('isValidDID', () => {
     expect(isValidDID('did:example')).toBe(false)
     expect(isValidDID('not-a-did')).toBe(false)
     expect(isValidDID('did::123')).toBe(false)
+  })
+})
+
+describe('isValidVeranaAddress', () => {
+  it('accepts account and policy addresses', () => {
+    expect(isValidVeranaAddress('verana1pjluhuuyzgdey0syket0xqthv2usmjfe4pta2s')).toBe(true)
+    expect(isValidVeranaAddress('verana10ezj2lmcj3flaacqwrzv278aled0pen8cnx257sggeng2fdel53q0929dj')).toBe(true)
+  })
+
+  it('rejects anything that is not bech32 under the verana prefix', () => {
+    expect(isValidVeranaAddress('')).toBe(false)
+    expect(isValidVeranaAddress('verana1grantee')).toBe(false)
+    expect(isValidVeranaAddress('verana1fixedagain')).toBe(false)
+    expect(isValidVeranaAddress('verana1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq')).toBe(false)
+    expect(isValidVeranaAddress('cosmos1pjluhuuyzgdey0syket0xqthv2usmjfe9frdjy')).toBe(false)
+    expect(isValidVeranaAddress('veranavaloper1pjluhuuyzgdey0syket0xqthv2usmjfe5wqvks')).toBe(false)
+    expect(isValidVeranaAddress(' verana1pjluhuuyzgdey0syket0xqthv2usmjfe4pta2s')).toBe(false)
   })
 })
 

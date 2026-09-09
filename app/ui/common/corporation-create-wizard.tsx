@@ -9,6 +9,7 @@ import { translate } from '@/i18n/dataview'
 import type { UserCorporation } from '@/lib/corporation-discovery'
 import { canonicalizeLanguageTag } from '@/lib/language'
 import { type CorporationMemberInput, useActionCorporation } from '@/msg/actions_hooks/actionCorporation'
+import { AddressIssueNote, addressIssue } from '@/ui/common/address-issue'
 import { LanguageCombobox } from '@/ui/common/language-combobox'
 import { ThresholdHint } from '@/ui/common/threshold-hint'
 import { shortenMiddle } from '@/util/util'
@@ -82,10 +83,21 @@ export function CorporationCreateWizard({ onDone }: { onDone: () => void }) {
 
   if (!address) return null
 
-  const members: CorporationMemberInput[] = [{ address, weight: ownWeight }, ...extraMembers]
+  const members: CorporationMemberInput[] = [
+    { address, weight: ownWeight },
+    ...extraMembers.map((member) => ({ ...member, address: member.address.trim() })),
+  ]
+  const memberIssues = members.map((member, index) =>
+    addressIssue(
+      member.address,
+      members.slice(0, index).map((listed) => listed.address)
+    )
+  )
   const identityValid = isValidDID(did.trim()) && language.length > 0 && isValidHttpUrl(docUrl.trim())
   const membersValid =
-    members.every((member) => member.address.startsWith('verana1') && /^[1-9]\d*$/.test(member.weight)) &&
+    members.every(
+      (member, index) => member.address.length > 0 && memberIssues[index] === null && /^[1-9]\d*$/.test(member.weight)
+    ) &&
     /^[1-9]\d*$/.test(threshold) &&
     /^[1-9]\d*$/.test(votingPeriod)
   const fundingValid = /^\d+$/.test(fundingUvna)
@@ -184,33 +196,38 @@ export function CorporationCreateWizard({ onDone }: { onDone: () => void }) {
               <span className="text-xs text-gray-500 dark:text-gray-400">{translate('corporation.wizard.you')}</span>
             </div>
             {extraMembers.map((member, index) => (
-              <div key={`member-${index}-${member.address}`} className="flex items-center gap-2 text-sm">
-                <input
-                  value={member.address}
-                  onChange={(e) =>
-                    setExtraMembers(extraMembers.map((m, i) => (i === index ? { ...m, address: e.target.value } : m)))
-                  }
-                  placeholder="verana1…"
-                  className="grow px-2 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface font-mono"
-                />
-                <label className="text-gray-500 dark:text-gray-400">
-                  {translate('corporation.page.weight')}
+              <div key={`member-${index}`}>
+                <div className="flex items-center gap-2 text-sm">
                   <input
-                    value={member.weight}
+                    value={member.address}
                     onChange={(e) =>
-                      setExtraMembers(extraMembers.map((m, i) => (i === index ? { ...m, weight: e.target.value } : m)))
+                      setExtraMembers(extraMembers.map((m, i) => (i === index ? { ...m, address: e.target.value } : m)))
                     }
-                    className="ml-2 w-16 px-2 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface"
+                    placeholder="verana1…"
+                    className="grow px-2 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface font-mono"
                   />
-                </label>
-                <button
-                  type="button"
-                  aria-label={translate('corporation.wizard.removemember')}
-                  onClick={() => setExtraMembers(extraMembers.filter((_, i) => i !== index))}
-                  className="text-red-500 px-2"
-                >
-                  <FontAwesomeIcon icon={faTrash} />
-                </button>
+                  <label className="text-gray-500 dark:text-gray-400">
+                    {translate('corporation.page.weight')}
+                    <input
+                      value={member.weight}
+                      onChange={(e) =>
+                        setExtraMembers(
+                          extraMembers.map((m, i) => (i === index ? { ...m, weight: e.target.value } : m))
+                        )
+                      }
+                      className="ml-2 w-16 px-2 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    aria-label={translate('corporation.wizard.removemember')}
+                    onClick={() => setExtraMembers(extraMembers.filter((_, i) => i !== index))}
+                    className="text-red-500 px-2"
+                  >
+                    <FontAwesomeIcon icon={faTrash} />
+                  </button>
+                </div>
+                <AddressIssueNote issue={memberIssues[index + 1]} />
               </div>
             ))}
             <button
@@ -274,8 +291,8 @@ export function CorporationCreateWizard({ onDone }: { onDone: () => void }) {
                 {translate('corporation.page.members')}
               </dt>
               <dd>
-                {members.map((member) => (
-                  <span key={member.address} className="block font-mono">
+                {members.map((member, index) => (
+                  <span key={`review-${index}-${member.address}`} className="block font-mono">
                     {shortenMiddle(member.address, 26)} ×{member.weight}
                   </span>
                 ))}

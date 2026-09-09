@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test'
 import { connectWallet } from './support/connect'
+import { GRANTEE, REPLACEMENT_MEMBER } from './support/corp-fixtures'
 import { HARNESS_MNEMONIC, installCorporationStubs, seedActingCorporation } from './support/corp-stubs'
 
 async function noHorizontalOverflow(page: Page) {
@@ -171,7 +172,7 @@ test('the proposal composer gates each kind on valid input', async ({ page }) =>
   await expect(submit).toBeDisabled()
   await page.getByLabel('Grantee account').fill('cosmos1notverana')
   await expect(submit).toBeDisabled()
-  await page.getByLabel('Grantee account').fill('verana1grantee')
+  await page.getByLabel('Grantee account').fill(GRANTEE)
   await expect(submit).toBeEnabled()
 
   await page.getByLabel('Proposal type').selectOption('members')
@@ -181,7 +182,7 @@ test('the proposal composer gates each kind on valid input', async ({ page }) =>
   const firstMember = page.getByPlaceholder('verana1…').first()
   await firstMember.fill('broken')
   await expect(submit).toBeDisabled()
-  await firstMember.fill('verana1fixedagain')
+  await firstMember.fill(REPLACEMENT_MEMBER)
   await expect(submit).toBeEnabled()
 
   await page.getByLabel('Proposal type').selectOption('policy')

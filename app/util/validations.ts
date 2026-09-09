@@ -1,11 +1,21 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: legacy code */
+import { fromBech32 } from '@cosmjs/encoding'
 import type { DataField } from '@/ui/dataview/types'
 
 const DID_PATTERN = /^did:[a-zA-Z0-9]+:[a-zA-Z0-9._:%-]+$/
 const LANGUAGE_TAG_PATTERN = /^[a-z]{2}$/
+const VERANA_ADDRESS_PREFIX = 'verana'
 
 export function isValidDID(did: string): boolean {
   return DID_PATTERN.test(did)
+}
+
+export function isValidVeranaAddress(address: string): boolean {
+  try {
+    return fromBech32(address).prefix === VERANA_ADDRESS_PREFIX
+  } catch {
+    return false
+  }
 }
 
 export function isValidLanguageTag(lang: string): boolean {
