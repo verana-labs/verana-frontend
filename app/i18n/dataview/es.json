@@ -759,6 +759,7 @@
   "corporation.time.in": "termina en {value}",
   "corporation.time.ago": "terminó hace {value}",
   "common.none": "Ninguno",
+  "common.unknown": "Desconocido",
   "corporation.page.modified": "Modificada",
   "account.corporation.moved": "La configuración y gestión de la corporación se movieron a la página Corporación.",
   "account.corporation.moved.link": "Abrir Corporación"

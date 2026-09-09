@@ -759,6 +759,7 @@
   "corporation.time.in": "ends in {value}",
   "corporation.time.ago": "ended {value} ago",
   "common.none": "None",
+  "common.unknown": "Unknown",
   "corporation.page.modified": "Modified",
   "account.corporation.moved": "Corporation setup and management moved to the Corporation page.",
   "account.corporation.moved.link": "Open Corporation"
