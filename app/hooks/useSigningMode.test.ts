@@ -22,7 +22,7 @@ function membership(overrides: Partial<CorporationMembership> = {}): Corporation
 
 describe('resolveActionSigning', () => {
   it('leaves non-delegable actions alone', () => {
-    expect(resolveActionSigning('copy', membership({ grantedMessageTypes: [], member: false }), false)).toEqual({
+    expect(resolveActionSigning('copy', membership({ grantedMessageTypes: [], member: false }), false, true)).toEqual({
       mode: null,
       disabled: false,
       reason: undefined,
@@ -30,24 +30,35 @@ describe('resolveActionSigning', () => {
   })
 
   it('disables without a reason while discovery is loading', () => {
-    expect(resolveActionSigning('MsgArchiveEcosystem', null, true)).toEqual({
+    expect(resolveActionSigning('MsgArchiveEcosystem', null, true, true)).toEqual({
       mode: null,
       disabled: true,
       reason: undefined,
     })
   })
 
-  it('stays enabled without an acting corporation so the click can ask for one', () => {
-    expect(resolveActionSigning('MsgArchiveEcosystem', null, false).disabled).toBe(false)
+  it('leaves the action alone for a visitor with no wallet connected', () => {
+    expect(resolveActionSigning('MsgArchiveEcosystem', null, false, false)).toEqual({
+      mode: null,
+      disabled: false,
+      reason: undefined,
+    })
+  })
+
+  it('disables with the selection reason when a wallet is connected but no corporation acts', () => {
+    const signing = resolveActionSigning('MsgArchiveEcosystem', null, false, true)
+    expect(signing.mode).toBeNull()
+    expect(signing.disabled).toBe(true)
+    expect(signing.reason).toBe('Create or select a corporation before continuing.')
   })
 
   it('is operator mode when the grant covers the message type', () => {
-    expect(resolveActionSigning('MsgArchiveEcosystem', membership(), false).mode).toBe('operator')
-    expect(resolveActionSigning('MsgUnarchiveEcosystem', membership(), false).mode).toBe('operator')
+    expect(resolveActionSigning('MsgArchiveEcosystem', membership(), false, true).mode).toBe('operator')
+    expect(resolveActionSigning('MsgUnarchiveEcosystem', membership(), false, true).mode).toBe('operator')
   })
 
   it('falls back to a proposal for members without the grant', () => {
-    const signing = resolveActionSigning('MsgArchiveEcosystem', membership({ grantedMessageTypes: [] }), false)
+    const signing = resolveActionSigning('MsgArchiveEcosystem', membership({ grantedMessageTypes: [] }), false, true)
     expect(signing).toEqual({ mode: 'proposal', disabled: false, reason: undefined })
   })
 
@@ -55,7 +66,8 @@ describe('resolveActionSigning', () => {
     const signing = resolveActionSigning(
       'MsgArchiveEcosystem',
       membership({ grantedMessageTypes: [], member: false }),
-      false
+      false,
+      true
     )
     expect(signing.mode).toBeNull()
     expect(signing.disabled).toBe(true)

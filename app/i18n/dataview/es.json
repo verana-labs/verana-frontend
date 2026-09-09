@@ -820,6 +820,7 @@
   "account.corporations.notice": "Las corporaciones se crean y gestionan en la página Corporación.",
   "account.corporations.notice.link": "Abrir Corporación",
   "corporation.capability.none": "Tu billetera no tiene autorización para esta acción en la corporación activa.",
+  "corporation.capability.select": "Cree o seleccione una corporación antes de continuar.",
   "corporation.lost.title": "Ya no puedes actuar por {corporation}",
   "corporation.lost.desc": "Tu autorización de operador fue revocada o expiró y tu billetera salió de su grupo. No se envió nada con el contexto anterior.",
   "corporation.lost.choose": "Elegir otra corporación",

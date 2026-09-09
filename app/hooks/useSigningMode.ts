@@ -1,6 +1,8 @@
 'use client'
 
+import { useChain } from '@cosmos-kit/react'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
+import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import { type CorporationSigningMode, corporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
@@ -15,22 +17,23 @@ export interface ActionSigning {
 
 const PLAIN: ActionSigning = { mode: null, disabled: false, reason: undefined }
 
+function blocked(key: string): ActionSigning {
+  return { mode: null, disabled: true, reason: resolveTranslatable({ key }, translate) }
+}
+
 export function resolveActionSigning(
   msgType: string,
   actingCorporation: CorporationMembership | null,
-  loading: boolean
+  loading: boolean,
+  connected: boolean
 ): ActionSigning {
   const typeUrl = delegableTypeUrl(msgType)
   if (!typeUrl) return PLAIN
   if (loading) return { mode: null, disabled: true, reason: undefined }
-  if (!actingCorporation) return PLAIN
+  if (!actingCorporation) return connected ? blocked('corporation.capability.select') : PLAIN
   const mode = corporationSigningMode(typeUrl, actingCorporation)
   if (mode) return { mode, disabled: false, reason: undefined }
-  return {
-    mode: null,
-    disabled: true,
-    reason: resolveTranslatable({ key: 'corporation.capability.none' }, translate),
-  }
+  return blocked('corporation.capability.none')
 }
 
 export function useSigningMode(typeUrl: string | undefined): CorporationSigningMode | null {
@@ -40,6 +43,8 @@ export function useSigningMode(typeUrl: string | undefined): CorporationSigningM
 }
 
 export function useActionSigning(msgType: string): ActionSigning {
+  const veranaChain = useVeranaChain()
+  const { address } = useChain(veranaChain.chain_name)
   const { actingCorporation, loading } = useUserCorporation()
-  return resolveActionSigning(msgType, actingCorporation, loading)
+  return resolveActionSigning(msgType, actingCorporation, loading, Boolean(address))
 }
