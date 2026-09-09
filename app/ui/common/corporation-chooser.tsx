@@ -8,7 +8,7 @@ import { CorporationMembershipRow } from '@/ui/common/corporation-membership-row
 function keepOpen() {}
 
 export function CorporationChooser() {
-  const { memberships, needsSelection, attention, setActingCorporation } = useUserCorporation()
+  const { memberships, needsSelection, actingCorporationLost, attention, setActingCorporation } = useUserCorporation()
 
   return (
     <Dialog open={needsSelection} onClose={keepOpen} className="relative z-50">
@@ -19,6 +19,11 @@ export function CorporationChooser() {
             {translate('corporation.chooser.title')}
           </DialogTitle>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{translate('corporation.chooser.desc')}</p>
+          {actingCorporationLost ? (
+            <p className="mb-4 rounded-lg bg-amber-100 px-3 py-2 text-sm text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
+              {translate('corporation.chooser.lost')}
+            </p>
+          ) : null}
           <div className="space-y-2">
             {memberships.map((membership) => (
               <button

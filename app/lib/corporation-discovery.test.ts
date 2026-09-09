@@ -267,26 +267,45 @@ describe('restoreActingMembership', () => {
   it('restores the persisted corporation when the account still acts for it', () => {
     stubStorage()
     saveActingCorporationId('verana1operator', 9)
-    expect(restoreActingMembership('verana1operator', [membership(7), membership(9)])?.corporation.id).toBe(9)
+    expect(restoreActingMembership('verana1operator', [membership(7), membership(9)])).toEqual({
+      membership: membership(9),
+      lost: false,
+    })
   })
 
-  it('clears a persisted corporation the account can no longer act for', () => {
+  it('reports a persisted corporation the account can no longer act for as lost', () => {
     const store = stubStorage()
     saveActingCorporationId('verana1operator', 4)
-    expect(restoreActingMembership('verana1operator', [membership(7), membership(9)])).toBeNull()
+    expect(restoreActingMembership('verana1operator', [membership(7), membership(9)])).toEqual({
+      membership: null,
+      lost: true,
+    })
     expect(store.has(STORAGE_KEY)).toBe(false)
   })
 
-  it('persists a sole membership it auto-selects', () => {
+  it('never falls back to the sole survivor when the persisted corporation is gone', () => {
     stubStorage()
-    expect(restoreActingMembership('verana1operator', [membership(7)])?.corporation.id).toBe(7)
+    saveActingCorporationId('verana1operator', 13)
+    expect(restoreActingMembership('verana1operator', [membership(12)])).toEqual({ membership: null, lost: true })
+    expect(loadActingCorporationId('verana1operator')).toBeNull()
+  })
+
+  it('persists a sole membership it auto-selects on first connect', () => {
+    stubStorage()
+    expect(restoreActingMembership('verana1operator', [membership(7)])).toEqual({
+      membership: membership(7),
+      lost: false,
+    })
     expect(loadActingCorporationId('verana1operator')).toBe(7)
   })
 
   it('keeps the persisted choice and picks nothing when discovery was partial', () => {
     stubStorage()
     saveActingCorporationId('verana1operator', 4)
-    expect(restoreActingMembership('verana1operator', [membership(9)], true)).toBeNull()
+    expect(restoreActingMembership('verana1operator', [membership(9)], true)).toEqual({
+      membership: null,
+      lost: false,
+    })
     expect(loadActingCorporationId('verana1operator')).toBe(4)
   })
 })

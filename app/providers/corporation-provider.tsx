@@ -20,6 +20,7 @@ export interface CorporationContextValue {
   needsSelection: boolean
   loading: boolean
   error: string | null
+  actingCorporationLost: boolean
   attention: Record<number, CorporationAttention>
   setActingCorporation: (corporationId: number) => void
   refetch: () => Promise<void>
@@ -33,6 +34,7 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
   const [memberships, setMemberships] = useState<CorporationMembership[]>([])
   const [actingCorporationId, setActingCorporationId] = useState<number | null>(null)
   const [attention, setAttention] = useState<Record<number, CorporationAttention>>({})
+  const [actingCorporationLost, setActingCorporationLost] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const runId = useRef(0)
@@ -49,8 +51,10 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
       ? mergeKnownMemberships(knownMemberships.current, discovered.memberships)
       : discovered.memberships
     knownMemberships.current = known
+    const restored = restoreActingMembership(account, known, discovered.error !== null)
     setMemberships(known)
-    setActingCorporationId(restoreActingMembership(account, known, discovered.error !== null)?.corporation.id ?? null)
+    setActingCorporationId(restored.membership?.corporation.id ?? null)
+    setActingCorporationLost(restored.lost)
     setError(discovered.error)
     setLoading(false)
     if (known.length === 0) return
@@ -71,6 +75,7 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
     knownMemberships.current = []
     setMemberships([])
     setActingCorporationId(null)
+    setActingCorporationLost(false)
     setAttention({})
     setError(null)
     if (!address) {
@@ -85,6 +90,7 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
       if (!address || !memberships.some((membership) => membership.corporation.id === corporationId)) return
       saveActingCorporationId(address, corporationId)
       setActingCorporationId(corporationId)
+      setActingCorporationLost(false)
     },
     [address, memberships]
   )
@@ -102,11 +108,21 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
       needsSelection: !loading && !actingCorporation && memberships.length > 0,
       loading,
       error,
+      actingCorporationLost,
       attention,
       setActingCorporation,
       refetch,
     }
-  }, [memberships, actingCorporationId, loading, error, attention, setActingCorporation, refetch])
+  }, [
+    memberships,
+    actingCorporationId,
+    loading,
+    error,
+    actingCorporationLost,
+    attention,
+    setActingCorporation,
+    refetch,
+  ])
 
   return <CorporationContext.Provider value={value}>{children}</CorporationContext.Provider>
 }

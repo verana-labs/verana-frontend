@@ -199,17 +199,25 @@ export function chooseActingMembership(
   return memberships.length === 1 ? memberships[0] : null
 }
 
+export interface ActingRestore {
+  membership: CorporationMembership | null
+  lost: boolean
+}
+
 export function restoreActingMembership(
   address: string,
   memberships: CorporationMembership[],
   partial = false
-): CorporationMembership | null {
+): ActingRestore {
   const persistedId = loadActingCorporationId(address)
   const persisted = memberships.find((membership) => membership.corporation.id === persistedId)
-  if (persisted) return persisted
-  if (partial) return null
-  if (persistedId !== null) forgetActingCorporationId(address)
+  if (persisted) return { membership: persisted, lost: false }
+  if (partial) return { membership: null, lost: false }
+  if (persistedId !== null) {
+    forgetActingCorporationId(address)
+    return { membership: null, lost: true }
+  }
   const chosen = chooseActingMembership(memberships, null)
   if (chosen) saveActingCorporationId(address, chosen.corporation.id)
-  return chosen
+  return { membership: chosen, lost: false }
 }

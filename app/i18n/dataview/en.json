@@ -601,6 +601,7 @@
   "notconnected.msg": "Connect a compatible wallet to interact with the Verana network.",
   "corporation.chooser.title": "Choose your acting corporation",
   "corporation.chooser.desc": "This wallet can act for several corporations. Pick the one to work as; you can switch anytime from the header.",
+  "corporation.chooser.lost": "The corporation you were acting for is no longer available to this wallet. Pick another one to continue.",
   "corporation.selector.title": "Acting corporation",
   "corporation.selector.choose": "Choose a corporation",
   "corporation.selector.none": "No corporation",
