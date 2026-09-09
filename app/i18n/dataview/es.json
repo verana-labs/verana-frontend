@@ -601,6 +601,8 @@
   "notconnected.msg": "Conecte una cartera compatible para interactuar con la red Verana.",
   "corporation.chooser.title": "Elige tu corporación activa",
   "corporation.chooser.desc": "Esta billetera puede actuar por varias corporaciones. Elige con cuál trabajar; puedes cambiar en cualquier momento desde la cabecera.",
+  "corporation.chooser.failed": "La detección falló, por lo que esta lista puede estar incompleta.",
+  "corporation.chooser.retry": "Reintentar la detección",
   "corporation.chooser.lost": "La corporación por la que actuabas ya no está disponible para esta billetera. Elige otra para continuar.",
   "corporation.selector.title": "Corporación activa",
   "corporation.selector.choose": "Elige una corporación",
