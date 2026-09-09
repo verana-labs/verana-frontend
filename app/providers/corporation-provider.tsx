@@ -8,7 +8,7 @@ import {
   type CorporationMembership,
   discoverCorporations,
   forgetActingCorporationId,
-  hasWalletSession,
+  invalidatesActingSession,
   mergeKnownMemberships,
   restoreActingMembership,
   saveActingCorporationId,
@@ -29,7 +29,7 @@ export const CorporationContext = createContext<CorporationContextValue | null>(
 
 export function CorporationProvider({ children }: { children: React.ReactNode }) {
   const veranaChain = useVeranaChain()
-  const { address } = useChain(veranaChain.chain_name)
+  const { address, isWalletDisconnected } = useChain(veranaChain.chain_name)
   const [memberships, setMemberships] = useState<CorporationMembership[]>([])
   const [actingCorporationId, setActingCorporationId] = useState<number | null>(null)
   const [attention, setAttention] = useState<Record<number, CorporationAttention>>({})
@@ -62,8 +62,9 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
   }, [])
 
   useEffect(() => {
-    if (lastAccount.current && lastAccount.current !== address && (address || !hasWalletSession())) {
-      forgetActingCorporationId(lastAccount.current)
+    const previousAccount = lastAccount.current
+    if (previousAccount && invalidatesActingSession(previousAccount, address, isWalletDisconnected)) {
+      forgetActingCorporationId(previousAccount)
     }
     if (address) lastAccount.current = address
     runId.current += 1
@@ -77,7 +78,7 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
       return
     }
     void discover(address)
-  }, [address, discover])
+  }, [address, isWalletDisconnected, discover])
 
   const setActingCorporation = useCallback(
     (corporationId: number) => {

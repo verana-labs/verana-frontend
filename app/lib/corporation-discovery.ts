@@ -163,13 +163,13 @@ export function saveActingCorporationId(address: string, corporationId: number):
   }
 }
 
-export function hasWalletSession(): boolean {
-  try {
-    const accounts = window.localStorage.getItem('cosmos-kit@2:core//accounts')
-    return accounts !== null && accounts !== '[]'
-  } catch {
-    return false
-  }
+export function invalidatesActingSession(
+  previousAddress: string,
+  address: string | undefined,
+  walletDisconnected: boolean
+): boolean {
+  if (previousAddress === address) return false
+  return Boolean(address) || walletDisconnected
 }
 
 export function forgetActingCorporationId(address: string): void {

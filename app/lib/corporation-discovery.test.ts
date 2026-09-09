@@ -12,7 +12,7 @@ import {
   chooseActingMembership,
   discoverCorporations,
   forgetActingCorporationId,
-  hasWalletSession,
+  invalidatesActingSession,
   loadActingCorporationId,
   mergeKnownMemberships,
   restoreActingMembership,
@@ -244,14 +244,22 @@ describe('forgetActingCorporationId', () => {
   })
 })
 
-describe('hasWalletSession', () => {
-  it('is true only while cosmos-kit still holds an account', () => {
-    stubStorage({ 'cosmos-kit@2:core//accounts': '[{"address":"verana1operator"}]' })
-    expect(hasWalletSession()).toBe(true)
-    stubStorage({ 'cosmos-kit@2:core//accounts': '[]' })
-    expect(hasWalletSession()).toBe(false)
-    stubStorage()
-    expect(hasWalletSession()).toBe(false)
+describe('invalidatesActingSession', () => {
+  it('invalidates on an account switch', () => {
+    expect(invalidatesActingSession('verana1operator', 'verana1other', false)).toBe(true)
+  })
+
+  it('invalidates on an explicit disconnect', () => {
+    expect(invalidatesActingSession('verana1operator', undefined, true)).toBe(true)
+  })
+
+  it('keeps the session while the address is transiently lost', () => {
+    expect(invalidatesActingSession('verana1operator', undefined, false)).toBe(false)
+  })
+
+  it('keeps the session while the same account stays connected', () => {
+    expect(invalidatesActingSession('verana1operator', 'verana1operator', false)).toBe(false)
+    expect(invalidatesActingSession('verana1operator', 'verana1operator', true)).toBe(false)
   })
 })
 
