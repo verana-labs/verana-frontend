@@ -10,6 +10,7 @@ import type { UserCorporation } from '@/lib/corporation-discovery'
 import { canonicalizeLanguageTag } from '@/lib/language'
 import { type CorporationMemberInput, useActionCorporation } from '@/msg/actions_hooks/actionCorporation'
 import { LanguageCombobox } from '@/ui/common/language-combobox'
+import { ThresholdHint } from '@/ui/common/threshold-hint'
 import { shortenMiddle } from '@/util/util'
 import { isValidDID, isValidHttpUrl } from '@/util/validations'
 
@@ -18,6 +19,13 @@ type WizardStep = (typeof STEPS)[number]
 
 const inputClass =
   'mt-2 w-full px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface'
+
+function totalMemberWeight(members: CorporationMemberInput[]): number {
+  return members.reduce((total, member) => {
+    const weight = Number(member.weight)
+    return total + (Number.isFinite(weight) ? weight : 0)
+  }, 0)
+}
 const primaryButton =
   'px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium disabled:opacity-60'
 const ghostButton = 'px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg font-medium'
@@ -81,6 +89,7 @@ export function CorporationCreateWizard({ onDone }: { onDone: () => void }) {
     /^[1-9]\d*$/.test(threshold) &&
     /^[1-9]\d*$/.test(votingPeriod)
   const fundingValid = /^\d+$/.test(fundingUvna)
+  const totalWeight = totalMemberWeight(members)
 
   async function create() {
     setBusy(true)
@@ -214,10 +223,13 @@ export function CorporationCreateWizard({ onDone }: { onDone: () => void }) {
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {translate('corporation.page.threshold')}
-              <input value={threshold} onChange={(e) => setThreshold(e.target.value)} className={inputClass} />
-            </label>
+            <div>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {translate('corporation.page.threshold')}
+                <input value={threshold} onChange={(e) => setThreshold(e.target.value)} className={inputClass} />
+              </label>
+              <ThresholdHint threshold={Number(threshold)} totalWeight={totalWeight} />
+            </div>
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {translate('corporation.wizard.votingperiod')}
               <input value={votingPeriod} onChange={(e) => setVotingPeriod(e.target.value)} className={inputClass} />

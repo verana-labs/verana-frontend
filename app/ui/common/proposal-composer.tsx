@@ -17,6 +17,7 @@ import {
   useCorporationManage,
 } from '@/msg/actions_hooks/actionCorporationManage'
 import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
+import { ThresholdHint } from '@/ui/common/threshold-hint'
 import { isValidDID } from '@/util/validations'
 
 const KINDS = ['grant', 'revoke', 'members', 'policy', 'rotate'] as const
@@ -220,10 +221,13 @@ export function ProposalComposer({
 
       {kind === 'policy' ? (
         <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-xl">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {translate('corporation.page.threshold')}
-            <input value={threshold} onChange={(event) => setThreshold(event.target.value)} className={inputClass} />
-          </label>
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {translate('corporation.page.threshold')}
+              <input value={threshold} onChange={(event) => setThreshold(event.target.value)} className={inputClass} />
+            </label>
+            <ThresholdHint threshold={Number(threshold)} totalWeight={Number(policy.totalWeight)} />
+          </div>
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
             {translate('corporation.wizard.votingperiod')}
             <input

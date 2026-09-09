@@ -751,6 +751,8 @@
   "corporation.proposals.voteabstain": "Abstain",
   "corporation.proposals.voteveto": "Veto",
   "corporation.proposals.tally": "{yes} of {total} yes · threshold {threshold}",
+  "corporation.threshold.total": "Total member weight {total}.",
+  "corporation.threshold.unanimity": "A threshold of {threshold} needs every member to vote yes.",
   "corporation.time.in": "ends in {value}",
   "corporation.time.ago": "ended {value} ago",
   "common.none": "None",
