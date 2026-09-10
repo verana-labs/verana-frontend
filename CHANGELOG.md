@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.16.0](https://github.com/verana-labs/verana-frontend/compare/v0.15.0...v0.16.0) (2026-09-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* bump verana-types to v0.10.3 (v4 support) ([#371](https://github.com/verana-labs/verana-frontend/issues/371))
+
+### Features
+
+* bump verana-types to v0.10.3 (v4 support) ([#371](https://github.com/verana-labs/verana-frontend/issues/371)) ([799c548](https://github.com/verana-labs/verana-frontend/commit/799c5488b0d5af8dc402c99747ad564524329d65))
+* corporation context, discovery and the acting selector ([#434](https://github.com/verana-labs/verana-frontend/issues/434)) ([ffce239](https://github.com/verana-labs/verana-frontend/commit/ffce239ea63c80cb82ce28ddcf5d4d45244c52bf))
+* corporation page, creation wizard and proposals ([#443](https://github.com/verana-labs/verana-frontend/issues/443)) ([15bd7fb](https://github.com/verana-labs/verana-frontend/commit/15bd7fb14aa131435cb26175fd3190999711a8e4))
+* unresolvable-services and disabled-participants filters on participant tree ([#433](https://github.com/verana-labs/verana-frontend/issues/433)) ([6c1fcc2](https://github.com/verana-labs/verana-frontend/commit/6c1fcc2f84a305528739f32b70a7422774ed16b3))
+
+
+### Bug Fixes
+
+* derive the indexer routes from the base url and drop the chart network defaults ([#451](https://github.com/verana-labs/verana-frontend/issues/451)) ([0dc2470](https://github.com/verana-labs/verana-frontend/commit/0dc2470853af281954c961da70c83b481eeb261c))
+* re-run build ([bb666d4](https://github.com/verana-labs/verana-frontend/commit/bb666d410f1196eb194c885fce9291a90d6eecde))
+* read the app version literally so the footer shows it ([#435](https://github.com/verana-labs/verana-frontend/issues/435)) ([4917d1a](https://github.com/verana-labs/verana-frontend/commit/4917d1acb0dc30d1185018b20b782776f10ab6eb))
+* seed the dashboard block height before the first indexer event ([#452](https://github.com/verana-labs/verana-frontend/issues/452)) ([c73e20b](https://github.com/verana-labs/verana-frontend/commit/c73e20b6c3841cb0e0ebb417416da1f84cf33449))
+
 ## [0.15.0](https://github.com/verana-labs/verana-frontend/compare/v0.14.1...v0.15.0) (2026-08-10)
 
 
