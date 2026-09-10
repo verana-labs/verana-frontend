@@ -6,7 +6,7 @@ import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { type FeeGrantLookup, useFeeGrant } from '@/hooks/useFeeGrant'
-import { type TxSimulation, useTxSimulation } from '@/hooks/useTxSimulation'
+import { simulationFor, type TxSimulation, useTxSimulation } from '@/hooks/useTxSimulation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { feeGrantCovering, nativeFeeAmount } from '@/lib/fee-grant'
@@ -115,6 +115,7 @@ export function ConfirmTransactionModal({
     [composing, buildProposalMsgs, msgs, fallbackTitle, settledTitle, settledSummary]
   )
   const { simulation, simulate } = useTxSimulation(simulatedMsgs)
+  const currentSimulation = simulationFor(simulation, simulatedMsgs)
   const feeGrantLookup = useFeeGrant(request.feeGrant ?? null)
 
   useEffect(() => {
@@ -127,7 +128,7 @@ export function ConfirmTransactionModal({
 
   const proposal = request.mode === 'proposal'
   const editing = title !== settledTitle || summary !== settledSummary
-  const granter = feeGranter(request.feeGrant, feeGrantLookup, simulation)
+  const granter = feeGranter(request.feeGrant, feeGrantLookup, currentSimulation)
   const payer = granter ?? request.payer
   const labelClass = 'text-sm font-medium text-gray-700 dark:text-gray-300 block'
 
@@ -154,7 +155,7 @@ export function ConfirmTransactionModal({
             </span>
           </Row>
           <Row label={t('txconfirm.fee')}>
-            <FeeValue simulation={simulation} />
+            <FeeValue simulation={currentSimulation} />
           </Row>
           <Row label={t('txconfirm.payer')}>
             <span className="font-mono">{shortenMiddle(payer, 24)}</span>
@@ -195,9 +196,9 @@ export function ConfirmTransactionModal({
           </div>
         ) : null}
         {request.warning ? <WarningBox severity={request.severity}>{request.warning}</WarningBox> : null}
-        {simulation.status === 'failed' ? (
+        {currentSimulation.status === 'failed' ? (
           <WarningBox severity="irreversible">
-            {t('txconfirm.simulation.rejected', { msg: simulation.message })}{' '}
+            {t('txconfirm.simulation.rejected', { msg: currentSimulation.message })}{' '}
             <button type="button" onClick={() => void simulate()} className="underline font-medium">
               {t('txconfirm.retry')}
             </button>
@@ -210,7 +211,7 @@ export function ConfirmTransactionModal({
           <button
             type="button"
             className="btn-action-confirm flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={simulation.status !== 'ready' || editing}
+            disabled={currentSimulation.status !== 'ready' || editing}
             onClick={() => onConfirm({ msgs: simulatedMsgs, granter })}
           >
             {t(confirmLabelKey(request.mode))}

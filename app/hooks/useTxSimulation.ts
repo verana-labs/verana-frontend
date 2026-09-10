@@ -9,8 +9,13 @@ import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 
 export type TxSimulation =
   | { status: 'simulating' }
-  | { status: 'ready'; fee: StdFee }
-  | { status: 'failed'; message: string }
+  | { status: 'ready'; fee: StdFee; msgs: EncodeObject[] }
+  | { status: 'failed'; message: string; msgs: EncodeObject[] }
+
+export function simulationFor(simulation: TxSimulation, msgs: EncodeObject[]): TxSimulation {
+  if (simulation.status === 'simulating' || simulation.msgs === msgs) return simulation
+  return { status: 'simulating' }
+}
 
 export function useTxSimulation(msgs: EncodeObject[]): { simulation: TxSimulation; simulate: () => () => void } {
   const veranaChain = useVeranaChain()
@@ -18,24 +23,25 @@ export function useTxSimulation(msgs: EncodeObject[]): { simulation: TxSimulatio
   const sendTxRef = useRef(sendTx)
   sendTxRef.current = sendTx
   const [simulation, setSimulation] = useState<TxSimulation>({ status: 'simulating' })
+  const runRef = useRef(0)
 
   const simulate = useCallback(() => {
-    let cancelled = false
+    const run = ++runRef.current
     setSimulation({ status: 'simulating' })
     sendTxRef
       .current({ msgs, simulate: true })
       .then((result) => {
-        if (cancelled) return
-        if ('gas' in result && 'amount' in result) setSimulation({ status: 'ready', fee: result })
-        else setSimulation({ status: 'failed', message: 'Expected a simulated fee' })
+        if (run !== runRef.current) return
+        if ('gas' in result && 'amount' in result) setSimulation({ status: 'ready', fee: result, msgs })
+        else setSimulation({ status: 'failed', message: 'Expected a simulated fee', msgs })
       })
       .catch((error: unknown) => {
-        if (cancelled) return
+        if (run !== runRef.current) return
         logger.error('transaction simulation', error)
-        setSimulation({ status: 'failed', message: error instanceof Error ? error.message : String(error) })
+        setSimulation({ status: 'failed', message: error instanceof Error ? error.message : String(error), msgs })
       })
     return () => {
-      cancelled = true
+      if (run === runRef.current) runRef.current += 1
     }
   }, [msgs])
 

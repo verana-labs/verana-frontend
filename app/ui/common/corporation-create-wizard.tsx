@@ -5,7 +5,7 @@ import { useChain } from '@cosmos-kit/react'
 import { faCheck, faPlus, faTrash, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
-import { type TxSimulation, useTxSimulation } from '@/hooks/useTxSimulation'
+import { simulationFor, type TxSimulation, useTxSimulation } from '@/hooks/useTxSimulation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { UserCorporation } from '@/lib/corporation-discovery'
@@ -132,7 +132,7 @@ function CostBlock({
 
 function SimulatedCost({ msgs, payer, fundingUvna }: { msgs: EncodeObject[]; payer: string; fundingUvna: string }) {
   const { simulation } = useTxSimulation(msgs)
-  return <CostBlock simulation={simulation} payer={payer} fundingUvna={fundingUvna} />
+  return <CostBlock simulation={simulationFor(simulation, msgs)} payer={payer} fundingUvna={fundingUvna} />
 }
 
 function CreateCost({
@@ -167,7 +167,7 @@ function CreateCost({
 
   if (preview.status === 'ready') return <SimulatedCost msgs={preview.msgs} payer={payer} fundingUvna={fundingUvna} />
   const simulation: TxSimulation =
-    preview.status === 'building' ? { status: 'simulating' } : { status: 'failed', message: preview.message }
+    preview.status === 'building' ? { status: 'simulating' } : { status: 'failed', message: preview.message, msgs: [] }
   return <CostBlock simulation={simulation} payer={payer} fundingUvna={fundingUvna} />
 }
 
