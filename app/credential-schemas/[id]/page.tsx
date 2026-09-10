@@ -105,7 +105,7 @@ export default function CredentialSchemaViewPage() {
   const { credentialSchema, errorCredentialSchema, refetch: refetchCredentialSchema } = useCredentialSchemaData(id)
   const ecosystemId = credentialSchema ? String(credentialSchema.ecosystemId) : ''
   const { ecosystem } = useEcosystemData(ecosystemId)
-  const { corporation, hasOperatorGrant } = useUserCorporation()
+  const { actingCorporation } = useUserCorporation()
 
   const [mode, setMode] = useState<'view' | 'edit'>('view')
   const [editValues, setEditValues] = useState<ValidityValues | null>(null)
@@ -118,7 +118,10 @@ export default function CredentialSchemaViewPage() {
   const { submitTx } = useSubmitTxMsgTypeFromObject(() => setMode('view'), refresh)
 
   const canManage =
-    credentialSchema !== null && ecosystem !== null && corporation?.id === ecosystem.corporationId && hasOperatorGrant
+    credentialSchema !== null &&
+    ecosystem !== null &&
+    actingCorporation?.corporation.id === ecosystem.corporationId &&
+    actingCorporation.operator
 
   useEffect(() => {
     if (!canManage && mode === 'edit') {

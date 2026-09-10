@@ -5,6 +5,7 @@ const headless = process.env.E2E_HEADLESS === 'true'
 export default defineConfig({
   testDir: './e2e',
   testMatch: '**/*.spec.ts',
+  globalSetup: './e2e/support/warm-up.ts',
   timeout: 90_000,
   expect: { timeout: 20_000 },
   fullyParallel: false,

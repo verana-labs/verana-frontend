@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
 import { parseParticipantRecord } from '@/hooks/useParticipant'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
@@ -52,13 +52,15 @@ export function pendingParticipantsUrl(endpoint: string, corporationId: number):
 }
 
 export function usePendingParticipants() {
-  const { corporation } = useUserCorporation()
-  const corporationId = corporation?.id
+  const { actingCorporation } = useUserCorporation()
+  const corporationId = actingCorporation?.corporation.id
   const [pendingParticipants, setPendingParticipants] = useState<PendingEcosystem[]>([])
   const [loading, setLoading] = useState(false)
   const [errorPendingParticipants, setError] = useState<string | null>(null)
+  const requestRef = useRef(0)
 
   const fetchPendingParticipants = useCallback(async () => {
+    const request = ++requestRef.current
     if (corporationId === undefined || !VERANA_REST_ENDPOINT_PARTICIPANT) {
       setPendingParticipants([])
       setLoading(false)
@@ -74,17 +76,17 @@ export function usePendingParticipants() {
         const { error, code } = json as ApiErrorResponse
         throw new Error(`Error ${code}: ${error}`)
       }
-      setPendingParticipants(parsePendingParticipantsResponse(json))
+      if (request === requestRef.current) setPendingParticipants(parsePendingParticipantsResponse(json))
     } catch (error) {
-      setError(error instanceof Error ? error.message : String(error))
+      if (request === requestRef.current) setError(error instanceof Error ? error.message : String(error))
     } finally {
-      setLoading(false)
+      if (request === requestRef.current) setLoading(false)
     }
   }, [corporationId])
 
   useEffect(() => {
-    if (corporationId !== undefined) void fetchPendingParticipants()
-  }, [corporationId, fetchPendingParticipants])
+    void fetchPendingParticipants()
+  }, [fetchPendingParticipants])
 
   return { pendingParticipants, loading, errorPendingParticipants, refetch: fetchPendingParticipants }
 }

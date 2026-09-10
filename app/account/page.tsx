@@ -22,7 +22,7 @@ export default function AccountPage() {
   // Custom hook to fetch account/trust deposit data
   const { accountData, refetch: refetchAccount } = useAccountCtx()
   const { txCount, refetch: refetchTxCount } = useAccountTxCount()
-  const { corporation, hasOperatorGrant, refetch: refetchCorporation } = useUserCorporation()
+  const { actingCorporation, refetch: refetchCorporation } = useUserCorporation()
   // Refresh account/trust deposit data
   const [refresh, setRefresh] = useState<boolean>(true)
   const [refreshState, setRefreshState] = useState<RefreshState>({})
@@ -63,13 +63,13 @@ export default function AccountPage() {
         claimableInterests,
         getVNA,
         claimInterests,
-        corporationId: corporation?.id ?? null,
-        policyAddress: corporation?.policyAddress ?? null,
-        operatorAuthorized: hasOperatorGrant,
+        corporationId: actingCorporation?.corporation.id ?? null,
+        policyAddress: actingCorporation?.corporation.policyAddress ?? null,
+        operatorAuthorized: actingCorporation?.operator ?? false,
         transactionsSent: txCount,
       })
     }
-  }, [accountData, corporation, hasOperatorGrant, txCount])
+  }, [accountData, actingCorporation, txCount])
 
   return (
     <>

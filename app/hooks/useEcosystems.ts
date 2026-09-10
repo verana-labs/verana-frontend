@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_ECOSYSTEM } from '@/config/env'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
@@ -63,13 +63,15 @@ export function parseEcosystemsResponse(payload: unknown): EcosystemListItem[] {
 }
 
 export function useEcosystems(all = false, onlyActive = true) {
-  const { corporation, loading: corporationLoading } = useUserCorporation()
-  const corporationId = corporation?.id
+  const { actingCorporation, loading: corporationLoading } = useUserCorporation()
+  const corporationId = actingCorporation?.corporation.id
   const [ecosystems, setEcosystems] = useState<EcosystemListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [errorEcosystems, setError] = useState<string | null>(null)
+  const requestRef = useRef(0)
 
   const fetchEcosystems = useCallback(async () => {
+    const request = ++requestRef.current
     if (!VERANA_REST_ENDPOINT_ECOSYSTEM) {
       setError(resolveTranslatable({ key: 'error.fetch.ecosystem' }, translate) ?? 'Missing ecosystem endpoint URL')
       setLoading(false)
@@ -93,11 +95,11 @@ export function useEcosystems(all = false, onlyActive = true) {
         const { error, code } = json as ApiErrorResponse
         throw new Error(`Error ${code}: ${error}`)
       }
-      setEcosystems(parseEcosystemsResponse(json))
+      if (request === requestRef.current) setEcosystems(parseEcosystemsResponse(json))
     } catch (error) {
-      setError(error instanceof Error ? error.message : String(error))
+      if (request === requestRef.current) setError(error instanceof Error ? error.message : String(error))
     } finally {
-      setLoading(false)
+      if (request === requestRef.current) setLoading(false)
     }
   }, [all, corporationId, corporationLoading, onlyActive])
 

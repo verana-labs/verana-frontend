@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { connectWallet } from './support/connect'
 import { fillEcosystemForm } from './support/flows'
-import { installMockChain } from './support/mock-chain'
+import { installMockChain, stubCorporationRoutes } from './support/mock-chain'
 
 const FAKE_ECOSYSTEM_ID = '777'
 const RPC_METHODS = ['status', 'abci_query', 'broadcast_tx_sync', 'tx_search']
@@ -10,6 +10,7 @@ test('Ring A — create ecosystem reaches faked success without a real chain wri
   test.setTimeout(90_000)
   const stamp = Date.now().toString(36)
 
+  await stubCorporationRoutes(page)
   const wallet = await connectWallet(page)
   const mock = await installMockChain(page, { address: wallet.bech32Address, ecosystemId: FAKE_ECOSYSTEM_ID })
 

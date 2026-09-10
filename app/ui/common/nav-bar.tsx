@@ -9,6 +9,7 @@ import NavLinks from '@/ui/common/nav-links'
 import VeranaLog from '@/ui/common/verana-logo'
 import { formatNetwork } from '@/util/util'
 import AccountZone from './account-zone'
+import { CorporationSelector } from './corporation-selector'
 
 export default function NavBar() {
   const veranaChain = useVeranaChain()
@@ -46,6 +47,8 @@ export default function NavBar() {
                 {/* Theme Toggle 
                 <ToggleTheme />
 */}
+                <CorporationSelector />
+
                 {/* Account Zone */}
                 <AccountZone />
               </div>
@@ -54,6 +57,9 @@ export default function NavBar() {
 
           {/* Mobile panel */}
           <DisclosurePanel className="navbar-mobile-panel">
+            <div className="px-4 pt-3 lg:hidden">
+              <CorporationSelector />
+            </div>
             {/* Logo */}
             {/* <div className='navbar-mobile-logo'>
               <VeranaLog />

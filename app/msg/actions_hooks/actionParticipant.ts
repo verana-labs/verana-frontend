@@ -17,7 +17,7 @@ import {
 } from '@verana-labs/verana-types/codec/verana/pp/v1/tx'
 import { type OptionalUInt64, ParticipantRole } from '@verana-labs/verana-types/codec/verana/pp/v1/types'
 import { useRef } from 'react'
-import { resolveUserCorporation, useUserCorporation } from '@/hooks/useUserCorporation'
+import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import {
@@ -264,7 +264,7 @@ function isDeliverTxResponse(result: DeliverTxResponse | SimulateResult): result
 export function useActionParticipant(onCancel?: () => void, onRefresh?: (id?: string, txHeight?: number) => void) {
   const veranaChain = useVeranaChain()
   const { address, isWalletConnected } = useChain(veranaChain.chain_name)
-  const { corporation, grantedMessageTypes, loading: corporationLoading } = useUserCorporation()
+  const { actingCorporation, loading: corporationLoading } = useUserCorporation()
   const { refetch: refetchPendingTasks } = usePendingTasksCtx()
   const { waitForBlock } = useIndexerEvents()
   const { notify } = useNotification()
@@ -279,9 +279,11 @@ export function useActionParticipant(onCancel?: () => void, onRefresh?: (id?: st
       await notify(resolveTranslatable({ key: 'notification.msg.connectwallet' }, translate) ?? '', 'error')
       return
     }
-    const authority =
-      corporation && !corporationLoading ? { corporation, grantedMessageTypes } : await resolveUserCorporation(address)
-    if (!authority.corporation) {
+    if (corporationLoading) {
+      if (!simulate) await notify(resolveTranslatable({ key: 'corporation.select.loading' }, translate) ?? '', 'error')
+      return
+    }
+    if (!actingCorporation) {
       if (!simulate)
         await notify(resolveTranslatable({ key: 'error.msg.corporation.required' }, translate) ?? '', 'error')
       return
@@ -303,10 +305,10 @@ export function useActionParticipant(onCancel?: () => void, onRefresh?: (id?: st
 
     try {
       const message = buildParticipantMessage(params, {
-        corporation: authority.corporation.policyAddress,
+        corporation: actingCorporation.corporation.policyAddress,
         operator: address,
       })
-      if (!authority.grantedMessageTypes.includes(message.typeUrl)) {
+      if (!actingCorporation.grantedMessageTypes.includes(message.typeUrl)) {
         if (!simulate) {
           await notify(
             resolveTranslatable(
