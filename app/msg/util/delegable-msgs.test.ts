@@ -45,20 +45,23 @@ function build(corporation: string, operator: string) {
 
 describe('resolveDelegableMsgs', () => {
   it('signs directly as operator with the policy as corporation and the wallet as operator', () => {
-    const resolved = resolveDelegableMsgs({
-      membership: membership(),
-      address: ME,
-      typeUrl: CREATE,
-      build,
-      proposalTitle: 'Create ecosystem',
-      proposalSummary: 'Create ecosystem',
-    })
+    const resolved = resolveDelegableMsgs({ membership: membership(), address: ME, typeUrl: CREATE, build })
     expect(resolved?.mode).toBe('operator')
-    expect(resolved?.msgs).toHaveLength(1)
-    expect(resolved?.msgs[0].typeUrl).toBe(CREATE)
-    const value = resolved?.msgs[0].value as MsgCreateEcosystem
+    const msgs = resolved?.build({ title: 'Create ecosystem', summary: 'Create ecosystem' }) ?? []
+    expect(msgs).toHaveLength(1)
+    expect(msgs[0].typeUrl).toBe(CREATE)
+    const value = msgs[0].value as MsgCreateEcosystem
     expect(value.corporation).toBe(POLICY)
     expect(value.operator).toBe(ME)
+  })
+
+  it('ignores the proposal metadata in operator mode', () => {
+    const resolved = resolveDelegableMsgs({ membership: membership(), address: ME, typeUrl: CREATE, build })
+    const first = resolved?.build({ title: 'One', summary: 'One' }) ?? []
+    const second = resolved?.build({ title: 'Two', summary: 'Two' }) ?? []
+    expect(MsgCreateEcosystem.encode(second[0].value as MsgCreateEcosystem).finish()).toEqual(
+      MsgCreateEcosystem.encode(first[0].value as MsgCreateEcosystem).finish()
+    )
   })
 
   it('wraps the policy-operated message in a group proposal for members without the grant', () => {
@@ -67,15 +70,12 @@ describe('resolveDelegableMsgs', () => {
       address: ME,
       typeUrl: CREATE,
       build,
-      proposalTitle: 'Create ecosystem',
-      proposalSummary: 'Because',
     })
     expect(resolved?.mode).toBe('proposal')
-    expect(resolved?.msgs).toHaveLength(1)
-    expect(resolved?.msgs[0].typeUrl).toBe('/cosmos.group.v1.MsgSubmitProposal')
-    const proposal = MsgSubmitProposal.decode(
-      MsgSubmitProposal.encode(resolved?.msgs[0].value as MsgSubmitProposal).finish()
-    )
+    const msgs = resolved?.build({ title: 'Create ecosystem', summary: 'Because' }) ?? []
+    expect(msgs).toHaveLength(1)
+    expect(msgs[0].typeUrl).toBe('/cosmos.group.v1.MsgSubmitProposal')
+    const proposal = MsgSubmitProposal.decode(MsgSubmitProposal.encode(msgs[0].value as MsgSubmitProposal).finish())
     expect(proposal.groupPolicyAddress).toBe(POLICY)
     expect(proposal.proposers).toEqual([ME])
     expect(proposal.exec).toBe(Exec.EXEC_TRY)
@@ -87,6 +87,19 @@ describe('resolveDelegableMsgs', () => {
     expect(inner.operator).toBe(POLICY)
   })
 
+  it('rebuilds the proposal from the metadata it is given', () => {
+    const resolved = resolveDelegableMsgs({
+      membership: membership({ grantedMessageTypes: [] }),
+      address: ME,
+      typeUrl: CREATE,
+      build,
+    })
+    const msgs = resolved?.build({ title: 'Custom', summary: 'Why' }) ?? []
+    const proposal = MsgSubmitProposal.decode(MsgSubmitProposal.encode(msgs[0].value as MsgSubmitProposal).finish())
+    expect(proposal.title).toBe('Custom')
+    expect(proposal.summary).toBe('Why')
+  })
+
   it('is null when the account is neither granted nor a member', () => {
     expect(
       resolveDelegableMsgs({
@@ -94,8 +107,6 @@ describe('resolveDelegableMsgs', () => {
         address: ME,
         typeUrl: CREATE,
         build,
-        proposalTitle: 'x',
-        proposalSummary: 'x',
       })
     ).toBeNull()
   })

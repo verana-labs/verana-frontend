@@ -1,6 +1,7 @@
 import type { EncodeObject } from '@cosmjs/proto-signing'
 import { veranaTypeUrls } from '@verana-labs/verana-types/signing'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
+import type { ProposalMetadata } from '@/lib/tx-preview'
 import {
   type CorporationSigningMode,
   corporationSigningMode,
@@ -15,28 +16,29 @@ export interface DelegableMsgs {
   mode: CorporationSigningMode
 }
 
+export interface DelegableResolution {
+  mode: CorporationSigningMode
+  build: (metadata: ProposalMetadata) => EncodeObject[]
+}
+
 export function resolveDelegableMsgs({
   membership,
   address,
   typeUrl,
   build,
-  proposalTitle,
-  proposalSummary,
 }: {
   membership: CorporationMembership
   address: string
   typeUrl: string
   build: DelegableBuild
-  proposalTitle: string
-  proposalSummary: string
-}): DelegableMsgs | null {
+}): DelegableResolution | null {
   const mode = corporationSigningMode(typeUrl, membership)
   if (!mode) return null
   const policy = membership.corporation.policyAddress
-  if (mode === 'operator') return { msgs: [build(policy, address)], mode }
+  if (mode === 'operator') return { mode, build: () => [build(policy, address)] }
   return {
-    msgs: [wrapInProposal(membership, address, build(policy, policy), proposalTitle, proposalSummary)],
     mode,
+    build: (metadata) => [wrapInProposal(membership, address, build(policy, policy), metadata.title, metadata.summary)],
   }
 }
 

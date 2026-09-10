@@ -6,8 +6,13 @@ import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
-import { msgShortName, type TxConfirmRequest, type TxConfirmResult, txSeverity } from '@/lib/tx-preview'
-import { proposalMeta } from '@/msg/actions_hooks/actionCorporationManage'
+import {
+  msgShortName,
+  proposalMetadata,
+  type TxConfirmRequest,
+  type TxConfirmResult,
+  txSeverity,
+} from '@/lib/tx-preview'
 import { type DelegableBuild, type DelegableMsgs, resolveDelegableMsgs } from '@/msg/util/delegable-msgs'
 import { useNotification } from '@/providers/notification-provider'
 import { useTxConfirm } from '@/providers/tx-confirm-provider'
@@ -60,31 +65,25 @@ export async function confirmDelegableMsgs(
     if (!simulate) await notify(t('error.msg.corporation.required'), 'error')
     return null
   }
-  const resolve = (title: string, summary: string) =>
-    resolveDelegableMsgs({
-      membership: actingCorporation,
-      address,
-      typeUrl,
-      build,
-      proposalTitle: title,
-      proposalSummary: summary,
-    })
-  const resolved = resolve(proposalTitle, proposalTitle)
-  if (!resolved) {
+  const resolution = resolveDelegableMsgs({ membership: actingCorporation, address, typeUrl, build })
+  if (!resolution) {
     if (!simulate) await notify(t('error.msg.corporation.notauthorized', { msgType: msgShortName(typeUrl) }), 'error')
     return null
   }
-  if (simulate) return resolved
+  const { mode } = resolution
+  const msgs = resolution.build(proposalMetadata('', '', proposalTitle))
+  if (simulate) return { msgs, mode }
   const severity = txSeverity(typeUrl) ?? undefined
   const confirmed = await confirmTx({
     titleKey: 'txconfirm.title.default',
     effect,
-    msgs: resolved.msgs,
-    mode: resolved.mode,
+    msgs,
+    mode,
     payer: address,
     severity,
     warning: severity ? warningFor(typeUrl) : undefined,
-    proposalTitle: resolved.mode === 'proposal' ? proposalTitle : undefined,
+    proposalTitle: mode === 'proposal' ? proposalTitle : undefined,
+    buildProposalMsgs: mode === 'proposal' ? resolution.build : undefined,
     costLines,
   })
   if (!confirmed) return null
@@ -92,9 +91,7 @@ export async function confirmDelegableMsgs(
     await notify(t('corporation.select.changed'), 'error')
     return null
   }
-  if (resolved.mode === 'operator') return resolved
-  const { title, summary } = proposalMeta(confirmed, proposalTitle)
-  return resolve(title, summary)
+  return { msgs: confirmed.msgs, mode }
 }
 
 export function useDelegableMsgs(): (args: DelegableMsgsArgs) => Promise<DelegableMsgs | null> {

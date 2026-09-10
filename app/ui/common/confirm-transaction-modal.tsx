@@ -4,13 +4,14 @@ import type { EncodeObject } from '@cosmjs/proto-signing'
 import { useChain } from '@cosmos-kit/react'
 import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { type ReactNode, useEffect, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { type TxSimulation, useTxSimulation } from '@/hooks/useTxSimulation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import {
   confirmLabelKey,
   modeLabelKey,
+  proposalMetadata,
   type TxConfirmRequest,
   type TxConfirmResult,
   type TxSeverity,
@@ -18,6 +19,8 @@ import {
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 import { shortenMiddle } from '@/util/util'
+
+const SETTLE_DELAY_MS = 400
 
 function t(key: string, values?: I18nValues): string {
   return resolveTranslatable({ key, values }, translate) ?? key
@@ -74,9 +77,30 @@ export function ConfirmTransactionModal({
 }) {
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
-  const { simulation, simulate } = useTxSimulation(request.msgs)
-  const [title, setTitle] = useState(request.proposalTitle ?? '')
+  const { msgs, buildProposalMsgs } = request
+  const fallbackTitle = request.proposalTitle ?? ''
+  const composing = request.mode === 'proposal' && buildProposalMsgs !== undefined
+  const [title, setTitle] = useState(fallbackTitle)
   const [summary, setSummary] = useState('')
+  const [settledTitle, setSettledTitle] = useState(fallbackTitle)
+  const [settledSummary, setSettledSummary] = useState('')
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSettledTitle(title)
+      setSettledSummary(summary)
+    }, SETTLE_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [title, summary])
+
+  const simulatedMsgs = useMemo(
+    () =>
+      composing && buildProposalMsgs
+        ? buildProposalMsgs(proposalMetadata(settledTitle, settledSummary, fallbackTitle))
+        : msgs,
+    [composing, buildProposalMsgs, msgs, fallbackTitle, settledTitle, settledSummary]
+  )
+  const { simulation, simulate } = useTxSimulation(simulatedMsgs)
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -87,7 +111,7 @@ export function ConfirmTransactionModal({
   }, [onCancel])
 
   const proposal = request.mode === 'proposal'
-  const composing = proposal && request.composer === true
+  const editing = title !== settledTitle || summary !== settledSummary
   const labelClass = 'text-sm font-medium text-gray-700 dark:text-gray-300 block'
 
   return (
@@ -165,8 +189,8 @@ export function ConfirmTransactionModal({
           <button
             type="button"
             className="btn-action-confirm flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={simulation.status !== 'ready'}
-            onClick={() => onConfirm(composing ? { proposalTitle: title, proposalSummary: summary } : {})}
+            disabled={simulation.status !== 'ready' || editing}
+            onClick={() => onConfirm({ msgs: simulatedMsgs })}
           >
             {t(confirmLabelKey(request.mode))}
           </button>

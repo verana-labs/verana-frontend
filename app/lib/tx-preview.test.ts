@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { confirmLabelKey, formatStdFee, modeLabelKey, msgShortName, txSeverity } from './tx-preview'
+import { confirmLabelKey, formatStdFee, modeLabelKey, msgShortName, proposalMetadata, txSeverity } from './tx-preview'
 
 describe('txSeverity', () => {
   it('flags revocations and slashes as irreversible', () => {
@@ -46,5 +46,20 @@ describe('labels', () => {
 
   it('shortens a type url to its message name', () => {
     expect(msgShortName('/verana.co.v1.MsgUpdateCorporation')).toBe('MsgUpdateCorporation')
+  })
+})
+
+describe('proposalMetadata', () => {
+  it('falls back to the default title and mirrors it into the summary', () => {
+    expect(proposalMetadata('', '', 'Rotate DID')).toEqual({ title: 'Rotate DID', summary: 'Rotate DID' })
+    expect(proposalMetadata('  ', '', 'Rotate DID')).toEqual({ title: 'Rotate DID', summary: 'Rotate DID' })
+  })
+
+  it('mirrors a typed title into an empty summary', () => {
+    expect(proposalMetadata('Custom', '   ', 'Rotate DID')).toEqual({ title: 'Custom', summary: 'Custom' })
+  })
+
+  it('keeps what the composer typed', () => {
+    expect(proposalMetadata(' Custom ', ' Why ', 'Rotate DID')).toEqual({ title: 'Custom', summary: 'Why' })
   })
 })

@@ -5,6 +5,16 @@ import { formatVNAFromUVNA } from '@/util/util'
 export type TxConfirmMode = 'operator' | 'proposal' | 'account'
 export type TxSeverity = 'irreversible' | 'notice'
 
+export interface ProposalMetadata {
+  title: string
+  summary: string
+}
+
+export function proposalMetadata(title: string, summary: string, fallbackTitle: string): ProposalMetadata {
+  const resolved = title.trim() || fallbackTitle
+  return { title: resolved, summary: summary.trim() || resolved }
+}
+
 export interface TxConfirmRequest {
   titleKey: string
   effect: string
@@ -14,14 +24,14 @@ export interface TxConfirmRequest {
   severity?: TxSeverity
   warning?: string
   costLines?: { label: string; value: string }[]
-  composer?: boolean
   proposalTitle?: string
   corporationLabel?: string
+  buildProposalMsgs?: (metadata: ProposalMetadata) => EncodeObject[]
 }
 
 export interface TxConfirmResult {
-  proposalTitle?: string
-  proposalSummary?: string
+  msgs: EncodeObject[]
+  granter?: string
 }
 
 export function msgShortName(typeUrl: string): string {

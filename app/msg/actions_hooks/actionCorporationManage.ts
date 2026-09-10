@@ -24,7 +24,13 @@ import { veranaRegistry } from '@/config/veranaChain.sign.client'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
-import { msgShortName, type TxConfirmRequest, type TxConfirmResult, txSeverity } from '@/lib/tx-preview'
+import {
+  msgShortName,
+  type ProposalMetadata,
+  proposalMetadata,
+  type TxConfirmRequest,
+  txSeverity,
+} from '@/lib/tx-preview'
 import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import { extractTxHeight } from '@/msg/util/signerUtil'
@@ -235,11 +241,6 @@ export function delegablePreview(
   }
 }
 
-export function proposalMeta(result: TxConfirmResult, fallbackTitle: string): { title: string; summary: string } {
-  const title = result.proposalTitle?.trim() || fallbackTitle
-  return { title, summary: result.proposalSummary?.trim() || title }
-}
-
 function accountPreview(effect: string, payer: string): TxPreview {
   return { titleKey: 'txconfirm.title.default', effect, mode: 'account', payer }
 }
@@ -253,12 +254,7 @@ export function useCorporationManage(onDone?: () => void) {
   const sendTx = useSendTxDetectingMode(veranaChain)
   const inFlight = useRef(false)
 
-  async function broadcast(
-    notificationKey: string,
-    msgs: EncodeObject[],
-    preview: TxPreview,
-    finalize?: (confirmed: TxConfirmResult) => EncodeObject[]
-  ): Promise<boolean> {
+  async function broadcast(notificationKey: string, msgs: EncodeObject[], preview: TxPreview): Promise<boolean> {
     if (!isWalletConnected || !address) {
       await notify(translate('notification.msg.connectwallet'), 'error')
       return false
@@ -272,7 +268,7 @@ export function useCorporationManage(onDone?: () => void) {
     inFlight.current = true
     try {
       void notify(translate(`notification.${notificationKey}.inprogress`), 'inProgress')
-      const result = await sendTx({ msgs: finalize ? finalize(confirmed) : msgs, memo: notificationKey })
+      const result = await sendTx({ msgs: confirmed.msgs, memo: notificationKey })
       if (!('code' in result)) throw new Error('Expected a transaction response')
       if (result.code !== 0)
         throw new Error(`${translate(`notification.${notificationKey}.error`)} (${result.code}): ${result.rawLog}`)
@@ -315,15 +311,13 @@ export function useCorporationManage(onDone?: () => void) {
     const preview = delegablePreview(typeUrl, mode, membership, address, proposalTitle, effectValues)
     if (mode === 'operator') return broadcast(notificationKey, [build(address)], preview)
     const inner = build(membership.corporation.policyAddress)
-    return broadcast(
-      'MsgSubmitProposal',
-      [wrapInProposal(membership, address, inner, proposalTitle, proposalTitle)],
-      preview,
-      (confirmed) => {
-        const { title, summary } = proposalMeta(confirmed, proposalTitle)
-        return [wrapInProposal(membership, address, inner, title, summary)]
-      }
-    )
+    const buildProposalMsgs = (metadata: ProposalMetadata) => [
+      wrapInProposal(membership, address, inner, metadata.title, metadata.summary),
+    ]
+    return broadcast('MsgSubmitProposal', buildProposalMsgs(proposalMetadata('', '', proposalTitle)), {
+      ...preview,
+      buildProposalMsgs,
+    })
   }
 
   return {

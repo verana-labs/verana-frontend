@@ -1,6 +1,5 @@
 'use client'
 
-import { useSearchParams } from 'next/navigation'
 import { createContext, type ReactNode, useCallback, useContext, useMemo, useRef, useState } from 'react'
 import type { TxConfirmRequest, TxConfirmResult } from '@/lib/tx-preview'
 import { ConfirmTransactionModal } from '@/ui/common/confirm-transaction-modal'
@@ -18,8 +17,6 @@ export function useTxConfirm(): TxConfirmContextType {
 }
 
 export function TxConfirmProvider({ children }: { children: ReactNode }) {
-  const searchParams = useSearchParams()
-  const forceComposer = searchParams.get('confirm') === 'c'
   const [pending, setPending] = useState<TxConfirmRequest | null>(null)
   const resolver = useRef<((result: TxConfirmResult | null) => void) | null>(null)
 
@@ -31,16 +28,13 @@ export function TxConfirmProvider({ children }: { children: ReactNode }) {
 
   const cancel = useCallback(() => settle(null), [settle])
 
-  const confirmTx = useCallback(
-    (request: TxConfirmRequest) => {
-      resolver.current?.(null)
-      setPending(forceComposer ? { ...request, composer: true } : request)
-      return new Promise<TxConfirmResult | null>((resolve) => {
-        resolver.current = resolve
-      })
-    },
-    [forceComposer]
-  )
+  const confirmTx = useCallback((request: TxConfirmRequest) => {
+    resolver.current?.(null)
+    setPending(request)
+    return new Promise<TxConfirmResult | null>((resolve) => {
+      resolver.current = resolve
+    })
+  }, [])
 
   const value = useMemo(() => ({ confirmTx }), [confirmTx])
 
