@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { VERANA_REST_ENDPOINT_DELEGATION } from '@/config/env'
 import { type FeeGrant, parseFeeGrants } from '@/lib/fee-grant'
 import { logger } from '@/lib/logger'
+
+export const FEE_GRANT_LOOKUP_TIMEOUT_MS = 5_000
 
 export interface FeeGrantQuery {
   corporationId: number
@@ -27,15 +29,47 @@ export function feeGrantsUrl(endpoint: string, query: FeeGrantQuery): string {
   return `${endpoint}/fee-grants?${params.toString()}`
 }
 
+export function startFeeGrantLookup(
+  endpoint: string,
+  query: FeeGrantQuery,
+  onSettled: (lookup: FeeGrantLookup) => void
+): () => void {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), FEE_GRANT_LOOKUP_TIMEOUT_MS)
+  let active = true
+
+  function settle(lookup: FeeGrantLookup): void {
+    if (!active) return
+    active = false
+    clearTimeout(timeout)
+    onSettled(lookup)
+  }
+
+  fetch(feeGrantsUrl(endpoint, query), { signal: controller.signal })
+    .then(async (response) => {
+      if (!response.ok) throw new Error(`fee grant lookup: ${response.status}`)
+      settle({ status: 'ready', grants: parseFeeGrants((await response.json()) as unknown) })
+    })
+    .catch((error: unknown) => {
+      if (!active) return
+      logger.error('fee grant lookup', error)
+      settle({ status: 'failed' })
+    })
+
+  return () => {
+    active = false
+    clearTimeout(timeout)
+    controller.abort()
+  }
+}
+
 export function useFeeGrant(query: FeeGrantQuery | null): FeeGrantLookup {
   const [lookup, setLookup] = useState<FeeGrantLookup>({ status: 'idle' })
-  const requestRef = useRef(0)
   const corporationId = query?.corporationId
   const grantee = query?.grantee
   const msgType = query?.msgType
 
   useEffect(() => {
-    const request = ++requestRef.current
     if (corporationId === undefined || !grantee || !msgType) {
       setLookup({ status: 'idle' })
       return
@@ -45,18 +79,7 @@ export function useFeeGrant(query: FeeGrantQuery | null): FeeGrantLookup {
       return
     }
     setLookup({ status: 'loading' })
-    fetch(feeGrantsUrl(VERANA_REST_ENDPOINT_DELEGATION, { corporationId, grantee, msgType }))
-      .then(async (response) => {
-        if (!response.ok) throw new Error(`fee grant lookup: ${response.status}`)
-        return (await response.json()) as unknown
-      })
-      .then((payload) => {
-        if (request === requestRef.current) setLookup({ status: 'ready', grants: parseFeeGrants(payload) })
-      })
-      .catch((error: unknown) => {
-        logger.error('fee grant lookup', error)
-        if (request === requestRef.current) setLookup({ status: 'failed' })
-      })
+    return startFeeGrantLookup(VERANA_REST_ENDPOINT_DELEGATION, { corporationId, grantee, msgType }, setLookup)
   }, [corporationId, grantee, msgType])
 
   return lookup

@@ -130,6 +130,8 @@ export function ConfirmTransactionModal({
   const editing = title !== settledTitle || summary !== settledSummary
   const granter = feeGranter(request.feeGrant, feeGrantLookup, currentSimulation)
   const payer = granter ?? request.payer
+  const payerPending =
+    feeGrantLookup.status === 'loading' || (request.feeGrant !== undefined && currentSimulation.status === 'simulating')
   const labelClass = 'text-sm font-medium text-gray-700 dark:text-gray-300 block'
 
   return (
@@ -158,8 +160,14 @@ export function ConfirmTransactionModal({
             <FeeValue simulation={currentSimulation} />
           </Row>
           <Row label={t('txconfirm.payer')}>
-            <span className="font-mono">{shortenMiddle(payer, 24)}</span>
-            {payer === address ? ` ${t('txconfirm.payer.you')}` : ''}
+            {payerPending ? (
+              <span className="animate-pulse text-gray-400">{t('txconfirm.payer.checking')}</span>
+            ) : (
+              <>
+                <span className="font-mono">{shortenMiddle(payer, 24)}</span>
+                {payer === address ? ` ${t('txconfirm.payer.you')}` : ''}
+              </>
+            )}
           </Row>
           {request.costLines?.map((line) => (
             <Row key={line.label} label={line.label}>
@@ -211,7 +219,7 @@ export function ConfirmTransactionModal({
           <button
             type="button"
             className="btn-action-confirm flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={currentSimulation.status !== 'ready' || editing}
+            disabled={currentSimulation.status !== 'ready' || editing || feeGrantLookup.status === 'loading'}
             onClick={() => onConfirm({ msgs: simulatedMsgs, granter })}
           >
             {t(confirmLabelKey(request.mode))}
