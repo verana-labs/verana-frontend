@@ -13,19 +13,31 @@ export function formatNumber(value: unknown, defaultZero: boolean = false, withS
   return Number.isNaN(num) ? (defaultZero ? '0' : 'isNan') : withSeparators ? num.toLocaleString() : String(num)
 }
 
+const INTEGER_AMOUNT = /^-?\d+$/
+
+function shiftDecimalPoint(digits: string, decimals: number): `${number}` {
+  const sign = digits.startsWith('-') ? '-' : ''
+  const unsigned = (sign ? digits.slice(1) : digits).padStart(decimals + 1, '0')
+  const whole = unsigned.slice(0, unsigned.length - decimals)
+  const fraction = unsigned.slice(unsigned.length - decimals)
+  return `${sign}${whole}${fraction ? `.${fraction}` : ''}` as `${number}`
+}
+
 export function formatVNA(amount: string | null, decimals?: number): string {
   if (!amount) return ''
   decimals = decimals ?? 6
-  return `${(Number(amount) / 10 ** decimals).toLocaleString(undefined, {
+  const trimmed = amount.trim()
+  const value = INTEGER_AMOUNT.test(trimmed) ? shiftDecimalPoint(trimmed, decimals) : Number(trimmed) / 10 ** decimals
+  return `${new Intl.NumberFormat(undefined, {
     minimumFractionDigits: 0,
     maximumFractionDigits: decimals,
-  })} VNA`
+  }).format(value)} VNA`
 }
 
 export function formatVNAFromUVNA(amount: string | null): string {
   const s = amount == null ? '' : String(amount)
   if (!s.trim() || !Number.isFinite(Number(s))) return ''
-  return formatVNA(String(Number(s)), 6)
+  return formatVNA(s.trim(), 6)
 }
 
 export function parseVNA(formatted: string, decimals: number = 6): string {
