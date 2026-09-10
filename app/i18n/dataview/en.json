@@ -775,6 +775,8 @@
   "txconfirm.fee.failed": "Could not simulate",
   "txconfirm.payer": "Paid by",
   "txconfirm.payer.you": "(you)",
+  "txconfirm.feegrant.covered": "The corporation covers this network fee with a fee grant.",
+  "txconfirm.feegrant.unavailable": "The fee grant could not be checked, your account pays this network fee.",
   "txconfirm.proposal.explainer": "You hold no operator authorization covering this action. It will be submitted as a governance proposal to {corporation}. Members vote, then it executes automatically.",
   "txconfirm.proposal.title": "Proposal title",
   "txconfirm.proposal.summary": "Proposal summary",

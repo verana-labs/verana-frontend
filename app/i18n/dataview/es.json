@@ -775,6 +775,8 @@
   "txconfirm.fee.failed": "No se pudo simular",
   "txconfirm.payer": "Pagada por",
   "txconfirm.payer.you": "(usted)",
+  "txconfirm.feegrant.covered": "La corporación cubre esta comisión de red mediante una concesión de comisiones.",
+  "txconfirm.feegrant.unavailable": "No se pudo comprobar la concesión de comisiones, su cuenta paga esta comisión de red.",
   "txconfirm.proposal.explainer": "No posee ninguna autorización de operador que cubra esta acción. Se enviará como propuesta de gobernanza a {corporation}. Los miembros votan y luego se ejecuta automáticamente.",
   "txconfirm.proposal.title": "Título de la propuesta",
   "txconfirm.proposal.summary": "Resumen de la propuesta",

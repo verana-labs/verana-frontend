@@ -1,15 +1,15 @@
 'use client'
 
 import type { EncodeObject } from '@cosmjs/proto-signing'
+import type { StdFee } from '@cosmjs/stargate'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { logger } from '@/lib/logger'
-import { formatStdFee } from '@/lib/tx-preview'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 
 export type TxSimulation =
   | { status: 'simulating' }
-  | { status: 'ready'; fee: string }
+  | { status: 'ready'; fee: StdFee }
   | { status: 'failed'; message: string }
 
 export function useTxSimulation(msgs: EncodeObject[]): { simulation: TxSimulation; simulate: () => () => void } {
@@ -26,7 +26,7 @@ export function useTxSimulation(msgs: EncodeObject[]): { simulation: TxSimulatio
       .current({ msgs, simulate: true })
       .then((result) => {
         if (cancelled) return
-        if ('gas' in result && 'amount' in result) setSimulation({ status: 'ready', fee: formatStdFee(result) })
+        if ('gas' in result && 'amount' in result) setSimulation({ status: 'ready', fee: result })
         else setSimulation({ status: 'failed', message: 'Expected a simulated fee' })
       })
       .catch((error: unknown) => {

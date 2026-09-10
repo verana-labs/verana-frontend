@@ -15,6 +15,7 @@ type AminoSignOptions = {
   gasAdjustment?: number // e.g. 1.2 (20% safety buffer)
   memo?: string // Optional memo
   simulate?: boolean // NEW: default false
+  granter?: string
 }
 
 export type SimulateResult = StdFee
@@ -28,6 +29,7 @@ export async function signAndBroadcastManualAmino({
   gasAdjustment = 1.5,
   memo = '',
   simulate = false,
+  granter,
 }: AminoSignOptions): Promise<DeliverTxResponse | SimulateResult> {
   // Connect a client — only used for simulate and broadcast
   const client = await SigningStargateClient.connectWithSigner(rpcEndpoint, signer, {
@@ -54,7 +56,7 @@ export async function signAndBroadcastManualAmino({
   }
 
   const gasLimit = Math.ceil(simulated * gasAdjustment)
-  const fee = calculateFee(gasLimit, GasPrice.fromString(gasPrice))
+  const fee: StdFee = { ...calculateFee(gasLimit, GasPrice.fromString(gasPrice)), granter }
 
   // If only simulating, return the computed fee before signing/broadcasting
   if (simulate) return fee

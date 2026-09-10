@@ -15,6 +15,13 @@ export function proposalMetadata(title: string, summary: string, fallbackTitle: 
   return { title: resolved, summary: summary.trim() || resolved }
 }
 
+export interface TxFeeGrant {
+  corporationId: number
+  grantee: string
+  msgType: string
+  granterAddress: string
+}
+
 export interface TxConfirmRequest {
   titleKey: string
   effect: string
@@ -27,6 +34,7 @@ export interface TxConfirmRequest {
   proposalTitle?: string
   corporationLabel?: string
   buildProposalMsgs?: (metadata: ProposalMetadata) => EncodeObject[]
+  feeGrant?: TxFeeGrant
 }
 
 export interface TxConfirmResult {

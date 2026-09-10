@@ -84,6 +84,15 @@ export async function confirmDelegableMsgs(
     warning: severity ? warningFor(typeUrl) : undefined,
     proposalTitle: mode === 'proposal' ? proposalTitle : undefined,
     buildProposalMsgs: mode === 'proposal' ? resolution.build : undefined,
+    feeGrant:
+      mode === 'operator'
+        ? {
+            corporationId: actingCorporation.corporation.id,
+            grantee: address,
+            msgType: typeUrl,
+            granterAddress: actingCorporation.corporation.policyAddress,
+          }
+        : undefined,
     costLines,
   })
   if (!confirmed) return null
@@ -91,7 +100,7 @@ export async function confirmDelegableMsgs(
     await notify(t('corporation.select.changed'), 'error')
     return null
   }
-  return { msgs: confirmed.msgs, mode }
+  return { msgs: confirmed.msgs, mode, granter: confirmed.granter }
 }
 
 export function useDelegableMsgs(): (args: DelegableMsgsArgs) => Promise<DelegableMsgs | null> {

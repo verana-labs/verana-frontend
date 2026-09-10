@@ -14,6 +14,7 @@ export type DelegableBuild = (corporation: string, operator: string) => EncodeOb
 export interface DelegableMsgs {
   msgs: EncodeObject[]
   mode: CorporationSigningMode
+  granter?: string
 }
 
 export interface DelegableResolution {

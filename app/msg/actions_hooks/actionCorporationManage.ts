@@ -238,6 +238,15 @@ export function delegablePreview(
     warning: severity ? translate(`txconfirm.warning.${name}`) : undefined,
     proposalTitle: mode === 'proposal' ? proposalTitle : undefined,
     corporationLabel: shortenMiddle(membership.corporation.did, 32),
+    feeGrant:
+      mode === 'operator'
+        ? {
+            corporationId: membership.corporation.id,
+            grantee: payer,
+            msgType: typeUrl,
+            granterAddress: membership.corporation.policyAddress,
+          }
+        : undefined,
   }
 }
 
@@ -268,7 +277,7 @@ export function useCorporationManage(onDone?: () => void) {
     inFlight.current = true
     try {
       void notify(translate(`notification.${notificationKey}.inprogress`), 'inProgress')
-      const result = await sendTx({ msgs: confirmed.msgs, memo: notificationKey })
+      const result = await sendTx({ msgs: confirmed.msgs, memo: notificationKey, granter: confirmed.granter })
       if (!('code' in result)) throw new Error('Expected a transaction response')
       if (result.code !== 0)
         throw new Error(`${translate(`notification.${notificationKey}.error`)} (${result.code}): ${result.rawLog}`)

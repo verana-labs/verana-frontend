@@ -5,15 +5,19 @@ import { useChain } from '@cosmos-kit/react'
 import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import { type FeeGrantLookup, useFeeGrant } from '@/hooks/useFeeGrant'
 import { type TxSimulation, useTxSimulation } from '@/hooks/useTxSimulation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
+import { feeGrantCovering, nativeFeeAmount } from '@/lib/fee-grant'
 import {
   confirmLabelKey,
+  formatStdFee,
   modeLabelKey,
   proposalMetadata,
   type TxConfirmRequest,
   type TxConfirmResult,
+  type TxFeeGrant,
   type TxSeverity,
 } from '@/lib/tx-preview'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
@@ -47,7 +51,17 @@ function FeeValue({ simulation }: { simulation: TxSimulation }) {
     return <span className="animate-pulse text-gray-400">{t('txconfirm.fee.simulating')}</span>
   if (simulation.status === 'failed')
     return <span className="text-red-600 dark:text-red-400">{t('txconfirm.fee.failed')}</span>
-  return <span>{simulation.fee}</span>
+  return <span>{formatStdFee(simulation.fee)}</span>
+}
+
+function feeGranter(
+  feeGrant: TxFeeGrant | undefined,
+  lookup: FeeGrantLookup,
+  simulation: TxSimulation
+): string | undefined {
+  if (!feeGrant || lookup.status !== 'ready' || simulation.status !== 'ready') return undefined
+  const covering = feeGrantCovering(lookup.grants, feeGrant.msgType, nativeFeeAmount(simulation.fee))
+  return covering ? feeGrant.granterAddress : undefined
 }
 
 function WarningBox({ severity, children }: { severity: TxSeverity | undefined; children: ReactNode }) {
@@ -101,6 +115,7 @@ export function ConfirmTransactionModal({
     [composing, buildProposalMsgs, msgs, fallbackTitle, settledTitle, settledSummary]
   )
   const { simulation, simulate } = useTxSimulation(simulatedMsgs)
+  const feeGrantLookup = useFeeGrant(request.feeGrant ?? null)
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -112,6 +127,8 @@ export function ConfirmTransactionModal({
 
   const proposal = request.mode === 'proposal'
   const editing = title !== settledTitle || summary !== settledSummary
+  const granter = feeGranter(request.feeGrant, feeGrantLookup, simulation)
+  const payer = granter ?? request.payer
   const labelClass = 'text-sm font-medium text-gray-700 dark:text-gray-300 block'
 
   return (
@@ -140,8 +157,8 @@ export function ConfirmTransactionModal({
             <FeeValue simulation={simulation} />
           </Row>
           <Row label={t('txconfirm.payer')}>
-            <span className="font-mono">{shortenMiddle(request.payer, 24)}</span>
-            {request.payer === address ? ` ${t('txconfirm.payer.you')}` : ''}
+            <span className="font-mono">{shortenMiddle(payer, 24)}</span>
+            {payer === address ? ` ${t('txconfirm.payer.you')}` : ''}
           </Row>
           {request.costLines?.map((line) => (
             <Row key={line.label} label={line.label}>
@@ -149,6 +166,10 @@ export function ConfirmTransactionModal({
             </Row>
           ))}
         </dl>
+        {granter ? <p className="text-sm text-gray-600 dark:text-gray-300">{t('txconfirm.feegrant.covered')}</p> : null}
+        {feeGrantLookup.status === 'failed' ? (
+          <p className="text-sm text-gray-600 dark:text-gray-300">{t('txconfirm.feegrant.unavailable')}</p>
+        ) : null}
         {proposal ? (
           <p className="text-sm text-gray-600 dark:text-gray-300">
             {t('txconfirm.proposal.explainer', {
@@ -190,7 +211,7 @@ export function ConfirmTransactionModal({
             type="button"
             className="btn-action-confirm flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={simulation.status !== 'ready' || editing}
-            onClick={() => onConfirm({ msgs: simulatedMsgs })}
+            onClick={() => onConfirm({ msgs: simulatedMsgs, granter })}
           >
             {t(confirmLabelKey(request.mode))}
           </button>

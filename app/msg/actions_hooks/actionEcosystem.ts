@@ -241,7 +241,7 @@ export function useActionEcosystem(onCancel?: () => void, onRefresh?: (id?: stri
         'inProgress',
         t('notification.msg.inprogress.title')
       )
-      const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType })
+      const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType, granter: resolved.granter })
       if (!isDeliverTxResponse(result)) throw new Error('Expected a transaction response')
       if (result.code !== 0) {
         await notify(errorMessage(result.code, result.rawLog), 'error', t('notification.msg.failed.title'))

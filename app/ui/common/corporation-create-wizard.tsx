@@ -10,6 +10,7 @@ import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { UserCorporation } from '@/lib/corporation-discovery'
 import { canonicalizeLanguageTag } from '@/lib/language'
+import { formatStdFee } from '@/lib/tx-preview'
 import {
   buildCreateCorporationMessages,
   buildGrantOperatorMessages,
@@ -98,7 +99,7 @@ function FeeValue({ simulation }: { simulation: TxSimulation }) {
         <span className="block text-xs">{simulation.message}</span>
       </span>
     )
-  return <span>{simulation.fee}</span>
+  return <span>{formatStdFee(simulation.fee)}</span>
 }
 
 function CostBlock({
