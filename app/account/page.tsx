@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useAccountTxCount } from '@/hooks/useAccountTxCount'
@@ -77,6 +78,15 @@ export default function AccountPage() {
         title={resolveTranslatable({ key: 'account.title' }, translate) ?? 'Account'}
         description={[resolveTranslatable({ key: 'account.desc' }, translate) ?? '']}
       />
+      <p className="mb-6 -mt-2 text-sm text-gray-500 dark:text-gray-400">
+        {resolveTranslatable({ key: 'account.corporation.moved' }, translate)}{' '}
+        <Link
+          href="/corporation"
+          className="font-medium text-primary-700 dark:text-primary-300 underline underline-offset-2"
+        >
+          {resolveTranslatable({ key: 'account.corporation.moved.link' }, translate)}
+        </Link>
+      </p>
       {data && (
         <ColumnsDataView<AccountData>
           sectionsI18n={accountSections}

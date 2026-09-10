@@ -1,0 +1,27 @@
+import { veranaTypeUrls } from '@verana-labs/verana-types/signing'
+
+export const OPERATOR_GRANT_MESSAGE_TYPES = [
+  veranaTypeUrls.MsgUpdateCorporation,
+  veranaTypeUrls.MsgCreateEcosystem,
+  veranaTypeUrls.MsgUpdateEcosystem,
+  veranaTypeUrls.MsgArchiveEcosystem,
+  veranaTypeUrls.MsgAddGovernanceFrameworkDocument,
+  veranaTypeUrls.MsgIncreaseActiveGovernanceFrameworkVersion,
+  veranaTypeUrls.MsgCreateCredentialSchema,
+  veranaTypeUrls.MsgUpdateCredentialSchema,
+  veranaTypeUrls.MsgArchiveCredentialSchema,
+  veranaTypeUrls.MsgSelfCreateParticipant,
+  veranaTypeUrls.MsgCreateRootParticipant,
+  veranaTypeUrls.MsgSetParticipantEffectiveUntil,
+  veranaTypeUrls.MsgRevokeParticipant,
+  veranaTypeUrls.MsgStartParticipantOP,
+  veranaTypeUrls.MsgRenewParticipantOP,
+  veranaTypeUrls.MsgSetParticipantOPToValidated,
+  veranaTypeUrls.MsgTriggerResolver,
+  veranaTypeUrls.MsgCancelParticipantOPLastRequest,
+  veranaTypeUrls.MsgSlashParticipantTrustDeposit,
+  veranaTypeUrls.MsgRepayParticipantSlashedTrustDeposit,
+  veranaTypeUrls.MsgReclaimTrustDepositYield,
+  veranaTypeUrls.MsgRepaySlashedTrustDeposit,
+  veranaTypeUrls.MsgStoreDigest,
+] as const

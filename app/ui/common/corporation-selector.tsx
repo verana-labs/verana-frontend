@@ -1,9 +1,10 @@
 'use client'
 
 import { useChain } from '@cosmos-kit/react'
-import { faBuilding, faChevronDown, faRotateRight } from '@fortawesome/free-solid-svg-icons'
+import { faBuilding, faChevronDown, faPlus, faRotateRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
+import Link from 'next/link'
 import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
@@ -89,6 +90,15 @@ export function CorporationSelector() {
             <FontAwesomeIcon icon={faRotateRight} className="text-xs opacity-70" />
             {translate('corporation.selector.refresh')}
           </button>
+        </MenuItem>
+        <MenuItem>
+          <Link
+            href="/corporation?create=1"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-primary-700 dark:text-primary-300 data-[focus]:bg-surface-muted dark:data-[focus]:bg-neutral-70/30"
+          >
+            <FontAwesomeIcon icon={faPlus} />
+            {translate('corporation.selector.create')}
+          </Link>
         </MenuItem>
       </MenuItems>
     </Menu>

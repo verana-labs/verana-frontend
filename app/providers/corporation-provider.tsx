@@ -6,6 +6,7 @@ import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { type CorporationAttention, fetchAttention } from '@/lib/corporation-attention'
 import {
   type CorporationMembership,
+  claimIntendedMembership,
   discoverCorporations,
   forgetActingCorporationId,
   invalidatesActingSession,
@@ -23,6 +24,7 @@ export interface CorporationContextValue {
   actingCorporationLost: boolean
   attention: Record<number, CorporationAttention>
   setActingCorporation: (corporationId: number) => void
+  actAsOnceDiscovered: (corporationId: number) => void
   refetch: () => Promise<void>
 }
 
@@ -40,6 +42,7 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
   const runId = useRef(0)
   const lastAccount = useRef<string | undefined>(undefined)
   const knownMemberships = useRef<CorporationMembership[]>([])
+  const intendedActingId = useRef<number | null>(null)
 
   const discover = useCallback(async (account: string) => {
     const run = ++runId.current
@@ -51,7 +54,11 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
       ? mergeKnownMemberships(knownMemberships.current, discovered.memberships)
       : discovered.memberships
     knownMemberships.current = known
-    const restored = restoreActingMembership(account, known, discovered.error !== null)
+    const intended = claimIntendedMembership(account, known, intendedActingId.current)
+    if (intended) intendedActingId.current = null
+    const restored = intended
+      ? { membership: intended, lost: false }
+      : restoreActingMembership(account, known, discovered.error !== null)
     setMemberships(known)
     setActingCorporationId(restored.membership?.corporation.id ?? null)
     setActingCorporationLost(restored.lost)
@@ -73,6 +80,7 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
     if (address) lastAccount.current = address
     runId.current += 1
     knownMemberships.current = []
+    intendedActingId.current = null
     setMemberships([])
     setActingCorporationId(null)
     setActingCorporationLost(false)
@@ -88,11 +96,20 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
   const setActingCorporation = useCallback(
     (corporationId: number) => {
       if (!address || !memberships.some((membership) => membership.corporation.id === corporationId)) return
+      intendedActingId.current = null
       saveActingCorporationId(address, corporationId)
       setActingCorporationId(corporationId)
       setActingCorporationLost(false)
     },
     [address, memberships]
+  )
+
+  const actAsOnceDiscovered = useCallback(
+    (corporationId: number) => {
+      intendedActingId.current = corporationId
+      if (address) void discover(address)
+    },
+    [address, discover]
   )
 
   const refetch = useCallback(async () => {
@@ -111,6 +128,7 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
       actingCorporationLost,
       attention,
       setActingCorporation,
+      actAsOnceDiscovered,
       refetch,
     }
   }, [
@@ -121,6 +139,7 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
     actingCorporationLost,
     attention,
     setActingCorporation,
+    actAsOnceDiscovered,
     refetch,
   ])
 

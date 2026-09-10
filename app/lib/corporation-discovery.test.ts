@@ -10,7 +10,9 @@ vi.mock('@/config/env', () => ({
 import {
   type CorporationMembership,
   chooseActingMembership,
+  claimIntendedMembership,
   discoverCorporations,
+  findCorporationMembership,
   forgetActingCorporationId,
   invalidatesActingSession,
   loadActingCorporationId,
@@ -190,6 +192,21 @@ describe('discoverCorporations', () => {
   })
 })
 
+describe('findCorporationMembership', () => {
+  it('returns the membership of that corporation, null when the account cannot act for it', async () => {
+    stubFetch({
+      [AUTHORIZATIONS]: {
+        authorizations: [{ corporation_id: 7, msg_types: ['/verana.ec.v1.MsgCreateEcosystem'] }],
+      },
+      [MEMBERSHIPS]: { memberships: [] },
+      [`${CORPORATION}7`]: corporationPayload(7),
+    })
+
+    expect((await findCorporationMembership('verana1operator', 7))?.operator).toBe(true)
+    expect(await findCorporationMembership('verana1operator', 9)).toBeNull()
+  })
+})
+
 describe('chooseActingMembership', () => {
   it('picks the persisted corporation when it is still in the set', () => {
     expect(chooseActingMembership([membership(7), membership(9)], 9)?.corporation.id).toBe(9)
@@ -202,6 +219,28 @@ describe('chooseActingMembership', () => {
   it('defers with several candidates and nothing usable persisted', () => {
     expect(chooseActingMembership([membership(7), membership(9)], null)).toBeNull()
     expect(chooseActingMembership([membership(7), membership(9)], 4)).toBeNull()
+  })
+})
+
+describe('claimIntendedMembership', () => {
+  it('persists the intended corporation once discovery returns it', () => {
+    stubStorage()
+    expect(claimIntendedMembership('verana1operator', [membership(7), membership(9)], 9)?.corporation.id).toBe(9)
+    expect(loadActingCorporationId('verana1operator')).toBe(9)
+  })
+
+  it('persists nothing while discovery has not returned it yet', () => {
+    stubStorage()
+    saveActingCorporationId('verana1operator', 7)
+    expect(claimIntendedMembership('verana1operator', [membership(7)], 9)).toBeNull()
+    expect(loadActingCorporationId('verana1operator')).toBe(7)
+  })
+
+  it('leaves the persisted choice alone without an intent', () => {
+    stubStorage()
+    saveActingCorporationId('verana1operator', 7)
+    expect(claimIntendedMembership('verana1operator', [membership(7)], null)).toBeNull()
+    expect(loadActingCorporationId('verana1operator')).toBe(7)
   })
 })
 

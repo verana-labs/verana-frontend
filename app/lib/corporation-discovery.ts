@@ -126,6 +126,14 @@ export async function discoverCorporations(address: string): Promise<Corporation
   return { memberships, error: failureReason([grantsResult, weightsResult, ...details]) }
 }
 
+export async function findCorporationMembership(
+  address: string,
+  corporationId: number
+): Promise<CorporationMembership | null> {
+  const { memberships } = await discoverCorporations(address)
+  return memberships.find((membership) => membership.corporation.id === corporationId) ?? null
+}
+
 const STORAGE_PREFIX = 'verana.acting-corporation:'
 
 interface StoredActing {
@@ -199,6 +207,17 @@ export function chooseActingMembership(
   const persisted = memberships.find((membership) => membership.corporation.id === persistedId)
   if (persisted) return persisted
   return memberships.length === 1 ? memberships[0] : null
+}
+
+export function claimIntendedMembership(
+  address: string,
+  memberships: CorporationMembership[],
+  intendedId: number | null
+): CorporationMembership | null {
+  const intended = memberships.find((membership) => membership.corporation.id === intendedId)
+  if (!intended) return null
+  saveActingCorporationId(address, intended.corporation.id)
+  return intended
 }
 
 export interface ActingRestore {
