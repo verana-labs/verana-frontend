@@ -16,6 +16,7 @@ import {
   forgetActingCorporationId,
   invalidatesActingSession,
   loadActingCorporationId,
+  lostActingCorporation,
   mergeKnownMemberships,
   restoreActingMembership,
   saveActingCorporationId,
@@ -260,6 +261,21 @@ describe('mergeKnownMemberships', () => {
     expect(mergeKnownMemberships([], [membership(9), membership(7)]).map((entry) => entry.corporation.id)).toEqual([
       7, 9,
     ])
+  })
+})
+
+describe('lostActingCorporation', () => {
+  it('is null without an acting corporation', () => {
+    expect(lostActingCorporation(null, [membership(7)])).toBeNull()
+  })
+
+  it('is null while the acting corporation is still discovered', () => {
+    expect(lostActingCorporation(membership(7), [membership(7), membership(9)])).toBeNull()
+  })
+
+  it('returns the acting corporation once discovery drops it', () => {
+    expect(lostActingCorporation(membership(7), [membership(9)])).toEqual(membership(7).corporation)
+    expect(lostActingCorporation(membership(7), [])).toEqual(membership(7).corporation)
   })
 })
 

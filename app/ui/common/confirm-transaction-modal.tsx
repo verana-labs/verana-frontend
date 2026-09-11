@@ -9,11 +9,13 @@ import { type FeeGrantLookup, useFeeGrant } from '@/hooks/useFeeGrant'
 import { simulationFor, type TxSimulation, useTxSimulation } from '@/hooks/useTxSimulation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
+import { classifyChainError, unauthorizedRejectionText } from '@/lib/chain-error'
 import { feeGrantCovering, nativeFeeAmount } from '@/lib/fee-grant'
 import {
   confirmLabelKey,
   formatStdFee,
   modeLabelKey,
+  msgShortName,
   proposalMetadata,
   type TxConfirmRequest,
   type TxConfirmResult,
@@ -133,6 +135,9 @@ export function ConfirmTransactionModal({
   const payerPending =
     feeGrantLookup.status === 'loading' || (request.feeGrant !== undefined && currentSimulation.status === 'simulating')
   const labelClass = 'text-sm font-medium text-gray-700 dark:text-gray-300 block'
+  const corporationLabel = request.corporationLabel ?? shortenMiddle(proposalPolicy(request.msgs), 24)
+  const unauthorized =
+    currentSimulation.status === 'failed' && classifyChainError(currentSimulation.message) === 'unauthorized'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onCancel}>
@@ -181,9 +186,7 @@ export function ConfirmTransactionModal({
         ) : null}
         {proposal ? (
           <p className="text-sm text-gray-600 dark:text-gray-300">
-            {t('txconfirm.proposal.explainer', {
-              corporation: request.corporationLabel ?? shortenMiddle(proposalPolicy(request.msgs), 24),
-            })}
+            {t('txconfirm.proposal.explainer', { corporation: corporationLabel })}
           </p>
         ) : null}
         {composing ? (
@@ -206,6 +209,14 @@ export function ConfirmTransactionModal({
         {request.warning ? <WarningBox severity={request.severity}>{request.warning}</WarningBox> : null}
         {currentSimulation.status === 'failed' ? (
           <WarningBox severity="irreversible">
+            {unauthorized ? (
+              <span className="block font-medium mb-1">
+                {unauthorizedRejectionText({
+                  corporation: corporationLabel,
+                  msg: msgShortName(request.msgs[0]?.typeUrl ?? ''),
+                })}
+              </span>
+            ) : null}
             {t('txconfirm.simulation.rejected', { msg: currentSimulation.message })}{' '}
             <button type="button" onClick={() => void simulate()} className="underline font-medium">
               {t('txconfirm.retry')}

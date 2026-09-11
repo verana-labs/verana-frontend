@@ -126,6 +126,18 @@ export async function discoverCorporations(address: string): Promise<Corporation
   return { memberships, error: failureReason([grantsResult, weightsResult, ...details]) }
 }
 
+export function lostActingCorporation(
+  actingCorporation: CorporationMembership | null,
+  discovered: CorporationMembership[]
+): UserCorporation | null {
+  if (
+    !actingCorporation ||
+    discovered.some((membership) => membership.corporation.id === actingCorporation.corporation.id)
+  )
+    return null
+  return actingCorporation.corporation
+}
+
 export async function findCorporationMembership(
   address: string,
   corporationId: number

@@ -14,11 +14,13 @@ export type DelegableBuild = (corporation: string, operator: string) => EncodeOb
 export interface DelegableMsgs {
   msgs: EncodeObject[]
   mode: CorporationSigningMode
+  corporation: string
   granter?: string
 }
 
 export interface DelegableResolution {
   mode: CorporationSigningMode
+  corporation: string
   build: (metadata: ProposalMetadata) => EncodeObject[]
 }
 
@@ -35,10 +37,11 @@ export function resolveDelegableMsgs({
 }): DelegableResolution | null {
   const mode = corporationSigningMode(typeUrl, membership)
   if (!mode) return null
-  const policy = membership.corporation.policyAddress
-  if (mode === 'operator') return { mode, build: () => [build(policy, address)] }
+  const { policyAddress: policy, did: corporation } = membership.corporation
+  if (mode === 'operator') return { mode, corporation, build: () => [build(policy, address)] }
   return {
     mode,
+    corporation,
     build: (metadata) => [wrapInProposal(membership, address, build(policy, policy), metadata.title, metadata.summary)],
   }
 }

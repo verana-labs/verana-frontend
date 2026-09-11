@@ -10,6 +10,7 @@ import { NotificationProvider } from '@/providers/notification-provider'
 import RequireConnectedWallet from '@/providers/require-connected-wallet'
 import { TxConfirmProvider } from '@/providers/tx-confirm-provider'
 import { CorporationChooser } from '@/ui/common/corporation-chooser'
+import { CorporationLostModal } from '@/ui/common/corporation-lost-modal'
 
 const VeranaChainProvider = dynamic(() => import('@/providers/verana-chain-provider'), { ssr: false })
 
@@ -21,6 +22,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           <IndexerEventsProvider>
             <CorporationProvider>
               <CorporationChooser />
+              <CorporationLostModal />
               <RequireConnectedWallet>
                 <NotificationProvider>
                   <TxConfirmProvider>

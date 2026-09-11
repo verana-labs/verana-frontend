@@ -4,6 +4,7 @@ import { useChain } from '@cosmos-kit/react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useCorporationDetails } from '@/hooks/useCorporationDetails'
+import { useActionSigning } from '@/hooks/useSigningMode'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
@@ -24,15 +25,22 @@ export default function CorporationPage() {
   const searchParams = useSearchParams()
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
-  const { actingCorporation, loading: actingLoading, refetch: refetchCorporations } = useUserCorporation()
+  const {
+    actingCorporation,
+    loading: actingLoading,
+    error: discoveryError,
+    refetch: refetchCorporations,
+    revalidate,
+  } = useUserCorporation()
   const { details, loading, error, refetch } = useCorporationDetails(actingCorporation?.corporation.id)
   const [votesVersion, setVotesVersion] = useState(0)
   const refreshAfterTx = () => {
     void refetch()
-    void refetchCorporations()
+    void revalidate()
     setVotesVersion((version) => version + 1)
   }
   const manage = useCorporationManage(refreshAfterTx)
+  const rotate = useActionSigning('MsgUpdateCorporation')
   const [rotating, setRotating] = useState(false)
   const [composing, setComposing] = useState(false)
   const [enrichment, setEnrichment] = useState<DidEnrichment | null>(null)
@@ -66,6 +74,10 @@ export default function CorporationPage() {
     return <p className="p-6 text-sm text-gray-500">{translate('corporation.page.loading')}</p>
   }
 
+  if (discoveryError && !actingCorporation) {
+    return <div className="p-6 error-pane">{discoveryError}</div>
+  }
+
   if (!actingCorporation || creating) {
     return (
       <>
@@ -96,8 +108,8 @@ export default function CorporationPage() {
     walletAddress: address,
     openProposals,
     unrepaidSlash,
+    rotate,
     modes: {
-      update: corporationSigningMode('/verana.co.v1.MsgUpdateCorporation', actingCorporation),
       grant: corporationSigningMode('/verana.de.v1.MsgGrantOperatorAuthorization', actingCorporation),
       revoke: corporationSigningMode('/verana.de.v1.MsgRevokeOperatorAuthorization', actingCorporation),
       repay: corporationSigningMode('/verana.td.v1.MsgRepaySlashedTrustDeposit', actingCorporation),

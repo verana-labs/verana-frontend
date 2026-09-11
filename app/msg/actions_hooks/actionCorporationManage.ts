@@ -21,8 +21,10 @@ import {
 import { ThresholdDecisionPolicy, VoteOption } from 'cosmjs-types/cosmos/group/v1/types'
 import { useRef } from 'react'
 import { veranaRegistry } from '@/config/veranaChain.sign.client'
+import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
+import { notifyChainRejection } from '@/lib/chain-error'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import {
   msgShortName,
@@ -257,11 +259,15 @@ function accountPreview(effect: string, payer: string): TxPreview {
 export function useCorporationManage(onDone?: () => void) {
   const veranaChain = useVeranaChain()
   const { address, isWalletConnected } = useChain(veranaChain.chain_name)
+  const { actingCorporation } = useUserCorporation()
   const { waitForBlock } = useIndexerEvents()
   const { notify } = useNotification()
   const { confirmTx } = useTxConfirm()
   const sendTx = useSendTxDetectingMode(veranaChain)
   const inFlight = useRef(false)
+  const actingCorporationRef = useRef(actingCorporation)
+  actingCorporationRef.current = actingCorporation
+  const actingCorporationId = () => actingCorporationRef.current?.corporation.id ?? null
 
   async function broadcast(notificationKey: string, msgs: EncodeObject[], preview: TxPreview): Promise<boolean> {
     if (!isWalletConnected || !address) {
@@ -272,15 +278,32 @@ export function useCorporationManage(onDone?: () => void) {
       await notify(translate('error.msg.pending.transaction'), 'error')
       return false
     }
+    const actingBefore = actingCorporationId()
     const confirmed = await confirmTx({ ...preview, msgs })
     if (!confirmed) return false
+    if (actingCorporationId() !== actingBefore) {
+      await notify(translate('corporation.select.changed'), 'error')
+      return false
+    }
+    const rejection = {
+      corporation:
+        preview.corporationLabel ?? (actingCorporation ? shortenMiddle(actingCorporation.corporation.did, 32) : ''),
+      msg: msgShortName(msgs[0]?.typeUrl ?? ''),
+    }
     inFlight.current = true
     try {
       void notify(translate(`notification.${notificationKey}.inprogress`), 'inProgress')
       const result = await sendTx({ msgs: confirmed.msgs, memo: notificationKey, granter: confirmed.granter })
       if (!('code' in result)) throw new Error('Expected a transaction response')
-      if (result.code !== 0)
-        throw new Error(`${translate(`notification.${notificationKey}.error`)} (${result.code}): ${result.rawLog}`)
+      if (result.code !== 0) {
+        await notifyChainRejection(
+          notify,
+          result.rawLog,
+          `${translate(`notification.${notificationKey}.error`)} (${result.code}): ${result.rawLog}`,
+          rejection
+        )
+        return false
+      }
       const height = txHeight(result)
       const indexed = await waitForIndexerAfterTx(waitForBlock, height)
       const notification = successfulTxNotification(
@@ -293,7 +316,8 @@ export function useCorporationManage(onDone?: () => void) {
       else runAfterIndexerCatchesUp(waitForBlock, height, () => onDone?.())
       return true
     } catch (error) {
-      await notify(error instanceof Error ? error.message : String(error), 'error')
+      const message = error instanceof Error ? error.message : String(error)
+      await notifyChainRejection(notify, message, message, rejection)
       return false
     } finally {
       inFlight.current = false
