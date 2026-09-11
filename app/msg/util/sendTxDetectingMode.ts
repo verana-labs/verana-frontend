@@ -7,7 +7,6 @@ import { useChain } from '@cosmos-kit/react'
 import { useCallback } from 'react'
 import { VERANA_SIGN_DIRECT_MODE } from '@/config/env'
 import { veranaGasAdjustment, veranaGasPrice, veranaRegistry } from '@/config/veranaChain.sign.client'
-import { useCalculateFee } from '@/hooks/useCalculateFee'
 import { logger } from '@/lib/logger'
 import { type SimulateResult, signAndBroadcastManualAmino } from '@/msg/util/signAndBroadcastManualAmino'
 import { signAndBroadcastManualDirect } from '@/msg/util/signAndBroadcastManualDirect'
@@ -28,7 +27,6 @@ export function useSendTxDetectingMode(chain: Chain) {
   const { address, getOfflineSignerDirect, getOfflineSignerAmino, getRpcEndpoint, isWalletConnected } = useChain(
     chain.chain_name
   )
-  const { fee: fallbackSimulationFee } = useCalculateFee()
 
   return useCallback(
     async (params: SendTxParams): Promise<DeliverTxResponse | SimulateResult> => {
@@ -90,25 +88,12 @@ export function useSendTxDetectingMode(chain: Chain) {
             granter,
           })
         } catch (e) {
-          const error = new Error(`Amino signing failed: ${e instanceof Error ? e.message : String(e)}`)
-          if (simulate) {
-            logger.error('signAndBroadcastManualAmino', error)
-            return fallbackSimulationFee as SimulateResult
-          }
-          throw error
+          throw new Error(`Amino signing failed: ${e instanceof Error ? e.message : String(e)}`)
         }
       }
 
       throw new Error('Signer does not support Direct or Amino')
     },
-    [
-      address,
-      chain.chain_id,
-      fallbackSimulationFee,
-      getOfflineSignerAmino,
-      getOfflineSignerDirect,
-      getRpcEndpoint,
-      isWalletConnected,
-    ]
+    [address, chain.chain_id, getOfflineSignerAmino, getOfflineSignerDirect, getRpcEndpoint, isWalletConnected]
   )
 }
