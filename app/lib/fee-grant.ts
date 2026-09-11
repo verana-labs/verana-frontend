@@ -62,6 +62,10 @@ function isExpired(expiration: string | null, now: number): boolean {
   return Number.isFinite(deadline) && deadline <= now
 }
 
+function coversMsgType(grant: FeeGrant, msgType: string): boolean {
+  return grant.msgTypes.length === 0 || grant.msgTypes.includes(msgType)
+}
+
 function coversFee(grant: FeeGrant, fee: bigint | null): boolean {
   if (!grant.spendLimit) return true
   if (fee === null) return false
@@ -79,7 +83,7 @@ export function feeGrantCovering(
   const fee = asAmount(feeAmountUvna)
   return (
     grants.find(
-      (grant) => grant.msgTypes.includes(msgType) && !isExpired(grant.expiration, now) && coversFee(grant, fee)
+      (grant) => coversMsgType(grant, msgType) && !isExpired(grant.expiration, now) && coversFee(grant, fee)
     ) ?? null
   )
 }

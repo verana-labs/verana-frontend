@@ -69,6 +69,10 @@ describe('nativeFeeAmount', () => {
 })
 
 describe('feeGrantCovering', () => {
+  it('covers every message type when the grant lists none', () => {
+    const grant = { msgTypes: [], spendLimit: null, remainingSpend: null, expiration: null }
+    expect(feeGrantCovering([grant], '/verana.ec.v1.MsgCreateEcosystem', '1000')).toBe(grant)
+  })
   it('covers any fee with an unlimited grant', () => {
     expect(feeGrantCovering([grant()], CREATE, '90000')).toEqual(grant())
   })
