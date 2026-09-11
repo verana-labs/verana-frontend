@@ -84,7 +84,6 @@ export const accountSections: Section<AccountData>[] = [
     name: t('dataview.account.sections.accountInformation'),
     sectionBorder: true,
     fields: [
-      { name: 'address', type: 'data', label: t('dataview.account.fields.address') },
       {
         name: 'network',
         label: t('dataview.account.fields.network'),
