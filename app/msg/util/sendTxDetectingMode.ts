@@ -7,13 +7,12 @@ import { useChain } from '@cosmos-kit/react'
 import { useCallback } from 'react'
 import { VERANA_SIGN_DIRECT_MODE } from '@/config/env'
 import { veranaGasAdjustment, veranaGasPrice, veranaRegistry } from '@/config/veranaChain.sign.client'
-import { useCalculateFee } from '@/hooks/useCalculateFee'
 import { logger } from '@/lib/logger'
 import { type SimulateResult, signAndBroadcastManualAmino } from '@/msg/util/signAndBroadcastManualAmino'
 import { signAndBroadcastManualDirect } from '@/msg/util/signAndBroadcastManualDirect'
 import { isAminoOnlySigner, isDirectSigner } from '@/msg/util/signerUtil'
 
-type SendTxParams = { msgs: EncodeObject[]; memo?: string; simulate?: boolean }
+type SendTxParams = { msgs: EncodeObject[]; memo?: string; simulate?: boolean; granter?: string }
 
 function resolveRpcEndpoint(value: unknown): string | undefined {
   if (typeof value === 'string') return value
@@ -28,11 +27,10 @@ export function useSendTxDetectingMode(chain: Chain) {
   const { address, getOfflineSignerDirect, getOfflineSignerAmino, getRpcEndpoint, isWalletConnected } = useChain(
     chain.chain_name
   )
-  const { fee: fallbackSimulationFee } = useCalculateFee()
 
   return useCallback(
     async (params: SendTxParams): Promise<DeliverTxResponse | SimulateResult> => {
-      const { msgs, memo = '', simulate = false } = params
+      const { msgs, memo = '', simulate = false, granter } = params
       const safeMemo = typeof memo === 'string' ? memo : String(memo ?? '')
 
       if (!isWalletConnected || !address) {
@@ -68,6 +66,7 @@ export function useSendTxDetectingMode(chain: Chain) {
             gasAdjustment: veranaGasAdjustment,
             memo: safeMemo,
             simulate,
+            granter,
           })
         } catch (e) {
           throw new Error(`Direct signing failed: ${e instanceof Error ? e.message : String(e)}`)
@@ -86,27 +85,15 @@ export function useSendTxDetectingMode(chain: Chain) {
             gasAdjustment: veranaGasAdjustment,
             memo: safeMemo,
             simulate,
+            granter,
           })
         } catch (e) {
-          const error = new Error(`Amino signing failed: ${e instanceof Error ? e.message : String(e)}`)
-          if (simulate) {
-            logger.error('signAndBroadcastManualAmino', error)
-            return fallbackSimulationFee as SimulateResult
-          }
-          throw error
+          throw new Error(`Amino signing failed: ${e instanceof Error ? e.message : String(e)}`)
         }
       }
 
       throw new Error('Signer does not support Direct or Amino')
     },
-    [
-      address,
-      chain.chain_id,
-      fallbackSimulationFee,
-      getOfflineSignerAmino,
-      getOfflineSignerDirect,
-      getRpcEndpoint,
-      isWalletConnected,
-    ]
+    [address, chain.chain_id, getOfflineSignerAmino, getOfflineSignerDirect, getRpcEndpoint, isWalletConnected]
   )
 }

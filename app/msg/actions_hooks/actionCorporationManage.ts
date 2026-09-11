@@ -24,11 +24,21 @@ import { veranaRegistry } from '@/config/veranaChain.sign.client'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
+import {
+  msgShortName,
+  type ProposalMetadata,
+  proposalMetadata,
+  type TxConfirmRequest,
+  txSeverity,
+} from '@/lib/tx-preview'
 import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import { extractTxHeight } from '@/msg/util/signerUtil'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
+import { useTxConfirm } from '@/providers/tx-confirm-provider'
+import type { I18nValues } from '@/ui/dataview/types'
+import { formatVNAFromUVNA, shortenMiddle } from '@/util/util'
 
 export type CorporationSigningMode = 'operator' | 'proposal'
 
@@ -185,6 +195,8 @@ export const VOTE_OPTIONS = {
 
 export type VoteChoice = keyof typeof VOTE_OPTIONS
 
+export type TxPreview = Omit<TxConfirmRequest, 'msgs'>
+
 export function buildVoteMessage(proposalId: number, voter: string, choice: VoteChoice): EncodeObject {
   return {
     typeUrl: '/cosmos.group.v1.MsgVote',
@@ -204,15 +216,54 @@ function txHeight(result: DeliverTxResponse): number {
   return height
 }
 
+export function delegablePreview(
+  typeUrl: string,
+  mode: CorporationSigningMode,
+  membership: CorporationMembership,
+  payer: string,
+  proposalTitle: string,
+  effectValues: I18nValues
+): TxPreview {
+  const name = msgShortName(typeUrl)
+  const severity = txSeverity(typeUrl) ?? undefined
+  return {
+    titleKey: 'txconfirm.title.default',
+    effect: translate(`txconfirm.effect.${name}`, {
+      corporation: shortenMiddle(membership.corporation.did, 32),
+      ...effectValues,
+    }),
+    mode,
+    payer,
+    severity,
+    warning: severity ? translate(`txconfirm.warning.${name}`) : undefined,
+    proposalTitle: mode === 'proposal' ? proposalTitle : undefined,
+    corporationLabel: shortenMiddle(membership.corporation.did, 32),
+    feeGrant:
+      mode === 'operator'
+        ? {
+            corporationId: membership.corporation.id,
+            grantee: payer,
+            msgType: typeUrl,
+            granterAddress: membership.corporation.policyAddress,
+          }
+        : undefined,
+  }
+}
+
+function accountPreview(effect: string, payer: string): TxPreview {
+  return { titleKey: 'txconfirm.title.default', effect, mode: 'account', payer }
+}
+
 export function useCorporationManage(onDone?: () => void) {
   const veranaChain = useVeranaChain()
   const { address, isWalletConnected } = useChain(veranaChain.chain_name)
   const { waitForBlock } = useIndexerEvents()
   const { notify } = useNotification()
+  const { confirmTx } = useTxConfirm()
   const sendTx = useSendTxDetectingMode(veranaChain)
   const inFlight = useRef(false)
 
-  async function broadcast(notificationKey: string, msgs: EncodeObject[]): Promise<boolean> {
+  async function broadcast(notificationKey: string, msgs: EncodeObject[], preview: TxPreview): Promise<boolean> {
     if (!isWalletConnected || !address) {
       await notify(translate('notification.msg.connectwallet'), 'error')
       return false
@@ -221,10 +272,12 @@ export function useCorporationManage(onDone?: () => void) {
       await notify(translate('error.msg.pending.transaction'), 'error')
       return false
     }
+    const confirmed = await confirmTx({ ...preview, msgs })
+    if (!confirmed) return false
     inFlight.current = true
     try {
       void notify(translate(`notification.${notificationKey}.inprogress`), 'inProgress')
-      const result = await sendTx({ msgs, memo: notificationKey })
+      const result = await sendTx({ msgs: confirmed.msgs, memo: notificationKey, granter: confirmed.granter })
       if (!('code' in result)) throw new Error('Expected a transaction response')
       if (result.code !== 0)
         throw new Error(`${translate(`notification.${notificationKey}.error`)} (${result.code}): ${result.rawLog}`)
@@ -251,7 +304,8 @@ export function useCorporationManage(onDone?: () => void) {
     membership: CorporationMembership,
     build: (operator: string) => EncodeObject,
     notificationKey: string,
-    proposalTitle: string
+    proposalTitle: string,
+    effectValues: I18nValues = {}
   ): Promise<boolean> {
     if (!address) {
       await notify(translate('notification.msg.connectwallet'), 'error')
@@ -263,11 +317,16 @@ export function useCorporationManage(onDone?: () => void) {
       await notify(translate('error.msg.corporation.notauthorized', { msgType: typeUrl }), 'error')
       return false
     }
-    if (mode === 'operator') return broadcast(notificationKey, [build(address)])
-    const policyAddress = membership.corporation.policyAddress
-    return broadcast('MsgSubmitProposal', [
-      wrapInProposal(membership, address, build(policyAddress), proposalTitle, proposalTitle),
-    ])
+    const preview = delegablePreview(typeUrl, mode, membership, address, proposalTitle, effectValues)
+    if (mode === 'operator') return broadcast(notificationKey, [build(address)], preview)
+    const inner = build(membership.corporation.policyAddress)
+    const buildProposalMsgs = (metadata: ProposalMetadata) => [
+      wrapInProposal(membership, address, inner, metadata.title, metadata.summary),
+    ]
+    return broadcast('MsgSubmitProposal', buildProposalMsgs(proposalMetadata('', '', proposalTitle)), {
+      ...preview,
+      buildProposalMsgs,
+    })
   }
 
   return {
@@ -276,28 +335,32 @@ export function useCorporationManage(onDone?: () => void) {
         membership,
         (operator) => buildUpdateCorporationMessage(membership, did, operator),
         'MsgUpdateCorporation',
-        `Rotate corporation DID to ${did}`
+        `Rotate corporation DID to ${did}`,
+        { did }
       ),
     grantOperator: (membership: CorporationMembership, grantee: string, msgTypes: string[]) =>
       sendDelegable(
         membership,
         (operator) => buildGrantOperatorMessage(membership, grantee, msgTypes, operator),
         'MsgGrantOperatorAuthorization',
-        `Grant operator authorization to ${grantee}`
+        `Grant operator authorization to ${grantee}`,
+        { grantee: shortenMiddle(grantee, 24), count: msgTypes.length }
       ),
     revokeOperator: (membership: CorporationMembership, grantee: string) =>
       sendDelegable(
         membership,
         (operator) => buildRevokeOperatorMessage(membership, grantee, operator),
         'MsgRevokeOperatorAuthorization',
-        `Revoke operator authorization of ${grantee}`
+        `Revoke operator authorization of ${grantee}`,
+        { operator: shortenMiddle(grantee, 24) }
       ),
     repaySlashed: (membership: CorporationMembership, depositUvna: number) =>
       sendDelegable(
         membership,
         (operator) => buildRepaySlashedMessage(membership, depositUvna, operator),
         'MsgRepaySlashedTrustDeposit',
-        'Repay the slashed trust deposit'
+        'Repay the slashed trust deposit',
+        { amount: formatVNAFromUVNA(String(depositUvna)) }
       ),
     propose: async (membership: CorporationMembership, message: EncodeObject, title: string): Promise<boolean> => {
       if (!membership.member) {
@@ -308,23 +371,44 @@ export function useCorporationManage(onDone?: () => void) {
         await notify(translate('notification.msg.connectwallet'), 'error')
         return false
       }
-      return broadcast('MsgSubmitProposal', [wrapInProposal(membership, address, message, title, title)])
+      return broadcast(
+        'MsgSubmitProposal',
+        [wrapInProposal(membership, address, message, title, title)],
+        accountPreview(
+          translate('txconfirm.effect.MsgSubmitProposal', {
+            corporation: shortenMiddle(membership.corporation.did, 32),
+          }),
+          address
+        )
+      )
     },
     vote: (proposalId: number, choice: VoteChoice) =>
-      broadcast('MsgVote', [buildVoteMessage(proposalId, address ?? '', choice)]),
+      broadcast(
+        'MsgVote',
+        [buildVoteMessage(proposalId, address ?? '', choice)],
+        accountPreview(translate('txconfirm.effect.MsgVote', { option: choice, id: proposalId }), address ?? '')
+      ),
     execute: (proposalId: number) =>
-      broadcast('MsgExec', [
-        {
-          typeUrl: '/cosmos.group.v1.MsgExec',
-          value: MsgExec.fromPartial({ proposalId: BigInt(proposalId), executor: address ?? '' }),
-        },
-      ]),
+      broadcast(
+        'MsgExec',
+        [
+          {
+            typeUrl: '/cosmos.group.v1.MsgExec',
+            value: MsgExec.fromPartial({ proposalId: BigInt(proposalId), executor: address ?? '' }),
+          },
+        ],
+        accountPreview(translate('txconfirm.effect.MsgExec', { id: proposalId }), address ?? '')
+      ),
     withdraw: (proposalId: number) =>
-      broadcast('MsgWithdrawProposal', [
-        {
-          typeUrl: '/cosmos.group.v1.MsgWithdrawProposal',
-          value: MsgWithdrawProposal.fromPartial({ proposalId: BigInt(proposalId), address: address ?? '' }),
-        },
-      ]),
+      broadcast(
+        'MsgWithdrawProposal',
+        [
+          {
+            typeUrl: '/cosmos.group.v1.MsgWithdrawProposal',
+            value: MsgWithdrawProposal.fromPartial({ proposalId: BigInt(proposalId), address: address ?? '' }),
+          },
+        ],
+        accountPreview(translate('txconfirm.effect.MsgWithdrawProposal', { id: proposalId }), address ?? '')
+      ),
   }
 }

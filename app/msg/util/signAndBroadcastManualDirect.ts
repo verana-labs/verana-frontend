@@ -10,7 +10,7 @@ import {
   OfflineDirectSigner,
   Registry,
 } from '@cosmjs/proto-signing'
-import { calculateFee, DeliverTxResponse, GasPrice, SigningStargateClient } from '@cosmjs/stargate'
+import { calculateFee, DeliverTxResponse, GasPrice, SigningStargateClient, StdFee } from '@cosmjs/stargate'
 import { createVeranaRegistry } from '@verana-labs/verana-types'
 import { TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import Long from 'long'
@@ -33,8 +33,7 @@ type ManualSignOptions = {
   memo?: string // Optional memo
   timeoutHeight?: number | Long // Optional timeout
   simulate?: boolean
-  // feeGranter?: string;           // Feegrant (optional)
-  // feePayer?: string;             // Fee payer (optional)
+  granter?: string
 }
 
 export async function signAndBroadcastManualDirect({
@@ -49,8 +48,7 @@ export async function signAndBroadcastManualDirect({
   memo = '',
   timeoutHeight,
   simulate = false,
-  // feeGranter,
-  // feePayer,
+  granter,
 }: ManualSignOptions): Promise<DeliverTxResponse | SimulateResult> {
   const anys = messages.map((m) => registry.encodeAsAny(m))
   logger.log('Any.typeUrl:', anys[0].typeUrl)
@@ -62,7 +60,7 @@ export async function signAndBroadcastManualDirect({
   // Simulate gas usage for the messages
   const simulated = await client.simulate(address, messages, memo)
   const gasLimit = Math.ceil(simulated * gasAdjustment)
-  const fee = calculateFee(gasLimit, GasPrice.fromString(gasPrice))
+  const fee: StdFee = { ...calculateFee(gasLimit, GasPrice.fromString(gasPrice)), granter }
   if (simulate) return fee
 
   // Create TxBody with your messages
@@ -89,8 +87,8 @@ export async function signAndBroadcastManualDirect({
     [{ pubkey: protoPubkey, sequence }],
     fee.amount,
     gasLimit,
-    /* feeGranter */ undefined,
-    /* feePayer   */ undefined
+    fee.granter,
+    /* feePayer */ undefined
   )
 
   // Build SignDoc and sign manually
