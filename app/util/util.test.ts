@@ -70,11 +70,20 @@ describe('formatVNA', () => {
     expect(formatVNA(null)).toBe('')
     expect(formatVNA('')).toBe('')
   })
+
+  it('keeps every digit of an integer amount beyond Number.MAX_SAFE_INTEGER', () => {
+    expect(formatVNA('9007199254740993123')).toBe('9,007,199,254,740.993123 VNA')
+    expect(formatVNA('-9007199254740993123')).toBe('-9,007,199,254,740.993123 VNA')
+  })
 })
 
 describe('formatVNAFromUVNA', () => {
   it('formats a finite numeric string as VNA', () => {
     expect(formatVNAFromUVNA('2000000')).toBe('2 VNA')
+  })
+
+  it('keeps every digit of an amount beyond Number.MAX_SAFE_INTEGER', () => {
+    expect(formatVNAFromUVNA('9007199254740993123')).toBe('9,007,199,254,740.993123 VNA')
   })
 
   it('returns an empty string for blank or non-finite input', () => {

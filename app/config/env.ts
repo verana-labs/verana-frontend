@@ -27,7 +27,7 @@ export const VERANA_REST_ENDPOINT_CORPORATION = indexerEndpoint('corporation')
 export const VERANA_REST_ENDPOINT_DELEGATION = indexerEndpoint('delegation')
 export const VERANA_REST_ENDPOINT_GROUP = indexerEndpoint('group')
 export const VERANA_REST_ENDPOINT_INDEXER = indexerEndpoint('indexer')
-export const VERANA_REST_ENDPOINT_METRICS = indexerEndpoint('metrics')
+export const VERANA_REST_ENDPOINT_STATS = indexerEndpoint('stats')
 export const VERANA_REST_ENDPOINT_VERIFIABLE_TRUST = indexerEndpoint('verifiable-trust')
 
 export const VERANA_WEBSOCKET = VERANA_INDEXER_BASE_URL
