@@ -51,7 +51,7 @@
     "postcss": "8.5.23",
     "postgres": "^3.4.5",
     "prism-react-renderer": "^2.3.1",
-    "protobufjs": "^7.6.6",
+    "protobufjs": "^8.6.6",
     "react": "latest",
     "react-dom": "latest",
     "react-icons": "4.6.0",
@@ -70,7 +70,7 @@
     "@types/react": "19.0.7",
     "@types/react-dom": "19.0.3",
     "pino-pretty": "^13.0.0",
-    "vitest": "^4.1.9"
+    "vitest": "^5.0.1"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
