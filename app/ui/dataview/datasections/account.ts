@@ -11,7 +11,7 @@ export interface AccountData {
   claimableInterests: string | null
   reclaimable: string | null
   message: string | null
-  getVNA?: string // action type
+  getVNA?: string | null // action type
   claimInterests?: string // action type
   address: string | null
   network: string | null
