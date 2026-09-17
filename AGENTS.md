@@ -113,3 +113,13 @@ Playwright:
 - The reusable lint workflow runs `pnpm test:e2e` whenever that script exists. The e2e script is named `e2e`, so CI skips it. Renaming it to `test:e2e` would make CI run the funded specs.
 - The dataview helper `useDataViewTranslator` interpolates `{{name}}` while the dictionaries and `translate()` use `{name}`. Use `translate()` for new strings.
 - Ring A specs must install indexer stubs (`page.route`, `stubCorporationRoutes`, `installCorporationStubs`) before `connectWallet`: connecting starts corporation discovery against the real indexer right away.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
