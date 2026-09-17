@@ -10,4 +10,4 @@ env:
   NEXT_PUBLIC_VERANA_INDEXER_BASE_URL: "https://idx.testnet.verana.network"
   NEXT_PUBLIC_VERANA_EXPLORER_URL: "https://explorer.testnet.verana.network/Verana%20Testnet"
   NEXT_PUBLIC_VERANA_VISUALIZER_URL: "https://vis.testnet.verana.network"
-  NEXT_PUBLIC_VERANA_TOPUP_VS: "did:web:faucet-vs.testnet.verana.network"
+  NEXT_PUBLIC_VERANA_FAUCET_URL: "https://faucet.testnet.verana.network"
