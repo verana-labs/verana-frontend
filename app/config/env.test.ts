@@ -1,18 +1,36 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('next-runtime-env', () => ({
-  env: (key: string) => (key === 'NEXT_PUBLIC_VERANA_INDEXER_BASE_URL' ? 'https://idx.example/' : undefined),
+  env: (key: string) =>
+    ({
+      NEXT_PUBLIC_VERANA_INDEXER_BASE_URL: 'https://idx.example/',
+      NEXT_PUBLIC_SHOW_PARTICIPANT_EXPIRE_BEFORE_DAYS: '7',
+    })[key],
 }))
 
 process.env.NEXT_PUBLIC_VERANA_REST_ENDPOINT_STATS = 'https://legacy.example/verana/stats/v1'
 process.env.NEXT_PUBLIC_VERANA_WEBSOCKET = 'wss://legacy.example/verana/indexer/v1/events'
 
 import { VERANA_REST_ENDPOINT_STATS, VERANA_REST_ENDPOINT_TRUST_DEPOSIT, VERANA_WEBSOCKET } from '@/config/env'
+import { isExpireSoon } from '@/util/util'
 
 describe('indexer endpoints', () => {
   it('derives every route from the indexer base url and ignores legacy per-module variables', () => {
     expect(VERANA_REST_ENDPOINT_STATS).toBe('https://idx.example/v4/stats')
     expect(VERANA_REST_ENDPOINT_TRUST_DEPOSIT).toBe('https://idx.example/v4/trust-deposit')
     expect(VERANA_WEBSOCKET).toBe('wss://idx.example/v4/indexer/subscribe')
+  })
+})
+
+describe('participant expires-soon window', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('flags an effective_until inside the configured number of days only', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 5, 23, 14, 0, 0))
+    expect(isExpireSoon(new Date(2026, 5, 29))).toBe(true)
+    expect(isExpireSoon(new Date(2026, 6, 10))).toBe(false)
   })
 })

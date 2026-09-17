@@ -15,7 +15,13 @@ import { service } from '@/ui/common/participant-attribute'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import ServiceIdentity from '@/ui/common/service-identity'
 import { resolveTranslatable } from '@/ui/dataview/types'
-import { formatVNAFromUVNA, onboardingStateColor, participantStateBadgeClass, roleBadgeClass } from '@/util/util'
+import {
+  formatVNAFromUVNA,
+  isExpireSoon,
+  onboardingStateColor,
+  participantStateBadgeClass,
+  roleBadgeClass,
+} from '@/util/util'
 
 export type TreeNodeHeaderProps = {
   node: TreeNode
@@ -44,12 +50,12 @@ export default function TreeNodeHeader({
 }: TreeNodeHeaderProps) {
   const hasChildren = Boolean(node.children?.length)
   const participant = node.participant
-  const participantState = participantStateBadgeClass(participant?.participant_state, participant?.expire_soon ?? false)
-  const onboardingState = onboardingStateColor(
-    participant?.op_state,
-    participant?.op_exp,
-    participant?.expire_soon ?? false
+  const participantState = participantStateBadgeClass(
+    participant?.participant_state,
+    isExpireSoon(participant?.effective_until)
   )
+  const onboardingState = onboardingStateColor(participant?.op_state)
+  const showParticipantState = type === 'participants' || participantState.expireSoon !== null
 
   let participantMetrics: ReactNode = null
   if (type === 'participants') {
@@ -167,12 +173,21 @@ export default function TreeNodeHeader({
           </>
         )}
 
-        {type === 'participants' && !node.group && participant?.participant_state ? (
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${participantState.classParticipantState}`}
-          >
-            {participantState.labelParticipantState}
-          </span>
+        {showParticipantState && !node.group && participant?.participant_state ? (
+          <>
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${participantState.classParticipantState}`}
+            >
+              {participantState.labelParticipantState}
+            </span>
+            {participantState.expireSoon ? (
+              <span
+                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${participantState.expireSoon.classExpireSoon}`}
+              >
+                {participantState.expireSoon.labelExpireSoon}
+              </span>
+            ) : null}
+          </>
         ) : null}
         {type === 'tasks' && participant?.op_state ? (
           <>

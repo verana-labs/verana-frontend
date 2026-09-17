@@ -46,6 +46,7 @@ Defined under `env`. The network values have no default and rendering fails when
 - `NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE`
 - `NEXT_PUBLIC_SESSION_LIFETIME_SECONDS`
 - `NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA`
+- `NEXT_PUBLIC_SHOW_PARTICIPANT_EXPIRE_BEFORE_DAYS` (empty keeps the 30-day default)
 
 ### Quick examples
 

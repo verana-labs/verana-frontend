@@ -38,6 +38,7 @@ import {
   countryCodeToFlag,
   formatDateTime,
   formatVNAFromUVNA,
+  isExpireSoon,
   onboardingStateColor,
   participantStateBadgeClass,
   roleBadgeClass,
@@ -284,12 +285,12 @@ export default function ParticipantCard({
     viewerCorporationId === participant.corporation_id ? participant.corporation_available_actions : []
   const validatorActions = selectedNode.isValidator ? participant.validator_available_actions : []
   const allowed = new Set([...corporationActions, ...validatorActions])
-  const state = participantStateBadgeClass(participant.participant_state, participant.expire_soon ?? false, 'header')
-  const onboardingState = onboardingStateColor(
-    participant.op_state,
-    participant.op_exp,
-    participant.expire_soon ?? false
+  const state = participantStateBadgeClass(
+    participant.participant_state,
+    isExpireSoon(participant.effective_until),
+    'header'
   )
+  const onboardingState = onboardingStateColor(participant.op_state)
   const lifecycleActions = participantLifecycleActions.filter(
     (action) => !participantSlashingActions.some((slashing) => slashing.name === action.name)
   )
@@ -345,6 +346,13 @@ export default function ParticipantCard({
             >
               {state.labelParticipantState}
             </span>
+            {state.expireSoon ? (
+              <span
+                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${state.expireSoon.classExpireSoon}`}
+              >
+                {state.expireSoon.labelExpireSoon}
+              </span>
+            ) : null}
           </div>
         </div>
         {detailBreadcrumb ? <p className="text-sm text-neutral-70 mt-2">{detailBreadcrumb}</p> : null}

@@ -17,10 +17,4 @@ describe('parseParticipantsResponse', () => {
     expect(parseParticipantsResponse({ participants: [participant] })).toHaveLength(1)
     expect(() => parseParticipantsResponse({ permissions: [participant] })).toThrow('participants envelope')
   })
-
-  it('accepts the nullable V4 expire-soon flag', () => {
-    expect(
-      parseParticipantsResponse({ participants: [{ ...participant, expire_soon: null }] })[0]?.expire_soon
-    ).toBeNull()
-  })
 })
