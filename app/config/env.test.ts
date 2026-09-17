@@ -1,10 +1,11 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const runtimeEnv = vi.hoisted(
   () =>
     new Map<string, string>([
       ['NEXT_PUBLIC_VERANA_INDEXER_BASE_URL', 'https://idx.example/'],
       ['NEXT_PUBLIC_VERANA_FAUCET_URL', 'https://faucet.example/'],
+      ['NEXT_PUBLIC_SHOW_PARTICIPANT_EXPIRE_BEFORE_DAYS', '7'],
     ])
 )
 
@@ -21,12 +22,28 @@ import {
   VERANA_REST_ENDPOINT_TRUST_DEPOSIT,
   VERANA_WEBSOCKET,
 } from '@/config/env'
+import { isExpireSoon } from '@/util/util'
 
 describe('indexer endpoints', () => {
   it('derives every route from the indexer base url and ignores legacy per-module variables', () => {
     expect(VERANA_REST_ENDPOINT_STATS).toBe('https://idx.example/v4/stats')
     expect(VERANA_REST_ENDPOINT_TRUST_DEPOSIT).toBe('https://idx.example/v4/trust-deposit')
     expect(VERANA_WEBSOCKET).toBe('wss://idx.example/v4/indexer/subscribe')
+  })
+})
+
+describe('participant expires-soon window', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('flags an effective_until inside the configured number of days only', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 5, 23, 14, 0, 0))
+    expect(isExpireSoon(new Date(2026, 5, 29))).toBe(true)
+    expect(isExpireSoon(new Date(2026, 6, 10))).toBe(false)
+    expect(isExpireSoon('2026-07-10T09:30:00.000Z')).toBe(true)
+    expect(isExpireSoon('2026-09-10T09:30:00.000Z')).toBe(false)
   })
 })
 

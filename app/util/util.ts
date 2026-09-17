@@ -2,6 +2,7 @@
 
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faCrown, faEye } from '@fortawesome/free-solid-svg-icons'
+import { SHOW_PARTICIPANT_EXPIRE_BEFORE_DAYS } from '@/config/env'
 import { translate } from '@/i18n/dataview'
 import { Role } from '@/ui/common/role-card'
 import type { OnboardingProcessState, ParticipantRole, ParticipantState } from '@/ui/dataview/datasections/participant'
@@ -130,20 +131,19 @@ export function formatLongDateUserLocale(date: Date | string) {
   })
 }
 
-export function isExpired(input: Date | string | number): boolean {
-  const date = new Date(String(input))
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  return date < today
+const DEFAULT_EXPIRE_BEFORE_DAYS = 30
+
+export function expireBeforeDays(configured: string | undefined = SHOW_PARTICIPANT_EXPIRE_BEFORE_DAYS): number {
+  const days = Number(configured)
+  return Number.isFinite(days) && days > 0 ? days : DEFAULT_EXPIRE_BEFORE_DAYS
 }
 
-const soonDays = 1
-export function isExpireSoon(input: Date | string | number): boolean {
+export function isExpireSoon(input: Date | string | number | null | undefined): boolean {
+  if (input === null || input === undefined || input === '') return false
   const date = new Date(String(input))
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const diff = date.getTime() - today.getTime()
-  return diff > 0 && diff <= soonDays * 24 * 60 * 60 * 1000
+  if (Number.isNaN(date.getTime())) return false
+  const diff = date.getTime() - Date.now()
+  return diff > 0 && diff <= expireBeforeDays() * 24 * 60 * 60 * 1000
 }
 
 export function isJson(value: unknown): object | null {
@@ -278,16 +278,26 @@ export function roleLabel(type: string): string {
   }
 }
 
+export interface ParticipantStateBadge {
+  labelParticipantState: string
+  classParticipantState: string
+  expireSoon: { labelExpireSoon: string; classExpireSoon: string } | null
+}
+
+const NEUTRAL_BADGE =
+  'bg-white text-gray-600 ring-1 ring-inset ring-gray-300 dark:bg-transparent dark:text-gray-300 dark:ring-gray-600'
+const GRAY_BADGE = 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300'
+const GREEN_BADGE = 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+const YELLOW_BADGE = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300'
+
 export function participantStateBadgeClass(
   participantState: ParticipantState | undefined,
   expireSoon: boolean,
   variant: 'tree' | 'header' = 'tree'
-): { labelParticipantState: string; classParticipantState: string } {
-  if (!participantState) return { labelParticipantState: '', classParticipantState: '' }
+): ParticipantStateBadge {
+  if (!participantState) return { labelParticipantState: '', classParticipantState: '', expireSoon: null }
   const activeClass =
-    variant === 'header'
-      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-      : 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+    variant === 'header' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' : GREEN_BADGE
   const badge = ((): { labelParticipantState: string; classParticipantState: string } => {
     switch (participantState) {
       case 'REPAID':
@@ -298,78 +308,77 @@ export function participantStateBadgeClass(
       case 'SLASHED':
         return {
           labelParticipantState: resolveTranslatable({ key: 'participant.labelstate.slashed' }, translate) ?? 'SLASHED',
-          classParticipantState: 'bg-red-900 text-red-100 dark:bg-red-300/20 dark:text-red-800',
+          classParticipantState: 'bg-red-900 text-red-100 dark:bg-red-800 dark:text-red-100',
         }
       case 'FUTURE':
         return {
           labelParticipantState: resolveTranslatable({ key: 'participant.labelstate.future' }, translate) ?? 'FUTURE',
-          classParticipantState: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300',
+          classParticipantState: NEUTRAL_BADGE,
         }
       case 'ACTIVE':
-        return expireSoon
-          ? {
-              labelParticipantState:
-                resolveTranslatable({ key: 'participant.labelstate.expiresoon' }, translate) ?? 'EXPIRE SOON',
-              classParticipantState: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300',
-            }
-          : {
-              labelParticipantState:
-                resolveTranslatable({ key: 'participant.labelstate.active' }, translate) ?? 'ACTIVE',
-              classParticipantState: activeClass,
-            }
+        return {
+          labelParticipantState: resolveTranslatable({ key: 'participant.labelstate.active' }, translate) ?? 'ACTIVE',
+          classParticipantState: activeClass,
+        }
       case 'INACTIVE':
         return {
           labelParticipantState:
             resolveTranslatable({ key: 'participant.labelstate.inactive' }, translate) ?? 'INACTIVE',
-          classParticipantState: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300',
+          classParticipantState: NEUTRAL_BADGE,
         }
-      default:
+      case 'EXPIRED':
         return {
-          labelParticipantState: participantState,
-          classParticipantState: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300',
+          labelParticipantState: resolveTranslatable({ key: 'participant.labelstate.expired' }, translate) ?? 'EXPIRED',
+          classParticipantState: GRAY_BADGE,
+        }
+      case 'REVOKED':
+        return {
+          labelParticipantState: resolveTranslatable({ key: 'participant.labelstate.revoked' }, translate) ?? 'REVOKED',
+          classParticipantState: GRAY_BADGE,
         }
     }
   })()
-  return variant === 'tree' ? { ...badge, labelParticipantState: badge.labelParticipantState.toLowerCase() } : badge
+  const expireSoonBadge =
+    participantState === 'ACTIVE' && expireSoon
+      ? {
+          labelExpireSoon:
+            resolveTranslatable({ key: 'participant.labelstate.expiresoon' }, translate) ?? 'EXPIRES SOON',
+          classExpireSoon: YELLOW_BADGE,
+        }
+      : null
+  if (variant !== 'tree') return { ...badge, expireSoon: expireSoonBadge }
+  return {
+    labelParticipantState: badge.labelParticipantState.toLowerCase(),
+    classParticipantState: badge.classParticipantState,
+    expireSoon: expireSoonBadge
+      ? { ...expireSoonBadge, labelExpireSoon: expireSoonBadge.labelExpireSoon.toLowerCase() }
+      : null,
+  }
 }
 
-export function onboardingStateColor(
-  onboardingState: OnboardingProcessState | null | undefined,
-  onboardingExpiration: string | null | undefined,
-  expireSoon: boolean
-): { labelOnboardingState: string; classOnboardingState: string } {
-  const GRAY = 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300'
+export function onboardingStateColor(onboardingState: OnboardingProcessState | null | undefined): {
+  labelOnboardingState: string
+  classOnboardingState: string
+} {
   switch (onboardingState) {
     case 'PENDING':
       return {
         labelOnboardingState:
           resolveTranslatable({ key: 'participant.labelopstate.pending' }, translate) ?? 'pending approval',
-        classOnboardingState: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300',
+        classOnboardingState: YELLOW_BADGE,
       }
     case 'TERMINATED':
       return {
         labelOnboardingState:
           resolveTranslatable({ key: 'participant.labelopstate.terminated' }, translate) ?? 'terminated',
-        classOnboardingState: GRAY,
+        classOnboardingState: GRAY_BADGE,
       }
     case 'VALIDATED':
-      return (onboardingExpiration ? isExpired(onboardingExpiration) : false)
-        ? {
-            labelOnboardingState:
-              resolveTranslatable({ key: 'participant.labelopstate.expired' }, translate) ?? 'expired',
-            classOnboardingState: GRAY,
-          }
-        : expireSoon
-          ? {
-              labelOnboardingState:
-                resolveTranslatable({ key: 'participant.labelopstate.expiresoon' }, translate) ?? 'expire soon',
-              classOnboardingState: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300',
-            }
-          : {
-              labelOnboardingState:
-                resolveTranslatable({ key: 'participant.labelopstate.validated' }, translate) ?? 'validated',
-              classOnboardingState: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300',
-            }
+      return {
+        labelOnboardingState:
+          resolveTranslatable({ key: 'participant.labelopstate.validated' }, translate) ?? 'validated',
+        classOnboardingState: GREEN_BADGE,
+      }
     default:
       return { labelOnboardingState: '', classOnboardingState: '' }
   }
