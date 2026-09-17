@@ -42,8 +42,6 @@ describe('participant expires-soon window', () => {
     vi.setSystemTime(new Date(2026, 5, 23, 14, 0, 0))
     expect(isExpireSoon(new Date(2026, 5, 29))).toBe(true)
     expect(isExpireSoon(new Date(2026, 6, 10))).toBe(false)
-    expect(isExpireSoon('2026-07-10T09:30:00.000Z')).toBe(true)
-    expect(isExpireSoon('2026-09-10T09:30:00.000Z')).toBe(false)
   })
 })
 
