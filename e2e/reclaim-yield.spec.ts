@@ -8,6 +8,8 @@ test('reclaim yield from /account (MsgReclaimTrustDepositYield)', async ({ page 
 
   await page.goto('/account')
   await page.waitForLoadState('networkidle')
+  // Per [VFE-PAGE-ACCT-3]: .env.ci sets NEXT_PUBLIC_VERANA_FAUCET_URL, so the Get VNA card is visible.
+  await expect(page.getByRole('button', { name: /get vna tokens/i }).first()).toBeVisible()
   await page
     .getByRole('button', { name: /claim yield/i })
     .first()
