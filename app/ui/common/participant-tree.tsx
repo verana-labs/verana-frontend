@@ -3,7 +3,7 @@
 import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
 import { type DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
@@ -37,6 +37,7 @@ type ParticipantTreeProps = {
   refreshRoot?: () => void
   onConnect?: () => void
   onRetryFetch?: () => void
+  placeholder?: ReactNode
 }
 
 function findNodeAndPath(nodes: TreeNode[], id: string): { node?: TreeNode; path: TreeNode[] } {
@@ -174,6 +175,7 @@ export default function ParticipantTree({
   refreshRoot,
   onConnect,
   onRetryFetch,
+  placeholder,
 }: ParticipantTreeProps) {
   const [showUnresolvable, setShowUnresolvable] = useState(false)
   const [showDisabled, setShowDisabled] = useState(false)
@@ -359,6 +361,7 @@ export default function ParticipantTree({
               'All participants are hidden by the current filters.'}
           </p>
         ) : null}
+        {placeholder}
         <Tree
           type={type}
           nodes={visibleTree}

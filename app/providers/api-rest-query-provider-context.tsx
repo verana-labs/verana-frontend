@@ -13,6 +13,8 @@ import type { PendingEcosystem } from '@/ui/dataview/datasections/participant'
 
 type PendingTasksCtxValue = {
   pendingParticipants: PendingEcosystem[]
+  loading: boolean
+  error: string | null
   refetch: () => Promise<void>
 }
 
@@ -56,7 +58,12 @@ const DashboardContext = createContext<DashboardCtxValue | undefined>(undefined)
 export function RestQueryProvider({ children }: { children: React.ReactNode }) {
   const { dashboardData, refetch: refetchDashboard } = useDashboardData()
   const { accountData, refetch: refetchAccountData } = useTrustDepositAccountData()
-  const { pendingParticipants, refetch: refetchPendingParticipants } = usePendingParticipants()
+  const {
+    pendingParticipants,
+    loading: pendingParticipantsLoading,
+    errorPendingParticipants,
+    refetch: refetchPendingParticipants,
+  } = usePendingParticipants()
 
   const [onlyActiveEcosystem, setOnlyActiveEcosystem] = useState(true)
   const [ecosystemFilters, setEcosystemFilters] = useState<Record<string, string | boolean>>({})
@@ -82,9 +89,11 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
   const pendingTasksValue = useMemo(
     () => ({
       pendingParticipants,
+      loading: pendingParticipantsLoading,
+      error: errorPendingParticipants,
       refetch: refetchPendingParticipants,
     }),
-    [pendingParticipants, refetchPendingParticipants]
+    [pendingParticipants, pendingParticipantsLoading, errorPendingParticipants, refetchPendingParticipants]
   )
 
   const discoverValue = useMemo(

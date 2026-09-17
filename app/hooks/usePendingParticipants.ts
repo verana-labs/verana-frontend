@@ -55,14 +55,19 @@ export function usePendingParticipants() {
   const { actingCorporation } = useUserCorporation()
   const corporationId = actingCorporation?.corporation.id
   const [pendingParticipants, setPendingParticipants] = useState<PendingEcosystem[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [errorPendingParticipants, setError] = useState<string | null>(null)
   const requestRef = useRef(0)
+  const corporationRef = useRef<number | undefined>(undefined)
 
   const fetchPendingParticipants = useCallback(async () => {
     const request = ++requestRef.current
-    if (corporationId === undefined || !VERANA_REST_ENDPOINT_PARTICIPANT) {
+    if (corporationRef.current !== corporationId) {
+      corporationRef.current = corporationId
       setPendingParticipants([])
+    }
+    if (corporationId === undefined || !VERANA_REST_ENDPOINT_PARTICIPANT) {
+      setError(null)
       setLoading(false)
       return
     }
