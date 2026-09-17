@@ -2,9 +2,10 @@
 
 import { faShieldHalved } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useCallback, useState } from 'react'
 import { translate } from '@/i18n/dataview'
-import { useLanguageLabel } from '@/lib/language'
-import GfDocumentViewer from '@/ui/common/gf-document-viewer'
+import { displayedVersion } from '@/lib/gf-document'
+import GfDocumentViewer, { VerificationBadge, type ViewerState } from '@/ui/common/gf-document-viewer'
 import { formatLongDateUserLocale } from '@/util/util'
 import type { EcosystemData } from '../dataview/datasections/ecosystem'
 import { resolveTranslatable } from '../dataview/types'
@@ -16,14 +17,16 @@ export type EgfCardProps = {
 }
 
 export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCardProps) {
-  const keyPoints = (resolveTranslatable({ key: 'join.egf.keypoints' }, translate) as string)
-    .split('\n')
-    .map((s) => s.trim())
-    .filter(Boolean)
-  const version =
-    ecosystem.versions.find((item) => item.version === ecosystem.activeVersion) ?? ecosystem.versions.at(-1)
-  const egfDoc = version?.documents?.[0]
-  const language = useLanguageLabel(egfDoc?.language)
+  const [state, setState] = useState<ViewerState>('verifying')
+  const blocked = state === 'mismatch'
+  const onViewerState = useCallback(
+    (next: ViewerState) => {
+      setState(next)
+      if (next === 'mismatch') onAcceptedChange(false)
+    },
+    [onAcceptedChange]
+  )
+  const version = displayedVersion(ecosystem.versions, ecosystem.activeVersion)
   return (
     <div className="border border-neutral-20 dark:border-neutral-70 rounded-xl p-6 mb-6">
       <div className="flex items-start space-x-4 mb-6">
@@ -36,23 +39,13 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
         </div>
       </div>
 
-      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
-        <div className="flex items-center space-x-2">
-          <span>✅</span>
-          <p className="text-sm font-medium text-green-800 dark:text-green-300">
-            {resolveTranslatable({ key: 'join.egf.verifiedtext' }, translate)}
-          </p>
-        </div>
-      </div>
-
-      <div className="border border-neutral-20 dark:border-neutral-70 rounded-lg p-4 sm:p-6 text-center mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+      <div className="border border-neutral-20 dark:border-neutral-70 rounded-lg p-4 sm:p-6 mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 text-center">
           {resolveTranslatable({ key: 'join.egf.title' }, translate)}
         </h3>
-        <p className="text-sm text-neutral-70 dark:text-neutral-70 mb-4">
+        <p className="text-sm text-neutral-70 dark:text-neutral-70 mb-4 text-center">
           {[
             `${resolveTranslatable({ key: 'join.egf.version.label' }, translate)} ${version?.version ?? ecosystem.activeVersion}`,
-            resolveTranslatable(language, translate),
             version?.activeSince
               ? `${resolveTranslatable({ key: 'join.egf.lastupdate.label' }, translate)} ${formatLongDateUserLocale(version.activeSince)}`
               : null,
@@ -60,26 +53,7 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
             .filter(Boolean)
             .join(' • ')}
         </p>
-        {egfDoc?.url ? (
-          <GfDocumentViewer url={egfDoc.url} />
-        ) : (
-          <div className="text-6xl text-gray-400 dark:text-gray-500">📄</div>
-        )}
-      </div>
-
-      <div className="mb-6">
-        <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-          {resolveTranslatable({ key: 'join.egf.keypoints.label' }, translate)}
-        </h4>
-
-        <ul className="space-y-2">
-          {keyPoints.map((t) => (
-            <li key={t} className="flex items-start">
-              <span className="text-primary-500 mr-2 mt-0.5 text-sm">✔</span>
-              <span className="text-sm text-gray-700 dark:text-gray-300">{t}</span>
-            </li>
-          ))}
-        </ul>
+        <GfDocumentViewer documents={version?.documents ?? []} onStateChange={onViewerState} />
       </div>
 
       <div className="flex items-start space-x-3">
@@ -87,13 +61,23 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
           id="egf-accept"
           type="checkbox"
           checked={accepted}
+          disabled={blocked}
           onChange={(e) => onAcceptedChange(e.target.checked)}
-          className="mt-1 w-4 h-4 text-primary-600 bg-white dark:bg-surface border-neutral-20 dark:border-neutral-70 rounded focus:ring-primary-500"
+          className="mt-1 w-4 h-4 text-primary-600 bg-white dark:bg-surface border-neutral-20 dark:border-neutral-70 rounded focus:ring-primary-500 disabled:opacity-50"
         />
-        <label htmlFor="egf-accept" className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+        <label
+          htmlFor="egf-accept"
+          className={`text-sm text-gray-700 dark:text-gray-300 ${blocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+        >
           {resolveTranslatable({ key: 'join.egf.acceptancemessage' }, translate)}
         </label>
+        {state === 'unverified' ? <VerificationBadge state="unverified" /> : null}
       </div>
+      {blocked ? (
+        <p className="mt-2 text-sm text-red-700 dark:text-red-300">
+          {resolveTranslatable({ key: 'join.egf.accept.blocked' }, translate)}
+        </p>
+      ) : null}
     </div>
   )
 }
