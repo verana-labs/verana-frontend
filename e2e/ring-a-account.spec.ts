@@ -2,11 +2,8 @@ import { expect, type Page, test } from '@playwright/test'
 import { connectWallet } from './support/connect'
 import { HARNESS_MNEMONIC, installCorporationStubs, seedActingCorporation } from './support/corp-stubs'
 
-// Per [VFE-PAGE-ACCT-3]: the Get VNA action follows NEXT_PUBLIC_VERANA_FAUCET_URL, which .env.ci sets.
-
 const getVNACard = (page: Page) => page.getByRole('button', { name: /get vna tokens/i })
 
-// next-runtime-env assigns window.__ENV from an inline script; keep the object but drop the faucet url.
 async function unsetFaucetUrl(page: Page) {
   await page.addInitScript(() => {
     let stored: Record<string, string | undefined> | undefined

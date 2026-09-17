@@ -82,7 +82,6 @@ export default function EditableDataView<T extends object>({
     return true
   }, [])
 
-  // Per [VFE-PAGE-ACCT-3]: without a faucet URL the Get VNA action does not exist, so the message has no link.
   const lowBalanceTemplate = VERANA_FAUCET_URL
     ? (resolveTranslatable({ key: 'messages.lowbalance' }, translate) ??
       "You’re Running Low on VNA. Your balance is {value} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted.")
