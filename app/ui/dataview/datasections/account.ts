@@ -13,7 +13,6 @@ export interface AccountData {
   message: string | null
   getVNA?: string | null // action type
   claimInterests?: string // action type
-  address: string | null
   network: string | null
   corporationId: number | null
   policyAddress: string | null
@@ -84,7 +83,6 @@ export const accountSections: Section<AccountData>[] = [
     name: t('dataview.account.sections.accountInformation'),
     sectionBorder: true,
     fields: [
-      { name: 'address', type: 'data', label: t('dataview.account.fields.address') },
       {
         name: 'network',
         label: t('dataview.account.fields.network'),

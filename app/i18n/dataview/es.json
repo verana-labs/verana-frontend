@@ -192,6 +192,7 @@
   "navbar.disconnect.title": "Desconectar",
   "modalqrcode.title": "Código QR de la cuenta",
   "modalqrcode.msg": "Escanea este código QR para enviar tokens VNA a tu cuenta",
+  "modalqrcode.close": "Cerrar",
   "footer.title": "Verana",
   "footer.version": "v0.xx",
   "footer.network": "network",
@@ -790,6 +791,8 @@
   "common.none": "Ninguno",
   "common.unknown": "Desconocido",
   "corporation.page.modified": "Modificada",
-  "account.corporation.moved": "La configuración y gestión de la corporación se movieron a la página Corporación.",
-  "account.corporation.moved.link": "Abrir Corporación"
+  "account.corporations.title": "Corporaciones",
+  "account.corporations.empty": "Esta billetera todavía no es operadora ni miembro de ninguna corporación.",
+  "account.corporations.notice": "Las corporaciones se crean y gestionan en la página Corporación.",
+  "account.corporations.notice.link": "Abrir Corporación"
 }

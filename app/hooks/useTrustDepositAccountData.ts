@@ -9,7 +9,6 @@ import { indexerValidators } from '@/lib/indexer-json'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 
 export type TrustDepositAccountData = {
-  address: string | null
   balance: string | null
   totalTrustDeposit: string | null
   claimableInterests: string | null
@@ -58,7 +57,6 @@ export function trustDepositAccountUrl(endpoint: string, corporationId: number):
 }
 
 const EMPTY_ACCOUNT_DATA: TrustDepositAccountData = {
-  address: null,
   balance: null,
   totalTrustDeposit: null,
   claimableInterests: null,
@@ -113,7 +111,6 @@ export function useTrustDepositAccountData() {
 
       if (request !== requestRef.current) return
       setData({
-        address,
         balance,
         ...trustDeposit,
         message: null,

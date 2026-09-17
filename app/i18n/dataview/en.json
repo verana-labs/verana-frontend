@@ -192,6 +192,7 @@
   "navbar.disconnect.title": "Disconnect",
   "modalqrcode.title": "Account QR Code",
   "modalqrcode.msg": "Scan this QR code to send VNA tokens to your account",
+  "modalqrcode.close": "Close",
   "footer.title": "Verana",
   "footer.version": "v0.xx",
   "footer.network": "network",
@@ -790,6 +791,8 @@
   "common.none": "None",
   "common.unknown": "Unknown",
   "corporation.page.modified": "Modified",
-  "account.corporation.moved": "Corporation setup and management moved to the Corporation page.",
-  "account.corporation.moved.link": "Open Corporation"
+  "account.corporations.title": "Corporations",
+  "account.corporations.empty": "This wallet is not an operator or a member of any corporation yet.",
+  "account.corporations.notice": "Corporations are created and managed on the Corporation page.",
+  "account.corporations.notice.link": "Open Corporation"
 }
