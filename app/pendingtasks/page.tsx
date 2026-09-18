@@ -57,20 +57,20 @@ function buildTree(ecosystems: PendingEcosystem[], corporationId?: number): Tree
   }))
 }
 
-function treePlaceholder(count: number, loading: boolean, error: string | null): ReactNode {
+function treePlaceholder(count: number, settled: boolean, error: string | null): ReactNode {
   if (error) return <p className="p-2 text-sm text-amber-700 dark:text-amber-300">{translate('task.tree.error')}</p>
   if (count > 0) return null
   return (
     <p className="p-2 text-sm text-neutral-70 dark:text-neutral-70">
-      {translate(loading ? 'task.tree.loading' : 'task.tree.empty')}
+      {translate(settled ? 'task.tree.empty' : 'task.tree.loading')}
     </p>
   )
 }
 
 export default function PendingTasksPage() {
   const { actingCorporation, loading: corporationLoading } = useUserCorporation()
-  const { pendingParticipants, loading, error, refetch } = usePendingTasksCtx()
-  const [refreshRoot, setRefreshRoot] = useState(false)
+  const { pendingParticipants, settled, error, refetch } = usePendingTasksCtx()
+  const [refreshRoot, setRefreshRoot] = useState(true)
   const participantTree = useMemo(
     () => buildTree(pendingParticipants, actingCorporation?.corporation.id),
     [actingCorporation?.corporation.id, pendingParticipants]
@@ -88,7 +88,7 @@ export default function PendingTasksPage() {
       type="tasks"
       viewerCorporationId={actingCorporation?.corporation.id}
       refreshRoot={() => setRefreshRoot(true)}
-      placeholder={treePlaceholder(pendingParticipants.length, loading || corporationLoading, error)}
+      placeholder={treePlaceholder(pendingParticipants.length, settled && !corporationLoading, error)}
     />
   )
 }

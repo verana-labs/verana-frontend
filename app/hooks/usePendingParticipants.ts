@@ -56,6 +56,7 @@ export function usePendingParticipants() {
   const corporationId = actingCorporation?.corporation.id
   const [pendingParticipants, setPendingParticipants] = useState<PendingEcosystem[]>([])
   const [loading, setLoading] = useState(true)
+  const [settled, setSettled] = useState(false)
   const [errorPendingParticipants, setError] = useState<string | null>(null)
   const requestRef = useRef(0)
   const corporationRef = useRef<number | undefined>(undefined)
@@ -65,10 +66,12 @@ export function usePendingParticipants() {
     if (corporationRef.current !== corporationId) {
       corporationRef.current = corporationId
       setPendingParticipants([])
+      setSettled(false)
     }
     if (corporationId === undefined || !VERANA_REST_ENDPOINT_PARTICIPANT) {
       setError(null)
       setLoading(false)
+      setSettled(true)
       return
     }
 
@@ -85,7 +88,10 @@ export function usePendingParticipants() {
     } catch (error) {
       if (request === requestRef.current) setError(error instanceof Error ? error.message : String(error))
     } finally {
-      if (request === requestRef.current) setLoading(false)
+      if (request === requestRef.current) {
+        setLoading(false)
+        setSettled(true)
+      }
     }
   }, [corporationId])
 
@@ -93,5 +99,5 @@ export function usePendingParticipants() {
     void fetchPendingParticipants()
   }, [fetchPendingParticipants])
 
-  return { pendingParticipants, loading, errorPendingParticipants, refetch: fetchPendingParticipants }
+  return { pendingParticipants, loading, settled, errorPendingParticipants, refetch: fetchPendingParticipants }
 }

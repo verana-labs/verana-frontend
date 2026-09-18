@@ -14,6 +14,7 @@ import type { PendingEcosystem } from '@/ui/dataview/datasections/participant'
 type PendingTasksCtxValue = {
   pendingParticipants: PendingEcosystem[]
   loading: boolean
+  settled: boolean
   error: string | null
   refetch: () => Promise<void>
 }
@@ -61,6 +62,7 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
   const {
     pendingParticipants,
     loading: pendingParticipantsLoading,
+    settled: pendingParticipantsSettled,
     errorPendingParticipants,
     refetch: refetchPendingParticipants,
   } = usePendingParticipants()
@@ -90,10 +92,17 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
     () => ({
       pendingParticipants,
       loading: pendingParticipantsLoading,
+      settled: pendingParticipantsSettled,
       error: errorPendingParticipants,
       refetch: refetchPendingParticipants,
     }),
-    [pendingParticipants, pendingParticipantsLoading, errorPendingParticipants, refetchPendingParticipants]
+    [
+      pendingParticipants,
+      pendingParticipantsLoading,
+      pendingParticipantsSettled,
+      errorPendingParticipants,
+      refetchPendingParticipants,
+    ]
   )
 
   const discoverValue = useMemo(
