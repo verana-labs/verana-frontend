@@ -1,10 +1,12 @@
 'use client'
 
+import { useChain } from '@cosmos-kit/react'
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
+import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import { CorporationDiscoveryFailure } from '@/ui/common/corporation-discovery-failure'
@@ -12,7 +14,11 @@ import { CorporationMembershipRow } from '@/ui/common/corporation-membership-row
 
 export function AccountCorporations() {
   const router = useRouter()
+  const veranaChain = useVeranaChain()
+  const { address } = useChain(veranaChain.chain_name)
   const { memberships, actingCorporation, loading, error, attention, setActingCorporation } = useUserCorporation()
+
+  if (!address) return null
 
   function openCorporation(membership: CorporationMembership) {
     setActingCorporation(membership.corporation.id)

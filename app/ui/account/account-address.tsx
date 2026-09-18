@@ -3,7 +3,8 @@
 import { useChain } from '@cosmos-kit/react'
 import { faCheck, faCopy, faQrcode, faUpRightFromSquare, faWallet } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useCopyFeedback } from '@/hooks/useCopyFeedback'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { AddressQrModal } from '@/ui/common/address-qr-modal'
@@ -13,26 +14,8 @@ export function AccountAddress() {
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
   const explorerUrl = veranaChain.explorers?.[0]?.url
-  const [copiedAt, setCopiedAt] = useState(0)
   const [qrOpen, setQrOpen] = useState(false)
-
-  const copied = copiedAt > 0
-
-  useEffect(() => {
-    if (!copiedAt) return
-    const timeout = window.setTimeout(() => setCopiedAt(0), 2000)
-    return () => window.clearTimeout(timeout)
-  }, [copiedAt])
-
-  async function copyAddress() {
-    if (!address || !navigator.clipboard) return
-    try {
-      await navigator.clipboard.writeText(address)
-      setCopiedAt(Date.now())
-    } catch {
-      setCopiedAt(0)
-    }
-  }
+  const { copied, copy } = useCopyFeedback(address)
 
   if (!address) return null
 
@@ -52,7 +35,7 @@ export function AccountAddress() {
             label={copied ? <span className="ml-1.5 text-xs font-medium">{translate('copied.label')}</span> : undefined}
             title={translate('navbar.addresscopy.title')}
             className={`navbar-icon flex items-center ${copied ? 'text-success-600 dark:text-success-400' : ''}`}
-            onClick={() => void copyAddress()}
+            onClick={() => void copy()}
           />
           <IconLabelButton
             icon={faQrcode}

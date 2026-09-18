@@ -3,7 +3,8 @@
 import { useChain } from '@cosmos-kit/react'
 import { faCheck, faQrcode, faRightFromBracket, faUpRightFromSquare, faWallet } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { JSX, useEffect, useState } from 'react'
+import { JSX, useState } from 'react'
+import { useCopyFeedback } from '@/hooks/useCopyFeedback'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { AddressQrModal } from '@/ui/common/address-qr-modal'
@@ -39,28 +40,8 @@ export default function AccountZone() {
 
   const ConnectButton = buttonByStatus[status as WalletStatus] ?? <ButtonConnect onClick={connect} />
 
-  const [copied, setCopied] = useState(false)
   const [qrModal, setQR] = useState(false)
-
-  useEffect(() => {
-    if (!copied) return
-    const timeout = window.setTimeout(() => setCopied(false), 2000)
-    return () => window.clearTimeout(timeout)
-  }, [copied])
-
-  async function handleCopy() {
-    if (!address) return
-    try {
-      if (typeof navigator !== 'undefined' && navigator.clipboard) {
-        await navigator.clipboard.writeText(address)
-        setCopied(true)
-        return
-      }
-    } catch {
-      // Swallow copy errors to avoid breaking the UI when clipboard is unavailable
-    }
-    setCopied(false)
-  }
+  const { copied, copy } = useCopyFeedback(address)
 
   return (
     <div className="flex items-center space-x-3 px-4 py-2 bg-surface-muted dark:bg-surface-muted rounded-xl">
@@ -71,7 +52,7 @@ export default function AccountZone() {
           </div>
           <div
             className="hidden xl:block cursor-pointer select-none"
-            onClick={handleCopy}
+            onClick={() => void copy()}
             title={resolveTranslatable({ key: 'navbar.addresscopy.title' }, translate)}
           >
             <p className="text-sm font-medium text-gray-900 dark:text-white">{shortenMiddle(address, 13)}</p>
