@@ -495,6 +495,7 @@
   "getvna.window.day": "day",
   "getvna.window.global": "global",
   "getvna.error.QUOTA_EXCEEDED": "You reached the {window} limit of the faucet. It resets at {resetsAt}.",
+  "getvna.error.QUOTA_EXCEEDED.later": "You reached the {window} limit of the faucet. Try again later.",
   "getvna.error.FAUCET_UNAVAILABLE": "The faucet cannot send tokens right now. Try again later.",
   "getvna.error.SIGN_ARBITRARY_UNSUPPORTED": "Your wallet cannot sign messages. Use a browser wallet that supports message signing, such as Keplr.",
   "getvna.error.RATE_LIMITED": "Too many requests. Wait a moment and try again.",

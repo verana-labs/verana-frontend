@@ -426,13 +426,24 @@ describe('requestFaucetFunds', () => {
   })
 })
 
+// The quota object of a QUOTA_EXCEEDED error, with the reset time of the binding window.
+function quotaDetails(window: string, resetsAt: string | null) {
+  const win = { limit: '50000000', used: '50000000', remaining: '0', resetsAt }
+  return {
+    hour: { ...win, resetsAt: null },
+    day: { ...win, resetsAt: null },
+    global: { ...win, resetsAt: null },
+    [window]: win,
+  }
+}
+
 describe('error map', () => {
   const cases: Array<[number, string, Record<string, unknown>]> = [
     [400, 'INVALID_REQUEST', {}],
     [400, 'INVALID_ACCOUNT', { account: 'bad' }],
     [401, 'AUTH_FAILED', {}],
     [429, 'RATE_LIMITED', { retryAfter: 30 }],
-    [429, 'QUOTA_EXCEEDED', { window: 'hour', resetsAt: '2026-01-01T01:00:00.000Z' }],
+    [429, 'QUOTA_EXCEEDED', { window: 'hour', quota: quotaDetails('hour', '2026-01-01T01:00:00.000Z') }],
     [502, 'TX_FAILED', { rawLog: 'out of gas' }],
     [502, 'NODE_ERROR', {}],
     [503, 'FAUCET_UNAVAILABLE', { reason: 'maintenance' }],
@@ -584,12 +595,10 @@ function text(key: string): string {
 describe('faucetErrorMessage', () => {
   const RESETS_AT = '2026-01-01T01:00:00.000Z'
 
-  it('names the quota window and its reset time for QUOTA_EXCEEDED', () => {
+  it('names the binding window and its reset time for QUOTA_EXCEEDED', () => {
     const message = faucetErrorMessage(
-      new FaucetError('QUOTA_EXCEEDED', 'quota', 429, { window: 'day', resetsAt: RESETS_AT })
+      new FaucetError('QUOTA_EXCEEDED', 'quota', 429, { window: 'day', quota: quotaDetails('day', RESETS_AT) })
     )
-    expect(message).toContain(text('getvna.window.day'))
-    expect(message).toContain(formatDateTime(RESETS_AT))
     expect(message).toBe(
       text('getvna.error.QUOTA_EXCEEDED')
         .replace('{window}', text('getvna.window.day'))
@@ -597,10 +606,16 @@ describe('faucetErrorMessage', () => {
     )
   })
 
-  it('keeps an unknown quota window as is', () => {
+  it('asks to try later when the binding window has no reset time', () => {
     const message = faucetErrorMessage(
-      new FaucetError('QUOTA_EXCEEDED', 'quota', 429, { window: 'week', resetsAt: RESETS_AT })
+      new FaucetError('QUOTA_EXCEEDED', 'quota', 429, { window: 'global', quota: quotaDetails('global', null) })
     )
+    expect(message).toBe(text('getvna.error.QUOTA_EXCEEDED.later').replace('{window}', text('getvna.window.global')))
+    expect(message).not.toContain('{resetsAt}')
+  })
+
+  it('keeps an unknown quota window as is', () => {
+    const message = faucetErrorMessage(new FaucetError('QUOTA_EXCEEDED', 'quota', 429, { window: 'week', quota: {} }))
     expect(message).toContain('week')
     expect(message).not.toContain('{window}')
   })

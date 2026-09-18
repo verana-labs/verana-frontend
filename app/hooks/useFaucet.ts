@@ -344,12 +344,14 @@ export function faucetErrorMessage(error: unknown): string {
   if (!(error instanceof FaucetError)) return translate('getvna.error.generic')
   switch (error.code) {
     case 'QUOTA_EXCEEDED': {
+      // The faucet sends { window, quota: { hour|day|global: { resetsAt, ... } } }. resetsAt is null when unused.
       const window = typeof error.details.window === 'string' ? error.details.window : ''
-      const resetsAt = typeof error.details.resetsAt === 'string' ? formatDateTime(error.details.resetsAt) : ''
-      return translate('getvna.error.QUOTA_EXCEEDED', {
-        window: QUOTA_WINDOWS.has(window) ? translate(`getvna.window.${window}`) : window,
-        resetsAt,
-      })
+      const quota = error.details.quota as Record<string, { resetsAt?: unknown }> | undefined
+      const resetsAt = quota?.[window]?.resetsAt
+      const values = { window: QUOTA_WINDOWS.has(window) ? translate(`getvna.window.${window}`) : window }
+      return typeof resetsAt === 'string'
+        ? translate('getvna.error.QUOTA_EXCEEDED', { ...values, resetsAt: formatDateTime(resetsAt) })
+        : translate('getvna.error.QUOTA_EXCEEDED.later', values)
     }
     case 'FAUCET_UNAVAILABLE':
     case 'RATE_LIMITED':
