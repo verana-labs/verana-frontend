@@ -12,6 +12,7 @@ import { RefreshState } from '@/msg/util/signerUtil'
 import { useAccountCtx } from '@/providers/api-rest-query-provider-context'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import ColumnsDataView from '@/ui/common/data-view-columns'
+import { GET_VNA_ACTION } from '@/ui/common/get-vna'
 import TitleAndButton from '@/ui/common/title-and-button'
 import { AccountData, accountSections } from '@/ui/dataview/datasections/account'
 import { resolveTranslatable } from '@/ui/dataview/types'
@@ -58,7 +59,8 @@ export default function AccountPage() {
       const typedAccountData = accountData as AccountData
       const claimableInterests =
         Number(typedAccountData.claimableInterests) > 0 ? typedAccountData.claimableInterests : null
-      const getVNA = VERANA_FAUCET_URL ? 'GetVNATrustDeposit' : null
+      // Per [VFE-PAGE-ACCT-3]: no faucet URL, no Get VNA action.
+      const getVNA = VERANA_FAUCET_URL ? GET_VNA_ACTION : null
       const claimInterests = 'MsgReclaimTrustDepositYield'
       setData({
         ...typedAccountData,

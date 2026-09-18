@@ -750,6 +750,10 @@
     @apply text-sm md:text-lg break-all;
   }
 
+  .notify-msg-link {
+    @apply block mt-1 text-sm font-mono underline underline-offset-2 break-all;
+  }
+
   .notify-btn-close {
     @apply absolute top-2 right-2 text-2xl font-bold px-2 focus:outline-none hover:text-black/60;
   }

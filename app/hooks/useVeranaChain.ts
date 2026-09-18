@@ -10,6 +10,11 @@ import {
 } from '@/config/env'
 import { veranaChainEnv } from '@/config/veranaChain.client'
 
+// Return the explorer URL of one transaction. Return undefined when the network has no explorer.
+export function explorerTxUrl(txHash: string): string | undefined {
+  return VERANA_EXPLORER_URL ? `${VERANA_EXPLORER_URL}/tx/${txHash}` : undefined
+}
+
 export function useVeranaChain() {
   const chainName = VERANA_CHAIN_NAME
   const chainId = VERANA_CHAIN_ID
