@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.17.0](https://github.com/verana-labs/verana-frontend/compare/v0.16.0...v0.17.0) (2026-09-19)
+
+
+### Features
+
+* [Account] address affordances and the membership list ([#477](https://github.com/verana-labs/verana-frontend/issues/477)) ([f3d643a](https://github.com/verana-labs/verana-frontend/commit/f3d643afbdb6417f9e8db242f37ff5e19bd9c569))
+* faucet client with the ADR-036 challenge and token exchange ([#478](https://github.com/verana-labs/verana-frontend/issues/478)) ([422b8cb](https://github.com/verana-labs/verana-frontend/commit/422b8cb732b1be6b56f71471c54628e7f19f36c7))
+* get vna the in page faucet flow vfe page acct 4 vfe page acct 6 vfe page acct 7 ([#480](https://github.com/verana-labs/verana-frontend/issues/480)) ([ca5d470](https://github.com/verana-labs/verana-frontend/commit/ca5d470caa1c039934647d499f7c7abf45a01461))
+* replace NEXT_PUBLIC_VERANA_TOPUP_VS with NEXT_PUBLIC_VERANA_FAUCET_URL and gate the Get VNA action ([#476](https://github.com/verana-labs/verana-frontend/issues/476)) ([6364a9e](https://github.com/verana-labs/verana-frontend/commit/6364a9e556433056fe9fb136ab33cb4825ce8572))
+
+
+### Bug Fixes
+
+* [Pending Tasks] explain empty, loading and failed task lists ([#475](https://github.com/verana-labs/verana-frontend/issues/475)) ([2643b0e](https://github.com/verana-labs/verana-frontend/commit/2643b0ea045c5f076bbb105c7039afab25e7ec24))
+* read the dashboard stats from the indexer snapshot route ([#442](https://github.com/verana-labs/verana-frontend/issues/442)) ([733dbf1](https://github.com/verana-labs/verana-frontend/commit/733dbf1154d0ba8218b27f25a0fd0b8b2619c5ba))
+
 ## [0.16.0](https://github.com/verana-labs/verana-frontend/compare/v0.15.0...v0.16.0) (2026-09-10)
 
 
