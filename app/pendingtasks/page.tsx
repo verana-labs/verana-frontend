@@ -1,8 +1,9 @@
 'use client'
 
 import { faFolder } from '@fortawesome/free-solid-svg-icons'
-import { useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
+import { translate } from '@/i18n/dataview'
 import { usePendingTasksCtx } from '@/providers/api-rest-query-provider-context'
 import ParticipantTree from '@/ui/common/participant-tree'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
@@ -56,9 +57,19 @@ function buildTree(ecosystems: PendingEcosystem[], corporationId?: number): Tree
   }))
 }
 
+function treePlaceholder(count: number, settled: boolean, error: string | null): ReactNode {
+  if (error) return <p className="p-2 text-sm text-amber-700 dark:text-amber-300">{translate('task.tree.error')}</p>
+  if (count > 0) return null
+  return (
+    <p className="p-2 text-sm text-neutral-70 dark:text-neutral-70">
+      {translate(settled ? 'task.tree.empty' : 'task.tree.loading')}
+    </p>
+  )
+}
+
 export default function PendingTasksPage() {
-  const { actingCorporation } = useUserCorporation()
-  const { pendingParticipants, refetch } = usePendingTasksCtx()
+  const { actingCorporation, loading: corporationLoading } = useUserCorporation()
+  const { pendingParticipants, settled, error, refetch } = usePendingTasksCtx()
   const [refreshRoot, setRefreshRoot] = useState(true)
   const participantTree = useMemo(
     () => buildTree(pendingParticipants, actingCorporation?.corporation.id),
@@ -77,6 +88,7 @@ export default function PendingTasksPage() {
       type="tasks"
       viewerCorporationId={actingCorporation?.corporation.id}
       refreshRoot={() => setRefreshRoot(true)}
+      placeholder={treePlaceholder(pendingParticipants.length, settled && !corporationLoading, error)}
     />
   )
 }
