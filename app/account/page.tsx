@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { VERANA_FAUCET_URL } from '@/config/env'
 import { useAccountTxCount } from '@/hooks/useAccountTxCount'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
@@ -57,7 +58,7 @@ export default function AccountPage() {
       const typedAccountData = accountData as AccountData
       const claimableInterests =
         Number(typedAccountData.claimableInterests) > 0 ? typedAccountData.claimableInterests : null
-      const getVNA = 'GetVNATrustDeposit'
+      const getVNA = VERANA_FAUCET_URL ? 'GetVNATrustDeposit' : null
       const claimInterests = 'MsgReclaimTrustDepositYield'
       setData({
         ...typedAccountData,

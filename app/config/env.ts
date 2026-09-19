@@ -10,11 +10,10 @@ export const VERANA_RPC_ENDPOINT = read('NEXT_PUBLIC_VERANA_RPC_ENDPOINT')
 export const VERANA_REST_ENDPOINT = read('NEXT_PUBLIC_VERANA_REST_ENDPOINT')
 export const VERANA_EXPLORER_URL = read('NEXT_PUBLIC_VERANA_EXPLORER_URL')
 export const VERANA_VISUALIZER_URL = read('NEXT_PUBLIC_VERANA_VISUALIZER_URL')
-export const VERANA_TOPUP_VS = read('NEXT_PUBLIC_VERANA_TOPUP_VS')
-export const VERANA_TOPUP_VS_HOST = VERANA_TOPUP_VS ? VERANA_TOPUP_VS.split(':')[2] : ''
 export const VERANA_SIGN_DIRECT_MODE = read('NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE')
 
 export const VERANA_INDEXER_BASE_URL = read('NEXT_PUBLIC_VERANA_INDEXER_BASE_URL')?.replace(/\/$/, '')
+export const VERANA_FAUCET_URL = read('NEXT_PUBLIC_VERANA_FAUCET_URL')?.replace(/\/$/, '')
 
 const indexerEndpoint = (path: string): string | undefined =>
   VERANA_INDEXER_BASE_URL ? `${VERANA_INDEXER_BASE_URL}/v4/${path}` : undefined

@@ -2,7 +2,7 @@
 
 import clsx from 'clsx'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { LOW_BALANCE_WARN_UVNA } from '@/config/env'
+import { LOW_BALANCE_WARN_UVNA, VERANA_FAUCET_URL } from '@/config/env'
 import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
@@ -82,13 +82,17 @@ export default function EditableDataView<T extends object>({
     return true
   }, [])
 
-  const lowBalanceTemplate =
-    resolveTranslatable({ key: 'messages.lowbalance' }, translate) ??
-    "You’re Running Low on VNA. Your balance is {value} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted."
+  const lowBalanceTemplate = VERANA_FAUCET_URL
+    ? (resolveTranslatable({ key: 'messages.lowbalance' }, translate) ??
+      "You’re Running Low on VNA. Your balance is {value} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted.")
+    : (resolveTranslatable({ key: 'messages.lowbalance.noFaucet' }, translate) ??
+      'You’re Running Low on VNA. Your balance is {value} VNA. Add more VNA to keep your activity uninterrupted.')
   const [feeAmount, setFeeAmount] = useState<number | null>(null)
-  const balanceLessThanFeeTemplate =
-    resolveTranslatable({ key: 'messages.balanceLessThanFee' }, translate) ??
-    "You’re Running Low on VNA. Your balance is {value} VNA and running this transaction requires {fee} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted."
+  const balanceLessThanFeeTemplate = VERANA_FAUCET_URL
+    ? (resolveTranslatable({ key: 'messages.balanceLessThanFee' }, translate) ??
+      "You’re Running Low on VNA. Your balance is {value} VNA and running this transaction requires {fee} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted.")
+    : (resolveTranslatable({ key: 'messages.balanceLessThanFee.noFaucet' }, translate) ??
+      'You’re Running Low on VNA. Your balance is {value} VNA and running this transaction requires {fee} VNA. Add more VNA to keep your activity uninterrupted.')
 
   // Custom hook to fetch user's account/trust deposit data
   const { accountData, errorAccountData } = useTrustDepositAccountData()

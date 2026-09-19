@@ -42,10 +42,11 @@ Defined under `env`. The network values have no default and rendering fails when
 - `NEXT_PUBLIC_VERANA_RPC_ENDPOINT`
 - `NEXT_PUBLIC_VERANA_REST_ENDPOINT`
 - `NEXT_PUBLIC_VERANA_INDEXER_BASE_URL`
-- `NEXT_PUBLIC_VERANA_TOPUP_VS`
 - `NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE`
 - `NEXT_PUBLIC_SESSION_LIFETIME_SECONDS`
 - `NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA`
+
+`NEXT_PUBLIC_VERANA_FAUCET_URL` is optional: leave it empty on a network without a faucet and the frontend hides the Get VNA action.
 
 ### Quick examples
 
