@@ -1,16 +1,25 @@
 'use client'
 
-import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+
+type NotificationType = 'success' | 'error' | 'info' | 'inProgress'
+
+// Per [VFE-TX-UX-1] a notification can link a transaction hash to the explorer.
+export type NotificationLink = {
+  href: string
+  label: string
+}
 
 type Notification = {
   title?: string
   message: string
-  type: 'success' | 'error' | 'info' | 'inProgress'
+  type: NotificationType
+  link?: NotificationLink
 }
 
 type NotificationContextType = {
   // Notify shows a notification and returns a promise that resolves when the notification is closed
-  notify: (message: string, type?: 'success' | 'error' | 'info' | 'inProgress', title?: string) => Promise<void>
+  notify: (message: string, type?: NotificationType, title?: string, link?: NotificationLink) => Promise<void>
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined)
@@ -28,19 +37,24 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   // Reference to the promise resolver, so we can resolve when notification closes
   const resolveClose = useRef<(() => void) | null>(null)
 
-  // Notify returns a promise that resolves when the notification closes
-  const notify = (message: string, type: 'success' | 'error' | 'info' | 'inProgress' = 'success', title?: string) => {
-    // Resolve previous notification promise if exists
-    if (resolveClose.current) {
-      resolveClose.current()
-      resolveClose.current = null
-    }
-    setNotification({ message, type, title })
-    setVisible(true)
-    return new Promise<void>((resolve) => {
-      resolveClose.current = resolve
-    })
-  }
+  // Notify returns a promise that resolves when the notification closes.
+  // It uses only a ref and state setters, so its identity does not change between renders.
+  const notify = useCallback(
+    (message: string, type: NotificationType = 'success', title?: string, link?: NotificationLink) => {
+      // Resolve the promise of the previous notification, if there is one
+      if (resolveClose.current) {
+        resolveClose.current()
+        resolveClose.current = null
+      }
+      setNotification({ message, type, title, link })
+      setVisible(true)
+      return new Promise<void>((resolve) => {
+        resolveClose.current = resolve
+      })
+    },
+    []
+  )
+  const contextValue = useMemo(() => ({ notify }), [notify])
 
   // Handle automatic closing for 'success' and 'error' types, no timeout for 'info'
   useEffect(() => {
@@ -67,7 +81,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   }, [visible, notification])
 
   return (
-    <NotificationContext.Provider value={{ notify }}>
+    <NotificationContext.Provider value={contextValue}>
       <div className="relative w-full h-full">
         {children}
         <NotificationContainer notification={notification} visible={visible} onClose={() => setVisible(false)} />
@@ -108,6 +122,11 @@ function NotificationContainer({
         <div className="notify-msg-container">
           {notification.title && <div className="notify-msg-title">{notification.title}</div>}
           <span className="notify-msg-message">{notification.message}</span>
+          {notification.link && (
+            <a href={notification.link.href} target="_blank" rel="noopener noreferrer" className="notify-msg-link">
+              {notification.link.label}
+            </a>
+          )}
         </div>
         <button onClick={onClose} className="notify-btn-close" aria-label="Close" title="Close" tabIndex={0}>
           ×
@@ -117,7 +136,7 @@ function NotificationContainer({
   )
 }
 
-function getIcon(type: 'success' | 'error' | 'info' | 'inProgress') {
+function getIcon(type: NotificationType) {
   if (type === 'success') {
     return (
       <svg className="notify-icon-success" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

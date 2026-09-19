@@ -5,7 +5,9 @@ import { useChain } from '@cosmos-kit/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { VERANA_FAUCET_URL } from '@/config/env'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
+import { translate } from '@/i18n/dataview'
 import { indexerValidators } from '@/lib/indexer-json'
+import { formatDateTime } from '@/util/util'
 
 export type FaucetErrorCode =
   | 'INVALID_REQUEST'
@@ -94,7 +96,7 @@ export type SignArbitrary = (signer: string, data: string | Uint8Array) => Promi
 const FETCH_TIMEOUT_MS = 10_000
 const TOKEN_EXPIRY_MARGIN_MS = 5_000
 
-const { record, string, number, integer, decimalAmount, optionalString } = indexerValidators('faucet')
+const { record, string, number, decimalAmount, optionalString } = indexerValidators('faucet')
 
 function boolean(value: unknown, path: string): boolean {
   if (typeof value !== 'boolean') throw new Error(`Invalid faucet response: ${path}`)
@@ -212,7 +214,8 @@ function parseFaucetResult(status: number, payload: unknown): FaucetResult {
   return {
     status: 'confirmed',
     ...base,
-    height: integer(result.height, 'faucet.height'),
+    // The faucet encodes the height as a decimal string, the same as the amounts.
+    height: Number(decimalAmount(result.height, 'faucet.height')),
     quota: record(result.quota ?? {}, 'faucet.quota'),
   }
 }
@@ -322,6 +325,47 @@ export async function requestFaucetFunds(options: RequestFaucetFundsOptions): Pr
     cachedToken = null
     token = await exchangeToken(account, challengePrefix, signArbitrary, onPhase)
     return await send(token.token)
+  }
+}
+
+const QUOTA_WINDOWS: ReadonlySet<string> = new Set(['hour', 'day', 'global'])
+const UNAVAILABLE_REASONS: ReadonlySet<string> = new Set(['LOW_BALANCE', 'NODE_UNAVAILABLE'])
+
+// Per [VFE-PAGE-ACCT-4] the unavailable state shows the reason when the dictionary has a text for it.
+export function faucetUnavailableMessage(reason: string | undefined): string {
+  return translate(
+    reason && UNAVAILABLE_REASONS.has(reason) ? `getvna.unavailable.${reason}` : 'getvna.unavailable.generic'
+  )
+}
+
+// Per [VFE-PAGE-ACCT-7] every faucet error maps to a user-facing message. The raw code only goes to the
+// notification details.
+export function faucetErrorMessage(error: unknown): string {
+  if (!(error instanceof FaucetError)) return translate('getvna.error.generic')
+  switch (error.code) {
+    case 'QUOTA_EXCEEDED': {
+      // The faucet sends { window, quota: { hour|day|global: { resetsAt, ... } } }. resetsAt is null when unused.
+      const window = typeof error.details.window === 'string' ? error.details.window : ''
+      const quota = error.details.quota as Record<string, { resetsAt?: unknown }> | undefined
+      const resetsAt = quota?.[window]?.resetsAt
+      const values = { window: QUOTA_WINDOWS.has(window) ? translate(`getvna.window.${window}`) : window }
+      return typeof resetsAt === 'string'
+        ? translate('getvna.error.QUOTA_EXCEEDED', { ...values, resetsAt: formatDateTime(resetsAt) })
+        : translate('getvna.error.QUOTA_EXCEEDED.later', values)
+    }
+    case 'FAUCET_UNAVAILABLE':
+    case 'RATE_LIMITED':
+    case 'TX_FAILED':
+    case 'NODE_ERROR':
+    case 'SIGN_ARBITRARY_UNSUPPORTED':
+      return translate(`getvna.error.${error.code}`)
+    case 'AUTH_FAILED':
+    case 'UNAUTHORIZED':
+      return translate('getvna.error.AUTH_FAILED')
+    case 'WALLET_NOT_CONNECTED':
+      return translate('notification.msg.connectwallet')
+    default:
+      return translate('getvna.error.generic')
   }
 }
 

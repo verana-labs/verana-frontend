@@ -214,6 +214,22 @@ export async function installKeplrMock(page: Page, opts: InstallKeplrMockOptions
           const signature = await bridge.__mock_signAmino(chainId, signer, signDoc)
           return { signed: signDoc, signature }
         }
+        case 'signArbitrary': {
+          // ADR-036: an amino sign doc with an empty chain id and one sign/MsgSignData message.
+          const signer = string(args[1], 'signArbitrary signer')
+          const data = args[2]
+          const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data
+          if (!(bytes instanceof Uint8Array)) throw new Error('signArbitrary data must be a string or bytes')
+          const signDoc = {
+            chain_id: '',
+            account_number: '0',
+            sequence: '0',
+            fee: { gas: '0', amount: [] },
+            msgs: [{ type: 'sign/MsgSignData', value: { signer, data: btoa(String.fromCharCode(...bytes)) } }],
+            memo: '',
+          }
+          return bridge.__mock_signAmino('', signer, signDoc)
+        }
         default:
           throw new Error(`method "${method}" not implemented in mock`)
       }

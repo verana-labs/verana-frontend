@@ -13,12 +13,17 @@ vi.mock('@/hooks/useVeranaChain', () => ({ useVeranaChain: () => ({ chain_name: 
 
 import {
   FaucetError,
+  type FaucetErrorCode,
+  faucetErrorMessage,
+  faucetUnavailableMessage,
   fetchFaucetInfo,
   isAmountWithinLimit,
   requestFaucetFunds,
   resetFaucetToken,
   useFaucet,
 } from '@/hooks/useFaucet'
+import en from '@/i18n/dataview/en.json'
+import { formatDateTime } from '@/util/util'
 
 const ACCOUNT = 'verana1account'
 const OTHER_ACCOUNT = 'verana1other'
@@ -74,7 +79,7 @@ function confirmedBody() {
   return {
     status: 'confirmed',
     txHash: 'ABC123',
-    height: 42,
+    height: '42',
     recipient: ACCOUNT,
     amount: '1000000',
     denom: 'uvna',
@@ -233,7 +238,7 @@ describe('requestFaucetFunds', () => {
     })
     expect(server.calls[2].headers.authorization).toBe('Bearer token-1')
     expect(server.calls[2].body).toEqual({ amount: '2500000' })
-    expect(result).toEqual({ ...confirmedBody(), status: 'confirmed' })
+    expect(result).toEqual({ ...confirmedBody(), status: 'confirmed', height: 42 })
   })
 
   it('sends an empty body without recipient when no amount is given', async () => {
@@ -421,13 +426,24 @@ describe('requestFaucetFunds', () => {
   })
 })
 
+// The quota object of a QUOTA_EXCEEDED error, with the reset time of the binding window.
+function quotaDetails(window: string, resetsAt: string | null) {
+  const win = { limit: '50000000', used: '50000000', remaining: '0', resetsAt }
+  return {
+    hour: { ...win, resetsAt: null },
+    day: { ...win, resetsAt: null },
+    global: { ...win, resetsAt: null },
+    [window]: win,
+  }
+}
+
 describe('error map', () => {
   const cases: Array<[number, string, Record<string, unknown>]> = [
     [400, 'INVALID_REQUEST', {}],
     [400, 'INVALID_ACCOUNT', { account: 'bad' }],
     [401, 'AUTH_FAILED', {}],
     [429, 'RATE_LIMITED', { retryAfter: 30 }],
-    [429, 'QUOTA_EXCEEDED', { window: 'hour', resetsAt: '2026-01-01T01:00:00.000Z' }],
+    [429, 'QUOTA_EXCEEDED', { window: 'hour', quota: quotaDetails('hour', '2026-01-01T01:00:00.000Z') }],
     [502, 'TX_FAILED', { rawLog: 'out of gas' }],
     [502, 'NODE_ERROR', {}],
     [503, 'FAUCET_UNAVAILABLE', { reason: 'maintenance' }],
@@ -565,5 +581,101 @@ describe('useFaucet', () => {
     expect(error.code).toBe('SIGN_ARBITRARY_UNSUPPORTED')
     expect(signArbitrary).not.toHaveBeenCalled()
     expect(server.paths()).toEqual(['GET /v1/info'])
+  })
+})
+
+// Per [VFE-PAGE-ACCT-7]: the text comes from the dictionary, never from the raw code.
+const dictionary = en as Record<string, string>
+function text(key: string): string {
+  const value = dictionary[key]
+  if (!value) throw new Error(`missing i18n key ${key}`)
+  return value
+}
+
+describe('faucetErrorMessage', () => {
+  const RESETS_AT = '2026-01-01T01:00:00.000Z'
+
+  it('names the binding window and its reset time for QUOTA_EXCEEDED', () => {
+    const message = faucetErrorMessage(
+      new FaucetError('QUOTA_EXCEEDED', 'quota', 429, { window: 'day', quota: quotaDetails('day', RESETS_AT) })
+    )
+    expect(message).toBe(
+      text('getvna.error.QUOTA_EXCEEDED')
+        .replace('{window}', text('getvna.window.day'))
+        .replace('{resetsAt}', formatDateTime(RESETS_AT))
+    )
+  })
+
+  it('asks to try later when the binding window has no reset time', () => {
+    const message = faucetErrorMessage(
+      new FaucetError('QUOTA_EXCEEDED', 'quota', 429, { window: 'global', quota: quotaDetails('global', null) })
+    )
+    expect(message).toBe(text('getvna.error.QUOTA_EXCEEDED.later').replace('{window}', text('getvna.window.global')))
+    expect(message).not.toContain('{resetsAt}')
+  })
+
+  it('keeps an unknown quota window as is', () => {
+    const message = faucetErrorMessage(new FaucetError('QUOTA_EXCEEDED', 'quota', 429, { window: 'week', quota: {} }))
+    expect(message).toContain('week')
+    expect(message).not.toContain('{window}')
+  })
+
+  const direct: FaucetErrorCode[] = [
+    'FAUCET_UNAVAILABLE',
+    'SIGN_ARBITRARY_UNSUPPORTED',
+    'RATE_LIMITED',
+    'TX_FAILED',
+    'NODE_ERROR',
+  ]
+  it.each(direct)('maps %s to its own dictionary text', (code) => {
+    expect(faucetErrorMessage(new FaucetError(code, `${code} raw`))).toBe(text(`getvna.error.${code}`))
+  })
+
+  it.each(['UNAUTHORIZED', 'AUTH_FAILED'] as const)('maps %s to the AUTH_FAILED text', (code) => {
+    expect(faucetErrorMessage(new FaucetError(code, 'raw', 401))).toBe(text('getvna.error.AUTH_FAILED'))
+  })
+
+  it('asks to connect the wallet for WALLET_NOT_CONNECTED', () => {
+    expect(faucetErrorMessage(new FaucetError('WALLET_NOT_CONNECTED', 'raw'))).toBe(
+      text('notification.msg.connectwallet')
+    )
+  })
+
+  it('falls back to the generic text for an unmapped code and for a plain Error', () => {
+    expect(faucetErrorMessage(new FaucetError('INVALID_REQUEST', 'raw', 400))).toBe(text('getvna.error.generic'))
+    expect(faucetErrorMessage(new Error('boom'))).toBe(text('getvna.error.generic'))
+  })
+
+  it('never returns a raw code or an i18n key', () => {
+    const codes: FaucetErrorCode[] = [
+      'INVALID_REQUEST',
+      'INVALID_ACCOUNT',
+      'AUTH_FAILED',
+      'UNAUTHORIZED',
+      'RATE_LIMITED',
+      'QUOTA_EXCEEDED',
+      'TX_FAILED',
+      'NODE_ERROR',
+      'FAUCET_UNAVAILABLE',
+      'SIGN_ARBITRARY_UNSUPPORTED',
+      'WALLET_NOT_CONNECTED',
+      'NETWORK_ERROR',
+    ]
+    for (const code of codes) {
+      const message = faucetErrorMessage(new FaucetError(code, `${code} raw`))
+      expect(message).not.toBe(code)
+      expect(message).not.toMatch(/^(getvna|notification)\./)
+    }
+  })
+})
+
+describe('faucetUnavailableMessage', () => {
+  it.each(['LOW_BALANCE', 'NODE_UNAVAILABLE'])('maps %s to its own text', (reason) => {
+    expect(faucetUnavailableMessage(reason)).toBe(text(`getvna.unavailable.${reason}`))
+  })
+
+  it('falls back to the generic text for an unknown or missing reason', () => {
+    expect(faucetUnavailableMessage('maintenance')).toBe(text('getvna.unavailable.generic'))
+    expect(faucetUnavailableMessage(undefined)).toBe(text('getvna.unavailable.generic'))
   })
 })
