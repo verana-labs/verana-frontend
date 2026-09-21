@@ -24,7 +24,9 @@ import { veranaRegistry } from '@/config/veranaChain.sign.client'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
+import { trustCostLines } from '@/lib/trust-costs'
 import {
+  type CostLine,
   msgShortName,
   type ProposalMetadata,
   proposalMetadata,
@@ -36,6 +38,7 @@ import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import { extractTxHeight } from '@/msg/util/signerUtil'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
+import { useProtocolParams } from '@/providers/protocol-params-context'
 import { useTxConfirm } from '@/providers/tx-confirm-provider'
 import type { I18nValues } from '@/ui/dataview/types'
 import { formatVNAFromUVNA, shortenMiddle } from '@/util/util'
@@ -248,6 +251,7 @@ function accountPreview(effect: string, payer: string): TxPreview {
 export function useCorporationManage(onDone?: () => void) {
   const veranaChain = useVeranaChain()
   const { address, isWalletConnected } = useChain(veranaChain.chain_name)
+  const rates = useProtocolParams()
   const { waitForBlock } = useIndexerEvents()
   const { notify } = useNotification()
   const { confirmTx } = useTxConfirm()
@@ -296,7 +300,8 @@ export function useCorporationManage(onDone?: () => void) {
     build: (operator: string) => EncodeObject,
     notificationKey: string,
     proposalTitle: string,
-    effectValues: I18nValues = {}
+    effectValues: I18nValues = {},
+    costLines?: CostLine[]
   ): Promise<boolean> {
     if (!address) {
       await notify(translate('notification.msg.connectwallet'), 'error')
@@ -308,7 +313,7 @@ export function useCorporationManage(onDone?: () => void) {
       await notify(translate('error.msg.corporation.notauthorized', { msgType: typeUrl }), 'error')
       return false
     }
-    const preview = delegablePreview(typeUrl, mode, membership, address, proposalTitle, effectValues)
+    const preview = { ...delegablePreview(typeUrl, mode, membership, address, proposalTitle, effectValues), costLines }
     if (mode === 'operator') return broadcast(notificationKey, [build(address)], preview)
     const inner = build(membership.corporation.policyAddress)
     const buildProposalMsgs = (metadata: ProposalMetadata) => [
@@ -351,7 +356,8 @@ export function useCorporationManage(onDone?: () => void) {
         (operator) => buildRepaySlashedMessage(membership, depositUvna, operator),
         'MsgRepaySlashedTrustDeposit',
         'Repay the slashed trust deposit',
-        { amount: formatVNAFromUVNA(String(depositUvna)) }
+        { amount: formatVNAFromUVNA(String(depositUvna)) },
+        trustCostLines({ msgType: 'MsgRepaySlashedTrustDeposit', amount: depositUvna }, rates)
       ),
     propose: async (membership: CorporationMembership, message: EncodeObject, title: string): Promise<boolean> => {
       if (!membership.member) {

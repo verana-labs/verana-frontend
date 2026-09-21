@@ -847,5 +847,14 @@
   "txconfirm.warning.MsgRevokeOperatorAuthorization": "Irreversible. El operador pierde el acceso en cuanto la transacción se incluye.",
   "txconfirm.warning.MsgUpdateCorporation": "Esto cambia el ancla de identidad de la corporación. La resolución de confianza se reinicia desde el nuevo DID.",
   "txconfirm.warning.MsgArchiveEcosystem": "Esto cambia el estado de archivo del ecosistema para todos los participantes. Puede revertirse con otra acción de archivo.",
-  "txconfirm.warning.MsgArchiveCredentialSchema": "Esto cambia el estado de archivo del esquema de credencial para todos los participantes. Puede revertirse con otra acción de archivo."
+  "txconfirm.warning.MsgArchiveCredentialSchema": "Esto cambia el estado de archivo del esquema de credencial para todos los participantes. Puede revertirse con otra acción de archivo.",
+  "txconfirm.cost.validationfees": "Tarifas de validación",
+  "txconfirm.cost.trustdeposit": "Depósito de confianza",
+  "txconfirm.cost.repay": "Depósito reembolsado",
+  "txconfirm.cost.yield": "Rendimiento reclamado",
+  "participantcard.feedistribution.title": "Distribución de tarifas",
+  "participantcard.feedistribution.issuance": "Tarifas de confianza que este emisor paga por credencial emitida, por beneficiario del árbol de participantes",
+  "participantcard.feedistribution.verification": "Tarifas de confianza que este verificador paga por credencial verificada, por beneficiario del árbol de participantes",
+  "participantcard.feedistribution.total": "Total de tarifas de confianza",
+  "participantcard.feedistribution.deposit": "Depósito de confianza del pagador ({rate}% de las tarifas)"
 }

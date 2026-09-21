@@ -61,12 +61,15 @@ function deps(
   return { deps: value, notify, confirmTx }
 }
 
+const costLines = [{ label: 'Trust deposit', value: '10 VNA', debitUvna: 10_000_000 }]
+
 const args = {
   typeUrl: CREATE,
   build,
   effect: 'Create an ecosystem.',
   proposalTitle: 'Create an ecosystem',
   simulate: false,
+  costLines,
 }
 
 describe('confirmDelegableMsgs', () => {
@@ -139,6 +142,8 @@ describe('confirmDelegableMsgs', () => {
     expect(request.warning).toBeUndefined()
     expect(request.proposalTitle).toBeUndefined()
     expect(request.buildProposalMsgs).toBeUndefined()
+    expect(request.costLines).toBe(costLines)
+    expect(resolved?.msgs).toBe(request.msgs)
   })
 
   it('carries the severity and the existing warning copy of a revocation', async () => {
@@ -161,6 +166,7 @@ describe('confirmDelegableMsgs', () => {
     const resolved = await confirmDelegableMsgs(d, args)
     expect(resolved?.mode).toBe('proposal')
     expect(confirmTx.mock.calls[0][0]).toMatchObject({ mode: 'proposal', proposalTitle: 'Create an ecosystem' })
+    expect(confirmTx.mock.calls[0][0].costLines).toBe(costLines)
     const proposal = MsgSubmitProposal.decode(
       MsgSubmitProposal.encode(resolved?.msgs[0].value as MsgSubmitProposal).finish()
     )
