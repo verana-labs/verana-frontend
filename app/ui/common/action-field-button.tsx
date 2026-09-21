@@ -3,9 +3,21 @@
 import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import clsx from 'clsx'
-import { useEffect, useState } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
+import { useActionSigning } from '@/hooks/useSigningMode'
+import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import { ActionFieldProps, renderActionComponent } from '@/ui/common/data-view-typed'
 import IconLabelButton from '@/ui/common/icon-label-button'
+import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
+
+export function ActionLabel({ label, mode }: { label: ReactNode; mode: CorporationSigningMode | null }) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      {label}
+      <SigningModeIcon mode={mode} />
+    </span>
+  )
+}
 
 type ActionFieldButtonProps = {
   data: object
@@ -27,6 +39,7 @@ export default function ActionFieldButton({
   isActive = false,
 }: ActionFieldButtonProps) {
   const [active, setActive] = useState<boolean>(isActive)
+  const { mode, disabled } = useActionSigning(field.value)
 
   const toggle = () => {
     const next = !active
@@ -43,13 +56,14 @@ export default function ActionFieldButton({
     <div>
       {type === 'button' && !active && (
         <IconLabelButton
-          label={field.label}
+          label={<ActionLabel label={field.label} mode={mode} />}
           icon={field.icon}
           className={clsx(
-            'btn-action-confirm text-sm', // base
-            field.iconColorClass // specific
+            'btn-action-confirm text-sm disabled:opacity-50 disabled:cursor-not-allowed',
+            field.iconColorClass
           )}
           onClick={toggle}
+          disabled={disabled}
         />
       )}
 
@@ -57,8 +71,9 @@ export default function ActionFieldButton({
         <button
           type="button"
           onClick={toggle}
+          disabled={disabled}
           className={clsx(
-            'w-full px-6 py-4 text-left flex items-center justify-between transition-colors',
+            'w-full px-6 py-4 text-left flex items-center justify-between transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
             field.isWarning ? 'hover:bg-red-50 dark:hover:bg-red-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
           )}
         >
@@ -69,7 +84,9 @@ export default function ActionFieldButton({
               </div>
             )}
             <div>
-              <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{field.label}</h4>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                <ActionLabel label={field.label} mode={mode} />
+              </h4>
               <p className="text-sm text-neutral-70 dark:text-neutral-70">{field.description}</p>
             </div>
           </div>
