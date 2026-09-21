@@ -13,6 +13,7 @@ import {
   type TxConfirmRequest,
   type TxConfirmResult,
   txSeverity,
+  txWarning,
 } from '@/lib/tx-preview'
 import { type DelegableBuild, type DelegableMsgs, resolveDelegableMsgs } from '@/msg/util/delegable-msgs'
 import { useNotification } from '@/providers/notification-provider'
@@ -39,16 +40,6 @@ export interface DelegableMsgsDeps {
 
 function t(key: string, values?: I18nValues): string {
   return resolveTranslatable({ key, values }, translate) ?? key
-}
-
-function existing(key: string): string | undefined {
-  const text = t(key)
-  return text === key ? undefined : text
-}
-
-function warningFor(typeUrl: string): string | undefined {
-  const name = msgShortName(typeUrl)
-  return existing(`txconfirm.warning.${name}`) ?? existing(`messages.${name}.warning`)
 }
 
 export async function confirmDelegableMsgs(
@@ -82,7 +73,7 @@ export async function confirmDelegableMsgs(
     mode,
     payer: address,
     severity,
-    warning: severity ? warningFor(typeUrl) : undefined,
+    warning: severity ? txWarning(typeUrl) : undefined,
     proposalTitle: mode === 'proposal' ? proposalTitle : undefined,
     buildProposalMsgs: mode === 'proposal' ? resolution.build : undefined,
     costLines,

@@ -32,6 +32,7 @@ import {
   proposalMetadata,
   type TxConfirmRequest,
   txSeverity,
+  txWarning,
 } from '@/lib/tx-preview'
 import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
@@ -238,14 +239,22 @@ export function delegablePreview(
     mode,
     payer,
     severity,
-    warning: severity ? translate(`txconfirm.warning.${name}`) : undefined,
+    warning: severity ? txWarning(typeUrl) : undefined,
     proposalTitle: mode === 'proposal' ? proposalTitle : undefined,
     corporationLabel: shortenMiddle(membership.corporation.did, 32),
   }
 }
 
-function accountPreview(effect: string, payer: string): TxPreview {
-  return { titleKey: 'txconfirm.title.default', effect, mode: 'account', payer }
+function accountPreview(effect: string, payer: string, innerTypeUrl?: string): TxPreview {
+  const severity = innerTypeUrl ? (txSeverity(innerTypeUrl) ?? undefined) : undefined
+  return {
+    titleKey: 'txconfirm.title.default',
+    effect,
+    mode: 'account',
+    payer,
+    severity,
+    warning: severity && innerTypeUrl ? txWarning(innerTypeUrl) : undefined,
+  }
 }
 
 export function useCorporationManage(onDone?: () => void) {
@@ -375,7 +384,8 @@ export function useCorporationManage(onDone?: () => void) {
           translate('txconfirm.effect.MsgSubmitProposal', {
             corporation: shortenMiddle(membership.corporation.did, 32),
           }),
-          address
+          address,
+          message.typeUrl
         )
       )
     },
