@@ -22,7 +22,7 @@ function amount(value: string | number | undefined): number {
 function discountFraction(value: string | number | undefined): number {
   const parsed = Number(value ?? 0)
   if (!Number.isFinite(parsed) || parsed <= 0) return 0
-  return Math.min(parsed, 1)
+  return parsed > 1 ? 0 : parsed
 }
 
 export function feeDistributionKind(role: Participant['role']): FeeDistributionKind | null {

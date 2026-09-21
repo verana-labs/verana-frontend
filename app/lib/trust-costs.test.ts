@@ -19,12 +19,17 @@ describe('trustCostLines', () => {
     expect(totalDebitUvna(lines)).toBe(2_100_000)
   })
 
-  it('shows nothing for a free onboarding or without the rate', () => {
+  it('shows nothing for a free onboarding', () => {
     expect(trustCostLines({ msgType: 'MsgStartParticipantOP', validationFees: 0 }, RATES)).toEqual([])
     expect(trustCostLines({ msgType: 'MsgStartParticipantOP', validationFees: undefined }, RATES)).toEqual([])
-    expect(
-      trustCostLines({ msgType: 'MsgStartParticipantOP', validationFees: 5 }, { ...RATES, trustDepositRate: null })
-    ).toEqual([])
+  })
+
+  it('keeps the validation fee when the deposit rate could not be read', () => {
+    const lines = trustCostLines(
+      { msgType: 'MsgStartParticipantOP', validationFees: 5_000_000 },
+      { ...RATES, trustDepositRate: null }
+    )
+    expect(lines.map((line) => line.label)).toEqual(['Validation fees'])
   })
 
   it('prices the module deposits in trust units', () => {

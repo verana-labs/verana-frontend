@@ -47,8 +47,10 @@ export function trustCostLines(subject: TrustCostSubject, rates: TrustCostRates)
     case 'MsgStartParticipantOP':
     case 'MsgRenewParticipantOP': {
       const fees = uvna(subject.validationFees)
-      if (fees === null || rates.trustDepositRate === null) return []
-      return [debit('validationfees', fees), debit('trustdeposit', Math.round(fees * rates.trustDepositRate))]
+      if (fees === null) return []
+      const rate = rates.trustDepositRate
+      if (rate === null) return [debit('validationfees', fees)]
+      return [debit('validationfees', fees), debit('trustdeposit', Math.round(fees * rate))]
     }
     case 'MsgRepaySlashedTrustDeposit':
     case 'MsgRepayParticipantSlashedTrustDeposit': {
