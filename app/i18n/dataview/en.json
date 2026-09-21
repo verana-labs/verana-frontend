@@ -871,5 +871,14 @@
   "txconfirm.warning.MsgRevokeOperatorAuthorization": "Irreversible. The operator loses access as soon as the transaction is included.",
   "txconfirm.warning.MsgUpdateCorporation": "This changes the identity anchor of the corporation. Trust resolution restarts from the new DID.",
   "txconfirm.warning.MsgArchiveEcosystem": "This changes the archived state of the ecosystem for every participant. It can be reverted with another archive action.",
-  "txconfirm.warning.MsgArchiveCredentialSchema": "This changes the archived state of the credential schema for every participant. It can be reverted with another archive action."
+  "txconfirm.warning.MsgArchiveCredentialSchema": "This changes the archived state of the credential schema for every participant. It can be reverted with another archive action.",
+  "txconfirm.cost.validationfees": "Validation fees",
+  "txconfirm.cost.trustdeposit": "Trust deposit",
+  "txconfirm.cost.repay": "Repaid deposit",
+  "txconfirm.cost.yield": "Claimed yield",
+  "participantcard.feedistribution.title": "Fee distribution",
+  "participantcard.feedistribution.issuance": "Trust fees this issuer pays per credential issued, per beneficiary of the participant tree",
+  "participantcard.feedistribution.verification": "Trust fees this verifier pays per credential verified, per beneficiary of the participant tree",
+  "participantcard.feedistribution.total": "Total trust fees",
+  "participantcard.feedistribution.deposit": "Payer trust deposit ({rate}% of the fees)"
 }

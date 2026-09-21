@@ -7,6 +7,7 @@ import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import {
+  type CostLine,
   msgShortName,
   proposalMetadata,
   type TxConfirmRequest,
@@ -24,7 +25,7 @@ export interface DelegableMsgsArgs {
   effect: string
   proposalTitle: string
   simulate: boolean
-  costLines?: { label: string; value: string }[]
+  costLines?: CostLine[]
 }
 
 export interface DelegableMsgsDeps {
