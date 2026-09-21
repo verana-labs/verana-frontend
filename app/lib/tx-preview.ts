@@ -1,5 +1,7 @@
 import type { EncodeObject } from '@cosmjs/proto-signing'
 import type { StdFee } from '@cosmjs/stargate'
+import { translate } from '@/i18n/dataview'
+import { resolveTranslatable } from '@/ui/dataview/types'
 import { formatVNAFromUVNA } from '@/util/util'
 
 export type TxConfirmMode = 'operator' | 'proposal' | 'account'
@@ -48,6 +50,16 @@ export function txSeverity(typeUrl: string): TxSeverity | null {
   if (/^Msg(Revoke|Slash)/.test(name)) return 'irreversible'
   if (typeUrl === '/verana.co.v1.MsgUpdateCorporation' || name.startsWith('MsgArchive')) return 'notice'
   return null
+}
+
+function existingText(key: string): string | undefined {
+  const text = resolveTranslatable({ key }, translate) ?? key
+  return text === key ? undefined : text
+}
+
+export function txWarning(typeUrl: string): string | undefined {
+  const name = msgShortName(typeUrl)
+  return existingText(`txconfirm.warning.${name}`) ?? existingText(`messages.${name}.warning`)
 }
 
 export function formatStdFee(fee: StdFee): string {
