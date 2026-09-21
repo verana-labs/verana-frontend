@@ -137,6 +137,13 @@ async function documentDigest(docUrl: string): Promise<string> {
   return sri
 }
 
+export async function buildCreateCorporationMessages(
+  params: CreateCorporationParams,
+  signer: string
+): Promise<EncodeObject[]> {
+  return [buildCreateCorporationMessage(params, signer, await documentDigest(params.docUrl))]
+}
+
 function txHeight(result: DeliverTxResponse): number {
   const height = extractTxHeight(result)
   if (height === undefined) throw new Error('Successful transaction did not include a block height')
@@ -160,7 +167,7 @@ export function useActionCorporation() {
   async function createCorporation(params: CreateCorporationParams, operator: string): Promise<UserCorporation> {
     void notify(translate('notification.MsgCreateCorporation.inprogress'), 'inProgress')
     const result = await sendTx({
-      msgs: [buildCreateCorporationMessage(params, operator, await documentDigest(params.docUrl))],
+      msgs: await buildCreateCorporationMessages(params, operator),
       memo: 'MsgCreateCorporation',
     })
     if (!('code' in result)) throw new Error('Expected a transaction response')

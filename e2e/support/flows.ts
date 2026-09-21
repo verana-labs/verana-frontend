@@ -32,10 +32,19 @@ export async function fillEcosystemForm(page: Page, opts: EcosystemFormOptions) 
   await labelInput(page, 'Document URL').fill(docUrl)
 }
 
+export async function confirmTransaction(page: Page) {
+  const dialog = page.getByRole('dialog')
+  const confirm = dialog.getByRole('button', { name: 'Confirm' })
+  await expect(confirm).toBeEnabled({ timeout: 60_000 })
+  await confirm.click()
+  await expect(dialog).toBeHidden()
+}
+
 export async function createEcosystem(page: Page, opts: EcosystemFormOptions): Promise<string> {
   const chainErrors = watchChainErrors(page)
   await fillEcosystemForm(page, opts)
   await page.locator('.btn-action-confirm').click()
+  await confirmTransaction(page)
 
   const success = expect
     .poll(() => page.url(), { timeout: 240_000 })
