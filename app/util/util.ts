@@ -138,7 +138,7 @@ export function expireBeforeDays(configured: string | undefined = SHOW_PARTICIPA
   return Number.isFinite(days) && days > 0 ? days : DEFAULT_EXPIRE_BEFORE_DAYS
 }
 
-export function isExpireSoon(input: Date | string | number | null | undefined): boolean {
+export function isExpireSoon(input: Date | string | null | undefined): boolean {
   if (input === null || input === undefined || input === '') return false
   const date = new Date(String(input))
   if (Number.isNaN(date.getTime())) return false
