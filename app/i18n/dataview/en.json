@@ -839,6 +839,7 @@
   "txconfirm.cancel": "Cancel",
   "txconfirm.retry": "Retry",
   "txconfirm.simulation.rejected": "The chain rejected the preview: {msg}",
+  "txconfirm.effect.MsgCreateCorporation": "Create a corporation anchored on {did}, with its group and policy.",
   "txconfirm.effect.MsgUpdateCorporation": "Rotate the DID of {corporation} to {did}.",
   "txconfirm.effect.MsgGrantOperatorAuthorization": "Grant {grantee} operator access on {corporation} for {count} message types.",
   "txconfirm.effect.MsgRevokeOperatorAuthorization": "Revoke the operator access of {operator} on {corporation}.",

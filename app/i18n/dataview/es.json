@@ -839,6 +839,7 @@
   "txconfirm.cancel": "Cancelar",
   "txconfirm.retry": "Reintentar",
   "txconfirm.simulation.rejected": "La cadena rechazó la vista previa: {msg}",
+  "txconfirm.effect.MsgCreateCorporation": "Crear una corporación anclada en {did}, con su grupo y su política.",
   "txconfirm.effect.MsgUpdateCorporation": "Rotar el DID de {corporation} a {did}.",
   "txconfirm.effect.MsgGrantOperatorAuthorization": "Conceder a {grantee} acceso de operador en {corporation} para {count} tipos de mensaje.",
   "txconfirm.effect.MsgRevokeOperatorAuthorization": "Revocar el acceso de operador de {operator} en {corporation}.",
