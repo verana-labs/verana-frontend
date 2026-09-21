@@ -99,7 +99,7 @@ test('a fresh wallet sees no corporation nav and lands on the wizard', async ({ 
   await expect(page.getByRole('menuitem', { name: /Create new Corporation/ })).toBeVisible()
 })
 
-test('the creation wizard gates each step on valid input', async ({ page }) => {
+test('the creation wizard gates each step and confirms the built message before broadcasting', async ({ page }) => {
   await installCorporationStubs(page, { fresh: true })
   const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
   const mock = await installMockChain(page, { address: wallet.bech32Address, stubCorporation: false })
@@ -123,8 +123,15 @@ test('the creation wizard gates each step on valid input', async ({ page }) => {
   await page.getByRole('button', { name: 'Continue' }).click()
 
   await expect(page.getByText(/you keep no personal privileges/)).toBeVisible()
-  await expect(page.getByText('Network fee').locator('..')).toContainText(/VNA/, { timeout: 30_000 })
-  await expect(page.getByRole('button', { name: 'Sign & create corporation' })).toBeEnabled()
+  await page.getByRole('button', { name: 'Sign & create corporation' }).click()
+
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toBeVisible({ timeout: 30_000 })
+  await expect(dialog).toContainText('did:web:new-corp.example')
+  await expect(dialog.getByText('Network fee').locator('..')).toContainText(/VNA/, { timeout: 30_000 })
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(dialog).toBeHidden()
+  expect(mock.seenMethods()).not.toContain('broadcast_tx_sync')
   await mock.teardown()
 })
 
