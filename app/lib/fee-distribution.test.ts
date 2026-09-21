@@ -47,7 +47,10 @@ describe('feeDistribution', () => {
   it('reads the payer discount as a fraction between 0 and 1 and never guesses another scale', () => {
     expect(feeDistribution({ role: 'ISSUER', issuance_fee_discount: 0.25 }, [ecosystem], 0.05)?.totalUvna).toBe(225000)
     expect(feeDistribution({ role: 'ISSUER', issuance_fee_discount: 1 }, [ecosystem], 0.05)?.totalUvna).toBe(0)
-    expect(feeDistribution({ role: 'ISSUER', issuance_fee_discount: 2500 }, [ecosystem], 0.05)?.totalUvna).toBe(0)
+    const undiscounted = feeDistribution({ role: 'ISSUER' }, [ecosystem], 0.05)?.totalUvna
+    expect(feeDistribution({ role: 'ISSUER', issuance_fee_discount: 2500 }, [ecosystem], 0.05)?.totalUvna).toBe(
+      undiscounted
+    )
     expect(feeDistribution({ role: 'VERIFIER', verification_fee_discount: '0.1' }, [ecosystem], 0.05)?.totalUvna).toBe(
       90000
     )

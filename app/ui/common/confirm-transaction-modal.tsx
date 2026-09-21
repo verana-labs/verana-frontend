@@ -82,9 +82,9 @@ export function ConfirmTransactionModal({
   const fallbackTitle = request.proposalTitle ?? ''
   const composing = request.mode === 'proposal' && buildProposalMsgs !== undefined
   const [title, setTitle] = useState(fallbackTitle)
-  const [summary, setSummary] = useState('')
+  const [summary, setSummary] = useState(fallbackTitle)
   const [settledTitle, setSettledTitle] = useState(fallbackTitle)
-  const [settledSummary, setSettledSummary] = useState('')
+  const [settledSummary, setSettledSummary] = useState(fallbackTitle)
 
   useEffect(() => {
     const timer = setTimeout(() => {
