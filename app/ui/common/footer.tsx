@@ -15,7 +15,7 @@ export function Footer() {
     <div className="flex-shrink-0 px-2 py-4 border-t border-neutral-20 dark:border-neutral-70">
       {/* Logo & versions */}
       <div className="flex items-center">
-        <Image src={configFooter.img} alt="Verana Logo" width={24} height={24} className="w-6 h-6 mr-2" />
+        <Image src={configFooter.img} alt="Verana Logo" width={24} height={24} className="w-6 h-6 me-2" />
         <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
           {resolveTranslatable({ key: 'footer.title' }, translate)}
         </p>

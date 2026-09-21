@@ -578,7 +578,7 @@
   }
 
   .navbar-mobile-menu-btn {
-    @apply md:hidden ml-2;
+    @apply md:hidden ms-2;
   }
 
   .navbar-mobile-menu-container {
@@ -594,7 +594,7 @@
   }
 
   .navbar-icon {
-    @apply p-2 text-neutral-70 hover:text-gray-500 hover:bg-surface-muted dark:hover:bg-surface-muted rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500;
+    @apply p-2 text-neutral-70 hover:text-gray-500 hover:bg-surface-muted dark:hover:bg-surface-muted rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500;
   }
 
   .navbar-user-actions-btn-container {
@@ -622,11 +622,11 @@
 
   .nav-links-icon{
     /* @apply w-6 h-6 flex-shrink-0; */
-    @apply text-gray-400 mr-3 text-sm;
+    @apply text-gray-400 me-3 text-sm;
   }
 
   .nav-links-icon-selected {
-    @apply text-primary-500 mr-3 text-sm
+    @apply text-primary-500 me-3 text-sm
   }
 
   .nav-links-label {
@@ -638,11 +638,11 @@
   }
 
   .nav-links-sublinks-container {
-    @apply relative flex flex-col ml-8 mt-1 space-y-1 text-base font-medium;
+    @apply relative flex flex-col ms-8 mt-1 space-y-1 text-base font-medium;
   }
 
   .nav-links-sublinks-line {
-    @apply absolute left-0 top-0 w-px h-full
+    @apply absolute start-0 top-0 w-px h-full
            bg-line-light-bg dark:bg-line-dark-bg
            pointer-events-none;
   }
@@ -661,7 +661,7 @@
 
   .sidenav-container {
     /* @apply flex flex-col justify-start items-start gap-8; */
-    @apply flex flex-col w-64 bg-white dark:bg-surface border-r border-neutral-20 dark:border-neutral-70 transition-colors duration-300;
+    @apply flex flex-col w-64 bg-white dark:bg-surface border-e border-neutral-20 dark:border-neutral-70 transition-colors duration-300;
   }
 
   .sidenav-links {
@@ -696,7 +696,7 @@
   }
 
   .logo-image {
-    @apply flex-none mr-2 w-6 h-6 md:w-[34px] md:h-[34px];
+    @apply flex-none me-2 w-6 h-6 md:w-[34px] md:h-[34px];
   }
 
   .logo-label {
