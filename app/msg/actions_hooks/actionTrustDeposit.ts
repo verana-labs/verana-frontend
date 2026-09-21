@@ -126,6 +126,7 @@ export function useActionTrustDeposit(onCancel?: () => void, onRefresh?: (id?: s
       onCancel?.()
       return result
     } catch (error) {
+      if (simulate) return
       await notify(
         errorMessage(undefined, error instanceof Error ? error.message : String(error)),
         'error',

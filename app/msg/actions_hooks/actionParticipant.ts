@@ -386,6 +386,7 @@ export function useActionParticipant(onCancel?: () => void, onRefresh?: (id?: st
       onCancel?.()
       return result
     } catch (error) {
+      if (simulate) return
       await notify(
         errorMessage(undefined, error instanceof Error ? error.message : String(error)),
         'error',
