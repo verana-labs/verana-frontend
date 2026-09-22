@@ -96,9 +96,15 @@ export async function safeFetch(url: string, fetchImpl: typeof fetch = fetch): P
       target = next
       continue
     }
-    if (!response.ok) throw new SafeFetchError(`Upstream responded ${response.status}`, 502)
+    if (!response.ok) {
+      await response.body?.cancel()
+      throw new SafeFetchError(`Upstream responded ${response.status}`, 502)
+    }
     const declared = Number(response.headers.get('content-length'))
-    if (Number.isFinite(declared) && declared > SAFE_FETCH_MAX_BYTES) throw tooLarge()
+    if (Number.isFinite(declared) && declared > SAFE_FETCH_MAX_BYTES) {
+      await response.body?.cancel()
+      throw tooLarge()
+    }
     return { bytes: await readCapped(response, signal), contentType: response.headers.get('content-type') }
   }
 }

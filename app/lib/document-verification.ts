@@ -33,6 +33,9 @@ export type DocumentVerificationState = DocumentVerification['state']
 
 type FetchedBytes = { bytes: Uint8Array; mediaType: string | null }
 
+export const DOCUMENT_FETCH_TIMEOUT_MS = 15_000
+export const DOCUMENT_FETCH_MAX_BYTES = 10 * 1024 * 1024
+
 export function verifiedFetchUrl(url: string, digest: string): string {
   return `/api/verified-fetch?url=${encodeURIComponent(url)}&digest=${encodeURIComponent(digest)}`
 }
@@ -41,14 +44,46 @@ function describe(cause: unknown): string {
   return cause instanceof Error ? cause.message : String(cause)
 }
 
-async function bytesOf(response: Response): Promise<FetchedBytes> {
-  return { bytes: new Uint8Array(await response.arrayBuffer()), mediaType: response.headers.get('content-type') }
+async function readCapped(response: Response): Promise<Uint8Array | null> {
+  const declared = Number(response.headers.get('content-length'))
+  if (Number.isFinite(declared) && declared > DOCUMENT_FETCH_MAX_BYTES) return null
+  if (!response.body) {
+    const whole = new Uint8Array(await response.arrayBuffer())
+    return whole.byteLength > DOCUMENT_FETCH_MAX_BYTES ? null : whole
+  }
+  const reader = response.body.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    total += value.byteLength
+    if (total > DOCUMENT_FETCH_MAX_BYTES) {
+      await reader.cancel()
+      return null
+    }
+    chunks.push(value)
+  }
+  const bytes = new Uint8Array(total)
+  let offset = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return bytes
+}
+
+async function bytesOf(response: Response): Promise<FetchedBytes | null> {
+  const bytes = await readCapped(response)
+  return bytes ? { bytes, mediaType: response.headers.get('content-type') } : null
 }
 
 async function fetchDirect(url: string, fetchImpl: typeof fetch): Promise<FetchedBytes | null> {
   try {
-    const response = await fetchImpl(fetchableDocumentUrl(url))
-    return response.ok ? bytesOf(response) : null
+    const response = await fetchImpl(fetchableDocumentUrl(url), {
+      signal: AbortSignal.timeout(DOCUMENT_FETCH_TIMEOUT_MS),
+    })
+    return response.ok ? await bytesOf(response) : null
   } catch {
     return null
   }
@@ -87,9 +122,13 @@ export async function verifyDocument(
   try {
     const direct = await fetchDirect(url, fetchImpl)
     if (direct) return verified(direct, expected)
-    const response = await fetchImpl(verifiedFetchUrl(url, expected))
+    const response = await fetchImpl(verifiedFetchUrl(url, expected), {
+      signal: AbortSignal.timeout(DOCUMENT_FETCH_TIMEOUT_MS),
+    })
     if (response.ok) {
-      const result = await verified(await bytesOf(response), expected)
+      const fetched = await bytesOf(response)
+      if (!fetched) return { state: 'unverified', digest: expected, reason: 'The document is too large to verify' }
+      const result = await verified(fetched, expected)
       if (result.state === 'verified') return result
       return { state: 'unverified', digest: expected, reason: 'The verified fetch response failed verification' }
     }

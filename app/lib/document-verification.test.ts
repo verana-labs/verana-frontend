@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { digestsMatch, parseSriDigest, sha384Sri, verifyDocument } from '@/lib/document-verification'
+import {
+  DOCUMENT_FETCH_MAX_BYTES,
+  digestsMatch,
+  parseSriDigest,
+  sha384Sri,
+  verifyDocument,
+} from '@/lib/document-verification'
 
 const HELLO = 'sha384-WeF0h3dEjGnea4ANejO7+5/xtGPkQ1TDVTvNucZm+pASWjx5+QOXvfX2oT3oKGhP'
 
@@ -117,6 +123,35 @@ describe('verifyDocument', () => {
       state: 'unverified',
       reason: 'Failed to fetch',
     })
+  })
+
+  it('refuses a document larger than the cap, by declared size or by streamed size', async () => {
+    const declared = fetchWith(
+      () =>
+        new Response('hello', {
+          headers: { 'content-type': 'text/markdown', 'content-length': String(DOCUMENT_FETCH_MAX_BYTES + 1) },
+        })
+    )
+    await expect(verifyDocument('https://x.example/doc.md', HELLO, declared)).resolves.toMatchObject({
+      state: 'unverified',
+    })
+
+    const oversized = new Uint8Array(DOCUMENT_FETCH_MAX_BYTES + 1)
+    const streamed = fetchWith(() => new Response(oversized, { headers: { 'content-type': 'text/markdown' } }))
+    await expect(verifyDocument('https://x.example/doc.md', HELLO, streamed)).resolves.toMatchObject({
+      state: 'unverified',
+    })
+  })
+
+  it('gives every document fetch an abort signal so a stalled host cannot hang the viewer', async () => {
+    const signals: Array<AbortSignal | null | undefined> = []
+    const impl = (async (_input: string | URL | Request, init?: RequestInit) => {
+      signals.push(init?.signal)
+      return new Response(null, { status: 404 })
+    }) as typeof fetch
+    await verifyDocument('https://x.example/doc.md', HELLO, impl)
+    expect(signals).toHaveLength(2)
+    expect(signals.every((signal) => signal instanceof AbortSignal)).toBe(true)
   })
 
   it('never trusts route bytes it cannot hash to the digest itself', async () => {

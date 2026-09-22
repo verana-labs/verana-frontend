@@ -7,7 +7,10 @@ export const DOCUMENT_ROUTE_WINDOW_MS = 60_000
 const limiter = createRateLimiter(DOCUMENT_ROUTE_LIMIT, DOCUMENT_ROUTE_WINDOW_MS)
 
 export function json(body: unknown, status: number): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+  })
 }
 
 export function throttle(request: Request): Response | null {
