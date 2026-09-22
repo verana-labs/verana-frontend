@@ -4,11 +4,21 @@ import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import clsx from 'clsx'
 import { translate } from '@/i18n/dataview'
-import { pricingAssetLabel, type SchemaPricing } from '@/lib/pricing-asset'
+import { feeGateState, pricingAssetLabel, type SchemaPricing } from '@/lib/pricing-asset'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
 export function unsupportedPricingReason(): string {
   return resolveTranslatable({ key: 'pricing.unsupported.short' }, translate) ?? 'Pricing asset not yet supported'
+}
+
+export function unknownPricingReason(): string {
+  return resolveTranslatable({ key: 'pricing.unknown.short' }, translate) ?? 'Schema pricing could not be read'
+}
+
+export function feeBlockedReasonFor(schema: SchemaPricing | null | undefined): string | undefined {
+  const state = feeGateState(schema)
+  if (state === 'allowed') return undefined
+  return state === 'unsupported' ? unsupportedPricingReason() : unknownPricingReason()
 }
 
 export function PricingNotice({ schema, className }: { schema: SchemaPricing; className?: string }) {

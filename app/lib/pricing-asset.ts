@@ -16,6 +16,13 @@ export function isNativePricing(schema: SchemaPricing): boolean {
   return coin && schema.pricingAsset === veranaDenom
 }
 
+export type FeeGateState = 'allowed' | 'unsupported' | 'unknown'
+
+export function feeGateState(schema: SchemaPricing | null | undefined): FeeGateState {
+  if (!schema) return 'unknown'
+  return isNativePricing(schema) ? 'allowed' : 'unsupported'
+}
+
 export function pricingAssetLabel(schema: SchemaPricing): string {
   const type = schema.pricingAssetType
   const name = typeof type === 'number' ? pricingAssetTypeToJSON(type) : (type ?? 'UNKNOWN')
