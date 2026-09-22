@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('next-runtime-env', () => ({ env: () => undefined }))
 
-const readRest = (chain: { apis?: { rest?: { address: string }[] } }) => chain.apis?.rest[0]?.address
+type UnguardedChain = { apis: { rest: { address: string }[] } }
+
+const readRestTheWayWalletAdaptersDo = (chain: unknown) => (chain as UnguardedChain).apis?.rest[0]?.address
 
 describe('the chain registry entry', () => {
   it('carries no chain REST address', async () => {
@@ -12,8 +14,8 @@ describe('the chain registry entry', () => {
 
   it('keeps an empty rest list so unguarded wallet adapters cannot throw', async () => {
     const { veranaChainEnv } = await import('./veranaChain.client')
-    expect(() => readRest(veranaChainEnv)).not.toThrow()
-    expect(readRest(veranaChainEnv)).toBeUndefined()
-    expect(() => readRest({ apis: { rpc: [] } as never })).toThrow(TypeError)
+    expect(() => readRestTheWayWalletAdaptersDo(veranaChainEnv)).not.toThrow()
+    expect(readRestTheWayWalletAdaptersDo(veranaChainEnv)).toBeUndefined()
+    expect(() => readRestTheWayWalletAdaptersDo({ apis: { rpc: [] } })).toThrow(TypeError)
   })
 })

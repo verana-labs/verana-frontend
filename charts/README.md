@@ -36,11 +36,11 @@ This chart deploys the Verana frontend (Next.js) as a Deployment with a Service,
 Defined under `env`. The network values have no default and rendering fails when one is missing, so every deploy passes `values-devnet.yaml`, `values-testnet.yaml` or its own file:
 
 - `NEXT_PUBLIC_PORT`
-- `NEXT_PUBLIC_BASE_URL`
 - `NEXT_PUBLIC_VERANA_CHAIN_ID`
 - `NEXT_PUBLIC_VERANA_CHAIN_NAME`
 - `NEXT_PUBLIC_VERANA_RPC_ENDPOINT`
 - `NEXT_PUBLIC_VERANA_INDEXER_BASE_URL`
+- `NEXT_PUBLIC_VERANA_EXPLORER_URL`
 - `NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE`
 - `NEXT_PUBLIC_SESSION_LIFETIME_SECONDS`
 - `NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA`
