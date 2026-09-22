@@ -2,13 +2,7 @@
 'use client'
 
 import { Asset } from '@chain-registry/types'
-import {
-  VERANA_CHAIN_ID,
-  VERANA_CHAIN_NAME,
-  VERANA_EXPLORER_URL,
-  VERANA_REST_ENDPOINT,
-  VERANA_RPC_ENDPOINT,
-} from '@/config/env'
+import { VERANA_CHAIN_ID, VERANA_CHAIN_NAME, VERANA_EXPLORER_URL, VERANA_RPC_ENDPOINT } from '@/config/env'
 
 export const veranaChainEnv = {
   chain_type: 'cosmos',
@@ -17,7 +11,6 @@ export const veranaChainEnv = {
   chain_id: VERANA_CHAIN_ID!,
   apis: {
     rpc: [{ address: VERANA_RPC_ENDPOINT!, provider: 'verana' }],
-    rest: [{ address: VERANA_REST_ENDPOINT!, provider: 'verana' }],
   },
   status: 'live',
   network_type: VERANA_CHAIN_ID?.includes('devnet') ? 'devnet' : 'testnet',

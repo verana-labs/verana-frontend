@@ -3,7 +3,6 @@
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { VERANA_FAUCET_URL } from '@/config/env'
-import { useAccountTxCount } from '@/hooks/useAccountTxCount'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
@@ -25,7 +24,6 @@ export default function AccountPage() {
 
   // Custom hook to fetch account/trust deposit data
   const { accountData, refetch: refetchAccount } = useAccountCtx()
-  const { txCount, refetch: refetchTxCount } = useAccountTxCount()
   const { actingCorporation, refetch: refetchCorporation } = useUserCorporation()
   // Refresh account/trust deposit data
   const [refresh, setRefresh] = useState<boolean>(true)
@@ -35,10 +33,10 @@ export default function AccountPage() {
   useEffect(() => {
     if (!refresh) return
     ;(async () => {
-      await Promise.all([refetchAccount(), refetchCorporation(), refetchTxCount()])
+      await Promise.all([refetchAccount(), refetchCorporation()])
       setRefresh(false)
     })()
-  }, [refresh, refetchAccount, refetchCorporation, refetchTxCount])
+  }, [refresh, refetchAccount, refetchCorporation])
 
   useEffect(() => {
     if (refreshState.txHeight == null) return
@@ -71,10 +69,9 @@ export default function AccountPage() {
         corporationId: actingCorporation?.corporation.id ?? null,
         policyAddress: actingCorporation?.corporation.policyAddress ?? null,
         operatorAuthorized: actingCorporation?.operator ?? false,
-        transactionsSent: txCount,
       })
     }
-  }, [accountData, actingCorporation, txCount])
+  }, [accountData, actingCorporation])
 
   return (
     <>

@@ -148,7 +148,6 @@ Public runtime variables. Source of truth is `.env` at the repo root.
 | Variable | Description | Example |
 | --- | --- | --- |
 | `NEXT_PUBLIC_VERANA_RPC_ENDPOINT` | CometBFT RPC | `https://rpc.devnet.verana.network` |
-| `NEXT_PUBLIC_VERANA_REST_ENDPOINT` | Verana REST API | `https://api.devnet.verana.network` |
 | `NEXT_PUBLIC_VERANA_INDEXER_BASE_URL` | V4 indexer base URL, every `/v4/*` route and the `wss://.../v4/indexer/subscribe` socket derive from it | `https://idx.devnet.verana.network` |
 
 **Wallet provider (WalletConnect and Cosmos-Kit)**
@@ -178,7 +177,7 @@ Public runtime variables. Source of truth is `.env` at the repo root.
 | `NEXT_PUBLIC_VERANA_VISUALIZER_URL` | Sister visualizer | `https://vis.devnet.verana.network` |
 | `NEXT_PUBLIC_VERANA_FAUCET_URL` | Faucet service origin (optional; unset hides the Get VNA action) | `https://faucet.devnet.verana.network` |
 
-Every indexer route, REST and socket alike, derives from `NEXT_PUBLIC_VERANA_INDEXER_BASE_URL`. The legacy `NEXT_PUBLIC_VERANA_REST_ENDPOINT_<MODULE>` and `NEXT_PUBLIC_VERANA_WEBSOCKET` variables are ignored, so a stale value can no longer point one network's frontend at another network's indexer.
+Every indexer route, REST and socket alike, derives from `NEXT_PUBLIC_VERANA_INDEXER_BASE_URL`. The legacy `NEXT_PUBLIC_VERANA_REST_ENDPOINT_<MODULE>`, `NEXT_PUBLIC_VERANA_REST_ENDPOINT` and `NEXT_PUBLIC_VERANA_WEBSOCKET` variables are ignored, so a stale value can no longer point one network's frontend at another network's indexer.
 
 All `NEXT_PUBLIC_*` values are exposed to the client by design (standard Next.js behavior). Override per environment via `.env.local` or container env vars.
 
@@ -201,7 +200,6 @@ docker run --rm -p 3000:3000 \
   -e NEXT_PUBLIC_VERANA_CHAIN_ID=vna-devnet-1 \
   -e NEXT_PUBLIC_VERANA_CHAIN_NAME=VeranaDevnet1 \
   -e NEXT_PUBLIC_VERANA_RPC_ENDPOINT=https://rpc.devnet.verana.network \
-  -e NEXT_PUBLIC_VERANA_REST_ENDPOINT=https://api.devnet.verana.network \
   verana/verana-frontend:local
 ```
 
