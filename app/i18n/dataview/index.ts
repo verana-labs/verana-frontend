@@ -61,6 +61,13 @@ export function textDirection(locale: string): 'ltr' | 'rtl' {
   return RTL_LANGUAGES.has(locale.toLowerCase().split('-')[0]) ? 'rtl' : 'ltr'
 }
 
+// Apply the locale to the dictionaries and to the document, per [VFE-GEN-I18N-2] and [VFE-GEN-I18N-3].
+export function applyLocale(locale: Locale): void {
+  setLocale(locale)
+  document.documentElement.lang = locale
+  document.documentElement.dir = textDirection(locale)
+}
+
 const LOCALE_STORAGE_KEY = 'verana.locale'
 
 interface StoredLocale {

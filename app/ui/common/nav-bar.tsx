@@ -59,8 +59,9 @@ export default function NavBar() {
 
           {/* Mobile panel */}
           <DisclosurePanel className="navbar-mobile-panel">
-            <div className="px-4 pt-3 lg:hidden">
+            <div className="px-4 pt-3 flex items-center justify-between gap-3 lg:hidden">
               <CorporationSelector />
+              <ToggleTheme />
             </div>
             {/* Logo */}
             {/* <div className='navbar-mobile-logo'>

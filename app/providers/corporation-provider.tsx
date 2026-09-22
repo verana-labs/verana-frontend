@@ -3,7 +3,7 @@
 import { useChain } from '@cosmos-kit/react'
 import { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
-import { forgetLocale } from '@/i18n/dataview'
+import { applyLocale, forgetLocale, resolveLocale } from '@/i18n/dataview'
 import { type CorporationAttention, fetchAttention } from '@/lib/corporation-attention'
 import {
   type CorporationMembership,
@@ -78,6 +78,7 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
     if (previousAccount && invalidatesActingSession(previousAccount, address, isWalletDisconnected)) {
       forgetActingCorporationId(previousAccount)
       forgetLocale()
+      applyLocale(resolveLocale(null, navigator.languages))
     }
     if (address) lastAccount.current = address
     runId.current += 1

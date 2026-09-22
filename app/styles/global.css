@@ -722,7 +722,7 @@
 
   .notify-notification {
     @apply rounded-2xl shadow-2xl flex items-center gap-4
-           transition-all duration-300 bg-white border
+           transition-all duration-300 bg-white dark:bg-surface border
            px-8 py-6 max-w-[90vw] w-auto;
   }
 
@@ -735,19 +735,19 @@
   }
 
   .notify-success {
-    @apply border-green-600 text-green-700;
+    @apply border-green-600 text-green-700 dark:text-green-300;
   }
 
   .notify-error {
-    @apply border-red-600 text-red-700;
+    @apply border-red-600 text-red-700 dark:text-red-300;
   }
 
   .notify-in-progress {
-    @apply border-blue-500 text-blue-600;
+    @apply border-blue-500 text-blue-600 dark:text-blue-300;
   }
 
   .notify-info {
-    @apply border-blue-600 text-blue-700;
+    @apply border-blue-600 text-blue-700 dark:text-blue-300;
   }
 
   .notify-msg-container {

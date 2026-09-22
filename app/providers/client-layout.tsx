@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { loadStoredLocale, resolveLocale, setLocale, textDirection } from '@/i18n/dataview'
+import { applyLocale, loadStoredLocale, resolveLocale } from '@/i18n/dataview'
 import type { ProtocolParams } from '@/lib/protocolParams'
 import { ProtocolParamsProvider } from '@/providers/protocol-params-context'
 import Providers from '@/providers/providers'
@@ -17,10 +17,7 @@ export default function ClientLayout({
 }) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
-    const locale = resolveLocale(loadStoredLocale(), navigator.languages)
-    setLocale(locale)
-    document.documentElement.lang = locale
-    document.documentElement.dir = textDirection(locale)
+    applyLocale(resolveLocale(loadStoredLocale(), navigator.languages))
     setMounted(true)
   }, [])
   if (!mounted) return null

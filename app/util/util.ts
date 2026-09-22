@@ -245,17 +245,17 @@ export function roleColorClass(type: string): string {
 export function roleJoinColorClass(type: string): string {
   switch (type) {
     case 'ISSUER_GRANTOR':
-      return 'bg-blue-100 text-blue-500'
+      return 'bg-blue-100 text-blue-500 dark:bg-blue-900/20 dark:text-blue-400'
     case 'VERIFIER_GRANTOR':
-      return 'bg-slate-100 text-slate-500'
+      return 'bg-slate-100 text-slate-500 dark:bg-slate-900/20 dark:text-slate-400'
     case 'ISSUER':
-      return 'bg-green-100 text-green-500'
+      return 'bg-green-100 text-green-500 dark:bg-green-900/20 dark:text-green-400'
     case 'VERIFIER':
-      return 'bg-orange-100 text-orange-500'
+      return 'bg-orange-100 text-orange-500 dark:bg-orange-900/20 dark:text-orange-400'
     case 'HOLDER':
-      return 'bg-pink-100 text-pink-500'
+      return 'bg-pink-100 text-pink-500 dark:bg-pink-900/20 dark:text-pink-400'
     default:
-      return 'bg-gray-100 text-gray-500'
+      return 'bg-gray-100 text-gray-500 dark:bg-gray-900/20 dark:text-gray-400'
   }
 }
 

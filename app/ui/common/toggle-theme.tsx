@@ -1,6 +1,6 @@
 'use client'
 
-import { faMoon } from '@fortawesome/free-solid-svg-icons'
+import { faCircleHalfStroke } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
@@ -29,7 +29,7 @@ export default function ToggleTheme() {
       aria-label={label}
       className="navbar-icon"
     >
-      <FontAwesomeIcon icon={faMoon} className={isDark ? 'text-primary-400' : undefined} />
+      <FontAwesomeIcon icon={faCircleHalfStroke} />
     </button>
   )
 }

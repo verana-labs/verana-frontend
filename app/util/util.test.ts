@@ -415,9 +415,9 @@ describe('role class helpers', () => {
     expect(roleColorClass('whatever')).toBe('text-gray-500')
   })
 
-  it('roleJoinColorClass omits ECOSYSTEM and defaults to gray', () => {
-    expect(roleJoinColorClass('ISSUER')).toBe('bg-green-100 text-green-500')
-    expect(roleJoinColorClass('ECOSYSTEM')).toBe('bg-gray-100 text-gray-500')
-    expect(roleJoinColorClass('whatever')).toBe('bg-gray-100 text-gray-500')
+  it('roleJoinColorClass omits ECOSYSTEM and defaults to gray, and carries both themes', () => {
+    expect(roleJoinColorClass('ISSUER')).toBe('bg-green-100 text-green-500 dark:bg-green-900/20 dark:text-green-400')
+    expect(roleJoinColorClass('ECOSYSTEM')).toBe(roleJoinColorClass('whatever'))
+    expect(roleJoinColorClass('whatever')).toBe('bg-gray-100 text-gray-500 dark:bg-gray-900/20 dark:text-gray-400')
   })
 })
