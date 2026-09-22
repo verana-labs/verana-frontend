@@ -796,5 +796,6 @@
   "account.corporations.notice": "Las corporaciones se crean y gestionan en la página Corporación.",
   "account.corporations.notice.link": "Abrir Corporación",
   "pricing.unsupported.short": "Activo de precio aún no soportado",
-  "pricing.unsupported.notice": "Activo de precio aún no soportado: este esquema se cotiza en {asset}. Las acciones con tarifas (iniciar o renovar un proceso de incorporación, autocrear, validar) permanecen deshabilitadas hasta que la consola soporte activos distintos de la moneda nativa (VNA). La consulta no se ve afectada."
+  "pricing.unsupported.notice": "Activo de precio aún no soportado: este esquema se cotiza en {asset}. Las acciones con tarifas (iniciar o renovar un proceso de incorporación, autocrear, validar) permanecen deshabilitadas hasta que la consola soporte activos distintos de la moneda nativa (VNA). La consulta no se ve afectada.",
+  "pricing.unknown.short": "No se pudo leer el precio del esquema"
 }
