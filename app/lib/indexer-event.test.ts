@@ -10,7 +10,7 @@ describe('parseIndexerBlockEvent', () => {
         blockTime: '2026-07-18T07:00:00Z',
         events: [],
       })
-    ).toEqual({ height: 10_928, timestamp: '2026-07-18T07:00:00Z' })
+    ).toEqual({ height: 10_928, timestamp: '2026-07-18T07:00:00Z', events: [] })
   })
 
   it('ignores legacy and malformed messages', () => {
@@ -23,7 +23,7 @@ describe('parseIndexerBlockHeight', () => {
   it('accepts the live block-height response', () => {
     expect(
       parseIndexerBlockHeight({ type: 'block-indexed', height: 506_370, timestamp: '2026-09-07T17:28:06Z' })
-    ).toEqual({ height: 506_370, timestamp: '2026-09-07T17:28:06Z' })
+    ).toEqual({ height: 506_370, timestamp: '2026-09-07T17:28:06Z', events: [] })
   })
 
   it('rejects malformed responses', () => {
