@@ -6,11 +6,13 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
+import type { SchemaPricing } from '@/lib/pricing-asset'
 import { type DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
 import AddJoinPage from '@/participants/add/page'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import EcosystemBreadcrumb from '@/ui/common/ecosystem-breadcrumb'
 import type { ParticipantRefreshState, TreeNode } from '@/ui/common/participant-tree-types'
+import { PricingNotice, unsupportedPricingReason } from '@/ui/common/pricing-notice'
 import SchemaHeader, { type SchemaStatus } from '@/ui/common/schema-header'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
@@ -31,6 +33,7 @@ type ParticipantTreeProps = {
   verifierOnboardingMode?: string | number
   ecosystemTitle?: string
   ecosystemId?: string
+  unsupportedPricing?: SchemaPricing
   isEcosystemController?: boolean
   viewerCorporationId?: number
   setNodeRequestParams?: (nodeId?: string, role?: string, validatorId?: string) => void
@@ -96,6 +99,7 @@ function Tree({
   onSelect,
   onToggle,
   onJoin,
+  joinBlockedReason,
   onConnect,
   depth = 0,
 }: {
@@ -109,6 +113,7 @@ function Tree({
   onSelect: (id: string) => void
   onToggle: (id: string, role?: string, validatorId?: string) => void
   onJoin: (node: TreeNode) => void
+  joinBlockedReason?: string
   onConnect?: () => void
   depth?: number
 }) {
@@ -132,6 +137,7 @@ function Tree({
                 onToggle={onToggle}
                 onSelect={onSelect}
                 onJoin={onJoin}
+                joinBlockedReason={joinBlockedReason}
                 onConnect={onConnect}
               />
             </div>
@@ -147,6 +153,7 @@ function Tree({
                 onSelect={onSelect}
                 onToggle={onToggle}
                 onJoin={onJoin}
+                joinBlockedReason={joinBlockedReason}
                 onConnect={onConnect}
                 depth={depth + 1}
               />
@@ -169,6 +176,7 @@ export default function ParticipantTree({
   ecosystemTitle,
   schemaId,
   ecosystemId,
+  unsupportedPricing,
   isEcosystemController,
   viewerCorporationId,
   setNodeRequestParams,
@@ -189,6 +197,7 @@ export default function ParticipantTree({
   const detailRef = useRef<HTMLDivElement | null>(null)
   const { latestProcessedHeight } = useIndexerEvents()
   const [enrichmentByDid, setEnrichmentByDid] = useState<Record<string, DidEnrichment>>({})
+  const joinBlockedReason = unsupportedPricing ? unsupportedPricingReason() : undefined
 
   useEffect(() => {
     if (type !== 'participants') return
@@ -315,6 +324,7 @@ export default function ParticipantTree({
           verifierOnboardingMode={verifierOnboardingMode}
         />
       ) : null}
+      {unsupportedPricing ? <PricingNotice schema={unsupportedPricing} className="mb-6" /> : null}
       {type === 'tasks' ? (
         <section className="mb-8">
           <h1 className="page-title">{resolveTranslatable({ key: 'task.title' }, translate) ?? ''}</h1>
@@ -376,13 +386,16 @@ export default function ParticipantTree({
             setNodeRequestParams?.()
             setJoinNode(node)
           }}
+          joinBlockedReason={joinBlockedReason}
           onConnect={onConnect}
         />
 
         {type === 'participants' && isEcosystemController ? (
           <button
             type="button"
-            className="flex items-center space-x-2 p-2 text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+            className="flex items-center space-x-2 p-2 text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={Boolean(joinBlockedReason)}
+            title={joinBlockedReason}
             onClick={() => setAddingRoot(true)}
           >
             <FontAwesomeIcon icon={faPlus} className="text-sm" />

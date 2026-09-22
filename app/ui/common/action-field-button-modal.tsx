@@ -13,6 +13,7 @@ type ActionFieldButtonModalProps = {
   onClose: () => void
   onRefresh?: (id?: string, txHeight?: number) => void
   isActive: boolean
+  blockedReason?: string
 }
 
 export default function ActionFieldButtonModal({
@@ -22,6 +23,7 @@ export default function ActionFieldButtonModal({
   onClose,
   onRefresh,
   isActive,
+  blockedReason,
 }: ActionFieldButtonModalProps) {
   const [modalHidden, setModalHidden] = useState(true)
   // Reset internal state when the modal is closed / deactivated
@@ -34,8 +36,10 @@ export default function ActionFieldButtonModal({
       <IconLabelButton
         label={field.label}
         icon={field.icon}
+        disabled={Boolean(blockedReason)}
+        title={blockedReason}
         className={clsx(
-          'btn-action-confirm text-sm', // base
+          'btn-action-confirm text-sm disabled:opacity-50 disabled:cursor-not-allowed', // base
           field.iconColorClass // specific
         )}
         onClick={onClickButton}

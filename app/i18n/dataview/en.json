@@ -794,5 +794,8 @@
   "account.corporations.title": "Corporations",
   "account.corporations.empty": "This wallet is not an operator or a member of any corporation yet.",
   "account.corporations.notice": "Corporations are created and managed on the Corporation page.",
-  "account.corporations.notice.link": "Open Corporation"
+  "account.corporations.notice.link": "Open Corporation",
+  "pricing.unsupported.short": "Pricing asset not yet supported",
+  "pricing.unsupported.notice": "Pricing asset not yet supported: this schema is priced in {asset}. Fee-bearing actions (start or renew an onboarding process, self-create, validate) stay disabled until the console supports assets other than the native coin (VNA). Browsing is unaffected.",
+  "pricing.unknown.short": "Schema pricing could not be read"
 }

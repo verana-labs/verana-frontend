@@ -11,6 +11,7 @@ import {
 } from '@verana-labs/verana-types/codec/verana/cs/v1/tx'
 import { HolderOnboardingMode, PricingAssetType } from '@verana-labs/verana-types/codec/verana/cs/v1/types'
 import { useRef } from 'react'
+import { veranaDenom } from '@/config/veranaChain.sign.client'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
@@ -31,8 +32,8 @@ import { resolveTranslatable } from '@/ui/dataview/types'
 import { normalizeJsonSchema, validateJSONSchemaReturn } from '@/util/json_schema_util'
 
 const DEFAULT_HOLDER_ONBOARDING_MODE = HolderOnboardingMode.HOLDER_ONBOARDING_MODE_PERMISSIONLESS
-const DEFAULT_PRICING_ASSET_TYPE = PricingAssetType.COIN
-const DEFAULT_PRICING_ASSET = 'uvna'
+const NATIVE_PRICING_ASSET_TYPE = PricingAssetType.COIN
+const NATIVE_PRICING_ASSET = veranaDenom
 const DEFAULT_DIGEST_ALGORITHM = 'sha384'
 
 type CredentialSchemaContext = {
@@ -86,8 +87,8 @@ export function buildCredentialSchemaMessage(
           issuerOnboardingMode: params.issuerOnboardingMode,
           verifierOnboardingMode: params.verifierOnboardingMode,
           holderOnboardingMode: DEFAULT_HOLDER_ONBOARDING_MODE,
-          pricingAssetType: DEFAULT_PRICING_ASSET_TYPE,
-          pricingAsset: DEFAULT_PRICING_ASSET,
+          pricingAssetType: NATIVE_PRICING_ASSET_TYPE,
+          pricingAsset: NATIVE_PRICING_ASSET,
           digestAlgorithm: DEFAULT_DIGEST_ALGORITHM,
         }),
       }
