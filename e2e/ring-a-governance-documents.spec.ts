@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { expect, type Page, test } from '@playwright/test'
 import { connectWallet } from './support/connect'
+import { installCorporationStubs } from './support/corp-stubs'
 import { DEFAULT_DOC_URL } from './support/flows'
 
 const ECOSYSTEM_ID = '9441'
@@ -139,6 +140,7 @@ test('a document neither the browser nor the server can fetch is reported as unv
 })
 
 async function reachGovernanceStep(page: Page) {
+  await installCorporationStubs(page, { fresh: true })
   await connectWallet(page)
   await page.goto(`/join/${ECOSYSTEM_ID}`)
   const next = page.getByRole('button', { name: 'Continue', exact: true })
