@@ -9,14 +9,23 @@ describe('getNavLinks', () => {
     expect(byHref.get('/pendingtasks')).toBe(3)
   })
 
-  it('returns the six top-level destinations in order', () => {
+  it('returns the seven top-level destinations in order', () => {
     const hrefs = getNavLinks().map((link) => link.href)
-    expect(hrefs).toEqual(['/dashboard', '/account', '/corporation', '/ecosystems', '/discover', '/pendingtasks'])
+    expect(hrefs).toEqual([
+      '/dashboard',
+      '/account',
+      '/corporation',
+      '/ecosystems',
+      '/agents',
+      '/discover',
+      '/pendingtasks',
+    ])
   })
 
   it('gates the corporation entry on an acting corporation', () => {
     const byHref = new Map(getNavLinks().map((link) => [link.href, link]))
     expect(byHref.get('/corporation')?.requiresCorporation).toBe(true)
+    expect(byHref.get('/agents')?.requiresCorporation).toBe(true)
   })
 
   it('gives every link a non-empty name and an icon', () => {

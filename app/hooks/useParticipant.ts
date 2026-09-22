@@ -72,6 +72,10 @@ export function parseParticipantRecord(value: unknown, path = 'participant'): Pa
   return {
     id: String(number(source.id, `${path}.id`)),
     schema_id: String(number(source.schema_id, `${path}.schema_id`)),
+    ecosystem_id:
+      source.ecosystem_id === undefined || source.ecosystem_id === null
+        ? source.ecosystem_id
+        : number(source.ecosystem_id, `${path}.ecosystem_id`),
     role,
     did: nullableString(source.did, `${path}.did`),
     corporation_id: number(source.corporation_id, `${path}.corporation_id`),

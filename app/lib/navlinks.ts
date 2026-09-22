@@ -3,6 +3,7 @@ import {
   faCircleUser,
   faCompass,
   faGaugeHigh,
+  faRobot,
   faShieldHalved,
   faTasks,
   IconDefinition,
@@ -51,6 +52,12 @@ export function getNavLinks(pendingCount?: number, pendingVotes?: number): NavLi
       iconClass: 'bg-gradient-to-br from-orange-500 to-orange-700 text-white',
       featuredService: true,
       description: resolveTranslatable({ key: 'ecosystemList.description' }, translate),
+    },
+    {
+      name: resolveTranslatable({ key: 'agents.title' }, translate) ?? 'Agents',
+      href: '/agents',
+      icon: faRobot,
+      requiresCorporation: true,
     },
     {
       name: resolveTranslatable({ key: 'discover.title' }, translate) ?? 'Discover & Join',
