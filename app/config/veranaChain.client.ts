@@ -11,6 +11,7 @@ export const veranaChainEnv = {
   chain_id: VERANA_CHAIN_ID!,
   apis: {
     rpc: [{ address: VERANA_RPC_ENDPOINT!, provider: 'verana' }],
+    rest: [],
   },
   status: 'live',
   network_type: VERANA_CHAIN_ID?.includes('devnet') ? 'devnet' : 'testnet',

@@ -25,6 +25,7 @@ export function useVeranaChain() {
       network_type: chainId.includes('devnet') ? 'devnet' : 'testnet',
       apis: {
         rpc: [{ address: rpc, provider: 'verana' }],
+        rest: [],
       },
       ...(explorerUrl
         ? {
