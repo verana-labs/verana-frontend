@@ -10,6 +10,7 @@ describe('getNavLinks', () => {
   })
 
   it('returns the seven top-level destinations in order', () => {
+  it('returns the top-level destinations in the order of VFE-PAGE-NAV-1, settings last', () => {
     const hrefs = getNavLinks().map((link) => link.href)
     expect(hrefs).toEqual([
       '/dashboard',
@@ -19,6 +20,9 @@ describe('getNavLinks', () => {
       '/agents',
       '/discover',
       '/pendingtasks',
+      '/discover',
+      '/pendingtasks',
+      '/settings',
     ])
   })
 
@@ -43,13 +47,14 @@ describe('getNavLinks', () => {
     expect(byHref.get('/discover')).toBe(translate('discover.title'))
     expect(byHref.get('/pendingtasks')).toBe(translate('task.title'))
     expect(byHref.get('/corporation')).toBe(translate('corporation.page.title'))
+    expect(byHref.get('/settings')).toBe(translate('navbar.settings.title'))
   })
 
-  it('marks dashboard and discover as available offline', () => {
+  it('marks dashboard, discover and settings as available offline per VFE-PAGE-NAV-2', () => {
     const offline = getNavLinks()
       .filter((link) => link.availableOffline === true)
       .map((link) => link.href)
-    expect(offline.sort()).toEqual(['/dashboard', '/discover'])
+    expect(offline.sort()).toEqual(['/dashboard', '/discover', '/settings'])
   })
 
   it('leaves availableOffline unset for online-only links', () => {
@@ -96,6 +101,7 @@ describe('allowedOffline', () => {
   it('allows the exact static offline routes', () => {
     expect(allowedOffline('/dashboard')).toBe(true)
     expect(allowedOffline('/discover')).toBe(true)
+    expect(allowedOffline('/settings')).toBe(true)
   })
 
   it('rejects routes that are not in the offline allow-list', () => {

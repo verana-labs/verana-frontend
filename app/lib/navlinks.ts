@@ -4,6 +4,7 @@ import {
   faCompass,
   faGaugeHigh,
   faRobot,
+  faGear,
   faShieldHalved,
   faTasks,
   IconDefinition,
@@ -75,12 +76,19 @@ export function getNavLinks(pendingCount?: number, pendingVotes?: number): NavLi
       className: 'bg-red-500',
       count: pendingCount,
     },
+    {
+      name: resolveTranslatable({ key: 'navbar.settings.title' }, translate) ?? 'Settings',
+      href: '/settings',
+      icon: faGear,
+      availableOffline: true,
+    },
   ]
 }
 
 const offlineRoutesAllowed: (string | RegExp)[] = [
   '/dashboard',
   '/discover',
+  '/settings',
   /^\/ecosystems\/[^/]+$/,
   /^\/credential-schemas\/[^/]+$/,
   /^\/participants\/[^/]+$/,

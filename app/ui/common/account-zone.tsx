@@ -44,7 +44,7 @@ export default function AccountZone() {
   const { copied, copy } = useCopyFeedback(address)
 
   return (
-    <div className="flex items-center space-x-3 px-4 py-2 bg-surface-muted dark:bg-surface-muted rounded-xl">
+    <div className="flex items-center space-x-3 rtl:space-x-reverse px-4 py-2 bg-surface-muted dark:bg-surface-muted rounded-xl">
       {address ? (
         <>
           <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
@@ -61,7 +61,7 @@ export default function AccountZone() {
             </p>
           </div>
 
-          <div className="flex items-center space-x-1 ml-2">
+          <div className="flex items-center space-x-1 rtl:space-x-reverse ms-2">
             <IconLabelButton
               icon={faQrcode}
               title={resolveTranslatable({ key: 'navbar.qr.title' }, translate)}

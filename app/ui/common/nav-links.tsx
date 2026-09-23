@@ -42,7 +42,7 @@ export default function NavLinks() {
                 className={pathname === link.href ? 'nav-links-icon-selected' : 'nav-links-icon'}
               />
               {link.count ? (
-                <span className="absolute top-0 left-4 min-w-4 h-4 px-1 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center leading-none">
+                <span className="absolute top-0 start-4 min-w-4 h-4 px-1 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center leading-none">
                   {link.count}
                 </span>
               ) : null}

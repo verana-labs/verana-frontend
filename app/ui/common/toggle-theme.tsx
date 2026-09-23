@@ -1,9 +1,11 @@
 'use client'
 
-import { faMoon, faSun } from '@fortawesome/free-solid-svg-icons'
+import { faCircleHalfStroke } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
+import { translate } from '@/i18n/dataview'
+import { resolveTranslatable } from '@/ui/dataview/types'
 
 export default function ToggleTheme() {
   const { theme, setTheme } = useTheme()
@@ -16,10 +18,18 @@ export default function ToggleTheme() {
   if (!mounted) return null
 
   const isDark = theme === 'dark'
+  const label = resolveTranslatable({ key: isDark ? 'navbar.theme.toLight' : 'navbar.theme.toDark' }, translate)
 
   return (
-    <button id="theme-toggle" onClick={() => setTheme(isDark ? 'light' : 'dark')} className="navbar-icon">
-      {isDark ? <FontAwesomeIcon icon={faSun} /> : <FontAwesomeIcon icon={faMoon} />}
+    <button
+      id="theme-toggle"
+      type="button"
+      onClick={() => setTheme(isDark ? 'light' : 'dark')}
+      title={label}
+      aria-label={label}
+      className="navbar-icon"
+    >
+      <FontAwesomeIcon icon={faCircleHalfStroke} />
     </button>
   )
 }
