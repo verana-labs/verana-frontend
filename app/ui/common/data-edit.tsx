@@ -2,21 +2,15 @@
 
 import clsx from 'clsx'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { LOW_BALANCE_WARN_UVNA, VERANA_FAUCET_URL } from '@/config/env'
-import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { canonicalizeLanguageTag } from '@/lib/language'
-import { logger } from '@/lib/logger'
-import { getCostMessage, getLowBalanceMessage, msgTypeStyle } from '@/msg/constants/msgTypeConfig'
+import { getCostMessage, msgTypeStyle } from '@/msg/constants/msgTypeConfig'
 import { resolveMsgCopy } from '@/msg/constants/resolveMsgTypeConfig'
 import type { MessageType } from '@/msg/constants/types'
-import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
-import { useNotification } from '@/providers/notification-provider'
 import ActionCard, { ActionCardProps } from '@/ui/common/action-card'
 import JsonCodeBlock from '@/ui/common/json-code-block'
 import { LanguageCombobox } from '@/ui/common/language-combobox'
-import { getBalanceWarningState, shouldStartNoFormSimulation, simulatedFeeUvna } from '@/ui/common/no-form-transaction'
 import {
   DataViewProps,
   isResolvedDataField,
@@ -33,9 +27,9 @@ type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & 
   data: T
   messageType: MessageType
   onSave: (newData: T) => void | Promise<void>
-  onSimulate?: (newData: T) => SimulateResult | undefined | Promise<SimulateResult | undefined>
   onCancel?: () => void
   noForm?: boolean
+  noFormReady?: boolean
   isModal?: boolean
   actionCard?: ActionCardProps
   withinView?: boolean
@@ -54,9 +48,9 @@ export default function EditableDataView<T extends object>({
   messageType,
   id,
   onSave,
-  onSimulate,
   onCancel,
   noForm = false,
+  noFormReady = true,
   isModal,
   actionCard,
   withinView,
@@ -72,48 +66,12 @@ export default function EditableDataView<T extends object>({
   const action = id ? 'edit' : 'create'
   const [hasTriedSubmit, setHasTriedSubmit] = useState(false)
 
-  const { notify } = useNotification()
-  const [errorNotified, setErrorNotified] = useState(false)
-
   const validatedRequiredField = useCallback((field: ResolvedField<T>, value: unknown): boolean => {
     if (!field.required) return true
     if (value === undefined || value === null) return false
     if (typeof value === 'string' && value.trim() === '') return false
     return true
   }, [])
-
-  const lowBalanceTemplate = VERANA_FAUCET_URL
-    ? (resolveTranslatable({ key: 'messages.lowbalance' }, translate) ??
-      "You’re Running Low on VNA. Your balance is {value} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted.")
-    : (resolveTranslatable({ key: 'messages.lowbalance.noFaucet' }, translate) ??
-      'You’re Running Low on VNA. Your balance is {value} VNA. Add more VNA to keep your activity uninterrupted.')
-  const [feeAmount, setFeeAmount] = useState<number | null>(null)
-  const [simulationSettled, setSimulationSettled] = useState(false)
-  const balanceLessThanFeeTemplate = VERANA_FAUCET_URL
-    ? (resolveTranslatable({ key: 'messages.balanceLessThanFee' }, translate) ??
-      "You’re Running Low on VNA. Your balance is {value} VNA and running this transaction requires {fee} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted.")
-    : (resolveTranslatable({ key: 'messages.balanceLessThanFee.noFaucet' }, translate) ??
-      'You’re Running Low on VNA. Your balance is {value} VNA and running this transaction requires {fee} VNA. Add more VNA to keep your activity uninterrupted.')
-
-  // Custom hook to fetch user's account/trust deposit data
-  const { accountData, errorAccountData } = useTrustDepositAccountData()
-  const {
-    availableBalance,
-    lowBalance: showMsgLowBalanceWarn,
-    balanceLessThanFee: showMsgBalanceLessThanFeeWarn,
-  } = useMemo(
-    () => getBalanceWarningState(accountData.balance, feeAmount, LOW_BALANCE_WARN_UVNA ?? '0'),
-    [accountData.balance, feeAmount]
-  )
-
-  useEffect(() => {
-    if (errorAccountData && !errorNotified) {
-      void (async () => {
-        await notify(errorAccountData, 'error', 'Error fetching account balance')
-        setErrorNotified(true)
-      })()
-    }
-  }, [errorAccountData, errorNotified, notify])
 
   const basicSection = useMemo(
     () => sections.find((section) => (!section.type || section.type === 'basic') && !section.noEdit),
@@ -124,7 +82,6 @@ export default function EditableDataView<T extends object>({
     [action, basicSection]
   )
 
-  const ran = useRef(false)
   const autoSaveRan = useRef(false)
 
   // Updates form state and manages error tracking on change
@@ -186,52 +143,17 @@ export default function EditableDataView<T extends object>({
     }
   }, [formData, hasInvalidData, hasInvalidRequiredFields, onSave, submitting])
 
-  const handleSimulate = useCallback(async () => {
-    if (messageType === 'MsgReclaimTrustDepositYield') return
-    if (!onSimulate) return
-    try {
-      setSubmitting(true)
-      setFeeAmount(simulatedFeeUvna(await Promise.resolve(onSimulate(formData))))
-    } catch (err) {
-      logger.error('handleSimulate', err)
-      setFeeAmount(null)
-    } finally {
-      setSimulationSettled(true)
-      setSubmitting(false)
-    }
-  }, [formData, messageType, onSimulate])
-
   useEffect(() => {
     if (!noForm) {
       setModalHidden?.()
       return
     }
-    if (errorAccountData) return
-    if (!shouldStartNoFormSimulation(noForm, availableBalance, ran.current)) return
-    ran.current = true
-    void handleSimulate()
-  }, [availableBalance, errorAccountData, handleSimulate, noForm, setModalHidden])
-
-  useEffect(() => {
-    if (!noForm || !simulationSettled) return
-    if (showMsgLowBalanceWarn == null) return
-    if (showMsgBalanceLessThanFeeWarn === true || showMsgLowBalanceWarn) {
-      setModalHidden?.()
+    if (messageType === 'MsgReclaimTrustDepositYield' || corporationLoading || !noFormReady || autoSaveRan.current)
       return
-    }
-    if (autoSaveRan.current) return
     autoSaveRan.current = true
     void handleSave()
     onCancel?.()
-  }, [
-    handleSave,
-    noForm,
-    onCancel,
-    setModalHidden,
-    showMsgBalanceLessThanFeeWarn,
-    showMsgLowBalanceWarn,
-    simulationSettled,
-  ])
+  }, [corporationLoading, handleSave, messageType, noForm, noFormReady, onCancel, setModalHidden])
 
   // Handles cancel action; disables button while submitting
   function handleCancel() {
@@ -400,47 +322,6 @@ export default function EditableDataView<T extends object>({
             className="data-edit-form-description"
             dangerouslySetInnerHTML={{ __html: getCostMessage(uiMsgType.cost, formatVNAFromUVNA(transactionCost)) }}
           />
-        </div>
-      )}
-
-      {/* Warning Cost Message */}
-      {(showMsgLowBalanceWarn || showMsgBalanceLessThanFeeWarn) && (
-        <div
-          className={clsx(
-            'bg-red-50 dark:bg-red-900/20 rounded-lg p-4',
-            actionCard?.available ? 'w-fit mx-auto text-center mb-6' : 'mb-4'
-          )}
-        >
-          <div className="flex">
-            <i className="text-red-600 dark:text-red-400 mt-0.5 mr-3" data-fa-i2svg="">
-              <svg
-                className="svg-inline--fa fa-triangle-exclamation"
-                aria-hidden="true"
-                focusable="false"
-                data-prefix="fas"
-                data-icon="triangle-exclamation"
-                role="img"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 512 512"
-                data-fa-i2svg=""
-              >
-                <path
-                  fill="currentColor"
-                  d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"
-                ></path>
-              </svg>
-            </i>
-            <p
-              className="text-sm mt-1"
-              dangerouslySetInnerHTML={{
-                __html: getLowBalanceMessage(
-                  showMsgBalanceLessThanFeeWarn ? balanceLessThanFeeTemplate : lowBalanceTemplate,
-                  (Number(accountData.balance) / 1_000_000).toString() ?? '1',
-                  ((feeAmount ?? 0) / 1_000_000).toString()
-                ),
-              }}
-            />
-          </div>
         </div>
       )}
 
