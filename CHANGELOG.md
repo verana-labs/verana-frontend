@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.0](https://github.com/verana-labs/verana-frontend/compare/v0.17.0...v0.18.0) (2026-09-23)
+
+
+### Features
+
+* settings page locale selection and theme ([#481](https://github.com/verana-labs/verana-frontend/issues/481)) ([aedf14e](https://github.com/verana-labs/verana-frontend/commit/aedf14e1fc5b05a2efaebdeb0ab10bcdbe8cab3c))
+
 ## [0.17.0](https://github.com/verana-labs/verana-frontend/compare/v0.16.0...v0.17.0) (2026-09-19)
 
 
