@@ -8,7 +8,7 @@ vi.mock('@/lib/safe-fetch', async (importOriginal) => ({
 }))
 
 import { DOCUMENT_ROUTE_LIMIT } from '@/lib/document-route'
-import { SafeFetchError } from '@/lib/safe-fetch'
+import { SafeFetchError } from '@/lib/safe-fetch-error'
 import { GET } from './route'
 
 const HELLO = 'sha384-WeF0h3dEjGnea4ANejO7+5/xtGPkQ1TDVTvNucZm+pASWjx5+QOXvfX2oT3oKGhP'

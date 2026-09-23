@@ -1,5 +1,6 @@
 import { clientKey, createRateLimiter } from '@/lib/rate-limit'
-import { parseHttpUrl, SafeFetchError } from '@/lib/safe-fetch'
+import { parseHttpUrl } from '@/lib/safe-fetch'
+import { SafeFetchError } from '@/lib/safe-fetch-error'
 
 export const DOCUMENT_ROUTE_LIMIT = 30
 export const DOCUMENT_ROUTE_WINDOW_MS = 60_000

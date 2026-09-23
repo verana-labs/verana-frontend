@@ -1,8 +1,6 @@
 import { SafeFetchError } from '@/lib/safe-fetch-error'
 import { assertPublicTarget } from '@/lib/ssrf-guard'
 
-export { SafeFetchError }
-
 export const SAFE_FETCH_MAX_BYTES = 10 * 1024 * 1024
 export const SAFE_FETCH_TIMEOUT_MS = 15_000
 export const SAFE_FETCH_MAX_REDIRECTS = 3

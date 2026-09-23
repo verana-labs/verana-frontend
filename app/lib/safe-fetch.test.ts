@@ -4,13 +4,8 @@ const { assertPublicTarget } = vi.hoisted(() => ({ assertPublicTarget: vi.fn(asy
 
 vi.mock('@/lib/ssrf-guard', () => ({ assertPublicTarget }))
 
-import {
-  parseHttpUrl,
-  SAFE_FETCH_MAX_BYTES,
-  SAFE_FETCH_MAX_REDIRECTS,
-  SafeFetchError,
-  safeFetch,
-} from '@/lib/safe-fetch'
+import { parseHttpUrl, SAFE_FETCH_MAX_BYTES, SAFE_FETCH_MAX_REDIRECTS, safeFetch } from '@/lib/safe-fetch'
+import { SafeFetchError } from '@/lib/safe-fetch-error'
 
 type Handler = (url: string) => Response
 
