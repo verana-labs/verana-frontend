@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type TrustCostRates, totalDebitUvna, trustCostLines } from './trust-costs'
+import { balanceWarning, type TrustCostRates, totalDebitUvna, trustCostLines } from './trust-costs'
 
 const RATES: TrustCostRates = {
   trustDepositRate: 0.05,
@@ -52,6 +52,40 @@ describe('trustCostLines', () => {
       { label: 'Repaid deposit', value: '2 VNA', debitUvna: 2_000_000 },
     ])
     expect(trustCostLines({ msgType: 'MsgRepayParticipantSlashedTrustDeposit', amount: '0' }, RATES)).toEqual([])
+  })
+
+  it('warns when the fee plus the trust costs exceed the balance and only flags a low balance otherwise', () => {
+    const lines = trustCostLines({ msgType: 'MsgStartParticipantOP', validationFees: 2_000_000 }, RATES)
+    const required = 90_000 + totalDebitUvna(lines)
+    expect(balanceWarning('2000000', 90_000, lines, '1000000', false)).toEqual({
+      kind: 'shortfall',
+      requiredUvna: required,
+    })
+    expect(balanceWarning('2200000', 90_000, lines, '1000000', false)).toBeNull()
+    expect(balanceWarning('900000', 90_000, [], '1000000', false)).toEqual({ kind: 'low', requiredUvna: 90_000 })
+    expect(balanceWarning('900000', 90_000, undefined, '1000000', false)).toEqual({ kind: 'low', requiredUvna: 90_000 })
+    expect(balanceWarning('2000000', null, lines, '1000000', false)).toBeNull()
+    expect(balanceWarning(null, 90_000, lines, '1000000', false)).toBeNull()
+  })
+
+  it('drops the granted fee from the total and never flags a low balance under a fee grant', () => {
+    const lines = trustCostLines({ msgType: 'MsgStartParticipantOP', validationFees: 2_000_000 }, RATES)
+    expect(balanceWarning('0', 90_000, [], '1000000', true)).toBeNull()
+    expect(balanceWarning('900000', 90_000, [], '1000000', true)).toBeNull()
+    expect(balanceWarning('900000', null, [], '1000000', true)).toBeNull()
+    expect(balanceWarning('2000000', 90_000, lines, '1000000', true)).toEqual({
+      kind: 'shortfall',
+      requiredUvna: totalDebitUvna(lines),
+    })
+    expect(balanceWarning('2150000', 90_000, lines, '5000000', true)).toBeNull()
+  })
+
+  it('reads a zero balance as a shortfall and a balance equal to the total as covering it', () => {
+    expect(balanceWarning('0', 90_000, [], '1000000', false)).toEqual({ kind: 'shortfall', requiredUvna: 90_000 })
+    expect(balanceWarning('90000', 90_000, [], '0', false)).toBeNull()
+    expect(balanceWarning('1000000', 90_000, [], '1000000', false)).toBeNull()
+    expect(balanceWarning('999999', 90_000, [], '1000000', false)).toEqual({ kind: 'low', requiredUvna: 90_000 })
+    expect(balanceWarning('nope', 90_000, [], '1000000', false)).toBeNull()
   })
 
   it('shows the claimed yield without counting it as a debit', () => {

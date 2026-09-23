@@ -144,6 +144,12 @@ describe('confirmDelegableMsgs', () => {
     expect(request.buildProposalMsgs).toBeUndefined()
     expect(request.costLines).toBe(costLines)
     expect(resolved?.msgs).toBe(request.msgs)
+    expect(request.feeGrant).toEqual({ corporationId: 12, grantee: ME, msgType: CREATE, granterAddress: POLICY })
+  })
+
+  it('carries the fee granter the confirmation elected', async () => {
+    const { deps: d } = deps({}, (request) => ({ msgs: request.msgs, granter: POLICY }))
+    expect((await confirmDelegableMsgs(d, args))?.granter).toBe(POLICY)
   })
 
   it('carries the severity and the existing warning copy of a revocation', async () => {
@@ -167,6 +173,7 @@ describe('confirmDelegableMsgs', () => {
     expect(resolved?.mode).toBe('proposal')
     expect(confirmTx.mock.calls[0][0]).toMatchObject({ mode: 'proposal', proposalTitle: 'Create an ecosystem' })
     expect(confirmTx.mock.calls[0][0].costLines).toBe(costLines)
+    expect(confirmTx.mock.calls[0][0].feeGrant).toBeUndefined()
     const proposal = MsgSubmitProposal.decode(
       MsgSubmitProposal.encode(resolved?.msgs[0].value as MsgSubmitProposal).finish()
     )

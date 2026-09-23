@@ -67,3 +67,32 @@ export function trustCostLines(subject: TrustCostSubject, rates: TrustCostRates)
 export function totalDebitUvna(lines: CostLine[]): number {
   return lines.reduce((sum, line) => sum + (line.debitUvna ?? 0), 0)
 }
+
+export interface BalanceWarning {
+  kind: 'shortfall' | 'low'
+  requiredUvna: number
+}
+
+function parseNonNegativeAmount(value: string | null): number | null {
+  if (value === null) return null
+  const amount = Number(value)
+  return Number.isFinite(amount) && amount >= 0 ? amount : null
+}
+
+export function balanceWarning(
+  balance: string | null,
+  feeUvna: number | null,
+  costLines: CostLine[] | undefined,
+  lowBalanceThreshold: string,
+  feeGranted: boolean
+): BalanceWarning | null {
+  const debitUvna = totalDebitUvna(costLines ?? [])
+  if (feeGranted && debitUvna === 0) return null
+  const requiredUvna = feeGranted ? debitUvna : feeUvna === null ? null : feeUvna + debitUvna
+  const available = parseNonNegativeAmount(balance)
+  if (requiredUvna === null || available === null) return null
+  if (available < requiredUvna) return { kind: 'shortfall', requiredUvna }
+  const threshold = Number(lowBalanceThreshold)
+  if (!feeGranted && Number.isFinite(threshold) && available < threshold) return { kind: 'low', requiredUvna }
+  return null
+}
