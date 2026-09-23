@@ -61,8 +61,9 @@ export default function AgentsPage() {
       <AgentsFilterBar value={filters} onChange={setFilters} />
 
       <section id="agents-grid" className="mb-8">
-        {error ? <div className="p-6 error-pane">{translate('agents.error')}</div> : null}
-        {loading ? (
+        {error ? (
+          <div className="p-6 error-pane">{translate('agents.error')}</div>
+        ) : loading ? (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
             {[...Array(SKELETONS)].map((_, index) => (
               <EcosystemCardSkeleton key={index} />

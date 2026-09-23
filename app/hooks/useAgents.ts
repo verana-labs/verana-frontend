@@ -88,6 +88,7 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
     if (corporationId === undefined || corporationDid === undefined) {
       setAgents([])
       setDelegations(new Map())
+      setError(null)
       setLoading(false)
       return
     }

@@ -293,6 +293,11 @@ function unresolvedAgent(did: string): AgentResolution {
   return { enrichment: unresolved(did), participations: [], services: [], credentials: [] }
 }
 
+function rememberAgentEntry(key: string, value: AgentResolution, ttlMs: number): void {
+  evictOldestIfFull(agentCache)
+  agentCache.set(key, { value, expires: Date.now() + ttlMs })
+}
+
 // Per [VFE-PAGE-AGENTS-2] one resolve per agent DID returns the identity, the participations, the services and the presentations.
 async function fetchAgentFromIndexer(did: string, states: readonly ParticipationState[]): Promise<AgentResolution> {
   if (!VERANA_REST_ENDPOINT_VERIFIABLE_TRUST) return unresolvedAgent(did)
@@ -320,9 +325,13 @@ export async function fetchAgentResolution(
 
   const promise = fetchAgentFromIndexer(did, states)
     .then((value) => {
-      evictOldestIfFull(agentCache)
-      agentCache.set(key, { value, expires: Date.now() + SUCCESS_TTL_MS })
+      rememberAgentEntry(key, value, SUCCESS_TTL_MS)
       return value
+    })
+    .catch((error) => {
+      // A failed resolve is remembered for a short time, so a burst of block events does not retry it per event.
+      rememberAgentEntry(key, unresolvedAgent(did), ERROR_TTL_MS)
+      throw error
     })
     .finally(() => {
       agentInflight.delete(key)
