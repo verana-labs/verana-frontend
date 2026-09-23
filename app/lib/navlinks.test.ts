@@ -16,6 +16,7 @@ describe('getNavLinks', () => {
       '/account',
       '/corporation',
       '/ecosystems',
+      '/agents',
       '/discover',
       '/pendingtasks',
       '/settings',
@@ -25,6 +26,7 @@ describe('getNavLinks', () => {
   it('gates the corporation entry on an acting corporation', () => {
     const byHref = new Map(getNavLinks().map((link) => [link.href, link]))
     expect(byHref.get('/corporation')?.requiresCorporation).toBe(true)
+    expect(byHref.get('/agents')?.requiresCorporation).toBe(true)
   })
 
   it('gives every link a non-empty name and an icon', () => {

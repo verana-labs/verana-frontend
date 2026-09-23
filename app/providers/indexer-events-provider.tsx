@@ -2,7 +2,12 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_INDEXER, VERANA_WEBSOCKET } from '@/config/env'
-import { type IndexerBlockEvent, parseIndexerBlockEvent, parseIndexerBlockHeight } from '@/lib/indexer-event'
+import {
+  type IndexerBlockEvent,
+  type IndexerEntityEvent,
+  parseIndexerBlockEvent,
+  parseIndexerBlockHeight,
+} from '@/lib/indexer-event'
 import { logger } from '@/lib/logger'
 import { useComponentsVersion } from '@/providers/components-version-provider'
 
@@ -17,6 +22,7 @@ type IndexerEventsContextType = {
   isConnected: boolean
   latestProcessedHeight: number
   latestProcessedTimestamp: string | null
+  latestBlockEvents: IndexerEntityEvent[]
   waitForBlock: (targetHeight: number, timeoutMs?: number) => Promise<void>
   getLatestProcessedBlock: () => number
 }
@@ -33,6 +39,7 @@ export function IndexerEventsProvider({ children }: { children: React.ReactNode 
   const [isConnected, setIsConnected] = useState(false)
   const [latestProcessedHeight, setLatestProcessedHeight] = useState(0)
   const [latestProcessedTimestamp, setLatestProcessedTimestamp] = useState<string | null>(null)
+  const [latestBlockEvents, setLatestBlockEvents] = useState<IndexerEntityEvent[]>([])
 
   const { setState: setVersionState } = useComponentsVersion()
 
@@ -42,6 +49,7 @@ export function IndexerEventsProvider({ children }: { children: React.ReactNode 
       latestProcessedTimestampRef.current = block.timestamp
       setLatestProcessedHeight(block.height)
       setLatestProcessedTimestamp(block.timestamp)
+      if (block.events.length > 0) setLatestBlockEvents(block.events)
       setVersionState((prev) => ({
         ...prev,
         indexer: { ...prev.indexer, lastProcessedBlock: block.height },
@@ -203,13 +211,32 @@ export function IndexerEventsProvider({ children }: { children: React.ReactNode 
       isConnected,
       latestProcessedHeight,
       latestProcessedTimestamp,
+      latestBlockEvents,
       waitForBlock,
       getLatestProcessedBlock,
     }),
-    [isConnected, latestProcessedHeight, latestProcessedTimestamp, waitForBlock, getLatestProcessedBlock]
+    [
+      isConnected,
+      latestProcessedHeight,
+      latestProcessedTimestamp,
+      latestBlockEvents,
+      waitForBlock,
+      getLatestProcessedBlock,
+    ]
   )
 
   return <IndexerEventsContext.Provider value={value}>{children}</IndexerEventsContext.Provider>
+}
+
+// Applies the events of each new block once. The same array is never applied twice.
+export function useIndexerEntityEvents(apply: (events: IndexerEntityEvent[]) => void) {
+  const { latestBlockEvents } = useIndexerEvents()
+  const applied = useRef<IndexerEntityEvent[]>([])
+  useEffect(() => {
+    if (latestBlockEvents.length === 0 || applied.current === latestBlockEvents) return
+    applied.current = latestBlockEvents
+    apply(latestBlockEvents)
+  }, [apply, latestBlockEvents])
 }
 
 export function useIndexerEvents() {

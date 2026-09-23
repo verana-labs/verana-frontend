@@ -4,6 +4,7 @@ import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useParticipant } from '@/hooks/useParticipant'
 import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
 import { type DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
@@ -14,6 +15,7 @@ import type { ParticipantRefreshState, TreeNode } from '@/ui/common/participant-
 import SchemaHeader, { type SchemaStatus } from '@/ui/common/schema-header'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
+import { participantAuthority, roleColorClass } from '@/util/util'
 import { renderActionComponent } from './data-view-typed'
 import { ModalAction } from './modal-action'
 import ParticipantCard from './participant-card'
@@ -243,6 +245,40 @@ export default function ParticipantTree({
     [selectedId, treeState]
   )
 
+  // A deep link can name a Participant the lazy tree has not loaded. Fetch it so the card still opens.
+  const missingSelectedId = selectedId && !selection.node ? selectedId : undefined
+  const { participant: linkedParticipant } = useParticipant(missingSelectedId)
+  const linkedNode = useMemo<TreeNode | undefined>(() => {
+    if (!missingSelectedId || linkedParticipant?.id !== missingSelectedId) return undefined
+    const isCorporation = linkedParticipant.corporation_id === viewerCorporationId
+    const authority = participantAuthority(isCorporation, false, false)
+    return {
+      nodeId: linkedParticipant.id,
+      name: linkedParticipant.did ?? linkedParticipant.role,
+      group: false,
+      parentId: linkedParticipant.validator_participant_id ?? 'root',
+      isCorporation,
+      isValidator: false,
+      roleColorClass: roleColorClass(linkedParticipant.role),
+      icon: authority.icon,
+      iconColorClass: authority.iconColorClass,
+      participant: linkedParticipant,
+    }
+  }, [linkedParticipant, missingSelectedId, viewerCorporationId])
+  const detailNode = selection.node ?? linkedNode
+  const requestedLinkedId = useRef<string>(undefined)
+
+  useEffect(() => {
+    const participant = linkedNode?.participant
+    const validatorId = participant?.validator_participant_id
+    if (!participant || !validatorId || requestedLinkedId.current === participant.id) return
+    if (!findNode(treeState, validatorId)) return
+    requestedLinkedId.current = participant.id
+    const folderId = `group:${validatorId}:${participant.role}`
+    setExpanded((current) => ({ ...current, [validatorId]: true, [folderId]: true }))
+    setNodeRequestParams?.(folderId, participant.role, validatorId)
+  }, [linkedNode, setNodeRequestParams, treeState])
+
   useEffect(() => {
     setTreeState((current) => mergeTrees(current, tree))
     setExpanded((current) => {
@@ -424,11 +460,11 @@ export default function ParticipantTree({
         </ModalAction>
       ) : null}
 
-      {selection.node ? (
+      {detailNode ? (
         <div ref={detailRef}>
           <ParticipantCard
-            selectedNode={selection.node}
-            path={selection.path}
+            selectedNode={detailNode}
+            path={selection.node ? selection.path : [detailNode]}
             schemaTitle={schemaTitle ?? ''}
             viewerCorporationId={viewerCorporationId}
             onRefresh={(participant) => setTreeState((current) => updateParticipant(current, participant))}

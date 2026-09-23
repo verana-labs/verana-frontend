@@ -10,6 +10,7 @@ import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
 import { type DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
 import { corporationSigningMode, useCorporationManage } from '@/msg/actions_hooks/actionCorporationManage'
+import { useIndexerEntityEvents } from '@/providers/indexer-events-provider'
 import { CorporationCreateWizard } from '@/ui/common/corporation-create-wizard'
 import { ProposalComposer } from '@/ui/common/proposal-composer'
 import { type CorporationTab, type CorporationView, TABS, TabsLayout } from '@/ui/corporation/layouts'
@@ -25,7 +26,8 @@ export default function CorporationPage() {
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
   const { actingCorporation, loading: actingLoading, refetch: refetchCorporations } = useUserCorporation()
-  const { details, loading, error, refetch } = useCorporationDetails(actingCorporation?.corporation.id)
+  const { details, loading, error, refetch, applyEvents } = useCorporationDetails(actingCorporation?.corporation.id)
+  useIndexerEntityEvents(applyEvents)
   const [votesVersion, setVotesVersion] = useState(0)
   const refreshAfterTx = () => {
     void refetch()

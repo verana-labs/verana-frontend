@@ -22,7 +22,10 @@ export interface DidEnrichment {
 }
 
 interface ResolvedCredential {
+  id?: string
   ecsSchema?: string | null
+  credentialSchemaId?: number | null
+  ecosystemId?: number | null
   issuerParticipantId?: number | null
   credentialSubject?: Record<string, unknown>
 }
@@ -33,6 +36,52 @@ interface ResolveResult {
   evaluatedAtBlock?: number
   expiresAtTime?: string | null
   ecsCredentials?: ResolvedCredential[]
+  participations?: unknown[]
+  services?: unknown[]
+  presentations?: unknown[]
+}
+
+export type ParticipationState = 'ACTIVE' | 'FUTURE' | 'INACTIVE' | 'EXPIRED' | 'REVOKED' | 'SLASHED' | 'REPAID'
+
+export const ALL_PARTICIPATION_STATES: readonly ParticipationState[] = [
+  'ACTIVE',
+  'FUTURE',
+  'INACTIVE',
+  'EXPIRED',
+  'REVOKED',
+  'SLASHED',
+  'REPAID',
+]
+
+export interface ResolvedParticipation {
+  id: number
+  vsOperator: string | null
+  role: string
+  state: string
+  credentialSchemaId: number | null
+  ecosystemId: number | null
+  validatorParticipantId: number | null
+}
+
+interface ResolvedService {
+  id: string
+  type: string
+  serviceEndpoint: string
+}
+
+export interface PresentedCredential {
+  id: string
+  ecsSchema: string | null
+  credentialSchemaId: number | null
+  ecosystemId: number | null
+  presentationUrl: string | null
+}
+
+export interface AgentResolution {
+  enrichment: DidEnrichment
+  participations: ResolvedParticipation[]
+  services: ResolvedService[]
+  credentials: PresentedCredential[]
 }
 
 const SUCCESS_TTL_MS = 60_000
@@ -42,6 +91,8 @@ const MAX_CACHE_ENTRIES = 200
 
 const cache = new Map<string, { value: DidEnrichment; expires: number }>()
 const inflight = new Map<string, Promise<DidEnrichment>>()
+const agentCache = new Map<string, { value: AgentResolution; expires: number }>()
+const agentInflight = new Map<string, Promise<AgentResolution>>()
 
 function unresolved(did: string): DidEnrichment {
   return { did, trustStatus: 'UNRESOLVED' }
@@ -61,14 +112,14 @@ function pickStringOrNumber(claims: Record<string, unknown> | undefined, key: st
   return undefined
 }
 
-function evictOldestIfFull(): void {
-  if (cache.size < MAX_CACHE_ENTRIES) return
-  const oldestKey = cache.keys().next().value
-  if (oldestKey !== undefined) cache.delete(oldestKey)
+function evictOldestIfFull(entries: Map<string, unknown>): void {
+  if (entries.size < MAX_CACHE_ENTRIES) return
+  const oldestKey = entries.keys().next().value
+  if (oldestKey !== undefined) entries.delete(oldestKey)
 }
 
 function rememberCacheEntry(did: string, value: DidEnrichment, ttlMs: number): void {
-  evictOldestIfFull()
+  evictOldestIfFull(cache)
   cache.set(did, { value, expires: Date.now() + ttlMs })
 }
 
@@ -170,8 +221,129 @@ export async function fetchDidEnrichment(did: string, options?: { force?: boolea
   return promise
 }
 
+function optionalInteger(value: unknown): number | null {
+  return typeof value === 'number' && Number.isSafeInteger(value) ? value : null
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null
+}
+
+export function mapAgentResolution(did: string, raw: ResolveResult): AgentResolution {
+  const participations: ResolvedParticipation[] = []
+  for (const entry of raw.participations ?? []) {
+    const row = asRecord(entry)
+    const id = optionalInteger(row?.id)
+    if (!row || id === null) continue
+    participations.push({
+      id,
+      vsOperator: typeof row.vsOperator === 'string' ? row.vsOperator : null,
+      role: typeof row.role === 'string' ? row.role : '',
+      state: typeof row.state === 'string' ? row.state : '',
+      credentialSchemaId: optionalInteger(row.credentialSchemaId),
+      ecosystemId: optionalInteger(row.ecosystemId),
+      validatorParticipantId: optionalInteger(row.validatorParticipantId),
+    })
+  }
+
+  const services: ResolvedService[] = []
+  for (const entry of raw.services ?? []) {
+    const row = asRecord(entry)
+    if (!row || typeof row.type !== 'string') continue
+    const endpoint = row.serviceEndpoint
+    services.push({
+      id: typeof row.id === 'string' ? row.id : '',
+      type: row.type,
+      serviceEndpoint: typeof endpoint === 'string' ? endpoint : JSON.stringify(endpoint ?? null),
+    })
+  }
+
+  const credentials: PresentedCredential[] = (raw.ecsCredentials ?? []).map((credential, index) => ({
+    id: typeof credential.id === 'string' ? credential.id : `ecs:${credential.ecsSchema ?? index}`,
+    ecsSchema: credential.ecsSchema ?? null,
+    credentialSchemaId: optionalInteger(credential.credentialSchemaId),
+    ecosystemId: optionalInteger(credential.ecosystemId),
+    presentationUrl: null,
+  }))
+  for (const entry of raw.presentations ?? []) {
+    const presentation = asRecord(entry)
+    if (!presentation) continue
+    const presentationUrl = typeof presentation.id === 'string' ? presentation.id : null
+    for (const item of Array.isArray(presentation.vtcCredentials) ? presentation.vtcCredentials : []) {
+      const vtc = asRecord(item)
+      if (!vtc || typeof vtc.id !== 'string') continue
+      credentials.push({
+        id: vtc.id,
+        ecsSchema: null,
+        credentialSchemaId: optionalInteger(vtc.credentialSchemaId),
+        ecosystemId: optionalInteger(vtc.ecosystemId),
+        presentationUrl,
+      })
+    }
+  }
+
+  return { enrichment: mapResolveResult(did, raw), participations, services, credentials }
+}
+
+function unresolvedAgent(did: string): AgentResolution {
+  return { enrichment: unresolved(did), participations: [], services: [], credentials: [] }
+}
+
+function rememberAgentEntry(key: string, value: AgentResolution, ttlMs: number): void {
+  evictOldestIfFull(agentCache)
+  agentCache.set(key, { value, expires: Date.now() + ttlMs })
+}
+
+// Per [VFE-PAGE-AGENTS-2] one resolve per agent DID returns the identity, the participations, the services and the presentations.
+async function fetchAgentFromIndexer(did: string, states: readonly ParticipationState[]): Promise<AgentResolution> {
+  if (!VERANA_REST_ENDPOINT_VERIFIABLE_TRUST) return unresolvedAgent(did)
+  const response = await fetchWithTimeout(`${VERANA_REST_ENDPOINT_VERIFIABLE_TRUST}/resolve`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ did, ecsCredentials: true, participations: { states }, services: true, presentations: {} }),
+  })
+  if (response.status === 404) return unresolvedAgent(did)
+  if (!response.ok) throw new Error(`Trust resolution responded ${response.status} for ${did}`)
+  return mapAgentResolution(did, (await response.json()) as ResolveResult)
+}
+
+export async function fetchAgentResolution(
+  did: string,
+  states: readonly ParticipationState[]
+): Promise<AgentResolution> {
+  if (!did.startsWith('did:')) return unresolvedAgent(did)
+  const key = `${did}|${states.join(',')}`
+  const cached = agentCache.get(key)
+  if (cached && cached.expires > Date.now()) return cached.value
+
+  const existing = agentInflight.get(key)
+  if (existing) return existing
+
+  const promise = fetchAgentFromIndexer(did, states)
+    .then((value) => {
+      rememberAgentEntry(key, value, SUCCESS_TTL_MS)
+      return value
+    })
+    .catch((error) => {
+      // A failed resolve is remembered for a short time, so a burst of block events does not retry it per event.
+      rememberAgentEntry(key, unresolvedAgent(did), ERROR_TTL_MS)
+      throw error
+    })
+    .finally(() => {
+      agentInflight.delete(key)
+    })
+
+  agentInflight.set(key, promise)
+  return promise
+}
+
 export function invalidateDid(did: string): void {
   cache.delete(did)
+  for (const key of agentCache.keys()) {
+    if (key.startsWith(`${did}|`)) agentCache.delete(key)
+  }
 }
 
 export const DEFAULT_SERVICE_AVATAR = '/default-service.svg'

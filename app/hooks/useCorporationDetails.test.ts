@@ -140,8 +140,11 @@ describe('parseVsOperatorAuthorizations', () => {
             {
               participant_id: 102,
               msg_types: ['/verana.pp.v1.MsgTriggerResolver'],
+              spend_limit: [{ denom: 'uvna', amount: '5000000' }],
+              remaining_spend: [{ denom: 'uvna', amount: '4250000' }],
               with_feegrant: true,
               expiration: '2026-08-27T12:11:01.742Z',
+              period: '2592000s',
             },
             {
               participant_id: 98,
@@ -158,13 +161,25 @@ describe('parseVsOperatorAuthorizations', () => {
         vsOperator: 'verana1vs',
         participantId: 102,
         msgTypes: ['/verana.pp.v1.MsgTriggerResolver'],
+        spendLimit: [{ denom: 'uvna', amount: '5000000' }],
+        remainingSpend: [{ denom: 'uvna', amount: '4250000' }],
+        feeSpendLimit: null,
+        remainingFeeSpend: null,
+        withFeegrant: true,
         expiration: '2026-08-27T12:11:01.742Z',
+        period: '2592000s',
       },
       {
         vsOperator: 'verana1vs',
         participantId: 98,
         msgTypes: ['/verana.pp.v1.MsgCreateOrUpdateParticipantSession'],
+        spendLimit: null,
+        remainingSpend: null,
+        feeSpendLimit: null,
+        remainingFeeSpend: null,
+        withFeegrant: true,
         expiration: null,
+        period: null,
       },
     ])
   })
