@@ -47,7 +47,7 @@ export function CorporationSelector() {
         ) : null}
         <FontAwesomeIcon icon={faChevronDown} className="text-xs opacity-60" />
       </MenuButton>
-      <MenuItems className="absolute right-0 z-30 mt-2 w-80 origin-top-right rounded-xl border border-neutral-20 dark:border-neutral-70 bg-white dark:bg-surface shadow-lg focus:outline-none p-1">
+      <MenuItems className="absolute end-0 z-30 mt-2 w-80 origin-top-right rtl:origin-top-left rounded-xl border border-neutral-20 dark:border-neutral-70 bg-white dark:bg-surface shadow-lg focus:outline-none p-1">
         <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
           {translate('corporation.selector.title')}
         </p>
