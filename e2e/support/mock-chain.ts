@@ -29,6 +29,7 @@ export type MockChainOptions = {
   corporationPolicyAddress?: string
   stubSri?: boolean
   stubCorporation?: boolean
+  balanceUvna?: string
 }
 
 const NOW = '2026-01-01T00:00:00.000000000Z'
@@ -115,9 +116,9 @@ const simulateQueryResult = (gasUsed: number) => {
   }
 }
 
-const balanceQueryResult = () => {
+const balanceQueryResult = (amount: string) => {
   const value = QueryBalanceResponse.encode(
-    QueryBalanceResponse.fromPartial({ balance: Coin.fromPartial({ denom: 'uvna', amount: '1000000000' }) })
+    QueryBalanceResponse.fromPartial({ balance: Coin.fromPartial({ denom: 'uvna', amount }) })
   ).finish()
   return {
     response: {
@@ -194,9 +195,11 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
     corporationPolicyAddress = address,
     stubSri = true,
     stubCorporation = true,
+    balanceUvna = '1000000000',
   } = opts
 
   const seen: string[] = []
+  const broadcasts: string[] = []
 
   const rpcPattern = new RegExp(`^${escapeRegExp(rpcEndpoint.replace(/\/+$/, ''))}/?(\\?.*)?$`)
 
@@ -222,11 +225,12 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
       case 'abci_query': {
         if (path.includes('Service/Simulate')) return fulfill(simulateQueryResult(gasUsed))
         if (path.includes('Query/Account')) return fulfill(accountQueryResult(address, accountNumber, sequence))
-        if (path.includes('Query/Balance')) return fulfill(balanceQueryResult())
+        if (path.includes('Query/Balance')) return fulfill(balanceQueryResult(balanceUvna))
         return fulfill(accountQueryResult(address, accountNumber, sequence))
       }
       case 'broadcast_tx_sync':
       case 'broadcast_tx_async':
+        if (typeof req.params?.tx === 'string') broadcasts.push(req.params.tx)
         return fulfill(broadcastSyncResult())
       case 'tx_search':
         return fulfill(txSearchResult(ecosystemId))
@@ -251,6 +255,7 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
 
   return {
     seenMethods: () => [...seen],
+    broadcastTxs: () => [...broadcasts],
     teardown: async () => {
       await page.unroute(rpcPattern)
       if (stubSri) await page.unroute('**/api/sri**')
