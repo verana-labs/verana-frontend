@@ -9,7 +9,6 @@ describe('getNavLinks', () => {
     expect(byHref.get('/pendingtasks')).toBe(3)
   })
 
-  it('returns the seven top-level destinations in order', () => {
   it('returns the top-level destinations in the order of VFE-PAGE-NAV-1, settings last', () => {
     const hrefs = getNavLinks().map((link) => link.href)
     expect(hrefs).toEqual([
@@ -18,8 +17,6 @@ describe('getNavLinks', () => {
       '/corporation',
       '/ecosystems',
       '/agents',
-      '/discover',
-      '/pendingtasks',
       '/discover',
       '/pendingtasks',
       '/settings',

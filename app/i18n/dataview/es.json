@@ -834,7 +834,7 @@
   "corporation.page.agents.empty": "No hay autorizaciones de agente activas.",
   "corporation.page.agents.records": "registros de participante",
   "corporation.page.agents.link": "Ver como agentes",
-  "corporation.page.agents.participant": "Participante"
+  "corporation.page.agents.participant": "Participante",
   "meta.settings.title": "Configuración",
   "meta.settings.description": "Elige tu idioma y tema, y revisa la red Verana conectada.",
   "settings.title": "Configuración",

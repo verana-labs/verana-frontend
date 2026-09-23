@@ -834,7 +834,7 @@
   "corporation.page.agents.empty": "No active agent authorizations.",
   "corporation.page.agents.records": "participant records",
   "corporation.page.agents.link": "View as agents",
-  "corporation.page.agents.participant": "Participant"
+  "corporation.page.agents.participant": "Participant",
   "meta.settings.title": "Settings",
   "meta.settings.description": "Choose your language and theme, and review the connected Verana network.",
   "settings.title": "Settings",
