@@ -19,10 +19,11 @@ export type EgfCardProps = {
 export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCardProps) {
   const [state, setState] = useState<ViewerState>('verifying')
   const blocked = state === 'mismatch'
+  const locked = blocked || state === 'verifying'
   const onViewerState = useCallback(
     (next: ViewerState) => {
       setState(next)
-      if (next === 'mismatch') onAcceptedChange(false)
+      if (next === 'mismatch' || next === 'verifying') onAcceptedChange(false)
     },
     [onAcceptedChange]
   )
@@ -61,13 +62,13 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
           id="egf-accept"
           type="checkbox"
           checked={accepted}
-          disabled={blocked}
+          disabled={locked}
           onChange={(e) => onAcceptedChange(e.target.checked)}
           className="mt-1 w-4 h-4 text-primary-600 bg-white dark:bg-surface border-neutral-20 dark:border-neutral-70 rounded focus:ring-primary-500 disabled:opacity-50"
         />
         <label
           htmlFor="egf-accept"
-          className={`text-sm text-gray-700 dark:text-gray-300 ${blocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+          className={`text-sm text-gray-700 dark:text-gray-300 ${locked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
         >
           {resolveTranslatable({ key: 'join.egf.acceptancemessage' }, translate)}
         </label>

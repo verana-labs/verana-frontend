@@ -118,6 +118,14 @@ function saveBytes(bytes: Uint8Array, type: string, name: string) {
   URL.revokeObjectURL(link.href)
 }
 
+function VerifyingNotice() {
+  return (
+    <div className="flex items-center justify-center h-40 rounded-lg border border-neutral-20 dark:border-neutral-70 animate-pulse">
+      <p className="text-sm text-neutral-70 dark:text-neutral-70">{t('gfdoc.verifying.text')}</p>
+    </div>
+  )
+}
+
 function VerifiedContent({
   kind,
   text,
@@ -129,7 +137,9 @@ function VerifiedContent({
   pdfUrl: string | undefined
   title: string
 }) {
-  if (kind === 'pdf' && pdfUrl) return <iframe src={pdfUrl} title={title} className={FRAME_CLASS} />
+  if (kind === 'pdf') {
+    return pdfUrl ? <iframe src={pdfUrl} title={title} className={FRAME_CLASS} /> : <VerifyingNotice />
+  }
   if (kind === 'html' && text !== undefined) {
     return <iframe sandbox="" srcDoc={text} referrerPolicy="no-referrer" title={title} className={FRAME_CLASS} />
   }
@@ -217,11 +227,7 @@ export default function GfDocumentViewer({ documents, initialDocumentId, onState
         {t('gfdoc.digest.label')}: {selected.digestSri ?? t('gfdoc.digest.none')}
       </p>
 
-      {state === 'verifying' ? (
-        <div className="flex items-center justify-center h-40 rounded-lg border border-neutral-20 dark:border-neutral-70 animate-pulse">
-          <p className="text-sm text-neutral-70 dark:text-neutral-70">{t('gfdoc.verifying.text')}</p>
-        </div>
-      ) : null}
+      {state === 'verifying' ? <VerifyingNotice /> : null}
 
       {result?.state === 'verified' ? <VerifiedContent kind={kind} text={text} pdfUrl={pdfUrl} title={title} /> : null}
 
@@ -238,15 +244,17 @@ export default function GfDocumentViewer({ documents, initialDocumentId, onState
       ) : null}
 
       <div className="flex flex-wrap justify-center gap-3 mt-4">
-        <a
-          href={selected.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
-        >
-          <FontAwesomeIcon icon={faUpRightFromSquare} className="text-xs" />
-          {t('gfdoc.open')}
-        </a>
+        {state === 'mismatch' ? null : (
+          <a
+            href={selected.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
+          >
+            <FontAwesomeIcon icon={faUpRightFromSquare} className="text-xs" />
+            {t('gfdoc.open')}
+          </a>
+        )}
         {verifiedBytes ? (
           <button
             type="button"

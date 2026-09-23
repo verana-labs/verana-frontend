@@ -100,6 +100,7 @@ test('the ecosystem page renders a verified document and offers every document o
   await expect(viewer.getByText(`Digest: ${sri(EN_MARKDOWN)}`)).toBeVisible()
   await expect(viewer.getByLabel('Document language').locator('option')).toHaveCount(2)
   await expect(viewer.getByRole('button', { name: 'Download' })).toBeVisible()
+  await expect(viewer.getByRole('link', { name: 'Open source URL' })).toBeVisible()
 
   await viewer.getByLabel('Document language').selectOption('2')
   await expect(viewer.getByRole('status')).toHaveText('Digest mismatch')
@@ -108,6 +109,7 @@ test('the ecosystem page renders a verified document and offers every document o
   await expect(viewer.getByText('Manipulado')).toBeHidden()
   await expect(viewer.getByRole('heading', { name: 'Acme governance framework' })).toBeHidden()
   await expect(viewer.getByRole('button', { name: 'Download' })).toBeHidden()
+  await expect(viewer.getByRole('link', { name: 'Open source URL' })).toBeHidden()
 })
 
 test('a document the browser cannot fetch is verified through the server route', async ({ page }) => {
@@ -176,6 +178,35 @@ test('the join wizard blocks accepting a document that does not match its digest
   await expect(next).toBeEnabled()
 
   await page.getByLabel('Document language').selectOption('1')
+  await expect(accept).not.toBeChecked()
+  await expect(next).toBeDisabled()
+})
+
+test('the join wizard takes the acceptance only once the shown document is checked', async ({ page }) => {
+  await stubEcosystem(page, bilingual)
+  let release: (() => void) | undefined
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  await page.route(EN_URL, async (route) => {
+    await held
+    await route.fulfill({ status: 200, headers: MARKDOWN_HEADERS, body: EN_MARKDOWN })
+  })
+  await serveMarkdown(page, ES_URL, ES_MARKDOWN)
+  const next = await reachGovernanceStep(page)
+  const accept = page.locator('#egf-accept')
+
+  await expect(page.getByText('Checking the document against its on-chain digest…')).toBeVisible()
+  await expect(accept).toBeDisabled()
+  await expect(next).toBeDisabled()
+
+  release?.()
+  await expect(accept).toBeEnabled()
+  await accept.check()
+  await expect(next).toBeEnabled()
+
+  await page.getByLabel('Document language').selectOption('2')
+  await expect(accept).toBeEnabled()
   await expect(accept).not.toBeChecked()
   await expect(next).toBeDisabled()
 })
