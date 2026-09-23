@@ -2,7 +2,6 @@
 
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
 import type { MsgTypeEcosystem } from '@/msg/constants/notificationMsgForMsgType'
-import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
 import EditableDataView from '@/ui/common/data-edit'
 import { type EcosystemData, ecosystemSections } from '@/ui/dataview/datasections/ecosystem'
 
@@ -29,12 +28,6 @@ export default function EcosystemActionPage({
     await submitTx(action, value)
   }
 
-  async function onSimulate(value: object): Promise<SimulateResult | undefined> {
-    if (!noForm) return
-    const result = await submitTx(action, value, true)
-    if (result && !('transactionHash' in result)) return result
-  }
-
   return (
     <EditableDataView<EcosystemData>
       sectionsI18n={ecosystemSections}
@@ -42,7 +35,6 @@ export default function EcosystemActionPage({
       messageType={action}
       data={ecosystem}
       onSave={onSave}
-      onSimulate={onSimulate}
       onCancel={onClose}
       noForm={noForm}
       withinView={action === 'MsgUpdateEcosystem'}
