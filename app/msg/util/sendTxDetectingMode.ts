@@ -12,7 +12,7 @@ import { type SimulateResult, signAndBroadcastManualAmino } from '@/msg/util/sig
 import { signAndBroadcastManualDirect } from '@/msg/util/signAndBroadcastManualDirect'
 import { isAminoOnlySigner, isDirectSigner } from '@/msg/util/signerUtil'
 
-type SendTxParams = { msgs: EncodeObject[]; memo?: string; simulate?: boolean }
+type SendTxParams = { msgs: EncodeObject[]; memo?: string; simulate?: boolean; granter?: string }
 
 function resolveRpcEndpoint(value: unknown): string | undefined {
   if (typeof value === 'string') return value
@@ -30,7 +30,7 @@ export function useSendTxDetectingMode(chain: Chain) {
 
   return useCallback(
     async (params: SendTxParams): Promise<DeliverTxResponse | SimulateResult> => {
-      const { msgs, memo = '', simulate = false } = params
+      const { msgs, memo = '', simulate = false, granter } = params
       const safeMemo = typeof memo === 'string' ? memo : String(memo ?? '')
 
       if (!isWalletConnected || !address) {
@@ -66,6 +66,7 @@ export function useSendTxDetectingMode(chain: Chain) {
             gasAdjustment: veranaGasAdjustment,
             memo: safeMemo,
             simulate,
+            granter,
           })
         } catch (e) {
           throw new Error(`Direct signing failed: ${e instanceof Error ? e.message : String(e)}`)
@@ -84,6 +85,7 @@ export function useSendTxDetectingMode(chain: Chain) {
             gasAdjustment: veranaGasAdjustment,
             memo: safeMemo,
             simulate,
+            granter,
           })
         } catch (e) {
           throw new Error(`Amino signing failed: ${e instanceof Error ? e.message : String(e)}`)

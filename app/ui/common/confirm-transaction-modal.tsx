@@ -5,16 +5,23 @@ import { useChain } from '@cosmos-kit/react'
 import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import { LOW_BALANCE_WARN_UVNA, VERANA_FAUCET_URL } from '@/config/env'
+import { type FeeGrantLookup, useFeeGrant } from '@/hooks/useFeeGrant'
+import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
 import { simulationFor, type TxSimulation, useTxSimulation } from '@/hooks/useTxSimulation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
+import { feeGrantCovering, nativeFeeAmount } from '@/lib/fee-grant'
+import { balanceWarning, totalDebitUvna } from '@/lib/trust-costs'
 import {
+  type CostLine,
   confirmLabelKey,
   formatStdFee,
   modeLabelKey,
   proposalMetadata,
   type TxConfirmRequest,
   type TxConfirmResult,
+  type TxFeeGrant,
   type TxSeverity,
 } from '@/lib/tx-preview'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
@@ -22,6 +29,7 @@ import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 import { shortenMiddle } from '@/util/util'
 
 const SETTLE_DELAY_MS = 400
+const UVNA_PER_VNA = 1_000_000
 
 function t(key: string, values?: I18nValues): string {
   return resolveTranslatable({ key, values }, translate) ?? key
@@ -49,6 +57,47 @@ function FeeValue({ simulation }: { simulation: TxSimulation }) {
   if (simulation.status === 'failed')
     return <span className="text-red-600 dark:text-red-400">{t('txconfirm.fee.failed')}</span>
   return <span>{formatStdFee(simulation.fee)}</span>
+}
+
+function feeGranter(
+  feeGrant: TxFeeGrant | undefined,
+  lookup: FeeGrantLookup,
+  simulation: TxSimulation
+): string | undefined {
+  if (!feeGrant || lookup.status !== 'ready' || simulation.status !== 'ready') return undefined
+  const covering = feeGrantCovering(lookup.grants, feeGrant.msgType, nativeFeeAmount(simulation.fee))
+  return covering ? feeGrant.granterAddress : undefined
+}
+
+function BalanceWarning({
+  balance,
+  balanceError,
+  feeUvna,
+  feeGranted,
+  costLines,
+}: {
+  balance: string | null
+  balanceError: string | null
+  feeUvna: number | null
+  feeGranted: boolean
+  costLines: CostLine[] | undefined
+}) {
+  const accountPaysNothing = feeGranted && totalDebitUvna(costLines ?? []) === 0
+  if (balance === null && balanceError && !accountPaysNothing)
+    return <p className="text-sm text-gray-600 dark:text-gray-300">{t('txconfirm.balance.unavailable')}</p>
+  const warning = balanceWarning(balance, feeUvna, costLines, LOW_BALANCE_WARN_UVNA ?? '0', feeGranted)
+  if (!warning) return null
+  const key = warning.kind === 'shortfall' ? 'txconfirm.balance.shortfall' : 'txconfirm.balance.low'
+  const html = t(VERANA_FAUCET_URL ? key : `${key}.noFaucet`, {
+    value: Number(balance) / UVNA_PER_VNA,
+    fee: warning.requiredUvna / UVNA_PER_VNA,
+  })
+  return (
+    <div role="alert" className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 flex gap-3">
+      <FontAwesomeIcon icon={faTriangleExclamation} className="text-red-600 dark:text-red-400 mt-0.5" />
+      <p className="text-sm text-red-700 dark:text-red-300" dangerouslySetInnerHTML={{ __html: html }} />
+    </div>
+  )
 }
 
 function WarningBox({ severity, children }: { severity: TxSeverity | undefined; children: ReactNode }) {
@@ -81,6 +130,7 @@ export function ConfirmTransactionModal({
   const { msgs, buildProposalMsgs } = request
   const fallbackTitle = request.proposalTitle ?? ''
   const composing = request.mode === 'proposal' && buildProposalMsgs !== undefined
+  const { accountData, errorAccountData } = useTrustDepositAccountData()
   const [title, setTitle] = useState(fallbackTitle)
   const [summary, setSummary] = useState(fallbackTitle)
   const [settledTitle, setSettledTitle] = useState(fallbackTitle)
@@ -103,6 +153,7 @@ export function ConfirmTransactionModal({
   )
   const { simulation, simulate } = useTxSimulation(simulatedMsgs)
   const currentSimulation = simulationFor(simulation, simulatedMsgs)
+  const feeGrantLookup = useFeeGrant(request.feeGrant ?? null)
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -114,6 +165,11 @@ export function ConfirmTransactionModal({
 
   const proposal = request.mode === 'proposal'
   const editing = title !== settledTitle || summary !== settledSummary
+  const granter = feeGranter(request.feeGrant, feeGrantLookup, currentSimulation)
+  const payer = granter ?? request.payer
+  const simulatedFeeUvna = currentSimulation.status === 'ready' ? Number(nativeFeeAmount(currentSimulation.fee)) : null
+  const payerPending =
+    feeGrantLookup.status === 'loading' || (request.feeGrant !== undefined && currentSimulation.status === 'simulating')
   const labelClass = 'text-sm font-medium text-gray-700 dark:text-gray-300 block'
 
   return (
@@ -142,8 +198,14 @@ export function ConfirmTransactionModal({
             <FeeValue simulation={currentSimulation} />
           </Row>
           <Row label={t('txconfirm.payer')}>
-            <span className="font-mono">{shortenMiddle(request.payer, 24)}</span>
-            {request.payer === address ? ` ${t('txconfirm.payer.you')}` : ''}
+            {payerPending ? (
+              <span className="animate-pulse text-gray-400">{t('txconfirm.payer.checking')}</span>
+            ) : (
+              <>
+                <span className="font-mono">{shortenMiddle(payer, 24)}</span>
+                {payer === address ? ` ${t('txconfirm.payer.you')}` : ''}
+              </>
+            )}
           </Row>
           {request.costLines?.map((line) => (
             <Row key={line.label} label={line.label}>
@@ -151,6 +213,10 @@ export function ConfirmTransactionModal({
             </Row>
           ))}
         </dl>
+        {granter ? <p className="text-sm text-gray-600 dark:text-gray-300">{t('txconfirm.feegrant.covered')}</p> : null}
+        {feeGrantLookup.status === 'failed' ? (
+          <p className="text-sm text-gray-600 dark:text-gray-300">{t('txconfirm.feegrant.unavailable')}</p>
+        ) : null}
         {proposal ? (
           <p className="text-sm text-gray-600 dark:text-gray-300">
             {t('txconfirm.proposal.explainer', {
@@ -176,6 +242,15 @@ export function ConfirmTransactionModal({
           </div>
         ) : null}
         {request.warning ? <WarningBox severity={request.severity}>{request.warning}</WarningBox> : null}
+        {request.payer === address && !payerPending && currentSimulation.status === 'ready' ? (
+          <BalanceWarning
+            balance={accountData.balance}
+            balanceError={errorAccountData}
+            feeUvna={simulatedFeeUvna}
+            feeGranted={granter !== undefined}
+            costLines={request.costLines}
+          />
+        ) : null}
         {currentSimulation.status === 'failed' ? (
           <WarningBox severity="irreversible">
             {t('txconfirm.simulation.rejected', { msg: currentSimulation.message })}{' '}
@@ -191,8 +266,8 @@ export function ConfirmTransactionModal({
           <button
             type="button"
             className="btn-action-confirm flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={currentSimulation.status !== 'ready' || editing}
-            onClick={() => onConfirm({ msgs: simulatedMsgs })}
+            disabled={currentSimulation.status !== 'ready' || editing || feeGrantLookup.status === 'loading'}
+            onClick={() => onConfirm({ msgs: simulatedMsgs, granter })}
           >
             {t(confirmLabelKey(request.mode))}
           </button>
