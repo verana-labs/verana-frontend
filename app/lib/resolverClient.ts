@@ -260,15 +260,13 @@ export function mapAgentResolution(did: string, raw: ResolveResult): AgentResolu
     })
   }
 
-  const credentials: PresentedCredential[] = (raw.ecsCredentials ?? [])
-    .filter((credential) => typeof credential.id === 'string')
-    .map((credential) => ({
-      id: credential.id as string,
-      ecsSchema: credential.ecsSchema ?? null,
-      credentialSchemaId: optionalInteger(credential.credentialSchemaId),
-      ecosystemId: optionalInteger(credential.ecosystemId),
-      presentationUrl: null,
-    }))
+  const credentials: PresentedCredential[] = (raw.ecsCredentials ?? []).map((credential, index) => ({
+    id: typeof credential.id === 'string' ? credential.id : `ecs:${credential.ecsSchema ?? index}`,
+    ecsSchema: credential.ecsSchema ?? null,
+    credentialSchemaId: optionalInteger(credential.credentialSchemaId),
+    ecosystemId: optionalInteger(credential.ecosystemId),
+    presentationUrl: null,
+  }))
   for (const entry of raw.presentations ?? []) {
     const presentation = asRecord(entry)
     if (!presentation) continue

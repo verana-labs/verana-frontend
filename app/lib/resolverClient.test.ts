@@ -197,6 +197,19 @@ describe('mapAgentResolution', () => {
     ])
   })
 
+  it('lists the ECS credentials of a resolve that identifies them by schema alone', () => {
+    const credentials = mapAgentResolution(DID, resolveResponse()).credentials
+
+    expect(credentials.map((credential) => credential.ecsSchema)).toEqual([
+      'ServiceCredential',
+      'OrganizationCredential',
+    ])
+    expect(credentials.map((credential) => credential.id)).toEqual([
+      'ecs:ServiceCredential',
+      'ecs:OrganizationCredential',
+    ])
+  })
+
   it('returns empty sections when the resolve carries none', () => {
     expect(mapAgentResolution(DID, { did: DID, trusted: false })).toEqual({
       enrichment: expect.objectContaining({ trustStatus: 'UNTRUSTED' }),
