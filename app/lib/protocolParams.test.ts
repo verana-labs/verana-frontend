@@ -9,29 +9,22 @@ vi.mock('@/config/env', () => ({
 import { getProtocolParams, protocolParamsInitialState } from './protocolParams'
 
 const PARAMS: Record<string, Record<string, unknown>> = {
-  'https://indexer/v4/ecosystem': { trust_unit_price: 1_000_000, ecosystem_trust_deposit: 10 },
+  'https://indexer/v4/ecosystem': { trust_unit_price: 1_000_000 },
   'https://indexer/v4/trust-deposit': {
     trust_deposit_reclaim_burn_rate: 0.6,
     trust_deposit_rate: 0.2,
   },
-  'https://indexer/v4/credential-schema': {
-    credential_schema_schema_max_size: 8192,
-    credential_schema_trust_deposit: 10,
-  },
+  'https://indexer/v4/credential-schema': { credential_schema_schema_max_size: 8192 },
 }
 
-function stubParams(params: Record<string, Record<string, unknown>>) {
+beforeEach(() => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: string | URL) => {
       const base = String(input).replace(/\/params$/, '')
-      return { ok: true, status: 200, json: async () => ({ params: params[base] }) } as Response
+      return { ok: true, status: 200, json: async () => ({ params: PARAMS[base] }) } as Response
     })
   )
-}
-
-beforeEach(() => {
-  stubParams(PARAMS)
 })
 
 afterEach(() => {
@@ -39,15 +32,13 @@ afterEach(() => {
 })
 
 describe('getProtocolParams', () => {
-  it('loads the rates and module deposits and converts the burn rate to percent', async () => {
+  it('loads only live V4 params and converts the burn rate to percent', async () => {
     await expect(getProtocolParams()).resolves.toEqual({
       params: {
         trustUnitPrice: 1_000_000,
-        ecosystemTrustDeposit: 10,
         trustDepositReclaimBurnRate: 60,
         trustDepositRate: 0.2,
         credentialSchemaSchemaMaxSize: 8192,
-        credentialSchemaTrustDeposit: 10,
       },
       errorProtocolParams: null,
     })
@@ -57,21 +48,6 @@ describe('getProtocolParams', () => {
     const { params } = await getProtocolParams()
     expect(params).not.toBe(protocolParamsInitialState)
     expect(fetch).toHaveBeenCalledTimes(3)
-  })
-
-  it('leaves the ecosystem deposit null without an error when the indexer omits it', async () => {
-    stubParams({ ...PARAMS, 'https://indexer/v4/ecosystem': { trust_unit_price: 1_000_000 } })
-    const { params, errorProtocolParams } = await getProtocolParams()
-    expect(params.ecosystemTrustDeposit).toBeNull()
-    expect(params.trustUnitPrice).toBe(1_000_000)
-    expect(errorProtocolParams).toBeNull()
-  })
-
-  it('still reports a missing mandatory key', async () => {
-    stubParams({ ...PARAMS, 'https://indexer/v4/credential-schema': { credential_schema_schema_max_size: 8192 } })
-    const { params, errorProtocolParams } = await getProtocolParams()
-    expect(params.credentialSchemaTrustDeposit).toBeNull()
-    expect(errorProtocolParams).toContain('credential_schema_trust_deposit not found')
   })
 
   it('fails closed when a configured V4 envelope is malformed', async () => {

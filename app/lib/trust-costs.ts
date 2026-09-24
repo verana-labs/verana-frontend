@@ -4,13 +4,9 @@ import type { CostLine } from '@/lib/tx-preview'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { formatVNAFromUVNA } from '@/util/util'
 
-export type TrustCostRates = Pick<
-  ProtocolParams,
-  'trustDepositRate' | 'trustUnitPrice' | 'ecosystemTrustDeposit' | 'credentialSchemaTrustDeposit'
->
+export type TrustCostRates = Pick<ProtocolParams, 'trustDepositRate'>
 
 export type TrustCostSubject =
-  | { msgType: 'MsgCreateEcosystem' | 'MsgCreateCredentialSchema' }
   | { msgType: 'MsgStartParticipantOP' | 'MsgRenewParticipantOP'; validationFees: string | number | undefined }
   | {
       msgType: 'MsgRepaySlashedTrustDeposit' | 'MsgRepayParticipantSlashedTrustDeposit'
@@ -32,18 +28,8 @@ function debit(key: string, amount: number): CostLine {
   return { label: label(key), value: formatVNAFromUVNA(String(amount)), debitUvna: amount }
 }
 
-function moduleDeposit(units: number | null, unitPrice: number | null): CostLine[] {
-  if (units === null || unitPrice === null) return []
-  const amount = Math.round(units * unitPrice)
-  return amount > 0 ? [debit('trustdeposit', amount)] : []
-}
-
 export function trustCostLines(subject: TrustCostSubject, rates: TrustCostRates): CostLine[] {
   switch (subject.msgType) {
-    case 'MsgCreateEcosystem':
-      return moduleDeposit(rates.ecosystemTrustDeposit, rates.trustUnitPrice)
-    case 'MsgCreateCredentialSchema':
-      return moduleDeposit(rates.credentialSchemaTrustDeposit, rates.trustUnitPrice)
     case 'MsgStartParticipantOP':
     case 'MsgRenewParticipantOP': {
       const fees = uvna(subject.validationFees)

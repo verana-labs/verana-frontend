@@ -1,12 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { type TrustCostRates, totalDebitUvna, trustCostLines } from './trust-costs'
 
-const RATES: TrustCostRates = {
-  trustDepositRate: 0.05,
-  trustUnitPrice: 1_000_000,
-  ecosystemTrustDeposit: 10,
-  credentialSchemaTrustDeposit: 10,
-}
+const RATES: TrustCostRates = { trustDepositRate: 0.05 }
 
 describe('trustCostLines', () => {
   it('previews the validator fees plus the applicant deposit for an onboarding process', () => {
@@ -30,21 +25,6 @@ describe('trustCostLines', () => {
       { ...RATES, trustDepositRate: null }
     )
     expect(lines.map((line) => line.label)).toEqual(['Validation fees'])
-  })
-
-  it('prices the module deposits in trust units', () => {
-    expect(trustCostLines({ msgType: 'MsgCreateEcosystem' }, RATES)).toEqual([
-      { label: 'Trust deposit', value: '10 VNA', debitUvna: 10_000_000 },
-    ])
-    expect(
-      trustCostLines({ msgType: 'MsgCreateCredentialSchema' }, { ...RATES, credentialSchemaTrustDeposit: 3 })
-    ).toEqual([{ label: 'Trust deposit', value: '3 VNA', debitUvna: 3_000_000 }])
-  })
-
-  it('hides a module deposit the indexer does not expose', () => {
-    expect(trustCostLines({ msgType: 'MsgCreateEcosystem' }, { ...RATES, ecosystemTrustDeposit: null })).toEqual([])
-    expect(trustCostLines({ msgType: 'MsgCreateCredentialSchema' }, { ...RATES, trustUnitPrice: null })).toEqual([])
-    expect(trustCostLines({ msgType: 'MsgCreateEcosystem' }, { ...RATES, ecosystemTrustDeposit: 0 })).toEqual([])
   })
 
   it('carries the repaid amount as a debit', () => {

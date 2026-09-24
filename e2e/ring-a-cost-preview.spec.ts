@@ -45,7 +45,7 @@ async function installEcosystemStubs(page: Page) {
   await page.route('**/v4/credential-schema/list*', (route) => route.fulfill({ json: { schemas: [] } }))
 }
 
-test('the confirmation lists the schema trust deposit next to the network fee', async ({ page }) => {
+test('a new schema confirms with its network fee and no trust deposit', async ({ page }) => {
   test.setTimeout(120_000)
   await installCorporationStubs(page)
   await installEcosystemStubs(page)
@@ -68,7 +68,7 @@ test('the confirmation lists the schema trust deposit next to the network fee', 
       $schema: 'https://json-schema.org/draft/2020-12/schema',
       type: 'object',
       title: 'Ring A Cost Preview',
-      description: 'Schema used to preview the trust deposit',
+      description: 'Schema used to preview the confirmation costs',
       properties: { fullName: { type: 'string' } },
       required: ['fullName'],
     })
@@ -77,9 +77,8 @@ test('the confirmation lists the schema trust deposit next to the network fee', 
 
   const dialog = page.getByRole('dialog')
   await expect(dialog).toBeVisible({ timeout: 30_000 })
-  await expect(dialog.getByText('Trust deposit', { exact: true })).toBeVisible()
-  await expect(dialog.getByText('Trust deposit', { exact: true }).locator('..')).toContainText(/[1-9][\d.]* VNA/)
   await expect(dialog.getByText('Network fee').locator('..')).toContainText(/VNA/, { timeout: 30_000 })
+  await expect(dialog.getByText('Trust deposit', { exact: true })).toHaveCount(0)
 
   await dialog.getByRole('button', { name: 'Cancel' }).click()
   await expect(dialog).toBeHidden()

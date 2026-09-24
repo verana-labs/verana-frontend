@@ -14,7 +14,6 @@ import { useRef } from 'react'
 import { useDelegableMsgs } from '@/hooks/useDelegableMsgs'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
-import { trustCostLines } from '@/lib/trust-costs'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import {
   MSG_ERROR_ACTION_CS,
@@ -142,8 +141,7 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
   const veranaChain = useVeranaChain()
   const { address, isWalletConnected } = useChain(veranaChain.chain_name)
   const delegable = useDelegableMsgs()
-  const rates = useProtocolParams()
-  const { credentialSchemaSchemaMaxSize } = rates
+  const { credentialSchemaSchemaMaxSize } = useProtocolParams()
   const { waitForBlock } = useIndexerEvents()
   const { notify } = useNotification()
   const sendTx = useSendTxDetectingMode(veranaChain)
@@ -191,10 +189,6 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
         effect,
         proposalTitle: proposalTitleFrom(effect),
         simulate,
-        costLines:
-          params.msgType === 'MsgCreateCredentialSchema'
-            ? trustCostLines({ msgType: params.msgType }, rates)
-            : undefined,
       })
       if (!resolved) return
       mode = resolved.mode
