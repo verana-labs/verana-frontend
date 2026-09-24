@@ -11,6 +11,7 @@ import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
 import { simulationFor, type TxSimulation, useTxSimulation } from '@/hooks/useTxSimulation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
+import { authorizationRejection } from '@/lib/chain-error'
 import { feeGrantCovering, nativeFeeAmount } from '@/lib/fee-grant'
 import { balanceWarning, totalDebitUvna } from '@/lib/trust-costs'
 import {
@@ -34,6 +35,13 @@ const UVNA_PER_VNA = 1_000_000
 
 function t(key: string, values?: I18nValues): string {
   return resolveTranslatable({ key, values }, translate) ?? key
+}
+
+function simulationRejection(message: string): string {
+  const reason = authorizationRejection(message)
+  return reason
+    ? t('txconfirm.simulation.unauthorized', { reason })
+    : t('txconfirm.simulation.rejected', { msg: message })
 }
 
 function proposalPolicy(msgs: EncodeObject[]): string {
@@ -268,7 +276,7 @@ export function ConfirmTransactionModal({
         ) : null}
         {currentSimulation.status === 'failed' ? (
           <WarningBox severity="irreversible">
-            {t('txconfirm.simulation.rejected', { msg: currentSimulation.message })}{' '}
+            {simulationRejection(currentSimulation.message)}{' '}
             <button type="button" onClick={() => void simulate()} className="underline font-medium">
               {t('txconfirm.retry')}
             </button>

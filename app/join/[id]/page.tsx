@@ -13,6 +13,7 @@ import { getParticipantOnboardingDecision, type JoinableParticipantRole } from '
 import { isNativePricing } from '@/lib/pricing-asset'
 import { trustCostLines } from '@/lib/trust-costs'
 import { useActionParticipant } from '@/msg/actions_hooks/actionParticipant'
+import { proposalExecution } from '@/msg/util/tx-outcome'
 import { useNotification } from '@/providers/notification-provider'
 import { useProtocolParams } from '@/providers/protocol-params-context'
 import { CapabilityButton } from '@/ui/common/capability-button'
@@ -73,6 +74,7 @@ export default function JoinEcosystemWizard() {
   const [selectedValidator, setSelectedValidator] = useState<Participant | null>(null)
   const [serviceDid, setServiceDid] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [awaitingVotes, setAwaitingVotes] = useState(false)
 
   const unsupportedPricing = selectedSchema !== null && !isNativePricing(selectedSchema)
   const decision = useMemo(() => {
@@ -124,26 +126,29 @@ export default function JoinEcosystemWizard() {
 
   async function submit() {
     if (!decision || !selectedRole || !selectedSchema || !isValidDID(serviceDid)) return
+    if (!selectedValidator) return
+    const proposal = joinSigning.mode === 'proposal'
     setSubmitting(true)
     try {
-      if (decision.messageType === 'MsgSelfCreateParticipant') {
-        if (!selectedValidator) return
-        await submitParticipant({
-          msgType: decision.messageType,
-          role: selectedRole,
-          validatorParticipantId: selectedValidator.id,
-          did: serviceDid,
-        })
-        return
-      }
-      if (!selectedValidator) return
-      await submitParticipant({
-        msgType: decision.messageType,
-        role: selectedRole,
-        validatorParticipantId: selectedValidator.id,
-        did: serviceDid,
-        validatorValidationFees: selectedValidator.validation_fees,
-      })
+      const result = await submitParticipant(
+        decision.messageType === 'MsgSelfCreateParticipant'
+          ? {
+              msgType: decision.messageType,
+              role: selectedRole,
+              validatorParticipantId: selectedValidator.id,
+              did: serviceDid,
+            }
+          : {
+              msgType: decision.messageType,
+              role: selectedRole,
+              validatorParticipantId: selectedValidator.id,
+              did: serviceDid,
+              validatorValidationFees: selectedValidator.validation_fees,
+            }
+      )
+      setAwaitingVotes(
+        proposal && result !== undefined && 'events' in result && proposalExecution(result.events).status === 'pending'
+      )
     } finally {
       setSubmitting(false)
     }
@@ -180,10 +185,24 @@ export default function JoinEcosystemWizard() {
         <div className="w-20 h-20 bg-success-500 rounded-full flex items-center justify-center mx-auto mb-6">
           <span className="text-white text-4xl">✓</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Participant submitted</h1>
-        <p className="text-neutral-70 mb-8">
-          The indexer has processed the transaction. The participant page now reflects the resulting onboarding state.
-        </p>
+        {awaitingVotes ? (
+          <>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              {resolveTranslatable({ key: 'join.proposal.pending.title' }, translate)}
+            </h1>
+            <p className="text-neutral-70 mb-8">
+              {resolveTranslatable({ key: 'join.proposal.pending.desc' }, translate)}
+            </p>
+          </>
+        ) : (
+          <>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Participant submitted</h1>
+            <p className="text-neutral-70 mb-8">
+              The indexer has processed the transaction. The participant page now reflects the resulting onboarding
+              state.
+            </p>
+          </>
+        )}
         <button
           type="button"
           onClick={() => router.push(`/participants/${selectedSchema?.id ?? ''}`)}

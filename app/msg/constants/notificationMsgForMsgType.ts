@@ -56,7 +56,6 @@ function t(key: string, values?: Record<string, unknown>): string {
 
 export const MSG_NOTIFICATION_PROPOSAL = {
   inprogress: () => t('notification.MsgSubmitProposal.inprogress'),
-  success: () => t('notification.MsgSubmitProposal.success'),
   error: (code?: number, msg?: string) =>
     `${t('notification.MsgSubmitProposal.error')} ${code ? `(${code}) ` : ''}${msg ?? ''}`.trim(),
 }

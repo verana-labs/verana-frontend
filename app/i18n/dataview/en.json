@@ -720,7 +720,6 @@
   "notification.MsgRepaySlashedTrustDeposit.success": "Slashed deposit repaid",
   "notification.MsgRepaySlashedTrustDeposit.error": "Unable to repay the slashed deposit.",
   "notification.MsgSubmitProposal.inprogress": "Submitting the proposal…",
-  "notification.MsgSubmitProposal.success": "Proposal submitted",
   "notification.MsgSubmitProposal.error": "Unable to submit the proposal.",
   "notification.MsgVote.inprogress": "Casting the vote…",
   "notification.MsgVote.success": "Vote cast",
@@ -903,5 +902,15 @@
   "pricing.unsupported.notice": "Pricing asset not yet supported: this schema is priced in {asset}. Fee-bearing actions (start or renew an onboarding process, self-create, validate) stay disabled until the console supports assets other than the native coin (VNA). Browsing is unaffected.",
   "pricing.unknown.short": "Schema pricing could not be read",
   "corporation.capability.none": "Your wallet holds no authorization for this action and is not a member of the acting corporation.",
-  "corporation.capability.select": "Create or select a corporation before continuing."
+  "corporation.capability.select": "Create or select a corporation before continuing.",
+  "notification.msg.unauthorized.title": "Authorization rejected",
+  "notification.msg.unauthorized": "The chain refused this action for lack of authorization: {reason}.",
+  "notification.proposal.failed.title": "Proposal not executed",
+  "notification.proposal.failed": "Proposal {id} was accepted, but its execution failed and none of its messages took effect: {reason}",
+  "notification.proposal.unauthorized": "Proposal {id} was accepted, but the chain refused to execute it for lack of authorization: {reason}.",
+  "notification.MsgSubmitProposal.executed": "Proposal submitted and executed",
+  "notification.MsgSubmitProposal.pending": "Proposal submitted. It executes once the group reaches its decision threshold.",
+  "txconfirm.simulation.unauthorized": "The chain refused this action for lack of authorization: {reason}.",
+  "join.proposal.pending.title": "Proposal submitted",
+  "join.proposal.pending.desc": "The participant is created once the group of the acting corporation reaches its decision threshold and the proposal executes. Follow it under Proposals on the Corporation page."
 }
