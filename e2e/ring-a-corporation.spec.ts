@@ -1,7 +1,13 @@
 import { expect, type Page, test } from '@playwright/test'
 import { connectWallet } from './support/connect'
 import { GRANTEE, REPLACEMENT_MEMBER } from './support/corp-fixtures'
-import { HARNESS_MNEMONIC, installCorporationStubs, seedActingCorporation } from './support/corp-stubs'
+import {
+  HARNESS_MNEMONIC,
+  indexerParticipantEvent,
+  installCorporationStubs,
+  installIndexerSocket,
+  seedActingCorporation,
+} from './support/corp-stubs'
 
 async function noHorizontalOverflow(page: Page) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
@@ -208,4 +214,87 @@ test('the proposal composer gates each kind on valid input', async ({ page }) =>
   await expect(submit).toBeDisabled()
   await page.getByLabel('DID', { exact: true }).fill('did:web:next.example')
   await expect(submit).toBeEnabled()
+})
+
+test('live updates: one subscription for each corporation, gap recovery and an indicator with no user action', async ({
+  page,
+}) => {
+  await installCorporationStubs(page)
+  let pendingTasks = 2
+  await page.route('**/v4/participant/pending/flat*', (route) =>
+    route.fulfill({
+      json: {
+        ecosystems: route.request().url().includes('corporation_id=13')
+          ? [{ id: 1, did: null, pending_tasks: pendingTasks, participants: 2, schemas: [] }]
+          : [],
+      },
+    })
+  )
+  // The indexer keeps the events it persisted and replays only the ones above `after_block_height`.
+  const persisted: ReturnType<typeof indexerParticipantEvent>[] = []
+  const replays: string[] = []
+  await page.route('**/v4/indexer/events*', (route) => {
+    const params = new URL(route.request().url()).searchParams
+    const after = Number(params.get('after_block_height') ?? 0)
+    replays.push(params.toString())
+    const events = persisted.filter(
+      (event) => event.block_height > after && params.get('corporation_id') === String(event.payload.corporation_id)
+    )
+    return route.fulfill({ json: { events, count: events.length, after_block_height: after } })
+  })
+  const replaysFromLastApplied = () =>
+    replays.filter((search) => search.includes('corporation_id=13') && search.includes('after_block_height=1001'))
+  const socket = await installIndexerSocket(page)
+  await seedActingCorporation(page, 12)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  await page.goto('/corporation')
+  await expect(page.getByRole('heading', { name: /did:web:keplr/ })).toBeVisible({ timeout: 15_000 })
+
+  // [VFE-DATA-WS-1] one subscription for each discovered Corporation, acting or not.
+  await expect.poll(() => [...socket.subscribedCorporationIds()].sort()).toEqual([12, 13])
+
+  await page
+    .getByRole('button', { name: /did:web:keplr/ })
+    .first()
+    .click()
+  await expect(page.getByLabel('2 Pending validator tasks')).toBeVisible()
+
+  // [VFE-CORP-SEL-5] an event of a non-acting Corporation moves its indicator with no user action.
+  pendingTasks = 5
+  const live = indexerParticipantEvent('LIVE', 1001, 13)
+  persisted.push(live)
+  socket.pushBlock(13, 1001, [live])
+  await expect(page.getByLabel('5 Pending validator tasks')).toBeVisible()
+  expect(replaysFromLastApplied()).toHaveLength(0)
+
+  // [VFE-DATA-WS-2] the chain moves on while block 1002 never reaches the client.
+  const connectionsBeforeGap = socket.connectionsFor(13).length
+  const hole = indexerParticipantEvent('HOLE', 1002, 13)
+  const afterGap = indexerParticipantEvent('AFTERGAP', 1003, 13)
+  persisted.push(hole, afterGap)
+  socket.pushBlock(13, 1003, [afterGap])
+
+  // The replay asks from the last applied height, so it brings the hole and not what was applied.
+  await expect.poll(() => replaysFromLastApplied().length).toBe(1)
+  await expect.poll(() => socket.connectionsFor(13).length).toBe(connectionsBeforeGap + 1)
+
+  // The stream resumes on the new connection and asks for no second replay.
+  pendingTasks = 7
+  const resumed = indexerParticipantEvent('RESUMED', 1004, 13)
+  persisted.push(resumed)
+  socket.pushBlock(13, 1004, [resumed])
+  await expect(page.getByLabel('7 Pending validator tasks')).toBeVisible()
+  expect(replaysFromLastApplied()).toHaveLength(1)
+})
+
+test('live updates: guest mode holds no subscription', async ({ page }) => {
+  await installCorporationStubs(page)
+  const socket = await installIndexerSocket(page)
+
+  await page.goto('/dashboard')
+  await expect(page.getByRole('button', { name: /connect/i }).first()).toBeVisible({ timeout: 15_000 })
+
+  await expect.poll(() => socket.openConnections().length).toBe(1)
+  expect(socket.subscribedCorporationIds()).toEqual([])
 })
