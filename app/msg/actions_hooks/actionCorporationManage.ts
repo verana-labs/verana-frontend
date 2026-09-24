@@ -276,10 +276,10 @@ export function useCorporationManage(onDone?: () => void) {
       await notify(translate('error.msg.pending.transaction'), 'error')
       return false
     }
-    const confirmed = await confirmTx({ ...preview, msgs })
-    if (!confirmed) return false
     inFlight.current = true
     try {
+      const confirmed = await confirmTx({ ...preview, msgs })
+      if (!confirmed) return false
       void notify(translate(`notification.${notificationKey}.inprogress`), 'inProgress')
       const result = await sendTx({ msgs: confirmed.msgs, memo: notificationKey })
       if (!('code' in result)) throw new Error('Expected a transaction response')

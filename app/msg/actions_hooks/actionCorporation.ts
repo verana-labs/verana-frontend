@@ -256,6 +256,7 @@ export function useActionCorporation() {
       await notify(translate('error.msg.pending.transaction'), 'error')
       return null
     }
+    inFlight.current = true
     try {
       const msgs = await confirm(
         await buildCreateCorporationMessages(params, address),
@@ -263,15 +264,12 @@ export function useActionCorporation() {
         []
       )
       if (!msgs) return null
-      inFlight.current = true
-      try {
-        return await createCorporation(msgs, params.did)
-      } finally {
-        inFlight.current = false
-      }
+      return await createCorporation(msgs, params.did)
     } catch (error) {
       await notify(error instanceof Error ? error.message : String(error), 'error')
       return null
+    } finally {
+      inFlight.current = false
     }
   }
 
@@ -287,6 +285,7 @@ export function useActionCorporation() {
       await notify(translate('error.msg.pending.transaction'), 'error')
       return 'failed'
     }
+    inFlight.current = true
     try {
       const msgs = await confirm(
         buildGrantOperatorMessages(corporation, address, fundingUvna),
@@ -298,15 +297,12 @@ export function useActionCorporation() {
         fundingCostLines(fundingUvna)
       )
       if (!msgs) return 'failed'
-      inFlight.current = true
-      try {
-        return await grantOperator(corporation, address, msgs)
-      } finally {
-        inFlight.current = false
-      }
+      return await grantOperator(corporation, address, msgs)
     } catch (error) {
       await notify(error instanceof Error ? error.message : String(error), 'error')
       return 'failed'
+    } finally {
+      inFlight.current = false
     }
   }
 
