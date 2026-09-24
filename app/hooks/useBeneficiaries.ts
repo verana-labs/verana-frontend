@@ -10,7 +10,10 @@ const { record } = indexerValidators('beneficiaries')
 
 export type BeneficiariesQuery = { issuerParticipantId?: string; verifierParticipantId?: string }
 
-export function beneficiariesQuery(participant: Pick<Participant, 'id' | 'role'>): BeneficiariesQuery | null {
+export type BeneficiariesSubject = Pick<Participant, 'id' | 'role' | 'participant_state'>
+
+export function beneficiariesQuery(participant: BeneficiariesSubject): BeneficiariesQuery | null {
+  if (participant.participant_state !== 'ACTIVE') return null
   if (participant.role === 'ISSUER') return { issuerParticipantId: participant.id }
   if (participant.role === 'VERIFIER') return { verifierParticipantId: participant.id }
   return null
@@ -33,26 +36,38 @@ export function parseBeneficiariesResponse(payload: unknown): Participant[] {
   )
 }
 
-export function useBeneficiaries(participant: Pick<Participant, 'id' | 'role'> | undefined): Participant[] | null {
-  const [beneficiaries, setBeneficiaries] = useState<Participant[] | null>(null)
+export type BeneficiariesState =
+  | { status: 'loading' }
+  | { status: 'failed' }
+  | { status: 'ready'; beneficiaries: Participant[] }
+
+export async function loadBeneficiaries(url: string, fetchImpl: typeof fetch = fetch): Promise<BeneficiariesState> {
+  try {
+    const response = await fetchImpl(url)
+    if (!response.ok) return { status: 'failed' }
+    return { status: 'ready', beneficiaries: parseBeneficiariesResponse(await response.json()) }
+  } catch {
+    return { status: 'failed' }
+  }
+}
+
+export function useBeneficiaries(participant: BeneficiariesSubject | undefined): BeneficiariesState | null {
+  const [result, setResult] = useState<{ url: string; state: BeneficiariesState } | null>(null)
   const query = participant ? beneficiariesQuery(participant) : null
   const url =
     query && VERANA_REST_ENDPOINT_PARTICIPANT ? beneficiariesUrl(VERANA_REST_ENDPOINT_PARTICIPANT, query) : null
 
   useEffect(() => {
-    setBeneficiaries(null)
     if (!url) return
     let cancelled = false
-    fetch(url)
-      .then(async (response) => (response.ok ? parseBeneficiariesResponse(await response.json()) : null))
-      .catch(() => null)
-      .then((result) => {
-        if (!cancelled) setBeneficiaries(result)
-      })
+    void loadBeneficiaries(url).then((state) => {
+      if (!cancelled) setResult({ url, state })
+    })
     return () => {
       cancelled = true
     }
   }, [url])
 
-  return beneficiaries
+  if (!url) return null
+  return result?.url === url ? result.state : { status: 'loading' }
 }

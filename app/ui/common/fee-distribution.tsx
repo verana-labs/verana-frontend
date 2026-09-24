@@ -28,9 +28,20 @@ export function FeeDistributionPreview({ participant }: { participant: Participa
   const beneficiaries = useBeneficiaries(participant)
   const { trustDepositRate } = useProtocolParams()
   const distribution = useMemo(
-    () => (beneficiaries ? feeDistribution(participant, beneficiaries, trustDepositRate) : null),
+    () =>
+      beneficiaries?.status === 'ready'
+        ? feeDistribution(participant, beneficiaries.beneficiaries, trustDepositRate)
+        : null,
     [beneficiaries, participant, trustDepositRate]
   )
+  if (beneficiaries?.status === 'failed') {
+    return (
+      <div className="mt-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-4" data-testid="fee-distribution">
+        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('title')}</h4>
+        <p className="text-xs text-red-700 dark:text-red-300">{t('failed')}</p>
+      </div>
+    )
+  }
   if (!distribution || distribution.beneficiaries.length === 0) return null
 
   return (

@@ -881,5 +881,6 @@
   "participantcard.feedistribution.issuance": "Trust fees this issuer pays per credential issued, per beneficiary of the participant tree",
   "participantcard.feedistribution.verification": "Trust fees this verifier pays per credential verified, per beneficiary of the participant tree",
   "participantcard.feedistribution.total": "Total trust fees",
-  "participantcard.feedistribution.deposit": "Payer trust deposit ({rate}% of the fees)"
+  "participantcard.feedistribution.deposit": "Payer trust deposit ({rate}% of the fees)",
+  "participantcard.feedistribution.failed": "The fee distribution could not be loaded from the indexer."
 }
