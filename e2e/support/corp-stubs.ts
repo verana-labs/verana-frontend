@@ -190,3 +190,91 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
     })
   })
 }
+
+const SOCKET_BLOCK_TIME = '2026-09-01T12:00:00Z'
+// A long block interval keeps the liveness timer of the client out of the test.
+const SOCKET_BLOCK_INTERVAL_MS = 600_000
+
+export type IndexerSocketConnection = {
+  corporationId: number | null
+  closed: boolean
+  send: (message: unknown) => void
+}
+
+export type IndexerSocketHarness = {
+  openConnections: () => IndexerSocketConnection[]
+  subscribedCorporationIds: () => number[]
+  connectionsFor: (corporationId: number) => IndexerSocketConnection[]
+  pushBlock: (corporationId: number, block: number, events?: unknown[]) => void
+}
+
+export function indexerParticipantEvent(txHash: string, blockHeight: number, corporationId: number) {
+  return {
+    type: 'indexer-event',
+    event_type: 'StartParticipantOP',
+    did: null,
+    block_height: blockHeight,
+    tx_hash: txHash,
+    timestamp: SOCKET_BLOCK_TIME,
+    payload: {
+      module: 'participant',
+      action: 'start_participant_op',
+      message_type: 'MsgStartParticipantOP',
+      tx_index: 0,
+      message_index: 0,
+      sender: HARNESS_ADDRESS,
+      related_dids: [],
+      corporation_id: corporationId,
+    },
+  }
+}
+
+export async function installIndexerSocket(page: Page, startBlock = 1001): Promise<IndexerSocketHarness> {
+  const connections: IndexerSocketConnection[] = []
+
+  await page.routeWebSocket('**/v4/indexer/subscribe', (ws) => {
+    const connection: IndexerSocketConnection = {
+      corporationId: null,
+      closed: false,
+      send: (message) => ws.send(JSON.stringify(message)),
+    }
+    connections.push(connection)
+    // A page load and the double mount of development mode leave closed connections behind.
+    ws.onClose(() => {
+      connection.closed = true
+    })
+    // The server sends `ready` on connect, before any subscribe, per IDX-INDEXER-SUB-1.
+    connection.send({
+      type: 'ready',
+      block: startBlock,
+      blockTime: SOCKET_BLOCK_TIME,
+      blockIntervalMs: SOCKET_BLOCK_INTERVAL_MS,
+    })
+    ws.onMessage((message) => {
+      const control = JSON.parse(String(message)) as { action?: string; corporationId?: number | null }
+      if (control.action !== 'subscribe') return
+      connection.corporationId = control.corporationId ?? null
+      connection.send({ type: 'subscribed', block: startBlock, blockTime: SOCKET_BLOCK_TIME })
+    })
+  })
+
+  const openConnections = () => connections.filter((connection) => !connection.closed)
+  const connectionsFor = (corporationId: number) =>
+    connections.filter((connection) => connection.corporationId === corporationId)
+
+  return {
+    openConnections,
+    connectionsFor,
+    subscribedCorporationIds: () =>
+      openConnections()
+        .map((connection) => connection.corporationId)
+        .filter((corporationId): corporationId is number => corporationId !== null),
+    pushBlock: (corporationId, block, events = []) => {
+      const open = openConnections()
+        .filter((connection) => connection.corporationId === corporationId)
+        .at(-1)
+      if (!open) throw new Error(`No open subscription for corporation ${corporationId}`)
+      open.send({ type: 'block', block, blockTime: SOCKET_BLOCK_TIME, events })
+    },
+  }
+}

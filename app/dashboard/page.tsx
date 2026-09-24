@@ -42,7 +42,7 @@ export default function Page() {
       await dashboardCtx.refetch()
       setRefresh(false)
     })()
-  }, [refresh])
+  }, [refresh, dashboardCtx.refetch])
 
   return (
     <>

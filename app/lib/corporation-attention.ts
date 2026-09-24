@@ -38,7 +38,7 @@ async function fetchJson(url: string): Promise<unknown> {
   return response.json()
 }
 
-async function fetchCorporationAttention(corporationId: number, account: string): Promise<CorporationAttention> {
+export async function fetchCorporationAttention(corporationId: number, account: string): Promise<CorporationAttention> {
   if (!VERANA_REST_ENDPOINT_PARTICIPANT || !VERANA_REST_ENDPOINT_GROUP) {
     throw new Error('Missing V4 participant or group endpoint')
   }
