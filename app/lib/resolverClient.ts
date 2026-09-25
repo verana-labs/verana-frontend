@@ -7,6 +7,7 @@ export interface DidEnrichment {
   trustStatus: DidTrustState
   serviceName?: string
   serviceDescription?: string
+  serviceDescriptionFormat?: string
   serviceLogoUrl?: string
   organizationName?: string
   organizationLogoUrl?: string
@@ -61,6 +62,11 @@ function pickStringOrNumber(claims: Record<string, unknown> | undefined, key: st
   return undefined
 }
 
+// The ECS defaults descriptionFormat to text/plain. Only text/markdown renders as Markdown, per [VFE-SEC-2].
+export function isMarkdownDescriptionFormat(format: string | undefined): boolean {
+  return format === 'text/markdown'
+}
+
 function evictOldestIfFull(): void {
   if (cache.size < MAX_CACHE_ENTRIES) return
   const oldestKey = cache.keys().next().value
@@ -88,6 +94,7 @@ export function mapResolveResult(did: string, raw: ResolveResult, credentialIssu
     trustStatus: trustState(raw, Date.now()),
     serviceName: pickString(service, 'name'),
     serviceDescription: pickString(service, 'description'),
+    serviceDescriptionFormat: pickString(service, 'descriptionFormat'),
     serviceLogoUrl: pickString(service, 'logoUri'),
     serviceMinAge: pickStringOrNumber(service, 'minimumAgeRequired'),
     serviceTermsUrl: pickString(service, 'termsAndConditionsUri'),

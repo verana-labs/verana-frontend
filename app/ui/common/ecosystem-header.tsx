@@ -4,6 +4,7 @@ import { faChildReaching } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { serviceAvatarUrl } from '@/lib/resolverClient'
+import ClaimText from '@/ui/common/claim-text'
 import LogoImage from '@/ui/common/logo-image'
 import TrustBadge from '@/ui/common/trust-badge'
 
@@ -52,7 +53,11 @@ export default function EcosystemHeader({ did, status }: EcosystemHeaderProps) {
             </div>
 
             {description ? (
-              <p className="text-xs sm:text-sm text-neutral-70 dark:text-neutral-70 mb-4 line-clamp-3">{description}</p>
+              <ClaimText
+                text={description}
+                format={enrichment?.serviceDescriptionFormat}
+                className="text-xs sm:text-sm text-neutral-70 dark:text-neutral-70 mb-4 line-clamp-3"
+              />
             ) : null}
 
             {showMinAge ? (

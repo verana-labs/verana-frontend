@@ -1,5 +1,4 @@
 import { faBoxArchive, faEdit } from '@fortawesome/free-solid-svg-icons'
-import { getModeLabel } from '@/ui/datatable/columnslist/cs'
 import type { I18nValues } from '@/ui/dataview/types'
 import { Section, typeOf } from '@/ui/dataview/types'
 import { MSG_SCHEMA_ID } from '@/util/json_schema_util'
@@ -71,8 +70,6 @@ export const credentialSchemaSections: Section<CredentialSchemaData>[] = [
         update: false,
         inputType: 'select',
         options: onboardingModeOptions,
-        format: (value) => getModeLabel(String(value), '_ISSUER'),
-        isHtml: true,
       },
       {
         name: 'verifierOnboardingMode',
@@ -82,8 +79,6 @@ export const credentialSchemaSections: Section<CredentialSchemaData>[] = [
         update: false,
         inputType: 'select',
         options: onboardingModeOptions,
-        format: (value) => getModeLabel(String(value), '_VERIFIER'),
-        isHtml: true,
       },
       {
         name: 'holderOnboardingMode',
@@ -187,8 +182,6 @@ export const credentialSchemaSections: Section<CredentialSchemaData>[] = [
         update: false,
         inputType: 'select',
         options: onboardingModeOptions,
-        format: (value) => getModeLabel(String(value), '_ISSUER'),
-        isHtml: true,
         show: 'create',
       },
       {
@@ -199,8 +192,6 @@ export const credentialSchemaSections: Section<CredentialSchemaData>[] = [
         update: false,
         inputType: 'select',
         options: onboardingModeOptions,
-        format: (value) => getModeLabel(String(value), '_VERIFIER'),
-        isHtml: true,
         show: 'create',
       },
       {
