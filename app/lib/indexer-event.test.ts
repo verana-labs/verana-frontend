@@ -158,8 +158,8 @@ describe('indexerEventsUrl', () => {
 describe('refreshTargets', () => {
   it.each([
     ['participant', ['attention', 'participants']],
-    ['group', ['attention']],
-    ['delegation', ['attention']],
+    ['group', ['attention', 'corporationDetails']],
+    ['delegation', ['attention', 'corporationDetails']],
     ['ecosystem', ['ecosystems']],
     ['credential-schema', ['credentialSchemas']],
     ['corporation', ['dashboard']],

@@ -24,7 +24,16 @@ export type IndexerSocketMessage =
   | { type: 'subscribed'; processedHeight: number; blockTime: string | null }
   | { type: 'block'; height: number; blockTime: string | null; events: IndexerEvent[] }
 
-export type IndexerRefreshTarget = 'attention' | 'participants' | 'ecosystems' | 'credentialSchemas' | 'dashboard'
+export type IndexerRefreshTarget =
+  | 'attention'
+  | 'participants'
+  | 'ecosystems'
+  | 'credentialSchemas'
+  | 'dashboard'
+  | 'corporationDetails'
+
+// One block can carry several events for one surface, so every listener waits this long.
+export const EVENT_COALESCE_MS = 250
 
 export const INDEXER_EVENTS_PAGE_LIMIT = 500
 
@@ -118,7 +127,7 @@ export function refreshTargets(event: IndexerEvent): IndexerRefreshTarget[] {
       return ['attention', 'participants']
     case 'delegation':
     case 'group':
-      return ['attention']
+      return ['attention', 'corporationDetails']
     case 'ecosystem':
       return ['ecosystems']
     case 'credential-schema':

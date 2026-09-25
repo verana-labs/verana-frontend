@@ -15,11 +15,9 @@ import {
   restoreActingMembership,
   saveActingCorporationId,
 } from '@/lib/corporation-discovery'
-import { refreshTargets, triggersDiscovery } from '@/lib/indexer-event'
+import { EVENT_COALESCE_MS, refreshTargets, triggersDiscovery } from '@/lib/indexer-event'
 import { logger } from '@/lib/logger'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
-
-const EVENT_COALESCE_MS = 250
 
 export interface CorporationContextValue {
   memberships: CorporationMembership[]

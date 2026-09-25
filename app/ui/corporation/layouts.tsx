@@ -11,7 +11,7 @@ import { CorporationHeader, RotateDidForm } from './header'
 import { MembersSection } from './members'
 import { OperatorsSection } from './operators'
 import { OverviewFacts } from './overview'
-import { type ProposalContext, ProposalsSection } from './proposals'
+import { type ProposalContext, type ProposalsPage, ProposalsSection } from './proposals'
 import { Card, SectionTitle } from './shared'
 import { TrustDepositSection } from './trust-deposit'
 
@@ -42,6 +42,7 @@ export interface CorporationView {
   onCompose: () => void
   composer: ReactNode
   proposalCtx: ProposalContext
+  proposalsPage: ProposalsPage
 }
 
 function section(view: CorporationView, tab: CorporationTab) {
@@ -77,6 +78,7 @@ function section(view: CorporationView, tab: CorporationTab) {
         <ProposalsSection
           proposals={details.proposals}
           ctx={view.proposalCtx}
+          page={view.proposalsPage}
           composing={view.composing}
           degraded={details.degraded.proposals}
           onCompose={view.onCompose}
