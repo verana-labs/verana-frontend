@@ -39,7 +39,7 @@ export function useAccountTxCount() {
     } finally {
       setLoading(false)
     }
-  }, [address, isWalletConnected, getURL])
+  }, [address, isWalletConnected])
 
   useEffect(() => {
     fetchTxCount()

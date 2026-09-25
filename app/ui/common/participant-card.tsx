@@ -17,6 +17,7 @@ import { useParticipantHistory } from '@/hooks/useParticipantHistory'
 import { translate } from '@/i18n/dataview'
 import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import ActionFieldButtonModal from '@/ui/common/action-field-button-modal'
+import ClaimText from '@/ui/common/claim-text'
 import type { ActionFieldProps } from '@/ui/common/data-view-typed'
 import LogoImage from '@/ui/common/logo-image'
 import ParticipantAttribute from '@/ui/common/participant-attribute'
@@ -365,7 +366,11 @@ export default function ParticipantCard({
                 <TrustBadge state={enrichment?.trustStatus} size="xl" />
               </div>
               {enrichment?.serviceDescription ? (
-                <p className="text-sm text-neutral-70 mb-3">{enrichment.serviceDescription}</p>
+                <ClaimText
+                  text={enrichment.serviceDescription}
+                  format={enrichment.serviceDescriptionFormat}
+                  className="text-sm text-neutral-70 mb-3"
+                />
               ) : null}
               <div className="flex flex-wrap items-center gap-3 text-sm">
                 {enrichment?.serviceMinAge ? (
