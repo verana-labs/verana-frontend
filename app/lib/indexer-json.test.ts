@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { indexerValidators } from './indexer-json'
+import { applyKeysetParams, indexerValidators, takeKeysetPage } from './indexer-json'
 
 const {
   record,
@@ -79,5 +79,56 @@ describe('indexerValidators', () => {
     expect(stringArray(['a', 'b'], 'msg_types')).toEqual(['a', 'b'])
     expect(() => stringArray(['a', 1], 'msg_types')).toThrow(rejected('msg_types'))
     expect(() => stringArray('a', 'msg_types')).toThrow(rejected('msg_types'))
+  })
+})
+
+describe('applyKeysetParams', () => {
+  it('asks for one row more than the page and sorts newest-first by default', () => {
+    const params = new URLSearchParams()
+    applyKeysetParams(params, { pageSize: 9 })
+    expect(params.toString()).toBe('limit=10&sort=-id')
+  })
+
+  it('keeps the parameters the caller already set', () => {
+    const params = new URLSearchParams({ trust_data: 'full', archived: 'false' })
+    applyKeysetParams(params, { pageSize: 5 })
+    expect(params.get('trust_data')).toBe('full')
+    expect(params.get('archived')).toBe('false')
+    expect(params.get('limit')).toBe('6')
+  })
+
+  it('passes the last id verbatim as the descending cursor, because max_id excludes it', () => {
+    const params = new URLSearchParams()
+    applyKeysetParams(params, { pageSize: 9, after: '24' })
+    expect(params.get('max_id')).toBe('24')
+    expect(params.get('min_id')).toBeNull()
+  })
+
+  it('advances the last id by one as the ascending cursor, because min_id includes it', () => {
+    const params = new URLSearchParams()
+    applyKeysetParams(params, { pageSize: 25, after: '20', sort: '+id' })
+    expect(params.get('min_id')).toBe('21')
+    expect(params.get('max_id')).toBeNull()
+    expect(params.get('sort')).toBe('+id')
+  })
+
+  it('advances an id above the safe integer range without losing precision', () => {
+    const params = new URLSearchParams()
+    applyKeysetParams(params, { pageSize: 25, after: '9007199254740993', sort: '+id' })
+    expect(params.get('min_id')).toBe('9007199254740994')
+  })
+})
+
+describe('takeKeysetPage', () => {
+  it('reports a next page and drops the extra row', () => {
+    expect(takeKeysetPage([1, 2, 3, 4], 3)).toEqual({ items: [1, 2, 3], hasNext: true })
+  })
+
+  it('reports no next page when the window holds the page exactly', () => {
+    expect(takeKeysetPage([1, 2, 3], 3)).toEqual({ items: [1, 2, 3], hasNext: false })
+  })
+
+  it('reports no next page for an empty window', () => {
+    expect(takeKeysetPage([], 3)).toEqual({ items: [], hasNext: false })
   })
 })

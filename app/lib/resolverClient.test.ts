@@ -5,7 +5,7 @@ vi.mock('@/config/env', () => ({
   VERANA_REST_ENDPOINT_PARTICIPANT: 'https://indexer.test/v4/participant',
 }))
 
-import { fetchDidEnrichment, invalidateDid, mapResolveResult } from '@/lib/resolverClient'
+import { enrichmentFromTrustData, fetchDidEnrichment, invalidateDid, mapResolveResult } from '@/lib/resolverClient'
 
 const DID = 'did:web:service.example'
 const ISSUER_DID = 'did:web:ecs.example'
@@ -123,5 +123,40 @@ describe('mapResolveResult', () => {
   it('treats a never-expiring evaluation as trusted', () => {
     const raw = { ...resolveResponse(), expiresAtTime: null }
     expect(mapResolveResult(DID, raw).trustStatus).toBe('TRUSTED')
+  })
+})
+
+describe('enrichmentFromTrustData', () => {
+  it('maps an inline row exactly like the resolver response', () => {
+    const row = resolveResponse()
+    expect(enrichmentFromTrustData(DID, row)).toEqual(mapResolveResult(DID, row))
+  })
+
+  it('returns no enrichment when the row carries no trust_data key', () => {
+    expect(enrichmentFromTrustData(DID, undefined)).toBeUndefined()
+  })
+
+  it('reads a null payload as unresolved, not untrusted', () => {
+    expect(enrichmentFromTrustData(DID, null)).toEqual({ did: DID, trustStatus: 'UNRESOLVED' })
+  })
+
+  it('reads a malformed payload as unresolved', () => {
+    expect(enrichmentFromTrustData(DID, 'not an object')).toEqual({ did: DID, trustStatus: 'UNRESOLVED' })
+    expect(enrichmentFromTrustData(DID, [])).toEqual({ did: DID, trustStatus: 'UNRESOLVED' })
+  })
+
+  it('keeps the identity of an evaluated but untrusted DID', () => {
+    const enrichment = enrichmentFromTrustData(DID, resolveResponse({ trusted: false }))
+    expect(enrichment?.trustStatus).toBe('UNTRUSTED')
+    expect(enrichment?.serviceName).toBe('Acme Portal')
+    expect(enrichment?.organizationName).toBe('Acme Corp')
+  })
+
+  it('leaves the names undefined when the summary payload carries no ecsCredentials', () => {
+    const { ecsCredentials: _full, ...summary } = resolveResponse()
+    const enrichment = enrichmentFromTrustData(DID, summary)
+    expect(enrichment?.trustStatus).toBe('TRUSTED')
+    expect(enrichment?.serviceName).toBeUndefined()
+    expect(enrichment?.organizationName).toBeUndefined()
   })
 })
