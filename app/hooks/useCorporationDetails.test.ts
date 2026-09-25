@@ -10,6 +10,7 @@ vi.mock('@/config/env', () => ({
 import { logger } from '@/lib/logger'
 import {
   fetchCorporationHistory,
+  PROPOSALS_PAGE_SIZE,
   parseGroup,
   parseHistory,
   parseOperatorAuthorizations,
@@ -17,6 +18,7 @@ import {
   parseProposals,
   parseTrustDeposit,
   parseVsOperatorAuthorizations,
+  proposalsUrl,
 } from './useCorporationDetails'
 
 describe('parseProfile', () => {
@@ -314,5 +316,19 @@ describe('fetchCorporationHistory', () => {
       vi.fn(async () => ({ ok: true, json: async () => ({ activity: [{ id: 'nope' }] }) }))
     )
     await expect(fetchCorporationHistory(13)).resolves.toEqual([])
+  })
+})
+
+describe('proposalsUrl', () => {
+  it('reads the newest page with the keyset defaults and no cursor', () => {
+    expect(proposalsUrl(13)).toBe(
+      `https://indexer.example/v4/group/proposals?corporation_id=13&limit=${PROPOSALS_PAGE_SIZE}&sort=-id`
+    )
+  })
+
+  it('continues from the last id of the page, which max_id excludes', () => {
+    expect(proposalsUrl(13, 41)).toBe(
+      `https://indexer.example/v4/group/proposals?corporation_id=13&limit=${PROPOSALS_PAGE_SIZE}&sort=-id&max_id=41`
+    )
   })
 })
