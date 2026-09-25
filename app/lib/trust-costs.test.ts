@@ -48,16 +48,18 @@ describe('trustCostLines', () => {
     expect(balanceWarning(null, 90_000, lines, '1000000', false)).toBeNull()
   })
 
-  it('drops the granted fee from the total and never flags a low balance under a fee grant', () => {
+  it('drops the granted fee from the total and warns only on what the account still pays', () => {
     const lines = trustCostLines({ msgType: 'MsgStartParticipantOP', validationFees: 2_000_000 }, RATES)
+    const debits = totalDebitUvna(lines)
     expect(balanceWarning('0', 90_000, [], '1000000', true)).toBeNull()
     expect(balanceWarning('900000', 90_000, [], '1000000', true)).toBeNull()
     expect(balanceWarning('900000', null, [], '1000000', true)).toBeNull()
     expect(balanceWarning('2000000', 90_000, lines, '1000000', true)).toEqual({
       kind: 'shortfall',
-      requiredUvna: totalDebitUvna(lines),
+      requiredUvna: debits,
     })
-    expect(balanceWarning('2150000', 90_000, lines, '5000000', true)).toBeNull()
+    expect(balanceWarning('2150000', 90_000, lines, '5000000', true)).toEqual({ kind: 'low', requiredUvna: debits })
+    expect(balanceWarning('6000000', 90_000, lines, '5000000', true)).toBeNull()
   })
 
   it('reads a zero balance as a shortfall and a balance equal to the total as covering it', () => {

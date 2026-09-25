@@ -131,6 +131,7 @@ export function ConfirmTransactionModal({
   const fallbackTitle = request.proposalTitle ?? ''
   const composing = request.mode === 'proposal' && buildProposalMsgs !== undefined
   const { accountData, errorAccountData } = useTrustDepositAccountData()
+  const balancePending = accountData.balance === null && errorAccountData === null
   const [title, setTitle] = useState(fallbackTitle)
   const [summary, setSummary] = useState(fallbackTitle)
   const [settledTitle, setSettledTitle] = useState(fallbackTitle)
@@ -266,7 +267,12 @@ export function ConfirmTransactionModal({
           <button
             type="button"
             className="btn-action-confirm flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={currentSimulation.status !== 'ready' || editing || feeGrantLookup.status === 'loading'}
+            disabled={
+              currentSimulation.status !== 'ready' ||
+              editing ||
+              feeGrantLookup.status === 'loading' ||
+              (balancePending && request.payer === address)
+            }
             onClick={() => onConfirm({ msgs: simulatedMsgs, granter })}
           >
             {t(confirmLabelKey(request.mode))}

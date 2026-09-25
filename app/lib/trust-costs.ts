@@ -79,6 +79,6 @@ export function balanceWarning(
   if (requiredUvna === null || available === null) return null
   if (available < requiredUvna) return { kind: 'shortfall', requiredUvna }
   const threshold = Number(lowBalanceThreshold)
-  if (!feeGranted && Number.isFinite(threshold) && available < threshold) return { kind: 'low', requiredUvna }
+  if (Number.isFinite(threshold) && available < threshold) return { kind: 'low', requiredUvna }
   return null
 }
