@@ -2,14 +2,13 @@
 
 import { faCheck } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { translate } from '@/i18n/dataview'
 import type { CorporationAttention } from '@/lib/corporation-attention'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import type { DidEnrichment } from '@/lib/resolverClient'
 import { countryCodeToFlag } from '@/util/util'
 
-export function corporationDisplayName(enrichment: DidEnrichment | null): string | null {
+export function corporationDisplayName(enrichment: DidEnrichment | null | undefined): string | null {
   return enrichment?.organizationName ?? enrichment?.serviceName ?? null
 }
 
@@ -36,7 +35,7 @@ export function CorporationMembershipRow({
   attention: CorporationAttention | undefined
 }) {
   const { corporation, operator, member, weight } = membership
-  const { data } = useDidTrustEnrichment(corporation.did)
+  const data = corporation.trustData
   const name = corporationDisplayName(data)
   const flag = name && data?.countryCode ? countryCodeToFlag(data.countryCode) : null
 
