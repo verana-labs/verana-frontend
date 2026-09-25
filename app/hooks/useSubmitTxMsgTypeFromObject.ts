@@ -64,7 +64,7 @@ export function useSubmitTxMsgTypeFromObject(
   const submitCredentialSchema = useActionCredentialSchema(onCancel, onRefresh)
   const submitEcosystem = useActionEcosystem(onCancel, onRefresh)
 
-  async function submitTx(messageType: MessageType, raw: unknown, simulate = false) {
+  async function submitTx(messageType: MessageType, raw: unknown) {
     if (!isRecord(raw)) throw new Error('Payload must be an object')
     const requiredFields = requiredFieldsByMsgType[messageType]
     if (!requiredFields) throw new Error(`Unsupported form message type: ${messageType}`)
@@ -76,10 +76,10 @@ export function useSubmitTxMsgTypeFromObject(
     }
 
     if (isCredentialSchemaMessage(messageType)) {
-      return submitCredentialSchema(payload as CredentialSchemaActionParams, simulate)
+      return submitCredentialSchema(payload as CredentialSchemaActionParams)
     }
     if (isEcosystemMessage(messageType)) {
-      return submitEcosystem(payload as EcosystemActionParams, simulate)
+      return submitEcosystem(payload as EcosystemActionParams)
     }
     throw new Error(`Unsupported form message type: ${messageType}`)
   }

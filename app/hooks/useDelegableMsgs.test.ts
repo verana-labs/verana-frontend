@@ -68,7 +68,6 @@ const args = {
   build,
   effect: 'Create an ecosystem.',
   proposalTitle: 'Create an ecosystem',
-  simulate: false,
   costLines,
 }
 
@@ -85,10 +84,6 @@ describe('confirmDelegableMsgs', () => {
     expect(await confirmDelegableMsgs(d, args)).toBeNull()
     expect(notify).toHaveBeenCalledWith('Corporation discovery is still running, retry in a moment.', 'info')
     expect(confirmTx).not.toHaveBeenCalled()
-
-    const silent = deps({ loading: true })
-    expect(await confirmDelegableMsgs(silent.deps, { ...args, simulate: true })).toBeNull()
-    expect(silent.notify).not.toHaveBeenCalled()
   })
 
   it('refuses when no corporation is acting', async () => {
@@ -109,14 +104,6 @@ describe('confirmDelegableMsgs', () => {
       'This corporation has not authorized your wallet for MsgCreateEcosystem.',
       'error'
     )
-    expect(confirmTx).not.toHaveBeenCalled()
-  })
-
-  it('skips the confirmation on simulate', async () => {
-    const { deps: d, confirmTx } = deps()
-    const resolved = await confirmDelegableMsgs(d, { ...args, simulate: true })
-    expect(resolved?.mode).toBe('operator')
-    expect((resolved?.msgs[0].value as MsgCreateEcosystem).operator).toBe(ME)
     expect(confirmTx).not.toHaveBeenCalled()
   })
 

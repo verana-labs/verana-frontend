@@ -146,10 +146,7 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
   const sendTx = useSendTxDetectingMode(veranaChain)
   const inFlight = useRef(false)
 
-  return async (
-    params: CredentialSchemaActionParams,
-    simulate = false
-  ): Promise<DeliverTxResponse | SimulateResult | undefined> => {
+  return async (params: CredentialSchemaActionParams): Promise<DeliverTxResponse | undefined> => {
     if (!isWalletConnected || !address) {
       await notify(t('notification.msg.connectwallet'), 'error')
       return
@@ -187,15 +184,9 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
         build: (corporation, operator) => buildCredentialSchemaMessage(params, { corporation, operator }),
         effect,
         proposalTitle: proposalTitleFrom(effect),
-        simulate,
       })
       if (!resolved) return
       mode = resolved.mode
-      if (simulate) {
-        const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType, simulate })
-        if (isDeliverTxResponse(result)) throw new Error('Expected a simulation result')
-        return result
-      }
       void notify(
         mode === 'proposal' ? MSG_NOTIFICATION_PROPOSAL.inprogress() : MSG_INPROGRESS_ACTION_CS[params.msgType](),
         'inProgress',
@@ -229,7 +220,6 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
       onCancel?.()
       return result
     } catch (error) {
-      if (simulate) return
       await notify(
         errorMessage(undefined, error instanceof Error ? error.message : String(error)),
         'error',
