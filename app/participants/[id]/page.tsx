@@ -60,7 +60,7 @@ export default function ParticipantsPage() {
   const [refreshRoot, setRefreshRoot] = useState(false)
   const [participantTree, setParticipantTree] = useState<TreeNode[]>([])
 
-  const { participants, refetch: refetchParticipants } = useParticipants(schemaId, role, validatorId)
+  const { participants, refetch: refetchParticipants, hasNext, loadMore } = useParticipants(schemaId, role, validatorId)
   const { credentialSchema } = useCredentialSchemaData(schemaId)
   const ecosystemId = credentialSchema ? String(credentialSchema.ecosystemId) : ''
   const { ecosystem } = useEcosystemData(ecosystemId)
@@ -163,6 +163,10 @@ export default function ParticipantsPage() {
     [refetchParticipants, role, schemaId, validatorId]
   )
 
+  // One request serves one sibling set, so only the set of the last request can
+  // grow. `hasNext` belongs to that set.
+  const moreNodeId = hasNext ? (role === 'ECOSYSTEM' ? 'root' : requestedNodeId) : undefined
+
   return (
     <ParticipantTree
       tree={participantTree}
@@ -178,6 +182,8 @@ export default function ParticipantsPage() {
       isEcosystemController={actingCorporation?.corporation.id === ecosystem?.corporationId}
       viewerCorporationId={actingCorporation?.corporation.id}
       setNodeRequestParams={setNodeRequestParams}
+      moreNodeId={moreNodeId}
+      loadMore={loadMore}
       refreshRoot={() => setRefreshRoot(true)}
       onConnect={!isWalletConnected ? connect : undefined}
       onRetryFetch={retryFetch}
