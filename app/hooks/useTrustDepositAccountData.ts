@@ -117,7 +117,9 @@ export function useTrustDepositAccountData() {
         network: veranaChain.chain_id,
       })
     } catch (error) {
-      if (request === requestRef.current) setError(error instanceof Error ? error.message : String(error))
+      if (request !== requestRef.current) return
+      if (balance !== null) setData({ ...EMPTY_ACCOUNT_DATA, balance, network: veranaChain.chain_id })
+      setError(error instanceof Error ? error.message : String(error))
     } finally {
       if (request === requestRef.current) setLoading(false)
     }

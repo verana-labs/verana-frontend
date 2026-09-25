@@ -135,3 +135,16 @@ test('a lookup still in flight holds Confirm and names no payer', async ({ page 
   expect(broadcastGranter(mock.broadcastTxs()[0])).toBe(ACME_POLICY_ADDRESS)
   await mock.teardown()
 })
+
+test('a failed trust deposit lookup still warns on the balance it read', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.route('**/v4/delegation/fee-grants*', (route) => route.fulfill({ json: { fee_grants: [] } }))
+  await page.route('**/v4/trust-deposit/get/*', (route) =>
+    route.fulfill({ status: 500, json: { error: 'indexer unavailable', code: 500 } })
+  )
+  const { mock, dialog } = await openConfirmation(page, SHORT_BALANCE_UVNA)
+
+  await expect(dialog.getByText(SHORTFALL_TEXT)).toBeVisible({ timeout: 30_000 })
+  await expect(dialog.getByRole('button', { name: 'Confirm' })).toBeEnabled()
+  await mock.teardown()
+})

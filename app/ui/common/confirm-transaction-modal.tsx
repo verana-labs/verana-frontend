@@ -29,6 +29,7 @@ import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 import { shortenMiddle } from '@/util/util'
 
 const SETTLE_DELAY_MS = 400
+const BALANCE_WAIT_MS = 5_000
 const UVNA_PER_VNA = 1_000_000
 
 function t(key: string, values?: I18nValues): string {
@@ -71,20 +72,24 @@ function feeGranter(
 
 function BalanceWarning({
   balance,
-  balanceError,
+  balanceUnknown,
   feeUvna,
   feeGranted,
   costLines,
 }: {
   balance: string | null
-  balanceError: string | null
+  balanceUnknown: boolean
   feeUvna: number | null
   feeGranted: boolean
   costLines: CostLine[] | undefined
 }) {
-  const accountPaysNothing = feeGranted && totalDebitUvna(costLines ?? []) === 0
-  if (balance === null && balanceError && !accountPaysNothing)
-    return <p className="text-sm text-gray-600 dark:text-gray-300">{t('txconfirm.balance.unavailable')}</p>
+  if (feeGranted && totalDebitUvna(costLines ?? []) === 0) return null
+  if (balance === null)
+    return balanceUnknown ? (
+      <p className="text-sm text-gray-600 dark:text-gray-300">{t('txconfirm.balance.unavailable')}</p>
+    ) : (
+      <p className="text-sm animate-pulse text-gray-400">{t('txconfirm.balance.checking')}</p>
+    )
   const warning = balanceWarning(balance, feeUvna, costLines, LOW_BALANCE_WARN_UVNA ?? '0', feeGranted)
   if (!warning) return null
   const key = warning.kind === 'shortfall' ? 'txconfirm.balance.shortfall' : 'txconfirm.balance.low'
@@ -131,11 +136,17 @@ export function ConfirmTransactionModal({
   const fallbackTitle = request.proposalTitle ?? ''
   const composing = request.mode === 'proposal' && buildProposalMsgs !== undefined
   const { accountData, errorAccountData } = useTrustDepositAccountData()
-  const balancePending = accountData.balance === null && errorAccountData === null
+  const [balanceWaitOver, setBalanceWaitOver] = useState(false)
+  const balanceUnknown = accountData.balance === null && (errorAccountData !== null || balanceWaitOver)
   const [title, setTitle] = useState(fallbackTitle)
   const [summary, setSummary] = useState(fallbackTitle)
   const [settledTitle, setSettledTitle] = useState(fallbackTitle)
   const [settledSummary, setSettledSummary] = useState(fallbackTitle)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setBalanceWaitOver(true), BALANCE_WAIT_MS)
+    return () => clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -171,6 +182,9 @@ export function ConfirmTransactionModal({
   const simulatedFeeUvna = currentSimulation.status === 'ready' ? Number(nativeFeeAmount(currentSimulation.fee)) : null
   const payerPending =
     feeGrantLookup.status === 'loading' || (request.feeGrant !== undefined && currentSimulation.status === 'simulating')
+  const accountOwesNothing = granter !== undefined && totalDebitUvna(request.costLines ?? []) === 0
+  const holdForBalance =
+    request.payer === address && !accountOwesNothing && accountData.balance === null && !balanceUnknown
   const labelClass = 'text-sm font-medium text-gray-700 dark:text-gray-300 block'
 
   return (
@@ -246,7 +260,7 @@ export function ConfirmTransactionModal({
         {request.payer === address && !payerPending && currentSimulation.status === 'ready' ? (
           <BalanceWarning
             balance={accountData.balance}
-            balanceError={errorAccountData}
+            balanceUnknown={balanceUnknown}
             feeUvna={simulatedFeeUvna}
             feeGranted={granter !== undefined}
             costLines={request.costLines}
@@ -268,10 +282,7 @@ export function ConfirmTransactionModal({
             type="button"
             className="btn-action-confirm flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={
-              currentSimulation.status !== 'ready' ||
-              editing ||
-              feeGrantLookup.status === 'loading' ||
-              (balancePending && request.payer === address)
+              currentSimulation.status !== 'ready' || editing || feeGrantLookup.status === 'loading' || holdForBalance
             }
             onClick={() => onConfirm({ msgs: simulatedMsgs, granter })}
           >
