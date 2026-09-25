@@ -1,7 +1,13 @@
 import { expect, type Page, test } from '@playwright/test'
 import { connectWallet } from './support/connect'
 import { GRANTEE, REPLACEMENT_MEMBER } from './support/corp-fixtures'
-import { HARNESS_MNEMONIC, installCorporationStubs, seedActingCorporation } from './support/corp-stubs'
+import {
+  HARNESS_MNEMONIC,
+  installCorporationStubs,
+  seedActingCorporation,
+  stubEcosystemList,
+  stubTrustResolve,
+} from './support/corp-stubs'
 import { installMockChain } from './support/mock-chain'
 
 async function noHorizontalOverflow(page: Page) {
@@ -248,4 +254,44 @@ test('a vote opens the confirmation, cancel broadcasts nothing and confirm broad
     .poll(() => mock.seenMethods().filter((method) => method === 'broadcast_tx_sync').length, { timeout: 30_000 })
     .toBe(1)
   await mock.teardown()
+})
+
+const XSS_CLAIM = '<img src=x onerror="window.__xssRan = true"> <script>window.__xssRan = true</script> **not bold**'
+const MARKDOWN_CLAIM = '**bold claim** of the service'
+
+test('a service description claim renders as text or Markdown, never as HTML', async ({ page }) => {
+  await installCorporationStubs(page)
+  await stubEcosystemList(page)
+  await seedActingCorporation(page, 13)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  const grid = page.locator('#ecosystems-grid')
+
+  await test.step('remote markup stays visible text', async () => {
+    await stubTrustResolve(page, { description: XSS_CLAIM })
+    await page.goto('/ecosystems')
+    await expect(grid.getByText('Acme Trust Registry').first()).toBeVisible({ timeout: 15_000 })
+    await expect(grid).toContainText('<img src=x')
+    await expect(grid).toContainText('<script>')
+    await expect(grid).toContainText('**not bold**')
+    await expect(grid.locator('img[src="x"]')).toHaveCount(0)
+    await expect(grid.locator('script')).toHaveCount(0)
+    expect(await page.evaluate(() => (window as unknown as { __xssRan?: boolean }).__xssRan)).toBeUndefined()
+  })
+
+  await test.step('text/markdown renders as Markdown', async () => {
+    await stubTrustResolve(page, { description: MARKDOWN_CLAIM, descriptionFormat: 'text/markdown' })
+    await page.goto('/ecosystems')
+    await expect(grid.locator('strong').first()).toHaveText('bold claim', { timeout: 15_000 })
+    await expect(grid).not.toContainText('**bold claim**')
+  })
+
+  for (const descriptionFormat of ['text/plain', 'markdown']) {
+    await test.step(`${descriptionFormat} keeps the Markdown literal`, async () => {
+      await stubTrustResolve(page, { description: MARKDOWN_CLAIM, descriptionFormat })
+      await page.goto('/ecosystems')
+      await expect(grid).toContainText('**bold claim**', { timeout: 15_000 })
+      await expect(grid.locator('strong')).toHaveCount(0)
+    })
+  }
 })

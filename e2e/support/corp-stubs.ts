@@ -166,27 +166,62 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
       : []
     return route.fulfill({ json: { ecosystems } })
   })
+  await stubTrustResolve(page)
+}
+
+type ServiceDescriptionClaims = { description?: string; descriptionFormat?: string }
+
+function resolveBody(service: ServiceDescriptionClaims) {
+  return {
+    did: ACME_DID,
+    trusted: true,
+    evaluatedAtTime: '2026-09-01T12:00:00Z',
+    evaluatedAtBlock: 405000,
+    expiresAtTime: null,
+    corporationId: 13,
+    ecsCredentials: [
+      {
+        ecsSchema: 'OrganizationCredential',
+        credentialSubject: { name: 'Acme Trust AG', countryCode: 'CH', registryId: 'CHE-999.999.999' },
+      },
+      { ecsSchema: 'ServiceCredential', credentialSubject: { name: 'Acme Trust Registry', ...service } },
+    ],
+  }
+}
+
+// Playwright gives the last handler priority, so a later call replaces the claims of the earlier one.
+export async function stubTrustResolve(page: Page, service: ServiceDescriptionClaims = {}) {
   await page.route('**/v4/verifiable-trust/resolve', (route) => {
     const body = JSON.parse(route.request().postData() ?? '{}') as { did?: string }
     if (body.did !== ACME_DID) {
       return route.fulfill({ status: 404, json: { error: 'DID not found', code: 404 } })
     }
-    return route.fulfill({
+    return route.fulfill({ json: resolveBody(service) })
+  })
+}
+
+export async function stubEcosystemList(page: Page) {
+  await page.route('**/v4/ecosystem/list*', (route) =>
+    route.fulfill({
       json: {
-        did: ACME_DID,
-        trusted: true,
-        evaluatedAtTime: '2026-09-01T12:00:00Z',
-        evaluatedAtBlock: 405000,
-        expiresAtTime: null,
-        corporationId: 13,
-        ecsCredentials: [
+        ecosystems: [
           {
-            ecsSchema: 'OrganizationCredential',
-            credentialSubject: { name: 'Acme Trust AG', countryCode: 'CH', registryId: 'CHE-999.999.999' },
+            id: 1,
+            did: ACME_DID,
+            corporation_id: 13,
+            created: '2026-09-01T10:00:00Z',
+            modified: '2026-09-01T10:00:00Z',
+            language: 'en',
+            active_version: 1,
+            active_schemas: 0,
+            participants: 1,
+            weight: '0',
+            issued: 0,
+            verified: 0,
+            archived: null,
           },
-          { ecsSchema: 'ServiceCredential', credentialSubject: { name: 'Acme Trust Registry' } },
         ],
       },
     })
-  })
+  )
 }
