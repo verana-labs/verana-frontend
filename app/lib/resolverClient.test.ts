@@ -5,12 +5,22 @@ vi.mock('@/config/env', () => ({
   VERANA_REST_ENDPOINT_PARTICIPANT: 'https://indexer.test/v4/participant',
 }))
 
-import { fetchDidEnrichment, invalidateDid, mapResolveResult } from '@/lib/resolverClient'
+import { fetchDidEnrichment, invalidateDid, isMarkdownDescriptionFormat, mapResolveResult } from '@/lib/resolverClient'
 
 const DID = 'did:web:service.example'
 const ISSUER_DID = 'did:web:ecs.example'
 
-function resolveResponse({ withLogos = true, trusted = true, expiresAtTime = '2036-01-01T00:00:00.000Z' } = {}) {
+function resolveResponse({
+  withLogos = true,
+  trusted = true,
+  expiresAtTime = '2036-01-01T00:00:00.000Z',
+  descriptionFormat,
+}: {
+  withLogos?: boolean
+  trusted?: boolean
+  expiresAtTime?: string | null
+  descriptionFormat?: string
+} = {}) {
   return {
     did: DID,
     trusted,
@@ -23,6 +33,7 @@ function resolveResponse({ withLogos = true, trusted = true, expiresAtTime = '20
         credentialSubject: {
           name: 'Acme Portal',
           description: 'Acme customer portal',
+          ...(descriptionFormat ? { descriptionFormat } : {}),
           ...(withLogos ? { logoUri: 'https://service.example/logo.png' } : {}),
           minimumAgeRequired: 18,
           termsAndConditionsUri: 'https://service.example/terms',
@@ -123,5 +134,23 @@ describe('mapResolveResult', () => {
   it('treats a never-expiring evaluation as trusted', () => {
     const raw = { ...resolveResponse(), expiresAtTime: null }
     expect(mapResolveResult(DID, raw).trustStatus).toBe('TRUSTED')
+  })
+
+  it('carries the descriptionFormat claim of the service credential', () => {
+    const withFormat = mapResolveResult(DID, resolveResponse({ descriptionFormat: 'text/markdown' }))
+    expect(withFormat.serviceDescriptionFormat).toBe('text/markdown')
+    expect(mapResolveResult(DID, resolveResponse()).serviceDescriptionFormat).toBeUndefined()
+  })
+})
+
+describe('isMarkdownDescriptionFormat', () => {
+  it('renders as Markdown only for text/markdown', () => {
+    expect(isMarkdownDescriptionFormat('text/markdown')).toBe(true)
+  })
+
+  it('falls back to plain text for text/plain, an absent claim and any other value', () => {
+    for (const format of ['text/plain', undefined, '', 'markdown', 'Text/Markdown', 'text/html']) {
+      expect(isMarkdownDescriptionFormat(format)).toBe(false)
+    }
   })
 })

@@ -10,7 +10,6 @@ import NavLinks from '@/ui/common/nav-links'
 import ToggleTheme from '@/ui/common/toggle-theme'
 import VeranaLog from '@/ui/common/verana-logo'
 import { resolveTranslatable } from '@/ui/dataview/types'
-import { formatNetwork } from '@/util/util'
 import AccountZone from './account-zone'
 import { CorporationSelector } from './corporation-selector'
 
@@ -40,10 +39,12 @@ export default function NavBar() {
               {/* Right: Actions */}
               <div className="navbar-user-actions">
                 {/* Network Status */}
-                <div
-                  className="flex items-center space-x-2 px-3 py-1 bg-success-50 dark:bg-success-900/20 rounded-full"
-                  dangerouslySetInnerHTML={{ __html: formatNetwork(veranaChain.chain_id) }}
-                />
+                <div className="flex items-center space-x-2 px-3 py-1 bg-success-50 dark:bg-success-900/20 rounded-full">
+                  <div className="relative w-2 h-2 bg-success-500 rounded-full pulse-dot" />
+                  <span className="text-sm text-success-700 dark:text-success-300 font-medium">
+                    {veranaChain.chain_id}
+                  </span>
+                </div>
 
                 <CorporationSelector />
                 <Link href="/settings" title={settingsTitle} aria-label={settingsTitle} className="navbar-icon">

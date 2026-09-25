@@ -1,6 +1,7 @@
 'use client'
 
 import clsx from 'clsx'
+import Link from 'next/link'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { LOW_BALANCE_WARN_UVNA, VERANA_FAUCET_URL } from '@/config/env'
 import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
@@ -84,13 +85,13 @@ export default function EditableDataView<T extends object>({
 
   const lowBalanceTemplate = VERANA_FAUCET_URL
     ? (resolveTranslatable({ key: 'messages.lowbalance' }, translate) ??
-      "You’re Running Low on VNA. Your balance is {value} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted.")
+      'You’re Running Low on VNA. Your balance is {value} VNA. {link} to keep your activity uninterrupted.')
     : (resolveTranslatable({ key: 'messages.lowbalance.noFaucet' }, translate) ??
       'You’re Running Low on VNA. Your balance is {value} VNA. Add more VNA to keep your activity uninterrupted.')
   const [feeAmount, setFeeAmount] = useState<number | null>(null)
   const balanceLessThanFeeTemplate = VERANA_FAUCET_URL
     ? (resolveTranslatable({ key: 'messages.balanceLessThanFee' }, translate) ??
-      "You’re Running Low on VNA. Your balance is {value} VNA and running this transaction requires {fee} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted.")
+      'You’re Running Low on VNA. Your balance is {value} VNA and running this transaction requires {fee} VNA. {link} to keep your activity uninterrupted.')
     : (resolveTranslatable({ key: 'messages.balanceLessThanFee.noFaucet' }, translate) ??
       'You’re Running Low on VNA. Your balance is {value} VNA and running this transaction requires {fee} VNA. Add more VNA to keep your activity uninterrupted.')
 
@@ -346,9 +347,7 @@ export default function EditableDataView<T extends object>({
         {inputEl}
         {showError && <div className="data-edit-error">{errorMessage}</div>}
         {/* Description inputType */}
-        {field.description && (
-          <p className="data-edit-input-description" dangerouslySetInnerHTML={{ __html: field.description }} />
-        )}
+        {field.description && <p className="data-edit-input-description">{field.description}</p>}
       </div>
     )
 
@@ -358,6 +357,14 @@ export default function EditableDataView<T extends object>({
       normalInputs.push(fieldBlock)
     }
   })
+
+  // The faucet link is a React element. The message gives the text before and after its {link} marker.
+  const lowBalanceMessageParts = getLowBalanceMessage(
+    showMsgBalanceLessThanFeeWarn ? balanceLessThanFeeTemplate : lowBalanceTemplate,
+    (Number(accountData.balance) / 1_000_000).toString() ?? '1',
+    ((feeAmount ?? 0) / 1_000_000).toString()
+  ).split('{link}')
+  const lowBalanceLinkLabel = resolveTranslatable({ key: 'messages.lowbalance.link' }, translate) ?? 'Add more VNA'
 
   return (
     <div
@@ -387,10 +394,9 @@ export default function EditableDataView<T extends object>({
             actionCard?.available ? 'w-fit mx-auto text-center mb-6' : 'mb-4'
           )}
         >
-          <p
-            className="data-edit-form-description"
-            dangerouslySetInnerHTML={{ __html: getCostMessage(uiMsgType.cost, formatVNAFromUVNA(transactionCost)) }}
-          />
+          <p className="data-edit-form-description">
+            {getCostMessage(uiMsgType.cost, formatVNAFromUVNA(transactionCost))}
+          </p>
         </div>
       )}
 
@@ -421,16 +427,17 @@ export default function EditableDataView<T extends object>({
                 ></path>
               </svg>
             </i>
-            <p
-              className="text-sm mt-1"
-              dangerouslySetInnerHTML={{
-                __html: getLowBalanceMessage(
-                  showMsgBalanceLessThanFeeWarn ? balanceLessThanFeeTemplate : lowBalanceTemplate,
-                  (Number(accountData.balance) / 1_000_000).toString() ?? '1',
-                  ((feeAmount ?? 0) / 1_000_000).toString()
-                ),
-              }}
-            />
+            <p className="text-sm mt-1">
+              {lowBalanceMessageParts[0]}
+              {lowBalanceMessageParts.length > 1 && (
+                <>
+                  <Link href="/account?getVNA=true" className="lowBalanceLink">
+                    {lowBalanceLinkLabel}
+                  </Link>
+                  {lowBalanceMessageParts[1]}
+                </>
+              )}
+            </p>
           </div>
         </div>
       )}

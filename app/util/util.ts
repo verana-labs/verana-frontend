@@ -196,14 +196,6 @@ export function countryCodeToFlag(code?: string | null): string {
   return String.fromCodePoint(base + (normalized.charCodeAt(0) - 65), base + (normalized.charCodeAt(1) - 65))
 }
 
-export function formatNetwork(network: string) {
-  const htmlNetwork = `
-    <div class="relative w-2 h-2 bg-success-500 rounded-full pulse-dot"></div>
-    <span class="text-sm text-success-700 dark:text-success-300 font-medium">${network}</span>
-    `
-  return htmlNetwork
-}
-
 export function roleBadgeClass(role: ParticipantRole) {
   switch (role) {
     case 'ECOSYSTEM':

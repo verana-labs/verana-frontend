@@ -77,11 +77,6 @@ export const columnsCredentialSchemaList: Column<CredentialSchemaListItem>[] = [
 
 export const description: Translatable[] = [t('datatable.cs.description')]
 
-export function getModeLabel(value: string, suffix: string): string {
-  if (!value?.trim()) return ''
-  return `<label class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getModeClass(value.concat(suffix))}">${value}</label>`
-}
-
 function getModeClass(value: string): string {
   const found = modeOptions.find((opt) => opt.value === value)
   return found?.class ?? ''
