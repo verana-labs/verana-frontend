@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useMemo, useState } from 'react'
-import { useCredentialSchemas } from '@/hooks/useCredentialSchemas'
+import { useCredentialSchemasByEcosystem } from '@/hooks/useCredentialSchemas'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { useEcosystems } from '@/hooks/useEcosystems'
 import { usePendingParticipants } from '@/hooks/usePendingParticipants'
@@ -19,18 +19,25 @@ type PendingTasksCtxValue = {
   refetch: () => Promise<void>
 }
 
-type DiscoverCtxValue = {
+type KeysetPageControls = {
+  hasNext: boolean
+  hasPrevious: boolean
+  nextPage: () => void
+  previousPage: () => void
+}
+
+type DiscoverCtxValue = KeysetPageControls & {
   discoverList: EcosystemListItem[]
-  credentialSchemas: CredentialSchemaListItem[]
+  credentialSchemasByEcosystem: Record<string, CredentialSchemaListItem[]>
   loading: boolean
   refetch: () => Promise<void>
   discoverSearch: string
   setDiscoverSearch: React.Dispatch<React.SetStateAction<string>>
-  discoverPage: number
-  setDiscoverPage: React.Dispatch<React.SetStateAction<number>>
+  hideUntrustedOnDiscover: boolean
+  setHideUntrustedOnDiscover: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-type EcosystemsCtxValue = {
+type EcosystemsCtxValue = KeysetPageControls & {
   ecosystemsList: EcosystemListItem[]
   ecosystemsLoading: boolean
   refetch: () => Promise<void>
@@ -49,6 +56,8 @@ type DashboardCtxValue = {
   dashboardData: DashboardData | null
   refetch: () => Promise<void>
 }
+
+export const DISCOVER_PAGE_SIZE = 5
 
 const PendingTasksContext = createContext<PendingTasksCtxValue | undefined>(undefined)
 const DiscoverContext = createContext<DiscoverCtxValue | undefined>(undefined)
@@ -73,16 +82,30 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
     ecosystems: ecosystemsList,
     loading: ecosystemsLoading,
     refetch: refetchEcosystems,
+    hasNext: ecosystemsHasNext,
+    hasPrevious: ecosystemsHasPrevious,
+    nextPage: ecosystemsNextPage,
+    previousPage: ecosystemsPreviousPage,
   } = useEcosystems(false, onlyActiveEcosystem)
 
   const [discoverSearch, setDiscoverSearch] = useState<string>('')
-  const [discoverPage, setDiscoverPage] = useState<number>(1)
-  const { ecosystems: discoverList, loading: discoverLoading, refetch: refetchDiscoverList } = useEcosystems(true)
+  // The filter starts off: [VFE-PAGE-DISCOVER-1] lists every non-archived Ecosystem.
+  const [hideUntrustedOnDiscover, setHideUntrustedOnDiscover] = useState(false)
   const {
-    credentialSchemas,
+    ecosystems: discoverList,
+    loading: discoverLoading,
+    refetch: refetchDiscoverList,
+    hasNext: discoverHasNext,
+    hasPrevious: discoverHasPrevious,
+    nextPage: discoverNextPage,
+    previousPage: discoverPreviousPage,
+  } = useEcosystems(true, true, DISCOVER_PAGE_SIZE)
+  const discoverEcosystemIds = useMemo(() => discoverList.map((ecosystem) => ecosystem.id), [discoverList])
+  const {
+    schemasByEcosystem: credentialSchemasByEcosystem,
     loading: credentialSchemasLoading,
     refetch: refetchCredentialSchemas,
-  } = useCredentialSchemas(undefined, true)
+  } = useCredentialSchemasByEcosystem(discoverEcosystemIds)
 
   const refetchDiscover = React.useCallback(async () => {
     await Promise.all([refetchDiscoverList(), refetchCredentialSchemas()])
@@ -110,20 +133,28 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
       discoverList,
       loading: discoverLoading || credentialSchemasLoading,
       refetch: refetchDiscover,
-      credentialSchemas,
+      credentialSchemasByEcosystem,
       discoverSearch,
       setDiscoverSearch,
-      discoverPage,
-      setDiscoverPage,
+      hideUntrustedOnDiscover,
+      setHideUntrustedOnDiscover,
+      hasNext: discoverHasNext,
+      hasPrevious: discoverHasPrevious,
+      nextPage: discoverNextPage,
+      previousPage: discoverPreviousPage,
     }),
     [
       discoverList,
       discoverLoading,
-      credentialSchemas,
+      credentialSchemasByEcosystem,
       credentialSchemasLoading,
       refetchDiscover,
       discoverSearch,
-      discoverPage,
+      hideUntrustedOnDiscover,
+      discoverHasNext,
+      discoverHasPrevious,
+      discoverNextPage,
+      discoverPreviousPage,
     ]
   )
 
@@ -136,8 +167,22 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
       setOnlyActiveEcosystem,
       ecosystemFilters,
       setEcosystemFilters,
+      hasNext: ecosystemsHasNext,
+      hasPrevious: ecosystemsHasPrevious,
+      nextPage: ecosystemsNextPage,
+      previousPage: ecosystemsPreviousPage,
     }),
-    [ecosystemsList, ecosystemsLoading, refetchEcosystems, onlyActiveEcosystem, ecosystemFilters]
+    [
+      ecosystemsList,
+      ecosystemsLoading,
+      refetchEcosystems,
+      onlyActiveEcosystem,
+      ecosystemFilters,
+      ecosystemsHasNext,
+      ecosystemsHasPrevious,
+      ecosystemsNextPage,
+      ecosystemsPreviousPage,
+    ]
   )
 
   const accountValue = useMemo(

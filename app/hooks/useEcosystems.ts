@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_ECOSYSTEM } from '@/config/env'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
-import { indexerValidators } from '@/lib/indexer-json'
+import { applyKeysetParams, indexerValidators, takeKeysetPage } from '@/lib/indexer-json'
+import { enrichmentFromTrustData } from '@/lib/resolverClient'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { resolveTranslatable } from '@/ui/dataview/types'
@@ -35,9 +36,10 @@ function parseVersions(value: unknown, path: string): EcosystemListItem['version
 
 function parseEcosystem(value: unknown, path: string): EcosystemListItem {
   const source = record(value, path)
+  const did = string(source.did, `${path}.did`)
   return {
     id: String(number(source.id, `${path}.id`)),
-    did: string(source.did, `${path}.did`),
+    did,
     corporationId: number(source.corporation_id, `${path}.corporation_id`),
     created: string(source.created, `${path}.created`),
     modified: string(source.modified, `${path}.modified`),
@@ -51,6 +53,7 @@ function parseEcosystem(value: unknown, path: string): EcosystemListItem {
     verified: number(source.verified, `${path}.verified`),
     archived: nullableString(source.archived, `${path}.archived`),
     role: '',
+    trustData: enrichmentFromTrustData(did, source.trust_data),
   }
 }
 
@@ -62,13 +65,25 @@ export function parseEcosystemsResponse(payload: unknown): EcosystemListItem[] {
   return envelope.ecosystems.map((value, index) => parseEcosystem(value, `ecosystems[${index}]`))
 }
 
-export function useEcosystems(all = false, onlyActive = true) {
+export const ECOSYSTEMS_PAGE_SIZE = 9
+
+export function useEcosystems(all = false, onlyActive = true, pageSize = ECOSYSTEMS_PAGE_SIZE) {
   const { actingCorporation, loading: corporationLoading } = useUserCorporation()
   const corporationId = actingCorporation?.corporation.id
   const [ecosystems, setEcosystems] = useState<EcosystemListItem[]>([])
+  const [hasNext, setHasNext] = useState(false)
   const [loading, setLoading] = useState(true)
   const [errorEcosystems, setError] = useState<string | null>(null)
   const requestRef = useRef(0)
+
+  // The stack holds one `after` id per visited page, so the previous page needs no reverse query.
+  const pageKey = `${all}|${corporationId ?? ''}|${onlyActive}|${pageSize}`
+  const [pages, setPages] = useState<{ key: string; stack: (string | undefined)[] }>({
+    key: pageKey,
+    stack: [undefined],
+  })
+  const stack = pages.key === pageKey ? pages.stack : [undefined]
+  const after = stack[stack.length - 1]
 
   const fetchEcosystems = useCallback(async () => {
     const request = ++requestRef.current
@@ -79,6 +94,7 @@ export function useEcosystems(all = false, onlyActive = true) {
     }
     if (!all && !corporationId) {
       setEcosystems([])
+      setHasNext(false)
       setLoading(corporationLoading)
       return
     }
@@ -86,7 +102,8 @@ export function useEcosystems(all = false, onlyActive = true) {
     setError(null)
     setLoading(true)
     try {
-      const params = new URLSearchParams({ limit: '1024' })
+      const params = new URLSearchParams({ trust_data: 'full' })
+      applyKeysetParams(params, { pageSize, after })
       if (!all && corporationId) params.set('participant_corporation_id', String(corporationId))
       if (onlyActive) params.set('archived', 'false')
       const response = await fetch(`${VERANA_REST_ENDPOINT_ECOSYSTEM}/list?${params.toString()}`)
@@ -95,17 +112,39 @@ export function useEcosystems(all = false, onlyActive = true) {
         const { error, code } = json as ApiErrorResponse
         throw new Error(`Error ${code}: ${error}`)
       }
-      if (request === requestRef.current) setEcosystems(parseEcosystemsResponse(json))
+      const page = takeKeysetPage(parseEcosystemsResponse(json), pageSize)
+      if (request === requestRef.current) {
+        setEcosystems(page.items)
+        setHasNext(page.hasNext)
+      }
     } catch (error) {
       if (request === requestRef.current) setError(error instanceof Error ? error.message : String(error))
     } finally {
       if (request === requestRef.current) setLoading(false)
     }
-  }, [all, corporationId, corporationLoading, onlyActive])
+  }, [after, all, corporationId, corporationLoading, onlyActive, pageSize])
 
   useEffect(() => {
     void fetchEcosystems()
   }, [fetchEcosystems])
 
-  return { ecosystems, loading, errorEcosystems, refetch: fetchEcosystems }
+  const nextPage = useCallback(() => {
+    const last = ecosystems[ecosystems.length - 1]
+    if (last) setPages({ key: pageKey, stack: [...stack, last.id] })
+  }, [ecosystems, pageKey, stack])
+
+  const previousPage = useCallback(() => {
+    if (stack.length > 1) setPages({ key: pageKey, stack: stack.slice(0, -1) })
+  }, [pageKey, stack])
+
+  return {
+    ecosystems,
+    loading,
+    errorEcosystems,
+    refetch: fetchEcosystems,
+    hasNext,
+    hasPrevious: stack.length > 1,
+    nextPage,
+    previousPage,
+  }
 }

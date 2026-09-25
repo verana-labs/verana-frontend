@@ -6,11 +6,13 @@ import {
 } from '@/config/env'
 import { indexerValidators } from '@/lib/indexer-json'
 import { logger } from '@/lib/logger'
+import { type DidEnrichment, enrichmentFromTrustData } from '@/lib/resolverClient'
 
 export interface UserCorporation {
   id: number
   policyAddress: string
   did: string
+  trustData?: DidEnrichment
 }
 
 export interface CorporationMembership {
@@ -37,14 +39,16 @@ async function fetchJson(url: string, context: string): Promise<unknown> {
 async function fetchCorporation(corporationId: number): Promise<UserCorporation> {
   if (!VERANA_REST_ENDPOINT_CORPORATION) throw new Error('Missing V4 corporation endpoint')
   const payload = await fetchJson(
-    `${VERANA_REST_ENDPOINT_CORPORATION}/get/${corporationId}`,
+    `${VERANA_REST_ENDPOINT_CORPORATION}/get/${corporationId}?trust_data=full`,
     'Unable to resolve corporation'
   )
   const corporation = record(record(payload, 'corporation response').corporation, 'corporation')
+  const did = string(corporation.did, 'corporation.did')
   return {
     id: number(corporation.id, 'corporation.id'),
     policyAddress: string(corporation.policy_address, 'corporation.policy_address'),
-    did: string(corporation.did, 'corporation.did'),
+    did,
+    trustData: enrichmentFromTrustData(did, corporation.trust_data),
   }
 }
 
