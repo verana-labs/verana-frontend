@@ -3,9 +3,10 @@
 import { faChevronDown, faChevronUp, faEdit } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import clsx from 'clsx'
-import React, { ReactNode, useState } from 'react'
+import React, { useState } from 'react'
+import { useActionSigning } from '@/hooks/useSigningMode'
 import { translate } from '@/i18n/dataview'
-import ActionFieldButton from '@/ui/common/action-field-button'
+import ActionFieldButton, { ActionLabel } from '@/ui/common/action-field-button'
 import ActionFieldButtonModal from '@/ui/common/action-field-button-modal'
 import CardView from '@/ui/common/card-view'
 import { ActionFieldProps, renderActionComponent } from '@/ui/common/data-view-typed'
@@ -23,6 +24,62 @@ import {
 } from '@/ui/dataview/types'
 import { isJson } from '@/util/util'
 import DataViewSkeleton from './data-view-skeleton'
+
+function InlineActionField<T extends object>({
+  field,
+  value,
+  data,
+  isActive,
+  onToggle,
+  onClose,
+  onRefresh,
+  onBack,
+}: {
+  field: ResolvedActionField<T>
+  value: string
+  data: object
+  isActive: boolean
+  onToggle: () => void
+  onClose: () => void
+  onRefresh?: (id?: string, txHeight?: number) => void
+  onBack?: () => void
+}) {
+  const { mode, disabled } = useActionSigning(value)
+  return (
+    <div
+      className={clsx(
+        'bg-white dark:bg-surface rounded-xl border',
+        field.isWarning ? 'border-red-200 dark:border-red-700' : 'border-neutral-20 dark:border-neutral-70'
+      )}
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        disabled={disabled}
+        className={clsx(
+          'w-full px-6 py-4 text-left flex items-center justify-between transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
+          field.isWarning ? 'hover:bg-red-50 dark:hover:bg-red-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+        )}
+      >
+        <div className="flex items-center">
+          {field.icon && (
+            <div className={clsx('w-10 h-10 rounded-lg flex items-center justify-center mr-3', field.iconClass)}>
+              <FontAwesomeIcon icon={field.icon} className={field.iconColorClass ?? field.iconClass ?? ''} />
+            </div>
+          )}
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <ActionLabel label={field.label} mode={mode} />
+            </h4>
+            <p className="text-sm text-neutral-70 dark:text-neutral-70">{field.description}</p>
+          </div>
+        </div>
+        <FontAwesomeIcon icon={isActive ? faChevronUp : faChevronDown} />
+      </button>
+      {isActive && <div className="px-6 pb-6">{renderActionComponent(value, onClose, data, onRefresh, onBack)}</div>}
+    </div>
+  )
+}
 
 export default function ColumnsDataView<T extends object>({
   sectionsI18n,
@@ -56,58 +113,6 @@ export default function ColumnsDataView<T extends object>({
     return null
   })
   if (loading) return <DataViewSkeleton sections={sections} />
-
-  // Helper to render the type action field
-  function renderActionField(
-    rowId: string,
-    isActive: boolean,
-    field: ResolvedActionField<T>,
-    value: string,
-    data: object
-    // id?: string,
-  ): ReactNode {
-    return (
-      <div
-        key={rowId}
-        className={clsx(
-          'bg-white dark:bg-surface rounded-xl border',
-          field.isWarning ? 'border-red-200 dark:border-red-700' : 'border-neutral-20 dark:border-neutral-70'
-        )}
-      >
-        <button
-          onClick={() => setActiveActionId(isActive ? null : rowId)}
-          className={clsx(
-            'w-full px-6 py-4 text-left flex items-center justify-between transition-colors',
-            field.isWarning ? 'hover:bg-red-50 dark:hover:bg-red-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
-          )}
-        >
-          <div className="flex items-center">
-            {field.icon && (
-              <div className={clsx('w-10 h-10 rounded-lg flex items-center justify-center mr-3', field.iconClass)}>
-                <FontAwesomeIcon icon={field.icon} className={field.iconColorClass ?? field.iconClass ?? ''} />
-              </div>
-            )}
-            <div>
-              <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{field.label}</h4>
-              <p className="text-sm text-neutral-70 dark:text-neutral-70">{field.description}</p>
-            </div>
-          </div>
-          <FontAwesomeIcon icon={isActive ? faChevronUp : faChevronDown} />
-        </button>
-        {isActive && (
-          <div className="px-6 pb-6">
-            {renderActionComponent(
-              String(value),
-              () => setActiveActionId(null),
-              data,
-              onRefresh ?? undefined,
-              onBack ?? undefined
-            )}
-          </div>
-        )}
-      </div>
-    )
-  }
 
   return (
     <div
@@ -285,7 +290,19 @@ export default function ColumnsDataView<T extends object>({
                   if (!isResolvedActionField(field) || value == null) return null
                   const rowId = `${sectionIndex}-${fieldIndex}`
                   const isActive = activeActionId === rowId
-                  return renderActionField(rowId, isActive, field, String(value), data)
+                  return (
+                    <InlineActionField
+                      key={rowId}
+                      field={field}
+                      value={String(value)}
+                      data={data}
+                      isActive={isActive}
+                      onToggle={() => setActiveActionId(isActive ? null : rowId)}
+                      onClose={() => setActiveActionId(null)}
+                      onRefresh={onRefresh ?? undefined}
+                      onBack={onBack ?? undefined}
+                    />
+                  )
                 })}
               </div>
             )}

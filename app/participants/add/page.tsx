@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react'
 import { useEcosystemData } from '@/hooks/useEcosystemData'
 import { translate } from '@/i18n/dataview'
 import { useNotification } from '@/providers/notification-provider'
-import { useProtocolParams } from '@/providers/protocol-params-context'
 import ActionFieldButton from '@/ui/common/action-field-button'
 import EgfCard from '@/ui/common/egf-card'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
@@ -60,17 +59,13 @@ export default function AddJoinPage({ ecosystemId, nodeJoin, onCancel, onRefresh
   const { notify } = useNotification()
   const router = useRouter()
 
-  const trustDepositRate = Number(useProtocolParams().trustDepositRate)
-  const validationFees = Number(nodeJoin.participant?.validation_fees)
-  const transactionCost =
-    Number.isFinite(trustDepositRate) && Number.isFinite(validationFees) ? (1 + trustDepositRate) * validationFees : 0
   const participantData = {
     id: '',
     role: nodeJoin.type,
     validator_participant_id: nodeJoin.parentId ?? '0',
     schema_id: nodeJoin.schemaId ?? '',
     did: '',
-    transaction_cost: transactionCost > 0 ? String(transactionCost) : undefined,
+    validator_validation_fees: nodeJoin.participant?.validation_fees,
   }
 
   useEffect(() => {
