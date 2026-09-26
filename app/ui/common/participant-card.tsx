@@ -18,6 +18,7 @@ import { translate } from '@/i18n/dataview'
 import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import ActionFieldButtonModal from '@/ui/common/action-field-button-modal'
 import type { ActionFieldProps } from '@/ui/common/data-view-typed'
+import { ShowMoreButton } from '@/ui/common/keyset-pagination'
 import LogoImage from '@/ui/common/logo-image'
 import ParticipantAttribute from '@/ui/common/participant-attribute'
 import ParticipantTimeline from '@/ui/common/participant-timeline'
@@ -252,7 +253,12 @@ export default function ParticipantCard({
   const did = participant?.did ?? undefined
   const { data: enrichment } = useDidTrustEnrichment(did)
   const { participant: refreshedParticipant, refetch } = useParticipant(participantId)
-  const { participantHistory, refetch: refetchHistory } = useParticipantHistory(participantId)
+  const {
+    participantHistory,
+    refetch: refetchHistory,
+    hasNext: historyHasNext,
+    loadMore: loadMoreHistory,
+  } = useParticipantHistory(participantId)
   const [activeActionId, setActiveActionId] = useState<string | null>(null)
   const participantRef = useRef(participant)
   participantRef.current = participant
@@ -456,9 +462,10 @@ export default function ParticipantCard({
           <h3 className="text-lg font-semibold mb-4">{tr('participantcard.timeline.title', 'Activity Timeline')}</h3>
           {participantHistory.length ? (
             <div className="space-y-4">
-              {participantHistory.map((history, index) => (
-                <ParticipantTimeline participantHistory={history} key={`${history.block_height}-${index}`} />
+              {participantHistory.map((history) => (
+                <ParticipantTimeline participantHistory={history} key={history.id} />
               ))}
+              {historyHasNext ? <ShowMoreButton onClick={loadMoreHistory} /> : null}
             </div>
           ) : (
             <p className="text-sm text-neutral-70">{tr('participantcard.timeline.empty', 'No activity yet.')}</p>

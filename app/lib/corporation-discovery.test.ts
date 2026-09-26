@@ -34,15 +34,14 @@ function corporationPayload(id: number) {
 }
 
 function stubFetch(routes: Record<string, unknown>) {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (url: string) => {
-      const match = Object.entries(routes).find(([prefix]) => url.startsWith(prefix))
-      if (!match) throw new Error(`Unexpected fetch: ${url}`)
-      if (match[1] === null) return { ok: false, status: 502, json: async () => ({}) }
-      return { ok: true, json: async () => match[1] }
-    })
-  )
+  const fetchMock = vi.fn(async (url: string) => {
+    const match = Object.entries(routes).find(([prefix]) => url.startsWith(prefix))
+    if (!match) throw new Error(`Unexpected fetch: ${url}`)
+    if (match[1] === null) return { ok: false, status: 502, json: async () => ({}) }
+    return { ok: true, json: async () => match[1] }
+  })
+  vi.stubGlobal('fetch', fetchMock)
+  return fetchMock
 }
 
 function stubStorage(initial: Record<string, string> = {}) {
@@ -373,5 +372,50 @@ describe('restoreActingMembership', () => {
       lost: false,
     })
     expect(loadActingCorporationId('verana1operator')).toBe(4)
+  })
+})
+
+describe('corporation identity comes from the inline trust_data', () => {
+  it('asks the corporation method for the enrichment and maps it onto the membership', async () => {
+    const fetchMock = stubFetch({
+      [AUTHORIZATIONS]: { authorizations: [{ id: 1, corporation_id: 7, msg_types: [] }] },
+      [MEMBERSHIPS]: { memberships: [] },
+      [`${CORPORATION}7`]: {
+        corporation: {
+          id: 7,
+          policy_address: 'verana1policy7',
+          did: 'did:web:corp7.example',
+          trust_data: {
+            did: 'did:web:corp7.example',
+            trusted: true,
+            expiresAtTime: null,
+            ecsCredentials: [
+              { ecsSchema: 'OrganizationCredential', credentialSubject: { name: 'Acme Corp', countryCode: 'BE' } },
+            ],
+          },
+        },
+      },
+    })
+
+    const { memberships } = await discoverCorporations('verana1operator')
+
+    expect(fetchMock.mock.calls.map(([url]) => url)).toContain(`${CORPORATION}7?trust_data=full`)
+    expect(memberships[0].corporation.trustData?.trustStatus).toBe('TRUSTED')
+    expect(memberships[0].corporation.trustData?.organizationName).toBe('Acme Corp')
+    expect(memberships[0].corporation.trustData?.countryCode).toBe('BE')
+  })
+
+  it('reads a corporation the resolver did not evaluate as unresolved', async () => {
+    stubFetch({
+      [AUTHORIZATIONS]: { authorizations: [{ id: 1, corporation_id: 7, msg_types: [] }] },
+      [MEMBERSHIPS]: { memberships: [] },
+      [`${CORPORATION}7`]: {
+        corporation: { id: 7, policy_address: 'verana1policy7', did: 'did:web:corp7.example', trust_data: null },
+      },
+    })
+
+    const { memberships } = await discoverCorporations('verana1operator')
+
+    expect(memberships[0].corporation.trustData?.trustStatus).toBe('UNRESOLVED')
   })
 })

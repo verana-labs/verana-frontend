@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 
 import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { translate } from '@/i18n/dataview'
-import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
+import { type DidEnrichment, serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import { trustStateBadge } from '@/lib/trust-state'
 import LogoImage from '@/ui/common/logo-image'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
@@ -55,17 +55,20 @@ function governanceFrameworkHref(ecosystem: EcosystemCardData): string | undefin
 
 type Props = {
   ecosystem: EcosystemCardData
+  enrichment?: DidEnrichment
 }
 
-export default function EcosystemCard({ ecosystem }: Props) {
+export default function EcosystemCard({ ecosystem, enrichment }: Props) {
   const router = useRouter()
-  const { data: enrichment } = useDidTrustEnrichment(ecosystem.did)
+  // A view with no inline `trust_data` falls back to the resolver, per [VFE-DATA-RESOLVE-1].
+  const { data: resolved } = useDidTrustEnrichment(enrichment ? undefined : ecosystem.did)
+  const identity = enrichment ?? resolved
 
-  const trustBadge = trustStateBadge(enrichment?.trustStatus)
-  const ecosystemName = enrichment?.serviceName ?? shortenDID(ecosystem.did) ?? ecosystem.did
-  const ecosystemDescription = enrichment?.serviceDescription
-  const orgName = enrichment?.organizationName ?? shortenDID(ecosystem.did) ?? ecosystem.did
-  const flag = countryCodeToFlag(enrichment?.countryCode)
+  const trustBadge = trustStateBadge(identity?.trustStatus)
+  const ecosystemName = identity?.serviceName ?? shortenDID(ecosystem.did) ?? ecosystem.did
+  const ecosystemDescription = identity?.serviceDescription
+  const orgName = identity?.organizationName ?? shortenDID(ecosystem.did) ?? ecosystem.did
+  const flag = countryCodeToFlag(identity?.countryCode)
   const egfHref = governanceFrameworkHref(ecosystem)
   const roles = parseRoles(ecosystem.role)
   const visibleRoles = roles.slice(0, 2)
@@ -95,7 +98,7 @@ export default function EcosystemCard({ ecosystem }: Props) {
       <div className={`${CARD_BODY_CLASS} ${isArchived ? 'archived-bg' : ''}`}>
         <div className={CARD_HEADER_REGION_CLASS}>
           <LogoImage
-            src={enrichment?.serviceLogoUrl}
+            src={identity?.serviceLogoUrl}
             fallbackSrc={serviceIdenticonUrl(ecosystem.did)}
             className="w-12 h-12 rounded-lg flex-shrink-0 object-contain"
           />
@@ -127,8 +130,8 @@ export default function EcosystemCard({ ecosystem }: Props) {
 
         <div className={CARD_ORG_REGION_CLASS}>
           <LogoImage
-            src={enrichment?.organizationLogoUrl}
-            fallbackSrc={serviceAvatarUrl(enrichment?.organizationName ?? ecosystem.did)}
+            src={identity?.organizationLogoUrl}
+            fallbackSrc={serviceAvatarUrl(identity?.organizationName ?? ecosystem.did)}
             className="w-8 h-8 rounded flex-shrink-0 object-contain"
           />
           <div className="flex-1 min-w-0">

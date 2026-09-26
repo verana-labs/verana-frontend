@@ -9,6 +9,7 @@ describe('parseParticipantHistoryResponse', () => {
         entity_id: '1',
         activity: [
           {
+            id: 42,
             timestamp: '2026-07-18T06:38:18.924Z',
             block_height: 10513,
             entity_type: 'Participant',
@@ -21,6 +22,7 @@ describe('parseParticipantHistoryResponse', () => {
       })
     ).toEqual([
       expect.objectContaining({
+        id: '42',
         entity_id: '1',
         msg: 'CreateRootParticipant',
         block_height: 10513,

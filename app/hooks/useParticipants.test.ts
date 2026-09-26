@@ -24,3 +24,32 @@ describe('parseParticipantsResponse', () => {
     ).toBeNull()
   })
 })
+
+const trustData = {
+  did: 'did:web:participant.example',
+  trusted: true,
+  expiresAtTime: null,
+  ecsCredentials: [{ ecsSchema: 'ServiceCredential', credentialSubject: { name: 'Acme Verifier' } }],
+}
+
+describe('participant rows carry the inline trust_data', () => {
+  it('maps a full payload to the row enrichment', () => {
+    const row = parseParticipantsResponse({ participants: [{ ...participant, trust_data: trustData }] })[0]
+    expect(row.trustData?.trustStatus).toBe('TRUSTED')
+    expect(row.trustData?.serviceName).toBe('Acme Verifier')
+  })
+
+  it('maps a null payload to unresolved', () => {
+    const row = parseParticipantsResponse({ participants: [{ ...participant, trust_data: null }] })[0]
+    expect(row.trustData?.trustStatus).toBe('UNRESOLVED')
+  })
+
+  it('leaves the enrichment unset when the request asked for no trust_data', () => {
+    expect(parseParticipantsResponse({ participants: [participant] })[0].trustData).toBeUndefined()
+  })
+
+  it('leaves the enrichment unset for a participant with no DID', () => {
+    const row = parseParticipantsResponse({ participants: [{ ...participant, did: null, trust_data: null }] })[0]
+    expect(row.trustData).toBeUndefined()
+  })
+})

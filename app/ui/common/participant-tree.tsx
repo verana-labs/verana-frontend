@@ -6,10 +6,10 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
-import { type DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
 import AddJoinPage from '@/participants/add/page'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import EcosystemBreadcrumb from '@/ui/common/ecosystem-breadcrumb'
+import { ShowMoreButton } from '@/ui/common/keyset-pagination'
 import type { ParticipantRefreshState, TreeNode } from '@/ui/common/participant-tree-types'
 import SchemaHeader, { type SchemaStatus } from '@/ui/common/schema-header'
 import type { Participant } from '@/ui/dataview/datasections/participant'
@@ -17,7 +17,7 @@ import { resolveTranslatable } from '@/ui/dataview/types'
 import { renderActionComponent } from './data-view-typed'
 import { ModalAction } from './modal-action'
 import ParticipantCard from './participant-card'
-import { collectParticipantDids, filterParticipantTree } from './participant-tree-filter'
+import { collectParticipantTrust, filterParticipantTree } from './participant-tree-filter'
 import TreeNodeHeader from './tree-node-header'
 
 type ParticipantTreeProps = {
@@ -34,6 +34,8 @@ type ParticipantTreeProps = {
   isEcosystemController?: boolean
   viewerCorporationId?: number
   setNodeRequestParams?: (nodeId?: string, role?: string, validatorId?: string) => void
+  moreNodeId?: string
+  loadMore?: () => void
   refreshRoot?: () => void
   onConnect?: () => void
   onRetryFetch?: () => void
@@ -97,6 +99,8 @@ function Tree({
   onToggle,
   onJoin,
   onConnect,
+  moreNodeId,
+  onLoadMore,
   depth = 0,
 }: {
   type: 'participants' | 'tasks'
@@ -110,6 +114,8 @@ function Tree({
   onToggle: (id: string, role?: string, validatorId?: string) => void
   onJoin: (node: TreeNode) => void
   onConnect?: () => void
+  moreNodeId?: string
+  onLoadMore?: () => void
   depth?: number
 }) {
   return (
@@ -148,8 +154,13 @@ function Tree({
                 onToggle={onToggle}
                 onJoin={onJoin}
                 onConnect={onConnect}
+                moreNodeId={moreNodeId}
+                onLoadMore={onLoadMore}
                 depth={depth + 1}
               />
+            ) : null}
+            {isExpanded && node.nodeId === moreNodeId && onLoadMore ? (
+              <ShowMoreButton onClick={onLoadMore} indent={(depth + 1) * 24} />
             ) : null}
           </div>
         )
@@ -172,6 +183,8 @@ export default function ParticipantTree({
   isEcosystemController,
   viewerCorporationId,
   setNodeRequestParams,
+  moreNodeId,
+  loadMore,
   refreshRoot,
   onConnect,
   onRetryFetch,
@@ -188,34 +201,15 @@ export default function ParticipantTree({
   const [refreshState, setRefreshState] = useState<ParticipantRefreshState>({})
   const detailRef = useRef<HTMLDivElement | null>(null)
   const { latestProcessedHeight } = useIndexerEvents()
-  const [enrichmentByDid, setEnrichmentByDid] = useState<Record<string, DidEnrichment>>({})
-
-  useEffect(() => {
-    if (type !== 'participants') return
-    let cancelled = false
-    const pending = collectParticipantDids(treeState).filter((did) => !enrichmentByDid[did])
-    for (const did of pending) {
-      fetchDidEnrichment(did)
-        .catch((): DidEnrichment => ({ did, trustStatus: 'UNRESOLVED' }))
-        .then((enrichment) => {
-          if (cancelled) return
-          setEnrichmentByDid((prev) => (prev[did] ? prev : { ...prev, [did]: enrichment }))
-        })
-    }
-    return () => {
-      cancelled = true
-    }
-  }, [type, treeState, enrichmentByDid])
 
   const visibleTree = useMemo(() => {
     if (type !== 'participants') return treeState
-    const trustByDid = Object.fromEntries(Object.entries(enrichmentByDid).map(([did, e]) => [did, e.trustStatus]))
     return filterParticipantTree(
       treeState,
       { includeUnresolvable: showUnresolvable, includeDisabled: showDisabled },
-      trustByDid
+      collectParticipantTrust(treeState)
     )
-  }, [type, treeState, enrichmentByDid, showUnresolvable, showDisabled])
+  }, [type, treeState, showUnresolvable, showDisabled])
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => (tree[0] ? { [tree[0].nodeId]: true } : {}))
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -377,7 +371,10 @@ export default function ParticipantTree({
             setJoinNode(node)
           }}
           onConnect={onConnect}
+          moreNodeId={moreNodeId}
+          onLoadMore={loadMore}
         />
+        {moreNodeId === 'root' && loadMore ? <ShowMoreButton onClick={loadMore} /> : null}
 
         {type === 'participants' && isEcosystemController ? (
           <button

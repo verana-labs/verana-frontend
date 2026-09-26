@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test'
 import {
   ACME_DID,
   ACME_POLICY_ADDRESS,
+  ACME_TRUST_DATA,
   GROUP_MEMBERS,
   HARNESS_ADDRESS,
   HISTORY_13,
@@ -64,7 +65,7 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
       },
     })
   )
-  await page.route('**/v4/corporation/get/12', (route) =>
+  await page.route('**/v4/corporation/get/12*', (route) =>
     route.fulfill({
       json: {
         corporation: {
@@ -74,11 +75,12 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
           language: 'en',
           created: '2026-08-25T20:34:20Z',
           modified: '2026-08-25T20:34:20Z',
+          trust_data: null,
         },
       },
     })
   )
-  await page.route('**/v4/corporation/get/13', (route) =>
+  await page.route('**/v4/corporation/get/13*', (route) =>
     route.fulfill({
       json: {
         corporation: {
@@ -88,6 +90,7 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
           language: 'de',
           created: '2026-09-01T10:00:00Z',
           modified: '2026-09-01T10:00:00Z',
+          trust_data: ACME_TRUST_DATA,
         },
       },
     })
@@ -171,22 +174,6 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
     if (body.did !== ACME_DID) {
       return route.fulfill({ status: 404, json: { error: 'DID not found', code: 404 } })
     }
-    return route.fulfill({
-      json: {
-        did: ACME_DID,
-        trusted: true,
-        evaluatedAtTime: '2026-09-01T12:00:00Z',
-        evaluatedAtBlock: 405000,
-        expiresAtTime: null,
-        corporationId: 13,
-        ecsCredentials: [
-          {
-            ecsSchema: 'OrganizationCredential',
-            credentialSubject: { name: 'Acme Trust AG', countryCode: 'CH', registryId: 'CHE-999.999.999' },
-          },
-          { ecsSchema: 'ServiceCredential', credentialSubject: { name: 'Acme Trust Registry' } },
-        ],
-      },
-    })
+    return route.fulfill({ json: ACME_TRUST_DATA })
   })
 }

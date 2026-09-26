@@ -61,3 +61,28 @@ export function indexerValidators(label: string) {
     stringArray,
   }
 }
+
+export type KeysetSort = '+id' | '-id'
+
+export interface KeysetPageRequest {
+  pageSize: number
+  after?: string
+  sort?: KeysetSort
+}
+
+// Add the keyset page parameters of [VFE-DATA-IDX-1]. The indexer excludes
+// `max_id` and includes `min_id`, so the ascending cursor starts one id later.
+export function applyKeysetParams(params: URLSearchParams, request: KeysetPageRequest): void {
+  const sort = request.sort ?? '-id'
+  params.set('limit', String(request.pageSize + 1))
+  params.set('sort', sort)
+  if (request.after === undefined) return
+  if (sort === '-id') params.set('max_id', request.after)
+  else params.set('min_id', (BigInt(request.after) + BigInt(1)).toString())
+}
+
+// Split the extra row off the window. The indexer returns no total count, so
+// that row is the only next-page signal of [VFE-DATA-IDX-1].
+export function takeKeysetPage<T>(window: T[], pageSize: number): { items: T[]; hasNext: boolean } {
+  return { items: window.slice(0, pageSize), hasNext: window.length > pageSize }
+}

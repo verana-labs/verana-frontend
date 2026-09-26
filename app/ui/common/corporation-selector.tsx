@@ -5,7 +5,6 @@ import { faBuilding, faChevronDown, faPlus, faRotateRight } from '@fortawesome/f
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import Link from 'next/link'
-import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
@@ -16,12 +15,11 @@ export function CorporationSelector() {
   const { isWalletConnected } = useChain(veranaChain.chain_name)
   const { memberships, actingCorporation, needsSelection, loading, error, attention, setActingCorporation, refetch } =
     useUserCorporation()
-  const { data: actingEnrichment } = useDidTrustEnrichment(actingCorporation?.corporation.did)
 
   if (!isWalletConnected || (loading && memberships.length === 0)) return null
 
   const label = actingCorporation
-    ? (corporationDisplayName(actingEnrichment) ?? actingCorporation.corporation.did)
+    ? (corporationDisplayName(actingCorporation.corporation.trustData) ?? actingCorporation.corporation.did)
     : translate(needsSelection ? 'corporation.selector.choose' : 'corporation.selector.none')
 
   return (

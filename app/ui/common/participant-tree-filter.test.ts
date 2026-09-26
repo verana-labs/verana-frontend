@@ -1,13 +1,14 @@
 import { faFolder } from '@fortawesome/free-solid-svg-icons'
 import { describe, expect, it } from 'vitest'
 import type { DidTrustState } from '@/lib/resolverClient'
-import { collectParticipantDids, filterParticipantTree } from '@/ui/common/participant-tree-filter'
+import { collectParticipantTrust, filterParticipantTree } from '@/ui/common/participant-tree-filter'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import type { OnboardingProcessState, Participant } from '@/ui/dataview/datasections/participant'
 
 type NodeSpec = {
   id: string
   did?: string
+  trust?: DidTrustState
   participantState?: string
   opState?: OnboardingProcessState
   group?: boolean
@@ -27,6 +28,7 @@ function node(spec: NodeSpec): TreeNode {
       : ({
           id: spec.id,
           did: spec.did,
+          trustData: spec.trust ? { did: spec.did, trustStatus: spec.trust } : undefined,
           participant_state: spec.participantState ?? 'ACTIVE',
           op_state: spec.opState,
         } as unknown as Participant),
@@ -40,7 +42,7 @@ const TRUST: Record<string, DidTrustState | undefined> = {
   'did:ex:untrusted': 'UNTRUSTED',
 }
 
-describe('collectParticipantDids', () => {
+describe('collectParticipantTrust', () => {
   it('collects unique participant DIDs recursively, ignoring group nodes', () => {
     const tree = [
       node({
@@ -59,7 +61,12 @@ describe('collectParticipantDids', () => {
         ],
       }),
     ]
-    expect(collectParticipantDids(tree).sort()).toEqual(['did:ex:a', 'did:ex:b'])
+    expect(Object.keys(collectParticipantTrust(tree)).sort()).toEqual(['did:ex:a', 'did:ex:b'])
+  })
+
+  it('reads the trust state from the row, and leaves an unenriched row undefined', () => {
+    const tree = [node({ id: '1', did: 'did:ex:a', trust: 'UNTRUSTED' }), node({ id: '2', did: 'did:ex:b' })]
+    expect(collectParticipantTrust(tree)).toEqual({ 'did:ex:a': 'UNTRUSTED', 'did:ex:b': undefined })
   })
 })
 

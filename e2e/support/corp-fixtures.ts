@@ -7,6 +7,22 @@ export const ACME_DID = 'did:web:acme-trust.ch'
 export const PLAIN_DID = 'did:web:keplr-maxime-0825.devnet.verana.network'
 export const ACME_POLICY_ADDRESS = 'verana10ezj2lmcj3flaacqwrzv278aled0pen8cnx257sggeng2fdel53q0929dj'
 export const GRANTEE = 'verana1enndx0fjq23urqc9fpf66y7xwvhe2ajhme498v'
+
+export const ACME_TRUST_DATA = {
+  did: ACME_DID,
+  trusted: true,
+  evaluatedAtTime: '2026-09-01T12:00:00Z',
+  evaluatedAtBlock: 405000,
+  expiresAtTime: null,
+  corporationId: 13,
+  ecsCredentials: [
+    {
+      ecsSchema: 'OrganizationCredential',
+      credentialSubject: { name: 'Acme Trust AG', countryCode: 'CH', registryId: 'CHE-999.999.999' },
+    },
+    { ecsSchema: 'ServiceCredential', credentialSubject: { name: 'Acme Trust Registry' } },
+  ],
+}
 export const REPLACEMENT_MEMBER = 'verana1y6hjwe5kpmuvw920cn5gje9mk7smgcgeuj4jdf'
 
 export const OPERATOR_GRANT_MESSAGE_TYPES = [

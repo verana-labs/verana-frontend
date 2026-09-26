@@ -1,9 +1,9 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA } from '@/config/env'
 import { translate } from '@/i18n/dataview'
-import { indexerValidators } from '@/lib/indexer-json'
+import { applyKeysetParams, indexerValidators, takeKeysetPage } from '@/lib/indexer-json'
 import type { HolderOnboardingMode, ParticipantOnboardingMode } from '@/lib/participant-onboarding'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
@@ -91,10 +91,27 @@ export function parseCredentialSchemasResponse(payload: unknown): CredentialSche
   return envelope.schemas.map((value, index) => parseCredentialSchema(value, `schemas[${index}]`))
 }
 
-export function useCredentialSchemas(ecosystemId?: string, all = true, onlyActive = false) {
+export const CREDENTIAL_SCHEMAS_PAGE_SIZE = 12
+
+// A credential schema carries no DID, so the list takes keyset pages and no `trust_data`.
+export function useCredentialSchemas(
+  ecosystemId?: string,
+  all = true,
+  onlyActive = false,
+  pageSize = CREDENTIAL_SCHEMAS_PAGE_SIZE
+) {
   const [credentialSchemas, setCredentialSchemas] = useState<CredentialSchemaListItem[]>([])
+  const [hasNext, setHasNext] = useState(false)
   const [loading, setLoading] = useState(false)
   const [errorCredentialSchemas, setError] = useState<string | null>(null)
+
+  const pageKey = `${all}|${ecosystemId ?? ''}|${onlyActive}|${pageSize}`
+  const [pages, setPages] = useState<{ key: string; stack: (string | undefined)[] }>({
+    key: pageKey,
+    stack: [undefined],
+  })
+  const stack = pages.key === pageKey ? pages.stack : [undefined]
+  const after = stack[stack.length - 1]
 
   const fetchCredentialSchemas = useCallback(async () => {
     if ((!all && !ecosystemId) || !VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA) {
@@ -109,7 +126,8 @@ export function useCredentialSchemas(ecosystemId?: string, all = true, onlyActiv
     setError(null)
     setLoading(true)
     try {
-      const params = new URLSearchParams({ limit: '1024' })
+      const params = new URLSearchParams()
+      applyKeysetParams(params, { pageSize, after })
       if (!all && ecosystemId) params.set('ecosystem_id', ecosystemId)
       if (onlyActive) params.set('archived', 'false')
       const response = await fetch(`${VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA}/list?${params.toString()}`)
@@ -118,22 +136,86 @@ export function useCredentialSchemas(ecosystemId?: string, all = true, onlyActiv
         const { error, code } = json as ApiErrorResponse
         throw new Error(`Error ${code}: ${error}`)
       }
-      setCredentialSchemas(parseCredentialSchemasResponse(json))
+      const page = takeKeysetPage(parseCredentialSchemasResponse(json), pageSize)
+      setCredentialSchemas(page.items)
+      setHasNext(page.hasNext)
     } catch (error) {
       setError(error instanceof Error ? error.message : String(error))
     } finally {
       setLoading(false)
     }
-  }, [all, ecosystemId, onlyActive])
+  }, [after, all, ecosystemId, onlyActive, pageSize])
 
   useEffect(() => {
     void fetchCredentialSchemas()
   }, [fetchCredentialSchemas])
+
+  const nextPage = useCallback(() => {
+    const last = credentialSchemas[credentialSchemas.length - 1]
+    if (last) setPages({ key: pageKey, stack: [...stack, last.id] })
+  }, [credentialSchemas, pageKey, stack])
+
+  const previousPage = useCallback(() => {
+    if (stack.length > 1) setPages({ key: pageKey, stack: stack.slice(0, -1) })
+  }, [pageKey, stack])
 
   return {
     credentialSchemas,
     loading,
     errorCredentialSchemas,
     refetch: fetchCredentialSchemas,
+    hasNext,
+    hasPrevious: stack.length > 1,
+    nextPage,
+    previousPage,
   }
+}
+
+// Discover groups the schema cards by ecosystem, and the list method filters by
+// a single `ecosystem_id`, so it reads one keyset page per loaded ecosystem.
+export function useCredentialSchemasByEcosystem(ecosystemIds: string[], pageSize = CREDENTIAL_SCHEMAS_PAGE_SIZE) {
+  const [schemasByEcosystem, setSchemasByEcosystem] = useState<Record<string, CredentialSchemaListItem[]>>({})
+  const [loading, setLoading] = useState(false)
+  const [errorCredentialSchemas, setError] = useState<string | null>(null)
+  const requestRef = useRef(0)
+  const ecosystemKey = ecosystemIds.join('|')
+
+  const fetchCredentialSchemas = useCallback(async () => {
+    const request = ++requestRef.current
+    const ids = ecosystemKey ? ecosystemKey.split('|') : []
+    if (ids.length === 0 || !VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA) {
+      setSchemasByEcosystem({})
+      setLoading(false)
+      return
+    }
+
+    setError(null)
+    setLoading(true)
+    try {
+      const pages = await Promise.all(
+        ids.map(async (ecosystemId) => {
+          const params = new URLSearchParams({ ecosystem_id: ecosystemId, archived: 'false' })
+          applyKeysetParams(params, { pageSize })
+          const response = await fetch(`${VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA}/list?${params.toString()}`)
+          const json: unknown = await response.json()
+          if (!response.ok) {
+            const { error, code } = json as ApiErrorResponse
+            throw new Error(`Error ${code}: ${error}`)
+          }
+          return [ecosystemId, takeKeysetPage(parseCredentialSchemasResponse(json), pageSize).items] as const
+        })
+      )
+      if (request === requestRef.current) setSchemasByEcosystem(Object.fromEntries(pages))
+    } catch (error) {
+      if (request === requestRef.current) setError(error instanceof Error ? error.message : String(error))
+    } finally {
+      if (request === requestRef.current) setLoading(false)
+    }
+  }, [ecosystemKey, pageSize])
+
+  useEffect(() => {
+    void fetchCredentialSchemas()
+  }, [fetchCredentialSchemas])
+
+  return { schemasByEcosystem, loading, errorCredentialSchemas, refetch: fetchCredentialSchemas }
 }

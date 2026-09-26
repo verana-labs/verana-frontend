@@ -10,6 +10,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import type { ReactNode } from 'react'
 import { translate } from '@/i18n/dataview'
+import type { DidEnrichment } from '@/lib/resolverClient'
 import type { MessageType } from '@/msg/constants/types'
 import type { Field, Section } from '@/ui/dataview/types'
 import { resolveTranslatable } from '@/ui/dataview/types'
@@ -281,9 +282,11 @@ export interface Participant {
   verified?: string | number
   expire_soon?: boolean | null
   transaction_cost?: string
+  trustData?: DidEnrichment
 }
 
 export interface ParticipantHistory {
+  id: string
   entity_id: string
   entity_type: string
   timestamp: string
@@ -415,6 +418,7 @@ export interface PendingEcosystem {
   did: string | null
   pending_tasks: number
   participants: number
+  trustData?: DidEnrichment
   schemas: {
     id: string
     title: string

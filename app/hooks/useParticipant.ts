@@ -4,6 +4,7 @@ import deepEqual from 'fast-deep-equal'
 import { useCallback, useEffect, useState } from 'react'
 import { VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
 import { indexerValidators } from '@/lib/indexer-json'
+import { enrichmentFromTrustData } from '@/lib/resolverClient'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type {
   OnboardingProcessState,
@@ -69,11 +70,14 @@ export function parseParticipantRecord(value: unknown, path = 'participant'): Pa
     if (!OP_STATES.has(opState)) throw new Error(`Invalid participant response: ${path}.op_state`)
   }
 
+  const did = nullableString(source.did, `${path}.did`)
+
   return {
     id: String(number(source.id, `${path}.id`)),
     schema_id: String(number(source.schema_id, `${path}.schema_id`)),
     role,
-    did: nullableString(source.did, `${path}.did`),
+    did,
+    trustData: did === null ? undefined : enrichmentFromTrustData(did, source.trust_data),
     corporation_id: number(source.corporation_id, `${path}.corporation_id`),
     participant_state: state,
     corporation_available_actions: stringArray(
