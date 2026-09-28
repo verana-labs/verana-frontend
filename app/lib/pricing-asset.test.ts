@@ -1,6 +1,6 @@
 import { PricingAssetType } from '@verana-labs/verana-types/codec/verana/cs/v1/types'
 import { describe, expect, it } from 'vitest'
-import { feeGateState, isNativePricing, pricingAssetLabel } from './pricing-asset'
+import { feeGateState, formatSchemaAmount, isNativePricing, NATIVE_PRICING, pricingAssetLabel } from './pricing-asset'
 
 describe('isNativePricing', () => {
   it('accepts the native coin as the indexer and the codec spell it', () => {
@@ -46,5 +46,24 @@ describe('feeGateState', () => {
   it('blocks rather than allows when the schema could not be read', () => {
     expect(feeGateState(null)).toBe('unknown')
     expect(feeGateState(undefined)).toBe('unknown')
+  })
+})
+
+describe('NATIVE_PRICING', () => {
+  it('is the pricing the gate accepts', () => {
+    expect(isNativePricing(NATIVE_PRICING)).toBe(true)
+    expect(feeGateState(NATIVE_PRICING)).toBe('allowed')
+  })
+})
+
+describe('formatSchemaAmount', () => {
+  it('prints native amounts in VNA and anything else in the schema asset', () => {
+    expect(formatSchemaAmount('2000000', { pricingAssetType: 'COIN', pricingAsset: 'uvna' })).toBe('2 VNA')
+    expect(formatSchemaAmount(2000000, { pricingAssetType: 'TU', pricingAsset: 'tu' })).toBe('2000000 TU (tu)')
+    expect(formatSchemaAmount('15', { pricingAssetType: 'FIAT', pricingAsset: 'USD' })).toBe('15 FIAT (USD)')
+  })
+
+  it('prints the bare amount when the schema could not be read', () => {
+    expect(formatSchemaAmount('2000000', null)).toBe('2000000')
   })
 })

@@ -100,6 +100,7 @@ function Tree({
   onToggle,
   onJoin,
   joinBlockedReason,
+  feePricing,
   onConnect,
   depth = 0,
 }: {
@@ -114,6 +115,7 @@ function Tree({
   onToggle: (id: string, role?: string, validatorId?: string) => void
   onJoin: (node: TreeNode) => void
   joinBlockedReason?: string
+  feePricing?: SchemaPricing
   onConnect?: () => void
   depth?: number
 }) {
@@ -138,6 +140,7 @@ function Tree({
                 onSelect={onSelect}
                 onJoin={onJoin}
                 joinBlockedReason={joinBlockedReason}
+                feePricing={feePricing}
                 onConnect={onConnect}
               />
             </div>
@@ -154,6 +157,7 @@ function Tree({
                 onToggle={onToggle}
                 onJoin={onJoin}
                 joinBlockedReason={joinBlockedReason}
+                feePricing={feePricing}
                 onConnect={onConnect}
                 depth={depth + 1}
               />
@@ -387,6 +391,7 @@ export default function ParticipantTree({
             setJoinNode(node)
           }}
           joinBlockedReason={joinBlockedReason}
+          feePricing={unsupportedPricing}
           onConnect={onConnect}
         />
 
@@ -440,9 +445,11 @@ export default function ParticipantTree({
       {selection.node ? (
         <div ref={detailRef}>
           <ParticipantCard
+            key={selection.node.nodeId}
             selectedNode={selection.node}
             path={selection.path}
             schemaTitle={schemaTitle ?? ''}
+            pricingNoticeShown={Boolean(unsupportedPricing)}
             viewerCorporationId={viewerCorporationId}
             onRefresh={(participant) => setTreeState((current) => updateParticipant(current, participant))}
             onRefreshList={onRetryFetch}

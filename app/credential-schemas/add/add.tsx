@@ -1,9 +1,8 @@
 'use client'
 
-import { PricingAssetType } from '@verana-labs/verana-types/codec/verana/cs/v1/types'
-import { veranaDenom } from '@/config/veranaChain.sign.client'
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
 import { translate } from '@/i18n/dataview'
+import { NATIVE_PRICING } from '@/lib/pricing-asset'
 import EditableDataView from '@/ui/common/data-edit'
 import { type CredentialSchemaData, credentialSchemaSections } from '@/ui/dataview/datasections/cs'
 import { resolveTranslatable } from '@/ui/dataview/types'
@@ -27,8 +26,8 @@ export default function AddCredentialSchemaPage({ ecosystemId, onCancel, onRefre
     issuerOnboardingMode: 1,
     verifierOnboardingMode: 1,
     holderOnboardingMode: null,
-    pricingAssetType: PricingAssetType.COIN,
-    pricingAsset: veranaDenom,
+    pricingAssetType: NATIVE_PRICING.pricingAssetType,
+    pricingAsset: NATIVE_PRICING.pricingAsset,
     digestAlgorithm: null,
     archived: null,
     jsonSchema: '',

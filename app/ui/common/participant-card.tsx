@@ -16,7 +16,7 @@ import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { mergeParticipantDetailActions, refreshParticipantSources, useParticipant } from '@/hooks/useParticipant'
 import { useParticipantHistory } from '@/hooks/useParticipantHistory'
 import { translate } from '@/i18n/dataview'
-import { FEE_BEARING_PARTICIPANT_ACTIONS } from '@/lib/pricing-asset'
+import { FEE_BEARING_PARTICIPANT_ACTIONS, formatSchemaAmount, isNativePricing } from '@/lib/pricing-asset'
 import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import ActionFieldButtonModal from '@/ui/common/action-field-button-modal'
 import type { ActionFieldProps } from '@/ui/common/data-view-typed'
@@ -25,7 +25,7 @@ import LogoImage from '@/ui/common/logo-image'
 import ParticipantAttribute from '@/ui/common/participant-attribute'
 import ParticipantTimeline from '@/ui/common/participant-timeline'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
-import { feeBlockedReasonFor } from '@/ui/common/pricing-notice'
+import { feeBlockedReasonFor, PricingNotice } from '@/ui/common/pricing-notice'
 import TrustBadge from '@/ui/common/trust-badge'
 import {
   type Participant,
@@ -239,6 +239,7 @@ type ParticipantCardProps = {
   selectedNode: TreeNode
   path: TreeNode[]
   schemaTitle: string
+  pricingNoticeShown?: boolean
   viewerCorporationId?: number
   onRefresh?: (participant: Participant) => void
   onRefreshList?: () => void | Promise<void>
@@ -248,6 +249,7 @@ export default function ParticipantCard({
   selectedNode,
   path,
   schemaTitle,
+  pricingNoticeShown = false,
   viewerCorporationId,
   onRefresh,
   onRefreshList,
@@ -258,7 +260,11 @@ export default function ParticipantCard({
   const { data: enrichment } = useDidTrustEnrichment(did)
   const { participant: refreshedParticipant, refetch } = useParticipant(participantId)
   const { participantHistory, refetch: refetchHistory } = useParticipantHistory(participantId)
-  const { credentialSchema } = useCredentialSchemaData(participant?.schema_id ?? '')
+  const {
+    credentialSchema,
+    loading: schemaLoading,
+    errorCredentialSchema,
+  } = useCredentialSchemaData(participant?.schema_id ?? '')
   const feeBlockedReason = feeBlockedReasonFor(credentialSchema)
   const [activeActionId, setActiveActionId] = useState<string | null>(null)
   const participantRef = useRef(participant)
@@ -297,6 +303,16 @@ export default function ParticipantCard({
     'header'
   )
   const onboardingState = onboardingStateColor(participant.op_state)
+  const pricingSettled = !schemaLoading && (credentialSchema !== null || errorCredentialSchema !== null)
+  const feeActionBlocked =
+    pricingSettled &&
+    Boolean(feeBlockedReason) &&
+    [...allowed].some((name) => FEE_BEARING_PARTICIPANT_ACTIONS.has(name))
+  const businessModels = participantBusinessModels.map((item) => ({
+    ...item,
+    format: (value: Participant[keyof Participant]) => formatSchemaAmount(String(value), credentialSchema),
+  }))
+
   const lifecycleActions = participantLifecycleActions.filter(
     (action) => !participantSlashingActions.some((slashing) => slashing.name === action.name)
   )
@@ -453,6 +469,9 @@ export default function ParticipantCard({
               </span>
             </div>
             <AttributeGrid participant={participant} items={onboardingItems} />
+            {feeActionBlocked && !pricingNoticeShown ? (
+              <PricingNotice schema={credentialSchema ?? null} className="mt-4" />
+            ) : null}
             <div className="flex flex-wrap gap-3 mt-4">{renderActions(participantOnboardingActions)}</div>
           </div>
         ) : null}
@@ -460,8 +479,10 @@ export default function ParticipantCard({
           <h3 className="text-lg font-semibold mb-4">
             {tr('participantcard.businessmodels.title', 'Business Models')}
           </h3>
-          <AttributeGrid participant={participant} items={participantBusinessModels} columns={3} />
-          <FeeDistributionPreview participant={participant} />
+          <AttributeGrid participant={participant} items={businessModels} columns={3} />
+          {credentialSchema && isNativePricing(credentialSchema) ? (
+            <FeeDistributionPreview participant={participant} />
+          ) : null}
         </div>
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
           <h3 className="text-lg font-semibold mb-4">{tr('participantcard.slashing.title', 'Slashing')}</h3>
@@ -473,7 +494,11 @@ export default function ParticipantCard({
           {participantHistory.length ? (
             <div className="space-y-4">
               {participantHistory.map((history, index) => (
-                <ParticipantTimeline participantHistory={history} key={`${history.block_height}-${index}`} />
+                <ParticipantTimeline
+                  participantHistory={history}
+                  feePricing={credentialSchema}
+                  key={`${history.block_height}-${index}`}
+                />
               ))}
             </div>
           ) : (

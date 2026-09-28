@@ -108,6 +108,18 @@ test('a schema priced in trust units keeps the fee-bearing affordances disabled 
   await expect(page.getByText(ACME_DID).first()).toBeVisible()
 })
 
+test('a participant of a schema priced in trust units shows its fees in trust units', async ({ page }) => {
+  await installCorporationStubs(page)
+  await installSchemaStubs(page)
+  await seedActingCorporation(page, ECOSYSTEM_ID)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  await page.goto(`/participants/${TU_SCHEMA_ID}?participant=701`)
+
+  await expect(page.getByText('2000000 TU (tu)')).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByText('2 VNA', { exact: true })).toHaveCount(0)
+  await expect(page.getByTestId('fee-distribution')).toHaveCount(0)
+})
+
 test('a schema priced in the native coin carries no notice and keeps its affordances', async ({ page }) => {
   await open(page, COIN_SCHEMA_ID)
 

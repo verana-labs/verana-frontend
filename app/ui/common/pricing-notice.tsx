@@ -21,12 +21,13 @@ export function feeBlockedReasonFor(schema: SchemaPricing | null | undefined): s
   return state === 'unsupported' ? unsupportedPricingReason() : unknownPricingReason()
 }
 
-export function PricingNotice({ schema, className }: { schema: SchemaPricing; className?: string }) {
-  const text =
-    resolveTranslatable(
-      { key: 'pricing.unsupported.notice', values: { asset: pricingAssetLabel(schema) } },
-      translate
-    ) ?? unsupportedPricingReason()
+export function PricingNotice({ schema, className }: { schema: SchemaPricing | null; className?: string }) {
+  const text = schema
+    ? (resolveTranslatable(
+        { key: 'pricing.unsupported.notice', values: { asset: pricingAssetLabel(schema) } },
+        translate
+      ) ?? unsupportedPricingReason())
+    : unknownPricingReason()
   return (
     <div
       role="note"

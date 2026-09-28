@@ -9,12 +9,12 @@ import {
   MsgCreateCredentialSchema,
   MsgUpdateCredentialSchema,
 } from '@verana-labs/verana-types/codec/verana/cs/v1/tx'
-import { HolderOnboardingMode, PricingAssetType } from '@verana-labs/verana-types/codec/verana/cs/v1/types'
+import { HolderOnboardingMode } from '@verana-labs/verana-types/codec/verana/cs/v1/types'
 import { useRef } from 'react'
-import { veranaDenom } from '@/config/veranaChain.sign.client'
 import { useDelegableMsgs } from '@/hooks/useDelegableMsgs'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
+import { NATIVE_PRICING } from '@/lib/pricing-asset'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import {
   MSG_ERROR_ACTION_CS,
@@ -35,8 +35,6 @@ import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 import { normalizeJsonSchema, validateJSONSchemaReturn } from '@/util/json_schema_util'
 
 const DEFAULT_HOLDER_ONBOARDING_MODE = HolderOnboardingMode.HOLDER_ONBOARDING_MODE_PERMISSIONLESS
-const NATIVE_PRICING_ASSET_TYPE = PricingAssetType.COIN
-const NATIVE_PRICING_ASSET = veranaDenom
 const DEFAULT_DIGEST_ALGORITHM = 'sha384'
 
 type CredentialSchemaContext = {
@@ -90,8 +88,8 @@ export function buildCredentialSchemaMessage(
           issuerOnboardingMode: params.issuerOnboardingMode,
           verifierOnboardingMode: params.verifierOnboardingMode,
           holderOnboardingMode: DEFAULT_HOLDER_ONBOARDING_MODE,
-          pricingAssetType: NATIVE_PRICING_ASSET_TYPE,
-          pricingAsset: NATIVE_PRICING_ASSET,
+          pricingAssetType: NATIVE_PRICING.pricingAssetType,
+          pricingAsset: NATIVE_PRICING.pricingAsset,
           digestAlgorithm: DEFAULT_DIGEST_ALGORITHM,
         }),
       }

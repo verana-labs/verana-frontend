@@ -11,6 +11,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { ReactNode } from 'react'
 import { translate } from '@/i18n/dataview'
+import { formatSchemaAmount, type SchemaPricing } from '@/lib/pricing-asset'
 import { service } from '@/ui/common/participant-attribute'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import ServiceIdentity from '@/ui/common/service-identity'
@@ -34,6 +35,7 @@ export type TreeNodeHeaderProps = {
   onSelect: (id: string) => void
   onJoin: (node: TreeNode) => void
   joinBlockedReason?: string
+  feePricing?: SchemaPricing
   onConnect?: () => void
 }
 
@@ -48,6 +50,7 @@ export default function TreeNodeHeader({
   onSelect,
   onJoin,
   joinBlockedReason,
+  feePricing,
   onConnect,
 }: TreeNodeHeaderProps) {
   const hasChildren = Boolean(node.children?.length)
@@ -58,6 +61,9 @@ export default function TreeNodeHeader({
   )
   const onboardingState = onboardingStateColor(participant?.op_state)
   const showParticipantState = type === 'participants' || participantState.expireSoon !== null
+
+  const fee = (value: string | number | undefined) =>
+    feePricing ? formatSchemaAmount(value ?? 0, feePricing) : formatVNAFromUVNA(String(value ?? 0))
 
   let participantMetrics: ReactNode = null
   if (type === 'participants') {
@@ -73,7 +79,7 @@ export default function TreeNodeHeader({
           {showBusiness ? (
             <span className="whitespace-nowrap">
               <FontAwesomeIcon icon={faCoins} className="mr-1" />
-              {`validation: ${formatVNAFromUVNA(String(participant.validation_fees ?? 0))} | issuance: ${formatVNAFromUVNA(String(participant.issuance_fees ?? 0))} | verification: ${formatVNAFromUVNA(String(participant.verification_fees ?? 0))}`}
+              {`validation: ${fee(participant.validation_fees)} | issuance: ${fee(participant.issuance_fees)} | verification: ${fee(participant.verification_fees)}`}
             </span>
           ) : null}
           {showStats ? (
