@@ -61,7 +61,7 @@ export default function TdActionPage({ action, data, onClose, onRefresh }: TdAct
     // Broadcast transaction with user input
     switch (action) {
       case 'MsgReclaimTrustDepositYield':
-        await actionTrustDeposit({ msgType: 'MsgReclaimTrustDepositYield' })
+        await actionTrustDeposit({ msgType: 'MsgReclaimTrustDepositYield', claimable: claimableInterests })
         break
       default:
         break
@@ -71,7 +71,10 @@ export default function TdActionPage({ action, data, onClose, onRefresh }: TdAct
   async function onSimulate(newData: TdData) {
     switch (action) {
       case 'MsgReclaimTrustDepositYield': {
-        const res = await actionTrustDeposit({ msgType: 'MsgReclaimTrustDepositYield' }, true)
+        const res = await actionTrustDeposit(
+          { msgType: 'MsgReclaimTrustDepositYield', claimable: claimableInterests },
+          true
+        )
         if (res && typeof res === 'object' && !('transactionHash' in res)) {
           return res as SimulateResult
         }

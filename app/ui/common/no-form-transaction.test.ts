@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getBalanceWarningState, shouldStartNoFormSimulation } from './no-form-transaction'
+import { getBalanceWarningState, shouldStartNoFormSimulation, simulatedFeeUvna } from './no-form-transaction'
 
 describe('no-form transaction readiness', () => {
   it('waits for the real account balance before simulating', () => {
@@ -37,5 +37,18 @@ describe('no-form transaction readiness', () => {
       lowBalance: false,
       balanceLessThanFee: false,
     })
+  })
+})
+
+describe('simulatedFeeUvna', () => {
+  it('reads the native amount the chain simulated', () => {
+    expect(simulatedFeeUvna({ gas: '200000', amount: [{ denom: 'uvna', amount: '4321' }] })).toBe(4321)
+    expect(simulatedFeeUvna({ gas: '200000', amount: [{ denom: 'uvna', amount: '0' }] })).toBe(0)
+  })
+
+  it('stays unknown rather than inventing a fee', () => {
+    expect(simulatedFeeUvna(undefined)).toBeNull()
+    expect(simulatedFeeUvna({ gas: '200000', amount: [] })).toBeNull()
+    expect(simulatedFeeUvna({ gas: '200000', amount: [{ denom: 'uvna', amount: 'nope' }] })).toBeNull()
   })
 })

@@ -18,6 +18,7 @@ import { translate } from '@/i18n/dataview'
 import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import ActionFieldButtonModal from '@/ui/common/action-field-button-modal'
 import type { ActionFieldProps } from '@/ui/common/data-view-typed'
+import { FeeDistributionPreview } from '@/ui/common/fee-distribution'
 import LogoImage from '@/ui/common/logo-image'
 import ParticipantAttribute from '@/ui/common/participant-attribute'
 import ParticipantTimeline from '@/ui/common/participant-timeline'
@@ -446,6 +447,7 @@ export default function ParticipantCard({
             {tr('participantcard.businessmodels.title', 'Business Models')}
           </h3>
           <AttributeGrid participant={participant} items={participantBusinessModels} columns={3} />
+          <FeeDistributionPreview participant={participant} />
         </div>
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
           <h3 className="text-lg font-semibold mb-4">{tr('participantcard.slashing.title', 'Slashing')}</h3>

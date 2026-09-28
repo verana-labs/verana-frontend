@@ -16,7 +16,7 @@ import { useNotification } from '@/providers/notification-provider'
 import ActionCard, { ActionCardProps } from '@/ui/common/action-card'
 import JsonCodeBlock from '@/ui/common/json-code-block'
 import { LanguageCombobox } from '@/ui/common/language-combobox'
-import { getBalanceWarningState, shouldStartNoFormSimulation } from '@/ui/common/no-form-transaction'
+import { getBalanceWarningState, shouldStartNoFormSimulation, simulatedFeeUvna } from '@/ui/common/no-form-transaction'
 import {
   DataViewProps,
   isResolvedDataField,
@@ -88,6 +88,7 @@ export default function EditableDataView<T extends object>({
     : (resolveTranslatable({ key: 'messages.lowbalance.noFaucet' }, translate) ??
       'You’re Running Low on VNA. Your balance is {value} VNA. Add more VNA to keep your activity uninterrupted.')
   const [feeAmount, setFeeAmount] = useState<number | null>(null)
+  const [simulationSettled, setSimulationSettled] = useState(false)
   const balanceLessThanFeeTemplate = VERANA_FAUCET_URL
     ? (resolveTranslatable({ key: 'messages.balanceLessThanFee' }, translate) ??
       "You’re Running Low on VNA. Your balance is {value} VNA and running this transaction requires {fee} VNA. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted.")
@@ -187,16 +188,16 @@ export default function EditableDataView<T extends object>({
 
   const handleSimulate = useCallback(async () => {
     if (messageType === 'MsgReclaimTrustDepositYield') return
-    if (onSimulate) {
-      try {
-        setSubmitting(true)
-        const res = await Promise.resolve(onSimulate(formData))
-        if (res) setFeeAmount(Number(res.amount?.[0]?.amount) || 900_000)
-      } catch (err) {
-        logger.error('handleSimulate', err)
-      } finally {
-        setSubmitting(false)
-      }
+    if (!onSimulate) return
+    try {
+      setSubmitting(true)
+      setFeeAmount(simulatedFeeUvna(await Promise.resolve(onSimulate(formData))))
+    } catch (err) {
+      logger.error('handleSimulate', err)
+      setFeeAmount(null)
+    } finally {
+      setSimulationSettled(true)
+      setSubmitting(false)
     }
   }, [formData, messageType, onSimulate])
 
@@ -212,9 +213,9 @@ export default function EditableDataView<T extends object>({
   }, [availableBalance, errorAccountData, handleSimulate, noForm, setModalHidden])
 
   useEffect(() => {
-    if (!noForm) return
-    if (showMsgBalanceLessThanFeeWarn == null || showMsgLowBalanceWarn == null) return
-    if (showMsgBalanceLessThanFeeWarn || showMsgLowBalanceWarn) {
+    if (!noForm || !simulationSettled) return
+    if (showMsgLowBalanceWarn == null) return
+    if (showMsgBalanceLessThanFeeWarn === true || showMsgLowBalanceWarn) {
       setModalHidden?.()
       return
     }
@@ -222,7 +223,15 @@ export default function EditableDataView<T extends object>({
     autoSaveRan.current = true
     void handleSave()
     onCancel?.()
-  }, [handleSave, noForm, onCancel, setModalHidden, showMsgBalanceLessThanFeeWarn, showMsgLowBalanceWarn])
+  }, [
+    handleSave,
+    noForm,
+    onCancel,
+    setModalHidden,
+    showMsgBalanceLessThanFeeWarn,
+    showMsgLowBalanceWarn,
+    simulationSettled,
+  ])
 
   // Handles cancel action; disables button while submitting
   function handleCancel() {
