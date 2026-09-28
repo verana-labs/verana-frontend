@@ -18,6 +18,8 @@ const requiredFieldsByMsgType: Partial<Record<MessageType, readonly string[]>> =
     'holderValidationValidityPeriod',
     'issuerOnboardingMode',
     'verifierOnboardingMode',
+    'holderOnboardingMode',
+    'digestAlgorithm',
   ],
   MsgUpdateCredentialSchema: [
     'id',

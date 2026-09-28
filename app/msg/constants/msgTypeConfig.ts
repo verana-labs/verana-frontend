@@ -46,6 +46,7 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     label: t('messages.MsgCreateCredentialSchema.label'),
     description: t('messages.MsgCreateCredentialSchema.description'),
     cost: t('messages.MsgCreateCredentialSchema.cost'), // {value}
+    warning: t('messages.MsgCreateCredentialSchema.warning'),
   },
   MsgUpdateCredentialSchema: {
     label: t('messages.MsgUpdateCredentialSchema.label'),

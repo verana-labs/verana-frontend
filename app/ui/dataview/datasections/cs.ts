@@ -38,6 +38,16 @@ export const onboardingModeOptions = [
   { value: 3, label: t('dataview.cs.managementMode.GRANTOR_ONBOARDING_PROCESS') },
 ]
 
+export const holderOnboardingModeOptions = [
+  { value: 1, label: t('dataview.cs.managementMode.ISSUER_ONBOARDING_PROCESS') },
+  { value: 2, label: t('dataview.cs.managementMode.PERMISSIONLESS') },
+]
+
+export const digestAlgorithmOptions = [
+  { value: 'sha384', label: 'sha384' },
+  { value: 'sha512', label: 'sha512' },
+]
+
 export const credentialSchemaSections: Section<CredentialSchemaData>[] = [
   {
     name: t('dataview.cs.sections.main'),
@@ -201,6 +211,26 @@ export const credentialSchemaSections: Section<CredentialSchemaData>[] = [
         options: onboardingModeOptions,
         format: (value) => getModeLabel(String(value), '_VERIFIER'),
         isHtml: true,
+        show: 'create',
+      },
+      {
+        name: 'holderOnboardingMode',
+        label: t('dataview.cs.fields.holderOnboardingMode'),
+        type: 'data',
+        required: true,
+        update: false,
+        inputType: 'select',
+        options: holderOnboardingModeOptions,
+        show: 'create',
+      },
+      {
+        name: 'digestAlgorithm',
+        label: t('dataview.cs.fields.digestAlgorithm'),
+        type: 'data',
+        required: true,
+        update: false,
+        inputType: 'select',
+        options: digestAlgorithmOptions,
         show: 'create',
       },
       {
