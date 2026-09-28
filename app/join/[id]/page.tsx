@@ -132,8 +132,9 @@ export default function JoinEcosystemWizard() {
     if (id) void refetchCreated(id)
   })
   const selfCreating = decision?.messageType === 'MsgSelfCreateParticipant'
+  const selfCreateWithFees = selectedRole === 'ISSUER'
   const selfCreateProblem = selfCreating
-    ? selfCreateIssue(selfCreate, selectedValidator?.effective_until, new Date())
+    ? selfCreateIssue(selfCreate, selectedValidator?.effective_until, new Date(), selfCreateWithFees)
     : null
   const vsOperatorProblem = selectedRole ? vsOperatorIssue(selectedRole, vsOperator) : null
   const activeStep = STEPS.find((step) => step.id === currentStep)
@@ -176,7 +177,7 @@ export default function JoinEcosystemWizard() {
             msgType: decision.messageType,
             effectiveFrom: selfCreate.effectiveFrom,
             effectiveUntil: selfCreate.effectiveUntil,
-            ...(selectedRole === 'ISSUER'
+            ...(selfCreateWithFees
               ? {
                   validationFees: selfCreate.validationFees.trim(),
                   verificationFees: selfCreate.verificationFees.trim(),
@@ -428,7 +429,7 @@ export default function JoinEcosystemWizard() {
                 <SelfCreateFields
                   value={selfCreate}
                   onChange={setSelfCreate}
-                  withFees={selectedRole === 'ISSUER'}
+                  withFees={selfCreateWithFees}
                   issue={selfCreateProblem}
                 />
               ) : null}

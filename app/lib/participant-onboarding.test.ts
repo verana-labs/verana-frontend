@@ -98,22 +98,29 @@ describe('selfCreateIssue', () => {
   const now = new Date('2026-09-28T10:00:00Z')
 
   it('accepts the empty form', () => {
-    expect(selfCreateIssue(EMPTY_SELF_CREATE_INPUT, null, now)).toBeNull()
+    expect(selfCreateIssue(EMPTY_SELF_CREATE_INPUT, null, now, true)).toBeNull()
   })
 
   it('refuses fees that are not whole base units', () => {
-    expect(selfCreateIssue({ ...EMPTY_SELF_CREATE_INPUT, validationFees: '1.5' }, null, now)).toBe('invalidFees')
-    expect(selfCreateIssue({ ...EMPTY_SELF_CREATE_INPUT, verificationFees: '-3' }, null, now)).toBe('invalidFees')
-    expect(selfCreateIssue({ ...EMPTY_SELF_CREATE_INPUT, validationFees: '2500000' }, null, now)).toBeNull()
+    expect(selfCreateIssue({ ...EMPTY_SELF_CREATE_INPUT, validationFees: '1.5' }, null, now, true)).toBe('invalidFees')
+    expect(selfCreateIssue({ ...EMPTY_SELF_CREATE_INPUT, verificationFees: '-3' }, null, now, true)).toBe('invalidFees')
+    expect(selfCreateIssue({ ...EMPTY_SELF_CREATE_INPUT, validationFees: '2500000' }, null, now, true)).toBeNull()
+  })
+
+  it('ignores fees left from another role when the fee fields are not shown', () => {
+    const stale = { ...EMPTY_SELF_CREATE_INPUT, validationFees: '1.5', verificationFees: 'abc' }
+    expect(selfCreateIssue(stale, null, now, true)).toBe('invalidFees')
+    expect(selfCreateIssue(stale, null, now, false)).toBeNull()
   })
 
   it('checks the window against the validator it reads from the indexer', () => {
-    expect(selfCreateIssue(EMPTY_SELF_CREATE_INPUT, '2027-01-01T00:00:00.000Z', now)).toBe('untilRequired')
+    expect(selfCreateIssue(EMPTY_SELF_CREATE_INPUT, '2027-01-01T00:00:00.000Z', now, false)).toBe('untilRequired')
     expect(
       selfCreateIssue(
         { ...EMPTY_SELF_CREATE_INPUT, effectiveUntil: '2026-12-01T00:00' },
         '2027-01-01T00:00:00.000Z',
-        now
+        now,
+        false
       )
     ).toBeNull()
   })

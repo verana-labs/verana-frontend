@@ -84,9 +84,11 @@ function optionalDate(value: string | null | undefined): Date | undefined {
 export function selfCreateIssue(
   input: SelfCreateInput,
   validatorUntil: string | null | undefined,
-  now: Date
+  now: Date,
+  withFees: boolean
 ): SelfCreateIssue | null {
-  if (![input.validationFees, input.verificationFees].every((fee) => /^\d*$/.test(fee.trim()))) return 'invalidFees'
+  const fees = withFees ? [input.validationFees, input.verificationFees] : []
+  if (!fees.every((fee) => /^\d*$/.test(fee.trim()))) return 'invalidFees'
   return effectiveWindowIssue(
     { from: optionalDate(input.effectiveFrom), until: optionalDate(input.effectiveUntil) },
     optionalDate(validatorUntil),
