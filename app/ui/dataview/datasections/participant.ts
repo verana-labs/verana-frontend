@@ -283,6 +283,7 @@ export interface Participant {
   expire_soon?: boolean | null
   transaction_cost?: string
   trustData?: DidEnrichment
+  validator_validation_fees?: string | number
 }
 
 export interface ParticipantHistory {

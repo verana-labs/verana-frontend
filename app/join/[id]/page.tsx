@@ -9,8 +9,10 @@ import { useEcosystemData } from '@/hooks/useEcosystemData'
 import { useParticipants } from '@/hooks/useParticipants'
 import { translate } from '@/i18n/dataview'
 import { getParticipantOnboardingDecision, type JoinableParticipantRole } from '@/lib/participant-onboarding'
+import { trustCostLines } from '@/lib/trust-costs'
 import { useActionParticipant } from '@/msg/actions_hooks/actionParticipant'
 import { useNotification } from '@/providers/notification-provider'
+import { useProtocolParams } from '@/providers/protocol-params-context'
 import CsCard from '@/ui/common/cs-card'
 import EcosystemCard from '@/ui/common/ecosystem-card'
 import EgfCard from '@/ui/common/egf-card'
@@ -95,6 +97,7 @@ export default function JoinEcosystemWizard() {
   } = useParticipants(selectedSchema?.id, validatorRole)
   const activeValidators = validators.filter((participant) => participant.participant_state === 'ACTIVE')
 
+  const protocolParams = useProtocolParams()
   const submitParticipant = useActionParticipant(() => setCurrentStep(7))
   const activeStep = STEPS.find((step) => step.id === currentStep)
   const percentage = currentStep === 7 ? 100 : ((currentStep - 1) / STEPS.length) * 100
@@ -118,6 +121,14 @@ export default function JoinEcosystemWizard() {
     }
   })()
 
+  const onboardingCostLines =
+    decision?.messageType === 'MsgStartParticipantOP'
+      ? trustCostLines(
+          { msgType: 'MsgStartParticipantOP', validationFees: selectedValidator?.validation_fees },
+          protocolParams
+        )
+      : []
+
   async function submit() {
     if (!decision || !selectedRole || !selectedSchema || !isValidDID(serviceDid)) return
     setSubmitting(true)
@@ -138,6 +149,7 @@ export default function JoinEcosystemWizard() {
         role: selectedRole,
         validatorParticipantId: selectedValidator.id,
         did: serviceDid,
+        validatorValidationFees: selectedValidator.validation_fees,
       })
     } finally {
       setSubmitting(false)
@@ -340,6 +352,11 @@ export default function JoinEcosystemWizard() {
                     <span className="font-medium">Validator participant:</span> {selectedValidator.id}
                   </p>
                 ) : null}
+                {onboardingCostLines.map((line) => (
+                  <p key={line.label}>
+                    <span className="font-medium">{line.label}:</span> {line.value}
+                  </p>
+                ))}
               </div>
               <div>
                 <label

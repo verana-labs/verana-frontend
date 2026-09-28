@@ -1,3 +1,5 @@
+import type { StdFee } from '@cosmjs/stargate'
+
 export type BalanceWarningState = {
   availableBalance: number | null
   lowBalance: boolean | null
@@ -35,4 +37,11 @@ export function shouldStartNoFormSimulation(
   simulationStarted: boolean
 ): boolean {
   return noForm && availableBalance !== null && !simulationStarted
+}
+
+export function simulatedFeeUvna(fee: StdFee | undefined): number | null {
+  const amount = fee?.amount?.find((coin) => coin.denom === 'uvna')?.amount ?? fee?.amount?.[0]?.amount
+  if (amount === undefined) return null
+  const parsed = Number(amount)
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null
 }
