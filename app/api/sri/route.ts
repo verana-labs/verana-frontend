@@ -1,24 +1,14 @@
-import { NextRequest } from 'next/server'
 import { calculateSRI } from '@/lib/calculateSRI'
+import { failure, json, requestedUrl, throttle } from '@/lib/document-route'
 
-export async function GET(req: NextRequest) {
-  const url = req.nextUrl.searchParams.get('url')
-  if (!url) {
-    return new Response(JSON.stringify({ error: 'Missing url parameter' }), {
-      status: 400,
-    })
-  }
-
+export async function GET(request: Request) {
+  const limited = throttle(request)
+  if (limited) return limited
+  const url = requestedUrl(request)
+  if (!url) return json({ error: 'Missing or invalid url parameter' }, 400)
   try {
-    const sri = await calculateSRI(url)
-    return new Response(JSON.stringify({ sri }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err)
-    return new Response(JSON.stringify({ error: message }), {
-      status: 500,
-    })
+    return json({ sri: await calculateSRI(url) }, 200)
+  } catch (error) {
+    return failure(error)
   }
 }
