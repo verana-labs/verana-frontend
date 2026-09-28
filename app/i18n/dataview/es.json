@@ -886,7 +886,7 @@
   "txconfirm.effect.MsgSlashParticipantTrustDeposit": "Penalizar {amount} del depósito de confianza del participante #{id}.",
   "txconfirm.effect.MsgRepayParticipantSlashedTrustDeposit": "Reembolsar el depósito de confianza penalizado del participante #{id}.",
   "txconfirm.effect.MsgSelfCreateParticipant": "Unirse como {role} con {did}.",
-  "txconfirm.effect.MsgReclaimTrustDepositYield": "Reclamar el rendimiento del depósito de confianza a tu saldo principal.",
+  "txconfirm.effect.MsgReclaimTrustDepositYield": "Reclamar el rendimiento del depósito de confianza a su saldo principal.",
   "txconfirm.warning.MsgRevokeOperatorAuthorization": "Irreversible. El operador pierde el acceso en cuanto la transacción se incluye.",
   "txconfirm.warning.MsgUpdateCorporation": "Esto cambia el ancla de identidad de la corporación. La resolución de confianza se reinicia desde el nuevo DID.",
   "txconfirm.warning.MsgArchiveEcosystem": "Esto cambia el estado de archivo del ecosistema para todos los participantes. Puede revertirse con otra acción de archivo.",
