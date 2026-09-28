@@ -2,7 +2,6 @@ global:
   domain: testnet.verana.network
 
 env:
-  NEXT_PUBLIC_BASE_URL: "https://app.testnet.verana.network"
   NEXT_PUBLIC_VERANA_CHAIN_ID: "vna-testnet-1"
   NEXT_PUBLIC_VERANA_CHAIN_NAME: "VeranaTestnet1"
   NEXT_PUBLIC_VERANA_RPC_ENDPOINT: "https://rpc.testnet.verana.network"

@@ -27,7 +27,6 @@ nodeSelector:
 # pass values-devnet.yaml or values-testnet.yaml (or your own) at deploy time.
 env:
   NEXT_PUBLIC_PORT: "3000"
-  NEXT_PUBLIC_BASE_URL: ""
   NEXT_PUBLIC_VERANA_CHAIN_ID: ""
   NEXT_PUBLIC_VERANA_CHAIN_NAME: ""
   NEXT_PUBLIC_VERANA_RPC_ENDPOINT: ""

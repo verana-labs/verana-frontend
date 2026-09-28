@@ -11,7 +11,6 @@ services:
     command: yarn start
     environment:
       - NEXT_PUBLIC_PORT=3000
-      - NEXT_PUBLIC_BASE_URL=http://localhost:2904
       - NEXT_PUBLIC_VERANA_CHAIN_ID=vna-devnet-1
       - NEXT_PUBLIC_VERANA_CHAIN_NAME=VeranaDevnet1
       - NEXT_PUBLIC_VERANA_RPC_ENDPOINT=https://rpc.devnet.verana.network
