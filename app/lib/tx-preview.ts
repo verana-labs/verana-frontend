@@ -47,7 +47,7 @@ export interface TxConfirmRequest {
 
 export interface TxConfirmResult {
   msgs: EncodeObject[]
-  granter?: string
+  fee: StdFee
 }
 
 export function msgShortName(typeUrl: string): string {

@@ -33,7 +33,7 @@ type ManualSignOptions = {
   memo?: string // Optional memo
   timeoutHeight?: number | Long // Optional timeout
   simulate?: boolean
-  granter?: string
+  fee?: StdFee
 }
 
 export async function signAndBroadcastManualDirect({
@@ -48,7 +48,7 @@ export async function signAndBroadcastManualDirect({
   memo = '',
   timeoutHeight,
   simulate = false,
-  granter,
+  fee: givenFee,
 }: ManualSignOptions): Promise<DeliverTxResponse | SimulateResult> {
   const anys = messages.map((m) => registry.encodeAsAny(m))
   logger.log('Any.typeUrl:', anys[0].typeUrl)
@@ -57,10 +57,12 @@ export async function signAndBroadcastManualDirect({
   // Connect a client — only used for simulate and broadcast
   const client = await SigningStargateClient.connectWithSigner(rpcEndpoint, signer, { registry })
 
-  // Simulate gas usage for the messages
-  const simulated = await client.simulate(address, messages, memo)
-  const gasLimit = Math.ceil(simulated * gasAdjustment)
-  const fee: StdFee = { ...calculateFee(gasLimit, GasPrice.fromString(gasPrice)), granter }
+  let fee = givenFee
+  if (!fee) {
+    // Simulate gas usage for the messages
+    const simulated = await client.simulate(address, messages, memo)
+    fee = calculateFee(Math.ceil(simulated * gasAdjustment), GasPrice.fromString(gasPrice))
+  }
   if (simulate) return fee
 
   // Create TxBody with your messages
@@ -86,7 +88,7 @@ export async function signAndBroadcastManualDirect({
   const authInfoBytes = makeAuthInfoBytes(
     [{ pubkey: protoPubkey, sequence }],
     fee.amount,
-    gasLimit,
+    Number(fee.gas),
     fee.granter,
     /* feePayer */ undefined
   )

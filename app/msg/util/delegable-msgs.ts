@@ -1,4 +1,5 @@
 import type { EncodeObject } from '@cosmjs/proto-signing'
+import type { StdFee } from '@cosmjs/stargate'
 import { veranaTypeUrls } from '@verana-labs/verana-types/signing'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import type { ProposalMetadata } from '@/lib/tx-preview'
@@ -14,7 +15,7 @@ export type DelegableBuild = (corporation: string, operator: string) => EncodeOb
 export interface DelegableMsgs {
   msgs: EncodeObject[]
   mode: CorporationSigningMode
-  granter?: string
+  fee: StdFee
 }
 
 export interface DelegableResolution {

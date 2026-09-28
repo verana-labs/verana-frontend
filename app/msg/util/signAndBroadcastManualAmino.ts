@@ -15,7 +15,7 @@ type AminoSignOptions = {
   gasAdjustment?: number // e.g. 1.2 (20% safety buffer)
   memo?: string // Optional memo
   simulate?: boolean // NEW: default false
-  granter?: string
+  fee?: StdFee
 }
 
 export type SimulateResult = StdFee
@@ -29,7 +29,7 @@ export async function signAndBroadcastManualAmino({
   gasAdjustment = 1.5,
   memo = '',
   simulate = false,
-  granter,
+  fee: givenFee,
 }: AminoSignOptions): Promise<DeliverTxResponse | SimulateResult> {
   // Connect a client — only used for simulate and broadcast
   const client = await SigningStargateClient.connectWithSigner(rpcEndpoint, signer, {
@@ -42,21 +42,22 @@ export async function signAndBroadcastManualAmino({
   let { accountNumber, sequence } = await client.getSequence(address)
   logger.log('{ accountNumber, sequence }', { accountNumber, sequence })
 
-  // Simulate gas usage for the messages
-  let simulated = 300000
-  try {
-    simulated = await client.simulate(address, messages, memo)
-  } catch (e) {
-    if (isSequenceMismatch(e)) {
-      logger.error('Simulated Tx: ', e)
-      const { expected } = parseSequenceMismatch(e)
-      if (expected != null) sequence = expected
+  let fee = givenFee
+  if (!fee) {
+    // Simulate gas usage for the messages
+    let simulated = 300000
+    try {
+      simulated = await client.simulate(address, messages, memo)
+    } catch (e) {
+      if (isSequenceMismatch(e)) {
+        logger.error('Simulated Tx: ', e)
+        const { expected } = parseSequenceMismatch(e)
+        if (expected != null) sequence = expected
+      }
+      throw e
     }
-    throw e
+    fee = calculateFee(Math.ceil(simulated * gasAdjustment), GasPrice.fromString(gasPrice))
   }
-
-  const gasLimit = Math.ceil(simulated * gasAdjustment)
-  const fee: StdFee = { ...calculateFee(gasLimit, GasPrice.fromString(gasPrice)), granter }
 
   // If only simulating, return the computed fee before signing/broadcasting
   if (simulate) return fee

@@ -90,7 +90,7 @@ export async function confirmDelegableMsgs(
     await notify(t('corporation.select.changed'), 'error')
     return null
   }
-  return { msgs: confirmed.msgs, mode, granter: confirmed.granter }
+  return { msgs: confirmed.msgs, mode, fee: confirmed.fee }
 }
 
 export function useDelegableMsgs(): (args: DelegableMsgsArgs) => Promise<DelegableMsgs | null> {

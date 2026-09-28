@@ -284,7 +284,10 @@ export function ConfirmTransactionModal({
             disabled={
               currentSimulation.status !== 'ready' || editing || feeGrantLookup.status === 'loading' || holdForBalance
             }
-            onClick={() => onConfirm({ msgs: simulatedMsgs, granter })}
+            onClick={() => {
+              if (currentSimulation.status === 'ready')
+                onConfirm({ msgs: simulatedMsgs, fee: { ...currentSimulation.fee, granter } })
+            }}
           >
             {t(confirmLabelKey(request.mode))}
           </button>

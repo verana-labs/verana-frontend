@@ -40,7 +40,9 @@ function build(corporation: string, operator: string) {
   }
 }
 
-const echo = (request: TxConfirmRequest): TxConfirmResult => ({ msgs: request.msgs })
+const FEE = { amount: [{ denom: 'uvna', amount: '293754' }], gas: '97918' }
+
+const echo = (request: TxConfirmRequest): TxConfirmResult => ({ msgs: request.msgs, fee: FEE })
 
 function deps(
   overrides: Partial<DelegableMsgsDeps> = {},
@@ -134,9 +136,10 @@ describe('confirmDelegableMsgs', () => {
     expect(request.feeGrant).toEqual({ corporationId: 12, grantee: ME, msgType: CREATE, granterAddress: POLICY })
   })
 
-  it('carries the fee granter the confirmation elected', async () => {
-    const { deps: d } = deps({}, (request) => ({ msgs: request.msgs, granter: POLICY }))
-    expect((await confirmDelegableMsgs(d, args))?.granter).toBe(POLICY)
+  it('returns the fee the confirmation previewed, with the granter it elected', async () => {
+    const fee = { ...FEE, granter: POLICY }
+    const { deps: d } = deps({}, (request) => ({ msgs: request.msgs, fee }))
+    expect((await confirmDelegableMsgs(d, args))?.fee).toBe(fee)
   })
 
   it('carries the severity and the existing warning copy of a revocation', async () => {
@@ -172,6 +175,7 @@ describe('confirmDelegableMsgs', () => {
   it('returns the exact messages the confirmation approved, never a rebuild', async () => {
     const { deps: d } = deps({ actingCorporation: membership({ grantedMessageTypes: [] }) }, (request) => ({
       msgs: request.buildProposalMsgs?.(proposalMetadata('Custom', 'Why', request.proposalTitle ?? '')) ?? [],
+      fee: FEE,
     }))
     const resolved = await confirmDelegableMsgs(d, args)
     const proposal = MsgSubmitProposal.decode(
