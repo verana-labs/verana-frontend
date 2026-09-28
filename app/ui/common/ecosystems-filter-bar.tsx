@@ -2,6 +2,7 @@
 
 import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import type { ReactNode } from 'react'
 import { translate } from '@/i18n/dataview'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
@@ -24,9 +25,11 @@ export const INITIAL_ECOSYSTEMS_FILTER: EcosystemsFilterState = {
 type Props = {
   value: EcosystemsFilterState
   onChange: (next: EcosystemsFilterState) => void
+  corporationFilters?: boolean
+  children?: ReactNode
 }
 
-export default function EcosystemsFilterBar({ value, onChange }: Props) {
+export default function EcosystemsFilterBar({ value, onChange, corporationFilters = true, children }: Props) {
   const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
 
   const set = <K extends keyof EcosystemsFilterState>(key: K, next: EcosystemsFilterState[K]) =>
@@ -68,18 +71,22 @@ export default function EcosystemsFilterBar({ value, onChange }: Props) {
               onChange={(v) => set('showArchived', v)}
               label={t('datatable.ecosystem.filter.showArchived', 'Show archived')}
             />
-            <Checkbox
-              id="hide-owned"
-              checked={value.hideOwned}
-              onChange={(v) => set('hideOwned', v)}
-              label={t('datatable.ecosystem.filter.hideOwned', 'Hide owned ecosystems')}
-            />
-            <Checkbox
-              id="hide-participant"
-              checked={value.hideParticipant}
-              onChange={(v) => set('hideParticipant', v)}
-              label={t('datatable.ecosystem.filter.hideParticipant', 'Hide participant ecosystems')}
-            />
+            {corporationFilters ? (
+              <>
+                <Checkbox
+                  id="hide-owned"
+                  checked={value.hideOwned}
+                  onChange={(v) => set('hideOwned', v)}
+                  label={t('datatable.ecosystem.filter.hideOwned', 'Hide owned ecosystems')}
+                />
+                <Checkbox
+                  id="hide-participant"
+                  checked={value.hideParticipant}
+                  onChange={(v) => set('hideParticipant', v)}
+                  label={t('datatable.ecosystem.filter.hideParticipant', 'Hide participant ecosystems')}
+                />
+              </>
+            ) : null}
             <Checkbox
               id="show-untrusted"
               checked={value.showUntrusted}
@@ -87,6 +94,7 @@ export default function EcosystemsFilterBar({ value, onChange }: Props) {
               label={t('datatable.ecosystem.filter.showUntrusted', 'Show untrusted ecosystems')}
             />
           </div>
+          {children}
         </div>
       </div>
     </section>

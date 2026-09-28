@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
 import { parseParticipantRecord } from '@/hooks/useParticipant'
+import { distinctRoles } from '@/lib/discover-list'
 import { applyKeysetParams, indexerValidators, takeKeysetPage } from '@/lib/indexer-json'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
-import type { Participant, ParticipantState } from '@/ui/dataview/datasections/participant'
+import type { Participant, ParticipantRole, ParticipantState } from '@/ui/dataview/datasections/participant'
 
 const { record } = indexerValidators('participants')
 
@@ -143,4 +144,63 @@ export function useParticipants(
   }, [fetchPage, participants])
 
   return { participants, pageKey, loading, errorParticipants, refetch: fetchParticipants, hasNext, loadMore }
+}
+
+const ROLE_LOOKUP_PAGE_SIZE = 64
+
+export async function fetchCorporationRoles(
+  endpoint: string,
+  corporationId: number,
+  ecosystemId: string,
+  fetchImpl: typeof fetch = fetch
+): Promise<ParticipantRole[]> {
+  const roles: ParticipantRole[] = []
+  let after: string | undefined
+  let more = true
+  while (more) {
+    const params = new URLSearchParams({
+      corporation_id: String(corporationId),
+      ecosystem_id: ecosystemId,
+      participant_state: 'ACTIVE',
+    })
+    applyKeysetParams(params, { pageSize: ROLE_LOOKUP_PAGE_SIZE, after })
+    const response = await fetchImpl(`${endpoint}/list?${params.toString()}`)
+    const json: unknown = await response.json()
+    if (!response.ok) {
+      const { error, code } = json as ApiErrorResponse
+      throw new Error(`Error ${code}: ${error}`)
+    }
+    const page = takeKeysetPage(parseParticipantsResponse(json), ROLE_LOOKUP_PAGE_SIZE)
+    roles.push(...page.items.map((participant) => participant.role))
+    after = page.items[page.items.length - 1]?.id
+    more = page.hasNext && after !== undefined
+  }
+  return distinctRoles(roles)
+}
+
+export function useCorporationRolesByEcosystem(corporationId: number | undefined, ecosystemIds: string[]) {
+  const [rolesByEcosystem, setRolesByEcosystem] = useState<Record<string, ParticipantRole[]>>({})
+  const [errorRoles, setError] = useState<string | null>(null)
+  const ecosystemKey = ecosystemIds.join('|')
+
+  useEffect(() => {
+    const ids = ecosystemKey ? ecosystemKey.split('|') : []
+    const endpoint = VERANA_REST_ENDPOINT_PARTICIPANT
+    setRolesByEcosystem({})
+    setError(null)
+    if (corporationId === undefined || ids.length === 0 || !endpoint) return
+    let cancelled = false
+    Promise.all(ids.map(async (id) => [id, await fetchCorporationRoles(endpoint, corporationId, id)] as const))
+      .then((entries) => {
+        if (!cancelled) setRolesByEcosystem(Object.fromEntries(entries))
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setError(error instanceof Error ? error.message : String(error))
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [corporationId, ecosystemKey])
+
+  return { rolesByEcosystem, errorRoles }
 }

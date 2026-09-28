@@ -1,5 +1,10 @@
-import { describe, expect, it } from 'vitest'
-import { parseParticipantsResponse, participantsListUrl, participantsPageKey } from '@/hooks/useParticipants'
+import { describe, expect, it, vi } from 'vitest'
+import {
+  fetchCorporationRoles,
+  parseParticipantsResponse,
+  participantsListUrl,
+  participantsPageKey,
+} from '@/hooks/useParticipants'
 
 const participant = {
   id: 1,
@@ -105,6 +110,49 @@ describe('participantsPageKey', () => {
   it('matches when the same page is requested twice', () => {
     expect(participantsPageKey({ schema: '9', role: 'ECOSYSTEM' })).toBe(
       participantsPageKey({ schema: '9', role: 'ECOSYSTEM', after: undefined })
+    )
+  })
+})
+
+describe('fetchCorporationRoles', () => {
+  const row = (id: number, role: string) => ({ ...participant, id, role })
+  const respond = (...pages: unknown[]) => {
+    const queue = [...pages]
+    return vi.fn(
+      async (_input: RequestInfo | URL) => ({ ok: true, status: 200, json: async () => queue.shift() }) as Response
+    )
+  }
+
+  it('asks for the active participants of the corporation in the ecosystem and keeps each role once', async () => {
+    const fetchImpl = respond({ participants: [row(9, 'ISSUER'), row(8, 'HOLDER'), row(7, 'ISSUER')] })
+    await expect(fetchCorporationRoles('https://indexer/v4/participant', 13, '44', fetchImpl)).resolves.toEqual([
+      'ISSUER',
+      'HOLDER',
+    ])
+    const url = new URL(String(fetchImpl.mock.calls[0]?.[0]))
+    expect(url.pathname).toBe('/v4/participant/list')
+    expect(url.searchParams.get('corporation_id')).toBe('13')
+    expect(url.searchParams.get('ecosystem_id')).toBe('44')
+    expect(url.searchParams.get('participant_state')).toBe('ACTIVE')
+    expect(url.searchParams.get('limit')).toBe('65')
+  })
+
+  it('follows the keyset cursor until the last page', async () => {
+    const first = Array.from({ length: 65 }, (_, index) => row(200 - index, 'VERIFIER'))
+    const fetchImpl = respond({ participants: first }, { participants: [row(3, 'ECOSYSTEM')] })
+    await expect(fetchCorporationRoles('https://indexer/v4/participant', 13, '44', fetchImpl)).resolves.toEqual([
+      'ECOSYSTEM',
+      'VERIFIER',
+    ])
+    expect(new URL(String(fetchImpl.mock.calls[1]?.[0])).searchParams.get('max_id')).toBe('137')
+  })
+
+  it('fails with the indexer error', async () => {
+    const fetchImpl = vi.fn(
+      async () => ({ ok: false, status: 502, json: async () => ({ error: 'down', code: 502 }) }) as Response
+    )
+    await expect(fetchCorporationRoles('https://indexer/v4/participant', 13, '44', fetchImpl)).rejects.toThrow(
+      'Error 502: down'
     )
   })
 })
