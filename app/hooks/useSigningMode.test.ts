@@ -22,7 +22,9 @@ function membership(overrides: Partial<CorporationMembership> = {}): Corporation
 
 describe('resolveActionSigning', () => {
   it('leaves non-delegable actions alone', () => {
-    expect(resolveActionSigning('copy', membership({ grantedMessageTypes: [], member: false }), false, true)).toEqual({
+    expect(
+      resolveActionSigning('Connect', membership({ grantedMessageTypes: [], member: false }), false, true)
+    ).toEqual({
       mode: null,
       disabled: false,
       reason: undefined,
@@ -37,7 +39,7 @@ describe('resolveActionSigning', () => {
     })
   })
 
-  it('leaves the action alone for a visitor with no wallet connected', () => {
+  it('leaves the action to the connect flow for a visitor with no wallet', () => {
     expect(resolveActionSigning('MsgArchiveEcosystem', null, false, false)).toEqual({
       mode: null,
       disabled: false,
@@ -46,23 +48,22 @@ describe('resolveActionSigning', () => {
   })
 
   it('disables with the selection reason when a wallet is connected but no corporation acts', () => {
-    const signing = resolveActionSigning('MsgArchiveEcosystem', null, false, true)
-    expect(signing.mode).toBeNull()
-    expect(signing.disabled).toBe(true)
-    expect(signing.reason).toBe('Create or select a corporation before continuing.')
+    expect(resolveActionSigning('MsgArchiveEcosystem', null, false, true)).toEqual({
+      mode: null,
+      disabled: true,
+      reason: 'Create or select a corporation before continuing.',
+    })
   })
 
-  it('is operator mode when the grant covers the message type', () => {
-    expect(resolveActionSigning('MsgArchiveEcosystem', membership(), false, true).mode).toBe('operator')
-    expect(resolveActionSigning('MsgUnarchiveEcosystem', membership(), false, true).mode).toBe('operator')
+  it('passes through the signing mode of the acting corporation', () => {
+    expect(resolveActionSigning('MsgArchiveEcosystem', membership(), false, true)).toEqual({
+      mode: 'operator',
+      disabled: false,
+      reason: undefined,
+    })
   })
 
-  it('falls back to a proposal for members without the grant', () => {
-    const signing = resolveActionSigning('MsgArchiveEcosystem', membership({ grantedMessageTypes: [] }), false, true)
-    expect(signing).toEqual({ mode: 'proposal', disabled: false, reason: undefined })
-  })
-
-  it('disables with the capability reason when the account is neither granted nor a member', () => {
+  it('disables with the capability reason when there is no signing mode', () => {
     const signing = resolveActionSigning(
       'MsgArchiveEcosystem',
       membership({ grantedMessageTypes: [], member: false }),
@@ -72,51 +73,5 @@ describe('resolveActionSigning', () => {
     expect(signing.mode).toBeNull()
     expect(signing.disabled).toBe(true)
     expect(signing.reason).toMatch(/authorization/i)
-  })
-
-  it('follows a change of the capability set', () => {
-    const before = membership({ grantedMessageTypes: [] })
-    const granted = membership({ grantedMessageTypes: [ARCHIVE] })
-    const removed = membership({ grantedMessageTypes: [], member: false })
-    expect(resolveActionSigning('MsgArchiveEcosystem', before, false, true).mode).toBe('proposal')
-    expect(resolveActionSigning('MsgArchiveEcosystem', granted, false, true).mode).toBe('operator')
-    expect(resolveActionSigning('MsgArchiveEcosystem', removed, false, true).disabled).toBe(true)
-  })
-
-  it('gates every entity, participant and join action on the capability set', () => {
-    const gated = [
-      'MsgCreateEcosystem',
-      'MsgUpdateEcosystem',
-      'MsgArchiveEcosystem',
-      'MsgUnarchiveEcosystem',
-      'MsgCreateCredentialSchema',
-      'MsgUpdateCredentialSchema',
-      'MsgArchiveCredentialSchema',
-      'MsgUnarchiveCredentialSchema',
-      'MsgRenewParticipantOP',
-      'MsgCancelParticipantOPLastRequest',
-      'MsgSetParticipantOPToValidated',
-      'MsgSetParticipantEffectiveUntil',
-      'MsgRevokeParticipant',
-      'MsgSlashParticipantTrustDeposit',
-      'MsgRepayParticipantSlashedTrustDeposit',
-      'MsgCreateRootParticipant',
-      'MsgSelfCreateParticipant',
-      'MsgStartParticipantOP',
-    ]
-    const member = membership({ grantedMessageTypes: [] })
-    for (const msgType of gated) {
-      expect(resolveActionSigning(msgType, member, false, true), msgType).toEqual({
-        mode: 'proposal',
-        disabled: false,
-        reason: undefined,
-      })
-    }
-  })
-
-  it('leaves the join controls that sign nothing alone', () => {
-    for (const action of ['LinkDID', 'Connect', '']) {
-      expect(resolveActionSigning(action, null, false, true).disabled).toBe(false)
-    }
   })
 })

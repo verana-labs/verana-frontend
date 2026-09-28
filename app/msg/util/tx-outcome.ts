@@ -1,6 +1,7 @@
 import type { DeliverTxResponse } from '@cosmjs/stargate'
 import { translate } from '@/i18n/dataview'
 import { authorizationRejection } from '@/lib/chain-error'
+import { logger } from '@/lib/logger'
 import type { TxEvent } from '@/msg/util/txEvents'
 import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 
@@ -53,6 +54,7 @@ export function proposalExecution(events: readonly TxEvent[]): ProposalExecution
 export function rejectionNotice(fallback: string, text: string): TxNotice {
   const reason = authorizationRejection(text)
   if (!reason) return { message: fallback, title: t('notification.msg.failed.title') }
+  logger.error('authorization rejection', text)
   return { message: t('notification.msg.unauthorized', { reason }), title: t('notification.msg.unauthorized.title') }
 }
 
@@ -65,6 +67,7 @@ export function txFailureNotice(
   const outcome = proposalExecution(result.events)
   if (outcome.status !== 'failed') return null
   const reason = authorizationRejection(outcome.logs)
+  logger.error('proposal execution failed', outcome.logs)
   return {
     message: t(reason ? 'notification.proposal.unauthorized' : 'notification.proposal.failed', {
       id: outcome.proposalId,
