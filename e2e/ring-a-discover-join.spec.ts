@@ -1,5 +1,10 @@
 import { createHash } from 'node:crypto'
+import { fromHex } from '@cosmjs/encoding'
 import { expect, type Page, test } from '@playwright/test'
+import { MsgSelfCreateParticipant } from '@verana-labs/verana-types/codec/verana/pp/v1/tx'
+import { ParticipantRole } from '@verana-labs/verana-types/codec/verana/pp/v1/types'
+import { SimulateRequest } from 'cosmjs-types/cosmos/tx/v1beta1/service'
+import { Tx } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { connectWallet } from './support/connect'
 import { HARNESS_MNEMONIC } from './support/corp-stubs'
 import { installMockChain, stubCorporationRoutes } from './support/mock-chain'
@@ -121,6 +126,30 @@ async function stubDiscover(page: Page) {
   await page.route(EGF_URL, (route) => route.fulfill({ status: 200, headers: MARKDOWN_HEADERS, body: EGF_MARKDOWN }))
 }
 
+function simulationData(body: string | null): string | null {
+  if (!body?.includes('Service/Simulate')) return null
+  const request: unknown = JSON.parse(body)
+  if (typeof request !== 'object' || request === null || !('params' in request)) return null
+  const params: unknown = request.params
+  if (typeof params !== 'object' || params === null || !('data' in params)) return null
+  return typeof params.data === 'string' ? params.data : null
+}
+
+function recordSimulatedSelfCreates(page: Page): MsgSelfCreateParticipant[] {
+  const simulated: MsgSelfCreateParticipant[] = []
+  page.on('request', (request) => {
+    const data = request.method() === 'POST' ? simulationData(request.postData()) : null
+    if (!data) return
+    const tx = Tx.decode(SimulateRequest.decode(fromHex(data)).txBytes)
+    for (const message of tx.body?.messages ?? []) {
+      if (message.typeUrl === '/verana.pp.v1.MsgSelfCreateParticipant') {
+        simulated.push(MsgSelfCreateParticipant.decode(message.value))
+      }
+    }
+  })
+  return simulated
+}
+
 const cardNames = (page: Page) =>
   page.locator('#ecosystem-list article').evaluateAll((cards) => cards.map((card) => card.getAttribute('aria-label')))
 
@@ -163,7 +192,7 @@ test('discover lists every ecosystem of the window, finds one by name and orders
   await expect(acme.getByRole('heading', { name: 'Acme join framework' })).toBeVisible()
 })
 
-test('an acting corporation sees its roles and reaches the confirmation of a self-create with a VS operator', async ({
+test('an acting corporation sees its roles and the wizard builds the self-create with its VS operator delegation', async ({
   page,
 }) => {
   test.setTimeout(150_000)
@@ -171,6 +200,7 @@ test('an acting corporation sees its roles and reaches the confirmation of a sel
   await stubDiscover(page)
   const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
   const mock = await installMockChain(page, { address: wallet.bech32Address })
+  const simulated = recordSimulatedSelfCreates(page)
 
   await page.goto('/discover')
   const acme = page.getByRole('article', { name: 'Acme Join Registry' })
@@ -200,7 +230,7 @@ test('an acting corporation sees its roles and reaches the confirmation of a sel
   await next.click()
 
   const validator = page.getByRole('button', { name: new RegExp(ACME_DID) })
-  await expect(validator.getByText('Trusted')).toBeVisible()
+  await expect(validator.getByRole('img', { name: 'Trusted', exact: true })).toBeVisible()
   await validator.click()
   await next.click()
 
@@ -219,12 +249,29 @@ test('an acting corporation sees its roles and reaches the confirmation of a sel
   await expect(join).toBeDisabled()
   await page.locator('#vs-operator-vsOperator').fill(wallet.bech32Address)
   await page.getByLabel('CreateOrUpdateParticipantSession').check()
+  await page.locator('#vs-operator-spendLimit').fill('1000')
+  await page.locator('#vs-operator-periodDays').fill('7')
   await expect(join).toBeEnabled()
 
   await join.click()
   const dialog = page.getByRole('dialog')
   await expect(dialog).toBeVisible({ timeout: 30_000 })
   await expect(dialog.getByText(`Join as ISSUER with ${SERVICE_DID}.`)).toBeVisible()
+  await expect.poll(() => simulated.length, { timeout: 30_000 }).toBeGreaterThan(0)
+  expect(simulated.at(-1)).toEqual(
+    expect.objectContaining({
+      role: ParticipantRole.ISSUER,
+      validatorParticipantId: 20,
+      did: SERVICE_DID,
+      validationFees: 2500,
+      vsOperator: wallet.bech32Address,
+      vsOperatorAuthzMsgTypes: ['/verana.pp.v1.MsgCreateOrUpdateParticipantSession'],
+      vsOperatorAuthzSpendLimit: [{ denom: 'uvna', amount: '1000' }],
+      vsOperatorAuthzWithFeegrant: false,
+      vsOperatorAuthzFeeSpendLimit: [],
+      vsOperatorAuthzPeriod: { seconds: 604_800, nanos: 0 },
+    })
+  )
   await dialog.getByRole('button', { name: 'Cancel' }).click()
   await expect(dialog).toBeHidden()
   expect(mock.seenMethods()).not.toContain('broadcast_tx_sync')

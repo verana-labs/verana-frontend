@@ -283,10 +283,8 @@ export default function JoinEcosystemWizard() {
           </div>
 
           {currentStep === 1 ? (
-            <div className="flex flex-wrap gap-3 mb-6">
-              <div className="w-full">
-                <EcosystemCard ecosystem={{ ...ecosystem, role: ecosystem.role ?? '' }} />
-              </div>
+            <div className="space-y-3 mb-6">
+              <EcosystemCard ecosystem={{ ...ecosystem, role: ecosystem.role ?? '' }} />
               <EgfViewerToggle versions={ecosystem.versions} activeVersion={ecosystem.activeVersion} />
             </div>
           ) : null}

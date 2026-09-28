@@ -121,24 +121,25 @@ export function DiscoverEcosystemCard({
           ))}
         </dl>
 
-        <div className="flex flex-wrap gap-3 mb-6">
-          <EgfViewerToggle versions={ecosystem.versions ?? []} activeVersion={ecosystem.activeVersion} />
-          <Link
-            href={`/ecosystems/${ecosystem.id}`}
-            className="inline-flex items-center px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-sm font-medium"
-          >
-            <FontAwesomeIcon className="mr-2" aria-hidden="true" icon={faShieldHalved} />
-            {t('discover.btn.view')}
-          </Link>
-          {canJoin && !archived && ecosystem.activeSchemas > 0 ? (
+        <div className="mb-6">
+          <EgfViewerToggle versions={ecosystem.versions ?? []} activeVersion={ecosystem.activeVersion}>
             <Link
-              href={`/join/${ecosystem.id}`}
-              className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
+              href={`/ecosystems/${ecosystem.id}`}
+              className="inline-flex items-center px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-sm font-medium"
             >
-              <FontAwesomeIcon className="mr-2" aria-hidden="true" icon={faRightToBracket} />
-              {t('discover.btn.join')}
+              <FontAwesomeIcon className="mr-2" aria-hidden="true" icon={faShieldHalved} />
+              {t('discover.btn.view')}
             </Link>
-          ) : null}
+            {canJoin && !archived && ecosystem.activeSchemas > 0 ? (
+              <Link
+                href={`/join/${ecosystem.id}`}
+                className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
+              >
+                <FontAwesomeIcon className="mr-2" aria-hidden="true" icon={faRightToBracket} />
+                {t('discover.btn.join')}
+              </Link>
+            ) : null}
+          </EgfViewerToggle>
         </div>
 
         <div className="space-y-4">

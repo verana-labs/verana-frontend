@@ -54,57 +54,59 @@ export function VsOperatorFields({ role, value, onChange, issue }: VsOperatorFie
     })
 
   return (
-    <details className="rounded-lg border border-neutral-20 dark:border-neutral-70 p-4">
-      <summary className="cursor-pointer text-sm font-medium text-gray-900 dark:text-white">
-        {t('join.vsoperator.title')}
-      </summary>
-      <div className="mt-4 space-y-4">
-        <p
-          role="note"
-          className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300"
-        >
-          {t('join.vsoperator.frozen')}
-        </p>
-        <p className="text-xs text-neutral-70 dark:text-neutral-70">{t('join.vsoperator.hint')}</p>
-        {field('vsOperator', t('join.vsoperator.account'))}
-        <fieldset>
-          <legend className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {t('join.vsoperator.msgtypes')}
-          </legend>
-          <div className="space-y-2">
-            {permittedVsOperatorMsgTypes(role).map((type) => (
-              <label key={type} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                <input
-                  type="checkbox"
-                  checked={value.msgTypes.includes(type)}
-                  onChange={(event) => toggleMsgType(type, event.target.checked)}
-                  className={CHECKBOX_CLASS}
-                />
-                <span className="font-mono">{msgShortName(type)}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {field('spendLimit', `${t('join.vsoperator.spendlimit')} (${veranaDenom})`)}
-          {field('periodDays', t('join.vsoperator.period'))}
-        </div>
-        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-          <input
-            type="checkbox"
-            checked={value.withFeegrant}
-            onChange={(event) => onChange({ ...value, withFeegrant: event.target.checked })}
-            className={CHECKBOX_CLASS}
-          />
-          {t('join.vsoperator.feegrant')}
-        </label>
-        {field('feeSpendLimit', `${t('join.vsoperator.feespendlimit')} (${veranaDenom})`)}
-        {issue ? (
-          <p role="alert" className="text-sm text-red-700 dark:text-red-300">
-            {t(`join.vsoperator.issue.${issue}`)}
+    <div className="space-y-2">
+      <details className="rounded-lg border border-neutral-20 dark:border-neutral-70 p-4">
+        <summary className="cursor-pointer text-sm font-medium text-gray-900 dark:text-white">
+          {t('join.vsoperator.title')}
+        </summary>
+        <div className="mt-4 space-y-4">
+          <p
+            role="note"
+            className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300"
+          >
+            {t('join.vsoperator.frozen')}
           </p>
-        ) : null}
-      </div>
-    </details>
+          <p className="text-xs text-neutral-70 dark:text-neutral-70">{t('join.vsoperator.hint')}</p>
+          {field('vsOperator', t('join.vsoperator.account'))}
+          <fieldset>
+            <legend className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {t('join.vsoperator.msgtypes')}
+            </legend>
+            <div className="space-y-2">
+              {permittedVsOperatorMsgTypes(role).map((type) => (
+                <label key={type} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={value.msgTypes.includes(type)}
+                    onChange={(event) => toggleMsgType(type, event.target.checked)}
+                    className={CHECKBOX_CLASS}
+                  />
+                  <span className="font-mono">{msgShortName(type)}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {field('spendLimit', `${t('join.vsoperator.spendlimit')} (${veranaDenom})`)}
+            {field('periodDays', t('join.vsoperator.period'))}
+          </div>
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <input
+              type="checkbox"
+              checked={value.withFeegrant}
+              onChange={(event) => onChange({ ...value, withFeegrant: event.target.checked })}
+              className={CHECKBOX_CLASS}
+            />
+            {t('join.vsoperator.feegrant')}
+          </label>
+          {field('feeSpendLimit', `${t('join.vsoperator.feespendlimit')} (${veranaDenom})`)}
+        </div>
+      </details>
+      {issue ? (
+        <p role="alert" className="text-sm text-red-700 dark:text-red-300">
+          {t(`join.vsoperator.issue.${issue}`)}
+        </p>
+      ) : null}
+    </div>
   )
 }

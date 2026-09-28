@@ -138,6 +138,7 @@ describe('buildParticipantMessage', () => {
         MsgSelfCreateParticipant.encode(selfCreate.value as MsgSelfCreateParticipant).finish()
       )
     ).toEqual(expect.objectContaining(delegation))
+    expect(veranaAmino.fromAmino(veranaAmino.toAmino(start)).value).toEqual(expect.objectContaining(delegation))
     expect(veranaAmino.fromAmino(veranaAmino.toAmino(selfCreate)).value).toEqual(expect.objectContaining(delegation))
   })
 
