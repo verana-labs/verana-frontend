@@ -50,7 +50,15 @@ describe('parseCredentialSchemasResponse', () => {
     expect(
       parseCredentialSchemasResponse({ schemas: [{ ...schema, pricing_asset_type: 'TU', pricing_asset: 'tu' }] })[0]
     ).toMatchObject({ pricingAssetType: 'TU', pricingAsset: 'tu' })
-    expect(() => parseCredentialSchemasResponse({ schemas: [{ ...schema, pricing_asset: undefined }] })).toThrow(
+  })
+
+  it('reads a missing pricing asset as unset instead of failing the list', () => {
+    const [unpriced, priced] = parseCredentialSchemasResponse({
+      schemas: [{ ...schema, pricing_asset_type: undefined, pricing_asset: undefined }, schema],
+    })
+    expect(unpriced).toMatchObject({ pricingAssetType: null, pricingAsset: null })
+    expect(priced).toMatchObject({ pricingAssetType: 'COIN', pricingAsset: 'uvna' })
+    expect(() => parseCredentialSchemasResponse({ schemas: [{ ...schema, pricing_asset: 42 }] })).toThrow(
       'schemas[0].pricing_asset'
     )
   })
