@@ -17,6 +17,7 @@ import {
 } from '@/lib/participant-onboarding'
 import { isNativePricing } from '@/lib/pricing-asset'
 import { trustCostLines } from '@/lib/trust-costs'
+import { EMPTY_VS_OPERATOR_INPUT, vsOperatorIssue } from '@/lib/vs-operator-authorization'
 import {
   createdParticipantId,
   type ParticipantActionParams,
@@ -36,6 +37,7 @@ import { PricingNotice } from '@/ui/common/pricing-notice'
 import RoleCard from '@/ui/common/role-card'
 import { SelfCreateFields } from '@/ui/common/self-create-fields'
 import ValidatorCard from '@/ui/common/validator-card'
+import { VsOperatorFields } from '@/ui/common/vs-operator-fields'
 import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
@@ -97,6 +99,7 @@ export default function JoinEcosystemWizard() {
   const [selectedValidator, setSelectedValidator] = useState<Participant | null>(null)
   const [serviceDid, setServiceDid] = useState('')
   const [selfCreate, setSelfCreate] = useState(EMPTY_SELF_CREATE_INPUT)
+  const [vsOperator, setVsOperator] = useState(EMPTY_VS_OPERATOR_INPUT)
   const [submitting, setSubmitting] = useState(false)
   const [created, setCreated] = useState<CreatedParticipant | null>(null)
   const { participant: createdParticipant, refetch: refetchCreated } = useParticipant(created?.id)
@@ -132,6 +135,7 @@ export default function JoinEcosystemWizard() {
   const selfCreateProblem = selfCreating
     ? selfCreateIssue(selfCreate, selectedValidator?.effective_until, new Date())
     : null
+  const vsOperatorProblem = selectedRole ? vsOperatorIssue(selectedRole, vsOperator) : null
   const activeStep = STEPS.find((step) => step.id === currentStep)
   const percentage = currentStep === 7 ? 100 : ((currentStep - 1) / STEPS.length) * 100
 
@@ -148,7 +152,7 @@ export default function JoinEcosystemWizard() {
       case 5:
         return decision?.validatorRole === null || selectedValidator !== null
       case 6:
-        return isValidDID(serviceDid) && selfCreateProblem === null && !submitting
+        return isValidDID(serviceDid) && selfCreateProblem === null && vsOperatorProblem === null && !submitting
       case 7:
         return false
     }
@@ -164,7 +168,7 @@ export default function JoinEcosystemWizard() {
 
   async function submit() {
     if (!decision?.messageType || !selectedRole || !selectedValidator || !isValidDID(serviceDid)) return
-    const common = { role: selectedRole, validatorParticipantId: selectedValidator.id, did: serviceDid }
+    const common = { role: selectedRole, validatorParticipantId: selectedValidator.id, did: serviceDid, vsOperator }
     const params: ParticipantActionParams =
       decision.messageType === 'MsgSelfCreateParticipant'
         ? {
@@ -326,6 +330,7 @@ export default function JoinEcosystemWizard() {
                   onSelect={() => {
                     setSelectedRole(role)
                     setSelectedValidator(null)
+                    setVsOperator(EMPTY_VS_OPERATOR_INPUT)
                   }}
                 />
               ))}
@@ -425,6 +430,14 @@ export default function JoinEcosystemWizard() {
                   onChange={setSelfCreate}
                   withFees={selectedRole === 'ISSUER'}
                   issue={selfCreateProblem}
+                />
+              ) : null}
+              {selectedRole ? (
+                <VsOperatorFields
+                  role={selectedRole}
+                  value={vsOperator}
+                  onChange={setVsOperator}
+                  issue={vsOperatorProblem}
                 />
               ) : null}
             </div>
