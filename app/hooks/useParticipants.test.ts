@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseParticipantsResponse, participantsListUrl } from '@/hooks/useParticipants'
+import { parseParticipantsResponse, participantsListUrl, participantsPageKey } from '@/hooks/useParticipants'
 
 const participant = {
   id: 1,
@@ -91,5 +91,26 @@ describe('participantsListUrl', () => {
         after: '40',
       })
     ).toContain('min_id=41&role=ISSUER_GRANTOR&participant_state=ACTIVE')
+  })
+})
+
+describe('participantsPageKey', () => {
+  it('separates two sibling sets of the same schema', () => {
+    const issuers = participantsPageKey({ schema: '9', role: 'ISSUER', validator: '4' })
+    const verifiers = participantsPageKey({ schema: '9', role: 'VERIFIER', validator: '4' })
+    expect(issuers).not.toBe(verifiers)
+    expect(participantsPageKey({ schema: '9', role: 'ISSUER', validator: '7' })).not.toBe(issuers)
+  })
+
+  it('separates a cursor page from the first page of the same set', () => {
+    expect(participantsPageKey({ schema: '9', role: 'ISSUER', validator: '4', after: '40' })).not.toBe(
+      participantsPageKey({ schema: '9', role: 'ISSUER', validator: '4' })
+    )
+  })
+
+  it('matches when the same page is requested twice', () => {
+    expect(participantsPageKey({ schema: '9', role: 'ECOSYSTEM' })).toBe(
+      participantsPageKey({ schema: '9', role: 'ECOSYSTEM', after: undefined })
+    )
   })
 })

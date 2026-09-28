@@ -6,10 +6,10 @@ import { useParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useCredentialSchemaData } from '@/hooks/useCredentialSchemaData'
 import { useEcosystemData } from '@/hooks/useEcosystemData'
-import { useParticipants } from '@/hooks/useParticipants'
+import { participantsPageKey, useParticipants } from '@/hooks/useParticipants'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
-import ParticipantTree from '@/ui/common/participant-tree'
+import ParticipantTree, { ROOT_NODE_ID } from '@/ui/common/participant-tree'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import type { Role } from '@/ui/common/role-card'
 import type { Participant } from '@/ui/dataview/datasections/participant'
@@ -37,13 +37,26 @@ function buildTreeByValidator(participants: Participant[]): BuiltParticipant[] {
   return roots
 }
 
-function setChildren(nodes: TreeNode[], targetNodeId: string, children: TreeNode[]): TreeNode[] {
+function mergeBy<T>(existing: T[], incoming: T[], key: (item: T) => string): T[] {
+  const byKey = new Map(existing.map((item) => [key(item), item]))
+  for (const item of incoming) byKey.set(key(item), item)
+  return [...byKey.values()]
+}
+
+function setChildren(nodes: TreeNode[], targetNodeId: string, children: TreeNode[], append: boolean): TreeNode[] {
   return nodes.map((node) => {
-    if (node.nodeId === targetNodeId) return { ...node, children }
-    if (node.children?.length) return { ...node, children: setChildren(node.children, targetNodeId, children) }
+    if (node.nodeId === targetNodeId) {
+      return { ...node, children: append ? mergeBy(node.children ?? [], children, (child) => child.nodeId) : children }
+    }
+    if (node.children?.length) {
+      return { ...node, children: setChildren(node.children, targetNodeId, children, append) }
+    }
     return node
   })
 }
+
+type TreeRequest = { nodeId?: string; role?: string; validatorId?: string; after?: string }
+type NodePage = { role?: string; validatorId?: string; cursor?: string; hasNext: boolean }
 
 export default function ParticipantsPage() {
   const params = useParams()
@@ -54,13 +67,19 @@ export default function ParticipantsPage() {
   const ownedIds = useRef<Set<string>>(new Set())
   const predecessorIds = useRef<Set<string>>(new Set())
 
-  const [role, setRole] = useState<string | undefined>('ECOSYSTEM')
-  const [validatorId, setValidatorId] = useState<string | undefined>()
-  const [requestedNodeId, setRequestedNodeId] = useState<string | undefined>()
+  const [request, setRequest] = useState<TreeRequest>({ role: 'ECOSYSTEM' })
+  const [pages, setPages] = useState<Record<string, NodePage>>({})
   const [refreshRoot, setRefreshRoot] = useState(false)
   const [participantTree, setParticipantTree] = useState<TreeNode[]>([])
+  const rootRows = useRef<Participant[]>([])
 
-  const { participants, refetch: refetchParticipants, hasNext, loadMore } = useParticipants(schemaId, role, validatorId)
+  const { role, validatorId } = request
+  const {
+    participants,
+    pageKey,
+    refetch: refetchParticipants,
+    hasNext,
+  } = useParticipants(schemaId, role, validatorId, { after: request.after })
   const { credentialSchema } = useCredentialSchemaData(schemaId)
   const ecosystemId = credentialSchema ? String(credentialSchema.ecosystemId) : ''
   const { ecosystem } = useEcosystemData(ecosystemId)
@@ -121,10 +140,22 @@ export default function ParticipantsPage() {
   )
 
   const setNodeRequestParams = useCallback((nodeId?: string, requestedRole?: string, requestedValidatorId?: string) => {
-    setRole(requestedRole)
-    setValidatorId(requestedValidatorId)
-    setRequestedNodeId(nodeId)
+    setRequest({ nodeId, role: requestedRole, validatorId: requestedValidatorId })
   }, [])
+
+  const loadMoreNode = useCallback(
+    (nodeId: string) => {
+      const page = pages[nodeId]
+      if (!page?.cursor) return
+      setRequest({
+        nodeId: nodeId === ROOT_NODE_ID ? undefined : nodeId,
+        role: page.role,
+        validatorId: page.validatorId,
+        after: page.cursor,
+      })
+    },
+    [pages]
+  )
 
   const childRoles = useMemo(
     () =>
@@ -139,33 +170,47 @@ export default function ParticipantsPage() {
   )
 
   useEffect(() => {
-    if (role === 'ECOSYSTEM') {
+    const target = role === 'ECOSYSTEM' ? ROOT_NODE_ID : request.nodeId
+    if (!target) return
+    if (target !== ROOT_NODE_ID && !(role && validatorId)) return
+    if (pageKey !== participantsPageKey({ schema: schemaId, role, validator: validatorId, after: request.after }))
+      return
+
+    const appending = request.after !== undefined
+    if (target === ROOT_NODE_ID) {
+      const rows = appending ? mergeBy(rootRows.current, participants, (row) => row.id) : participants
+      rootRows.current = rows
       ownedIds.current.clear()
       predecessorIds.current.clear()
-      setParticipantTree(buildTreeByValidator(participants).map((node) => toTreeNode(node, childRoles)))
-      return
-    }
-    if (role && validatorId && requestedNodeId) {
+      setParticipantTree(buildTreeByValidator(rows).map((node) => toTreeNode(node, childRoles)))
+    } else {
       const children = participants.map((participant) => toTreeNode({ ...participant, children: [] }, childRoles))
-      setParticipantTree((current) => setChildren(current, requestedNodeId, children))
+      setParticipantTree((current) => setChildren(current, target, children, appending))
     }
-  }, [childRoles, participants, requestedNodeId, role, toTreeNode, validatorId])
+
+    const last = participants[participants.length - 1]
+    setPages((current) => ({
+      ...current,
+      [target]: { role, validatorId, cursor: last?.id ?? current[target]?.cursor, hasNext },
+    }))
+  }, [childRoles, hasNext, pageKey, participants, request, role, schemaId, toTreeNode, validatorId])
 
   useEffect(() => {
     if (!refreshRoot) return
-    if (role === 'ECOSYSTEM') void refetchParticipants()
+    if (role === 'ECOSYSTEM' && request.after === undefined) void refetchParticipants()
     else setNodeRequestParams(undefined, 'ECOSYSTEM', undefined)
     setRefreshRoot(false)
-  }, [refetchParticipants, refreshRoot, role, setNodeRequestParams])
+  }, [refetchParticipants, refreshRoot, request.after, role, setNodeRequestParams])
 
   const retryFetch = useCallback(
     () => refetchParticipants(schemaId, role, validatorId),
     [refetchParticipants, role, schemaId, validatorId]
   )
 
-  // One request serves one sibling set, so only the set of the last request can
-  // grow. `hasNext` belongs to that set.
-  const moreNodeId = hasNext ? (role === 'ECOSYSTEM' ? 'root' : requestedNodeId) : undefined
+  const moreNodeIds = useMemo(
+    () => new Set(Object.entries(pages).flatMap(([nodeId, page]) => (page.hasNext ? [nodeId] : []))),
+    [pages]
+  )
 
   return (
     <ParticipantTree
@@ -182,8 +227,8 @@ export default function ParticipantsPage() {
       isEcosystemController={actingCorporation?.corporation.id === ecosystem?.corporationId}
       viewerCorporationId={actingCorporation?.corporation.id}
       setNodeRequestParams={setNodeRequestParams}
-      moreNodeId={moreNodeId}
-      loadMore={loadMore}
+      moreNodeIds={moreNodeIds}
+      loadMore={loadMoreNode}
       refreshRoot={() => setRefreshRoot(true)}
       onConnect={!isWalletConnected ? connect : undefined}
       onRetryFetch={retryFetch}

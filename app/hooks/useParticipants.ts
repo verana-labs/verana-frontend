@@ -27,6 +27,11 @@ export type ParticipantsOptions = {
   participantState?: ParticipantState
   trustData?: 'summary' | 'full'
   pageSize?: number
+  after?: string
+}
+
+export function participantsPageKey(request: ParticipantQuery & { after?: string }): string {
+  return [request.schema ?? '', request.role ?? '', request.validator ?? '', request.after ?? ''].join('|')
 }
 
 type ParticipantsRequest = {
@@ -54,8 +59,9 @@ export function useParticipants(
   validatorParticipantId?: string,
   options: ParticipantsOptions = {}
 ) {
-  const { participantState, trustData = 'full', pageSize = PARTICIPANTS_PAGE_SIZE } = options
+  const { participantState, trustData = 'full', pageSize = PARTICIPANTS_PAGE_SIZE, after } = options
   const [participants, setParticipants] = useState<Participant[]>([])
+  const [pageKey, setPageKey] = useState('')
   const [hasNext, setHasNext] = useState(false)
   const [loading, setLoading] = useState(false)
   const [errorParticipants, setError] = useState<string | null>(null)
@@ -63,11 +69,13 @@ export function useParticipants(
   const queryRef = useRef<ParticipantQuery>({})
 
   const fetchPage = useCallback(
-    async (query: ParticipantQuery, after: string | undefined, append: boolean) => {
+    async (query: ParticipantQuery, cursor: string | undefined, append: boolean) => {
       const request = ++requestRef.current
+      const key = participantsPageKey({ ...query, after: cursor })
       if (!query.schema || !VERANA_REST_ENDPOINT_PARTICIPANT || (!query.role && !query.validator)) {
         setParticipants([])
         setHasNext(false)
+        setPageKey(key)
         setLoading(false)
         return
       }
@@ -82,7 +90,7 @@ export function useParticipants(
           participantState,
           trustData,
           pageSize,
-          after,
+          after: cursor,
         })
         const response = await fetch(url)
         const json: unknown = await response.json()
@@ -94,6 +102,7 @@ export function useParticipants(
         if (request !== requestRef.current) return
         setParticipants((current) => (append ? [...current, ...page.items] : page.items))
         setHasNext(page.hasNext)
+        setPageKey(key)
       } catch (error) {
         if (request === requestRef.current) setError(error instanceof Error ? error.message : String(error))
       } finally {
@@ -111,9 +120,9 @@ export function useParticipants(
         validator: validatorOverride ?? validatorParticipantId,
       }
       queryRef.current = query
-      await fetchPage(query, undefined, false)
+      await fetchPage(query, after, false)
     },
-    [fetchPage, role, schemaId, validatorParticipantId]
+    [after, fetchPage, role, schemaId, validatorParticipantId]
   )
 
   useEffect(() => {
@@ -125,5 +134,5 @@ export function useParticipants(
     if (last) void fetchPage(queryRef.current, last.id, true)
   }, [fetchPage, participants])
 
-  return { participants, loading, errorParticipants, refetch: fetchParticipants, hasNext, loadMore }
+  return { participants, pageKey, loading, errorParticipants, refetch: fetchParticipants, hasNext, loadMore }
 }

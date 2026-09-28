@@ -20,6 +20,8 @@ import ParticipantCard from './participant-card'
 import { collectParticipantTrust, filterParticipantTree } from './participant-tree-filter'
 import TreeNodeHeader from './tree-node-header'
 
+export const ROOT_NODE_ID = 'root'
+
 type ParticipantTreeProps = {
   tree: TreeNode[]
   type: 'participants' | 'tasks'
@@ -34,8 +36,8 @@ type ParticipantTreeProps = {
   isEcosystemController?: boolean
   viewerCorporationId?: number
   setNodeRequestParams?: (nodeId?: string, role?: string, validatorId?: string) => void
-  moreNodeId?: string
-  loadMore?: () => void
+  moreNodeIds?: ReadonlySet<string>
+  loadMore?: (nodeId: string) => void
   refreshRoot?: () => void
   onConnect?: () => void
   onRetryFetch?: () => void
@@ -67,7 +69,7 @@ function mergeTrees(previous: TreeNode[], next: TreeNode[]): TreeNode[] {
   const previousById = new Map(previous.map((node) => [node.nodeId, node]))
   return next.map((node) => {
     const oldNode = previousById.get(node.nodeId)
-    if (node.group) return { ...node, children: node.children ?? [] }
+    if (node.group) return { ...node, children: node.children?.length ? node.children : (oldNode?.children ?? []) }
     return {
       ...oldNode,
       ...node,
@@ -99,7 +101,7 @@ function Tree({
   onToggle,
   onJoin,
   onConnect,
-  moreNodeId,
+  moreNodeIds,
   onLoadMore,
   depth = 0,
 }: {
@@ -114,8 +116,8 @@ function Tree({
   onToggle: (id: string, role?: string, validatorId?: string) => void
   onJoin: (node: TreeNode) => void
   onConnect?: () => void
-  moreNodeId?: string
-  onLoadMore?: () => void
+  moreNodeIds?: ReadonlySet<string>
+  onLoadMore?: (nodeId: string) => void
   depth?: number
 }) {
   return (
@@ -154,13 +156,13 @@ function Tree({
                 onToggle={onToggle}
                 onJoin={onJoin}
                 onConnect={onConnect}
-                moreNodeId={moreNodeId}
+                moreNodeIds={moreNodeIds}
                 onLoadMore={onLoadMore}
                 depth={depth + 1}
               />
             ) : null}
-            {isExpanded && node.nodeId === moreNodeId && onLoadMore ? (
-              <ShowMoreButton onClick={onLoadMore} indent={(depth + 1) * 24} />
+            {isExpanded && moreNodeIds?.has(node.nodeId) && onLoadMore ? (
+              <ShowMoreButton onClick={() => onLoadMore(node.nodeId)} indent={(depth + 1) * 24} />
             ) : null}
           </div>
         )
@@ -183,7 +185,7 @@ export default function ParticipantTree({
   isEcosystemController,
   viewerCorporationId,
   setNodeRequestParams,
-  moreNodeId,
+  moreNodeIds,
   loadMore,
   refreshRoot,
   onConnect,
@@ -349,7 +351,7 @@ export default function ParticipantTree({
           ) : null}
         </div>
 
-        {type === 'participants' && moreNodeId ? (
+        {type === 'participants' && moreNodeIds?.size ? (
           <p className="p-2 text-xs text-neutral-70 dark:text-neutral-70">
             {resolveTranslatable({ key: 'pagination.loadedOnly' }, translate) ??
               'Sorting and filters apply to the loaded results only.'}
@@ -377,10 +379,10 @@ export default function ParticipantTree({
             setJoinNode(node)
           }}
           onConnect={onConnect}
-          moreNodeId={moreNodeId}
+          moreNodeIds={moreNodeIds}
           onLoadMore={loadMore}
         />
-        {moreNodeId === 'root' && loadMore ? <ShowMoreButton onClick={loadMore} /> : null}
+        {moreNodeIds?.has(ROOT_NODE_ID) && loadMore ? <ShowMoreButton onClick={() => loadMore(ROOT_NODE_ID)} /> : null}
 
         {type === 'participants' && isEcosystemController ? (
           <button
