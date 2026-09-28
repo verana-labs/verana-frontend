@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseParticipantsResponse } from '@/hooks/useParticipants'
+import { parseParticipantsResponse, participantsListUrl } from '@/hooks/useParticipants'
 
 const participant = {
   id: 1,
@@ -51,5 +51,45 @@ describe('participant rows carry the inline trust_data', () => {
   it('leaves the enrichment unset for a participant with no DID', () => {
     const row = parseParticipantsResponse({ participants: [{ ...participant, did: null, trust_data: null }] })[0]
     expect(row.trustData).toBeUndefined()
+  })
+})
+
+describe('participantsListUrl', () => {
+  it('asks the indexer for ACTIVE validators with the summary enrichment', () => {
+    expect(
+      participantsListUrl('https://indexer/v4/participant', {
+        schema: '9',
+        role: 'ISSUER_GRANTOR',
+        participantState: 'ACTIVE',
+        trustData: 'summary',
+        pageSize: 25,
+      })
+    ).toBe(
+      'https://indexer/v4/participant/list?schema_id=9&trust_data=summary&limit=26&sort=%2Bid&role=ISSUER_GRANTOR&participant_state=ACTIVE'
+    )
+  })
+
+  it('omits participant_state for a tree that shows every state', () => {
+    const url = participantsListUrl('https://indexer/v4/participant', {
+      schema: '9',
+      role: 'ECOSYSTEM',
+      trustData: 'full',
+      pageSize: 25,
+    })
+    expect(url).not.toContain('participant_state')
+    expect(url).toContain('trust_data=full')
+  })
+
+  it('keeps the state filter on the next cursor page', () => {
+    expect(
+      participantsListUrl('https://indexer/v4/participant', {
+        schema: '9',
+        role: 'ISSUER_GRANTOR',
+        participantState: 'ACTIVE',
+        trustData: 'summary',
+        pageSize: 25,
+        after: '40',
+      })
+    ).toContain('min_id=41&role=ISSUER_GRANTOR&participant_state=ACTIVE')
   })
 })

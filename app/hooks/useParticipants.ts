@@ -5,7 +5,7 @@ import { VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
 import { parseParticipantRecord } from '@/hooks/useParticipant'
 import { applyKeysetParams, indexerValidators, takeKeysetPage } from '@/lib/indexer-json'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
-import type { Participant } from '@/ui/dataview/datasections/participant'
+import type { Participant, ParticipantState } from '@/ui/dataview/datasections/participant'
 
 const { record } = indexerValidators('participants')
 
@@ -23,12 +23,38 @@ export const PARTICIPANTS_PAGE_SIZE = 25
 
 type ParticipantQuery = { schema?: string; role?: string; validator?: string }
 
+export type ParticipantsOptions = {
+  participantState?: ParticipantState
+  trustData?: 'summary' | 'full'
+  pageSize?: number
+}
+
+type ParticipantsRequest = {
+  schema: string
+  role?: string
+  validator?: string
+  participantState?: ParticipantState
+  trustData: 'summary' | 'full'
+  pageSize: number
+  after?: string
+}
+
+export function participantsListUrl(base: string, request: ParticipantsRequest): string {
+  const params = new URLSearchParams({ schema_id: request.schema, trust_data: request.trustData })
+  applyKeysetParams(params, { pageSize: request.pageSize, after: request.after, sort: '+id' })
+  if (request.role) params.set('role', request.role)
+  if (request.validator) params.set('validator_participant_id', request.validator)
+  if (request.participantState) params.set('participant_state', request.participantState)
+  return `${base}/list?${params.toString()}`
+}
+
 export function useParticipants(
   schemaId?: string,
   role?: string,
   validatorParticipantId?: string,
-  pageSize = PARTICIPANTS_PAGE_SIZE
+  options: ParticipantsOptions = {}
 ) {
+  const { participantState, trustData = 'full', pageSize = PARTICIPANTS_PAGE_SIZE } = options
   const [participants, setParticipants] = useState<Participant[]>([])
   const [hasNext, setHasNext] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -49,11 +75,16 @@ export function useParticipants(
       setError(null)
       setLoading(true)
       try {
-        const params = new URLSearchParams({ schema_id: query.schema, trust_data: 'full' })
-        applyKeysetParams(params, { pageSize, after, sort: '+id' })
-        if (query.role) params.set('role', query.role)
-        if (query.validator) params.set('validator_participant_id', query.validator)
-        const response = await fetch(`${VERANA_REST_ENDPOINT_PARTICIPANT}/list?${params.toString()}`)
+        const url = participantsListUrl(VERANA_REST_ENDPOINT_PARTICIPANT, {
+          schema: query.schema,
+          role: query.role,
+          validator: query.validator,
+          participantState,
+          trustData,
+          pageSize,
+          after,
+        })
+        const response = await fetch(url)
         const json: unknown = await response.json()
         if (!response.ok) {
           const { error, code } = json as ApiErrorResponse
@@ -69,7 +100,7 @@ export function useParticipants(
         if (request === requestRef.current) setLoading(false)
       }
     },
-    [pageSize]
+    [pageSize, participantState, trustData]
   )
 
   const fetchParticipants = useCallback(

@@ -349,6 +349,12 @@ export default function ParticipantTree({
           ) : null}
         </div>
 
+        {type === 'participants' && moreNodeId ? (
+          <p className="p-2 text-xs text-neutral-70 dark:text-neutral-70">
+            {resolveTranslatable({ key: 'pagination.loadedOnly' }, translate) ??
+              'Sorting and filters apply to the loaded results only.'}
+          </p>
+        ) : null}
         {type === 'participants' && treeState.length > 0 && visibleTree.length === 0 ? (
           <p className="p-2 text-sm text-neutral-70 dark:text-neutral-70">
             {resolveTranslatable({ key: 'participants.filters.allhidden' }, translate) ??
