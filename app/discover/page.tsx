@@ -13,7 +13,7 @@ import LogoImage from '@/ui/common/logo-image'
 import TitleAndButton from '@/ui/common/title-and-button'
 import TrustBadge from '@/ui/common/trust-badge'
 import { resolveTranslatable } from '@/ui/dataview/types'
-import { countryCodeToFlag, formatVNAFromUVNA, shortenDID } from '@/util/util'
+import { countryCodeToFlag, formatNumber, formatVNAFromUVNA, shortenDID } from '@/util/util'
 
 function scrollToTop(): void {
   document.getElementById('app-scroll')?.scrollTo({ top: 0, behavior: 'smooth' })
@@ -157,7 +157,8 @@ export default function DiscoverJoinPage() {
                   <div className="flex items-center space-x-4 text-sm text-neutral-70 dark:text-neutral-70 mb-4">
                     <span>
                       <FontAwesomeIcon className="mr-1" aria-hidden="true" icon={faFileContract} />
-                      {eco.credentialSchemas.length} {resolveTranslatable({ key: 'discover.cs.label' }, translate)}
+                      {formatNumber(eco.activeSchemas, true)}{' '}
+                      {resolveTranslatable({ key: 'discover.cs.label' }, translate)}
                     </span>
                     <span>
                       <FontAwesomeIcon className="mr-1" aria-hidden="true" icon={faCoins} />
@@ -190,9 +191,11 @@ export default function DiscoverJoinPage() {
                 </div>
 
                 <div className="space-y-4">
-                  {eco.credentialSchemas.map((schema) => (
-                    <CsCard key={schema.id} credentialSchema={schema} />
-                  ))}
+                  {discoverCtx.errorCredentialSchemas ? (
+                    <div className="error-pane">{discoverCtx.errorCredentialSchemas}</div>
+                  ) : (
+                    eco.credentialSchemas.map((schema) => <CsCard key={schema.id} credentialSchema={schema} />)
+                  )}
                 </div>
               </div>
             )
