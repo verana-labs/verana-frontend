@@ -379,7 +379,7 @@ export default function EditableDataView<T extends object>({
               msgTypeStyle[messageType].button // specific
             )}
             onClick={handleSave}
-            disabled={submitting || corporationLoading}
+            disabled={submitting || corporationLoading || !noFormReady}
           >
             {uiMsgType.label}
           </button>

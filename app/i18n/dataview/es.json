@@ -149,6 +149,7 @@
   "participant.labelstate.repaid": "REEMBOLSADO",
   "participant.labelstate.slashed": "CONFISCADO",
   "participant.labelstate.expiresoon": "EXPIRA PRONTO",
+  "participant.renew.validatorunavailable": "No se pudieron cargar las tarifas del validador, así que no se puede mostrar el costo de la renovación. Inténtelo de nuevo en un momento.",
   "participant.labelstate.active": "ACTIVO",
   "participant.labelstate.inactive": "INACTIVO",
   "participant.labelstate.future": "FUTURO",

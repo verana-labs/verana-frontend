@@ -1,10 +1,13 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { useParticipant } from '@/hooks/useParticipant'
+import { translate } from '@/i18n/dataview'
 import { totalDebitUvna, trustCostLines } from '@/lib/trust-costs'
 import { type ParticipantActionParams, useActionParticipant } from '@/msg/actions_hooks/actionParticipant'
 import type { MsgTypeParticipant } from '@/msg/constants/notificationMsgForMsgType'
 import type { MessageType } from '@/msg/constants/types'
+import { useNotification } from '@/providers/notification-provider'
 import { useProtocolParams } from '@/providers/protocol-params-context'
 import EditableDataView from '@/ui/common/data-edit'
 import {
@@ -12,6 +15,7 @@ import {
   type Participant,
   type ParticipantData,
 } from '@/ui/dataview/datasections/participant'
+import { resolveTranslatable } from '@/ui/dataview/types'
 
 interface ParticipantActionProps {
   action: MsgTypeParticipant
@@ -37,7 +41,16 @@ export default function ParticipantActionPage({
       : undefined
   const { participant: validator, errorParticipant: validatorError } = useParticipant(validatorId)
   const validatorValidationFees = participant.validator_validation_fees ?? validator?.validation_fees
-  const validatorSettled = validatorId === undefined || validator !== null || validatorError !== null
+  const validatorSettled = validatorId === undefined || validator !== null
+  const { notify } = useNotification()
+  const validatorFailureReported = useRef(false)
+
+  useEffect(() => {
+    if (!validatorError || validatorFailureReported.current) return
+    validatorFailureReported.current = true
+    void notify(resolveTranslatable({ key: 'participant.renew.validatorunavailable' }, translate) ?? '', 'error')
+    onClose()
+  }, [validatorError, notify, onClose])
   const repayAmount = Number(participant.slashed_deposit ?? 0) - Number(participant.repaid_deposit ?? 0)
   const costLines =
     action === 'MsgStartParticipantOP' || action === 'MsgRenewParticipantOP'

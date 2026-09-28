@@ -149,6 +149,7 @@
   "participant.labelstate.repaid": "REPAID",
   "participant.labelstate.slashed": "SLASHED",
   "participant.labelstate.expiresoon": "EXPIRES SOON",
+  "participant.renew.validatorunavailable": "The validator's fees could not be loaded, so the renewal cost cannot be shown. Try again in a moment.",
   "participant.labelstate.active": "ACTIVE",
   "participant.labelstate.inactive": "INACTIVE",
   "participant.labelstate.future": "FUTURE",
