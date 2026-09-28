@@ -44,3 +44,52 @@ export function getParticipantOnboardingDecision(
     validatorRole: role === 'ISSUER' ? 'ISSUER_GRANTOR' : 'VERIFIER_GRANTOR',
   }
 }
+
+export type EffectiveWindowIssue = 'fromInPast' | 'untilNotAfterFrom' | 'untilRequired' | 'untilAfterValidator'
+
+export function effectiveWindowIssue(
+  window: { from: Date | undefined; until: Date | undefined },
+  validatorUntil: Date | undefined,
+  now: Date
+): EffectiveWindowIssue | null {
+  if (window.from && window.from.getTime() < now.getTime()) return 'fromInPast'
+  if (!window.until) return validatorUntil ? 'untilRequired' : null
+  if (window.until.getTime() <= (window.from ?? now).getTime()) return 'untilNotAfterFrom'
+  if (validatorUntil && window.until.getTime() > validatorUntil.getTime()) return 'untilAfterValidator'
+  return null
+}
+
+export type SelfCreateInput = {
+  effectiveFrom: string
+  effectiveUntil: string
+  validationFees: string
+  verificationFees: string
+}
+
+export const EMPTY_SELF_CREATE_INPUT: SelfCreateInput = {
+  effectiveFrom: '',
+  effectiveUntil: '',
+  validationFees: '',
+  verificationFees: '',
+}
+
+export type SelfCreateIssue = EffectiveWindowIssue | 'invalidFees'
+
+function optionalDate(value: string | null | undefined): Date | undefined {
+  if (!value) return undefined
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? undefined : date
+}
+
+export function selfCreateIssue(
+  input: SelfCreateInput,
+  validatorUntil: string | null | undefined,
+  now: Date
+): SelfCreateIssue | null {
+  if (![input.validationFees, input.verificationFees].every((fee) => /^\d*$/.test(fee.trim()))) return 'invalidFees'
+  return effectiveWindowIssue(
+    { from: optionalDate(input.effectiveFrom), until: optionalDate(input.effectiveUntil) },
+    optionalDate(validatorUntil),
+    now
+  )
+}
