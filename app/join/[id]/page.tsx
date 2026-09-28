@@ -21,6 +21,7 @@ import { CapabilityButton } from '@/ui/common/capability-button'
 import CsCard from '@/ui/common/cs-card'
 import EcosystemCard from '@/ui/common/ecosystem-card'
 import EgfCard from '@/ui/common/egf-card'
+import { EgfViewerToggle } from '@/ui/common/egf-viewer-toggle'
 import KeysetPagination, { ShowMoreButton } from '@/ui/common/keyset-pagination'
 import { PricingNotice } from '@/ui/common/pricing-notice'
 import RoleCard from '@/ui/common/role-card'
@@ -110,7 +111,6 @@ export default function JoinEcosystemWizard() {
     participantState: 'ACTIVE',
     trustData: 'full',
   })
-  const activeValidators = validators.filter((participant) => participant.participant_state === 'ACTIVE')
 
   const joinSigning = useActionSigning(decision?.messageType ?? '')
   const protocolParams = useProtocolParams()
@@ -288,7 +288,14 @@ export default function JoinEcosystemWizard() {
             <p className="text-sm text-neutral-70 mt-1">{activeStep.description}</p>
           </div>
 
-          {currentStep === 1 ? <EcosystemCard ecosystem={{ ...ecosystem, role: ecosystem.role ?? '' }} /> : null}
+          {currentStep === 1 ? (
+            <div className="flex flex-wrap gap-3 mb-6">
+              <div className="w-full">
+                <EcosystemCard ecosystem={{ ...ecosystem, role: ecosystem.role ?? '' }} />
+              </div>
+              <EgfViewerToggle versions={ecosystem.versions} activeVersion={ecosystem.activeVersion} />
+            </div>
+          ) : null}
 
           {currentStep === 2 ? (
             <div className="space-y-4 mb-6">
@@ -364,11 +371,11 @@ export default function JoinEcosystemWizard() {
                 </div>
               ) : null}
               {errorParticipants ? <div className="error-pane">{errorParticipants}</div> : null}
-              {decision?.validatorRole && activeValidators.length === 0 ? (
+              {decision?.validatorRole && validators.length === 0 ? (
                 <p className="text-sm text-neutral-70">No active validator participant is available.</p>
               ) : null}
               {decision?.validatorRole
-                ? activeValidators.map((validator) => (
+                ? validators.map((validator) => (
                     <ValidatorCard
                       key={validator.id}
                       validator={validator}
