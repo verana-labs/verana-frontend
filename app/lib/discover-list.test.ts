@@ -7,6 +7,8 @@ import {
   filterEcosystems,
   INITIAL_DISCOVER_FILTERS,
   orderEcosystems,
+  roleFiltersPending,
+  settleRoleLookups,
 } from './discover-list'
 
 function ecosystem(id: string, overrides: Partial<EcosystemListItem> = {}): EcosystemListItem {
@@ -117,5 +119,57 @@ describe('distinctRoles', () => {
       'ISSUER',
       'HOLDER',
     ])
+  })
+})
+
+describe('settleRoleLookups', () => {
+  it('keeps the roles that resolved and names the ecosystems that failed', () => {
+    const lookup = settleRoleLookups(
+      ['1', '2', '3'],
+      [
+        { status: 'fulfilled', value: ['ISSUER'] },
+        { status: 'rejected', reason: new Error('Error 502: indexer unavailable') },
+        { status: 'fulfilled', value: [] },
+      ]
+    )
+    expect(lookup).toEqual({
+      rolesByEcosystem: { '1': ['ISSUER'], '3': [] },
+      failedEcosystemIds: ['2'],
+      failureReason: 'Error 502: indexer unavailable',
+    })
+  })
+
+  it('keeps the first failure reason when several lookups fail', () => {
+    const lookup = settleRoleLookups(
+      ['1', '2'],
+      [
+        { status: 'rejected', reason: 'timeout' },
+        { status: 'rejected', reason: new Error('later') },
+      ]
+    )
+    expect(lookup.failedEcosystemIds).toEqual(['1', '2'])
+    expect(lookup.failureReason).toBe('timeout')
+  })
+
+  it('leaves a failed ecosystem out of the role based filters instead of hiding it', () => {
+    const list = [ecosystem('1'), ecosystem('2')]
+    const { rolesByEcosystem } = settleRoleLookups(
+      ['1', '2'],
+      [
+        { status: 'fulfilled', value: ['HOLDER'] },
+        { status: 'rejected', reason: 'down' },
+      ]
+    )
+    const scope = { actingCorporationId: 9, rolesByEcosystem }
+    expect(ids(filterEcosystems(list, filters({ hideParticipant: true }), scope))).toEqual(['2'])
+  })
+})
+
+describe('roleFiltersPending', () => {
+  it('holds the list only while roles load and a role based filter is on', () => {
+    expect(roleFiltersPending(INITIAL_DISCOVER_FILTERS, true)).toBe(false)
+    expect(roleFiltersPending(filters({ hideParticipant: true }), true)).toBe(true)
+    expect(roleFiltersPending(filters({ hideOwned: true }), true)).toBe(true)
+    expect(roleFiltersPending(filters({ hideOwned: true, hideParticipant: true }), false)).toBe(false)
   })
 })

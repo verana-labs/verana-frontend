@@ -138,7 +138,8 @@ test('discover lists every ecosystem of the window, finds one by name and orders
     'Beta Registry',
     'Gamma Registry',
   ])
-  await expect(page.getByText('Sorting and filters apply to the loaded results only.').first()).toBeVisible()
+  await expect(page.getByText('Sorting and filters apply to the loaded results only.')).toHaveCount(1)
+  await expect(page.locator('section', { hasText: 'Search Ecosystems' }).getByText(/loaded results only/)).toBeVisible()
 
   await page.locator('#discover-order').selectOption('trustValue')
   await expect

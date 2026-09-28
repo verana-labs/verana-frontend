@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
 import { parseParticipantRecord } from '@/hooks/useParticipant'
-import { distinctRoles } from '@/lib/discover-list'
+import { distinctRoles, type RoleLookup, settleRoleLookups } from '@/lib/discover-list'
 import { applyKeysetParams, indexerValidators, takeKeysetPage } from '@/lib/indexer-json'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type { Participant, ParticipantRole, ParticipantState } from '@/ui/dataview/datasections/participant'
@@ -179,28 +179,29 @@ export async function fetchCorporationRoles(
 }
 
 export function useCorporationRolesByEcosystem(corporationId: number | undefined, ecosystemIds: string[]) {
-  const [rolesByEcosystem, setRolesByEcosystem] = useState<Record<string, ParticipantRole[]>>({})
-  const [errorRoles, setError] = useState<string | null>(null)
   const ecosystemKey = ecosystemIds.join('|')
+  const requestKey = `${corporationId ?? ''}#${ecosystemKey}`
+  const enabled = corporationId !== undefined && ecosystemKey !== '' && Boolean(VERANA_REST_ENDPOINT_PARTICIPANT)
+  const [lookup, setLookup] = useState<{ key: string; value: RoleLookup } | null>(null)
 
   useEffect(() => {
-    const ids = ecosystemKey ? ecosystemKey.split('|') : []
     const endpoint = VERANA_REST_ENDPOINT_PARTICIPANT
-    setRolesByEcosystem({})
-    setError(null)
-    if (corporationId === undefined || ids.length === 0 || !endpoint) return
+    if (corporationId === undefined || !ecosystemKey || !endpoint) return
+    const ids = ecosystemKey.split('|')
     let cancelled = false
-    Promise.all(ids.map(async (id) => [id, await fetchCorporationRoles(endpoint, corporationId, id)] as const))
-      .then((entries) => {
-        if (!cancelled) setRolesByEcosystem(Object.fromEntries(entries))
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) setError(error instanceof Error ? error.message : String(error))
-      })
+    void Promise.allSettled(ids.map((id) => fetchCorporationRoles(endpoint, corporationId, id))).then((results) => {
+      if (!cancelled) setLookup({ key: requestKey, value: settleRoleLookups(ids, results) })
+    })
     return () => {
       cancelled = true
     }
-  }, [corporationId, ecosystemKey])
+  }, [corporationId, ecosystemKey, requestKey])
 
-  return { rolesByEcosystem, errorRoles }
+  const current = lookup?.key === requestKey ? lookup.value : null
+  return {
+    rolesByEcosystem: current?.rolesByEcosystem ?? {},
+    rolesLoading: enabled && current === null,
+    failedEcosystemIds: current?.failedEcosystemIds ?? [],
+    failureReason: current?.failureReason ?? null,
+  }
 }

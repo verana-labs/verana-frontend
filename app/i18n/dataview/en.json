@@ -14,6 +14,7 @@
   "discover.btn.view": "View Ecosystem",
   "discover.btn.join": "Join",
   "discover.roles.label": "Your corporation's roles:",
+  "discover.roles.failed": "Your corporation's roles could not be loaded for {count} ecosystems, so the owned and participant filters leave those ecosystems in the list: {reason}",
   "discover.order.label": "Sort by",
   "discover.order.newest": "Newest first",
   "discover.order.trustValue": "Locked trust value",

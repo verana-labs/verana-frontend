@@ -12,9 +12,18 @@ type Props = {
   hasNext: boolean
   onPrevious: () => void
   onNext: () => void
+  loadedOnlyNote?: boolean
 }
 
-export default function KeysetPagination({ showing, itemsLabel, hasPrevious, hasNext, onPrevious, onNext }: Props) {
+export default function KeysetPagination({
+  showing,
+  itemsLabel,
+  hasPrevious,
+  hasNext,
+  onPrevious,
+  onNext,
+  loadedOnlyNote = true,
+}: Props) {
   const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
 
   return (
@@ -22,7 +31,7 @@ export default function KeysetPagination({ showing, itemsLabel, hasPrevious, has
       <div className="text-sm text-neutral-70 dark:text-neutral-70">
         {t('pagination.showing', 'Showing')}{' '}
         <span className="font-medium text-gray-900 dark:text-white">{showing}</span> {itemsLabel}
-        {hasPrevious || hasNext ? (
+        {loadedOnlyNote && (hasPrevious || hasNext) ? (
           <span className="block text-xs">
             {t('pagination.loadedOnly', 'Sorting and filters apply to the loaded results only.')}
           </span>

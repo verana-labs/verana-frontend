@@ -40,6 +40,34 @@ export function distinctRoles(roles: ParticipantRole[]): ParticipantRole[] {
   return ROLE_ORDER.filter((role) => present.has(role))
 }
 
+export type RoleLookup = {
+  rolesByEcosystem: Record<string, ParticipantRole[]>
+  failedEcosystemIds: string[]
+  failureReason: string | null
+}
+
+export function settleRoleLookups(
+  ecosystemIds: string[],
+  results: PromiseSettledResult<ParticipantRole[]>[]
+): RoleLookup {
+  const lookup: RoleLookup = { rolesByEcosystem: {}, failedEcosystemIds: [], failureReason: null }
+  results.forEach((result, index) => {
+    const id = ecosystemIds[index]
+    if (id === undefined) return
+    if (result.status === 'fulfilled') {
+      lookup.rolesByEcosystem[id] = result.value
+      return
+    }
+    lookup.failedEcosystemIds.push(id)
+    lookup.failureReason ??= result.reason instanceof Error ? result.reason.message : String(result.reason)
+  })
+  return lookup
+}
+
+export function roleFiltersPending(filters: DiscoverFilters, rolesLoading: boolean): boolean {
+  return rolesLoading && (filters.hideOwned || filters.hideParticipant)
+}
+
 function matchesSearch(ecosystem: EcosystemListItem, term: string): boolean {
   if (!term) return true
   return [ecosystem.did, ecosystem.trustData?.serviceName, ecosystem.trustData?.organizationName].some((value) =>

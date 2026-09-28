@@ -14,6 +14,7 @@
   "discover.btn.view": "Ver Ecosistema",
   "discover.btn.join": "Unirse",
   "discover.roles.label": "Roles de su corporación:",
+  "discover.roles.failed": "No se pudieron cargar los roles de su corporación para {count} ecosistemas, por lo que los filtros de propiedad y participación los mantienen en la lista: {reason}",
   "discover.order.label": "Ordenar por",
   "discover.order.newest": "Más recientes primero",
   "discover.order.trustValue": "Valor de confianza bloqueado",

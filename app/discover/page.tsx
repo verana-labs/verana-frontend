@@ -5,13 +5,13 @@ import type { EcosystemSchemaPage } from '@/hooks/useCredentialSchemas'
 import { useCorporationRolesByEcosystem } from '@/hooks/useParticipants'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
-import { filterEcosystems, orderEcosystems } from '@/lib/discover-list'
+import { filterEcosystems, orderEcosystems, roleFiltersPending } from '@/lib/discover-list'
 import { useDiscoverCtx } from '@/providers/api-rest-query-provider-context'
 import { DiscoverEcosystemCard } from '@/ui/common/discover-ecosystem-card'
 import EcosystemsFilterBar from '@/ui/common/ecosystems-filter-bar'
 import KeysetPagination from '@/ui/common/keyset-pagination'
 import TitleAndButton from '@/ui/common/title-and-button'
-import { resolveTranslatable } from '@/ui/dataview/types'
+import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 
 const NO_SCHEMAS: EcosystemSchemaPage = { items: [], hasNext: false }
 
@@ -19,8 +19,8 @@ function scrollToTop(): void {
   document.getElementById('app-scroll')?.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-function t(key: string): string {
-  return resolveTranslatable({ key }, translate) ?? key
+function t(key: string, values?: I18nValues): string {
+  return resolveTranslatable({ key, values }, translate) ?? key
 }
 
 export default function DiscoverJoinPage() {
@@ -29,7 +29,10 @@ export default function DiscoverJoinPage() {
   const { actingCorporation } = useUserCorporation()
   const actingCorporationId = actingCorporation?.corporation.id
   const ecosystemIds = useMemo(() => discoverList.map((ecosystem) => ecosystem.id), [discoverList])
-  const { rolesByEcosystem, errorRoles } = useCorporationRolesByEcosystem(actingCorporationId, ecosystemIds)
+  const { rolesByEcosystem, rolesLoading, failedEcosystemIds, failureReason } = useCorporationRolesByEcosystem(
+    actingCorporationId,
+    ecosystemIds
+  )
 
   const shown = useMemo(
     () =>
@@ -41,8 +44,11 @@ export default function DiscoverJoinPage() {
   )
 
   const partial = discoverCtx.hasNext || discoverCtx.hasPrevious
-  const loading = discoverCtx.loading && discoverList.length === 0
-  const error = discoverCtx.error ?? errorRoles
+  const loading = (discoverCtx.loading && discoverList.length === 0) || roleFiltersPending(filters, rolesLoading)
+  const errors = [
+    discoverCtx.error,
+    failureReason ? t('discover.roles.failed', { count: failedEcosystemIds.length, reason: failureReason }) : null,
+  ].filter((message): message is string => message !== null)
 
   return (
     <>
@@ -72,7 +78,11 @@ export default function DiscoverJoinPage() {
         {partial ? <p className="text-xs text-neutral-70 dark:text-neutral-70">{t('pagination.loadedOnly')}</p> : null}
       </EcosystemsFilterBar>
 
-      {error ? <div className="error-pane mb-6">{error}</div> : null}
+      {errors.map((message) => (
+        <div key={message} className="error-pane mb-6">
+          {message}
+        </div>
+      ))}
 
       <section id="ecosystem-list" className="space-y-6">
         {loading ? (
@@ -110,6 +120,7 @@ export default function DiscoverJoinPage() {
         itemsLabel={t('datatable.ecosystem.pagination.ecosystems')}
         hasPrevious={discoverCtx.hasPrevious}
         hasNext={discoverCtx.hasNext}
+        loadedOnlyNote={false}
         onPrevious={() => {
           discoverCtx.previousPage()
           scrollToTop()
