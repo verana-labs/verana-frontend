@@ -2,6 +2,7 @@
 
 import { faArrowRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import { useCredentialSchemas } from '@/hooks/useCredentialSchemas'
@@ -45,6 +46,10 @@ const STEPS = [
   { id: 6, title: 'Confirm and Submit', description: 'Provide the DID that will participate in the ecosystem.' },
 ] as const
 
+function t(key: string): string {
+  return resolveTranslatable({ key }, translate) ?? key
+}
+
 function classes(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(' ')
 }
@@ -56,7 +61,7 @@ function isJoinableRole(role: string): role is JoinableParticipantRole {
 function availableRoles(schema: CredentialSchemaListItem): JoinableParticipantRole[] {
   return rolesSchema(schema.issuerOnboardingMode, schema.verifierOnboardingMode).filter(
     (role): role is JoinableParticipantRole =>
-      isJoinableRole(role) && (role !== 'HOLDER' || schema.holderOnboardingMode === 'ISSUER_ONBOARDING_PROCESS')
+      isJoinableRole(role) && (role !== 'HOLDER' || schema.holderOnboardingMode !== null)
   )
 }
 
@@ -120,7 +125,7 @@ export default function JoinEcosystemWizard() {
       case 2:
         return selectedSchema !== null
       case 3:
-        return selectedRole !== null && !unsupportedPricing
+        return selectedRole !== null && !unsupportedPricing && decision?.messageType !== null
       case 4:
         return acceptedGovernanceFramework
       case 5:
@@ -141,7 +146,7 @@ export default function JoinEcosystemWizard() {
       : []
 
   async function submit() {
-    if (!decision || !selectedRole || !selectedSchema || !isValidDID(serviceDid)) return
+    if (!decision?.messageType || !selectedRole || !selectedSchema || !isValidDID(serviceDid)) return
     if (!selectedValidator) return
     const proposal = joinSigning.mode === 'proposal'
     setSubmitting(true)
@@ -328,6 +333,18 @@ export default function JoinEcosystemWizard() {
                   }}
                 />
               ))}
+              {selectedRole === 'HOLDER' && decision?.messageType === null ? (
+                <div
+                  role="status"
+                  className="rounded-lg border border-primary-200 bg-primary-50 p-4 text-sm text-primary-800 dark:border-primary-800 dark:bg-primary-900/20 dark:text-primary-300"
+                >
+                  <p className="font-semibold">{t('join.holder.permissionless.title')}</p>
+                  <p className="mt-1">{t('join.holder.permissionless.text')}</p>
+                  <Link href={`/participants/${selectedSchema.id}`} className="mt-2 inline-block font-medium underline">
+                    {t('join.holder.permissionless.link')}
+                  </Link>
+                </div>
+              ) : null}
             </div>
           ) : null}
 

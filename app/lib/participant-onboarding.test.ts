@@ -42,10 +42,10 @@ describe('getParticipantOnboardingDecision', () => {
     })
   })
 
-  it('does not create an on-chain participant for a permissionless holder', () => {
-    expect(() =>
+  it('needs no on-chain onboarding for a permissionless holder', () => {
+    expect(
       getParticipantOnboardingDecision('HOLDER', { ...schemaModes, holderOnboardingMode: 'PERMISSIONLESS' })
-    ).toThrow('Permissionless holders do not create on-chain participants')
+    ).toEqual({ messageType: null, validatorRole: null })
   })
 
   it('rejects a holder role when the schema has no holder onboarding mode', () => {
