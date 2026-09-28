@@ -8,7 +8,7 @@ import { translate } from '@/i18n/dataview'
 import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import { useDiscoverCtx } from '@/providers/api-rest-query-provider-context'
 import CsCard from '@/ui/common/cs-card'
-import KeysetPagination from '@/ui/common/keyset-pagination'
+import KeysetPagination, { ShowMoreButton } from '@/ui/common/keyset-pagination'
 import LogoImage from '@/ui/common/logo-image'
 import TitleAndButton from '@/ui/common/title-and-button'
 import TrustBadge from '@/ui/common/trust-badge'
@@ -27,12 +27,12 @@ export default function DiscoverJoinPage() {
     () =>
       discoverCtx.discoverList.map((ecosystem) => ({
         ...ecosystem,
-        credentialSchemas: discoverCtx.credentialSchemasByEcosystem[ecosystem.id] ?? [],
+        credentialSchemas: discoverCtx.credentialSchemasByEcosystem[ecosystem.id]?.items ?? [],
+        credentialSchemasHasNext: discoverCtx.credentialSchemasByEcosystem[ecosystem.id]?.hasNext ?? false,
       })),
     [discoverCtx.discoverList, discoverCtx.credentialSchemasByEcosystem]
   )
 
-  // Search and the trust filter run over the loaded page, per [VFE-DATA-IDX-1].
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase()
     return ecosystems.filter((ecosystem) => {
@@ -194,7 +194,14 @@ export default function DiscoverJoinPage() {
                   {discoverCtx.errorCredentialSchemas ? (
                     <div className="error-pane">{discoverCtx.errorCredentialSchemas}</div>
                   ) : (
-                    eco.credentialSchemas.map((schema) => <CsCard key={schema.id} credentialSchema={schema} />)
+                    <>
+                      {eco.credentialSchemas.map((schema) => (
+                        <CsCard key={schema.id} credentialSchema={schema} />
+                      ))}
+                      {eco.credentialSchemasHasNext ? (
+                        <ShowMoreButton onClick={() => discoverCtx.loadMoreCredentialSchemas(eco.id)} />
+                      ) : null}
+                    </>
                   )}
                 </div>
               </div>

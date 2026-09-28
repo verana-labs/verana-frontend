@@ -1,12 +1,11 @@
 'use client'
 
 import React, { createContext, useContext, useMemo, useState } from 'react'
-import { useCredentialSchemasByEcosystem } from '@/hooks/useCredentialSchemas'
+import { type EcosystemSchemaPage, useCredentialSchemasByEcosystem } from '@/hooks/useCredentialSchemas'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { useEcosystems } from '@/hooks/useEcosystems'
 import { usePendingParticipants } from '@/hooks/usePendingParticipants'
 import { TrustDepositAccountData, useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
-import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { DashboardData } from '@/ui/dataview/datasections/dashboard'
 import type { PendingEcosystem } from '@/ui/dataview/datasections/participant'
@@ -28,8 +27,9 @@ type KeysetPageControls = {
 
 type DiscoverCtxValue = KeysetPageControls & {
   discoverList: EcosystemListItem[]
-  credentialSchemasByEcosystem: Record<string, CredentialSchemaListItem[]>
+  credentialSchemasByEcosystem: Record<string, EcosystemSchemaPage>
   errorCredentialSchemas: string | null
+  loadMoreCredentialSchemas: (ecosystemId: string) => void
   loading: boolean
   refetch: () => Promise<void>
   discoverSearch: string
@@ -90,7 +90,6 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
   } = useEcosystems(false, onlyActiveEcosystem)
 
   const [discoverSearch, setDiscoverSearch] = useState<string>('')
-  // The filter starts off: [VFE-PAGE-DISCOVER-1] lists every non-archived Ecosystem.
   const [hideUntrustedOnDiscover, setHideUntrustedOnDiscover] = useState(false)
   const {
     ecosystems: discoverList,
@@ -107,6 +106,7 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
     loading: credentialSchemasLoading,
     errorCredentialSchemas,
     refetch: refetchCredentialSchemas,
+    loadMore: loadMoreCredentialSchemas,
   } = useCredentialSchemasByEcosystem(discoverEcosystemIds)
 
   const refetchDiscover = React.useCallback(async () => {
@@ -137,6 +137,7 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
       refetch: refetchDiscover,
       credentialSchemasByEcosystem,
       errorCredentialSchemas,
+      loadMoreCredentialSchemas,
       discoverSearch,
       setDiscoverSearch,
       hideUntrustedOnDiscover,
@@ -152,6 +153,7 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
       credentialSchemasByEcosystem,
       credentialSchemasLoading,
       errorCredentialSchemas,
+      loadMoreCredentialSchemas,
       refetchDiscover,
       discoverSearch,
       hideUntrustedOnDiscover,

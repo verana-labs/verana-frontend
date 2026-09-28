@@ -50,8 +50,6 @@ export function parsePendingParticipantsResponse(payload: unknown): PendingEcosy
   })
 }
 
-// The pending task list carries its identity inline, per [VFE-PAGE-PENDING-1].
-// The method has no keyset cursor, so it keeps the maximum ecosystem limit.
 export function pendingParticipantsUrl(endpoint: string, corporationId: number): string {
   return `${endpoint}/pending/flat?corporation_id=${corporationId}&trust_data=summary&limit=1024`
 }

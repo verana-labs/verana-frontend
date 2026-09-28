@@ -70,8 +70,6 @@ export interface KeysetPageRequest {
   sort?: KeysetSort
 }
 
-// Add the keyset page parameters of [VFE-DATA-IDX-1]. The indexer excludes
-// `max_id` and includes `min_id`, so the ascending cursor starts one id later.
 export function applyKeysetParams(params: URLSearchParams, request: KeysetPageRequest): void {
   const sort = request.sort ?? '-id'
   params.set('limit', String(request.pageSize + 1))
@@ -81,8 +79,6 @@ export function applyKeysetParams(params: URLSearchParams, request: KeysetPageRe
   else params.set('min_id', (BigInt(request.after) + BigInt(1)).toString())
 }
 
-// Split the extra row off the window. The indexer returns no total count, so
-// that row is the only next-page signal of [VFE-DATA-IDX-1].
 export function takeKeysetPage<T>(window: T[], pageSize: number): { items: T[]; hasNext: boolean } {
   return { items: window.slice(0, pageSize), hasNext: window.length > pageSize }
 }

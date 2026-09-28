@@ -103,8 +103,6 @@ export function mapResolveResult(did: string, raw: ResolveResult, credentialIssu
   }
 }
 
-// Map the inline `trust_data` of a list row, per [VFE-DATA-IDX-2]. A null value
-// means the resolver did not evaluate the DID: unresolved, not untrusted.
 export function enrichmentFromTrustData(did: string, value: unknown): DidEnrichment | undefined {
   if (value === undefined) return undefined
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return unresolved(did)

@@ -19,7 +19,6 @@ import { ModalAction } from '@/ui/common/modal-action'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
-// The filter also matches the card identity of [VFE-PAGE-ES-LIST-2].
 function matchesSearch(ecosystem: EcosystemListItem, search: string): boolean {
   const q = search.trim().toLowerCase()
   if (!q) return true

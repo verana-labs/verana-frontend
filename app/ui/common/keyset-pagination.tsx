@@ -14,8 +14,6 @@ type Props = {
   onNext: () => void
 }
 
-// Cursor paging per [VFE-DATA-IDX-1]. The indexer returns no total count, so the
-// bar shows neither numbered pages nor a row total.
 export default function KeysetPagination({ showing, itemsLabel, hasPrevious, hasNext, onPrevious, onNext }: Props) {
   const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
 

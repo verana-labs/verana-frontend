@@ -60,7 +60,6 @@ type Props = {
 
 export default function EcosystemCard({ ecosystem, enrichment }: Props) {
   const router = useRouter()
-  // A view with no inline `trust_data` falls back to the resolver, per [VFE-DATA-RESOLVE-1].
   const { data: resolved } = useDidTrustEnrichment(enrichment ? undefined : ecosystem.did)
   const identity = enrichment ?? resolved
 

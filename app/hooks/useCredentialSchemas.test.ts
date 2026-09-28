@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseCredentialSchemasResponse } from './useCredentialSchemas'
+import { ecosystemSchemasUrl, parseCredentialSchemasResponse } from './useCredentialSchemas'
 
 const schema = {
   id: 12,
@@ -50,5 +50,19 @@ describe('parseCredentialSchemasResponse', () => {
         schemas: [{ ...schema, holder_validation_validity_period: undefined }],
       })
     ).toThrow('schemas[0].holder_validation_validity_period')
+  })
+})
+
+describe('ecosystemSchemasUrl', () => {
+  it('asks for one keyset page of the non-archived schemas of an ecosystem', () => {
+    expect(ecosystemSchemasUrl('https://indexer/v4/credential-schema', '7', 12)).toBe(
+      'https://indexer/v4/credential-schema/list?ecosystem_id=7&archived=false&limit=13&sort=-id'
+    )
+  })
+
+  it('carries the cursor into the next page of the same ecosystem', () => {
+    const url = ecosystemSchemasUrl('https://indexer/v4/credential-schema', '7', 12, '30')
+    expect(url).toContain('ecosystem_id=7')
+    expect(url).toContain('max_id=30')
   })
 })

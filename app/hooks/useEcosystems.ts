@@ -76,7 +76,6 @@ export function useEcosystems(all = false, onlyActive = true, pageSize = ECOSYST
   const [errorEcosystems, setError] = useState<string | null>(null)
   const requestRef = useRef(0)
 
-  // The stack holds one `after` id per visited page, so the previous page needs no reverse query.
   const pageKey = `${all}|${corporationId ?? ''}|${onlyActive}|${pageSize}`
   const [pages, setPages] = useState<{ key: string; stack: (string | undefined)[] }>({
     key: pageKey,
