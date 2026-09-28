@@ -169,6 +169,7 @@ Public runtime variables. Source of truth is `.env` at the repo root.
 | `NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE` | Use Direct signing | `true` |
 | `NEXT_PUBLIC_SESSION_LIFETIME_SECONDS` | Auth session lifetime | `86400` |
 | `NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA` | Low balance warning threshold in uvna | `1000000` |
+| `NEXT_PUBLIC_SHOW_PARTICIPANT_EXPIRE_BEFORE_DAYS` | Days before `effective_until` at which an active Participant is flagged expires soon, 30 when unset or not a positive number | `30` |
 
 **External links**
 
