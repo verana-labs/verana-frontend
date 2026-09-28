@@ -23,6 +23,7 @@ type DiscoverEcosystemCardProps = {
   schemasError: string | null
   onLoadMoreSchemas: () => void
   roles: ParticipantRole[]
+  canJoin: boolean
 }
 
 function t(key: string): string {
@@ -35,6 +36,7 @@ export function DiscoverEcosystemCard({
   schemasError,
   onLoadMoreSchemas,
   roles,
+  canJoin,
 }: DiscoverEcosystemCardProps) {
   const identity = ecosystem.trustData
   const serviceName = identity?.serviceName ?? shortenDID(ecosystem.did) ?? ecosystem.did
@@ -128,7 +130,7 @@ export function DiscoverEcosystemCard({
             <FontAwesomeIcon className="mr-2" aria-hidden="true" icon={faShieldHalved} />
             {t('discover.btn.view')}
           </Link>
-          {!archived && ecosystem.activeSchemas > 0 ? (
+          {canJoin && !archived && ecosystem.activeSchemas > 0 ? (
             <Link
               href={`/join/${ecosystem.id}`}
               className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"

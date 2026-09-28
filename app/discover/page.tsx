@@ -99,6 +99,7 @@ export default function DiscoverJoinPage() {
               schemasError={discoverCtx.errorCredentialSchemas}
               onLoadMoreSchemas={() => discoverCtx.loadMoreCredentialSchemas(ecosystem.id)}
               roles={rolesByEcosystem[ecosystem.id] ?? []}
+              canJoin={actingCorporationId !== undefined}
             />
           ))
         )}
