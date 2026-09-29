@@ -100,6 +100,8 @@ export const credentialSchemaSections: Section<CredentialSchemaData>[] = [
         label: t('dataview.cs.fields.holderOnboardingMode'),
         type: 'data',
         update: false,
+        format: (value) => (value ? getModeLabel(String(value), '_HOLDER') : ''),
+        isHtml: true,
         show: 'view',
       },
       {

@@ -206,6 +206,7 @@ export default function CredentialSchemaViewPage() {
         status={status}
         issuerOnboardingMode={credentialSchema.issuerOnboardingMode}
         verifierOnboardingMode={credentialSchema.verifierOnboardingMode}
+        holderOnboardingMode={credentialSchema.holderOnboardingMode ?? undefined}
         action={
           <button
             type="button"
