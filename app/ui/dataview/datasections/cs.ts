@@ -1,4 +1,5 @@
 import { faBoxArchive, faEdit } from '@fortawesome/free-solid-svg-icons'
+import { HolderOnboardingMode } from '@verana-labs/verana-types/codec/verana/cs/v1/types'
 import { getModeLabel } from '@/ui/datatable/columnslist/cs'
 import type { I18nValues } from '@/ui/dataview/types'
 import { Section, typeOf } from '@/ui/dataview/types'
@@ -39,8 +40,14 @@ export const onboardingModeOptions = [
 ]
 
 export const holderOnboardingModeOptions = [
-  { value: 1, label: t('dataview.cs.managementMode.ISSUER_ONBOARDING_PROCESS') },
-  { value: 2, label: t('dataview.cs.managementMode.PERMISSIONLESS') },
+  {
+    value: HolderOnboardingMode.HOLDER_ONBOARDING_MODE_ISSUER_ONBOARDING_PROCESS,
+    label: t('dataview.cs.managementMode.ISSUER_ONBOARDING_PROCESS'),
+  },
+  {
+    value: HolderOnboardingMode.HOLDER_ONBOARDING_MODE_PERMISSIONLESS,
+    label: t('dataview.cs.managementMode.PERMISSIONLESS'),
+  },
 ]
 
 export const digestAlgorithmOptions = [
