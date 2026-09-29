@@ -826,7 +826,6 @@
   "settings.network.chainName": "Chain name",
   "settings.network.chainId": "Chain id",
   "settings.network.rpc": "RPC endpoint",
-  "settings.network.rest": "REST endpoint",
   "settings.network.indexer": "Indexer",
   "settings.network.explorer": "Explorer",
   "settings.network.missing": "Not configured",
