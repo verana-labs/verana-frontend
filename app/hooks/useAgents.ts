@@ -43,6 +43,9 @@ interface AgentSources {
 
 const ACTIVE_ONLY: readonly ParticipationState[] = ['ACTIVE']
 const REFRESH_MODULES = new Set(['pp', 'de'])
+const SESSION_EVENT = 'CreateOrUpdateParticipantSession'
+const RESOLVER_EVENT = 'TriggerResolver'
+const LIST_NEUTRAL_EVENTS = new Set([SESSION_EVENT, RESOLVER_EVENT])
 
 // Per [VFE-PAGE-AGENTS-1] agents come from Participant DIDs only; VSOA entries never add an agent.
 // Per [VFE-PAGE-AGENTS-1a] the Corporation DID and the controlled Ecosystem DIDs stay pinned first, as one card each.
@@ -67,12 +70,19 @@ export function agentRefreshNeeded(
 ): { lists: boolean; dids: string[] } {
   const dids = new Set<string>()
   let lists = false
-  // Per [VFE-PAGE-AGENTS-6] an event of any module on a known DID invalidates its resolve. Only pp and de refetch the lists.
   for (const event of events) {
-    for (const did of [event.did, ...event.relatedDids]) {
-      if (did && knownDids.has(did)) dids.add(did)
+    if (event.eventType !== SESSION_EVENT) {
+      for (const did of [event.did, ...event.relatedDids]) {
+        if (did && knownDids.has(did)) dids.add(did)
+      }
     }
-    if (REFRESH_MODULES.has(event.module) && concernsCorporation(event, corporationId, knownDids)) lists = true
+    if (
+      !LIST_NEUTRAL_EVENTS.has(event.eventType) &&
+      REFRESH_MODULES.has(event.module) &&
+      concernsCorporation(event, corporationId, knownDids)
+    ) {
+      lists = true
+    }
   }
   return { lists, dids: [...dids] }
 }
@@ -92,57 +102,61 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
 
   const states = includeInactive ? ALL_PARTICIPATION_STATES : ACTIVE_ONLY
 
-  const load = useCallback(async () => {
-    const requestId = ++requestRef.current
-    if (corporationId === undefined || corporationDid === undefined) {
-      setAgents([])
-      setDelegations(new Map())
-      setDegraded(NOTHING_DEGRADED)
+  const load = useCallback(
+    async ({ background = false }: { background?: boolean } = {}) => {
+      const requestId = ++requestRef.current
+      if (corporationId === undefined || corporationDid === undefined) {
+        setAgents([])
+        setDelegations(new Map())
+        setDegraded(NOTHING_DEGRADED)
+        setError(null)
+        setLoading(false)
+        return
+      }
+      if (!background) setLoading(true)
       setError(null)
-      setLoading(false)
-      return
-    }
-    setLoading(true)
-    setError(null)
-    try {
-      const participantParams = new URLSearchParams({ corporation_id: String(corporationId), limit: '1024' })
-      if (!includeInactive) participantParams.set('participant_state', 'ACTIVE')
-      const [participants, ecosystems, authorizations] = await Promise.all([
-        fetchJson(`${VERANA_REST_ENDPOINT_PARTICIPANT}/list?${participantParams}`, 'Unable to fetch participants').then(
-          parseParticipantsResponse
-        ),
-        degrade('agents ecosystems', [] as { did: string }[], () =>
+      try {
+        const participantParams = new URLSearchParams({ corporation_id: String(corporationId), limit: '1024' })
+        if (!includeInactive) participantParams.set('participant_state', 'ACTIVE')
+        const [participants, ecosystems, authorizations] = await Promise.all([
           fetchJson(
-            `${VERANA_REST_ENDPOINT_ECOSYSTEM}/list?corporation_id=${corporationId}&limit=1024`,
-            'Unable to fetch ecosystems'
-          ).then(parseEcosystemsResponse)
-        ),
-        degrade('agents delegations', [] as VsOperatorAuthorizationRow[], () =>
-          fetchJson(
-            vsOperatorAuthorizationsUrl(corporationId, false),
-            'Unable to fetch VS operator authorizations'
-          ).then(parseVsOperatorAuthorizations)
-        ),
-      ])
-      if (requestRef.current !== requestId) return
-      setAgents(
-        buildAgentList({
-          corporationDid,
-          ecosystemDids: ecosystems.value.map((ecosystem) => ecosystem.did),
-          participantDids: participants.flatMap((participant) => (participant.did ? [participant.did] : [])),
-        })
-      )
-      setDelegations(new Map(authorizations.value.map((row) => [row.participantId, row])))
-      setDegraded({ ecosystems: ecosystems.failed, delegations: authorizations.failed })
-    } catch (cause) {
-      if (requestRef.current !== requestId) return
-      setAgents([])
-      setDegraded(NOTHING_DEGRADED)
-      setError(cause instanceof Error ? cause.message : String(cause))
-    } finally {
-      if (requestRef.current === requestId) setLoading(false)
-    }
-  }, [corporationId, corporationDid, includeInactive])
+            `${VERANA_REST_ENDPOINT_PARTICIPANT}/list?${participantParams}`,
+            'Unable to fetch participants'
+          ).then(parseParticipantsResponse),
+          degrade('agents ecosystems', [] as { did: string }[], () =>
+            fetchJson(
+              `${VERANA_REST_ENDPOINT_ECOSYSTEM}/list?corporation_id=${corporationId}&limit=1024`,
+              'Unable to fetch ecosystems'
+            ).then(parseEcosystemsResponse)
+          ),
+          degrade('agents delegations', [] as VsOperatorAuthorizationRow[], () =>
+            fetchJson(
+              vsOperatorAuthorizationsUrl(corporationId, false),
+              'Unable to fetch VS operator authorizations'
+            ).then(parseVsOperatorAuthorizations)
+          ),
+        ])
+        if (requestRef.current !== requestId) return
+        setAgents(
+          buildAgentList({
+            corporationDid,
+            ecosystemDids: ecosystems.value.map((ecosystem) => ecosystem.did),
+            participantDids: participants.flatMap((participant) => (participant.did ? [participant.did] : [])),
+          })
+        )
+        setDelegations(new Map(authorizations.value.map((row) => [row.participantId, row])))
+        setDegraded({ ecosystems: ecosystems.failed, delegations: authorizations.failed })
+      } catch (cause) {
+        if (requestRef.current !== requestId) return
+        setAgents([])
+        setDegraded(NOTHING_DEGRADED)
+        setError(cause instanceof Error ? cause.message : String(cause))
+      } finally {
+        if (requestRef.current === requestId) setLoading(false)
+      }
+    },
+    [corporationId, corporationDid, includeInactive]
+  )
 
   useEffect(() => {
     void load()
@@ -186,7 +200,7 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
       if (corporationId === undefined) return
       const { lists, dids } = agentRefreshNeeded(events, corporationId, knownDids)
       for (const did of dids) invalidateDid(did)
-      if (lists) void load()
+      if (lists) void load({ background: true })
       if (dids.length > 0) setReloadToken((token) => token + 1)
     },
     [corporationId, knownDids, load]
