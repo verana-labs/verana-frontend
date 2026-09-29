@@ -280,8 +280,7 @@ export interface Participant {
   weight?: string | number
   issued?: string | number
   verified?: string | number
-  expire_soon?: boolean | null
-  transaction_cost?: string
+  validator_validation_fees?: string | number
 }
 
 export interface ParticipantHistory {

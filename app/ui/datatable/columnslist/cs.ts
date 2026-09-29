@@ -14,6 +14,8 @@ export interface CredentialSchemaListItem {
   issuerOnboardingMode: ParticipantOnboardingMode
   verifierOnboardingMode: ParticipantOnboardingMode
   holderOnboardingMode: HolderOnboardingMode | null
+  pricingAssetType: string | null
+  pricingAsset: string | null
   jsonSchema: string
   participants: number
   issuedCredentials: number

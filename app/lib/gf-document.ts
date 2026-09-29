@@ -1,6 +1,19 @@
-export type GfDocumentKind = 'pdf' | 'markdown'
+export type GfDocumentKind = 'pdf' | 'markdown' | 'html'
 
-/** Detect the document kind from the URL file extension, when it has one. */
+export type GfDocument = {
+  id: string
+  url: string
+  language: string
+  digestSri?: string
+}
+
+export type GfVersion = {
+  id: string
+  version: number
+  activeSince: string | null
+  documents: GfDocument[]
+}
+
 export function kindFromUrl(url: string): GfDocumentKind | undefined {
   let pathname: string
   try {
@@ -10,33 +23,33 @@ export function kindFromUrl(url: string): GfDocumentKind | undefined {
   }
   if (pathname.endsWith('.pdf')) return 'pdf'
   if (pathname.endsWith('.md') || pathname.endsWith('.markdown')) return 'markdown'
+  if (pathname.endsWith('.html') || pathname.endsWith('.htm')) return 'html'
   return undefined
 }
 
-/** Detect the document kind from a Content-Type response header. */
 export function kindFromContentType(contentType: string | null | undefined): GfDocumentKind | undefined {
   if (!contentType) return undefined
   const mime = contentType.split(';')[0].trim().toLowerCase()
   if (mime === 'application/pdf') return 'pdf'
   if (mime === 'text/markdown' || mime === 'text/x-markdown') return 'markdown'
+  if (mime === 'text/html') return 'html'
   return undefined
 }
 
-/**
- * URL to fetch the raw document bytes from. GitHub `/blob/` and `/raw/` page
- * URLs serve the HTML UI (or a redirect) without CORS headers, so they are
- * rewritten to raw.githubusercontent.com, which serves the raw file with
- * `access-control-allow-origin: *`. Every other URL is returned unchanged.
- */
 export function fetchableDocumentUrl(url: string): string {
   const match = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/(?:blob|raw)\/(.+)$/.exec(url)
   if (match) return `https://raw.githubusercontent.com/${match[1]}/${match[2]}/${match[3]}`
   return url
 }
 
-/** File name used when downloading the document. */
+const FALLBACK_FILE_NAMES: Record<GfDocumentKind, string> = {
+  markdown: 'governance-framework.md',
+  html: 'governance-framework.html',
+  pdf: 'governance-framework.pdf',
+}
+
 export function documentFileName(url: string, kind?: GfDocumentKind): string {
-  const fallback = kind === 'markdown' ? 'governance-framework.md' : 'governance-framework.pdf'
+  const fallback = kind ? FALLBACK_FILE_NAMES[kind] : 'governance-framework'
   try {
     const segments = new URL(url).pathname.split('/').filter(Boolean)
     const last = segments[segments.length - 1]
@@ -45,4 +58,8 @@ export function documentFileName(url: string, kind?: GfDocumentKind): string {
   } catch {
     return fallback
   }
+}
+
+export function displayedVersion(versions: GfVersion[], activeVersion: number): GfVersion | undefined {
+  return versions.find((version) => version.version === activeVersion) ?? versions.at(-1)
 }

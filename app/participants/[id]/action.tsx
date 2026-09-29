@@ -1,9 +1,12 @@
 'use client'
 
+import { useParticipant } from '@/hooks/useParticipant'
+import { totalDebitUvna, trustCostLines } from '@/lib/trust-costs'
 import { type ParticipantActionParams, useActionParticipant } from '@/msg/actions_hooks/actionParticipant'
 import type { MsgTypeParticipant } from '@/msg/constants/notificationMsgForMsgType'
 import type { MessageType } from '@/msg/constants/types'
 import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
+import { useProtocolParams } from '@/providers/protocol-params-context'
 import EditableDataView from '@/ui/common/data-edit'
 import {
   getParticipantActionSections,
@@ -28,16 +31,31 @@ export default function ParticipantActionPage({
 }: ParticipantActionProps) {
   const participant = data as Participant
   const submitParticipant = useActionParticipant(onClose, onRefresh)
+  const rates = useProtocolParams()
+  const { participant: validator } = useParticipant(
+    action === 'MsgRenewParticipantOP' ? (participant.validator_participant_id ?? undefined) : undefined
+  )
+  const validatorValidationFees = participant.validator_validation_fees ?? validator?.validation_fees
+  const repayAmount = Number(participant.slashed_deposit ?? 0) - Number(participant.repaid_deposit ?? 0)
+  const costLines =
+    action === 'MsgStartParticipantOP' || action === 'MsgRenewParticipantOP'
+      ? trustCostLines({ msgType: action, validationFees: validatorValidationFees }, rates)
+      : []
+  const transactionCost = totalDebitUvna(costLines)
 
   async function onSave(formData: object) {
     const form = formData as ParticipantData
     let params: ParticipantActionParams
     switch (action) {
       case 'MsgRenewParticipantOP':
+        params = { msgType: action, id: participant.id, validatorValidationFees }
+        break
       case 'MsgCancelParticipantOPLastRequest':
       case 'MsgRevokeParticipant':
-      case 'MsgRepayParticipantSlashedTrustDeposit':
         params = { msgType: action, id: participant.id }
+        break
+      case 'MsgRepayParticipantSlashedTrustDeposit':
+        params = { msgType: action, id: participant.id, amount: repayAmount }
         break
       case 'MsgSetParticipantOPToValidated':
         params = {
@@ -84,6 +102,7 @@ export default function ParticipantActionPage({
           validationFees: form.validationFees,
           issuanceFees: form.issuanceFees,
           verificationFees: form.verificationFees,
+          validatorValidationFees,
         }
         break
       case 'MsgSelfCreateParticipant':
@@ -134,7 +153,7 @@ export default function ParticipantActionPage({
       onCancel={onClose}
       noForm={noForm}
       setModalHidden={setModalHidden}
-      transactionCost={participant.transaction_cost}
+      transactionCost={transactionCost > 0 ? String(transactionCost) : undefined}
     />
   )
 }

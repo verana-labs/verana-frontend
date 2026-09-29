@@ -2,16 +2,18 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   countryCodeToFlag,
   countryNameFromCode,
+  expireBeforeDays,
   formatDateTime,
   formatNumber,
   formatUSDfromUVNA,
   formatVNA,
   formatVNAFromUVNA,
   getStatus,
-  isExpired,
   isExpireSoon,
   isJson,
+  onboardingStateColor,
   parseVNA,
+  participantStateBadgeClass,
   roleBadgeClass,
   roleColorClass,
   roleJoinColorClass,
@@ -271,22 +273,17 @@ describe('isJson', () => {
   })
 })
 
-describe('isExpired', () => {
-  afterEach(() => {
-    vi.useRealTimers()
+describe('expireBeforeDays', () => {
+  it('defaults to thirty days when the window is unset or unusable', () => {
+    expect(expireBeforeDays(undefined)).toBe(30)
+    expect(expireBeforeDays('')).toBe(30)
+    expect(expireBeforeDays('nope')).toBe(30)
+    expect(expireBeforeDays('0')).toBe(30)
+    expect(expireBeforeDays('-5')).toBe(30)
   })
 
-  it('treats dates strictly before today (midnight) as expired', () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date(2026, 5, 23, 14, 0, 0))
-    expect(isExpired(new Date(2026, 5, 22))).toBe(true)
-  })
-
-  it('treats today and future dates as not expired', () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date(2026, 5, 23, 14, 0, 0))
-    expect(isExpired(new Date(2026, 5, 23, 14, 0, 0))).toBe(false)
-    expect(isExpired(new Date(2026, 5, 24))).toBe(false)
+  it('honours a configured window', () => {
+    expect(expireBeforeDays('7')).toBe(7)
   })
 })
 
@@ -295,22 +292,84 @@ describe('isExpireSoon', () => {
     vi.useRealTimers()
   })
 
-  it('is true for a date within 24h of today midnight', () => {
+  it('is true for a date inside the default thirty-day window', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 5, 23, 14, 0, 0))
     expect(isExpireSoon(new Date(2026, 5, 23, 20, 0, 0))).toBe(true)
+    expect(isExpireSoon(new Date(2026, 6, 20))).toBe(true)
+    expect(isExpireSoon('2026-07-10T09:30:00.000Z')).toBe(true)
+    expect(isExpireSoon('2026-09-10T09:30:00.000Z')).toBe(false)
   })
 
-  it('is false for already-expired dates', () => {
+  it('counts the window from now, inclusive of its last instant', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 5, 23, 14, 0, 0))
+    expect(isExpireSoon(new Date(2026, 6, 23, 14, 0, 0))).toBe(true)
+    expect(isExpireSoon(new Date(2026, 6, 23, 14, 1, 0))).toBe(false)
+  })
+
+  it('is false for already-expired dates, including earlier today', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 5, 23, 14, 0, 0))
     expect(isExpireSoon(new Date(2026, 5, 22))).toBe(false)
+    expect(isExpireSoon(new Date(2026, 5, 23, 9, 0, 0))).toBe(false)
   })
 
-  it('is false for dates more than a day past today midnight', () => {
+  it('is false beyond the window and for a missing or unparsable date', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 5, 23, 14, 0, 0))
-    expect(isExpireSoon(new Date(2026, 5, 25))).toBe(false)
+    expect(isExpireSoon(new Date(2026, 7, 25))).toBe(false)
+    expect(isExpireSoon(null)).toBe(false)
+    expect(isExpireSoon(undefined)).toBe(false)
+    expect(isExpireSoon('not a date')).toBe(false)
+  })
+})
+
+describe('participantStateBadgeClass', () => {
+  it('keeps FUTURE and INACTIVE neutral, apart from the gray of EXPIRED and REVOKED', () => {
+    for (const state of ['FUTURE', 'INACTIVE'] as const) {
+      expect(participantStateBadgeClass(state, false, 'header').classParticipantState).toMatch(
+        /^bg-white text-gray-600 ring-1/
+      )
+    }
+    for (const state of ['EXPIRED', 'REVOKED'] as const) {
+      expect(participantStateBadgeClass(state, false, 'header').classParticipantState).toMatch(/^bg-gray-100/)
+    }
+    expect(participantStateBadgeClass('EXPIRED', false, 'header').labelParticipantState).toBe('EXPIRED')
+    expect(participantStateBadgeClass('REVOKED', false).labelParticipantState).toBe('revoked')
+  })
+
+  it('renders ACTIVE green in the tree, SLASHED strong red and REPAID muted red', () => {
+    expect(participantStateBadgeClass('ACTIVE', false).classParticipantState).toContain('bg-green-100')
+    expect(participantStateBadgeClass('SLASHED', false).classParticipantState).toContain('bg-red-900 text-red-100')
+    expect(participantStateBadgeClass('REPAID', false).classParticipantState).toContain('bg-gray-100 text-red-800')
+  })
+
+  it('adds the expires-soon indicator alongside ACTIVE instead of replacing it', () => {
+    const badge = participantStateBadgeClass('ACTIVE', true, 'header')
+    expect(badge.labelParticipantState).toBe('ACTIVE')
+    expect(badge.classParticipantState).toContain('blue')
+    expect(badge.expireSoon?.labelExpireSoon).toBe('EXPIRES SOON')
+    expect(badge.expireSoon?.classExpireSoon).toContain('yellow')
+  })
+
+  it('carries no indicator when the participant is not expiring or not active', () => {
+    expect(participantStateBadgeClass('ACTIVE', false).expireSoon).toBeNull()
+    expect(participantStateBadgeClass('SLASHED', true).expireSoon).toBeNull()
+  })
+
+  it('lowercases both badges in the tree variant', () => {
+    const badge = participantStateBadgeClass('ACTIVE', true)
+    expect(badge.labelParticipantState).toBe('active')
+    expect(badge.expireSoon?.labelExpireSoon).toBe('expires soon')
+  })
+})
+
+describe('onboardingStateColor', () => {
+  it('renders PENDING yellow, VALIDATED green and TERMINATED gray', () => {
+    expect(onboardingStateColor('PENDING').classOnboardingState).toContain('yellow')
+    expect(onboardingStateColor('VALIDATED').classOnboardingState).toContain('green')
+    expect(onboardingStateColor('TERMINATED').classOnboardingState).toContain('gray')
   })
 })
 
@@ -403,6 +462,8 @@ describe('rolesSchema', () => {
 describe('role class helpers', () => {
   it('roleBadgeClass returns distinct classes per known role and a gray default', () => {
     expect(roleBadgeClass('ECOSYSTEM')).toContain('purple')
+    expect(roleBadgeClass('ISSUER_GRANTOR')).toContain('blue')
+    expect(roleBadgeClass('VERIFIER_GRANTOR')).toContain('slate')
     expect(roleBadgeClass('ISSUER')).toContain('green')
     expect(roleBadgeClass('VERIFIER')).toContain('orange')
     expect(roleBadgeClass('HOLDER')).toContain('pink')

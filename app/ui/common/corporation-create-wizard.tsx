@@ -3,12 +3,16 @@
 import { useChain } from '@cosmos-kit/react'
 import { faCheck, faPlus, faTrash, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { UserCorporation } from '@/lib/corporation-discovery'
 import { canonicalizeLanguageTag } from '@/lib/language'
-import { type CorporationMemberInput, useActionCorporation } from '@/msg/actions_hooks/actionCorporation'
+import {
+  type CorporationMemberInput,
+  type CreateCorporationParams,
+  useActionCorporation,
+} from '@/msg/actions_hooks/actionCorporation'
 import { AddressIssueNote, addressIssue } from '@/ui/common/address-issue'
 import { LanguageCombobox } from '@/ui/common/language-combobox'
 import { ThresholdHint } from '@/ui/common/threshold-hint'
@@ -81,12 +85,27 @@ export function CorporationCreateWizard({ onDone }: { onDone: () => void }) {
   const [busy, setBusy] = useState(false)
   const [created, setCreated] = useState<UserCorporation | null>(null)
 
+  const members = useMemo<CorporationMemberInput[]>(
+    () => [
+      { address: address ?? '', weight: ownWeight },
+      ...extraMembers.map((member) => ({ ...member, address: member.address.trim() })),
+    ],
+    [address, ownWeight, extraMembers]
+  )
+  const createParams = useMemo<CreateCorporationParams>(
+    () => ({
+      did: did.trim(),
+      language,
+      docUrl: docUrl.trim(),
+      members,
+      threshold,
+      votingPeriodSeconds: Number(votingPeriod),
+    }),
+    [did, language, docUrl, members, threshold, votingPeriod]
+  )
+
   if (!address) return null
 
-  const members: CorporationMemberInput[] = [
-    { address, weight: ownWeight },
-    ...extraMembers.map((member) => ({ ...member, address: member.address.trim() })),
-  ]
   const memberIssues = members.map((member, index) =>
     addressIssue(
       member.address,
@@ -106,14 +125,7 @@ export function CorporationCreateWizard({ onDone }: { onDone: () => void }) {
   async function create() {
     setBusy(true)
     try {
-      const corporation = await createOnly({
-        did: did.trim(),
-        language,
-        docUrl: docUrl.trim(),
-        members,
-        threshold,
-        votingPeriodSeconds: Number(votingPeriod),
-      })
+      const corporation = await createOnly(createParams)
       if (corporation) {
         setCreated(corporation)
         setStep('grant')
