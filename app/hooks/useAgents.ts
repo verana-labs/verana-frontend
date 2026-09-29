@@ -28,6 +28,13 @@ export interface AgentEntry {
   pinned: boolean
 }
 
+export interface DegradedAgentSections {
+  ecosystems: boolean
+  delegations: boolean
+}
+
+const NOTHING_DEGRADED: DegradedAgentSections = { ecosystems: false, delegations: false }
+
 interface AgentSources {
   corporationDid: string
   ecosystemDids: string[]
@@ -75,6 +82,7 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
   const corporationDid = corporation?.did
   const [agents, setAgents] = useState<AgentEntry[]>([])
   const [delegations, setDelegations] = useState<Map<number, VsOperatorAuthorizationRow>>(new Map())
+  const [degraded, setDegraded] = useState<DegradedAgentSections>(NOTHING_DEGRADED)
   const [resolutions, setResolutions] = useState<Map<string, AgentResolution>>(new Map())
   const [unavailableDids, setUnavailableDids] = useState<ReadonlySet<string>>(new Set())
   const [loading, setLoading] = useState(true)
@@ -89,6 +97,7 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
     if (corporationId === undefined || corporationDid === undefined) {
       setAgents([])
       setDelegations(new Map())
+      setDegraded(NOTHING_DEGRADED)
       setError(null)
       setLoading(false)
       return
@@ -124,9 +133,11 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
         })
       )
       setDelegations(new Map(authorizations.value.map((row) => [row.participantId, row])))
+      setDegraded({ ecosystems: ecosystems.failed, delegations: authorizations.failed })
     } catch (cause) {
       if (requestRef.current !== requestId) return
       setAgents([])
+      setDegraded(NOTHING_DEGRADED)
       setError(cause instanceof Error ? cause.message : String(cause))
     } finally {
       if (requestRef.current === requestId) setLoading(false)
@@ -181,5 +192,5 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
     [corporationId, knownDids, load]
   )
 
-  return { agents, delegations, resolutions, unavailableDids, loading, error, refetch: load, applyEvents }
+  return { agents, delegations, degraded, resolutions, unavailableDids, loading, error, refetch: load, applyEvents }
 }

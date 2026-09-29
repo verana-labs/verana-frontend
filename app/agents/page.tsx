@@ -13,11 +13,12 @@ import AgentsFilterBar, { type AgentsFilterState, INITIAL_AGENTS_FILTER } from '
 import EcosystemCardSkeleton from '@/ui/common/ecosystem-card-skeleton'
 
 const SKELETONS = 3
+const DEGRADED = 'text-sm text-amber-700 dark:text-amber-300'
 
 export default function AgentsPage() {
   const { actingCorporation, loading: actingLoading } = useUserCorporation()
   const [filters, setFilters] = useState<AgentsFilterState>(INITIAL_AGENTS_FILTER)
-  const { agents, delegations, resolutions, unavailableDids, loading, error, applyEvents } = useAgents(
+  const { agents, delegations, degraded, resolutions, unavailableDids, loading, error, applyEvents } = useAgents(
     actingCorporation?.corporation,
     filters.includeInactive
   )
@@ -59,6 +60,13 @@ export default function AgentsPage() {
       </section>
 
       <AgentsFilterBar value={filters} onChange={setFilters} />
+
+      {degraded.ecosystems || degraded.delegations ? (
+        <div className="mb-4 space-y-1">
+          {degraded.ecosystems ? <p className={DEGRADED}>{translate('agents.degraded.ecosystems')}</p> : null}
+          {degraded.delegations ? <p className={DEGRADED}>{translate('agents.degraded.delegations')}</p> : null}
+        </div>
+      ) : null}
 
       <section id="agents-grid" className="mb-8">
         {error ? (
