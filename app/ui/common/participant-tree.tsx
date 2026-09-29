@@ -8,6 +8,7 @@ import { useParticipant } from '@/hooks/useParticipant'
 import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
 import type { SchemaPricing } from '@/lib/pricing-asset'
+import type { SchemaPricing } from '@/lib/pricing-asset'
 import { type DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
 import AddJoinPage from '@/participants/add/page'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
@@ -481,9 +482,9 @@ export default function ParticipantTree({
       {detailNode ? (
         <div ref={detailRef}>
           <ParticipantCard
-            key={detailNode.nodeId}
-            selectedNode={detailNode}
-            path={selection.node ? selection.path : [detailNode]}
+            key={selection.node.nodeId}
+            selectedNode={selection.node}
+            path={selection.path}
             schemaTitle={schemaTitle ?? ''}
             pricingNoticeShown={Boolean(unsupportedPricing)}
             viewerCorporationId={viewerCorporationId}
