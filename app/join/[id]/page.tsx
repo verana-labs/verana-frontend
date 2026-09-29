@@ -9,6 +9,7 @@ import { useEcosystemData } from '@/hooks/useEcosystemData'
 import { useParticipants } from '@/hooks/useParticipants'
 import { translate } from '@/i18n/dataview'
 import { getParticipantOnboardingDecision, type JoinableParticipantRole } from '@/lib/participant-onboarding'
+import { isNativePricing } from '@/lib/pricing-asset'
 import { trustCostLines } from '@/lib/trust-costs'
 import { useActionParticipant } from '@/msg/actions_hooks/actionParticipant'
 import { useNotification } from '@/providers/notification-provider'
@@ -16,6 +17,7 @@ import { useProtocolParams } from '@/providers/protocol-params-context'
 import CsCard from '@/ui/common/cs-card'
 import EcosystemCard from '@/ui/common/ecosystem-card'
 import EgfCard from '@/ui/common/egf-card'
+import { PricingNotice } from '@/ui/common/pricing-notice'
 import RoleCard from '@/ui/common/role-card'
 import ValidatorCard from '@/ui/common/validator-card'
 import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
@@ -70,6 +72,7 @@ export default function JoinEcosystemWizard() {
   const [serviceDid, setServiceDid] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
+  const unsupportedPricing = selectedSchema !== null && !isNativePricing(selectedSchema)
   const decision = useMemo(() => {
     if (!selectedSchema || !selectedRole) return null
     if (selectedRole === 'HOLDER' && !selectedSchema.holderOnboardingMode) return null
@@ -96,7 +99,7 @@ export default function JoinEcosystemWizard() {
       case 2:
         return selectedSchema !== null
       case 3:
-        return selectedRole !== null
+        return selectedRole !== null && !unsupportedPricing
       case 4:
         return acceptedGovernanceFramework
       case 5:
@@ -267,6 +270,7 @@ export default function JoinEcosystemWizard() {
 
           {currentStep === 3 && selectedSchema ? (
             <div className="mb-6">
+              {unsupportedPricing ? <PricingNotice schema={selectedSchema} className="mb-4" /> : null}
               {availableRoles(selectedSchema).map((role) => (
                 <RoleCard
                   key={role}

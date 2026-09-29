@@ -15,6 +15,7 @@ type ActionFieldButtonModalProps = {
   onClose: () => void
   onRefresh?: (id?: string, txHeight?: number) => void
   isActive: boolean
+  blockedReason?: string
 }
 
 export default function ActionFieldButtonModal({
@@ -24,6 +25,7 @@ export default function ActionFieldButtonModal({
   onClose,
   onRefresh,
   isActive,
+  blockedReason,
 }: ActionFieldButtonModalProps) {
   const [modalHidden, setModalHidden] = useState(true)
   const { mode, disabled } = useActionSigning(field.value)
@@ -37,12 +39,13 @@ export default function ActionFieldButtonModal({
       <IconLabelButton
         label={<ActionLabel label={field.label} mode={mode} />}
         icon={field.icon}
+        title={blockedReason}
         className={clsx(
           'btn-action-confirm text-sm disabled:opacity-50 disabled:cursor-not-allowed',
           field.iconColorClass
         )}
         onClick={onClickButton}
-        disabled={disabled}
+        disabled={disabled || Boolean(blockedReason)}
       />
 
       {field.value ? (
