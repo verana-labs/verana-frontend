@@ -53,31 +53,6 @@ export function parseVNA(formatted: string, decimals: number = 6): string {
   return micro.toString()
 }
 
-export function formatUSDfromUVNA(amount: string | null, conversionFactorUSDfromVNA: number): string {
-  if (!amount) return ''
-  if (!Number.isFinite(conversionFactorUSDfromVNA) || conversionFactorUSDfromVNA <= 0) return ''
-
-  // Clean locale-formatted number (remove thousands separators and whitespace)
-  const cleanAmount = amount
-    .trim()
-    .replace(/[^\d.,-]/g, '')
-    .replace(/,/g, '')
-  const numericAmount = parseFloat(cleanAmount)
-
-  if (!Number.isFinite(numericAmount)) return ''
-
-  const usd = numericAmount * conversionFactorUSDfromVNA
-
-  return (
-    '≈ $' +
-    usd.toLocaleString(undefined, {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    }) +
-    ' USD'
-  )
-}
-
 export function shortenMiddle(str: string, maxLength: number): string {
   if (str === null || str.length <= maxLength) return str
   const keep = Math.floor((maxLength - 3) / 2)

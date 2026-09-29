@@ -1,21 +1,13 @@
-import {
-  VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA,
-  VERANA_REST_ENDPOINT_ECOSYSTEM,
-  VERANA_REST_ENDPOINT_TRUST_DEPOSIT,
-} from '@/config/env'
+import { VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA, VERANA_REST_ENDPOINT_TRUST_DEPOSIT } from '@/config/env'
 import { translate } from '@/i18n/dataview'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
 export type ProtocolParams = {
-  trustUnitPrice: number | null
-  trustDepositReclaimBurnRate: number | null
   trustDepositRate: number | null
   credentialSchemaSchemaMaxSize: number | null
 }
 
 export const protocolParamsInitialState: ProtocolParams = {
-  trustUnitPrice: null,
-  trustDepositReclaimBurnRate: null,
   trustDepositRate: null,
   credentialSchemaSchemaMaxSize: null,
 }
@@ -24,21 +16,9 @@ type ParamConfig = {
   key: keyof ProtocolParams
   responseKey: string
   endpoint: string | undefined
-  transform?: (value: number) => number
 }
 
 const CONFIGS: ParamConfig[] = [
-  {
-    key: 'trustUnitPrice',
-    responseKey: 'trust_unit_price',
-    endpoint: VERANA_REST_ENDPOINT_ECOSYSTEM,
-  },
-  {
-    key: 'trustDepositReclaimBurnRate',
-    responseKey: 'trust_deposit_reclaim_burn_rate',
-    endpoint: VERANA_REST_ENDPOINT_TRUST_DEPOSIT,
-    transform: (value) => value * 100,
-  },
   {
     key: 'trustDepositRate',
     responseKey: 'trust_deposit_rate',
@@ -91,7 +71,7 @@ export async function getProtocolParams(): Promise<ProtocolParamsResult> {
   }
 
   await Promise.all(
-    CONFIGS.map(async ({ key, responseKey, endpoint, transform }) => {
+    CONFIGS.map(async ({ key, responseKey, endpoint }) => {
       if (!endpoint) {
         errors.push(`${resolveTranslatable({ key: 'error.fetch.td.param.missing' }, translate)} ${responseKey}`)
         return
@@ -99,8 +79,7 @@ export async function getProtocolParams(): Promise<ProtocolParamsResult> {
       try {
         const responseParams = await load(endpoint)
         if (!(responseKey in responseParams)) throw new Error(`${responseKey} not found in response`)
-        const value = numeric(responseParams[responseKey], responseKey)
-        params[key] = value === null ? null : (transform?.(value) ?? value)
+        params[key] = numeric(responseParams[responseKey], responseKey)
       } catch (error) {
         errors.push(
           `${resolveTranslatable({ key: 'error.fetch.td.param.failed' }, translate)} ${responseKey}: ${

@@ -2,7 +2,6 @@
 
 import { faClock, faCoins } from '@fortawesome/free-solid-svg-icons'
 import { useState } from 'react'
-import { useProtocolParams } from '@/hooks/useProtocolParams'
 import { translate } from '@/i18n/dataview'
 import { useActionTrustDeposit } from '@/msg/actions_hooks/actionTrustDeposit'
 import { MsgTypeTD } from '@/msg/constants/notificationMsgForMsgType'
@@ -11,7 +10,6 @@ import EditableDataView from '@/ui/common/data-edit'
 import type { AccountData } from '@/ui/dataview/datasections/account'
 import { type TdData, tdSections } from '@/ui/dataview/datasections/td'
 import { resolveTranslatable } from '@/ui/dataview/types'
-import { formatUSDfromUVNA } from '@/util/util'
 
 // Define TdActionPage props interface
 interface TdActionProps {
@@ -30,8 +28,6 @@ export default function TdActionPage({ action, data, onClose, onRefresh }: TdAct
   const actionTrustDeposit = useActionTrustDeposit(onClose, onRefresh)
   const claimableInterests = (data as AccountData).claimableInterests ?? undefined
   const available = Number(claimableInterests) > 0
-  const trustUnitPrice = useProtocolParams().trustUnitPrice
-  const conversionFactorUSDfromVNA = trustUnitPrice ? 1_000_000 / Number(trustUnitPrice) : 0
 
   const actionCardYield: ActionCardProps = {
     available,
@@ -49,9 +45,6 @@ export default function TdActionPage({ action, data, onClose, onRefresh }: TdAct
     indicatorValue: available ? undefined : '4.2%',
     valueVNA: claimableInterests,
     classValue: 'text-orange-600 dark:text-orange-400',
-    valueUSD: claimableInterests
-      ? formatUSDfromUVNA(claimableInterests.split('VNA')[0], conversionFactorUSDfromVNA)
-      : undefined,
   }
 
   // Save handler: called when the form is submitted
