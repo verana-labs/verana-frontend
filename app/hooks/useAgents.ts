@@ -76,6 +76,7 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
   const [agents, setAgents] = useState<AgentEntry[]>([])
   const [delegations, setDelegations] = useState<Map<number, VsOperatorAuthorizationRow>>(new Map())
   const [resolutions, setResolutions] = useState<Map<string, AgentResolution>>(new Map())
+  const [unavailableDids, setUnavailableDids] = useState<ReadonlySet<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reloadToken, setReloadToken] = useState(0)
@@ -142,15 +143,26 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
     const dids = didsKey ? didsKey.split('|') : []
     if (dids.length === 0) {
       setResolutions(new Map())
+      setUnavailableDids(new Set())
       return
     }
     let cancelled = false
     for (const did of dids) {
       fetchAgentResolution(did, states)
         .then((resolution) => {
-          if (!cancelled) setResolutions((current) => new Map(current).set(did, resolution))
+          if (cancelled) return
+          setResolutions((current) => new Map(current).set(did, resolution))
+          setUnavailableDids((current) => {
+            if (!current.has(did)) return current
+            const next = new Set(current)
+            next.delete(did)
+            return next
+          })
         })
-        .catch((cause) => logger.error(`agent resolve ${did}`, cause))
+        .catch((cause) => {
+          logger.error(`agent resolve ${did}`, cause)
+          if (!cancelled) setUnavailableDids((current) => new Set(current).add(did))
+        })
     }
     return () => {
       cancelled = true
@@ -169,5 +181,5 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
     [corporationId, knownDids, load]
   )
 
-  return { agents, delegations, resolutions, loading, error, refetch: load, applyEvents }
+  return { agents, delegations, resolutions, unavailableDids, loading, error, refetch: load, applyEvents }
 }

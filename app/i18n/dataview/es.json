@@ -829,6 +829,8 @@
   "agents.card.endpoints": "Endpoints de servicio",
   "agents.card.endpoints.empty": "No declara endpoints de servicio.",
   "agents.card.endpoints.admin": "Abrir interfaz de administración",
+  "agents.card.resolving": "Resolviendo\u2026",
+  "agents.card.unavailable": "No se pudo contactar al resolver, los datos de este agente no están disponibles.",
   "agents.card.schema": "Esquema",
   "agents.card.ecosystem": "Ecosistema",
   "delegation.operator": "Operador VS",

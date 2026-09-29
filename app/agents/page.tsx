@@ -17,7 +17,7 @@ const SKELETONS = 3
 export default function AgentsPage() {
   const { actingCorporation, loading: actingLoading } = useUserCorporation()
   const [filters, setFilters] = useState<AgentsFilterState>(INITIAL_AGENTS_FILTER)
-  const { agents, delegations, resolutions, loading, error, applyEvents } = useAgents(
+  const { agents, delegations, resolutions, unavailableDids, loading, error, applyEvents } = useAgents(
     actingCorporation?.corporation,
     filters.includeInactive
   )
@@ -80,6 +80,7 @@ export default function AgentsPage() {
                 key={agent.did}
                 agent={agent}
                 resolution={resolutions.get(agent.did)}
+                unavailable={unavailableDids.has(agent.did)}
                 delegations={delegations}
               />
             ))}

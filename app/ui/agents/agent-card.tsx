@@ -2,7 +2,7 @@
 
 import { faChevronDown, faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import type { AgentEntry } from '@/hooks/useAgents'
 import type { VsOperatorAuthorizationRow } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
@@ -28,6 +28,7 @@ import {
 
 const SECTION_TITLE = 'text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400'
 const EMPTY = 'text-xs text-gray-500 dark:text-gray-400'
+const UNAVAILABLE = 'text-xs text-amber-700 dark:text-amber-300'
 const PILL = 'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium'
 const LINK =
   'inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400'
@@ -107,13 +108,31 @@ function AccreditationRow({
   )
 }
 
+function SectionBody({
+  unavailable,
+  resolved,
+  emptyKey,
+  children,
+}: {
+  unavailable: boolean
+  resolved: boolean
+  emptyKey: string
+  children: ReactNode
+}) {
+  if (unavailable) return <p className={UNAVAILABLE}>{translate('agents.card.unavailable')}</p>
+  if (!resolved) return <p className={EMPTY}>{translate('agents.card.resolving')}</p>
+  return children ?? <p className={EMPTY}>{translate(emptyKey)}</p>
+}
+
 export default function AgentCard({
   agent,
   resolution,
+  unavailable,
   delegations,
 }: {
   agent: AgentEntry
   resolution: AgentResolution | undefined
+  unavailable: boolean
   delegations: Map<number, VsOperatorAuthorizationRow>
 }) {
   const enrichment = resolution?.enrichment
@@ -164,54 +183,60 @@ export default function AgentCard({
 
       <section>
         <h4 className={SECTION_TITLE}>{translate('agents.card.credentials')}</h4>
-        {resolution && resolution.credentials.length > 0 ? (
-          <ul className="divide-y divide-neutral-20 dark:divide-neutral-70">
-            {resolution.credentials.map((credential) => (
-              <CredentialRow key={`${credential.presentationUrl ?? ''}|${credential.id}`} credential={credential} />
-            ))}
-          </ul>
-        ) : (
-          <p className={EMPTY}>{translate('agents.card.credentials.empty')}</p>
-        )}
+        <SectionBody unavailable={unavailable} resolved={Boolean(resolution)} emptyKey="agents.card.credentials.empty">
+          {resolution && resolution.credentials.length > 0 ? (
+            <ul className="divide-y divide-neutral-20 dark:divide-neutral-70">
+              {resolution.credentials.map((credential) => (
+                <CredentialRow key={`${credential.presentationUrl ?? ''}|${credential.id}`} credential={credential} />
+              ))}
+            </ul>
+          ) : null}
+        </SectionBody>
       </section>
 
       <section>
         <h4 className={SECTION_TITLE}>{translate('agents.card.accreditations')}</h4>
-        {resolution && resolution.participations.length > 0 ? (
-          <ul className="divide-y divide-neutral-20 dark:divide-neutral-70">
-            {resolution.participations.map((participation) => (
-              <AccreditationRow
-                key={participation.id}
-                participation={participation}
-                delegation={delegations.get(participation.id)}
-              />
-            ))}
-          </ul>
-        ) : (
-          <p className={EMPTY}>{translate('agents.card.accreditations.empty')}</p>
-        )}
+        <SectionBody
+          unavailable={unavailable}
+          resolved={Boolean(resolution)}
+          emptyKey="agents.card.accreditations.empty"
+        >
+          {resolution && resolution.participations.length > 0 ? (
+            <ul className="divide-y divide-neutral-20 dark:divide-neutral-70">
+              {resolution.participations.map((participation) => (
+                <AccreditationRow
+                  key={participation.id}
+                  participation={participation}
+                  delegation={delegations.get(participation.id)}
+                />
+              ))}
+            </ul>
+          ) : null}
+        </SectionBody>
       </section>
 
       <section>
         <h4 className={SECTION_TITLE}>{translate('agents.card.endpoints')}</h4>
-        {resolution && resolution.services.length > 0 ? (
-          <ul className="space-y-1 text-xs">
-            {resolution.services.map((service) => (
-              <li key={service.id || `${service.type}|${service.serviceEndpoint}`} className="flex flex-wrap gap-x-2">
-                <span className="font-medium text-gray-900 dark:text-white">{service.type}</span>
-                <span className="font-mono break-all text-gray-500 dark:text-gray-400">{service.serviceEndpoint}</span>
-                {service.type === ADMIN_API_TYPE && service.serviceEndpoint.startsWith('http') ? (
-                  <a href={service.serviceEndpoint} target="_blank" rel="noopener noreferrer" className={LINK}>
-                    {translate('agents.card.endpoints.admin')}
-                    <FontAwesomeIcon icon={faExternalLinkAlt} />
-                  </a>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className={EMPTY}>{translate('agents.card.endpoints.empty')}</p>
-        )}
+        <SectionBody unavailable={unavailable} resolved={Boolean(resolution)} emptyKey="agents.card.endpoints.empty">
+          {resolution && resolution.services.length > 0 ? (
+            <ul className="space-y-1 text-xs">
+              {resolution.services.map((service) => (
+                <li key={service.id || `${service.type}|${service.serviceEndpoint}`} className="flex flex-wrap gap-x-2">
+                  <span className="font-medium text-gray-900 dark:text-white">{service.type}</span>
+                  <span className="font-mono break-all text-gray-500 dark:text-gray-400">
+                    {service.serviceEndpoint}
+                  </span>
+                  {service.type === ADMIN_API_TYPE && service.serviceEndpoint.startsWith('http') ? (
+                    <a href={service.serviceEndpoint} target="_blank" rel="noopener noreferrer" className={LINK}>
+                      {translate('agents.card.endpoints.admin')}
+                      <FontAwesomeIcon icon={faExternalLinkAlt} />
+                    </a>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </SectionBody>
       </section>
     </article>
   )
