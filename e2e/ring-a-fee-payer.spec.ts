@@ -10,8 +10,12 @@ const CORPORATION_ID = 7
 const SHORT_BALANCE_UVNA = '500000'
 const SHORTFALL_TEXT = /Your balance of 0\.5 VNA does not cover/
 
+function broadcastFee(tx: string) {
+  return AuthInfo.decode(TxRaw.decode(fromBase64(tx)).authInfoBytes).fee
+}
+
 function broadcastGranter(tx: string): string {
-  return AuthInfo.decode(TxRaw.decode(fromBase64(tx)).authInfoBytes).fee?.granter ?? ''
+  return broadcastFee(tx)?.granter ?? ''
 }
 
 async function openConfirmation(page: Page, balanceUvna?: string) {
@@ -22,6 +26,7 @@ async function openConfirmation(page: Page, balanceUvna?: string) {
     corporationId: CORPORATION_ID,
     corporationPolicyAddress: ACME_POLICY_ADDRESS,
     balanceUvna,
+    gasDriftPerSimulation: 1_000,
   })
   const stamp = Date.now().toString(36)
   await fillEcosystemForm(page, {
@@ -34,7 +39,7 @@ async function openConfirmation(page: Page, balanceUvna?: string) {
   return { wallet, mock, dialog }
 }
 
-test('a covering fee grant makes the corporation the fee granter', async ({ page }) => {
+test('a covering fee grant makes the corporation the fee granter of the fee shown', async ({ page }) => {
   test.setTimeout(120_000)
   const lookups: URLSearchParams[] = []
   await page.route('**/v4/delegation/fee-grants*', (route) => {
@@ -54,10 +59,13 @@ test('a covering fee grant makes the corporation the fee granter', async ({ page
   expect(lookups[0]?.get('grantee')).toBe(wallet.bech32Address)
   expect(lookups[0]?.get('msg_type')).toBe('/verana.ec.v1.MsgCreateEcosystem')
   expect(lookups[0]?.get('only_active')).toBe('true')
+  const shownFee = await dialog.getByText('Network fee', { exact: true }).locator('..').textContent()
 
   await dialog.getByRole('button', { name: 'Confirm' }).click()
   await expect.poll(() => mock.broadcastTxs().length, { timeout: 30_000 }).toBeGreaterThan(0)
-  expect(broadcastGranter(mock.broadcastTxs()[0])).toBe(ACME_POLICY_ADDRESS)
+  const fee = broadcastFee(mock.broadcastTxs()[0])
+  expect(fee?.granter).toBe(ACME_POLICY_ADDRESS)
+  expect(shownFee).toContain(`${Number(fee?.amount[0]?.amount) / 1_000_000} VNA`)
   await mock.teardown()
 })
 

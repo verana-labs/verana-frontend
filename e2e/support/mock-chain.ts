@@ -24,6 +24,7 @@ export type MockChainOptions = {
   accountNumber?: number
   sequence?: number
   gasUsed?: number
+  gasDriftPerSimulation?: number
   ecosystemId?: string
   corporationId?: number
   corporationPolicyAddress?: string
@@ -190,6 +191,7 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
     accountNumber = 12,
     sequence = 7,
     gasUsed = 200_000,
+    gasDriftPerSimulation = 0,
     ecosystemId = '4242',
     corporationId = 7,
     corporationPolicyAddress = address,
@@ -200,6 +202,7 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
 
   const seen: string[] = []
   const broadcasts: string[] = []
+  let simulations = 0
 
   const rpcPattern = new RegExp(`^${escapeRegExp(rpcEndpoint.replace(/\/+$/, ''))}/?(\\?.*)?$`)
 
@@ -223,7 +226,8 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
       case 'status':
         return fulfill(statusResult(chainId))
       case 'abci_query': {
-        if (path.includes('Service/Simulate')) return fulfill(simulateQueryResult(gasUsed))
+        if (path.includes('Service/Simulate'))
+          return fulfill(simulateQueryResult(gasUsed + gasDriftPerSimulation * simulations++))
         if (path.includes('Query/Account')) return fulfill(accountQueryResult(address, accountNumber, sequence))
         if (path.includes('Query/Balance')) return fulfill(balanceQueryResult(balanceUvna))
         return fulfill(accountQueryResult(address, accountNumber, sequence))
