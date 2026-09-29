@@ -41,6 +41,7 @@ export default function ClaimText({ text, format, className, title }: ClaimTextP
               {children}
             </a>
           ),
+          img: ({ alt }) => (alt ? <span>{alt}</span> : null),
         }}
       >
         {text}
