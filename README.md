@@ -201,6 +201,9 @@ docker run --rm -p 3000:3000 \
   -e NEXT_PUBLIC_VERANA_CHAIN_ID=vna-devnet-1 \
   -e NEXT_PUBLIC_VERANA_CHAIN_NAME=VeranaDevnet1 \
   -e NEXT_PUBLIC_VERANA_RPC_ENDPOINT=https://rpc.devnet.verana.network \
+  -e NEXT_PUBLIC_VERANA_INDEXER_BASE_URL=https://idx.devnet.verana.network \
+  -e NEXT_PUBLIC_VERANA_EXPLORER_URL=https://explorer.devnet.verana.network/Verana%20Devnet \
+  -e NEXT_PUBLIC_VERANA_VISUALIZER_URL=https://vis.devnet.verana.network \
   verana/verana-frontend:local
 ```
 
