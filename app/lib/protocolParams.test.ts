@@ -37,12 +37,6 @@ describe('getProtocolParams', () => {
     })
   })
 
-  it('deduplicates requests that share an endpoint', async () => {
-    const { params } = await getProtocolParams()
-    expect(params).not.toBe(protocolParamsInitialState)
-    expect(fetch).toHaveBeenCalledTimes(2)
-  })
-
   it('fails closed when a configured V4 envelope is malformed', async () => {
     vi.mocked(fetch).mockResolvedValue({ ok: true, status: 200, json: async () => ({}) } as Response)
     const result = await getProtocolParams()

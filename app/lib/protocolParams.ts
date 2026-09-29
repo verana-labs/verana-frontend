@@ -57,17 +57,11 @@ export type ProtocolParamsResult = {
 export async function getProtocolParams(): Promise<ProtocolParamsResult> {
   const params: ProtocolParams = { ...protocolParamsInitialState }
   const errors: string[] = []
-  const responses = new Map<string, Promise<Record<string, unknown>>>()
 
-  function load(base: string): Promise<Record<string, unknown>> {
-    const existing = responses.get(base)
-    if (existing) return existing
-    const request = fetch(`${base}/params`).then(async (response) => {
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
-      return paramsEnvelope(await response.json())
-    })
-    responses.set(base, request)
-    return request
+  async function load(base: string): Promise<Record<string, unknown>> {
+    const response = await fetch(`${base}/params`)
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    return paramsEnvelope(await response.json())
   }
 
   await Promise.all(
