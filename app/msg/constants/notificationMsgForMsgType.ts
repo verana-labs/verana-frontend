@@ -3,8 +3,6 @@
 import { translate } from '@/i18n/dataview'
 import { I18nValues, resolveTranslatable, Translatable } from '@/ui/dataview/types'
 
-export type MsgTypeTD = 'MsgReclaimTrustDepositYield'
-
 // Supported Ecosystem actions
 export type MsgTypeEcosystem =
   | 'MsgCreateEcosystem'
@@ -58,19 +56,6 @@ export const MSG_NOTIFICATION_PROPOSAL = {
   inprogress: () => t('notification.MsgSubmitProposal.inprogress'),
   error: (code?: number, msg?: string) =>
     `${t('notification.MsgSubmitProposal.error')} ${code ? `(${code}) ` : ''}${msg ?? ''}`.trim(),
-}
-
-export const MSG_SUCCESS_ACTION_TD: Record<MsgTypeTD, (claimed?: string) => string> = {
-  MsgReclaimTrustDepositYield: () => t('notification.MsgReclaimTrustDepositYield.success'),
-}
-
-export const MSG_INPROGRESS_ACTION_TD: Record<MsgTypeTD, () => string> = {
-  MsgReclaimTrustDepositYield: () => t('notification.MsgReclaimTrustDepositYield.inprogress'),
-}
-
-export const MSG_ERROR_ACTION_TD: Record<MsgTypeTD, (code?: number, msg?: string) => string> = {
-  MsgReclaimTrustDepositYield: (code, msg) =>
-    t('notification.MsgReclaimTrustDepositYield.error', { code: code ? `(${code}) ` : '', msg: msg ?? '' }),
 }
 
 // ============================================================================
