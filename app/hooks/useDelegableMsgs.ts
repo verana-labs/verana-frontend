@@ -25,7 +25,6 @@ export interface DelegableMsgsArgs {
   build: DelegableBuild
   effect: string
   proposalTitle: string
-  simulate: boolean
   costLines?: CostLine[]
 }
 
@@ -47,24 +46,23 @@ export async function confirmDelegableMsgs(
   args: DelegableMsgsArgs
 ): Promise<DelegableMsgs | null> {
   const { address, actingCorporation, loading, actingCorporationNow, notify, confirmTx } = deps
-  const { typeUrl, build, effect, proposalTitle, simulate, costLines } = args
+  const { typeUrl, build, effect, proposalTitle, costLines } = args
   if (!address) return null
   if (loading) {
-    if (!simulate) await notify(t('corporation.select.loading'), 'info')
+    await notify(t('corporation.select.loading'), 'info')
     return null
   }
   if (!actingCorporation) {
-    if (!simulate) await notify(t('error.msg.corporation.required'), 'error')
+    await notify(t('error.msg.corporation.required'), 'error')
     return null
   }
   const resolution = resolveDelegableMsgs({ membership: actingCorporation, address, typeUrl, build })
   if (!resolution) {
-    if (!simulate) await notify(t('error.msg.corporation.notauthorized', { msgType: msgShortName(typeUrl) }), 'error')
+    await notify(t('error.msg.corporation.notauthorized', { msgType: msgShortName(typeUrl) }), 'error')
     return null
   }
   const { mode } = resolution
   const msgs = resolution.build(proposalMetadata('', '', proposalTitle))
-  if (simulate) return { msgs, mode }
   const severity = txSeverity(typeUrl) ?? undefined
   const confirmed = await confirmTx({
     titleKey: 'txconfirm.title.default',
@@ -76,6 +74,15 @@ export async function confirmDelegableMsgs(
     warning: severity ? txWarning(typeUrl) : undefined,
     proposalTitle: mode === 'proposal' ? proposalTitle : undefined,
     buildProposalMsgs: mode === 'proposal' ? resolution.build : undefined,
+    feeGrant:
+      mode === 'operator'
+        ? {
+            corporationId: actingCorporation.corporation.id,
+            grantee: address,
+            msgType: typeUrl,
+            granterAddress: actingCorporation.corporation.policyAddress,
+          }
+        : undefined,
     costLines,
   })
   if (!confirmed) return null
@@ -83,7 +90,7 @@ export async function confirmDelegableMsgs(
     await notify(t('corporation.select.changed'), 'error')
     return null
   }
-  return { msgs: confirmed.msgs, mode }
+  return { msgs: confirmed.msgs, mode, fee: confirmed.fee }
 }
 
 export function useDelegableMsgs(): (args: DelegableMsgsArgs) => Promise<DelegableMsgs | null> {

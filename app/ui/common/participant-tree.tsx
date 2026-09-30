@@ -1,7 +1,6 @@
 'use client'
 
 import { faPlus } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParticipant } from '@/hooks/useParticipant'
@@ -11,6 +10,7 @@ import type { SchemaPricing } from '@/lib/pricing-asset'
 import { type DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
 import AddJoinPage from '@/participants/add/page'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
+import { EntityActionButton } from '@/ui/common/capability-button'
 import EcosystemBreadcrumb from '@/ui/common/ecosystem-breadcrumb'
 import type { ParticipantRefreshState, TreeNode } from '@/ui/common/participant-tree-types'
 import { PricingNotice, unsupportedPricingReason } from '@/ui/common/pricing-notice'
@@ -33,6 +33,7 @@ type ParticipantTreeProps = {
   schemaStatus?: SchemaStatus
   issuerOnboardingMode?: string | number
   verifierOnboardingMode?: string | number
+  holderOnboardingMode?: string | number
   ecosystemTitle?: string
   ecosystemId?: string
   unsupportedPricing?: SchemaPricing
@@ -179,6 +180,7 @@ export default function ParticipantTree({
   schemaStatus,
   issuerOnboardingMode,
   verifierOnboardingMode,
+  holderOnboardingMode,
   ecosystemTitle,
   schemaId,
   ecosystemId,
@@ -362,6 +364,7 @@ export default function ParticipantTree({
           status={schemaStatus}
           issuerOnboardingMode={issuerOnboardingMode}
           verifierOnboardingMode={verifierOnboardingMode}
+          holderOnboardingMode={holderOnboardingMode}
         />
       ) : null}
       {unsupportedPricing ? <PricingNotice schema={unsupportedPricing} className="mb-6" /> : null}
@@ -432,18 +435,14 @@ export default function ParticipantTree({
         />
 
         {type === 'participants' && isEcosystemController ? (
-          <button
-            type="button"
-            className="flex items-center space-x-2 p-2 text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={Boolean(joinBlockedReason)}
-            title={joinBlockedReason}
+          <EntityActionButton
+            msgType="MsgCreateRootParticipant"
+            icon={faPlus}
+            label={translate('participants.action.newparticipant')}
+            blockedReason={joinBlockedReason}
             onClick={() => setAddingRoot(true)}
-          >
-            <FontAwesomeIcon icon={faPlus} className="text-sm" />
-            <span className="text-sm font-medium">
-              {resolveTranslatable({ key: 'participants.action.newparticipant' }, translate)}
-            </span>
-          </button>
+            className="flex items-center gap-2 p-2 text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+          />
         ) : null}
       </section>
 

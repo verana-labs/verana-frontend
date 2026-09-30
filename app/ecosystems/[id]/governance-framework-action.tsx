@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useActionEcosystem } from '@/msg/actions_hooks/actionEcosystem'
 import type { MsgTypeEcosystem } from '@/msg/constants/notificationMsgForMsgType'
-import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
 import EditableDataView from '@/ui/common/data-edit'
 import type { EcosystemData } from '@/ui/dataview/datasections/ecosystem'
 import {
@@ -45,12 +44,6 @@ export default function GovernanceFrameworkActionPage({
     }
   }
 
-  async function onSimulate(): Promise<SimulateResult | undefined> {
-    if (action !== 'MsgIncreaseActiveGovernanceFrameworkVersion') return
-    const result = await submitEcosystem({ msgType: action, ecosystemId: ecosystem.id }, true)
-    if (result && !('transactionHash' in result)) return result
-  }
-
   return (
     <EditableDataView<GovernanceFrameworkDocumentForm>
       sectionsI18n={governanceFrameworkDocumentSections}
@@ -58,7 +51,6 @@ export default function GovernanceFrameworkActionPage({
       messageType={action}
       data={form}
       onSave={onSave}
-      onSimulate={onSimulate}
       onCancel={onClose}
       noForm={action === 'MsgIncreaseActiveGovernanceFrameworkVersion'}
       setModalHidden={setModalHidden}

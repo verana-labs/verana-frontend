@@ -12,6 +12,10 @@ describe('txSeverity', () => {
     expect(txSeverity('/verana.cs.v1.MsgArchiveCredentialSchema')).toBe('notice')
   })
 
+  it('flags a schema creation as a notice since most of it is immutable', () => {
+    expect(txSeverity('/verana.cs.v1.MsgCreateCredentialSchema')).toBe('notice')
+  })
+
   it('leaves group messages, grants and the slashed-deposit repayment unflagged', () => {
     for (const typeUrl of [
       '/cosmos.group.v1.MsgVote',

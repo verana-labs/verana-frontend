@@ -62,6 +62,8 @@ const messages: EncodeObject[] = [
       holderValidationValidityPeriod: 23,
       issuerOnboardingMode: 1,
       verifierOnboardingMode: 1,
+      holderOnboardingMode: 2,
+      digestAlgorithm: 'sha384',
     },
     context
   ),

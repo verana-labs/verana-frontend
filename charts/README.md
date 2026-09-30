@@ -35,17 +35,20 @@ This chart deploys the Verana frontend (Next.js) as a Deployment with a Service,
 
 Defined under `env`. The network values have no default and rendering fails when one is missing, so every deploy passes `values-devnet.yaml`, `values-testnet.yaml` or its own file:
 
-- `NEXT_PUBLIC_PORT`
-- `NEXT_PUBLIC_BASE_URL`
 - `NEXT_PUBLIC_VERANA_CHAIN_ID`
 - `NEXT_PUBLIC_VERANA_CHAIN_NAME`
 - `NEXT_PUBLIC_VERANA_RPC_ENDPOINT`
-- `NEXT_PUBLIC_VERANA_REST_ENDPOINT`
 - `NEXT_PUBLIC_VERANA_INDEXER_BASE_URL`
+- `NEXT_PUBLIC_VERANA_EXPLORER_URL`
+
+`global.domain` is required the same way. The rest have defaults in `values.yaml` and can be overridden:
+
+- `NEXT_PUBLIC_PORT`
 - `NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE`
 - `NEXT_PUBLIC_SESSION_LIFETIME_SECONDS`
 - `NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA`
 - `NEXT_PUBLIC_SHOW_PARTICIPANT_EXPIRE_BEFORE_DAYS` (empty keeps the 30-day default)
+- `NEXT_PUBLIC_VERANA_VISUALIZER_URL` (empty falls back to the testnet visualizer)
 
 `NEXT_PUBLIC_VERANA_FAUCET_URL` is optional: leave it empty on a network without a faucet and the frontend hides the Get VNA action.
 

@@ -40,7 +40,9 @@ function build(corporation: string, operator: string) {
   }
 }
 
-const echo = (request: TxConfirmRequest): TxConfirmResult => ({ msgs: request.msgs })
+const FEE = { amount: [{ denom: 'uvna', amount: '293754' }], gas: '97918' }
+
+const echo = (request: TxConfirmRequest): TxConfirmResult => ({ msgs: request.msgs, fee: FEE })
 
 function deps(
   overrides: Partial<DelegableMsgsDeps> = {},
@@ -68,7 +70,6 @@ const args = {
   build,
   effect: 'Create an ecosystem.',
   proposalTitle: 'Create an ecosystem',
-  simulate: false,
   costLines,
 }
 
@@ -85,10 +86,6 @@ describe('confirmDelegableMsgs', () => {
     expect(await confirmDelegableMsgs(d, args)).toBeNull()
     expect(notify).toHaveBeenCalledWith('Corporation discovery is still running, retry in a moment.', 'info')
     expect(confirmTx).not.toHaveBeenCalled()
-
-    const silent = deps({ loading: true })
-    expect(await confirmDelegableMsgs(silent.deps, { ...args, simulate: true })).toBeNull()
-    expect(silent.notify).not.toHaveBeenCalled()
   })
 
   it('refuses when no corporation is acting', async () => {
@@ -109,14 +106,6 @@ describe('confirmDelegableMsgs', () => {
       'This corporation has not authorized your wallet for MsgCreateEcosystem.',
       'error'
     )
-    expect(confirmTx).not.toHaveBeenCalled()
-  })
-
-  it('skips the confirmation on simulate', async () => {
-    const { deps: d, confirmTx } = deps()
-    const resolved = await confirmDelegableMsgs(d, { ...args, simulate: true })
-    expect(resolved?.mode).toBe('operator')
-    expect((resolved?.msgs[0].value as MsgCreateEcosystem).operator).toBe(ME)
     expect(confirmTx).not.toHaveBeenCalled()
   })
 
@@ -144,6 +133,13 @@ describe('confirmDelegableMsgs', () => {
     expect(request.buildProposalMsgs).toBeUndefined()
     expect(request.costLines).toBe(costLines)
     expect(resolved?.msgs).toBe(request.msgs)
+    expect(request.feeGrant).toEqual({ corporationId: 12, grantee: ME, msgType: CREATE, granterAddress: POLICY })
+  })
+
+  it('returns the fee the confirmation previewed, with the granter it elected', async () => {
+    const fee = { ...FEE, granter: POLICY }
+    const { deps: d } = deps({}, (request) => ({ msgs: request.msgs, fee }))
+    expect((await confirmDelegableMsgs(d, args))?.fee).toBe(fee)
   })
 
   it('carries the severity and the existing warning copy of a revocation', async () => {
@@ -167,6 +163,7 @@ describe('confirmDelegableMsgs', () => {
     expect(resolved?.mode).toBe('proposal')
     expect(confirmTx.mock.calls[0][0]).toMatchObject({ mode: 'proposal', proposalTitle: 'Create an ecosystem' })
     expect(confirmTx.mock.calls[0][0].costLines).toBe(costLines)
+    expect(confirmTx.mock.calls[0][0].feeGrant).toBeUndefined()
     const proposal = MsgSubmitProposal.decode(
       MsgSubmitProposal.encode(resolved?.msgs[0].value as MsgSubmitProposal).finish()
     )
@@ -178,6 +175,7 @@ describe('confirmDelegableMsgs', () => {
   it('returns the exact messages the confirmation approved, never a rebuild', async () => {
     const { deps: d } = deps({ actingCorporation: membership({ grantedMessageTypes: [] }) }, (request) => ({
       msgs: request.buildProposalMsgs?.(proposalMetadata('Custom', 'Why', request.proposalTitle ?? '')) ?? [],
+      fee: FEE,
     }))
     const resolved = await confirmDelegableMsgs(d, args)
     const proposal = MsgSubmitProposal.decode(

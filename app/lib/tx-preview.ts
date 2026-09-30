@@ -23,6 +23,13 @@ export function proposalMetadata(title: string, summary: string, fallbackTitle: 
   return { title: resolved, summary: summary.trim() || resolved }
 }
 
+export interface TxFeeGrant {
+  corporationId: number
+  grantee: string
+  msgType: string
+  granterAddress: string
+}
+
 export interface TxConfirmRequest {
   titleKey: string
   effect: string
@@ -35,10 +42,12 @@ export interface TxConfirmRequest {
   proposalTitle?: string
   corporationLabel?: string
   buildProposalMsgs?: (metadata: ProposalMetadata) => EncodeObject[]
+  feeGrant?: TxFeeGrant
 }
 
 export interface TxConfirmResult {
   msgs: EncodeObject[]
+  fee: StdFee
 }
 
 export function msgShortName(typeUrl: string): string {
@@ -48,7 +57,12 @@ export function msgShortName(typeUrl: string): string {
 export function txSeverity(typeUrl: string): TxSeverity | null {
   const name = msgShortName(typeUrl)
   if (/^Msg(Revoke|Slash)/.test(name)) return 'irreversible'
-  if (typeUrl === '/verana.co.v1.MsgUpdateCorporation' || name.startsWith('MsgArchive')) return 'notice'
+  if (
+    typeUrl === '/verana.co.v1.MsgUpdateCorporation' ||
+    typeUrl === '/verana.cs.v1.MsgCreateCredentialSchema' ||
+    name.startsWith('MsgArchive')
+  )
+    return 'notice'
   return null
 }
 

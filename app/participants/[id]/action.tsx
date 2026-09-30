@@ -1,11 +1,13 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { useParticipant } from '@/hooks/useParticipant'
+import { translate } from '@/i18n/dataview'
 import { totalDebitUvna, trustCostLines } from '@/lib/trust-costs'
 import { type ParticipantActionParams, useActionParticipant } from '@/msg/actions_hooks/actionParticipant'
 import type { MsgTypeParticipant } from '@/msg/constants/notificationMsgForMsgType'
 import type { MessageType } from '@/msg/constants/types'
-import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
+import { useNotification } from '@/providers/notification-provider'
 import { useProtocolParams } from '@/providers/protocol-params-context'
 import EditableDataView from '@/ui/common/data-edit'
 import {
@@ -13,6 +15,7 @@ import {
   type Participant,
   type ParticipantData,
 } from '@/ui/dataview/datasections/participant'
+import { resolveTranslatable } from '@/ui/dataview/types'
 
 interface ParticipantActionProps {
   action: MsgTypeParticipant
@@ -32,10 +35,22 @@ export default function ParticipantActionPage({
   const participant = data as Participant
   const submitParticipant = useActionParticipant(onClose, onRefresh)
   const rates = useProtocolParams()
-  const { participant: validator } = useParticipant(
-    action === 'MsgRenewParticipantOP' ? (participant.validator_participant_id ?? undefined) : undefined
-  )
+  const validatorId =
+    action === 'MsgRenewParticipantOP' && participant.validator_validation_fees === undefined
+      ? (participant.validator_participant_id ?? undefined)
+      : undefined
+  const { participant: validator, errorParticipant: validatorError } = useParticipant(validatorId)
   const validatorValidationFees = participant.validator_validation_fees ?? validator?.validation_fees
+  const validatorSettled = validatorId === undefined || validator !== null
+  const { notify } = useNotification()
+  const validatorFailureReported = useRef(false)
+
+  useEffect(() => {
+    if (!validatorError || validatorFailureReported.current) return
+    validatorFailureReported.current = true
+    void notify(resolveTranslatable({ key: 'participant.renew.validatorunavailable' }, translate) ?? '', 'error')
+    onClose()
+  }, [validatorError, notify, onClose])
   const repayAmount = Number(participant.slashed_deposit ?? 0) - Number(participant.repaid_deposit ?? 0)
   const costLines =
     action === 'MsgStartParticipantOP' || action === 'MsgRenewParticipantOP'
@@ -122,19 +137,6 @@ export default function ParticipantActionPage({
     await submitParticipant(params)
   }
 
-  async function onSimulate(): Promise<SimulateResult | undefined> {
-    if (
-      action !== 'MsgRenewParticipantOP' &&
-      action !== 'MsgCancelParticipantOPLastRequest' &&
-      action !== 'MsgRevokeParticipant' &&
-      action !== 'MsgRepayParticipantSlashedTrustDeposit'
-    ) {
-      return
-    }
-    const result = await submitParticipant({ msgType: action, id: participant.id }, true)
-    if (result && !('transactionHash' in result)) return result
-  }
-
   const noForm =
     action === 'MsgRenewParticipantOP' ||
     action === 'MsgCancelParticipantOPLastRequest' ||
@@ -148,10 +150,10 @@ export default function ParticipantActionPage({
       messageType={action as MessageType}
       data={{}}
       onSave={onSave}
-      onSimulate={onSimulate}
       isModal={true}
       onCancel={onClose}
       noForm={noForm}
+      noFormReady={validatorSettled}
       setModalHidden={setModalHidden}
       transactionCost={transactionCost > 0 ? String(transactionCost) : undefined}
     />
