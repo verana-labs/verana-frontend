@@ -13,11 +13,12 @@ import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { findCorporationMembership, type UserCorporation } from '@/lib/corporation-discovery'
-import type { CostLine, TxConfirmRequest } from '@/lib/tx-preview'
+import type { CostLine, TxConfirmRequest, TxConfirmResult } from '@/lib/tx-preview'
 import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
 import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import { extractTxHeight } from '@/msg/util/signerUtil'
+import { rejectionNotice, txFailureNotice } from '@/msg/util/tx-outcome'
 import { findEventAttribute } from '@/msg/util/txEvents'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
@@ -180,9 +181,9 @@ export function useActionCorporation() {
     if (!indexed) runAfterIndexerCatchesUp(waitForBlock, height, () => actAsOnceDiscovered(corporationId))
   }
 
-  async function createCorporation(msgs: EncodeObject[], did: string): Promise<UserCorporation> {
+  async function createCorporation({ msgs, fee }: TxConfirmResult, did: string): Promise<UserCorporation> {
     void notify(translate('notification.MsgCreateCorporation.inprogress'), 'inProgress')
-    const result = await sendTx({ msgs, memo: 'MsgCreateCorporation' })
+    const result = await sendTx({ msgs, fee, memo: 'MsgCreateCorporation' })
     if (!('code' in result)) throw new Error('Expected a transaction response')
     if (result.code !== 0)
       throw new Error(`${translate('notification.MsgCreateCorporation.error')} (${result.code}): ${result.rawLog}`)
@@ -205,15 +206,18 @@ export function useActionCorporation() {
   async function grantOperator(
     corporation: UserCorporation,
     operator: string,
-    msgs: EncodeObject[]
-  ): Promise<'granted' | 'pending'> {
+    { msgs, fee }: TxConfirmResult
+  ): Promise<'granted' | 'pending' | 'failed'> {
     void notify(translate('notification.MsgGrantSelfOperatorAuthorization.inprogress'), 'inProgress')
-    const result = await sendTx({ msgs, memo: 'MsgGrantSelfOperatorAuthorization' })
+    const result = await sendTx({ msgs, fee, memo: 'MsgGrantSelfOperatorAuthorization' })
     if (!('code' in result)) throw new Error('Expected a transaction response')
-    if (result.code !== 0) {
-      throw new Error(
-        `${translate('notification.MsgGrantSelfOperatorAuthorization.error')} (${result.code}): ${result.rawLog}`
-      )
+    const failure = txFailureNotice(
+      result,
+      (code, rawLog) => `${translate('notification.MsgGrantSelfOperatorAuthorization.error')} (${code}): ${rawLog}`
+    )
+    if (failure) {
+      await notify(failure.message, 'error', failure.title)
+      return 'failed'
     }
 
     const height = txHeight(result)
@@ -235,7 +239,7 @@ export function useActionCorporation() {
     return indexed ? 'granted' : 'pending'
   }
 
-  async function confirm(msgs: EncodeObject[], effect: string, costLines: CostLine[]): Promise<EncodeObject[] | null> {
+  async function confirm(msgs: EncodeObject[], effect: string, costLines: CostLine[]): Promise<TxConfirmResult | null> {
     const request: TxConfirmRequest = {
       titleKey: 'txconfirm.title.default',
       effect,
@@ -244,7 +248,7 @@ export function useActionCorporation() {
       payer: address ?? '',
       costLines: costLines.length > 0 ? costLines : undefined,
     }
-    return (await confirmTx(request))?.msgs ?? null
+    return confirmTx(request)
   }
 
   async function createOnly(params: CreateCorporationParams): Promise<UserCorporation | null> {
@@ -258,13 +262,13 @@ export function useActionCorporation() {
     }
     inFlight.current = true
     try {
-      const msgs = await confirm(
+      const confirmed = await confirm(
         await buildCreateCorporationMessages(params, address),
         translate('txconfirm.effect.MsgCreateCorporation', { did: params.did }),
         []
       )
-      if (!msgs) return null
-      return await createCorporation(msgs, params.did)
+      if (!confirmed) return null
+      return await createCorporation(confirmed, params.did)
     } catch (error) {
       await notify(error instanceof Error ? error.message : String(error), 'error')
       return null
@@ -287,7 +291,7 @@ export function useActionCorporation() {
     }
     inFlight.current = true
     try {
-      const msgs = await confirm(
+      const confirmed = await confirm(
         buildGrantOperatorMessages(corporation, address, fundingUvna),
         translate('txconfirm.effect.MsgGrantOperatorAuthorization', {
           grantee: shortenMiddle(address, 24),
@@ -296,10 +300,12 @@ export function useActionCorporation() {
         }),
         fundingCostLines(fundingUvna)
       )
-      if (!msgs) return 'failed'
-      return await grantOperator(corporation, address, msgs)
+      if (!confirmed) return 'failed'
+      return await grantOperator(corporation, address, confirmed)
     } catch (error) {
-      await notify(error instanceof Error ? error.message : String(error), 'error')
+      const text = error instanceof Error ? error.message : String(error)
+      const notice = rejectionNotice(text, text)
+      await notify(notice.message, 'error', notice.title)
       return 'failed'
     } finally {
       inFlight.current = false

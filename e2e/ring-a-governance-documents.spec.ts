@@ -59,6 +59,8 @@ async function stubEcosystem(page: Page, documents: Document[]) {
             issuer_onboarding_mode: 'OPEN',
             verifier_onboarding_mode: 'OPEN',
             holder_onboarding_mode: null,
+            pricing_asset_type: 'COIN',
+            pricing_asset: 'uvna',
             participants: 0,
             issued: 0,
             verified: 0,

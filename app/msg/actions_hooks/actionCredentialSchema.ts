@@ -9,11 +9,11 @@ import {
   MsgCreateCredentialSchema,
   MsgUpdateCredentialSchema,
 } from '@verana-labs/verana-types/codec/verana/cs/v1/tx'
-import { HolderOnboardingMode, PricingAssetType } from '@verana-labs/verana-types/codec/verana/cs/v1/types'
 import { useRef } from 'react'
 import { useDelegableMsgs } from '@/hooks/useDelegableMsgs'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
+import { NATIVE_PRICING } from '@/lib/pricing-asset'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import {
   MSG_ERROR_ACTION_CS,
@@ -26,17 +26,13 @@ import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfter
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
 import { extractTxHeight } from '@/msg/util/signerUtil'
+import { proposalSubmittedMessage, rejectionNotice, txFailureNotice } from '@/msg/util/tx-outcome'
 import { findEventAttribute } from '@/msg/util/txEvents'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
 import { useProtocolParams } from '@/providers/protocol-params-context'
 import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 import { normalizeJsonSchema, validateJSONSchemaReturn } from '@/util/json_schema_util'
-
-const DEFAULT_HOLDER_ONBOARDING_MODE = HolderOnboardingMode.HOLDER_ONBOARDING_MODE_PERMISSIONLESS
-const DEFAULT_PRICING_ASSET_TYPE = PricingAssetType.COIN
-const DEFAULT_PRICING_ASSET = 'uvna'
-const DEFAULT_DIGEST_ALGORITHM = 'sha384'
 
 type CredentialSchemaContext = {
   corporation: string
@@ -58,6 +54,8 @@ export type CredentialSchemaActionParams =
       jsonSchema: string
       issuerOnboardingMode: number
       verifierOnboardingMode: number
+      holderOnboardingMode: number
+      digestAlgorithm: string
     } & CredentialSchemaPeriods)
   | ({
       msgType: 'MsgUpdateCredentialSchema'
@@ -88,10 +86,10 @@ export function buildCredentialSchemaMessage(
           holderValidationValidityPeriod: pickOptionalUInt32(params.holderValidationValidityPeriod),
           issuerOnboardingMode: params.issuerOnboardingMode,
           verifierOnboardingMode: params.verifierOnboardingMode,
-          holderOnboardingMode: DEFAULT_HOLDER_ONBOARDING_MODE,
-          pricingAssetType: DEFAULT_PRICING_ASSET_TYPE,
-          pricingAsset: DEFAULT_PRICING_ASSET,
-          digestAlgorithm: DEFAULT_DIGEST_ALGORITHM,
+          holderOnboardingMode: params.holderOnboardingMode,
+          pricingAssetType: NATIVE_PRICING.pricingAssetType,
+          pricingAsset: NATIVE_PRICING.pricingAsset,
+          digestAlgorithm: params.digestAlgorithm,
         }),
       }
     case 'MsgUpdateCredentialSchema':
@@ -147,10 +145,7 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
   const sendTx = useSendTxDetectingMode(veranaChain)
   const inFlight = useRef(false)
 
-  return async (
-    params: CredentialSchemaActionParams,
-    simulate = false
-  ): Promise<DeliverTxResponse | SimulateResult | undefined> => {
+  return async (params: CredentialSchemaActionParams): Promise<DeliverTxResponse | undefined> => {
     if (!isWalletConnected || !address) {
       await notify(t('notification.msg.connectwallet'), 'error')
       return
@@ -188,24 +183,19 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
         build: (corporation, operator) => buildCredentialSchemaMessage(params, { corporation, operator }),
         effect,
         proposalTitle: proposalTitleFrom(effect),
-        simulate,
       })
       if (!resolved) return
       mode = resolved.mode
-      if (simulate) {
-        const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType, simulate })
-        if (isDeliverTxResponse(result)) throw new Error('Expected a simulation result')
-        return result
-      }
       void notify(
         mode === 'proposal' ? MSG_NOTIFICATION_PROPOSAL.inprogress() : MSG_INPROGRESS_ACTION_CS[params.msgType](),
         'inProgress',
         t('notification.msg.inprogress.title')
       )
-      const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType })
+      const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType, fee: resolved.fee })
       if (!isDeliverTxResponse(result)) throw new Error('Expected a transaction response')
-      if (result.code !== 0) {
-        await notify(errorMessage(result.code, result.rawLog), 'error', t('notification.msg.failed.title'))
+      const failure = txFailureNotice(result, errorMessage)
+      if (failure) {
+        await notify(failure.message, 'error', failure.title)
         return result
       }
 
@@ -217,7 +207,7 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
       const indexed = await waitForIndexerAfterTx(waitForBlock, txHeight)
       if (id) sessionStorage.setItem('id_updated', id)
       const notification = successfulTxNotification(
-        mode === 'proposal' ? MSG_NOTIFICATION_PROPOSAL.success() : MSG_SUCCESS_ACTION_CS[params.msgType](),
+        mode === 'proposal' ? proposalSubmittedMessage(result.events) : MSG_SUCCESS_ACTION_CS[params.msgType](),
         txHeight,
         indexed
       )
@@ -230,12 +220,9 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
       onCancel?.()
       return result
     } catch (error) {
-      if (simulate) return
-      await notify(
-        errorMessage(undefined, error instanceof Error ? error.message : String(error)),
-        'error',
-        t('notification.msg.failed.title')
-      )
+      const text = error instanceof Error ? error.message : String(error)
+      const notice = rejectionNotice(errorMessage(undefined, text), text)
+      await notify(notice.message, 'error', notice.title)
     } finally {
       inFlight.current = false
     }

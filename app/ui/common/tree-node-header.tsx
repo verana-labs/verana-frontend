@@ -9,11 +9,14 @@ import {
   faScaleBalanced,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import type { ReactNode } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
+import { useActionSigning } from '@/hooks/useSigningMode'
 import { translate } from '@/i18n/dataview'
+import { formatSchemaAmount, type SchemaPricing } from '@/lib/pricing-asset'
 import { service } from '@/ui/common/participant-attribute'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import ServiceIdentity from '@/ui/common/service-identity'
+import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import {
   formatVNAFromUVNA,
@@ -33,7 +36,36 @@ export type TreeNodeHeaderProps = {
   onToggle: (id: string, role?: string, validatorId?: string) => void
   onSelect: (id: string) => void
   onJoin: (node: TreeNode) => void
+  joinBlockedReason?: string
+  feePricing?: SchemaPricing
   onConnect?: () => void
+}
+
+function JoinButton({
+  action,
+  blockedReason,
+  onClick,
+}: {
+  action: string
+  blockedReason?: string
+  onClick: (event: MouseEvent<HTMLButtonElement>) => void
+}) {
+  const { mode, disabled, reason } = useActionSigning(action)
+  const shownReason = blockedReason ?? reason
+  return (
+    <button
+      type="button"
+      className="inline-flex items-center gap-1 hover:text-purple-600 cursor-pointer whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+      disabled={disabled || Boolean(blockedReason)}
+      title={shownReason}
+      onClick={onClick}
+    >
+      <FontAwesomeIcon icon={faHandshake} />
+      {resolveTranslatable({ key: 'participants.btn.join' }, translate)}
+      <SigningModeIcon mode={mode} />
+      {shownReason ? <span className="sr-only">{shownReason}</span> : null}
+    </button>
+  )
 }
 
 export default function TreeNodeHeader({
@@ -46,6 +78,8 @@ export default function TreeNodeHeader({
   onToggle,
   onSelect,
   onJoin,
+  joinBlockedReason,
+  feePricing,
   onConnect,
 }: TreeNodeHeaderProps) {
   const hasChildren = Boolean(node.children?.length)
@@ -56,6 +90,9 @@ export default function TreeNodeHeader({
   )
   const onboardingState = onboardingStateColor(participant?.op_state)
   const showParticipantState = type === 'participants' || participantState.expireSoon !== null
+
+  const fee = (value: string | number | undefined) =>
+    feePricing ? formatSchemaAmount(value ?? 0, feePricing) : formatVNAFromUVNA(String(value ?? 0))
 
   let participantMetrics: ReactNode = null
   if (type === 'participants') {
@@ -71,7 +108,7 @@ export default function TreeNodeHeader({
           {showBusiness ? (
             <span className="whitespace-nowrap">
               <FontAwesomeIcon icon={faCoins} className="mr-1" />
-              {`validation: ${formatVNAFromUVNA(String(participant.validation_fees ?? 0))} | issuance: ${formatVNAFromUVNA(String(participant.issuance_fees ?? 0))} | verification: ${formatVNAFromUVNA(String(participant.verification_fees ?? 0))}`}
+              {`validation: ${fee(participant.validation_fees)} | issuance: ${fee(participant.issuance_fees)} | verification: ${fee(participant.verification_fees)}`}
             </span>
           ) : null}
           {showStats ? (
@@ -91,9 +128,9 @@ export default function TreeNodeHeader({
             {node.onboardingLabel}
           </span>
           {node.enabledJoin ? (
-            <button
-              type="button"
-              className="hover:text-purple-600 cursor-pointer whitespace-nowrap"
+            <JoinButton
+              action={node.onboardingAction ?? ''}
+              blockedReason={joinBlockedReason}
               onClick={(event) => {
                 event.stopPropagation()
                 if (node.onboardingAction === 'LinkDID') {
@@ -106,10 +143,7 @@ export default function TreeNodeHeader({
                   onToggle(node.nodeId, node.type, node.parentId)
                 }
               }}
-            >
-              <FontAwesomeIcon icon={faHandshake} className="mr-1" />
-              {resolveTranslatable({ key: 'participants.btn.join' }, translate)}
-            </button>
+            />
           ) : null}
         </div>
       )

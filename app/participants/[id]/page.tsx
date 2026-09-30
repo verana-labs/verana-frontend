@@ -9,7 +9,8 @@ import { useEcosystemData } from '@/hooks/useEcosystemData'
 import { participantsPageKey, useParticipants } from '@/hooks/useParticipants'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
-import ParticipantTree, { ROOT_NODE_ID } from '@/ui/common/participant-tree'
+import { isNativePricing } from '@/lib/pricing-asset'
+import ParticipantTree from '@/ui/common/participant-tree'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import type { Role } from '@/ui/common/role-card'
 import type { Participant } from '@/ui/dataview/datasections/participant'
@@ -83,6 +84,7 @@ export default function ParticipantsPage() {
   const { credentialSchema } = useCredentialSchemaData(schemaId)
   const ecosystemId = credentialSchema ? String(credentialSchema.ecosystemId) : ''
   const { ecosystem } = useEcosystemData(ecosystemId)
+  const unsupportedPricing = credentialSchema && !isNativePricing(credentialSchema) ? credentialSchema : undefined
 
   const foldersByRole = useCallback(
     (parent: Participant, roles: ChildRole[]): TreeNode[] =>
@@ -221,9 +223,11 @@ export default function ParticipantsPage() {
       schemaStatus={credentialSchema?.archived ? 'ARCHIVED' : 'ACTIVE'}
       issuerOnboardingMode={credentialSchema?.issuerOnboardingMode}
       verifierOnboardingMode={credentialSchema?.verifierOnboardingMode}
+      holderOnboardingMode={credentialSchema?.holderOnboardingMode ?? undefined}
       ecosystemTitle={ecosystem?.did ?? ''}
       schemaId={credentialSchema?.id != null ? String(credentialSchema.id) : undefined}
       ecosystemId={ecosystemId || undefined}
+      unsupportedPricing={unsupportedPricing}
       isEcosystemController={actingCorporation?.corporation.id === ecosystem?.corporationId}
       viewerCorporationId={actingCorporation?.corporation.id}
       setNodeRequestParams={setNodeRequestParams}

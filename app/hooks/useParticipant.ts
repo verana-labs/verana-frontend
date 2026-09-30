@@ -169,6 +169,7 @@ export function useParticipant(id?: string) {
       if (!participantId || !VERANA_REST_ENDPOINT_PARTICIPANT) {
         setParticipant(null)
         setLoading(false)
+        if (participantId) setError('Missing participant endpoint URL')
         return
       }
 

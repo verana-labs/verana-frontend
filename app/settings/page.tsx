@@ -47,7 +47,6 @@ export default function SettingsPage() {
     ['chainName', chain.chain_name],
     ['chainId', chain.chain_id],
     ['rpc', chain.apis?.rpc?.[0]?.address],
-    ['rest', chain.apis?.rest?.[0]?.address],
     ['indexer', VERANA_INDEXER_BASE_URL],
     ['explorer', chain.explorers?.[0]?.url],
   ]

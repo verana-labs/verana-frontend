@@ -43,6 +43,10 @@ export function indexerValidators(label: string) {
     return string(value, path)
   }
 
+  function missingAsNull(value: unknown, path: string): string | null {
+    return value === undefined ? null : nullableString(value, path)
+  }
+
   function stringArray(value: unknown, path: string): string[] {
     if (!Array.isArray(value) || !value.every((entry) => typeof entry === 'string')) throw invalid(path)
     return value
@@ -58,6 +62,7 @@ export function indexerValidators(label: string) {
     nullableString,
     nullableTimestamp: nullableString,
     optionalString,
+    missingAsNull,
     stringArray,
   }
 }

@@ -37,6 +37,7 @@ import {
 import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import { extractTxHeight } from '@/msg/util/signerUtil'
+import { proposalSubmittedMessage, rejectionNotice, txFailureNotice } from '@/msg/util/tx-outcome'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
 import { useProtocolParams } from '@/providers/protocol-params-context'
@@ -214,6 +215,10 @@ export function buildVoteMessage(proposalId: number, voter: string, choice: Vote
   }
 }
 
+function failureText(notificationKey: string, code: number, rawLog: string): string {
+  return `${translate(`notification.${notificationKey}.error`)} (${code}): ${rawLog}`
+}
+
 function txHeight(result: DeliverTxResponse): number {
   const height = extractTxHeight(result)
   if (height === undefined) throw new Error('Successful transaction did not include a block height')
@@ -242,6 +247,15 @@ export function delegablePreview(
     warning: severity ? txWarning(typeUrl) : undefined,
     proposalTitle: mode === 'proposal' ? proposalTitle : undefined,
     corporationLabel: shortenMiddle(membership.corporation.did, 32),
+    feeGrant:
+      mode === 'operator'
+        ? {
+            corporationId: membership.corporation.id,
+            grantee: payer,
+            msgType: typeUrl,
+            granterAddress: membership.corporation.policyAddress,
+          }
+        : undefined,
   }
 }
 
@@ -281,14 +295,20 @@ export function useCorporationManage(onDone?: () => void) {
       const confirmed = await confirmTx({ ...preview, msgs })
       if (!confirmed) return false
       void notify(translate(`notification.${notificationKey}.inprogress`), 'inProgress')
-      const result = await sendTx({ msgs: confirmed.msgs, memo: notificationKey })
+      const result = await sendTx({ msgs: confirmed.msgs, memo: notificationKey, fee: confirmed.fee })
       if (!('code' in result)) throw new Error('Expected a transaction response')
-      if (result.code !== 0)
-        throw new Error(`${translate(`notification.${notificationKey}.error`)} (${result.code}): ${result.rawLog}`)
+      const failure = txFailureNotice(result, (code, rawLog) => failureText(notificationKey, code, rawLog))
+      if (failure) {
+        await notify(failure.message, 'error', failure.title)
+        if (result.code === 0) runAfterIndexerCatchesUp(waitForBlock, txHeight(result), () => onDone?.())
+        return false
+      }
       const height = txHeight(result)
       const indexed = await waitForIndexerAfterTx(waitForBlock, height)
       const notification = successfulTxNotification(
-        translate(`notification.${notificationKey}.success`),
+        notificationKey === 'MsgSubmitProposal'
+          ? proposalSubmittedMessage(result.events)
+          : translate(`notification.${notificationKey}.success`),
         height,
         indexed
       )
@@ -297,7 +317,9 @@ export function useCorporationManage(onDone?: () => void) {
       else runAfterIndexerCatchesUp(waitForBlock, height, () => onDone?.())
       return true
     } catch (error) {
-      await notify(error instanceof Error ? error.message : String(error), 'error')
+      const text = error instanceof Error ? error.message : String(error)
+      const notice = rejectionNotice(text, text)
+      await notify(notice.message, 'error', notice.title)
       return false
     } finally {
       inFlight.current = false

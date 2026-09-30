@@ -2,7 +2,6 @@
 
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
 import type { MsgTypeCS } from '@/msg/constants/notificationMsgForMsgType'
-import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
 import EditableDataView from '@/ui/common/data-edit'
 import { type CredentialSchemaData, credentialSchemaSections } from '@/ui/dataview/datasections/cs'
 
@@ -29,12 +28,6 @@ export default function CredentialSchemaActionPage({
     await submitTx(action, value)
   }
 
-  async function onSimulate(value: object): Promise<SimulateResult | undefined> {
-    if (!noForm) return
-    const result = await submitTx(action, value, true)
-    if (result && !('transactionHash' in result)) return result
-  }
-
   return (
     <EditableDataView<CredentialSchemaData>
       sectionsI18n={credentialSchemaSections}
@@ -42,7 +35,6 @@ export default function CredentialSchemaActionPage({
       messageType={action}
       data={credentialSchema}
       onSave={onSave}
-      onSimulate={onSimulate}
       onCancel={onClose}
       noForm={noForm}
       withinView={action === 'MsgUpdateCredentialSchema'}

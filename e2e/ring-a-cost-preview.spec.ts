@@ -60,8 +60,14 @@ test('a new schema confirms with its network fee and no trust deposit', async ({
     .click()
   await expect(page.getByRole('heading', { name: /create new credential schema/i })).toBeVisible({ timeout: 20_000 })
 
+  await expect(page.getByText(/everything except the validity periods is immutable after creation/i)).toBeVisible()
+  await expect(labelSelect(page, 'Holder Onboarding Mode')).toHaveValue('2')
+  await expect(labelSelect(page, 'Digest Algorithm')).toHaveValue('sha384')
+
   await labelSelect(page, 'Issuer Onboarding Mode').selectOption('1')
   await labelSelect(page, 'Verifier Onboarding Mode').selectOption('1')
+  await labelSelect(page, 'Holder Onboarding Mode').selectOption('1')
+  await labelSelect(page, 'Digest Algorithm').selectOption('sha512')
   for (const field of VALIDITY_FIELDS) await labelInput(page, field).fill('0')
   await labelTextarea(page, 'JSON Schema').fill(
     JSON.stringify({

@@ -6,7 +6,6 @@ import { useProtocolParams } from '@/hooks/useProtocolParams'
 import { translate } from '@/i18n/dataview'
 import { useActionTrustDeposit } from '@/msg/actions_hooks/actionTrustDeposit'
 import { MsgTypeTD } from '@/msg/constants/notificationMsgForMsgType'
-import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
 import type { ActionCardProps } from '@/ui/common/action-card'
 import EditableDataView from '@/ui/common/data-edit'
 import type { AccountData } from '@/ui/dataview/datasections/account'
@@ -68,23 +67,6 @@ export default function TdActionPage({ action, data, onClose, onRefresh }: TdAct
     }
   }
 
-  async function onSimulate(newData: TdData) {
-    switch (action) {
-      case 'MsgReclaimTrustDepositYield': {
-        const res = await actionTrustDeposit(
-          { msgType: 'MsgReclaimTrustDepositYield', claimable: claimableInterests },
-          true
-        )
-        if (res && typeof res === 'object' && !('transactionHash' in res)) {
-          return res as SimulateResult
-        }
-        return undefined
-      }
-      default:
-        return
-    }
-  }
-
   return (
     <>
       {/* Editable form */}
@@ -94,7 +76,6 @@ export default function TdActionPage({ action, data, onClose, onRefresh }: TdAct
         messageType={action}
         data={dataTD}
         onSave={onSave}
-        onSimulate={onSimulate}
         onCancel={onClose}
         noForm={action === 'MsgReclaimTrustDepositYield'}
         actionCard={action === 'MsgReclaimTrustDepositYield' ? actionCardYield : undefined}

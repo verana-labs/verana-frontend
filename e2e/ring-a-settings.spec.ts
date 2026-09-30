@@ -29,7 +29,6 @@ test.describe('guest mode, browser in English', () => {
     expect(chainId).toBeTruthy()
     await expect(networkValue(page, 'Chain id')).toHaveText(chainId as string)
     await expect(networkValue(page, 'RPC endpoint')).toHaveText(/^https?:\/\//)
-    await expect(networkValue(page, 'REST endpoint')).toHaveText(/^https?:\/\//)
     await expect(networkValue(page, 'Indexer')).toHaveText(/^https?:\/\//)
   })
 

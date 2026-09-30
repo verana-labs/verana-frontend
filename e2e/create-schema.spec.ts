@@ -43,6 +43,8 @@ test('create a credential schema (real devnet broadcast)', async ({ page }) => {
 
   await labelSelect(page, 'Issuer Onboarding Mode').selectOption('1')
   await labelSelect(page, 'Verifier Onboarding Mode').selectOption('1')
+  await labelSelect(page, 'Holder Onboarding Mode').selectOption('2')
+  await labelSelect(page, 'Digest Algorithm').selectOption('sha384')
   for (const field of VALIDITY_FIELDS) await labelInput(page, field).fill('0')
   await labelTextarea(page, 'JSON Schema').fill(jsonSchema)
 
