@@ -228,7 +228,7 @@ export function DelegationDetail({
   const facts: [string, ReactNode][] = [
     ['delegation.spendLimit', formatCoins(record.spendLimit)],
     ['delegation.remainingSpend', formatCoins(record.remainingSpend)],
-    ['delegation.feeSpendLimit', formatCoins(record.feeSpendLimit)],
+    ['delegation.feeSpendLimit', record.withFeegrant ? formatCoins(record.feeSpendLimit) : translate('common.none')],
     ['delegation.withFeegrant', translate(record.withFeegrant ? 'common.yes' : 'common.no')],
     ['delegation.expiration', formatDate(record.expiration)],
     ['delegation.period', record.period ?? translate('common.none')],
