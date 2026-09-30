@@ -19,6 +19,9 @@ vi.mock('@/hooks/useVeranaChain', () => ({ useVeranaChain: () => ({ chain_name: 
 vi.mock('@/providers/indexer-events-provider', () => ({ useIndexerEvents: () => ({ waitForBlock: vi.fn() }) }))
 vi.mock('@/providers/notification-provider', () => ({ useNotification: () => ({ notify: vi.fn() }) }))
 vi.mock('@/msg/util/sendTxDetectingMode', () => ({ useSendTxDetectingMode: () => vi.fn() }))
+vi.mock('@/providers/tx-confirm-provider', () => ({
+  useTxConfirm: () => ({ confirmTx: vi.fn().mockResolvedValue({}) }),
+}))
 
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import {
@@ -30,6 +33,7 @@ import {
   buildUpdateMembersMessage,
   buildVoteMessage,
   corporationSigningMode,
+  delegablePreview,
   VOTE_OPTIONS,
   wrapInProposal,
 } from './actionCorporationManage'
@@ -173,6 +177,48 @@ describe('buildVoteMessage', () => {
     expect(value.voter).toBe('verana1member')
     expect(value.option).toBe(VoteOption.VOTE_OPTION_YES)
     expect(value.exec).toBe(Exec.EXEC_TRY)
+  })
+})
+
+describe('delegablePreview', () => {
+  it('describes an operator revoke as irreversible with its warning', () => {
+    const preview = delegablePreview(
+      '/verana.de.v1.MsgRevokeOperatorAuthorization',
+      'operator',
+      membership(),
+      'verana1me',
+      'Revoke',
+      { operator: 'verana1grantee' }
+    )
+    expect(preview.mode).toBe('operator')
+    expect(preview.payer).toBe('verana1me')
+    expect(preview.severity).toBe('irreversible')
+    expect(preview.warning).toMatch(/^Irreversible\./)
+    expect(preview.effect).toBe('Revoke the operator access of verana1grantee on did:web:corp.example.')
+    expect(preview.proposalTitle).toBeUndefined()
+    expect(preview.feeGrant).toEqual({
+      corporationId: 12,
+      grantee: 'verana1me',
+      msgType: '/verana.de.v1.MsgRevokeOperatorAuthorization',
+      granterAddress: POLICY,
+    })
+  })
+
+  it('carries the proposal title only in proposal mode and leaves the repayment unflagged', () => {
+    const preview = delegablePreview(
+      '/verana.td.v1.MsgRepaySlashedTrustDeposit',
+      'proposal',
+      membership(),
+      'verana1me',
+      'Repay',
+      { amount: '2 VNA' }
+    )
+    expect(preview.mode).toBe('proposal')
+    expect(preview.severity).toBeUndefined()
+    expect(preview.warning).toBeUndefined()
+    expect(preview.proposalTitle).toBe('Repay')
+    expect(preview.effect).toBe('Repay 2 VNA of slashed trust deposit for did:web:corp.example.')
+    expect(preview.feeGrant).toBeUndefined()
   })
 })
 

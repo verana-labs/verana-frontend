@@ -7,13 +7,20 @@ import { useMemo, useState } from 'react'
 import { useCredentialSchemas } from '@/hooks/useCredentialSchemas'
 import { useEcosystemData } from '@/hooks/useEcosystemData'
 import { useParticipants } from '@/hooks/useParticipants'
+import { useActionSigning } from '@/hooks/useSigningMode'
 import { translate } from '@/i18n/dataview'
 import { getParticipantOnboardingDecision, type JoinableParticipantRole } from '@/lib/participant-onboarding'
+import { isNativePricing } from '@/lib/pricing-asset'
+import { trustCostLines } from '@/lib/trust-costs'
 import { useActionParticipant } from '@/msg/actions_hooks/actionParticipant'
+import { proposalExecution } from '@/msg/util/tx-outcome'
 import { useNotification } from '@/providers/notification-provider'
+import { useProtocolParams } from '@/providers/protocol-params-context'
+import { CapabilityButton } from '@/ui/common/capability-button'
 import CsCard from '@/ui/common/cs-card'
 import EcosystemCard from '@/ui/common/ecosystem-card'
 import EgfCard from '@/ui/common/egf-card'
+import { PricingNotice } from '@/ui/common/pricing-notice'
 import RoleCard from '@/ui/common/role-card'
 import ValidatorCard from '@/ui/common/validator-card'
 import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
@@ -67,7 +74,9 @@ export default function JoinEcosystemWizard() {
   const [selectedValidator, setSelectedValidator] = useState<Participant | null>(null)
   const [serviceDid, setServiceDid] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [awaitingVotes, setAwaitingVotes] = useState(false)
 
+  const unsupportedPricing = selectedSchema !== null && !isNativePricing(selectedSchema)
   const decision = useMemo(() => {
     if (!selectedSchema || !selectedRole) return null
     if (selectedRole === 'HOLDER' && !selectedSchema.holderOnboardingMode) return null
@@ -82,6 +91,8 @@ export default function JoinEcosystemWizard() {
   const { participants: validators, errorParticipants } = useParticipants(selectedSchema?.id, validatorRole)
   const activeValidators = validators.filter((participant) => participant.participant_state === 'ACTIVE')
 
+  const joinSigning = useActionSigning(decision?.messageType ?? '')
+  const protocolParams = useProtocolParams()
   const submitParticipant = useActionParticipant(() => setCurrentStep(7))
   const activeStep = STEPS.find((step) => step.id === currentStep)
   const percentage = currentStep === 7 ? 100 : ((currentStep - 1) / STEPS.length) * 100
@@ -93,7 +104,7 @@ export default function JoinEcosystemWizard() {
       case 2:
         return selectedSchema !== null
       case 3:
-        return selectedRole !== null
+        return selectedRole !== null && !unsupportedPricing
       case 4:
         return acceptedGovernanceFramework
       case 5:
@@ -105,27 +116,39 @@ export default function JoinEcosystemWizard() {
     }
   })()
 
+  const onboardingCostLines =
+    decision?.messageType === 'MsgStartParticipantOP'
+      ? trustCostLines(
+          { msgType: 'MsgStartParticipantOP', validationFees: selectedValidator?.validation_fees },
+          protocolParams
+        )
+      : []
+
   async function submit() {
     if (!decision || !selectedRole || !selectedSchema || !isValidDID(serviceDid)) return
+    if (!selectedValidator) return
+    const proposal = joinSigning.mode === 'proposal'
     setSubmitting(true)
     try {
-      if (decision.messageType === 'MsgSelfCreateParticipant') {
-        if (!selectedValidator) return
-        await submitParticipant({
-          msgType: decision.messageType,
-          role: selectedRole,
-          validatorParticipantId: selectedValidator.id,
-          did: serviceDid,
-        })
-        return
-      }
-      if (!selectedValidator) return
-      await submitParticipant({
-        msgType: decision.messageType,
-        role: selectedRole,
-        validatorParticipantId: selectedValidator.id,
-        did: serviceDid,
-      })
+      const result = await submitParticipant(
+        decision.messageType === 'MsgSelfCreateParticipant'
+          ? {
+              msgType: decision.messageType,
+              role: selectedRole,
+              validatorParticipantId: selectedValidator.id,
+              did: serviceDid,
+            }
+          : {
+              msgType: decision.messageType,
+              role: selectedRole,
+              validatorParticipantId: selectedValidator.id,
+              did: serviceDid,
+              validatorValidationFees: selectedValidator.validation_fees,
+            }
+      )
+      setAwaitingVotes(
+        proposal && result !== undefined && 'events' in result && proposalExecution(result.events).status === 'pending'
+      )
     } finally {
       setSubmitting(false)
     }
@@ -162,10 +185,24 @@ export default function JoinEcosystemWizard() {
         <div className="w-20 h-20 bg-success-500 rounded-full flex items-center justify-center mx-auto mb-6">
           <span className="text-white text-4xl">✓</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Participant submitted</h1>
-        <p className="text-neutral-70 mb-8">
-          The indexer has processed the transaction. The participant page now reflects the resulting onboarding state.
-        </p>
+        {awaitingVotes ? (
+          <>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              {resolveTranslatable({ key: 'join.proposal.pending.title' }, translate)}
+            </h1>
+            <p className="text-neutral-70 mb-8">
+              {resolveTranslatable({ key: 'join.proposal.pending.desc' }, translate)}
+            </p>
+          </>
+        ) : (
+          <>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Participant submitted</h1>
+            <p className="text-neutral-70 mb-8">
+              The indexer has processed the transaction. The participant page now reflects the resulting onboarding
+              state.
+            </p>
+          </>
+        )}
         <button
           type="button"
           onClick={() => router.push(`/participants/${selectedSchema?.id ?? ''}`)}
@@ -255,6 +292,7 @@ export default function JoinEcosystemWizard() {
 
           {currentStep === 3 && selectedSchema ? (
             <div className="mb-6">
+              {unsupportedPricing ? <PricingNotice schema={selectedSchema} className="mb-4" /> : null}
               {availableRoles(selectedSchema).map((role) => (
                 <RoleCard
                   key={role}
@@ -318,6 +356,11 @@ export default function JoinEcosystemWizard() {
                     <span className="font-medium">Validator participant:</span> {selectedValidator.id}
                   </p>
                 ) : null}
+                {onboardingCostLines.map((line) => (
+                  <p key={line.label}>
+                    <span className="font-medium">{line.label}:</span> {line.value}
+                  </p>
+                ))}
               </div>
               <div>
                 <label
@@ -351,20 +394,34 @@ export default function JoinEcosystemWizard() {
                 {resolveTranslatable({ key: 'join.btn.back' }, translate) ?? 'Back'}
               </button>
             ) : null}
-            <button
-              type="button"
-              onClick={continueWizard}
-              disabled={!canContinue}
-              className={classes(
-                'px-6 py-3 rounded-lg font-medium',
-                canContinue
-                  ? 'bg-primary-600 text-white hover:bg-primary-700'
-                  : 'bg-gray-300 dark:bg-gray-600 text-gray-500 cursor-not-allowed'
-              )}
-            >
-              {resolveTranslatable({ key: currentStep === 6 ? 'join.btn.join' : 'join.btn.continue' }, translate) ??
-                (currentStep === 6 ? 'Join' : 'Continue')}
-            </button>
+            {currentStep === 6 ? (
+              <CapabilityButton
+                signing={joinSigning}
+                disabled={!canContinue}
+                label={resolveTranslatable({ key: 'join.btn.join' }, translate) ?? 'Join'}
+                onClick={continueWizard}
+                className={classes(
+                  'inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium',
+                  canContinue && !joinSigning.disabled
+                    ? 'bg-primary-600 text-white hover:bg-primary-700'
+                    : 'bg-gray-300 dark:bg-gray-600 text-gray-500'
+                )}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={continueWizard}
+                disabled={!canContinue}
+                className={classes(
+                  'px-6 py-3 rounded-lg font-medium',
+                  canContinue
+                    ? 'bg-primary-600 text-white hover:bg-primary-700'
+                    : 'bg-gray-300 dark:bg-gray-600 text-gray-500 cursor-not-allowed'
+                )}
+              >
+                {resolveTranslatable({ key: 'join.btn.continue' }, translate) ?? 'Continue'}
+              </button>
+            )}
           </div>
         </section>
       ) : null}

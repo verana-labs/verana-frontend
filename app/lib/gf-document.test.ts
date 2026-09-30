@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { documentFileName, fetchableDocumentUrl, kindFromContentType, kindFromUrl } from '@/lib/gf-document'
+import {
+  displayedVersion,
+  documentFileName,
+  fetchableDocumentUrl,
+  type GfVersion,
+  kindFromContentType,
+  kindFromUrl,
+} from '@/lib/gf-document'
 
 describe('kindFromUrl', () => {
   it('detects pdf and markdown extensions', () => {
@@ -7,6 +14,8 @@ describe('kindFromUrl', () => {
     expect(kindFromUrl('https://x.example/docs/EGF.PDF')).toBe('pdf')
     expect(kindFromUrl('https://x.example/docs/egf.md')).toBe('markdown')
     expect(kindFromUrl('https://x.example/docs/egf.markdown')).toBe('markdown')
+    expect(kindFromUrl('https://x.example/docs/egf.html')).toBe('html')
+    expect(kindFromUrl('https://x.example/docs/egf.htm')).toBe('html')
   })
 
   it('ignores query strings and unknown extensions', () => {
@@ -21,6 +30,7 @@ describe('kindFromContentType', () => {
     expect(kindFromContentType('application/pdf')).toBe('pdf')
     expect(kindFromContentType('text/markdown; charset=utf-8')).toBe('markdown')
     expect(kindFromContentType('text/x-markdown')).toBe('markdown')
+    expect(kindFromContentType('text/html; charset=utf-8')).toBe('html')
     expect(kindFromContentType('application/octet-stream')).toBeUndefined()
     expect(kindFromContentType(null)).toBeUndefined()
   })
@@ -52,6 +62,20 @@ describe('documentFileName', () => {
   it('falls back per kind when there is no usable segment', () => {
     expect(documentFileName('https://x.example/', 'markdown')).toBe('governance-framework.md')
     expect(documentFileName('https://x.example/', 'pdf')).toBe('governance-framework.pdf')
-    expect(documentFileName('not a url')).toBe('governance-framework.pdf')
+    expect(documentFileName('https://x.example/', 'html')).toBe('governance-framework.html')
+    expect(documentFileName('not a url')).toBe('governance-framework')
+  })
+})
+
+describe('displayedVersion', () => {
+  const versions: GfVersion[] = [
+    { id: '1', version: 1, activeSince: '2026-01-01T00:00:00Z', documents: [] },
+    { id: '2', version: 2, activeSince: null, documents: [] },
+  ]
+
+  it('prefers the active version and falls back to the last one', () => {
+    expect(displayedVersion(versions, 1)?.id).toBe('1')
+    expect(displayedVersion(versions, 3)?.id).toBe('2')
+    expect(displayedVersion([], 1)).toBeUndefined()
   })
 })

@@ -4,9 +4,11 @@ import { faBuilding, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { type ReactNode, useState } from 'react'
 import type { CorporationProfile } from '@/hooks/useCorporationDetails'
+import type { ActionSigning } from '@/hooks/useSigningMode'
 import { translate } from '@/i18n/dataview'
 import type { DidEnrichment } from '@/lib/resolverClient'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
+import { CapabilityButton } from '@/ui/common/capability-button'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 import { countryCodeToFlag, shortenMiddle } from '@/util/util'
 import { isValidDID } from '@/util/validations'
@@ -55,7 +57,7 @@ export function RotateDidForm({ mode, onSubmit }: { mode: CorporationSigningMode
 export function CorporationHeader({
   profile,
   enrichment,
-  updateMode,
+  rotate,
   rotating,
   onToggleRotate,
   onCreate,
@@ -64,7 +66,7 @@ export function CorporationHeader({
 }: {
   profile: CorporationProfile
   enrichment: DidEnrichment | null
-  updateMode: CorporationSigningMode | null
+  rotate: ActionSigning
   rotating: boolean
   onToggleRotate: () => void
   onCreate: () => void
@@ -95,18 +97,19 @@ export function CorporationHeader({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {updateMode ? (
-            <button type="button" onClick={onToggleRotate} className={OUTLINE_BUTTON}>
-              {translate('corporation.page.rotatedid')}
-            </button>
-          ) : null}
+          <CapabilityButton
+            signing={rotate}
+            label={translate('corporation.page.rotatedid')}
+            onClick={onToggleRotate}
+            className={OUTLINE_BUTTON}
+          />
           <button type="button" onClick={onCreate} className={OUTLINE_BUTTON}>
             <FontAwesomeIcon icon={faPlus} />
             {translate('corporation.page.new')}
           </button>
         </div>
       </div>
-      {rotating && updateMode ? rotateForm : null}
+      {rotating && rotate.mode ? rotateForm : null}
       {nav}
     </section>
   )

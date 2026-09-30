@@ -46,13 +46,6 @@ function optionalAmount(value: unknown, path: string): string | number | undefin
   return value
 }
 
-function optionalNullableBoolean(value: unknown, path: string): boolean | null | undefined {
-  if (value === undefined) return undefined
-  if (value === null) return null
-  if (typeof value !== 'boolean') throw new Error(`Invalid participant response: ${path}`)
-  return value
-}
-
 export function parseParticipantRecord(value: unknown, path = 'participant'): Participant {
   const source = record(value, path)
   const role = string(source.role, `${path}.role`) as ParticipantRole
@@ -113,7 +106,6 @@ export function parseParticipantRecord(value: unknown, path = 'participant'): Pa
     weight: optionalAmount(source.weight, `${path}.weight`),
     issued: optionalAmount(source.issued, `${path}.issued`),
     verified: optionalAmount(source.verified, `${path}.verified`),
-    expire_soon: optionalNullableBoolean(source.expire_soon, `${path}.expire_soon`),
   }
 }
 
@@ -173,6 +165,7 @@ export function useParticipant(id?: string) {
       if (!participantId || !VERANA_REST_ENDPOINT_PARTICIPANT) {
         setParticipant(null)
         setLoading(false)
+        if (participantId) setError('Missing participant endpoint URL')
         return
       }
 

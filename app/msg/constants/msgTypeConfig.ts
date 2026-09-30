@@ -46,6 +46,7 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     label: t('messages.MsgCreateCredentialSchema.label'),
     description: t('messages.MsgCreateCredentialSchema.description'),
     cost: t('messages.MsgCreateCredentialSchema.cost'), // {value}
+    warning: t('messages.MsgCreateCredentialSchema.warning'),
   },
   MsgUpdateCredentialSchema: {
     label: t('messages.MsgUpdateCredentialSchema.label'),
@@ -119,11 +120,6 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
 // Utility function to fill {value} in the cost message
 export function getCostMessage(template: string, value: string | number, td?: string | number) {
   return template.replace('{value}', String(value)).replace('{td}', String(td))
-}
-
-// Utility function to fill {value} and {link} in the low balance message
-export function getLowBalanceMessage(template: string, value: string, fee?: string) {
-  return template.replace('{value}', value).replace('{fee}', String(fee))
 }
 
 // Utility function to fill {addBalance} and {burnRate} in the description message

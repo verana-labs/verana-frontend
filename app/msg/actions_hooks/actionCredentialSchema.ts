@@ -9,31 +9,30 @@ import {
   MsgCreateCredentialSchema,
   MsgUpdateCredentialSchema,
 } from '@verana-labs/verana-types/codec/verana/cs/v1/tx'
-import { HolderOnboardingMode, PricingAssetType } from '@verana-labs/verana-types/codec/verana/cs/v1/types'
 import { useRef } from 'react'
-import { useUserCorporation } from '@/hooks/useUserCorporation'
+import { useDelegableMsgs } from '@/hooks/useDelegableMsgs'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
+import { NATIVE_PRICING } from '@/lib/pricing-asset'
+import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import {
   MSG_ERROR_ACTION_CS,
   MSG_INPROGRESS_ACTION_CS,
+  MSG_NOTIFICATION_PROPOSAL,
   MSG_SUCCESS_ACTION_CS,
 } from '@/msg/constants/notificationMsgForMsgType'
+import { delegableTypeUrl, proposalTitleFrom } from '@/msg/util/delegable-msgs'
 import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
 import { extractTxHeight } from '@/msg/util/signerUtil'
+import { proposalSubmittedMessage, rejectionNotice, txFailureNotice } from '@/msg/util/tx-outcome'
 import { findEventAttribute } from '@/msg/util/txEvents'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
 import { useProtocolParams } from '@/providers/protocol-params-context'
-import { resolveTranslatable } from '@/ui/dataview/types'
+import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 import { normalizeJsonSchema, validateJSONSchemaReturn } from '@/util/json_schema_util'
-
-const DEFAULT_HOLDER_ONBOARDING_MODE = HolderOnboardingMode.HOLDER_ONBOARDING_MODE_PERMISSIONLESS
-const DEFAULT_PRICING_ASSET_TYPE = PricingAssetType.COIN
-const DEFAULT_PRICING_ASSET = 'uvna'
-const DEFAULT_DIGEST_ALGORITHM = 'sha384'
 
 type CredentialSchemaContext = {
   corporation: string
@@ -55,6 +54,8 @@ export type CredentialSchemaActionParams =
       jsonSchema: string
       issuerOnboardingMode: number
       verifierOnboardingMode: number
+      holderOnboardingMode: number
+      digestAlgorithm: string
     } & CredentialSchemaPeriods)
   | ({
       msgType: 'MsgUpdateCredentialSchema'
@@ -85,10 +86,10 @@ export function buildCredentialSchemaMessage(
           holderValidationValidityPeriod: pickOptionalUInt32(params.holderValidationValidityPeriod),
           issuerOnboardingMode: params.issuerOnboardingMode,
           verifierOnboardingMode: params.verifierOnboardingMode,
-          holderOnboardingMode: DEFAULT_HOLDER_ONBOARDING_MODE,
-          pricingAssetType: DEFAULT_PRICING_ASSET_TYPE,
-          pricingAsset: DEFAULT_PRICING_ASSET,
-          digestAlgorithm: DEFAULT_DIGEST_ALGORITHM,
+          holderOnboardingMode: params.holderOnboardingMode,
+          pricingAssetType: NATIVE_PRICING.pricingAssetType,
+          pricingAsset: NATIVE_PRICING.pricingAsset,
+          digestAlgorithm: params.digestAlgorithm,
         }),
       }
     case 'MsgUpdateCredentialSchema':
@@ -119,39 +120,38 @@ export function buildCredentialSchemaMessage(
   }
 }
 
+function effectValues(params: CredentialSchemaActionParams): I18nValues {
+  return {
+    id: 'id' in params ? String(params.id) : null,
+    ecosystemId: 'ecosystemId' in params ? String(params.ecosystemId) : null,
+  }
+}
+
 function isDeliverTxResponse(result: DeliverTxResponse | SimulateResult): result is DeliverTxResponse {
   return 'code' in result
+}
+
+function t(key: string, values?: I18nValues): string {
+  return resolveTranslatable({ key, values }, translate) ?? key
 }
 
 export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id?: string, txHeight?: number) => void) {
   const veranaChain = useVeranaChain()
   const { address, isWalletConnected } = useChain(veranaChain.chain_name)
-  const { actingCorporation, loading: corporationLoading } = useUserCorporation()
+  const delegable = useDelegableMsgs()
   const { credentialSchemaSchemaMaxSize } = useProtocolParams()
   const { waitForBlock } = useIndexerEvents()
   const { notify } = useNotification()
   const sendTx = useSendTxDetectingMode(veranaChain)
   const inFlight = useRef(false)
 
-  return async (
-    params: CredentialSchemaActionParams,
-    simulate = false
-  ): Promise<DeliverTxResponse | SimulateResult | undefined> => {
+  return async (params: CredentialSchemaActionParams): Promise<DeliverTxResponse | undefined> => {
     if (!isWalletConnected || !address) {
-      await notify(resolveTranslatable({ key: 'notification.msg.connectwallet' }, translate) ?? '', 'error')
-      return
-    }
-    if (corporationLoading) {
-      if (!simulate) await notify(resolveTranslatable({ key: 'corporation.select.loading' }, translate) ?? '', 'error')
-      return
-    }
-    if (!actingCorporation) {
-      if (!simulate)
-        await notify(resolveTranslatable({ key: 'error.msg.corporation.required' }, translate) ?? '', 'error')
+      await notify(t('notification.msg.connectwallet'), 'error')
       return
     }
     if (inFlight.current) {
-      await notify(resolveTranslatable({ key: 'error.msg.pending.transaction' }, translate) ?? '', 'error')
+      await notify(t('error.msg.pending.transaction'), 'error')
       return
     }
 
@@ -162,53 +162,40 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
           : undefined
       const validationError = validateJSONSchemaReturn(params.jsonSchema, maxSize)
       if (validationError) {
-        await notify(
-          `${resolveTranslatable({ key: 'error.msg.cs.create.schema.json' }, translate)} ${validationError.message}`,
-          'error'
-        )
+        await notify(`${t('error.msg.cs.create.schema.json')} ${validationError.message}`, 'error')
         return
       }
     }
 
     inFlight.current = true
     let id = 'id' in params ? String(params.id) : undefined
-    if (!simulate) {
-      void notify(
-        MSG_INPROGRESS_ACTION_CS[params.msgType](),
-        'inProgress',
-        resolveTranslatable({ key: 'notification.msg.inprogress.title' }, translate)
-      )
-    }
-
+    let mode: CorporationSigningMode = 'operator'
+    const errorMessage = (code?: number, msg?: string) =>
+      mode === 'proposal'
+        ? MSG_NOTIFICATION_PROPOSAL.error(code, msg)
+        : MSG_ERROR_ACTION_CS[params.msgType](id, code, msg)
     try {
-      const message = buildCredentialSchemaMessage(params, {
-        corporation: actingCorporation.corporation.policyAddress,
-        operator: address,
+      const typeUrl = delegableTypeUrl(params.msgType)
+      if (!typeUrl) throw new Error(`Unsupported message type: ${params.msgType}`)
+      const effect = t(`txconfirm.effect.${params.msgType}`, effectValues(params))
+      const resolved = await delegable({
+        typeUrl,
+        build: (corporation, operator) => buildCredentialSchemaMessage(params, { corporation, operator }),
+        effect,
+        proposalTitle: proposalTitleFrom(effect),
       })
-      if (!actingCorporation.grantedMessageTypes.includes(message.typeUrl)) {
-        if (!simulate) {
-          await notify(
-            resolveTranslatable(
-              { key: 'error.msg.corporation.notauthorized', values: { msgType: params.msgType } },
-              translate
-            ) ?? '',
-            'error'
-          )
-        }
-        return
-      }
-      const result = await sendTx({ msgs: [message], memo: params.msgType, simulate })
-      if (simulate) {
-        if (isDeliverTxResponse(result)) throw new Error('Expected a simulation result')
-        return result
-      }
+      if (!resolved) return
+      mode = resolved.mode
+      void notify(
+        mode === 'proposal' ? MSG_NOTIFICATION_PROPOSAL.inprogress() : MSG_INPROGRESS_ACTION_CS[params.msgType](),
+        'inProgress',
+        t('notification.msg.inprogress.title')
+      )
+      const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType, fee: resolved.fee })
       if (!isDeliverTxResponse(result)) throw new Error('Expected a transaction response')
-      if (result.code !== 0) {
-        await notify(
-          MSG_ERROR_ACTION_CS[params.msgType](id, result.code, result.rawLog),
-          'error',
-          resolveTranslatable({ key: 'notification.msg.failed.title' }, translate)
-        )
+      const failure = txFailureNotice(result, errorMessage)
+      if (failure) {
+        await notify(failure.message, 'error', failure.title)
         return result
       }
 
@@ -219,7 +206,11 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
       if (txHeight === undefined) throw new Error('Successful transaction did not include a block height')
       const indexed = await waitForIndexerAfterTx(waitForBlock, txHeight)
       if (id) sessionStorage.setItem('id_updated', id)
-      const notification = successfulTxNotification(MSG_SUCCESS_ACTION_CS[params.msgType](), txHeight, indexed)
+      const notification = successfulTxNotification(
+        mode === 'proposal' ? proposalSubmittedMessage(result.events) : MSG_SUCCESS_ACTION_CS[params.msgType](),
+        txHeight,
+        indexed
+      )
       await notify(notification.message, notification.type, notification.title)
       if (indexed) {
         onRefresh?.(id, txHeight)
@@ -229,11 +220,9 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
       onCancel?.()
       return result
     } catch (error) {
-      await notify(
-        MSG_ERROR_ACTION_CS[params.msgType](id, undefined, error instanceof Error ? error.message : String(error)),
-        'error',
-        resolveTranslatable({ key: 'notification.msg.failed.title' }, translate)
-      )
+      const text = error instanceof Error ? error.message : String(error)
+      const notice = rejectionNotice(errorMessage(undefined, text), text)
+      await notify(notice.message, 'error', notice.title)
     } finally {
       inFlight.current = false
     }

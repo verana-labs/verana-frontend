@@ -3,11 +3,11 @@ import { connectWallet } from './support/connect'
 import { GRANTEE, REPLACEMENT_MEMBER } from './support/corp-fixtures'
 import {
   HARNESS_MNEMONIC,
-  indexerParticipantEvent,
   installCorporationStubs,
-  installIndexerSocket,
+  installEcosystemStubs,
   seedActingCorporation,
 } from './support/corp-stubs'
+import { installMockChain } from './support/mock-chain'
 
 async function noHorizontalOverflow(page: Page) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
@@ -63,7 +63,7 @@ test('tabs, deep links and proposal actions', async ({ page }) => {
 
   await page.getByRole('button', { name: /#40/ }).click()
   await expect(page.getByText('/verana.co.v1.MsgUpdateCorporation').first()).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Execute' })).toBeHidden()
+  await expect(page.getByRole('button', { name: /^Execute\b/ })).toBeHidden()
 
   await page.getByRole('button', { name: 'Members', exact: true }).click()
   await expect(page).toHaveURL(/tab=members/)
@@ -90,6 +90,33 @@ test('a member without grants gets the proposal signing mode everywhere', async 
   await expect(repay.getByLabel('Opens a governance proposal')).toBeVisible()
 })
 
+test('a member without grants gets the proposal fallback on an owned ecosystem', async ({ page }) => {
+  await installCorporationStubs(page, { memberOnly: true })
+  await installEcosystemStubs(page)
+  await seedActingCorporation(page, 13)
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubSri: false, stubCorporation: false })
+
+  await page.goto('/ecosystems/13')
+  const archive = page.getByRole('button', { name: /^Archive/ })
+  await expect(archive).toBeVisible({ timeout: 15_000 })
+  await expect(archive).toBeEnabled()
+  await expect(archive.getByLabel('Opens a governance proposal')).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: /^Edit Configuration/ }).getByLabel('Opens a governance proposal')
+  ).toBeVisible()
+
+  await archive.click()
+  const dialog = page.getByRole('dialog', { name: 'Confirm transaction' })
+  await expect(dialog).toBeVisible({ timeout: 30_000 })
+  await expect(dialog.getByText('Governance proposal', { exact: true })).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Submit proposal' })).toBeVisible()
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(dialog).toBeHidden()
+  expect(mock.seenMethods()).not.toContain('broadcast_tx_sync')
+  await mock.teardown()
+})
+
 test('a fresh wallet sees no corporation nav and lands on the wizard', async ({ page }) => {
   await installCorporationStubs(page, { fresh: true })
   await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
@@ -104,9 +131,10 @@ test('a fresh wallet sees no corporation nav and lands on the wizard', async ({ 
   await expect(page.getByRole('menuitem', { name: /Create new Corporation/ })).toBeVisible()
 })
 
-test('the creation wizard gates each step on valid input', async ({ page }) => {
+test('the creation wizard gates each step and confirms the built message before broadcasting', async ({ page }) => {
   await installCorporationStubs(page, { fresh: true })
-  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubCorporation: false })
   await page.goto('/corporation')
 
   const next = page.getByRole('button', { name: 'Continue' })
@@ -127,7 +155,16 @@ test('the creation wizard gates each step on valid input', async ({ page }) => {
   await page.getByRole('button', { name: 'Continue' }).click()
 
   await expect(page.getByText(/you keep no personal privileges/)).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Sign & create corporation' })).toBeEnabled()
+  await page.getByRole('button', { name: 'Sign & create corporation' }).click()
+
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toBeVisible({ timeout: 30_000 })
+  await expect(dialog).toContainText('did:web:new-corp.example')
+  await expect(dialog.getByText('Network fee').locator('..')).toContainText(/VNA/, { timeout: 30_000 })
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(dialog).toBeHidden()
+  expect(mock.seenMethods()).not.toContain('broadcast_tx_sync')
+  await mock.teardown()
 })
 
 test('a missing trust deposit renders the empty state', async ({ page }) => {
@@ -214,6 +251,35 @@ test('the proposal composer gates each kind on valid input', async ({ page }) =>
   await expect(submit).toBeDisabled()
   await page.getByLabel('DID', { exact: true }).fill('did:web:next.example')
   await expect(submit).toBeEnabled()
+})
+
+test('a vote opens the confirmation, cancel broadcasts nothing and confirm broadcasts once', async ({ page }) => {
+  await installCorporationStubs(page)
+  await seedActingCorporation(page, 13)
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubSri: false, stubCorporation: false })
+
+  await page.goto('/corporation?tab=proposals')
+  await expect(page.getByText('#41')).toBeVisible({ timeout: 15_000 })
+  await page.getByRole('button', { name: /#41/ }).click()
+  await page.getByRole('button', { name: 'Vote yes' }).click()
+
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toBeVisible()
+  await expect(dialog.getByText('Executes as')).toBeVisible()
+  await expect(dialog.getByText('Network fee')).toBeVisible()
+  await expect(dialog.getByText(/VNA/)).toBeVisible({ timeout: 30_000 })
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(dialog).toBeHidden()
+  expect(mock.seenMethods()).not.toContain('broadcast_tx_sync')
+
+  await page.getByRole('button', { name: 'Vote yes' }).click()
+  await expect(dialog.getByText(/VNA/)).toBeVisible({ timeout: 30_000 })
+  await dialog.getByRole('button', { name: 'Confirm' }).click()
+  await expect
+    .poll(() => mock.seenMethods().filter((method) => method === 'broadcast_tx_sync').length, { timeout: 30_000 })
+    .toBe(1)
+  await mock.teardown()
 })
 
 test('live updates: one subscription for each corporation, gap recovery and an indicator with no user action', async ({
