@@ -18,6 +18,7 @@ import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessa
 import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import { extractTxHeight } from '@/msg/util/signerUtil'
+import { rejectionNotice, txFailureNotice } from '@/msg/util/tx-outcome'
 import { findEventAttribute } from '@/msg/util/txEvents'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
@@ -206,14 +207,17 @@ export function useActionCorporation() {
     corporation: UserCorporation,
     operator: string,
     { msgs, fee }: TxConfirmResult
-  ): Promise<'granted' | 'pending'> {
+  ): Promise<'granted' | 'pending' | 'failed'> {
     void notify(translate('notification.MsgGrantSelfOperatorAuthorization.inprogress'), 'inProgress')
     const result = await sendTx({ msgs, fee, memo: 'MsgGrantSelfOperatorAuthorization' })
     if (!('code' in result)) throw new Error('Expected a transaction response')
-    if (result.code !== 0) {
-      throw new Error(
-        `${translate('notification.MsgGrantSelfOperatorAuthorization.error')} (${result.code}): ${result.rawLog}`
-      )
+    const failure = txFailureNotice(
+      result,
+      (code, rawLog) => `${translate('notification.MsgGrantSelfOperatorAuthorization.error')} (${code}): ${rawLog}`
+    )
+    if (failure) {
+      await notify(failure.message, 'error', failure.title)
+      return 'failed'
     }
 
     const height = txHeight(result)
@@ -299,7 +303,9 @@ export function useActionCorporation() {
       if (!confirmed) return 'failed'
       return await grantOperator(corporation, address, confirmed)
     } catch (error) {
-      await notify(error instanceof Error ? error.message : String(error), 'error')
+      const text = error instanceof Error ? error.message : String(error)
+      const notice = rejectionNotice(text, text)
+      await notify(notice.message, 'error', notice.title)
       return 'failed'
     } finally {
       inFlight.current = false

@@ -27,6 +27,7 @@ import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfter
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
 import { extractTxHeight } from '@/msg/util/signerUtil'
+import { proposalSubmittedMessage, rejectionNotice, txFailureNotice } from '@/msg/util/tx-outcome'
 import { findEventAttribute } from '@/msg/util/txEvents'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
@@ -194,8 +195,9 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
       )
       const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType, fee: resolved.fee })
       if (!isDeliverTxResponse(result)) throw new Error('Expected a transaction response')
-      if (result.code !== 0) {
-        await notify(errorMessage(result.code, result.rawLog), 'error', t('notification.msg.failed.title'))
+      const failure = txFailureNotice(result, errorMessage)
+      if (failure) {
+        await notify(failure.message, 'error', failure.title)
         return result
       }
 
@@ -207,7 +209,7 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
       const indexed = await waitForIndexerAfterTx(waitForBlock, txHeight)
       if (id) sessionStorage.setItem('id_updated', id)
       const notification = successfulTxNotification(
-        mode === 'proposal' ? MSG_NOTIFICATION_PROPOSAL.success() : MSG_SUCCESS_ACTION_CS[params.msgType](),
+        mode === 'proposal' ? proposalSubmittedMessage(result.events) : MSG_SUCCESS_ACTION_CS[params.msgType](),
         txHeight,
         indexed
       )
@@ -220,11 +222,9 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
       onCancel?.()
       return result
     } catch (error) {
-      await notify(
-        errorMessage(undefined, error instanceof Error ? error.message : String(error)),
-        'error',
-        t('notification.msg.failed.title')
-      )
+      const text = error instanceof Error ? error.message : String(error)
+      const notice = rejectionNotice(errorMessage(undefined, text), text)
+      await notify(notice.message, 'error', notice.title)
     } finally {
       inFlight.current = false
     }

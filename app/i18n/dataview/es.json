@@ -720,7 +720,6 @@
   "notification.MsgRepaySlashedTrustDeposit.success": "Depósito recortado reembolsado",
   "notification.MsgRepaySlashedTrustDeposit.error": "No se pudo reembolsar el depósito recortado.",
   "notification.MsgSubmitProposal.inprogress": "Enviando la propuesta…",
-  "notification.MsgSubmitProposal.success": "Propuesta enviada",
   "notification.MsgSubmitProposal.error": "No se pudo enviar la propuesta.",
   "notification.MsgVote.inprogress": "Emitiendo el voto…",
   "notification.MsgVote.success": "Voto emitido",
@@ -901,5 +900,17 @@
   "participantcard.feedistribution.failed": "No se pudo cargar la distribución de tarifas desde el indexador.",
   "pricing.unsupported.short": "Activo de precio aún no soportado",
   "pricing.unsupported.notice": "Activo de precio aún no soportado: este esquema se cotiza en {asset}. Las acciones con tarifas (iniciar o renovar un proceso de incorporación, autocrear, validar) permanecen deshabilitadas hasta que la consola soporte activos distintos de la moneda nativa (VNA). La consulta no se ve afectada.",
-  "pricing.unknown.short": "No se pudo leer el precio del esquema"
+  "pricing.unknown.short": "No se pudo leer el precio del esquema",
+  "corporation.capability.none": "Su billetera no tiene autorización para esta acción y no es miembro de la corporación activa.",
+  "corporation.capability.select": "Cree o seleccione una corporación antes de continuar.",
+  "notification.msg.unauthorized.title": "Autorización rechazada",
+  "notification.msg.unauthorized": "La cadena rechazó esta acción por falta de autorización: {reason}.",
+  "notification.proposal.failed.title": "Propuesta no ejecutada",
+  "notification.proposal.failed": "La propuesta {id} fue aceptada, pero su ejecución falló y ninguno de sus mensajes tuvo efecto: {reason}",
+  "notification.proposal.unauthorized": "La propuesta {id} fue aceptada, pero la cadena se negó a ejecutarla por falta de autorización: {reason}.",
+  "notification.MsgSubmitProposal.executed": "Propuesta enviada y ejecutada",
+  "notification.MsgSubmitProposal.pending": "Propuesta enviada. Se ejecuta cuando el grupo alcance su umbral de decisión.",
+  "txconfirm.simulation.unauthorized": "La cadena rechazó esta acción por falta de autorización: {reason}.",
+  "join.proposal.pending.title": "Propuesta enviada",
+  "join.proposal.pending.desc": "El participante se crea cuando el grupo de la corporación activa alcance su umbral de decisión y la propuesta se ejecute. Sígala en Propuestas, en la página Corporación."
 }
