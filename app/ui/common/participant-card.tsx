@@ -260,7 +260,12 @@ export default function ParticipantCard({
   const did = participant?.did ?? undefined
   const { data: enrichment } = useDidTrustEnrichment(did)
   const { participant: refreshedParticipant, refetch } = useParticipant(participantId)
-  const { participantHistory, refetch: refetchHistory } = useParticipantHistory(participantId)
+  const {
+    participantHistory,
+    refetch: refetchHistory,
+    hasNext: historyHasNext,
+    loadMore: loadMoreHistory,
+  } = useParticipantHistory(participantId)
   const {
     credentialSchema,
     loading: schemaLoading,

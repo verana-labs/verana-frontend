@@ -1,7 +1,7 @@
 'use client'
 
 import { faPlus } from '@fortawesome/free-solid-svg-icons'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import AddEcosystemPage from '@/ecosystems/add/add'
 import { ECOSYSTEMS_PAGE_SIZE } from '@/hooks/useEcosystems'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
