@@ -1,4 +1,5 @@
 import { faBoxArchive, faEdit } from '@fortawesome/free-solid-svg-icons'
+import { HolderOnboardingMode } from '@verana-labs/verana-types/codec/verana/cs/v1/types'
 import type { I18nValues } from '@/ui/dataview/types'
 import { Section, typeOf } from '@/ui/dataview/types'
 import { MSG_SCHEMA_ID } from '@/util/json_schema_util'
@@ -35,6 +36,22 @@ export const onboardingModeOptions = [
   { value: 1, label: t('dataview.cs.managementMode.OPEN') },
   { value: 2, label: t('dataview.cs.managementMode.ECOSYSTEM_ONBOARDING_PROCESS') },
   { value: 3, label: t('dataview.cs.managementMode.GRANTOR_ONBOARDING_PROCESS') },
+]
+
+export const holderOnboardingModeOptions = [
+  {
+    value: HolderOnboardingMode.HOLDER_ONBOARDING_MODE_ISSUER_ONBOARDING_PROCESS,
+    label: t('dataview.cs.managementMode.ISSUER_ONBOARDING_PROCESS'),
+  },
+  {
+    value: HolderOnboardingMode.HOLDER_ONBOARDING_MODE_PERMISSIONLESS,
+    label: t('dataview.cs.managementMode.PERMISSIONLESS'),
+  },
+]
+
+export const digestAlgorithmOptions = [
+  { value: 'sha384', label: 'sha384' },
+  { value: 'sha512', label: 'sha512' },
 ]
 
 export const credentialSchemaSections: Section<CredentialSchemaData>[] = [
@@ -192,6 +209,26 @@ export const credentialSchemaSections: Section<CredentialSchemaData>[] = [
         update: false,
         inputType: 'select',
         options: onboardingModeOptions,
+        show: 'create',
+      },
+      {
+        name: 'holderOnboardingMode',
+        label: t('dataview.cs.fields.holderOnboardingMode'),
+        type: 'data',
+        required: true,
+        update: false,
+        inputType: 'select',
+        options: holderOnboardingModeOptions,
+        show: 'create',
+      },
+      {
+        name: 'digestAlgorithm',
+        label: t('dataview.cs.fields.digestAlgorithm'),
+        type: 'data',
+        required: true,
+        update: false,
+        inputType: 'select',
+        options: digestAlgorithmOptions,
         show: 'create',
       },
       {

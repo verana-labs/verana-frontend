@@ -33,6 +33,7 @@ import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfter
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
 import { extractTxHeight } from '@/msg/util/signerUtil'
+import { proposalSubmittedMessage, rejectionNotice, txFailureNotice } from '@/msg/util/tx-outcome'
 import { findEventAttribute } from '@/msg/util/txEvents'
 import { usePendingTasksCtx } from '@/providers/api-rest-query-provider-context'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
@@ -310,10 +311,7 @@ export function useActionParticipant(onCancel?: () => void, onRefresh?: (id?: st
   const sendTx = useSendTxDetectingMode(veranaChain)
   const inFlight = useRef(false)
 
-  return async (
-    params: ParticipantActionParams,
-    simulate = false
-  ): Promise<DeliverTxResponse | SimulateResult | undefined> => {
+  return async (params: ParticipantActionParams): Promise<DeliverTxResponse | undefined> => {
     if (!isWalletConnected || !address) {
       await notify(t('notification.msg.connectwallet'), 'error')
       return
@@ -340,16 +338,10 @@ export function useActionParticipant(onCancel?: () => void, onRefresh?: (id?: st
         build: (corporation, operator) => buildParticipantMessage(params, { corporation, operator }),
         effect,
         proposalTitle: proposalTitleFrom(effect),
-        simulate,
         costLines: subject ? trustCostLines(subject, rates) : undefined,
       })
       if (!resolved) return
       mode = resolved.mode
-      if (simulate) {
-        const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType, simulate })
-        if (isDeliverTxResponse(result)) throw new Error('Expected a simulation result')
-        return result
-      }
       void notify(
         mode === 'proposal'
           ? MSG_NOTIFICATION_PROPOSAL.inprogress()
@@ -357,10 +349,11 @@ export function useActionParticipant(onCancel?: () => void, onRefresh?: (id?: st
         'inProgress',
         t('notification.msg.inprogress.title')
       )
-      const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType })
+      const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType, fee: resolved.fee })
       if (!isDeliverTxResponse(result)) throw new Error('Expected a transaction response')
-      if (result.code !== 0) {
-        await notify(errorMessage(result.code, result.rawLog), 'error', t('notification.msg.failed.title'))
+      const failure = txFailureNotice(result, errorMessage)
+      if (failure) {
+        await notify(failure.message, 'error', failure.title)
         return result
       }
 
@@ -378,7 +371,9 @@ export function useActionParticipant(onCancel?: () => void, onRefresh?: (id?: st
         runAfterIndexerCatchesUp(waitForBlock, txHeight, refresh)
       }
       const notification = successfulTxNotification(
-        mode === 'proposal' ? MSG_NOTIFICATION_PROPOSAL.success() : MSG_SUCCESS_ACTION_PARTICIPANT[params.msgType](id),
+        mode === 'proposal'
+          ? proposalSubmittedMessage(result.events)
+          : MSG_SUCCESS_ACTION_PARTICIPANT[params.msgType](id),
         txHeight,
         indexed
       )
@@ -386,12 +381,9 @@ export function useActionParticipant(onCancel?: () => void, onRefresh?: (id?: st
       onCancel?.()
       return result
     } catch (error) {
-      if (simulate) return
-      await notify(
-        errorMessage(undefined, error instanceof Error ? error.message : String(error)),
-        'error',
-        t('notification.msg.failed.title')
-      )
+      const text = error instanceof Error ? error.message : String(error)
+      const notice = rejectionNotice(errorMessage(undefined, text), text)
+      await notify(notice.message, 'error', notice.title)
     } finally {
       inFlight.current = false
     }

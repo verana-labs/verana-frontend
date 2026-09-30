@@ -174,6 +174,7 @@ export default function ParticipantsPage() {
       schemaStatus={credentialSchema?.archived ? 'ARCHIVED' : 'ACTIVE'}
       issuerOnboardingMode={credentialSchema?.issuerOnboardingMode}
       verifierOnboardingMode={credentialSchema?.verifierOnboardingMode}
+      holderOnboardingMode={credentialSchema?.holderOnboardingMode ?? undefined}
       ecosystemTitle={ecosystem?.did ?? ''}
       schemaId={credentialSchema?.id != null ? String(credentialSchema.id) : undefined}
       ecosystemId={ecosystemId || undefined}

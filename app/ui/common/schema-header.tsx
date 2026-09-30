@@ -14,6 +14,7 @@ export type SchemaHeaderProps = {
   status?: SchemaStatus
   issuerOnboardingMode?: string | number
   verifierOnboardingMode?: string | number
+  holderOnboardingMode?: string | number
   action?: ReactNode
 }
 
@@ -57,6 +58,7 @@ export default function SchemaHeader({
   status,
   issuerOnboardingMode,
   verifierOnboardingMode,
+  holderOnboardingMode,
   action,
 }: SchemaHeaderProps) {
   return (
@@ -102,6 +104,14 @@ export default function SchemaHeader({
                   'Verifier Onboarding Mode'
                 }
                 suffix="_VERIFIER"
+              />
+              <OnboardingModeRow
+                value={holderOnboardingMode}
+                label={
+                  resolveTranslatable({ key: 'dataview.cs.fields.holderOnboardingMode' }, translate) ??
+                  'Holder Onboarding Mode'
+                }
+                suffix="_HOLDER"
               />
             </div>
           </div>
