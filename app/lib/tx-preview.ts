@@ -57,7 +57,12 @@ export function msgShortName(typeUrl: string): string {
 export function txSeverity(typeUrl: string): TxSeverity | null {
   const name = msgShortName(typeUrl)
   if (/^Msg(Revoke|Slash)/.test(name)) return 'irreversible'
-  if (typeUrl === '/verana.co.v1.MsgUpdateCorporation' || name.startsWith('MsgArchive')) return 'notice'
+  if (
+    typeUrl === '/verana.co.v1.MsgUpdateCorporation' ||
+    typeUrl === '/verana.cs.v1.MsgCreateCredentialSchema' ||
+    name.startsWith('MsgArchive')
+  )
+    return 'notice'
   return null
 }
 

@@ -9,7 +9,6 @@ import {
   MsgCreateCredentialSchema,
   MsgUpdateCredentialSchema,
 } from '@verana-labs/verana-types/codec/verana/cs/v1/tx'
-import { HolderOnboardingMode } from '@verana-labs/verana-types/codec/verana/cs/v1/types'
 import { useRef } from 'react'
 import { useDelegableMsgs } from '@/hooks/useDelegableMsgs'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
@@ -35,9 +34,6 @@ import { useProtocolParams } from '@/providers/protocol-params-context'
 import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 import { normalizeJsonSchema, validateJSONSchemaReturn } from '@/util/json_schema_util'
 
-const DEFAULT_HOLDER_ONBOARDING_MODE = HolderOnboardingMode.HOLDER_ONBOARDING_MODE_PERMISSIONLESS
-const DEFAULT_DIGEST_ALGORITHM = 'sha384'
-
 type CredentialSchemaContext = {
   corporation: string
   operator: string
@@ -58,6 +54,8 @@ export type CredentialSchemaActionParams =
       jsonSchema: string
       issuerOnboardingMode: number
       verifierOnboardingMode: number
+      holderOnboardingMode: number
+      digestAlgorithm: string
     } & CredentialSchemaPeriods)
   | ({
       msgType: 'MsgUpdateCredentialSchema'
@@ -88,10 +86,10 @@ export function buildCredentialSchemaMessage(
           holderValidationValidityPeriod: pickOptionalUInt32(params.holderValidationValidityPeriod),
           issuerOnboardingMode: params.issuerOnboardingMode,
           verifierOnboardingMode: params.verifierOnboardingMode,
-          holderOnboardingMode: DEFAULT_HOLDER_ONBOARDING_MODE,
+          holderOnboardingMode: params.holderOnboardingMode,
           pricingAssetType: NATIVE_PRICING.pricingAssetType,
           pricingAsset: NATIVE_PRICING.pricingAsset,
-          digestAlgorithm: DEFAULT_DIGEST_ALGORITHM,
+          digestAlgorithm: params.digestAlgorithm,
         }),
       }
     case 'MsgUpdateCredentialSchema':

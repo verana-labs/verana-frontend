@@ -31,6 +31,7 @@ type ParticipantTreeProps = {
   schemaStatus?: SchemaStatus
   issuerOnboardingMode?: string | number
   verifierOnboardingMode?: string | number
+  holderOnboardingMode?: string | number
   ecosystemTitle?: string
   ecosystemId?: string
   unsupportedPricing?: SchemaPricing
@@ -177,6 +178,7 @@ export default function ParticipantTree({
   schemaStatus,
   issuerOnboardingMode,
   verifierOnboardingMode,
+  holderOnboardingMode,
   ecosystemTitle,
   schemaId,
   ecosystemId,
@@ -326,6 +328,7 @@ export default function ParticipantTree({
           status={schemaStatus}
           issuerOnboardingMode={issuerOnboardingMode}
           verifierOnboardingMode={verifierOnboardingMode}
+          holderOnboardingMode={holderOnboardingMode}
         />
       ) : null}
       {unsupportedPricing ? <PricingNotice schema={unsupportedPricing} className="mb-6" /> : null}
