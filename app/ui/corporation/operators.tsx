@@ -230,9 +230,9 @@ export function DelegationDetail({
     ['delegation.remainingSpend', formatCoins(record.remainingSpend)],
     ['delegation.feeSpendLimit', record.withFeegrant ? formatCoins(record.feeSpendLimit) : translate('common.none')],
     ['delegation.withFeegrant', translate(record.withFeegrant ? 'common.yes' : 'common.no')],
-    ['delegation.expiration', formatDate(record.expiration)],
     ['delegation.period', record.period ?? translate('common.none')],
   ]
+  if (record.period) facts.push(['delegation.cycleEnd', formatDate(record.expiration)])
   return (
     <div className="space-y-3 text-sm">
       {showOperator ? (

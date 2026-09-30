@@ -840,7 +840,7 @@
   "delegation.remainingSpend": "Remaining spend",
   "delegation.feeSpendLimit": "Fee spend limit",
   "delegation.withFeegrant": "Fee grant",
-  "delegation.expiration": "Expiration",
+  "delegation.cycleEnd": "Spend cycle ends",
   "delegation.period": "Period",
   "delegation.participant": "Open participant card",
   "delegation.unlimited": "Unlimited",
