@@ -124,15 +124,20 @@ export function indexerEventKey(event: IndexerEvent): string {
 export function refreshTargets(event: IndexerEvent): IndexerRefreshTarget[] {
   switch (event.module) {
     case 'participant':
+    case 'pp':
       return ['attention', 'participants']
     case 'delegation':
+    case 'de':
     case 'group':
       return ['attention', 'corporationDetails']
     case 'ecosystem':
+    case 'ec':
       return ['ecosystems']
     case 'credential-schema':
+    case 'cs':
       return ['credentialSchemas']
     case 'corporation':
+    case 'co':
       return ['dashboard']
     default:
       return []
@@ -140,7 +145,7 @@ export function refreshTargets(event: IndexerEvent): IndexerRefreshTarget[] {
 }
 
 export function triggersDiscovery(event: IndexerEvent, account: string): boolean {
-  if (event.module === 'delegation') {
+  if (event.module === 'delegation' || event.module === 'de') {
     return (
       (event.eventType === 'GrantOperatorAuthorization' || event.eventType === 'RevokeOperatorAuthorization') &&
       (event.grantee === account || event.sender === account)

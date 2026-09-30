@@ -51,7 +51,7 @@ function rawEvent(txHash: string, blockHeight: number, messageIndex = 0) {
     tx_hash: txHash,
     timestamp: BLOCK_TIME,
     payload: {
-      module: 'participant',
+      module: 'pp',
       action: 'start_participant_op',
       message_type: 'MsgStartParticipantOP',
       tx_index: 0,
@@ -65,7 +65,7 @@ function rawEvent(txHash: string, blockHeight: number, messageIndex = 0) {
 function storedEvent(txHash: string, blockHeight: number, messageIndex = 0): IndexerEvent {
   return {
     eventType: 'StartParticipantOP',
-    module: 'participant',
+    module: 'pp',
     did: null,
     blockHeight,
     txHash,

@@ -252,7 +252,7 @@ export function indexerParticipantEvent(txHash: string, blockHeight: number, cor
     tx_hash: txHash,
     timestamp: SOCKET_BLOCK_TIME,
     payload: {
-      module: 'participant',
+      module: 'pp',
       action: 'start_participant_op',
       message_type: 'MsgStartParticipantOP',
       tx_index: 0,

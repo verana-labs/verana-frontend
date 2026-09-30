@@ -23,7 +23,7 @@ const participantEvent = {
   tx_hash: 'AB12',
   timestamp: '2026-07-18T07:00:00Z',
   payload: {
-    module: 'participant',
+    module: 'pp',
     action: 'start_participant_op',
     message_type: 'MsgStartParticipantOP',
     tx_index: 3,
@@ -43,7 +43,7 @@ const malformedEvent = {
 function event(overrides: Partial<IndexerEvent>): IndexerEvent {
   return {
     eventType: 'StartParticipantOP',
-    module: 'participant',
+    module: 'pp',
     did: 'did:web:participant.example',
     blockHeight: 102,
     txHash: 'AB12',
@@ -91,7 +91,7 @@ describe('parseIndexerSocketMessage', () => {
       events: [
         {
           eventType: 'StartParticipantOP',
-          module: 'participant',
+          module: 'pp',
           did: 'did:web:participant.example',
           blockHeight: 102,
           txHash: 'AB12',
@@ -156,9 +156,16 @@ describe('indexerEventsUrl', () => {
 })
 
 describe('refreshTargets', () => {
+  // The indexer sends the abbreviated module; the long spellings are accepted too.
   it.each([
-    ['participant', ['attention', 'participants']],
+    ['pp', ['attention', 'participants']],
     ['group', ['attention', 'corporationDetails']],
+    ['de', ['attention', 'corporationDetails']],
+    ['ec', ['ecosystems']],
+    ['cs', ['credentialSchemas']],
+    ['co', ['dashboard']],
+    ['di', []],
+    ['participant', ['attention', 'participants']],
     ['delegation', ['attention', 'corporationDetails']],
     ['ecosystem', ['ecosystems']],
     ['credential-schema', ['credentialSchemas']],
@@ -173,6 +180,12 @@ describe('triggersDiscovery', () => {
   it('re-runs discovery for an operator grant of the connected account', () => {
     expect(
       triggersDiscovery(
+        event({ module: 'de', eventType: 'GrantOperatorAuthorization', grantee: 'verana1me' }),
+        'verana1me'
+      )
+    ).toBe(true)
+    expect(
+      triggersDiscovery(
         event({ module: 'delegation', eventType: 'GrantOperatorAuthorization', grantee: 'verana1me' }),
         'verana1me'
       )
@@ -182,7 +195,7 @@ describe('triggersDiscovery', () => {
   it('ignores an operator grant of another account', () => {
     expect(
       triggersDiscovery(
-        event({ module: 'delegation', eventType: 'GrantOperatorAuthorization', grantee: 'verana1other' }),
+        event({ module: 'de', eventType: 'GrantOperatorAuthorization', grantee: 'verana1other' }),
         'verana1me'
       )
     ).toBe(false)

@@ -3,8 +3,10 @@ import { connectWallet } from './support/connect'
 import { GRANTEE, REPLACEMENT_MEMBER } from './support/corp-fixtures'
 import {
   HARNESS_MNEMONIC,
+  indexerParticipantEvent,
   installCorporationStubs,
   installEcosystemStubs,
+  installIndexerSocket,
   seedActingCorporation,
 } from './support/corp-stubs'
 import { installMockChain } from './support/mock-chain'
