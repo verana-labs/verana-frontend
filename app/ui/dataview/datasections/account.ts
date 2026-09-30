@@ -93,7 +93,7 @@ export const accountSections: Section<AccountData>[] = [
           createElement(
             Fragment,
             null,
-            createElement('div', { className: 'relative w-2 h-2 bg-success-500 rounded-full pulse-dot' }),
+            createElement('span', { className: 'relative w-2 h-2 bg-success-500 rounded-full pulse-dot' }),
             createElement(
               'span',
               { className: 'text-sm text-success-700 dark:text-success-300 font-medium' },
