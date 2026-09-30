@@ -244,6 +244,44 @@ describe('the recovery of a gap', () => {
   })
 })
 
+describe('a superseded catch-up', () => {
+  it('does not recover the stream that replaced it', async () => {
+    const harness = createHarness()
+    let rejectStale: (error: Error) => void = () => {}
+    harness.fetchEvents.mockImplementationOnce(
+      () => new Promise<IndexerEvent[]>((_resolve, reject) => (rejectStale = reject))
+    )
+    harness.subscriptions.setCorporations([7])
+
+    const stale = harness.sockets[0]
+    stale.accept()
+    stale.emit({ type: 'ready', block: 101, blockTime: BLOCK_TIME, blockIntervalMs: BLOCK_INTERVAL_MS })
+    stale.emit({ type: 'subscribed', block: 101, blockTime: BLOCK_TIME })
+    await flush()
+
+    // A dropped socket supersedes the pending catch-up and opens a new one.
+    stale.drop()
+    await vi.advanceTimersByTimeAsync(500)
+    expect(harness.sockets).toHaveLength(2)
+
+    const healthy = harness.sockets[1]
+    healthy.accept()
+    healthy.emit({ type: 'ready', block: 101, blockTime: BLOCK_TIME, blockIntervalMs: BLOCK_INTERVAL_MS })
+    healthy.emit({ type: 'subscribed', block: 101, blockTime: BLOCK_TIME })
+    await flush()
+
+    rejectStale(new Error('indexer down'))
+    await flush()
+
+    expect(healthy.closed).toBe(false)
+    expect(harness.sockets).toHaveLength(2)
+
+    // The replacement still delivers, so nothing tore it down.
+    healthy.emit({ type: 'block', block: 101, blockTime: BLOCK_TIME, events: [rawEvent('LIVE', 101)] })
+    expect(harness.batches.at(-1)).toEqual({ corporationId: 7, txHashes: ['LIVE'] })
+  })
+})
+
 describe('the reconnection backoff', () => {
   it.each([
     [() => 0, 500],

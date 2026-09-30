@@ -179,6 +179,7 @@ export function createIndexerSubscriptions(options: IndexerSubscriptionsOptions)
         after = highest
       }
     } catch (error) {
+      if (generation !== stream.generation) return
       logger.error('Indexer catch-up failed', { corporationId, error })
       recover(stream, 'catch-up')
       return
