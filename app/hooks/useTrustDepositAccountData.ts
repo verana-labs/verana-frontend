@@ -11,22 +11,15 @@ import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 export type TrustDepositAccountData = {
   balance: string | null
   totalTrustDeposit: string | null
-  claimableInterests: string | null
-  reclaimable: string | null
   message: string | null
   network: string | null
   slashCount: number | null
 }
 
-type ParsedTrustDeposit = Pick<
-  TrustDepositAccountData,
-  'totalTrustDeposit' | 'claimableInterests' | 'reclaimable' | 'slashCount'
->
+type ParsedTrustDeposit = Pick<TrustDepositAccountData, 'totalTrustDeposit' | 'slashCount'>
 
 const ZERO_TRUST_DEPOSIT: ParsedTrustDeposit = {
   totalTrustDeposit: '0',
-  claimableInterests: '0',
-  reclaimable: '0',
   slashCount: 0,
 }
 
@@ -38,7 +31,7 @@ export function parseTrustDepositResponse(payload: unknown): ParsedTrustDeposit 
   integer(trustDeposit.corporation_id, 'trust_deposit.corporation_id')
   const deposit = integer(trustDeposit.deposit, 'trust_deposit.deposit')
   scaledShare(trustDeposit.share, 'trust_deposit.share')
-  const claimable = integer(trustDeposit.claimable, 'trust_deposit.claimable')
+  integer(trustDeposit.claimable, 'trust_deposit.claimable')
   integer(trustDeposit.slashed_deposit, 'trust_deposit.slashed_deposit')
   integer(trustDeposit.repaid_deposit, 'trust_deposit.repaid_deposit')
   nullableTimestamp(trustDeposit.last_slashed, 'trust_deposit.last_slashed')
@@ -46,8 +39,6 @@ export function parseTrustDepositResponse(payload: unknown): ParsedTrustDeposit 
   const slashCount = integer(trustDeposit.slash_count, 'trust_deposit.slash_count')
   return {
     totalTrustDeposit: String(deposit),
-    claimableInterests: String(claimable),
-    reclaimable: String(claimable),
     slashCount,
   }
 }
@@ -59,8 +50,6 @@ export function trustDepositAccountUrl(endpoint: string, corporationId: number):
 const EMPTY_ACCOUNT_DATA: TrustDepositAccountData = {
   balance: null,
   totalTrustDeposit: null,
-  claimableInterests: null,
-  reclaimable: null,
   message: null,
   network: null,
   slashCount: null,
