@@ -3,6 +3,7 @@ const ROUTES = [
   '/dashboard',
   '/account',
   '/corporation',
+  '/agents',
   '/ecosystems',
   '/ecosystems/13',
   '/credential-schemas/26',
