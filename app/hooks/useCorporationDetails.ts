@@ -9,7 +9,7 @@ import {
   VERANA_REST_ENDPOINT_TRUST_DEPOSIT,
 } from '@/config/env'
 import { parseParticipantsResponse } from '@/hooks/useParticipants'
-import { concernsCorporation, type IndexerEntityEvent } from '@/lib/indexer-event'
+import { type IndexerEntityEvent, refreshesEntityLists } from '@/lib/indexer-event'
 import { degrade, fetchJson, indexerValidators } from '@/lib/indexer-json'
 import { logger } from '@/lib/logger'
 import type { Participant } from '@/ui/dataview/datasections/participant'
@@ -438,10 +438,7 @@ export function useCorporationDetails(corporationId: number | undefined) {
       for (const participant of current.participantsById.values()) {
         if (participant.did) knownDids.add(participant.did)
       }
-      const relevant = events.some(
-        (event) =>
-          (event.module === 'pp' || event.module === 'de') && concernsCorporation(event, corporationId, knownDids)
-      )
+      const relevant = events.some((event) => refreshesEntityLists(event, corporationId, knownDids))
       if (relevant) void load()
     },
     [corporationId, load]

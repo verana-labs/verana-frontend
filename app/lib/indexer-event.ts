@@ -67,3 +67,18 @@ export function concernsCorporation(event: IndexerEntityEvent, corporationId: nu
   if (event.did !== null && knownDids.has(event.did)) return true
   return event.relatedDids.some((did) => knownDids.has(did))
 }
+
+export const SESSION_EVENT = 'CreateOrUpdateParticipantSession'
+const RESOLVER_EVENT = 'TriggerResolver'
+const LIST_NEUTRAL_EVENTS = new Set([SESSION_EVENT, RESOLVER_EVENT])
+const ENTITY_LIST_MODULES = new Set(['pp', 'de'])
+
+export function refreshesEntityLists(
+  event: IndexerEntityEvent,
+  corporationId: number,
+  knownDids: Set<string>
+): boolean {
+  if (LIST_NEUTRAL_EVENTS.has(event.eventType)) return false
+  if (!ENTITY_LIST_MODULES.has(event.module)) return false
+  return concernsCorporation(event, corporationId, knownDids)
+}

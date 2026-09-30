@@ -4,9 +4,20 @@ import {
   type IndexerEntityEvent,
   parseIndexerBlockEvent,
   parseIndexerBlockHeight,
+  refreshesEntityLists,
 } from '@/lib/indexer-event'
 
 const AGENT_DID = 'did:web:agent.example'
+const known = new Set([AGENT_DID])
+const event = (overrides: Partial<IndexerEntityEvent>): IndexerEntityEvent => ({
+  eventType: 'StartParticipantOP',
+  module: 'pp',
+  did: null,
+  relatedDids: [],
+  corporationId: null,
+  relatedCorporationIds: [],
+  ...overrides,
+})
 
 describe('parseIndexerBlockEvent', () => {
   it.each(['ready', 'block'])('accepts live %s messages', (type) => {
@@ -61,17 +72,6 @@ describe('parseIndexerBlockEvent', () => {
 })
 
 describe('concernsCorporation', () => {
-  const known = new Set([AGENT_DID])
-  const event = (overrides: Partial<IndexerEntityEvent>): IndexerEntityEvent => ({
-    eventType: 'StartParticipantOP',
-    module: 'pp',
-    did: null,
-    relatedDids: [],
-    corporationId: null,
-    relatedCorporationIds: [],
-    ...overrides,
-  })
-
   it('matches on the Corporation ids of the payload', () => {
     expect(concernsCorporation(event({ corporationId: 42 }), 42, known)).toBe(true)
     expect(concernsCorporation(event({ relatedCorporationIds: [9, 42] }), 42, known)).toBe(true)
@@ -85,6 +85,17 @@ describe('concernsCorporation', () => {
     expect(concernsCorporation(event({ did: AGENT_DID }), 42, known)).toBe(true)
     expect(concernsCorporation(event({ relatedDids: [AGENT_DID] }), 42, known)).toBe(true)
     expect(concernsCorporation(event({ did: 'did:web:other.example' }), 42, known)).toBe(false)
+  })
+})
+
+describe('refreshesEntityLists', () => {
+  it('skips the session and resolver events of the acting Corporation', () => {
+    const session = event({ eventType: 'CreateOrUpdateParticipantSession', corporationId: 42 })
+    const resolver = event({ eventType: 'TriggerResolver', corporationId: 42 })
+
+    expect(refreshesEntityLists(session, 42, known)).toBe(false)
+    expect(refreshesEntityLists(resolver, 42, known)).toBe(false)
+    expect(refreshesEntityLists(event({ corporationId: 42 }), 42, known)).toBe(true)
   })
 })
 

@@ -9,7 +9,7 @@ import {
 } from '@/hooks/useCorporationDetails'
 import { parseEcosystemsResponse } from '@/hooks/useEcosystems'
 import { parseParticipantsResponse } from '@/hooks/useParticipants'
-import { concernsCorporation, type IndexerEntityEvent } from '@/lib/indexer-event'
+import { type IndexerEntityEvent, refreshesEntityLists, SESSION_EVENT } from '@/lib/indexer-event'
 import { degrade, fetchJson } from '@/lib/indexer-json'
 import { logger } from '@/lib/logger'
 import {
@@ -42,10 +42,6 @@ interface AgentSources {
 }
 
 const ACTIVE_ONLY: readonly ParticipationState[] = ['ACTIVE']
-const REFRESH_MODULES = new Set(['pp', 'de'])
-const SESSION_EVENT = 'CreateOrUpdateParticipantSession'
-const RESOLVER_EVENT = 'TriggerResolver'
-const LIST_NEUTRAL_EVENTS = new Set([SESSION_EVENT, RESOLVER_EVENT])
 
 // Per [VFE-PAGE-AGENTS-1] agents come from Participant DIDs only; VSOA entries never add an agent.
 // Per [VFE-PAGE-AGENTS-1a] the Corporation DID and the controlled Ecosystem DIDs stay pinned first, as one card each.
@@ -76,13 +72,7 @@ export function agentRefreshNeeded(
         if (did && knownDids.has(did)) dids.add(did)
       }
     }
-    if (
-      !LIST_NEUTRAL_EVENTS.has(event.eventType) &&
-      REFRESH_MODULES.has(event.module) &&
-      concernsCorporation(event, corporationId, knownDids)
-    ) {
-      lists = true
-    }
+    if (refreshesEntityLists(event, corporationId, knownDids)) lists = true
   }
   return { lists, dids: [...dids] }
 }
