@@ -839,7 +839,6 @@
   "delegation.spendLimit": "Límite de gasto",
   "delegation.remainingSpend": "Gasto restante",
   "delegation.feeSpendLimit": "Límite de gasto en fees",
-  "delegation.remainingFeeSpend": "Gasto en fees restante",
   "delegation.withFeegrant": "Fee grant",
   "delegation.expiration": "Expiración",
   "delegation.period": "Periodo",

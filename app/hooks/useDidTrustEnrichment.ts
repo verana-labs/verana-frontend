@@ -20,7 +20,7 @@ const INITIAL: State = { data: null, loading: false, error: null }
 
 export function useDidTrustEnrichment(did: string | undefined): UseDidTrustEnrichmentResult {
   const [state, setState] = useState<State>(INITIAL)
-  const [reloadToken, setReloadToken] = useState(0)
+  const [_reloadToken, setReloadToken] = useState(0)
 
   useEffect(() => {
     if (!did) {
@@ -45,7 +45,7 @@ export function useDidTrustEnrichment(did: string | undefined): UseDidTrustEnric
     return () => {
       cancelled = true
     }
-  }, [did, reloadToken])
+  }, [did])
 
   const refetch = useCallback(() => {
     if (did) invalidateDid(did)

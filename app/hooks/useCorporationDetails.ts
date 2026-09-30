@@ -66,7 +66,6 @@ export interface VsOperatorAuthorizationRow {
   spendLimit: CoinAmount[] | null
   remainingSpend: CoinAmount[] | null
   feeSpendLimit: CoinAmount[] | null
-  remainingFeeSpend: CoinAmount[] | null
   withFeegrant: boolean
   expiration: string | null
   period: string | null
@@ -217,7 +216,6 @@ export function parseVsOperatorAuthorizations(payload: unknown): VsOperatorAutho
         spendLimit: coinAmounts(authorization.spend_limit, `${recordPath}.spend_limit`),
         remainingSpend: coinAmounts(authorization.remaining_spend, `${recordPath}.remaining_spend`),
         feeSpendLimit: coinAmounts(authorization.fee_spend_limit, `${recordPath}.fee_spend_limit`),
-        remainingFeeSpend: coinAmounts(authorization.remaining_fee_spend, `${recordPath}.remaining_fee_spend`),
         withFeegrant: authorization.with_feegrant === true,
         expiration: nullableString(authorization.expiration ?? null, `${recordPath}.expiration`),
         period: nullableString(authorization.period ?? null, `${recordPath}.period`),

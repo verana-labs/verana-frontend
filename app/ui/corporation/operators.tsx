@@ -229,7 +229,6 @@ export function DelegationDetail({
     ['delegation.spendLimit', formatCoins(record.spendLimit)],
     ['delegation.remainingSpend', formatCoins(record.remainingSpend)],
     ['delegation.feeSpendLimit', formatCoins(record.feeSpendLimit)],
-    ['delegation.remainingFeeSpend', formatCoins(record.remainingFeeSpend)],
     ['delegation.withFeegrant', translate(record.withFeegrant ? 'common.yes' : 'common.no')],
     ['delegation.expiration', formatDate(record.expiration)],
     ['delegation.period', record.period ?? translate('common.none')],

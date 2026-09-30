@@ -61,15 +61,13 @@ export default function TitleAndButton({
             )}
 
             {/* Help Section (if present) */}
-            {description && Array.isArray(description) && (
-              <>
-                {description.map((d, idx) => (
-                  <p key={idx} className="page-description">
-                    {d}
-                  </p>
-                ))}
-              </>
-            )}
+            {description &&
+              Array.isArray(description) &&
+              description.map((d, idx) => (
+                <p key={idx} className="page-description">
+                  {d}
+                </p>
+              ))}
           </div>
           {}
           {!backLink && (
