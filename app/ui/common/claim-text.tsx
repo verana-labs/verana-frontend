@@ -36,11 +36,21 @@ export default function ClaimText({ text, format, className, title }: ClaimTextP
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          a: ({ children, href }) => (
-            <a href={href} target="_blank" rel="noopener noreferrer" className="underline">
-              {children}
-            </a>
-          ),
+          a: ({ children, href }) =>
+            // An unsafe href is blanked by the default urlTransform: render the text, not a dead link.
+            href ? (
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="underline"
+              >
+                {children}
+              </a>
+            ) : (
+              children
+            ),
           img: ({ alt }) => (alt ? <span>{alt}</span> : null),
         }}
       >
