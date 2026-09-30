@@ -157,6 +157,7 @@ export function createIndexerSubscriptions(options: IndexerSubscriptionsOptions)
       }
       applyEnvelope(stream, envelope)
     }
+    stream.attempts = 0
     armLiveness(stream)
   }
 
@@ -201,7 +202,6 @@ export function createIndexerSubscriptions(options: IndexerSubscriptionsOptions)
 
     if (message.type === 'ready') {
       if (message.blockIntervalMs) blockIntervalMs = message.blockIntervalMs
-      stream.attempts = 0
       // A first stream starts from the height of the connection, so the catch-up stays short.
       if (stream.lastSeenBlock === 0) stream.lastSeenBlock = message.processedHeight
       options.onProcessedBlock(message.processedHeight, message.blockTime)

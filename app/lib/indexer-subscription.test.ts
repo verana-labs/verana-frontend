@@ -260,6 +260,51 @@ describe('the reconnection backoff', () => {
     await vi.advanceTimersByTimeAsync(1)
     expect(harness.sockets).toHaveLength(2)
   })
+
+  it('grows the delay while the catch-up keeps failing', async () => {
+    const harness = createHarness(() => 1)
+    harness.fetchEvents.mockRejectedValue(new Error('indexer down'))
+    harness.subscriptions.setCorporations([7])
+
+    // A socket that opens and acknowledges, then fails its catch-up, has not established anything.
+    for (const [attempt, delay] of [1000, 2000, 4000, 8000, 10_000, 10_000].entries()) {
+      const socket = harness.sockets[attempt]
+      socket.accept()
+      socket.emit({ type: 'ready', block: 101, blockTime: BLOCK_TIME, blockIntervalMs: BLOCK_INTERVAL_MS })
+      socket.emit({ type: 'subscribed', block: 101, blockTime: BLOCK_TIME })
+      await flush()
+
+      await vi.advanceTimersByTimeAsync(delay - 1)
+      expect(harness.sockets).toHaveLength(attempt + 1)
+      await vi.advanceTimersByTimeAsync(1)
+      expect(harness.sockets).toHaveLength(attempt + 2)
+    }
+  })
+
+  it('starts from the shortest delay again once a stream established', async () => {
+    const harness = createHarness(() => 1)
+    harness.fetchEvents.mockRejectedValue(new Error('indexer down'))
+    harness.subscriptions.setCorporations([7])
+
+    harness.sockets[0].accept()
+    harness.sockets[0].emit({ type: 'ready', block: 101, blockTime: BLOCK_TIME, blockIntervalMs: BLOCK_INTERVAL_MS })
+    harness.sockets[0].emit({ type: 'subscribed', block: 101, blockTime: BLOCK_TIME })
+    await flush()
+    await vi.advanceTimersByTimeAsync(1000)
+
+    harness.fetchEvents.mockResolvedValue([])
+    const recovered = harness.sockets[1]
+    recovered.accept()
+    recovered.emit({ type: 'ready', block: 101, blockTime: BLOCK_TIME, blockIntervalMs: BLOCK_INTERVAL_MS })
+    recovered.emit({ type: 'subscribed', block: 101, blockTime: BLOCK_TIME })
+    await flush()
+
+    recovered.drop()
+    await vi.advanceTimersByTimeAsync(999)
+    expect(harness.sockets).toHaveLength(2)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(harness.sockets).toHaveLength(3)
+  })
 })
 
 describe('setCorporations', () => {
