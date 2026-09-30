@@ -29,7 +29,7 @@ import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfter
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
 import { extractTxHeight } from '@/msg/util/signerUtil'
-import { proposalSubmittedMessage, rejectionNotice, txFailureNotice } from '@/msg/util/tx-outcome'
+import { proposalExecution, proposalSubmittedMessage, rejectionNotice, txFailureNotice } from '@/msg/util/tx-outcome'
 import { findEventAttribute } from '@/msg/util/txEvents'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
@@ -241,7 +241,9 @@ export function useActionEcosystem(onCancel?: () => void, onRefresh?: (id?: stri
         return result
       }
 
-      const created = params.msgType === 'MsgCreateEcosystem' && mode === 'operator'
+      const created =
+        params.msgType === 'MsgCreateEcosystem' &&
+        (mode === 'operator' || proposalExecution(result.events).status === 'executed')
       if (created) {
         id = findEventAttribute(result.events, 'create_ecosystem', 'ecosystem_id')
         if (!id) throw new Error('Create ecosystem transaction did not emit an ecosystem ID')
