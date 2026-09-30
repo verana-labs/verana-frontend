@@ -167,6 +167,53 @@ test('the creation wizard gates each step and confirms the built message before 
   await mock.teardown()
 })
 
+test('a confirmed creation continues to the operator grant step', async ({ page }) => {
+  await installCorporationStubs(page, { fresh: true })
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubCorporation: false })
+  await page.goto('/corporation')
+
+  await page.getByLabel('Corporation DID').fill('did:web:new-corp.example')
+  await page.getByLabel('CGF document URL').fill('https://example.com/cgf.pdf')
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('button', { name: 'Sign & create corporation' }).click()
+
+  const dialog = page.getByRole('dialog')
+  await expect(dialog.getByText('Network fee').locator('..')).toContainText(/VNA/, { timeout: 30_000 })
+  await dialog.getByRole('button', { name: 'Confirm' }).click()
+  await expect.poll(() => mock.broadcastTxs().length, { timeout: 30_000 }).toBeGreaterThan(0)
+
+  await expect(page.getByText('Corporation created:')).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByRole('button', { name: 'Grant me operator authorization' })).toBeVisible()
+  await mock.teardown()
+})
+
+test('a cancelled creation leaves the wizard through the sidebar', async ({ page }) => {
+  await seedActingCorporation(page, 13)
+  await installCorporationStubs(page)
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubCorporation: false })
+  await page.goto('/corporation?create=1')
+
+  await page.getByLabel('Corporation DID').fill('did:web:new-corp.example')
+  await page.getByLabel('CGF document URL').fill('https://example.com/cgf.pdf')
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('button', { name: 'Sign & create corporation' }).click()
+
+  const dialog = page.getByRole('dialog')
+  await expect(dialog.getByText('Network fee').locator('..')).toContainText(/VNA/, { timeout: 30_000 })
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(dialog).toBeHidden()
+
+  await page.locator('a[href="/corporation"]').first().click()
+  await expect(page.getByRole('heading', { name: /Acme Trust AG/ })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('heading', { name: 'Create Corporation' })).toBeHidden()
+  expect(mock.seenMethods()).not.toContain('broadcast_tx_sync')
+  await mock.teardown()
+})
+
 test('a missing trust deposit renders the empty state', async ({ page }) => {
   await installCorporationStubs(page, { trustDeposit404: true })
   await seedActingCorporation(page, 13)
