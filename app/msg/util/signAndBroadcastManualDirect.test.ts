@@ -1,7 +1,7 @@
 import { toBase64 } from '@cosmjs/encoding'
 import type { OfflineDirectSigner } from '@cosmjs/proto-signing'
 import { MsgStoreDigest } from '@verana-labs/verana-types/codec/verana/di/v1/tx'
-import { TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
+import { AuthInfo, TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeRegistry, signAndBroadcastManualDirect } from './signAndBroadcastManualDirect'
 
@@ -125,5 +125,48 @@ describe('signAndBroadcastManualDirect', () => {
     const txRaw = TxRaw.decode(stargate.broadcastTx.mock.calls[0]?.[0] ?? new Uint8Array())
     expect(txRaw.bodyBytes).toEqual(signDoc?.bodyBytes)
     expect(txRaw.signatures).toEqual([signatureBytes])
+  })
+
+  it('signs the given fee and granter without simulating again', async () => {
+    const address = 'verana1operator'
+    const publicKey = Uint8Array.from([2, ...new Array<number>(32).fill(1)])
+    const signDirect = vi.fn(async (_signerAddress, signDoc) => ({
+      signed: signDoc,
+      signature: {
+        pub_key: { type: 'tendermint/PubKeySecp256k1', value: toBase64(publicKey) },
+        signature: toBase64(new Uint8Array(64).fill(2)),
+      },
+    }))
+    const signer: OfflineDirectSigner = {
+      getAccounts: vi.fn(async () => [{ address, algo: 'secp256k1' as const, pubkey: publicKey }]),
+      signDirect,
+    }
+    stargate.getSequence.mockResolvedValue({ accountNumber: 7, sequence: 3 })
+    stargate.broadcastTx.mockResolvedValue({ code: 0, height: 123, transactionHash: 'ABC', events: [] })
+
+    await signAndBroadcastManualDirect({
+      rpcEndpoint: 'https://rpc.example',
+      chainId: 'vna-devnet-1',
+      signer,
+      address,
+      registry: makeRegistry(),
+      messages: [
+        {
+          typeUrl: '/verana.di.v1.MsgStoreDigest',
+          value: MsgStoreDigest.fromPartial({ authority: 'verana1corporation', operator: address, digest: 'sha384' }),
+        },
+      ],
+      gasPrice: '3uvna',
+      gasAdjustment: 2,
+      fee: { amount: [{ denom: 'uvna', amount: '293754' }], gas: '97918', granter: 'verana1corporation' },
+    })
+
+    expect(stargate.simulate).not.toHaveBeenCalled()
+    const authInfo = AuthInfo.decode(signDirect.mock.calls[0]?.[1]?.authInfoBytes ?? new Uint8Array())
+    expect(authInfo.fee?.amount).toEqual([{ denom: 'uvna', amount: '293754' }])
+    expect(authInfo.fee?.gasLimit).toBe(BigInt(97918))
+    expect(authInfo.fee?.granter).toBe('verana1corporation')
+    const txRaw = TxRaw.decode(stargate.broadcastTx.mock.calls[0]?.[0] ?? new Uint8Array())
+    expect(AuthInfo.decode(txRaw.authInfoBytes).fee?.amount).toEqual([{ denom: 'uvna', amount: '293754' }])
   })
 })

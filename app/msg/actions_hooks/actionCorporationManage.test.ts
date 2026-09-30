@@ -196,6 +196,12 @@ describe('delegablePreview', () => {
     expect(preview.warning).toMatch(/^Irreversible\./)
     expect(preview.effect).toBe('Revoke the operator access of verana1grantee on did:web:corp.example.')
     expect(preview.proposalTitle).toBeUndefined()
+    expect(preview.feeGrant).toEqual({
+      corporationId: 12,
+      grantee: 'verana1me',
+      msgType: '/verana.de.v1.MsgRevokeOperatorAuthorization',
+      granterAddress: POLICY,
+    })
   })
 
   it('carries the proposal title only in proposal mode and leaves the repayment unflagged', () => {
@@ -212,6 +218,7 @@ describe('delegablePreview', () => {
     expect(preview.warning).toBeUndefined()
     expect(preview.proposalTitle).toBe('Repay')
     expect(preview.effect).toBe('Repay 2 VNA of slashed trust deposit for did:web:corp.example.')
+    expect(preview.feeGrant).toBeUndefined()
   })
 })
 

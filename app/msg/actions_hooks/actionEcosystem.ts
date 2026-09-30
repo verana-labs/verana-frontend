@@ -195,10 +195,7 @@ export function useActionEcosystem(onCancel?: () => void, onRefresh?: (id?: stri
   const sendTx = useSendTxDetectingMode(veranaChain)
   const inFlight = useRef(false)
 
-  return async (
-    params: EcosystemActionParams,
-    simulate = false
-  ): Promise<DeliverTxResponse | SimulateResult | undefined> => {
+  return async (params: EcosystemActionParams): Promise<DeliverTxResponse | undefined> => {
     if (!isWalletConnected || !address) {
       await notify(t('notification.msg.connectwallet'), 'error')
       return
@@ -225,15 +222,9 @@ export function useActionEcosystem(onCancel?: () => void, onRefresh?: (id?: stri
         build: (corporation, operator) => buildEcosystemMessage(messageParams, { corporation, operator }),
         effect,
         proposalTitle: proposalTitleFrom(effect),
-        simulate,
       })
       if (!resolved) return
       mode = resolved.mode
-      if (simulate) {
-        const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType, simulate })
-        if (isDeliverTxResponse(result)) throw new Error('Expected a simulation result')
-        return result
-      }
       void notify(
         mode === 'proposal'
           ? MSG_NOTIFICATION_PROPOSAL.inprogress()
@@ -241,7 +232,7 @@ export function useActionEcosystem(onCancel?: () => void, onRefresh?: (id?: stri
         'inProgress',
         t('notification.msg.inprogress.title')
       )
-      const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType })
+      const result = await sendTx({ msgs: resolved.msgs, memo: params.msgType, fee: resolved.fee })
       if (!isDeliverTxResponse(result)) throw new Error('Expected a transaction response')
       if (result.code !== 0) {
         await notify(errorMessage(result.code, result.rawLog), 'error', t('notification.msg.failed.title'))
@@ -279,7 +270,6 @@ export function useActionEcosystem(onCancel?: () => void, onRefresh?: (id?: stri
       }
       return result
     } catch (error) {
-      if (simulate) return
       await notify(
         errorMessage(undefined, error instanceof Error ? error.message : String(error)),
         'error',
