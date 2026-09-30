@@ -18,10 +18,6 @@ type ClaimTextProps = {
   title?: string
 }
 
-/**
- * Renders credential claim text as text or as Markdown, per [VFE-SEC-2].
- * The Markdown renderer keeps raw HTML inert, so remote content cannot run a script.
- */
 export default function ClaimText({ text, format, className, title }: ClaimTextProps) {
   if (!isMarkdownDescriptionFormat(format)) {
     return (

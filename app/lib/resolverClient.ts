@@ -62,7 +62,6 @@ function pickStringOrNumber(claims: Record<string, unknown> | undefined, key: st
   return undefined
 }
 
-// The ECS defaults descriptionFormat to text/plain. Only text/markdown renders as Markdown, per [VFE-SEC-2].
 export function isMarkdownDescriptionFormat(format: string | undefined): boolean {
   return format === 'text/markdown'
 }

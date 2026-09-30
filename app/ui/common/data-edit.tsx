@@ -367,7 +367,6 @@ export default function EditableDataView<T extends object>({
     }
   })
 
-  // The faucet link is a React element. The message gives the text before and after its {link} marker.
   const lowBalanceMessageParts = getLowBalanceMessage(
     showMsgBalanceLessThanFeeWarn ? balanceLessThanFeeTemplate : lowBalanceTemplate,
     (Number(accountData.balance) / 1_000_000).toString() ?? '1',
