@@ -245,12 +245,7 @@ describe('fetchAgentResolution', () => {
     const fetchMock = stubFetch({ error: 'boom' }, 500)
 
     await expect(fetchAgentResolution(DID, ALL_PARTICIPATION_STATES)).rejects.toThrow()
-    expect(await fetchAgentResolution(DID, ALL_PARTICIPATION_STATES)).toEqual({
-      enrichment: { did: DID, trustStatus: 'UNRESOLVED' },
-      participations: [],
-      services: [],
-      credentials: [],
-    })
+    await expect(fetchAgentResolution(DID, ALL_PARTICIPATION_STATES)).rejects.toThrow()
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })

@@ -101,6 +101,7 @@ export interface ActivityRow {
 export interface DegradedSections {
   trustDeposit: boolean
   operatorAuthorizations: boolean
+  vsOperatorAuthorizations: boolean
   proposals: boolean
 }
 
@@ -409,6 +410,7 @@ export function useCorporationDetails(corporationId: number | undefined) {
         degraded: {
           trustDeposit: trustDeposit.failed,
           operatorAuthorizations: authorizations.failed,
+          vsOperatorAuthorizations: vsAuthorizations.failed,
           proposals: proposals.failed,
         },
       })

@@ -358,7 +358,8 @@ export function OperatorsSection({
   revokeMode,
   grantMode,
   walletAddress,
-  degraded,
+  degradedOperators,
+  degradedAgents,
   onRevoke,
   onGrant,
 }: {
@@ -368,7 +369,8 @@ export function OperatorsSection({
   revokeMode: CorporationSigningMode | null
   grantMode: CorporationSigningMode | null
   walletAddress: string | undefined
-  degraded: boolean
+  degradedOperators: boolean
+  degradedAgents: boolean
   onRevoke: (operator: string) => void
   onGrant: (grantee: string, msgTypes: string[]) => void
 }) {
@@ -391,7 +393,7 @@ export function OperatorsSection({
           ))}
           {authorizations.length === 0 ? (
             <li className="py-2 text-sm text-gray-500">
-              {degraded ? <SectionUnavailable /> : translate('corporation.page.operators.empty')}
+              {degradedOperators ? <SectionUnavailable /> : translate('corporation.page.operators.empty')}
             </li>
           ) : null}
         </ul>
@@ -418,7 +420,9 @@ export function OperatorsSection({
             />
           ))}
           {agentAccounts.length === 0 ? (
-            <li className="py-2 text-sm text-gray-500">{translate('corporation.page.agents.empty')}</li>
+            <li className="py-2 text-sm text-gray-500">
+              {degradedAgents ? <SectionUnavailable /> : translate('corporation.page.agents.empty')}
+            </li>
           ) : null}
         </ul>
         <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">{translate('corporation.page.agents.note')}</p>
