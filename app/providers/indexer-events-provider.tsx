@@ -89,6 +89,29 @@ export function IndexerEventsProvider({ children }: { children: React.ReactNode 
     [applyBlock]
   )
 
+  const heightPollWanted = useCallback(
+    () => waitingRef.current.length > 0 || corporationIdsRef.current.length === 0,
+    []
+  )
+
+  const armHeightFallback = useCallback(() => {
+    if (heightPollTimerRef.current) return
+    const tick = async () => {
+      heightPollTimerRef.current = null
+      const subscriptions = subscriptionsRef.current
+      if (!subscriptions || !heightPollWanted()) return
+      try {
+        await fetchProcessedHeight()
+      } catch (error) {
+        logger.warn('Indexer height fallback failed', error)
+      }
+      if (heightPollWanted()) {
+        heightPollTimerRef.current = setTimeout(tick, subscriptions.getBlockIntervalMs())
+      }
+    }
+    heightPollTimerRef.current = setTimeout(tick, 2 * (subscriptionsRef.current?.getBlockIntervalMs() ?? 0))
+  }, [fetchProcessedHeight, heightPollWanted])
+
   useEffect(() => {
     const controller = new AbortController()
     fetchProcessedHeight(controller.signal).catch((error: unknown) => {
@@ -107,8 +130,8 @@ export function IndexerEventsProvider({ children }: { children: React.ReactNode 
       onConnectionChange: setIsConnected,
     })
     subscriptionsRef.current = subscriptions
-    // A child effect can set the corporations before this effect runs.
     subscriptions.setCorporations(corporationIdsRef.current)
+    if (heightPollWanted()) armHeightFallback()
 
     return () => {
       subscriptionsRef.current = null
@@ -121,12 +144,16 @@ export function IndexerEventsProvider({ children }: { children: React.ReactNode 
       }
       waitingRef.current = []
     }
-  }, [applyBlock])
+  }, [applyBlock, armHeightFallback, heightPollWanted])
 
-  const setSubscribedCorporations = useCallback((corporationIds: number[]) => {
-    corporationIdsRef.current = corporationIds
-    subscriptionsRef.current?.setCorporations(corporationIds)
-  }, [])
+  const setSubscribedCorporations = useCallback(
+    (corporationIds: number[]) => {
+      corporationIdsRef.current = corporationIds
+      subscriptionsRef.current?.setCorporations(corporationIds)
+      if (heightPollWanted()) armHeightFallback()
+    },
+    [armHeightFallback, heightPollWanted]
+  )
 
   const addIndexerEventListener = useCallback((listener: IndexerEventListener) => {
     listenersRef.current.add(listener)
@@ -134,25 +161,6 @@ export function IndexerEventsProvider({ children }: { children: React.ReactNode 
       listenersRef.current.delete(listener)
     }
   }, [])
-
-  const armHeightFallback = useCallback(() => {
-    if (heightPollTimerRef.current) return
-    const tick = async () => {
-      heightPollTimerRef.current = null
-      const subscriptions = subscriptionsRef.current
-      if (!subscriptions || waitingRef.current.length === 0) return
-      try {
-        await fetchProcessedHeight()
-      } catch (error) {
-        logger.warn('Indexer height fallback failed', error)
-      }
-      if (waitingRef.current.length > 0) {
-        heightPollTimerRef.current = setTimeout(tick, subscriptions.getBlockIntervalMs())
-      }
-    }
-    // [VFE-DATA-WS-4] falls back to the block-height query when no block envelope arrives in time.
-    heightPollTimerRef.current = setTimeout(tick, 2 * (subscriptionsRef.current?.getBlockIntervalMs() ?? 0))
-  }, [fetchProcessedHeight])
 
   const waitForBlock = useCallback(
     (targetHeight: number, timeoutMs = 30000) => {

@@ -356,13 +356,27 @@ test('live updates: one subscription for each corporation, gap recovery and an i
   expect(replaysFromLastApplied()).toHaveLength(1)
 })
 
-test('live updates: guest mode holds no subscription', async ({ page }) => {
+test('live updates: guest mode holds no subscription and still tracks the height', async ({ page }) => {
   await installCorporationStubs(page)
-  const socket = await installIndexerSocket(page)
+  // The indexer pushes blocks to subscribers only, so an unsubscribed guest reads the height here.
+  let height = 1001
+  await page.route('**/v4/indexer/block-height', (route) => {
+    height += 1
+    return route.fulfill({ json: { height, timestamp: '2026-07-18T07:00:00Z' } })
+  })
+  // A short block interval makes the height poll observable inside the test.
+  const socket = await installIndexerSocket(page, 1001, 2000)
 
   await page.goto('/dashboard')
   await expect(page.getByRole('button', { name: /connect/i }).first()).toBeVisible({ timeout: 15_000 })
 
   await expect.poll(() => socket.openConnections().length).toBe(1)
   expect(socket.subscribedCorporationIds()).toEqual([])
+
+  // [VFE-DATA-WS-4] the block height keeps moving with no subscription behind it.
+  const blockHeight = page.getByText('Block height').locator('..')
+  const readHeight = async () => Number((await blockHeight.innerText()).replace(/\D/g, ''))
+  await expect.poll(readHeight, { timeout: 15_000 }).toBeGreaterThan(1001)
+  const seen = await readHeight()
+  await expect.poll(readHeight, { timeout: 30_000 }).toBeGreaterThan(seen)
 })

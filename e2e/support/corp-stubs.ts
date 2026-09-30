@@ -264,7 +264,11 @@ export function indexerParticipantEvent(txHash: string, blockHeight: number, cor
   }
 }
 
-export async function installIndexerSocket(page: Page, startBlock = 1001): Promise<IndexerSocketHarness> {
+export async function installIndexerSocket(
+  page: Page,
+  startBlock = 1001,
+  blockIntervalMs = SOCKET_BLOCK_INTERVAL_MS
+): Promise<IndexerSocketHarness> {
   const connections: IndexerSocketConnection[] = []
 
   await page.routeWebSocket('**/v4/indexer/subscribe', (ws) => {
@@ -283,7 +287,7 @@ export async function installIndexerSocket(page: Page, startBlock = 1001): Promi
       type: 'ready',
       block: startBlock,
       blockTime: SOCKET_BLOCK_TIME,
-      blockIntervalMs: SOCKET_BLOCK_INTERVAL_MS,
+      blockIntervalMs,
     })
     ws.onMessage((message) => {
       const control = JSON.parse(String(message)) as { action?: string; corporationId?: number | null }
