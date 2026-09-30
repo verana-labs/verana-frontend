@@ -89,9 +89,11 @@ const ERROR_TTL_MS = 5_000
 const FETCH_TIMEOUT_MS = 10_000
 const MAX_CACHE_ENTRIES = 200
 
-const cache = new Map<string, { value: DidEnrichment; expires: number }>()
+type CacheEntry<T> = { expires: number } & ({ ok: true; value: T } | { ok: false; error: unknown })
+
+const cache = new Map<string, CacheEntry<DidEnrichment>>()
 const inflight = new Map<string, Promise<DidEnrichment>>()
-const agentCache = new Map<string, { value: AgentResolution; expires: number }>()
+const agentCache = new Map<string, CacheEntry<AgentResolution>>()
 const agentInflight = new Map<string, Promise<AgentResolution>>()
 
 function unresolved(did: string): DidEnrichment {
@@ -118,9 +120,14 @@ function evictOldestIfFull(entries: Map<string, unknown>): void {
   if (oldestKey !== undefined) entries.delete(oldestKey)
 }
 
-function rememberCacheEntry(did: string, value: DidEnrichment, ttlMs: number): void {
+function rememberCacheEntry(did: string, value: DidEnrichment): void {
   evictOldestIfFull(cache)
-  cache.set(did, { value, expires: Date.now() + ttlMs })
+  cache.set(did, { ok: true, value, expires: Date.now() + SUCCESS_TTL_MS })
+}
+
+function rememberCacheFailure(did: string, error: unknown): void {
+  evictOldestIfFull(cache)
+  cache.set(did, { ok: false, error, expires: Date.now() + ERROR_TTL_MS })
 }
 
 function trustState(raw: ResolveResult, now: number): DidTrustState {
@@ -198,7 +205,10 @@ export async function fetchDidEnrichment(did: string, options?: { force?: boolea
   const now = Date.now()
   if (!options?.force) {
     const cached = cache.get(did)
-    if (cached && cached.expires > now) return cached.value
+    if (cached && cached.expires > now) {
+      if (!cached.ok) throw cached.error
+      return cached.value
+    }
   }
 
   const existing = inflight.get(did)
@@ -206,11 +216,11 @@ export async function fetchDidEnrichment(did: string, options?: { force?: boolea
 
   const promise = fetchFromIndexer(did)
     .then((value) => {
-      rememberCacheEntry(did, value, SUCCESS_TTL_MS)
+      rememberCacheEntry(did, value)
       return value
     })
     .catch((error) => {
-      rememberCacheEntry(did, unresolved(did), ERROR_TTL_MS)
+      rememberCacheFailure(did, error)
       throw error
     })
     .finally(() => {
@@ -291,9 +301,14 @@ function unresolvedAgent(did: string): AgentResolution {
   return { enrichment: unresolved(did), participations: [], services: [], credentials: [] }
 }
 
-function rememberAgentEntry(key: string, value: AgentResolution, ttlMs: number): void {
+function rememberAgentEntry(key: string, value: AgentResolution): void {
   evictOldestIfFull(agentCache)
-  agentCache.set(key, { value, expires: Date.now() + ttlMs })
+  agentCache.set(key, { ok: true, value, expires: Date.now() + SUCCESS_TTL_MS })
+}
+
+function rememberAgentFailure(key: string, error: unknown): void {
+  evictOldestIfFull(agentCache)
+  agentCache.set(key, { ok: false, error, expires: Date.now() + ERROR_TTL_MS })
 }
 
 // Per [VFE-PAGE-AGENTS-2] one resolve per agent DID returns the identity, the participations, the services and the presentations.
@@ -316,19 +331,21 @@ export async function fetchAgentResolution(
   if (!did.startsWith('did:')) return unresolvedAgent(did)
   const key = `${did}|${states.join(',')}`
   const cached = agentCache.get(key)
-  if (cached && cached.expires > Date.now()) return cached.value
+  if (cached && cached.expires > Date.now()) {
+    if (!cached.ok) throw cached.error
+    return cached.value
+  }
 
   const existing = agentInflight.get(key)
   if (existing) return existing
 
   const promise = fetchAgentFromIndexer(did, states)
     .then((value) => {
-      rememberAgentEntry(key, value, SUCCESS_TTL_MS)
+      rememberAgentEntry(key, value)
       return value
     })
     .catch((error) => {
-      // A failed resolve is remembered for a short time, so a burst of block events does not retry it per event.
-      rememberAgentEntry(key, unresolvedAgent(did), ERROR_TTL_MS)
+      rememberAgentFailure(key, error)
       throw error
     })
     .finally(() => {
