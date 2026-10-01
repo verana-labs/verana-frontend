@@ -81,6 +81,11 @@ function optionalDate(value: string | null | undefined): Date | undefined {
   return Number.isNaN(date.getTime()) ? undefined : date
 }
 
+function validFee(fee: string): boolean {
+  const value = fee.trim()
+  return value === '' || (/^\d+$/.test(value) && Number.isSafeInteger(Number(value)))
+}
+
 export function selfCreateIssue(
   input: SelfCreateInput,
   validatorUntil: string | null | undefined,
@@ -88,7 +93,7 @@ export function selfCreateIssue(
   withFees: boolean
 ): SelfCreateIssue | null {
   const fees = withFees ? [input.validationFees, input.verificationFees] : []
-  if (!fees.every((fee) => /^\d*$/.test(fee.trim()))) return 'invalidFees'
+  if (!fees.every(validFee)) return 'invalidFees'
   return effectiveWindowIssue(
     { from: optionalDate(input.effectiveFrom), until: optionalDate(input.effectiveUntil) },
     optionalDate(validatorUntil),

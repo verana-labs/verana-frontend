@@ -20,7 +20,7 @@ describe('permittedVsOperatorMsgTypes', () => {
     ['VERIFIER', [SESSION]],
     ['ISSUER_GRANTOR', [VALIDATE]],
     ['VERIFIER_GRANTOR', [VALIDATE]],
-    ['ECOSYSTEM', [VALIDATE]],
+    ['ECOSYSTEM', []],
   ] as const)('follows the VPR table for %s', (role, expected) => {
     expect(permittedVsOperatorMsgTypes(role)).toEqual(expected)
   })
@@ -44,6 +44,27 @@ describe('vsOperatorIssue', () => {
   it('refuses a message the role may not delegate', () => {
     expect(vsOperatorIssue('VERIFIER', input({ vsOperator: OPERATOR, msgTypes: [VALIDATE] }))).toBe(
       'msgTypeNotPermitted'
+    )
+  })
+
+  it('refuses any delegation from an ecosystem participant', () => {
+    expect(vsOperatorIssue('ECOSYSTEM', input({ vsOperator: OPERATOR, msgTypes: [VALIDATE] }))).toBe(
+      'msgTypeNotPermitted'
+    )
+  })
+
+  it('refuses amounts and periods the signed message could not carry exactly', () => {
+    const base = { vsOperator: OPERATOR, msgTypes: [SESSION] }
+    const max = String(Number.MAX_SAFE_INTEGER)
+    expect(vsOperatorIssue('ISSUER', input({ ...base, spendLimit: max }))).toBeNull()
+    expect(vsOperatorIssue('ISSUER', input({ ...base, spendLimit: '9007199254740992' }))).toBe('invalidAmount')
+    expect(vsOperatorIssue('ISSUER', input({ ...base, withFeegrant: true, feeSpendLimit: '1'.repeat(30) }))).toBe(
+      'invalidAmount'
+    )
+    const maxDays = Math.floor(Number.MAX_SAFE_INTEGER / 86_400)
+    expect(vsOperatorIssue('ISSUER', input({ ...base, spendLimit: '10', periodDays: String(maxDays) }))).toBeNull()
+    expect(vsOperatorIssue('ISSUER', input({ ...base, spendLimit: '10', periodDays: String(maxDays + 1) }))).toBe(
+      'invalidAmount'
     )
   })
 

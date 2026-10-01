@@ -40,8 +40,7 @@ export type VsOperatorAuthorizationFields = {
   vsOperatorAuthzPeriod: { seconds: number; nanos: number } | undefined
 }
 
-const PERMITTED_MSG_TYPES: Record<ParticipantRole, string[]> = {
-  ECOSYSTEM: [veranaTypeUrls.MsgSetParticipantOPToValidated],
+const PERMITTED_MSG_TYPES: Partial<Record<ParticipantRole, string[]>> = {
   ISSUER_GRANTOR: [veranaTypeUrls.MsgSetParticipantOPToValidated],
   VERIFIER_GRANTOR: [veranaTypeUrls.MsgSetParticipantOPToValidated],
   ISSUER: [veranaTypeUrls.MsgCreateOrUpdateParticipantSession, veranaTypeUrls.MsgSetParticipantOPToValidated],
@@ -53,7 +52,11 @@ const POSITIVE_WHOLE = /^[1-9]\d*$/
 const SECONDS_PER_DAY = 86_400
 
 export function permittedVsOperatorMsgTypes(role: ParticipantRole): string[] {
-  return PERMITTED_MSG_TYPES[role]
+  return PERMITTED_MSG_TYPES[role] ?? []
+}
+
+function safePositiveWhole(value: string, factor = 1): boolean {
+  return POSITIVE_WHOLE.test(value) && Number.isSafeInteger(Number(value) * factor)
 }
 
 export function vsOperatorIssue(role: ParticipantRole, input: VsOperatorInput): VsOperatorIssue | null {
@@ -67,10 +70,9 @@ export function vsOperatorIssue(role: ParticipantRole, input: VsOperatorInput): 
   if (!delegates) return null
   if (!operator) return 'operatorRequired'
   if (input.msgTypes.length === 0) return 'msgTypesRequired'
-  if (input.msgTypes.some((type) => !PERMITTED_MSG_TYPES[role].includes(type))) return 'msgTypeNotPermitted'
-  if ([spendLimit, period, feeSpendLimit].some((value) => value !== '' && !POSITIVE_WHOLE.test(value))) {
-    return 'invalidAmount'
-  }
+  if (input.msgTypes.some((type) => !permittedVsOperatorMsgTypes(role).includes(type))) return 'msgTypeNotPermitted'
+  if ([spendLimit, feeSpendLimit].some((value) => value !== '' && !safePositiveWhole(value))) return 'invalidAmount'
+  if (period !== '' && !safePositiveWhole(period, SECONDS_PER_DAY)) return 'invalidAmount'
   if (input.withFeegrant && feeSpendLimit === '') return 'feeSpendLimitRequired'
   if (!input.withFeegrant && feeSpendLimit !== '') return 'feeSpendLimitWithoutFeegrant'
   if (period !== '' && spendLimit === '') return 'periodRequiresSpendLimit'
@@ -90,7 +92,7 @@ export function vsOperatorAuthorization(
   const period = input.periodDays.trim()
   return {
     vsOperator: input.vsOperator.trim(),
-    vsOperatorAuthzMsgTypes: PERMITTED_MSG_TYPES[role].filter((type) => input.msgTypes.includes(type)),
+    vsOperatorAuthzMsgTypes: permittedVsOperatorMsgTypes(role).filter((type) => input.msgTypes.includes(type)),
     vsOperatorAuthzSpendLimit: nativeCoins(input.spendLimit.trim()),
     vsOperatorAuthzWithFeegrant: input.withFeegrant,
     vsOperatorAuthzFeeSpendLimit: nativeCoins(input.feeSpendLimit.trim()),

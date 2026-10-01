@@ -107,6 +107,17 @@ describe('selfCreateIssue', () => {
     expect(selfCreateIssue({ ...EMPTY_SELF_CREATE_INPUT, validationFees: '2500000' }, null, now, true)).toBeNull()
   })
 
+  it('refuses fees the signed message could not carry exactly', () => {
+    const max = String(Number.MAX_SAFE_INTEGER)
+    expect(selfCreateIssue({ ...EMPTY_SELF_CREATE_INPUT, validationFees: max }, null, now, true)).toBeNull()
+    expect(selfCreateIssue({ ...EMPTY_SELF_CREATE_INPUT, validationFees: '9007199254740992' }, null, now, true)).toBe(
+      'invalidFees'
+    )
+    expect(selfCreateIssue({ ...EMPTY_SELF_CREATE_INPUT, verificationFees: '1'.repeat(30) }, null, now, true)).toBe(
+      'invalidFees'
+    )
+  })
+
   it('ignores fees left from another role when the fee fields are not shown', () => {
     const stale = { ...EMPTY_SELF_CREATE_INPUT, validationFees: '1.5', verificationFees: 'abc' }
     expect(selfCreateIssue(stale, null, now, true)).toBe('invalidFees')
