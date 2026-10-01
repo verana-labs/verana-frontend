@@ -250,6 +250,7 @@ test('an acting corporation sees its roles and the wizard builds the self-create
   await next.click()
 
   await page.locator('#service-did').fill(SERVICE_DID)
+  await expect(page.getByText(`Join as ISSUER with ${SERVICE_DID}.`)).toBeVisible()
   await expect(page.locator('#self-create-effectiveFrom')).toBeVisible()
   await expect(page.locator('#self-create-validationFees')).toBeVisible()
   await page.locator('#self-create-validationFees').fill('1.5')

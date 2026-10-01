@@ -31,7 +31,7 @@ function t(key: string): string {
 export function JoinSuccess({ created, participant, schemaId }: JoinSuccessProps) {
   const proposal = created.id === undefined
   const expireSoon = isExpireSoon(participant?.effective_until)
-  const { classOnboardingState } = onboardingStateColor(participant?.op_state)
+  const { labelOnboardingState, classOnboardingState } = onboardingStateColor(participant?.op_state)
   const { labelParticipantState, classParticipantState } = participantStateBadgeClass(
     participant?.participant_state,
     expireSoon
@@ -62,7 +62,7 @@ export function JoinSuccess({ created, participant, schemaId }: JoinSuccessProps
               <>
                 <dt className="text-neutral-70">{t('join.success.opstate')}</dt>
                 <dd>
-                  <span className={`${BADGE_CLASS} ${classOnboardingState}`}>{participant.op_state}</span>
+                  <span className={`${BADGE_CLASS} ${classOnboardingState}`}>{labelOnboardingState}</span>
                 </dd>
               </>
             ) : null}

@@ -40,7 +40,7 @@ import ValidatorCard from '@/ui/common/validator-card'
 import { VsOperatorFields } from '@/ui/common/vs-operator-fields'
 import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
 import type { Participant } from '@/ui/dataview/datasections/participant'
-import { resolveTranslatable } from '@/ui/dataview/types'
+import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 import { rolesSchema } from '@/util/util'
 import { isValidDID } from '@/util/validations'
 
@@ -55,8 +55,8 @@ const STEPS = [
   { id: 6, title: 'join.createparticipant.title', description: 'join.step.confirm.description' },
 ] as const
 
-function t(key: string): string {
-  return resolveTranslatable({ key }, translate) ?? key
+function t(key: string, values?: I18nValues): string {
+  return resolveTranslatable({ key, values }, translate) ?? key
 }
 
 function classes(...values: Array<string | false | null | undefined>) {
@@ -114,6 +114,7 @@ export default function JoinEcosystemWizard() {
   const validatorRole = decision?.validatorRole ?? undefined
   const {
     participants: validators,
+    loading: validatorsLoading,
     errorParticipants,
     hasNext: validatorsHasNext,
     loadMore: loadMoreValidators,
@@ -366,7 +367,14 @@ export default function JoinEcosystemWizard() {
               ) : null}
               {errorParticipants ? <div className="error-pane">{errorParticipants}</div> : null}
               {decision?.validatorRole && validators.length === 0 ? (
-                <p className="text-sm text-neutral-70">{t('join.validators.empty')}</p>
+                validatorsLoading ? (
+                  <div className="space-y-4">
+                    <div className="skeleton-block h-16 rounded-lg" />
+                    <div className="skeleton-block h-16 rounded-lg" />
+                  </div>
+                ) : (
+                  <p className="text-sm text-neutral-70">{t('join.validators.empty')}</p>
+                )
               ) : null}
               {decision?.validatorRole
                 ? validators.map((validator) => (
@@ -392,7 +400,13 @@ export default function JoinEcosystemWizard() {
                   <span className="font-medium">{t('join.success.role')}:</span> {selectedRole}
                 </p>
                 <p>
-                  <span className="font-medium">{t('join.summary.transaction')}:</span> {decision?.messageType}
+                  <span className="font-medium">{t('join.summary.transaction')}:</span>{' '}
+                  {decision?.messageType
+                    ? t(`txconfirm.effect.${decision.messageType}`, {
+                        role: selectedRole,
+                        did: isValidDID(serviceDid) ? serviceDid : t('join.servicedid.label'),
+                      })
+                    : null}
                 </p>
                 {selectedValidator ? (
                   <p>

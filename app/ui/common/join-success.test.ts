@@ -1,6 +1,7 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
+import en from '@/i18n/dataview/en.json'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 import { type CreatedParticipant, JoinSuccess } from './join-success'
 
@@ -33,7 +34,8 @@ describe('JoinSuccess', () => {
     expect(html).toContain('>42<')
     expect(html).toContain(created.did)
     expect(html).toContain('>ISSUER<')
-    expect(html).toContain('>PENDING<')
+    expect(html).toContain(`>${en['participant.labelopstate.pending']}<`)
+    expect(html).not.toContain('>PENDING<')
     expect(html).toContain('VS Agent over DIDComm')
     expect(html).toContain('href="/participants/7"')
     expect(html).not.toContain('Proposal submitted')
@@ -42,7 +44,7 @@ describe('JoinSuccess', () => {
   it('shows the participant before the indexer returns it, without inventing its states', () => {
     const html = render(created, null)
     expect(html).toContain(created.did)
-    expect(html).not.toContain('>PENDING<')
+    expect(html).not.toContain(`>${en['participant.labelopstate.pending']}<`)
   })
 
   it('says no validation is needed after a self-create', () => {
