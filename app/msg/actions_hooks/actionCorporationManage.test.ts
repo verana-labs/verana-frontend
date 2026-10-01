@@ -24,6 +24,7 @@ vi.mock('@/providers/tx-confirm-provider', () => ({
 }))
 
 import type { CorporationMembership } from '@/lib/corporation-discovery'
+import { NO_GRANT_OPTIONS } from '@/lib/operator-grant'
 import {
   buildGrantOperatorMessage,
   buildRepaySlashedMessage,
@@ -89,7 +90,8 @@ describe('delegable message builders', () => {
       membership(),
       'verana1grantee',
       ['/verana.ec.v1.MsgCreateEcosystem'],
-      POLICY
+      POLICY,
+      NO_GRANT_OPTIONS
     )
     const value = MsgGrantOperatorAuthorization.decode(
       MsgGrantOperatorAuthorization.encode(message.value as MsgGrantOperatorAuthorization).finish()
@@ -99,6 +101,26 @@ describe('delegable message builders', () => {
     expect(value.grantee).toBe('verana1grantee')
     expect(value.msgTypes).toEqual(['/verana.ec.v1.MsgCreateEcosystem'])
     expect(value.withFeegrant).toBe(false)
+  })
+
+  it('carries the grant options into the operator grant', () => {
+    const expiration = new Date('2026-12-01T00:00:00Z')
+    const message = buildGrantOperatorMessage(membership(), 'verana1grantee', [], 'verana1operator', {
+      expiration,
+      spendLimit: { amountUvna: '5000000', periodSeconds: 86_400 },
+      feeGrant: { spendLimit: null },
+    })
+    const value = MsgGrantOperatorAuthorization.decode(
+      MsgGrantOperatorAuthorization.encode(message.value as MsgGrantOperatorAuthorization).finish()
+    )
+    expect(value).toMatchObject({
+      operator: 'verana1operator',
+      expiration,
+      authzSpendLimit: [{ denom: 'uvna', amount: '5000000' }],
+      authzSpendLimitPeriod: { seconds: 86_400, nanos: 0 },
+      withFeegrant: true,
+      feegrantSpendLimit: [],
+    })
   })
 
   it('round-trips the revoke and the slashed-deposit repayment', () => {

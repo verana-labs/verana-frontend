@@ -6,6 +6,7 @@ import {
   AGENT_ECOSYSTEMS,
   AGENT_PARTICIPANTS,
   AGENT_RESOLUTIONS,
+  FEE_GRANTS,
   GROUP_MEMBERS,
   HARNESS_ADDRESS,
   HISTORY_13,
@@ -199,6 +200,23 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
   await page.route('**/v4/delegation/vs-operator-authorizations*', (route) =>
     route.fulfill({ json: { authorizations: [] } })
   )
+  await page.route('**/v4/delegation/fee-grants*', (route) => {
+    if (sectionsDown) return route.fulfill(unavailable)
+    const params = new URL(route.request().url()).searchParams
+    const corporationId = params.get('grantor_corporation_id')
+    const grantee = params.get('grantee')
+    const msgType = params.get('msg_type')
+    return route.fulfill({
+      json: {
+        fee_grants: FEE_GRANTS.filter(
+          (row) =>
+            (corporationId === null || String(row.grantor_corporation_id) === corporationId) &&
+            (grantee === null || row.grantee === grantee) &&
+            (msgType === null || row.msg_types.includes(msgType))
+        ),
+      },
+    })
+  })
   await page.route('**/v4/participant/pending/flat*', (route) => {
     const url = route.request().url()
     const ecosystems = url.includes('corporation_id=13')
