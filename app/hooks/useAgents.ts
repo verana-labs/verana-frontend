@@ -49,7 +49,6 @@ const ACTIVE_ONLY: readonly ParticipationState[] = ['ACTIVE']
 
 export const AGENTS_PAGE_SIZE = 25
 
-// Per [VFE-DATA-IDX-1] both sources of the agent set are read as cursor pages, never as one capped request.
 export function agentParticipantsUrl(
   base: string,
   corporationId: number,
@@ -175,8 +174,6 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
       }
       if (!background) setLoading(true)
       setError(null)
-      // A reload that is not a show more starts over at the first page. The pages are sorted newest-first,
-      // so the Participant an event just created lands on that page; replaying every loaded cursor would not.
       const base = append ? windowRef.current : EMPTY_WINDOW
       try {
         const [participants, ecosystems, authorizations] = await Promise.all([
@@ -214,7 +211,6 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
           participants: [...base.participants, ...participants.items],
           ecosystems: [...base.ecosystems, ...ecosystems.value.items],
           participantsHasNext: participants.hasNext,
-          // A page that failed keeps its show more, so the window is not capped by one bad request.
           ecosystemsHasNext: ecosystems.failed ? base.ecosystemsHasNext : ecosystems.value.hasNext,
         }
         setAgentWindow(next)
@@ -245,7 +241,6 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
   }, [load])
 
   const loadMore = useCallback(() => {
-    // The cursor only moves once the page lands, so without the guard a second click appends the same page again.
     if (loadingMore.current) return
     loadingMore.current = true
     void load({ append: true, background: true }).finally(() => {

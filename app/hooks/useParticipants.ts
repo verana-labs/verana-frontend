@@ -75,7 +75,6 @@ export function useParticipants(
       const key = participantsPageKey({ ...query, after: cursor })
       const queryKey = participantsPageKey(query)
       if (queryKey !== queryKeyRef.current) {
-        // A new query starts from an empty window, so a show more cannot append its page after the previous cursor.
         queryKeyRef.current = queryKey
         setParticipants([])
         setHasNext(false)

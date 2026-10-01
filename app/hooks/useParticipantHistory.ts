@@ -96,7 +96,6 @@ export function useParticipantHistory(id?: string, pageSize = PARTICIPANT_HISTOR
   const loadMore = useCallback(() => {
     const participantId = participantRef.current
     const last = participantHistory[participantHistory.length - 1]
-    // The cursor only moves once the page lands, so without the guard a second click appends the same page again.
     if (!participantId || !last || loadingMore.current) return
     loadingMore.current = true
     void fetchPage(participantId, last.id, true).finally(() => {

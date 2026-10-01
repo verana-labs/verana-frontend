@@ -238,7 +238,6 @@ export function useCredentialSchemasByEcosystem(ecosystemIds: string[], pageSize
       const base = VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA
       const loaded = schemasByEcosystem[ecosystemId]
       const after = loaded?.items[loaded.items.length - 1]?.id
-      // The cursor only moves once the page lands, so without the guard a second click appends the same page again.
       if (!base || !after || !loaded?.hasNext || loadingMore.current.has(ecosystemId)) return
 
       loadingMore.current.add(ecosystemId)
