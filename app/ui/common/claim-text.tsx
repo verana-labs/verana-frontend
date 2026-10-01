@@ -33,7 +33,6 @@ export default function ClaimText({ text, format, className, title }: ClaimTextP
         remarkPlugins={[remarkGfm]}
         components={{
           a: ({ children, href }) =>
-            // An unsafe href is blanked by the default urlTransform: render the text, not a dead link.
             href ? (
               <a
                 href={href}
