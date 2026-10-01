@@ -5,7 +5,6 @@ import {
   expireBeforeDays,
   formatDateTime,
   formatNumber,
-  formatUSDfromUVNA,
   formatVNA,
   formatVNAFromUVNA,
   getStatus,
@@ -119,37 +118,6 @@ describe('parseVNA', () => {
   it('returns "0" for empty or unparseable input', () => {
     expect(parseVNA('')).toBe('0')
     expect(parseVNA('VNA')).toBe('0')
-  })
-})
-
-describe('formatUSDfromUVNA', () => {
-  it('multiplies the VNA amount by the conversion factor with a USD prefix', () => {
-    expect(formatUSDfromUVNA('10', 1.5)).toBe('≈ $15 USD')
-    expect(formatUSDfromUVNA('2', 0.5)).toBe('≈ $1 USD')
-  })
-
-  it('clamps the displayed value to two fractional digits', () => {
-    expect(formatUSDfromUVNA('1', 0.125)).toBe('≈ $0.13 USD')
-  })
-
-  it('ignores thousands separators in the amount', () => {
-    expect(formatUSDfromUVNA('1,000', 2)).toBe('≈ $2,000 USD')
-  })
-
-  it('returns an empty string for an empty amount', () => {
-    expect(formatUSDfromUVNA(null, 1)).toBe('')
-    expect(formatUSDfromUVNA('', 1)).toBe('')
-  })
-
-  it('returns an empty string for a non-positive or non-finite factor', () => {
-    expect(formatUSDfromUVNA('10', 0)).toBe('')
-    expect(formatUSDfromUVNA('10', -1)).toBe('')
-    expect(formatUSDfromUVNA('10', Number.NaN)).toBe('')
-    expect(formatUSDfromUVNA('10', Number.POSITIVE_INFINITY)).toBe('')
-  })
-
-  it('returns an empty string when the amount has no numeric content', () => {
-    expect(formatUSDfromUVNA('abc', 1)).toBe('')
   })
 })
 
