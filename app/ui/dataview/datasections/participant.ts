@@ -245,6 +245,7 @@ export function getParticipantActionSections(
 export interface Participant {
   id: string
   schema_id: string
+  ecosystem_id?: number | null
   role: ParticipantRole
   did: string | null
   corporation_id: number

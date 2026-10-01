@@ -6,6 +6,8 @@ import {
   installCorporationStubs,
   installEcosystemStubs,
   seedActingCorporation,
+  stubEcosystemList,
+  stubTrustResolve,
 } from './support/corp-stubs'
 import { installMockChain } from './support/mock-chain'
 
@@ -167,6 +169,53 @@ test('the creation wizard gates each step and confirms the built message before 
   await mock.teardown()
 })
 
+test('a confirmed creation continues to the operator grant step', async ({ page }) => {
+  await installCorporationStubs(page, { fresh: true })
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubCorporation: false })
+  await page.goto('/corporation')
+
+  await page.getByLabel('Corporation DID').fill('did:web:new-corp.example')
+  await page.getByLabel('CGF document URL').fill('https://example.com/cgf.pdf')
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('button', { name: 'Sign & create corporation' }).click()
+
+  const dialog = page.getByRole('dialog')
+  await expect(dialog.getByText('Network fee').locator('..')).toContainText(/VNA/, { timeout: 30_000 })
+  await dialog.getByRole('button', { name: 'Confirm' }).click()
+  await expect.poll(() => mock.broadcastTxs().length, { timeout: 30_000 }).toBeGreaterThan(0)
+
+  await expect(page.getByText('Corporation created:')).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByRole('button', { name: 'Grant me operator authorization' })).toBeVisible()
+  await mock.teardown()
+})
+
+test('a cancelled creation leaves the wizard through the sidebar', async ({ page }) => {
+  await seedActingCorporation(page, 13)
+  await installCorporationStubs(page)
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubCorporation: false })
+  await page.goto('/corporation?create=1')
+
+  await page.getByLabel('Corporation DID').fill('did:web:new-corp.example')
+  await page.getByLabel('CGF document URL').fill('https://example.com/cgf.pdf')
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('button', { name: 'Sign & create corporation' }).click()
+
+  const dialog = page.getByRole('dialog')
+  await expect(dialog.getByText('Network fee').locator('..')).toContainText(/VNA/, { timeout: 30_000 })
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(dialog).toBeHidden()
+
+  await page.locator('a[href="/corporation"]').first().click()
+  await expect(page.getByRole('heading', { name: /Acme Trust AG/ })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('heading', { name: 'Create Corporation' })).toBeHidden()
+  expect(mock.seenMethods()).not.toContain('broadcast_tx_sync')
+  await mock.teardown()
+})
+
 test('a missing trust deposit renders the empty state', async ({ page }) => {
   await installCorporationStubs(page, { trustDeposit404: true })
   await seedActingCorporation(page, 13)
@@ -280,4 +329,44 @@ test('a vote opens the confirmation, cancel broadcasts nothing and confirm broad
     .poll(() => mock.seenMethods().filter((method) => method === 'broadcast_tx_sync').length, { timeout: 30_000 })
     .toBe(1)
   await mock.teardown()
+})
+
+const XSS_CLAIM = '<img src=x onerror="window.__xssRan = true"> <script>window.__xssRan = true</script> **not bold**'
+const MARKDOWN_CLAIM = '**bold claim** of the service'
+
+test('a service description claim renders as text or Markdown, never as HTML', async ({ page }) => {
+  await installCorporationStubs(page)
+  await stubEcosystemList(page)
+  await seedActingCorporation(page, 13)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  const grid = page.locator('#ecosystems-grid')
+
+  await test.step('remote markup stays visible text', async () => {
+    await stubTrustResolve(page, { description: XSS_CLAIM })
+    await page.goto('/ecosystems')
+    await expect(grid.getByText('Acme Trust Registry').first()).toBeVisible({ timeout: 15_000 })
+    await expect(grid).toContainText('<img src=x')
+    await expect(grid).toContainText('<script>')
+    await expect(grid).toContainText('**not bold**')
+    await expect(grid.locator('img[src="x"]')).toHaveCount(0)
+    await expect(grid.locator('script')).toHaveCount(0)
+    expect(await page.evaluate(() => (window as unknown as { __xssRan?: boolean }).__xssRan)).toBeUndefined()
+  })
+
+  await test.step('text/markdown renders as Markdown', async () => {
+    await stubTrustResolve(page, { description: MARKDOWN_CLAIM, descriptionFormat: 'text/markdown' })
+    await page.goto('/ecosystems')
+    await expect(grid.locator('strong').first()).toHaveText('bold claim', { timeout: 15_000 })
+    await expect(grid).not.toContainText('**bold claim**')
+  })
+
+  for (const descriptionFormat of ['text/plain', 'markdown']) {
+    await test.step(`${descriptionFormat} keeps the Markdown literal`, async () => {
+      await stubTrustResolve(page, { description: MARKDOWN_CLAIM, descriptionFormat })
+      await page.goto('/ecosystems')
+      await expect(grid).toContainText('**bold claim**', { timeout: 15_000 })
+      await expect(grid.locator('strong')).toHaveCount(0)
+    })
+  }
 })

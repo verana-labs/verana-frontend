@@ -1,8 +1,12 @@
 import type { Page } from '@playwright/test'
 import {
   ACME_DID,
+  ACME_ECOSYSTEM_DID,
   ACME_POLICY_ADDRESS,
   ACME_TRUST_DATA,
+  AGENT_ECOSYSTEMS,
+  AGENT_PARTICIPANTS,
+  AGENT_RESOLUTIONS,
   GROUP_MEMBERS,
   HARNESS_ADDRESS,
   HISTORY_13,
@@ -10,11 +14,13 @@ import {
   PLAIN_DID,
   PROPOSALS,
   VOTES,
+  VS_OPERATOR,
+  VS_OPERATOR_AUTHORIZATIONS,
 } from './corp-fixtures'
 
-export { ACME_DID, HARNESS_ADDRESS, HARNESS_MNEMONIC, PLAIN_DID } from './corp-fixtures'
+export { ACME_DID, ACME_ECOSYSTEM_DID, HARNESS_ADDRESS, HARNESS_MNEMONIC, PLAIN_DID } from './corp-fixtures'
 
-export const ACME_ECOSYSTEM_DID = 'did:web:acme-eco.example'
+const unavailable = { status: 502, json: { error: 'indexer unavailable', code: 502 } }
 
 export type CorpStubOptions = {
   memberOnly?: boolean
@@ -70,7 +76,6 @@ export async function installEcosystemStubs(page: Page) {
 
 export async function installCorporationStubs(page: Page, opts: CorpStubOptions = {}) {
   const { memberOnly = false, trustDeposit404 = false, fresh = false, sectionsDown = false } = opts
-  const unavailable = { status: 502, json: { error: 'indexer unavailable', code: 502 } }
 
   await page.route('**/v4/delegation/operator-authorizations*', (route) => {
     if (fresh || memberOnly) return route.fulfill({ json: { authorizations: [] } })
@@ -204,11 +209,127 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
       : []
     return route.fulfill({ json: { ecosystems } })
   })
+  await stubTrustResolve(page)
+}
+
+type ServiceDescriptionClaims = { description?: string; descriptionFormat?: string }
+
+function resolveBody(service: ServiceDescriptionClaims) {
+  return {
+    ...ACME_TRUST_DATA,
+    ecsCredentials: ACME_TRUST_DATA.ecsCredentials.map((credential) =>
+      credential.ecsSchema === 'ServiceCredential'
+        ? { ...credential, credentialSubject: { ...credential.credentialSubject, ...service } }
+        : credential
+    ),
+  }
+}
+
+// Playwright gives the last handler priority, so a later call replaces the claims of the earlier one.
+export async function stubTrustResolve(page: Page, service: ServiceDescriptionClaims = {}) {
   await page.route('**/v4/verifiable-trust/resolve', (route) => {
     const body = JSON.parse(route.request().postData() ?? '{}') as { did?: string }
     if (body.did !== ACME_DID) {
       return route.fulfill({ status: 404, json: { error: 'DID not found', code: 404 } })
     }
-    return route.fulfill({ json: ACME_TRUST_DATA })
+    return route.fulfill({ json: resolveBody(service) })
+  })
+}
+
+export async function stubEcosystemList(page: Page) {
+  await page.route('**/v4/ecosystem/list*', (route) =>
+    route.fulfill({
+      json: {
+        ecosystems: [
+          {
+            id: 1,
+            did: ACME_DID,
+            corporation_id: 13,
+            created: '2026-09-01T10:00:00Z',
+            modified: '2026-09-01T10:00:00Z',
+            language: 'en',
+            active_version: 1,
+            active_schemas: 0,
+            participants: 1,
+            weight: '0',
+            issued: 0,
+            verified: 0,
+            archived: null,
+          },
+        ],
+      },
+    })
+  )
+}
+
+export type AgentStubOptions = {
+  ecosystemsDown?: boolean
+  delegationsDown?: boolean
+  resolverDown?: boolean
+}
+
+export async function installAgentStubs(page: Page, opts: AgentStubOptions = {}) {
+  const { ecosystemsDown = false, delegationsDown = false, resolverDown = false } = opts
+
+  await page.route('**/v4/participant/list*', (route) => {
+    const params = new URL(route.request().url()).searchParams
+    if (params.get('corporation_id') !== '13') return route.fulfill({ json: { participants: [] } })
+    const wanted = params.get('participant_state')
+    const participants = wanted
+      ? AGENT_PARTICIPANTS.filter((participant) => participant.participant_state === wanted)
+      : AGENT_PARTICIPANTS
+    return route.fulfill({ json: { participants } })
+  })
+  await page.route('**/v4/ecosystem/list*', (route) => {
+    if (ecosystemsDown) return route.fulfill(unavailable)
+    return route.fulfill({ json: { ecosystems: AGENT_ECOSYSTEMS } })
+  })
+  await page.route('**/v4/credential-schema/list*', (route) => route.fulfill({ json: { schemas: [] } }))
+  await page.route('**/v4/delegation/vs-operator-authorizations*', (route) => {
+    if (delegationsDown) return route.fulfill(unavailable)
+    return route.fulfill({ json: { authorizations: VS_OPERATOR_AUTHORIZATIONS } })
+  })
+  await page.route('**/v4/verifiable-trust/resolve', (route) => {
+    if (resolverDown) return route.fulfill(unavailable)
+    const body = JSON.parse(route.request().postData() ?? '{}') as {
+      did?: string
+      participations?: { states?: string[] }
+    }
+    const fixture = body.did ? AGENT_RESOLUTIONS[body.did] : undefined
+    if (!body.did || !fixture) return route.fulfill({ status: 404, json: { error: 'DID not found', code: 404 } })
+    const states = body.participations?.states ?? []
+    return route.fulfill({
+      json: {
+        did: body.did,
+        trusted: fixture.trusted ?? true,
+        evaluatedAtBlock: 405000,
+        expiresAtTime: null,
+        ecsCredentials: [
+          {
+            id: `urn:uuid:ecs-org-${body.did}`,
+            ecsSchema: 'OrganizationCredential',
+            credentialSubject: { name: 'Acme Trust AG', countryCode: 'CH' },
+          },
+          {
+            id: `urn:uuid:ecs-service-${body.did}`,
+            ecsSchema: 'ServiceCredential',
+            credentialSubject: { name: fixture.serviceName },
+          },
+        ],
+        participations: (fixture.participations ?? [])
+          .filter((participation) => states.includes(participation.state))
+          .map((participation) => ({
+            id: participation.id,
+            role: participation.role,
+            state: participation.state,
+            credentialSchemaId: 26,
+            ecosystemId: 13,
+            vsOperator: participation.id === 102 ? VS_OPERATOR : null,
+            validatorParticipantId: null,
+          })),
+        services: fixture.services ?? [],
+        presentations: fixture.presentations ?? [],
+      },
+    })
   })
 }

@@ -6,6 +6,7 @@ import { PublicEnvScript } from 'next-runtime-env'
 import type { ReactNode } from 'react'
 import ClientLayout from '@/providers/client-layout'
 import '@/init-long'
+import { logger } from '@/lib/logger'
 import { getProtocolParams } from '@/lib/protocolParams'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
@@ -38,6 +39,8 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const protocolParamsResult = await getProtocolParams()
+  if (protocolParamsResult.errorProtocolParams)
+    logger.error('protocol params', protocolParamsResult.errorProtocolParams)
 
   return (
     <html lang="en" className={`${inter.variable}`}>

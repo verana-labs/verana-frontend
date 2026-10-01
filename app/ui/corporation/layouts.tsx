@@ -65,10 +65,12 @@ function section(view: CorporationView, tab: CorporationTab) {
         <OperatorsSection
           authorizations={details.operatorAuthorizations}
           vsAuthorizations={details.vsOperatorAuthorizations}
+          participantsById={details.participantsById}
           revokeMode={view.modes.revoke}
           grantMode={view.modes.grant}
           walletAddress={view.walletAddress}
-          degraded={details.degraded.operatorAuthorizations}
+          degradedOperators={details.degraded.operatorAuthorizations}
+          degradedAgents={details.degraded.vsOperatorAuthorizations}
           onRevoke={view.onRevoke}
           onGrant={view.onGrant}
         />

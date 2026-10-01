@@ -93,7 +93,7 @@ export default function EcosystemsFilterBar({ value, onChange }: Props) {
   )
 }
 
-function Checkbox({
+export function Checkbox({
   id,
   checked,
   onChange,

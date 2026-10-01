@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger'
+
 export function indexerValidators(label: string) {
   const invalid = (path: string) => new Error(`Invalid ${label} response: ${path}`)
 
@@ -86,4 +88,24 @@ export function applyKeysetParams(params: URLSearchParams, request: KeysetPageRe
 
 export function takeKeysetPage<T>(window: T[], pageSize: number): { items: T[]; hasNext: boolean } {
   return { items: window.slice(0, pageSize), hasNext: window.length > pageSize }
+}
+
+export interface Degradable<T> {
+  value: T
+  failed: boolean
+}
+
+export async function fetchJson(url: string, context: string): Promise<unknown> {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`${context}: ${response.status}`)
+  return response.json()
+}
+
+export async function degrade<T>(context: string, fallback: T, task: () => Promise<T>): Promise<Degradable<T>> {
+  try {
+    return { value: await task(), failed: false }
+  } catch (cause) {
+    logger.error(context, cause)
+    return { value: fallback, failed: true }
+  }
 }

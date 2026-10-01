@@ -11,7 +11,6 @@ export type Column<T> = {
   getClassName?: (value: T[keyof T]) => string
   className?: string
   viewMobileRight?: boolean
-  isHtml?: boolean
   break?: string
 }
 

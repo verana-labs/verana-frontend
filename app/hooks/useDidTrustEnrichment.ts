@@ -22,6 +22,7 @@ export function useDidTrustEnrichment(did: string | undefined): UseDidTrustEnric
   const [state, setState] = useState<State>(INITIAL)
   const [reloadToken, setReloadToken] = useState(0)
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reloadToken re-runs the resolve after refetch invalidates the cache
   useEffect(() => {
     if (!did) {
       setState(INITIAL)

@@ -53,37 +53,16 @@ export function parseVNA(formatted: string, decimals: number = 6): string {
   return micro.toString()
 }
 
-export function formatUSDfromUVNA(amount: string | null, conversionFactorUSDfromVNA: number): string {
-  if (!amount) return ''
-  if (!Number.isFinite(conversionFactorUSDfromVNA) || conversionFactorUSDfromVNA <= 0) return ''
-
-  // Clean locale-formatted number (remove thousands separators and whitespace)
-  const cleanAmount = amount
-    .trim()
-    .replace(/[^\d.,-]/g, '')
-    .replace(/,/g, '')
-  const numericAmount = parseFloat(cleanAmount)
-
-  if (!Number.isFinite(numericAmount)) return ''
-
-  const usd = numericAmount * conversionFactorUSDfromVNA
-
-  return (
-    '≈ $' +
-    usd.toLocaleString(undefined, {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    }) +
-    ' USD'
-  )
-}
-
 export function shortenMiddle(str: string, maxLength: number): string {
   if (str === null || str.length <= maxLength) return str
   const keep = Math.floor((maxLength - 3) / 2)
   const start = str.slice(0, keep)
   const end = str.slice(-keep)
   return `${start}...${end}`
+}
+
+export function participantCardHref(schemaId: number | string, participantId: number | string): string {
+  return `/participants/${encodeURIComponent(String(schemaId))}?participant=${encodeURIComponent(String(participantId))}`
 }
 
 export function shortenDID(str: string): string {
@@ -194,14 +173,6 @@ export function countryCodeToFlag(code?: string | null): string {
   if (normalized.length !== 2 || !/^[A-Z]{2}$/.test(normalized)) return '🏳️'
   const base = 0x1f1e6
   return String.fromCodePoint(base + (normalized.charCodeAt(0) - 65), base + (normalized.charCodeAt(1) - 65))
-}
-
-export function formatNetwork(network: string) {
-  const htmlNetwork = `
-    <div class="relative w-2 h-2 bg-success-500 rounded-full pulse-dot"></div>
-    <span class="text-sm text-success-700 dark:text-success-300 font-medium">${network}</span>
-    `
-  return htmlNetwork
 }
 
 export function roleBadgeClass(role: ParticipantRole) {
