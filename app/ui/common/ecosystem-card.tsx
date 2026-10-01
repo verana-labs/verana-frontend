@@ -120,7 +120,7 @@ export default function EcosystemCard({ ecosystem, enrichment }: Props) {
             {ecosystemDescription ? (
               <ClaimText
                 text={ecosystemDescription}
-                format={enrichment?.serviceDescriptionFormat}
+                format={identity?.serviceDescriptionFormat}
                 className="text-xs text-neutral-70 dark:text-neutral-70 mt-1 line-clamp-2 break-words"
                 title={ecosystemDescription}
               />
