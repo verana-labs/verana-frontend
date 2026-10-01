@@ -100,6 +100,14 @@ describe('buildGrantOperatorMessages', () => {
     expect(grant.msgTypes).not.toContain('/verana.pp.v1.MsgCreateOrUpdateParticipantSession')
     expect(grant.msgTypes).toContain('/verana.pp.v1.MsgTriggerResolver')
     expect(grant.msgTypes).toContain('/verana.di.v1.MsgStoreDigest')
+    expect(grant).toMatchObject({
+      expiration: undefined,
+      authzSpendLimit: [],
+      authzSpendLimitPeriod: undefined,
+      withFeegrant: false,
+      feegrantSpendLimit: [],
+      feegrantSpendLimitPeriod: undefined,
+    })
   })
 
   it('funds only the exact corporation policy address when requested', () => {

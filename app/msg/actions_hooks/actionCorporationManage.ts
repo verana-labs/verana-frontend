@@ -4,10 +4,7 @@ import type { EncodeObject } from '@cosmjs/proto-signing'
 import type { DeliverTxResponse } from '@cosmjs/stargate'
 import { useChain } from '@cosmos-kit/react'
 import { MsgUpdateCorporation } from '@verana-labs/verana-types/codec/verana/co/v1/tx'
-import {
-  MsgGrantOperatorAuthorization,
-  MsgRevokeOperatorAuthorization,
-} from '@verana-labs/verana-types/codec/verana/de/v1/tx'
+import { MsgRevokeOperatorAuthorization } from '@verana-labs/verana-types/codec/verana/de/v1/tx'
 import { MsgRepaySlashedTrustDeposit } from '@verana-labs/verana-types/codec/verana/td/v1/tx'
 import {
   Exec,
@@ -24,6 +21,7 @@ import { veranaRegistry } from '@/config/veranaChain.sign.client'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
+import { grantOperatorAuthorization, grantOptionLines, type OperatorGrantOptions } from '@/lib/operator-grant'
 import { trustCostLines } from '@/lib/trust-costs'
 import {
   type CostLine,
@@ -91,22 +89,15 @@ export function buildGrantOperatorMessage(
   membership: CorporationMembership,
   grantee: string,
   msgTypes: string[],
-  operator: string
+  operator: string,
+  options: OperatorGrantOptions
 ): EncodeObject {
   return {
     typeUrl: '/verana.de.v1.MsgGrantOperatorAuthorization',
-    value: MsgGrantOperatorAuthorization.fromPartial({
-      corporation: membership.corporation.policyAddress,
-      operator,
-      grantee,
-      msgTypes,
-      expiration: undefined,
-      authzSpendLimit: [],
-      authzSpendLimitPeriod: undefined,
-      withFeegrant: false,
-      feegrantSpendLimit: [],
-      feegrantSpendLimitPeriod: undefined,
-    }),
+    value: grantOperatorAuthorization(
+      { corporation: membership.corporation.policyAddress, operator, grantee, msgTypes },
+      options
+    ),
   }
 }
 
@@ -365,13 +356,20 @@ export function useCorporationManage(onDone?: () => void) {
         `Rotate corporation DID to ${did}`,
         { did }
       ),
-    grantOperator: (membership: CorporationMembership, grantee: string, msgTypes: string[]) =>
+    grantOperator: (
+      membership: CorporationMembership,
+      grantee: string,
+      msgTypes: string[],
+      options: OperatorGrantOptions,
+      replacesFeeGrant: boolean
+    ) =>
       sendDelegable(
         membership,
-        (operator) => buildGrantOperatorMessage(membership, grantee, msgTypes, operator),
+        (operator) => buildGrantOperatorMessage(membership, grantee, msgTypes, operator, options),
         'MsgGrantOperatorAuthorization',
         `Grant operator authorization to ${grantee}`,
-        { grantee: shortenMiddle(grantee, 24), count: msgTypes.length }
+        { grantee: shortenMiddle(grantee, 24), count: msgTypes.length },
+        grantOptionLines(options, replacesFeeGrant)
       ),
     revokeOperator: (membership: CorporationMembership, grantee: string) =>
       sendDelegable(
@@ -390,7 +388,12 @@ export function useCorporationManage(onDone?: () => void) {
         { amount: formatVNAFromUVNA(String(depositUvna)) },
         trustCostLines({ msgType: 'MsgRepaySlashedTrustDeposit', amount: depositUvna }, rates)
       ),
-    propose: async (membership: CorporationMembership, message: EncodeObject, title: string): Promise<boolean> => {
+    propose: async (
+      membership: CorporationMembership,
+      message: EncodeObject,
+      title: string,
+      costLines?: CostLine[]
+    ): Promise<boolean> => {
       if (!membership.member) {
         await notify(translate('error.msg.corporation.notauthorized'), 'error')
         return false
@@ -399,17 +402,16 @@ export function useCorporationManage(onDone?: () => void) {
         await notify(translate('notification.msg.connectwallet'), 'error')
         return false
       }
-      return broadcast(
-        'MsgSubmitProposal',
-        [wrapInProposal(membership, address, message, title, title)],
-        accountPreview(
+      return broadcast('MsgSubmitProposal', [wrapInProposal(membership, address, message, title, title)], {
+        ...accountPreview(
           translate('txconfirm.effect.MsgSubmitProposal', {
             corporation: shortenMiddle(membership.corporation.did, 32),
           }),
           address,
           message.typeUrl
-        )
-      )
+        ),
+        costLines,
+      })
     },
     vote: (proposalId: number, choice: VoteChoice) =>
       broadcast(

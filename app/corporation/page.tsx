@@ -142,7 +142,8 @@ export default function CorporationPage() {
     },
     onCreate: () => router.push(`${pathname}?create=1`),
     onRefresh: refreshAfterTx,
-    onGrant: (grantee, msgTypes) => void manage.grantOperator(actingCorporation, grantee, msgTypes),
+    onGrant: (grantee, msgTypes, options, replacesFeeGrant) =>
+      manage.grantOperator(actingCorporation, grantee, msgTypes, options, replacesFeeGrant),
     onRevoke: (operator) => void manage.revokeOperator(actingCorporation, operator),
     onRepay: () => void manage.repaySlashed(actingCorporation, unrepaidSlash),
     composing,
@@ -152,6 +153,7 @@ export default function CorporationPage() {
         membership={actingCorporation}
         policy={policy}
         members={members}
+        feeGrants={details.feeGrants}
         onDone={refreshAfterTx}
         onClose={() => setComposing(false)}
       />
