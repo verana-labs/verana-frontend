@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { agentRefreshNeeded, buildAgentList } from '@/hooks/useAgents'
+import {
+  AGENTS_PAGE_SIZE,
+  agentEcosystemsUrl,
+  agentParticipantsUrl,
+  agentRefreshNeeded,
+  buildAgentList,
+} from '@/hooks/useAgents'
 import type { IndexerEntityEvent } from '@/lib/indexer-event'
 
 const CORPORATION_DID = 'did:web:corp.example'
@@ -75,5 +81,37 @@ describe('agentRefreshNeeded', () => {
     ]
 
     expect(agentRefreshNeeded(events, 7, known).dids).toEqual([AGENT_DID, CORPORATION_DID])
+  })
+})
+
+describe('the agent list reads both sources as cursor pages', () => {
+  const PARTICIPANT = 'https://indexer/v4/participant'
+  const ECOSYSTEM = 'https://indexer/v4/ecosystem'
+
+  it('asks for one page of the Corporation ACTIVE participants, newest first', () => {
+    expect(agentParticipantsUrl(PARTICIPANT, 13, false, AGENTS_PAGE_SIZE)).toBe(
+      'https://indexer/v4/participant/list?corporation_id=13&limit=26&sort=-id&participant_state=ACTIVE'
+    )
+  })
+
+  it('drops the state filter when the inactive agents are included', () => {
+    expect(agentParticipantsUrl(PARTICIPANT, 13, true, AGENTS_PAGE_SIZE)).not.toContain('participant_state')
+  })
+
+  it('carries the last row of the window as the descending cursor', () => {
+    expect(agentParticipantsUrl(PARTICIPANT, 13, true, AGENTS_PAGE_SIZE, '40')).toContain('max_id=40')
+    expect(agentEcosystemsUrl(ECOSYSTEM, 13, AGENTS_PAGE_SIZE, '40')).toBe(
+      'https://indexer/v4/ecosystem/list?corporation_id=13&limit=26&sort=-id&max_id=40'
+    )
+  })
+
+  it('never falls back to one capped request', () => {
+    for (const url of [
+      agentParticipantsUrl(PARTICIPANT, 13, false, AGENTS_PAGE_SIZE),
+      agentEcosystemsUrl(ECOSYSTEM, 13, AGENTS_PAGE_SIZE),
+    ]) {
+      expect(url).not.toContain('limit=1024')
+      expect(url).toContain('sort=-id')
+    }
   })
 })

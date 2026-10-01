@@ -11,6 +11,7 @@ import { useIndexerEntityEvents } from '@/providers/indexer-events-provider'
 import AgentCard from '@/ui/agents/agent-card'
 import AgentsFilterBar, { type AgentsFilterState, INITIAL_AGENTS_FILTER } from '@/ui/agents/agents-filter-bar'
 import EcosystemCardSkeleton from '@/ui/common/ecosystem-card-skeleton'
+import { ShowMoreButton } from '@/ui/common/keyset-pagination'
 
 const SKELETONS = 3
 const DEGRADED = 'text-sm text-amber-700 dark:text-amber-300'
@@ -18,10 +19,18 @@ const DEGRADED = 'text-sm text-amber-700 dark:text-amber-300'
 export default function AgentsPage() {
   const { actingCorporation, loading: actingLoading } = useUserCorporation()
   const [filters, setFilters] = useState<AgentsFilterState>(INITIAL_AGENTS_FILTER)
-  const { agents, delegations, degraded, resolutions, unavailableDids, loading, error, applyEvents } = useAgents(
-    actingCorporation?.corporation,
-    filters.includeInactive
-  )
+  const {
+    agents,
+    delegations,
+    degraded,
+    resolutions,
+    unavailableDids,
+    loading,
+    error,
+    hasNext,
+    loadMore,
+    applyEvents,
+  } = useAgents(actingCorporation?.corporation, filters.includeInactive)
   useIndexerEntityEvents(applyEvents)
 
   // Per [VFE-PAGE-AGENTS-7] the trust gate never hides a pinned Corporation or Ecosystem DID.
@@ -69,6 +78,9 @@ export default function AgentsPage() {
       ) : null}
 
       <section id="agents-grid" className="mb-8">
+        {hasNext ? (
+          <p className="pb-2 text-xs text-neutral-70 dark:text-neutral-70">{translate('pagination.loadedOnly')}</p>
+        ) : null}
         {error ? (
           <div className="p-6 error-pane">{translate('agents.error')}</div>
         ) : loading ? (
@@ -94,6 +106,7 @@ export default function AgentsPage() {
             ))}
           </div>
         )}
+        {!error && !loading && hasNext ? <ShowMoreButton onClick={loadMore} /> : null}
       </section>
     </>
   )
