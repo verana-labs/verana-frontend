@@ -47,16 +47,12 @@ import { isValidDID } from '@/util/validations'
 type WizardStep = 1 | 2 | 3 | 4 | 5 | 6 | 7
 
 const STEPS = [
-  { id: 1, title: 'Review Ecosystem', description: 'Verify the ecosystem before continuing.' },
-  { id: 2, title: 'Select Credential Schema', description: 'Choose the schema you want to join.' },
-  { id: 3, title: 'Select Your Role', description: 'Choose your participant role.' },
-  {
-    id: 4,
-    title: 'Accept the Governance Framework',
-    description: 'Review the active governance framework document and accept it.',
-  },
-  { id: 5, title: 'Select Validator', description: 'Choose the participant that will validate your request.' },
-  { id: 6, title: 'Confirm and Submit', description: 'Provide the DID that will participate in the ecosystem.' },
+  { id: 1, title: 'join.step.review.title', description: 'join.step.review.description' },
+  { id: 2, title: 'join.step.schema.title', description: 'join.step.schema.description' },
+  { id: 3, title: 'join.step.role.title', description: 'join.step.role.description' },
+  { id: 4, title: 'join.acceptegf.title', description: 'join.acceptegf.description' },
+  { id: 5, title: 'join.step.validator.title', description: 'join.step.validator.description' },
+  { id: 6, title: 'join.createparticipant.title', description: 'join.step.confirm.description' },
 ] as const
 
 function t(key: string): string {
@@ -203,7 +199,7 @@ export default function JoinEcosystemWizard() {
 
   function continueWizard() {
     if (!canContinue) {
-      void notify('Complete the current step before continuing.', 'error')
+      void notify(t('join.continue.incomplete'), 'error')
       return
     }
     if (currentStep === 6) {
@@ -244,7 +240,7 @@ export default function JoinEcosystemWizard() {
       <section className="mb-8">
         <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Progress</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('join.progress')}</span>
             <span className="text-sm font-medium text-primary-600">{Math.round(percentage)}%</span>
           </div>
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
@@ -268,7 +264,7 @@ export default function JoinEcosystemWizard() {
                 >
                   {step.id < currentStep ? '✓' : step.id}
                 </div>
-                <span className="text-xs text-gray-600 dark:text-gray-300">{step.title}</span>
+                <span className="text-xs text-gray-600 dark:text-gray-300">{t(step.title)}</span>
               </div>
             ))}
           </div>
@@ -278,8 +274,8 @@ export default function JoinEcosystemWizard() {
       {activeStep ? (
         <section className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6">
           <div className="mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{activeStep.title}</h2>
-            <p className="text-sm text-neutral-70 mt-1">{activeStep.description}</p>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t(activeStep.title)}</h2>
+            <p className="text-sm text-neutral-70 mt-1">{t(activeStep.description)}</p>
           </div>
 
           {currentStep === 1 ? (
@@ -305,7 +301,7 @@ export default function JoinEcosystemWizard() {
                 />
               ))}
               {credentialSchemas.length === 0 ? (
-                <p className="text-sm text-neutral-70">No active credential schemas are available.</p>
+                <p className="text-sm text-neutral-70">{t('join.schemas.empty')}</p>
               ) : null}
               <KeysetPagination
                 showing={credentialSchemas.length}
@@ -360,12 +356,17 @@ export default function JoinEcosystemWizard() {
             <div className="space-y-4 mb-6">
               {decision?.messageType === 'MsgSelfCreateParticipant' ? (
                 <div className="rounded-lg bg-green-50 dark:bg-green-900/20 p-4 text-sm text-green-800 dark:text-green-300">
-                  This role uses open onboarding. Select the ecosystem participant that anchors the new participant.
+                  {t(
+                    selectedRole === 'VERIFIER'
+                      ? 'join.createparticipant.description.open.verifier'
+                      : 'join.createparticipant.description.open.issuer'
+                  )}{' '}
+                  {t('join.validators.open.anchor')}
                 </div>
               ) : null}
               {errorParticipants ? <div className="error-pane">{errorParticipants}</div> : null}
               {decision?.validatorRole && validators.length === 0 ? (
-                <p className="text-sm text-neutral-70">No active validator participant is available.</p>
+                <p className="text-sm text-neutral-70">{t('join.validators.empty')}</p>
               ) : null}
               {decision?.validatorRole
                 ? validators.map((validator) => (
@@ -385,17 +386,17 @@ export default function JoinEcosystemWizard() {
             <div className="space-y-4 mb-6">
               <div className="rounded-lg bg-gray-50 dark:bg-gray-800/50 p-4 text-sm">
                 <p>
-                  <span className="font-medium">Schema:</span> {selectedSchema?.title}
+                  <span className="font-medium">{t('join.summary.schema')}:</span> {selectedSchema?.title}
                 </p>
                 <p>
-                  <span className="font-medium">Role:</span> {selectedRole}
+                  <span className="font-medium">{t('join.success.role')}:</span> {selectedRole}
                 </p>
                 <p>
-                  <span className="font-medium">Onboarding transaction:</span> {decision?.messageType}
+                  <span className="font-medium">{t('join.summary.transaction')}:</span> {decision?.messageType}
                 </p>
                 {selectedValidator ? (
                   <p>
-                    <span className="font-medium">Validator participant:</span> {selectedValidator.id}
+                    <span className="font-medium">{t('join.summary.validator')}:</span> {selectedValidator.id}
                   </p>
                 ) : null}
                 {onboardingCostLines.map((line) => (
@@ -409,7 +410,7 @@ export default function JoinEcosystemWizard() {
                   htmlFor="service-did"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
-                  Service DID
+                  {t('join.servicedid.label')}
                 </label>
                 <input
                   id="service-did"
