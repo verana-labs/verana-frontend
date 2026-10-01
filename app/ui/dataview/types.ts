@@ -187,7 +187,6 @@ export type DataField<T> = BaseField & {
   validation?: FieldValidation
   classField?: string
   isHtml?: boolean
-  usdValue?: boolean
   hasStats?: boolean
   format?: (value: T[keyof T]) => ReactNode
 }

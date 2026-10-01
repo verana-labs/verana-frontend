@@ -11,7 +11,6 @@ export interface ActionCardProps {
   indicatorValue?: string
   valueVNA?: string
   classValue?: string
-  valueUSD?: string
 }
 
 export default function ActionCard({
@@ -24,7 +23,6 @@ export default function ActionCard({
   indicatorValue,
   valueVNA,
   classValue,
-  valueUSD,
 }: ActionCardProps) {
   return (
     <div className="text-center py-8">
@@ -38,7 +36,6 @@ export default function ActionCard({
       {available && (
         <div className="mb-6">
           <div className={`text-3xl font-bold font-mono mb-2 ${classValue}`}>{valueVNA}</div>
-          <div className="text-sm text-neutral-70 dark:text-neutral-70">{valueUSD}</div>
         </div>
       )}
       {indicatorName && indicatorValue && (
