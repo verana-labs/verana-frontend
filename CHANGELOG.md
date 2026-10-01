@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.18.0](https://github.com/verana-labs/verana-frontend/compare/v0.17.0...v0.18.0) (2026-10-01)
+
+
+### Features
+
+* [Corporation] capability gates and the proposal fallback on every action ([#492](https://github.com/verana-labs/verana-frontend/issues/492)) ([c969831](https://github.com/verana-labs/verana-frontend/commit/c96983167e642ff4f2f37320c0a489a9f3d2514b))
+* [Credential Schema] collect the holder onboarding mode and digest algorithm on creation ([#493](https://github.com/verana-labs/verana-frontend/issues/493)) ([b980165](https://github.com/verana-labs/verana-frontend/commit/b980165d2eb8a5292c3b08427a1f097a4f185ac6))
+* [Credential Schema] gate fee-bearing actions on the native pricing asset ([#485](https://github.com/verana-labs/verana-frontend/issues/485)) ([708afe9](https://github.com/verana-labs/verana-frontend/commit/708afe93fc46d2b1e44a9b07a7ddcd5a7e42a9de))
+* [Data] remove the chain REST dependency ([#486](https://github.com/verana-labs/verana-frontend/issues/486)) ([26331d1](https://github.com/verana-labs/verana-frontend/commit/26331d1bd3cf0838db81877da62186b6d3ad7fbc))
+* [Governance] verified fetch route and a truthful document viewer ([#484](https://github.com/verana-labs/verana-frontend/issues/484)) ([449b9af](https://github.com/verana-labs/verana-frontend/commit/449b9af91e5e63dd2e47a9446e1761f5a34ee712))
+* [Transactions] confirmation step with the trust cost preview ([#482](https://github.com/verana-labs/verana-frontend/issues/482)) ([22364b1](https://github.com/verana-labs/verana-frontend/commit/22364b1df9907d1efc60db8d1641ebca31bd047b))
+* [Transactions] elect the fee payer from the corporation fee grants ([#487](https://github.com/verana-labs/verana-frontend/issues/487)) ([b91640f](https://github.com/verana-labs/verana-frontend/commit/b91640f87ea30446e800c3930bd59f47c59c14d2))
+* agents page and agent authorization detail corporation page ([#483](https://github.com/verana-labs/verana-frontend/issues/483)) ([ba34d70](https://github.com/verana-labs/verana-frontend/commit/ba34d700d42a52ed222180670eac75eeb9d63faa))
+* render remote content as text never as html ([#490](https://github.com/verana-labs/verana-frontend/issues/490)) ([575446e](https://github.com/verana-labs/verana-frontend/commit/575446ec780c0aab515ea66c45903c033bc622b7))
+* settings page locale selection and theme ([#481](https://github.com/verana-labs/verana-frontend/issues/481)) ([aedf14e](https://github.com/verana-labs/verana-frontend/commit/aedf14e1fc5b05a2efaebdeb0ab10bcdbe8cab3c))
+
+
+### Bug Fixes
+
+* [Data] align with chain v0.10.5 ([#495](https://github.com/verana-labs/verana-frontend/issues/495)) ([c8435ed](https://github.com/verana-labs/verana-frontend/commit/c8435ed57a4ebc3f822c36af82a02f85a611555e))
+* [Participants] badge palettes and the expires-soon indicator ([#473](https://github.com/verana-labs/verana-frontend/issues/473)) ([e93f0da](https://github.com/verana-labs/verana-frontend/commit/e93f0da7f71f6c4eab74afc1610e6fb85c5c28ba))
+* keep the corporation wizard mounted through creation so the grant step shows ([#498](https://github.com/verana-labs/verana-frontend/issues/498)) ([71fa733](https://github.com/verana-labs/verana-frontend/commit/71fa7330e9d317a9e39baa4777e13dd5092cc2ab))
+
 ## [0.17.0](https://github.com/verana-labs/verana-frontend/compare/v0.16.0...v0.17.0) (2026-09-19)
 
 
