@@ -10,6 +10,7 @@ import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { DashboardData } from '@/ui/dataview/datasections/dashboard'
 import type { PendingEcosystem } from '@/ui/dataview/datasections/participant'
+import { shortenDID } from '@/util/util'
 
 type PendingTasksCtxValue = {
   pendingParticipants: PendingEcosystem[]
@@ -179,6 +180,23 @@ export function useDiscoverCtx() {
   const ctx = useContext(DiscoverContext)
   if (!ctx) throw new Error('useDiscoverCtx must be used within RestQueryProvider')
   return ctx
+}
+
+// Schema titles and ecosystem DIDs for ids, from the loaded discover window; the id is the fallback.
+export function useRegistryLabels() {
+  const { credentialSchemas, discoverList } = useDiscoverCtx()
+  return useMemo(() => {
+    const schemas = new Map(credentialSchemas.map((schema) => [schema.id, schema.title]))
+    const ecosystems = new Map(discoverList.map((ecosystem) => [ecosystem.id, ecosystem.did]))
+    return {
+      schemaLabel: (id: number | null) => (id === null ? '' : schemas.get(String(id)) || `#${id}`),
+      ecosystemLabel: (id: number | null) => {
+        if (id === null) return ''
+        const did = ecosystems.get(String(id))
+        return did ? shortenDID(did) : `#${id}`
+      },
+    }
+  }, [credentialSchemas, discoverList])
 }
 
 export function useEcosystemsCtx() {
