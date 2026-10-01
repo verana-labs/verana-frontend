@@ -45,7 +45,29 @@ const HARNESS_GRANTS_13 = [
 export const OPERATOR_AUTHORIZATIONS = [
   { id: 1, corporation_id: 12, operator: HARNESS_ADDRESS, msg_types: ['/verana.ec.v1.MsgCreateEcosystem'] },
   { id: 2, corporation_id: 13, operator: HARNESS_ADDRESS, msg_types: HARNESS_GRANTS_13 },
-  { id: 3, corporation_id: 13, operator: SECOND_OPERATOR, msg_types: OPERATOR_GRANT_MESSAGE_TYPES },
+  {
+    id: 3,
+    corporation_id: 13,
+    operator: SECOND_OPERATOR,
+    msg_types: OPERATOR_GRANT_MESSAGE_TYPES,
+    spend_limit: [{ denom: 'uvna', amount: '5000000' }],
+    remaining_spend: [{ denom: 'uvna', amount: '3500000' }],
+    expiration: '2026-12-01T00:00:00Z',
+    period: '2592000s',
+  },
+]
+
+export const FEE_GRANTS = [
+  {
+    id: 9,
+    grantor_corporation_id: 13,
+    grantee: SECOND_OPERATOR,
+    msg_types: OPERATOR_GRANT_MESSAGE_TYPES,
+    spend_limit: [{ denom: 'uvna', amount: '2000000' }],
+    remaining_spend: [{ denom: 'uvna', amount: '1250000' }],
+    expiration: '2026-10-08T00:00:00Z',
+    period: '604800s',
+  },
 ]
 
 export const GROUP_MEMBERS = [

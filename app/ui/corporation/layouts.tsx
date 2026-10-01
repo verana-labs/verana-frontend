@@ -5,6 +5,7 @@ import type { CorporationDetails } from '@/hooks/useCorporationDetails'
 import type { ActionSigning } from '@/hooks/useSigningMode'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
+import type { OperatorGrantOptions } from '@/lib/operator-grant'
 import type { DidEnrichment } from '@/lib/resolverClient'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import { ActivityTimeline } from './activity'
@@ -36,7 +37,12 @@ export interface CorporationView {
   onToggleRotate: () => void
   onRotate: (did: string) => void
   onCreate: () => void
-  onGrant: (grantee: string, msgTypes: string[]) => void
+  onGrant: (
+    grantee: string,
+    msgTypes: string[],
+    options: OperatorGrantOptions,
+    replacesFeeGrant: boolean
+  ) => Promise<boolean>
   onRevoke: (operator: string) => void
   onRepay: () => void
   composing: boolean
@@ -65,12 +71,14 @@ function section(view: CorporationView, tab: CorporationTab) {
         <OperatorsSection
           authorizations={details.operatorAuthorizations}
           vsAuthorizations={details.vsOperatorAuthorizations}
+          feeGrants={details.feeGrants}
           participantsById={details.participantsById}
           revokeMode={view.modes.revoke}
           grantMode={view.modes.grant}
           walletAddress={view.walletAddress}
           degradedOperators={details.degraded.operatorAuthorizations}
           degradedAgents={details.degraded.vsOperatorAuthorizations}
+          degradedFeeGrants={details.degraded.feeGrants}
           onRevoke={view.onRevoke}
           onGrant={view.onGrant}
         />

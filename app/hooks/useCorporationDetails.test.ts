@@ -9,7 +9,9 @@ vi.mock('@/config/env', () => ({
 
 import { logger } from '@/lib/logger'
 import {
+  corporationFeeGrantsUrl,
   fetchCorporationHistory,
+  parseCorporationFeeGrants,
   parseGroup,
   parseHistory,
   parseOperatorAuthorizations,
@@ -114,17 +116,146 @@ describe('parseTrustDeposit', () => {
 })
 
 describe('parseOperatorAuthorizations', () => {
-  it('keeps every grant row with its message types', () => {
+  it('keeps every grant row with its message types and no limits when the indexer omits them', () => {
     const rows = parseOperatorAuthorizations({
       authorizations: [
         { id: 11, corporation_id: 12, operator: 'verana1op', msg_types: ['/verana.ec.v1.MsgCreateEcosystem'] },
       ],
     })
-    expect(rows).toEqual([{ id: 11, operator: 'verana1op', msgTypes: ['/verana.ec.v1.MsgCreateEcosystem'] }])
+    expect(rows).toEqual([
+      {
+        id: 11,
+        operator: 'verana1op',
+        msgTypes: ['/verana.ec.v1.MsgCreateEcosystem'],
+        spendLimit: null,
+        remainingSpend: null,
+        expiration: null,
+        period: null,
+      },
+    ])
+  })
+
+  it('reads the spend limit, remaining spend, expiration and period', () => {
+    const [row] = parseOperatorAuthorizations({
+      authorizations: [
+        {
+          id: 3,
+          corporation_id: 13,
+          operator: 'verana1op',
+          msg_types: [],
+          spend_limit: [{ denom: 'uvna', amount: '5000000' }],
+          remaining_spend: [{ denom: 'uvna', amount: 3500000 }],
+          expiration: '2026-12-01T00:00:00.000Z',
+          period: '2592000s',
+        },
+      ],
+    })
+    expect(row).toMatchObject({
+      spendLimit: [{ denom: 'uvna', amount: '5000000' }],
+      remainingSpend: [{ denom: 'uvna', amount: '3500000' }],
+      expiration: '2026-12-01T00:00:00.000Z',
+      period: '2592000s',
+    })
+  })
+
+  it('reads a missing remaining spend under a spend limit as exhausted, per denom', () => {
+    const [exhausted, partial] = parseOperatorAuthorizations({
+      authorizations: [
+        { id: 3, operator: 'verana1op', msg_types: [], spend_limit: [{ denom: 'uvna', amount: '5000000' }] },
+        {
+          id: 4,
+          operator: 'verana1op2',
+          msg_types: [],
+          spend_limit: [
+            { denom: 'uvna', amount: '5000000' },
+            { denom: 'uother', amount: '7' },
+          ],
+          remaining_spend: [{ denom: 'uother', amount: '3' }],
+        },
+      ],
+    })
+    expect(exhausted.remainingSpend).toEqual([{ denom: 'uvna', amount: '0' }])
+    expect(partial.remainingSpend).toEqual([
+      { denom: 'uvna', amount: '0' },
+      { denom: 'uother', amount: '3' },
+    ])
+    expect(
+      parseCorporationFeeGrants({
+        fee_grants: [
+          { grantee: 'verana1op', msg_types: [], spend_limit: [{ denom: 'uvna', amount: '1' }], remaining_spend: null },
+        ],
+      })[0].remainingSpend
+    ).toEqual([{ denom: 'uvna', amount: '0' }])
+  })
+
+  it('treats an empty spend limit as unlimited and drops its remaining spend', () => {
+    const [row] = parseOperatorAuthorizations({
+      authorizations: [{ id: 3, operator: 'verana1op', msg_types: [], spend_limit: [], remaining_spend: [] }],
+    })
+    expect(row).toMatchObject({ spendLimit: null, remainingSpend: null })
+  })
+
+  it('rejects a malformed spend limit amount', () => {
+    expect(() =>
+      parseOperatorAuthorizations({
+        authorizations: [
+          { id: 3, operator: 'verana1op', msg_types: [], spend_limit: [{ denom: 'uvna', amount: '-1' }] },
+        ],
+      })
+    ).toThrow('authorizations[0].spend_limit[0].amount')
   })
 
   it('returns an empty list when the envelope has no rows', () => {
     expect(parseOperatorAuthorizations({ authorizations: [] })).toEqual([])
+  })
+})
+
+describe('parseCorporationFeeGrants', () => {
+  it('reads the live fee grant shape, periodic or not', () => {
+    const rows = parseCorporationFeeGrants({
+      fee_grants: [
+        {
+          id: 21,
+          grantor_corporation_id: 5,
+          grantee: 'verana1vs',
+          msg_types: ['/verana.pp.v1.MsgTriggerResolver'],
+          spend_limit: [{ denom: 'uvna', amount: '100000000' }],
+          remaining_spend: [{ denom: 'uvna', amount: '98483858' }],
+          expiration: '2026-09-30T18:45:06.582Z',
+          period: '86400s',
+        },
+        { id: 10, grantor_corporation_id: 5, grantee: 'verana1op', msg_types: ['/verana.ec.v1.MsgCreateEcosystem'] },
+      ],
+    })
+    expect(rows).toEqual([
+      {
+        grantee: 'verana1vs',
+        msgTypes: ['/verana.pp.v1.MsgTriggerResolver'],
+        spendLimit: [{ denom: 'uvna', amount: '100000000' }],
+        remainingSpend: [{ denom: 'uvna', amount: '98483858' }],
+        expiration: '2026-09-30T18:45:06.582Z',
+        period: '86400s',
+      },
+      {
+        grantee: 'verana1op',
+        msgTypes: ['/verana.ec.v1.MsgCreateEcosystem'],
+        spendLimit: null,
+        remainingSpend: null,
+        expiration: null,
+        period: null,
+      },
+    ])
+  })
+
+  it('returns an empty list without rows and rejects a grant without its grantee', () => {
+    expect(parseCorporationFeeGrants({ fee_grants: [] })).toEqual([])
+    expect(() => parseCorporationFeeGrants({ fee_grants: [{ msg_types: [] }] })).toThrow('fee_grants[0].grantee')
+  })
+
+  it('asks for the active grants of the corporation', () => {
+    expect(corporationFeeGrantsUrl(13)).toBe(
+      'https://indexer.example/v4/delegation/fee-grants?grantor_corporation_id=13&only_active=true&limit=1024'
+    )
   })
 })
 
