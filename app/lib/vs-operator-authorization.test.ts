@@ -27,9 +27,9 @@ describe('permittedVsOperatorMsgTypes', () => {
 })
 
 describe('vsOperatorIssue', () => {
-  it('accepts no delegation and a bare VS operator account', () => {
+  it('accepts no delegation and refuses a VS operator account without messages', () => {
     expect(vsOperatorIssue('ISSUER', EMPTY_VS_OPERATOR_INPUT)).toBeNull()
-    expect(vsOperatorIssue('ISSUER', input({ vsOperator: OPERATOR }))).toBeNull()
+    expect(vsOperatorIssue('ISSUER', input({ vsOperator: OPERATOR }))).toBe('msgTypesRequired')
   })
 
   it('refuses an account that is not a Verana address', () => {

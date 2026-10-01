@@ -65,7 +65,12 @@ export function vsOperatorIssue(role: ParticipantRole, input: VsOperatorInput): 
   const period = input.periodDays.trim()
   const feeSpendLimit = input.feeSpendLimit.trim()
   const delegates =
-    input.msgTypes.length > 0 || spendLimit !== '' || period !== '' || input.withFeegrant || feeSpendLimit !== ''
+    operator !== '' ||
+    input.msgTypes.length > 0 ||
+    spendLimit !== '' ||
+    period !== '' ||
+    input.withFeegrant ||
+    feeSpendLimit !== ''
   if (operator && !isValidVeranaAddress(operator)) return 'invalidOperator'
   if (!delegates) return null
   if (!operator) return 'operatorRequired'

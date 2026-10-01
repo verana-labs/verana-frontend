@@ -90,7 +90,7 @@ export default function CsCard({ credentialSchema, onSelect, selected }: CsCardP
       className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
       type="button"
     >
-      {'</>'} View JSON Schema
+      {'</>'} {resolveTranslatable({ key: 'dataview.cs.viewJsonSchema' }, translate) ?? 'View JSON Schema'}
     </button>
   )
 

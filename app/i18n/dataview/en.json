@@ -423,6 +423,7 @@
   "dataview.cs.fields.verifierValidationValidityPeriod": "Verifier Validity Period",
   "dataview.cs.fields.holderValidationValidityPeriod": "Holder Validity Period",
   "dataview.cs.fields.jsonSchema": "JSON Schema",
+  "dataview.cs.viewJsonSchema": "View JSON Schema",
   "dataview.cs.fields.creator": "Controller",
   "dataview.cs.fields.ecosystemId": "Ecosystem ID",
   "dataview.cs.fields.id": "ID",
