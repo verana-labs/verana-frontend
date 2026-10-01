@@ -100,7 +100,11 @@ function participant(id: number, role: string, corporationId: number, extra: Rec
 }
 
 async function stubDiscover(page: Page) {
-  await page.route('**/v4/ecosystem/list*', (route) => route.fulfill({ json: { ecosystems: ECOSYSTEMS } }))
+  await page.route('**/v4/ecosystem/list*', (route) => {
+    const params = new URL(route.request().url()).searchParams
+    const discoverQuery = params.get('trust_data') === 'full' && params.get('archived') === 'false'
+    return route.fulfill({ json: { ecosystems: discoverQuery ? ECOSYSTEMS : [] } })
+  })
   await page.route(`**/v4/ecosystem/get/${ACME_ID}*`, (route) => route.fulfill({ json: { ecosystem: ECOSYSTEMS[0] } }))
   await page.route('**/v4/credential-schema/list*', (route) => {
     const ecosystemId = new URL(route.request().url()).searchParams.get('ecosystem_id')
@@ -181,10 +185,19 @@ test('discover lists every ecosystem of the window, finds one by name and orders
   await page.locator('#ecosystem-search').fill('acme join')
   await expect(page.locator('#ecosystem-list article')).toHaveCount(1)
   const acme = page.getByRole('article', { name: 'Acme Join Registry' })
-  for (const label of ['Active Schemas:', 'Participants:', 'Trust Value:', 'Issued Credentials:']) {
-    await expect(acme.getByText(label)).toBeVisible()
+  const counters = [
+    ['Active Schemas:', '1'],
+    ['Participants:', '2'],
+    ['Trust Value:', '0.003 VNA'],
+    ['Issued Credentials:', '3'],
+    ['Verified Credentials:', '4'],
+  ] as const
+  for (const [label, value] of counters) {
+    const counter = acme.locator('dl > div').filter({ has: page.locator('dt', { hasText: label }) })
+    await expect(counter.locator('dd')).toHaveText(value)
   }
   await expect(acme.getByRole('heading', { name: 'Acme Membership' })).toBeVisible()
+  await expect(acme.getByRole('button', { name: /Acme Membership/ })).toHaveCount(0)
   await expect(acme.getByRole('link', { name: 'Join' })).toHaveCount(0)
 
   await acme.getByRole('button', { name: 'EGF' }).click()
@@ -211,7 +224,9 @@ test('an acting corporation sees its roles and the wizard builds the self-create
 
   const next = page.getByRole('button', { name: 'Continue', exact: true })
   await next.click()
-  await page.getByRole('button', { name: /Acme Membership/ }).click()
+  await expect(next).toBeDisabled()
+  await page.getByRole('button', { name: /Acme Membership/ }).press('Enter')
+  await expect(next).toBeEnabled()
   await next.click()
 
   await page.getByRole('button', { name: /Holder/ }).click()

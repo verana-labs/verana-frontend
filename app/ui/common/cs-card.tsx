@@ -36,11 +36,17 @@ export default function CsCard({ credentialSchema, onSelect, selected }: CsCardP
               )
             : 'bg-gray-50 dark:bg-gray-800/50 border border-neutral-20 dark:border-neutral-70 rounded-lg p-4 cursor-default'
         }
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') onSelect?.()
-        }}
+        role={onSelect ? 'button' : undefined}
+        tabIndex={onSelect ? 0 : undefined}
+        onKeyDown={
+          onSelect
+            ? (e) => {
+                if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return
+                e.preventDefault()
+                onSelect()
+              }
+            : undefined
+        }
       >
         <div className="flex items-start space-x-3">
           {onSelect && <input type="radio" checked={selected} readOnly className="mt-1 w-4 h-4 text-primary-600" />}
