@@ -9,11 +9,8 @@ const t = (key: string) => ({ key })
 export interface AccountData {
   balance: string | null
   totalTrustDeposit: string | null
-  claimableInterests: string | null
-  reclaimable: string | null
   message: string | null
   getVNA?: string | null // action type
-  claimInterests?: string // action type
   network: string | null
   corporationId: number | null
   policyAddress: string | null
@@ -64,15 +61,6 @@ export const accountSections: Section<AccountData>[] = [
         description: t('dataview.account.actions.getVNA.desc'),
         icon: faPlus,
         iconClass: 'bg-gradient-to-br from-green-500 to-green-700',
-        iconColorClass: 'text-white',
-      },
-      {
-        name: 'claimInterests',
-        label: t('dataview.account.actions.claimInterests.label'),
-        type: 'action',
-        description: t('dataview.account.actions.claimInterests.desc'),
-        icon: faCoins,
-        iconClass: 'bg-gradient-to-br from-orange-500 to-orange-700',
         iconColorClass: 'text-white',
       },
     ],

@@ -18,6 +18,7 @@ import {
   isResolvedActionField,
   isResolvedDataField,
   ResolvedActionField,
+  ResolvedField,
   resolveTranslatable,
   translateSections,
   visibleFieldsForMode,
@@ -114,6 +115,9 @@ export default function ColumnsDataView<T extends object>({
     return null
   })
   if (loading) return <DataViewSkeleton sections={sections} />
+
+  const hasAvailableAction = (fields?: ResolvedField<T>[]) =>
+    visibleFieldsForMode(fields, 'view').some((field) => isResolvedActionField(field) && data[field.name] != null)
 
   return (
     <div
@@ -271,7 +275,7 @@ export default function ColumnsDataView<T extends object>({
               : null}
 
             {/* Actions Section */}
-            {section.type === 'actions' && section.fields && section.fields.length > 0 && (
+            {section.type === 'actions' && hasAvailableAction(section.fields) && (
               <div className="space-y-4">
                 {section.name?.trim() && (
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">{section.name}</h2>
