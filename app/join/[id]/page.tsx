@@ -103,7 +103,7 @@ export default function JoinEcosystemWizard() {
     loadMore: loadMoreValidators,
   } = useParticipants(selectedSchema?.id, validatorRole, undefined, {
     participantState: 'ACTIVE',
-    trustData: 'summary',
+    trustData: 'full',
   })
   const activeValidators = validators.filter((participant) => participant.participant_state === 'ACTIVE')
 

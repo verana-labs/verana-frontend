@@ -49,17 +49,17 @@ describe('participant rows carry the inline trust_data', () => {
 })
 
 describe('participantsListUrl', () => {
-  it('asks the indexer for ACTIVE validators with the summary enrichment', () => {
+  it('asks the indexer for the ACTIVE validators with the claims their cards render', () => {
     expect(
       participantsListUrl('https://indexer/v4/participant', {
         schema: '9',
         role: 'ISSUER_GRANTOR',
         participantState: 'ACTIVE',
-        trustData: 'summary',
+        trustData: 'full',
         pageSize: 25,
       })
     ).toBe(
-      'https://indexer/v4/participant/list?schema_id=9&trust_data=summary&limit=26&sort=%2Bid&role=ISSUER_GRANTOR&participant_state=ACTIVE'
+      'https://indexer/v4/participant/list?schema_id=9&trust_data=full&limit=26&sort=%2Bid&role=ISSUER_GRANTOR&participant_state=ACTIVE'
     )
   })
 
@@ -80,7 +80,7 @@ describe('participantsListUrl', () => {
         schema: '9',
         role: 'ISSUER_GRANTOR',
         participantState: 'ACTIVE',
-        trustData: 'summary',
+        trustData: 'full',
         pageSize: 25,
         after: '40',
       })

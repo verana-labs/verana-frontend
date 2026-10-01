@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { parsePendingParticipantsResponse, pendingParticipantsUrl } from './usePendingParticipants'
 
 describe('pendingParticipantsUrl', () => {
-  it('queries by corporation id', () => {
+  it('queries by corporation id and asks for the identity claims inline', () => {
     expect(pendingParticipantsUrl('https://indexer/v4/participant', 1)).toBe(
-      'https://indexer/v4/participant/pending/flat?corporation_id=1&trust_data=summary&limit=1024'
+      'https://indexer/v4/participant/pending/flat?corporation_id=1&trust_data=full&limit=1024'
     )
   })
 })
@@ -50,7 +50,33 @@ describe('parsePendingParticipantsResponse', () => {
     ])
   })
 
-  it('reads the summary trust_data: a trust state, and no name for the page to show', () => {
+  it('reads the name the ecosystem folder shows from the full trust_data', () => {
+    const row = parsePendingParticipantsResponse({
+      ecosystems: [
+        {
+          id: 10,
+          did: 'did:web:ecosystem.example',
+          trust_data: {
+            did: 'did:web:ecosystem.example',
+            trusted: true,
+            expiresAtTime: null,
+            ecsCredentials: [
+              { ecsSchema: 'ServiceCredential', credentialSubject: { name: 'Acme Ecosystem' } },
+              { ecsSchema: 'OrganizationCredential', credentialSubject: { countryCode: 'CH' } },
+            ],
+          },
+          pending_tasks: 1,
+          participants: 4,
+          schemas: [{ id: 9, title: 'T', description: null, pending_tasks: 1, pending_participants: [] }],
+        },
+      ],
+    })[0]
+    expect(row.trustData?.trustStatus).toBe('TRUSTED')
+    expect(row.trustData?.serviceName).toBe('Acme Ecosystem')
+    expect(row.trustData?.countryCode).toBe('CH')
+  })
+
+  it('still reads a claim-less payload as a trust state without an identity', () => {
     const row = parsePendingParticipantsResponse({
       ecosystems: [
         {
