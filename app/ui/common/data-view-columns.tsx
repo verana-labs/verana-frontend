@@ -211,16 +211,9 @@ export default function ColumnsDataView<T extends object>({
                               return (
                                 <div key={`${sectionIndex}-${fieldIndex}`}>
                                   <label className="data-view-label">{field.label}</label>
-                                  {isResolvedDataField(field) && field.isHtml ? (
-                                    <p
-                                      className={field.classField ?? 'data-view-value'}
-                                      dangerouslySetInnerHTML={{
-                                        __html: field.format ? String(field.format(value)) : String(value),
-                                      }}
-                                    />
-                                  ) : (
-                                    <p className="data-view-value">{String(value)}</p>
-                                  )}
+                                  <p className={field.classField ?? 'data-view-value'}>
+                                    {field.format ? field.format(value) : String(value)}
+                                  </p>
                                 </div>
                               )
                             }

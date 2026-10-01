@@ -277,9 +277,7 @@ export default function EditableDataView<T extends object>({
         {inputEl}
         {showError && <div className="data-edit-error">{errorMessage}</div>}
         {/* Description inputType */}
-        {field.description && (
-          <p className="data-edit-input-description" dangerouslySetInnerHTML={{ __html: field.description }} />
-        )}
+        {field.description && <p className="data-edit-input-description">{field.description}</p>}
       </div>
     )
 
@@ -318,10 +316,9 @@ export default function EditableDataView<T extends object>({
             actionCard?.available ? 'w-fit mx-auto text-center mb-6' : 'mb-4'
           )}
         >
-          <p
-            className="data-edit-form-description"
-            dangerouslySetInnerHTML={{ __html: getCostMessage(uiMsgType.cost, formatVNAFromUVNA(transactionCost)) }}
-          />
+          <p className="data-edit-form-description">
+            {getCostMessage(uiMsgType.cost, formatVNAFromUVNA(transactionCost))}
+          </p>
         </div>
       )}
 

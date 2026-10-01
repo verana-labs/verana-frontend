@@ -7,6 +7,7 @@ export interface DidEnrichment {
   trustStatus: DidTrustState
   serviceName?: string
   serviceDescription?: string
+  serviceDescriptionFormat?: string
   serviceLogoUrl?: string
   organizationName?: string
   organizationLogoUrl?: string
@@ -114,6 +115,10 @@ function pickStringOrNumber(claims: Record<string, unknown> | undefined, key: st
   return undefined
 }
 
+export function isMarkdownDescriptionFormat(format: string | undefined): boolean {
+  return format === 'text/markdown'
+}
+
 function evictOldestIfFull(entries: Map<string, unknown>): void {
   if (entries.size < MAX_CACHE_ENTRIES) return
   const oldestKey = entries.keys().next().value
@@ -146,6 +151,7 @@ export function mapResolveResult(did: string, raw: ResolveResult, credentialIssu
     trustStatus: trustState(raw, Date.now()),
     serviceName: pickString(service, 'name'),
     serviceDescription: pickString(service, 'description'),
+    serviceDescriptionFormat: pickString(service, 'descriptionFormat'),
     serviceLogoUrl: pickString(service, 'logoUri'),
     serviceMinAge: pickStringOrNumber(service, 'minimumAgeRequired'),
     serviceTermsUrl: pickString(service, 'termsAndConditionsUri'),
