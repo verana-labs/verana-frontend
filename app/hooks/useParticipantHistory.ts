@@ -39,6 +39,7 @@ export function useParticipantHistory(id?: string, pageSize = PARTICIPANT_HISTOR
   const [loading, setLoading] = useState(false)
   const [errorParticipantHistory, setError] = useState<string | null>(null)
   const participantRef = useRef<string | undefined>(undefined)
+  const loadingMore = useRef(false)
 
   const fetchPage = useCallback(
     async (participantId: string, after: string | undefined, append: boolean) => {
@@ -95,7 +96,12 @@ export function useParticipantHistory(id?: string, pageSize = PARTICIPANT_HISTOR
   const loadMore = useCallback(() => {
     const participantId = participantRef.current
     const last = participantHistory[participantHistory.length - 1]
-    if (participantId && last) void fetchPage(participantId, last.id, true)
+    // The cursor only moves once the page lands, so without the guard a second click appends the same page again.
+    if (!participantId || !last || loadingMore.current) return
+    loadingMore.current = true
+    void fetchPage(participantId, last.id, true).finally(() => {
+      loadingMore.current = false
+    })
   }, [fetchPage, participantHistory])
 
   return { participantHistory, loading, errorParticipantHistory, refetch: fetchParticipantHistory, hasNext, loadMore }

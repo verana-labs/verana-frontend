@@ -10,7 +10,7 @@ import { participantsPageKey, useParticipants } from '@/hooks/useParticipants'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { isNativePricing } from '@/lib/pricing-asset'
-import ParticipantTree, { ROOT_NODE_ID } from '@/ui/common/participant-tree'
+import ParticipantTree, { mergeTrees, ROOT_NODE_ID } from '@/ui/common/participant-tree'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import type { Role } from '@/ui/common/role-card'
 import type { Participant } from '@/ui/dataview/datasections/participant'
@@ -184,7 +184,8 @@ export default function ParticipantsPage() {
       rootRows.current = rows
       ownedIds.current.clear()
       predecessorIds.current.clear()
-      setParticipantTree(buildTreeByValidator(rows).map((node) => toTreeNode(node, childRoles)))
+      const rebuilt = buildTreeByValidator(rows).map((node) => toTreeNode(node, childRoles))
+      setParticipantTree((current) => mergeTrees(current, rebuilt))
     } else {
       const children = participants.map((participant) => toTreeNode({ ...participant, children: [] }, childRoles))
       setParticipantTree((current) => setChildren(current, target, children, appending))

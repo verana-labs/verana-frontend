@@ -71,7 +71,8 @@ function findNode(nodes: TreeNode[], id: string): TreeNode | undefined {
   }
 }
 
-function mergeTrees(previous: TreeNode[], next: TreeNode[]): TreeNode[] {
+// A rebuilt group node arrives with no children, so the pages already loaded under it survive the rebuild.
+export function mergeTrees(previous: TreeNode[], next: TreeNode[]): TreeNode[] {
   const previousById = new Map(previous.map((node) => [node.nodeId, node]))
   return next.map((node) => {
     const oldNode = previousById.get(node.nodeId)

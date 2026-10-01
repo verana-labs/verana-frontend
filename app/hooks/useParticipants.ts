@@ -67,11 +67,20 @@ export function useParticipants(
   const [errorParticipants, setError] = useState<string | null>(null)
   const requestRef = useRef(0)
   const queryRef = useRef<ParticipantQuery>({})
+  const queryKeyRef = useRef('')
 
   const fetchPage = useCallback(
     async (query: ParticipantQuery, cursor: string | undefined, append: boolean) => {
       const request = ++requestRef.current
       const key = participantsPageKey({ ...query, after: cursor })
+      const queryKey = participantsPageKey(query)
+      if (queryKey !== queryKeyRef.current) {
+        // A new query starts from an empty window, so a show more cannot append its page after the previous cursor.
+        queryKeyRef.current = queryKey
+        setParticipants([])
+        setHasNext(false)
+        setPageKey('')
+      }
       if (!query.schema || !VERANA_REST_ENDPOINT_PARTICIPANT || (!query.role && !query.validator)) {
         setParticipants([])
         setHasNext(false)

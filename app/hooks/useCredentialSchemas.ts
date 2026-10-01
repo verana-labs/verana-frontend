@@ -200,6 +200,7 @@ export function useCredentialSchemasByEcosystem(ecosystemIds: string[], pageSize
   const [loading, setLoading] = useState(false)
   const [errorCredentialSchemas, setError] = useState<string | null>(null)
   const requestRef = useRef(0)
+  const loadingMore = useRef<Set<string>>(new Set())
   const ecosystemKey = ecosystemIds.join('|')
 
   const fetchCredentialSchemas = useCallback(async () => {
@@ -237,8 +238,10 @@ export function useCredentialSchemasByEcosystem(ecosystemIds: string[], pageSize
       const base = VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA
       const loaded = schemasByEcosystem[ecosystemId]
       const after = loaded?.items[loaded.items.length - 1]?.id
-      if (!base || !after || !loaded?.hasNext) return
+      // The cursor only moves once the page lands, so without the guard a second click appends the same page again.
+      if (!base || !after || !loaded?.hasNext || loadingMore.current.has(ecosystemId)) return
 
+      loadingMore.current.add(ecosystemId)
       setError(null)
       try {
         const page = await fetchEcosystemSchemaPage(base, ecosystemId, pageSize, after)
@@ -249,6 +252,8 @@ export function useCredentialSchemasByEcosystem(ecosystemIds: string[], pageSize
         })
       } catch (error) {
         setError(error instanceof Error ? error.message : String(error))
+      } finally {
+        loadingMore.current.delete(ecosystemId)
       }
     },
     [pageSize, schemasByEcosystem]

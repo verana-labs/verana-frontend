@@ -4,7 +4,7 @@ import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import LogoImage from '@/ui/common/logo-image'
 import TrustBadge from '@/ui/common/trust-badge'
 import type { Participant } from '@/ui/dataview/datasections/participant'
-import { countryCodeToFlag, formatVNAFromUVNA, participantStateBadgeClass, shortenDID } from '@/util/util'
+import { countryCodeToFlag, formatVNAFromUVNA, isExpireSoon, participantStateBadgeClass, shortenDID } from '@/util/util'
 
 function cn(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(' ')
@@ -21,9 +21,9 @@ export default function ValidatorCard({ validator, selected = false, onSelect }:
   const did = validator.did ?? undefined
   const serviceName = identity?.serviceName ?? (did ? shortenDID(did) : '—')
   const orgName = identity?.organizationName
-  const { labelParticipantState, classParticipantState } = participantStateBadgeClass(
+  const { labelParticipantState, classParticipantState, expireSoon } = participantStateBadgeClass(
     validator.participant_state,
-    validator.expire_soon ?? false
+    isExpireSoon(validator.effective_until)
   )
 
   const feeLabel = validator.issuance_fees ? 'Issuance Fee' : 'Verification Fee'
@@ -97,6 +97,13 @@ export default function ValidatorCard({ validator, selected = false, onSelect }:
               >
                 {labelParticipantState}
               </span>
+              {expireSoon ? (
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${expireSoon.classExpireSoon}`}
+                >
+                  {expireSoon.labelExpireSoon}
+                </span>
+              ) : null}
             </div>
           </div>
 
