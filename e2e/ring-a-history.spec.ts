@@ -57,7 +57,7 @@ async function installSchemaPage(page: Page, opts: { canonical: boolean; history
       },
     })
   )
-  await page.route(`**/v4/credential-schema/js/${SCHEMA_ID}`, (route) =>
+  await page.route(`**/v4/credential-schema/js/${SCHEMA_ID}*`, (route) =>
     opts.canonical
       ? route.fulfill({ json: { ...STORED_JSON_SCHEMA, $id: CANONICAL_ID } })
       : route.fulfill({ status: 502, json: { error: 'indexer unavailable', code: 502 } })

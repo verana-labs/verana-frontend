@@ -35,7 +35,7 @@ export default function EcosystemViewPage() {
   const { actingCorporation } = useUserCorporation()
   const { ecosystem, errorEcosystem, refetch: refetchEcosystem } = useEcosystemData(id)
   const history = useActivityHistory(
-    VERANA_REST_ENDPOINT_ECOSYSTEM && id ? `${VERANA_REST_ENDPOINT_ECOSYSTEM}/history/${id}?limit=64` : undefined
+    VERANA_REST_ENDPOINT_ECOSYSTEM && id ? `${VERANA_REST_ENDPOINT_ECOSYSTEM}/history/${id}` : undefined
   )
   const {
     credentialSchemas,

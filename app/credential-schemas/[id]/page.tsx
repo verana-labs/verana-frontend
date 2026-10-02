@@ -120,9 +120,7 @@ export default function CredentialSchemaViewPage() {
   const { credentialSchema, errorCredentialSchema, refetch: refetchCredentialSchema } = useCredentialSchemaData(id)
   const canonicalJsonSchema = useCanonicalJsonSchema(id)
   const history = useActivityHistory(
-    VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA && id
-      ? `${VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA}/history/${id}?limit=64`
-      : undefined
+    VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA && id ? `${VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA}/history/${id}` : undefined
   )
   const ecosystemId = credentialSchema ? String(credentialSchema.ecosystemId) : ''
   const { ecosystem } = useEcosystemData(ecosystemId)

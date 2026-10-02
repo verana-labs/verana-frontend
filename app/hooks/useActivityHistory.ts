@@ -31,6 +31,7 @@ export function useActivityHistory(url: string | undefined) {
   }, [url])
 
   useEffect(() => {
+    setState({ rows: [], loading: true, failed: false })
     void load()
   }, [load])
 
