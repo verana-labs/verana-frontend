@@ -1,18 +1,28 @@
 'use client'
 
-import { faArrowRight } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { useParams } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import { useCredentialSchemas } from '@/hooks/useCredentialSchemas'
 import { useEcosystemData } from '@/hooks/useEcosystemData'
+import { useParticipant } from '@/hooks/useParticipant'
 import { useParticipants } from '@/hooks/useParticipants'
 import { useActionSigning } from '@/hooks/useSigningMode'
 import { translate } from '@/i18n/dataview'
-import { getParticipantOnboardingDecision, type JoinableParticipantRole } from '@/lib/participant-onboarding'
+import {
+  EMPTY_SELF_CREATE_INPUT,
+  getParticipantOnboardingDecision,
+  type JoinableParticipantRole,
+  selfCreateIssue,
+} from '@/lib/participant-onboarding'
 import { isNativePricing } from '@/lib/pricing-asset'
 import { trustCostLines } from '@/lib/trust-costs'
-import { useActionParticipant } from '@/msg/actions_hooks/actionParticipant'
+import { EMPTY_VS_OPERATOR_INPUT, vsOperatorIssue } from '@/lib/vs-operator-authorization'
+import {
+  createdParticipantId,
+  type ParticipantActionParams,
+  useActionParticipant,
+} from '@/msg/actions_hooks/actionParticipant'
 import { proposalExecution } from '@/msg/util/tx-outcome'
 import { useNotification } from '@/providers/notification-provider'
 import { useProtocolParams } from '@/providers/protocol-params-context'
@@ -20,30 +30,34 @@ import { CapabilityButton } from '@/ui/common/capability-button'
 import CsCard from '@/ui/common/cs-card'
 import EcosystemCard from '@/ui/common/ecosystem-card'
 import EgfCard from '@/ui/common/egf-card'
+import { EgfViewerToggle } from '@/ui/common/egf-viewer-toggle'
+import { type CreatedParticipant, JoinSuccess } from '@/ui/common/join-success'
 import KeysetPagination, { ShowMoreButton } from '@/ui/common/keyset-pagination'
 import { PricingNotice } from '@/ui/common/pricing-notice'
 import RoleCard from '@/ui/common/role-card'
+import { SelfCreateFields } from '@/ui/common/self-create-fields'
 import ValidatorCard from '@/ui/common/validator-card'
+import { VsOperatorFields } from '@/ui/common/vs-operator-fields'
 import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
 import type { Participant } from '@/ui/dataview/datasections/participant'
-import { resolveTranslatable } from '@/ui/dataview/types'
+import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 import { rolesSchema } from '@/util/util'
 import { isValidDID } from '@/util/validations'
 
 type WizardStep = 1 | 2 | 3 | 4 | 5 | 6 | 7
 
 const STEPS = [
-  { id: 1, title: 'Review Ecosystem', description: 'Verify the ecosystem before continuing.' },
-  { id: 2, title: 'Select Credential Schema', description: 'Choose the schema you want to join.' },
-  { id: 3, title: 'Select Your Role', description: 'Choose your participant role.' },
-  {
-    id: 4,
-    title: 'Accept the Governance Framework',
-    description: 'Review the active governance framework document and accept it.',
-  },
-  { id: 5, title: 'Select Validator', description: 'Choose the participant that will validate your request.' },
-  { id: 6, title: 'Confirm and Submit', description: 'Provide the DID that will participate in the ecosystem.' },
+  { id: 1, title: 'join.step.review.title', description: 'join.step.review.description' },
+  { id: 2, title: 'join.step.schema.title', description: 'join.step.schema.description' },
+  { id: 3, title: 'join.step.role.title', description: 'join.step.role.description' },
+  { id: 4, title: 'join.acceptegf.title', description: 'join.acceptegf.description' },
+  { id: 5, title: 'join.step.validator.title', description: 'join.step.validator.description' },
+  { id: 6, title: 'join.createparticipant.title', description: 'join.step.confirm.description' },
 ] as const
+
+function t(key: string, values?: I18nValues): string {
+  return resolveTranslatable({ key, values }, translate) ?? key
+}
 
 function classes(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(' ')
@@ -56,14 +70,13 @@ function isJoinableRole(role: string): role is JoinableParticipantRole {
 function availableRoles(schema: CredentialSchemaListItem): JoinableParticipantRole[] {
   return rolesSchema(schema.issuerOnboardingMode, schema.verifierOnboardingMode).filter(
     (role): role is JoinableParticipantRole =>
-      isJoinableRole(role) && (role !== 'HOLDER' || schema.holderOnboardingMode === 'ISSUER_ONBOARDING_PROCESS')
+      isJoinableRole(role) && (role !== 'HOLDER' || schema.holderOnboardingMode !== null)
   )
 }
 
 export default function JoinEcosystemWizard() {
   const params = useParams<{ id: string }>()
   const ecosystemId = params?.id ?? ''
-  const router = useRouter()
   const { notify } = useNotification()
   const { ecosystem, errorEcosystem } = useEcosystemData(ecosystemId)
   const {
@@ -81,8 +94,11 @@ export default function JoinEcosystemWizard() {
   const [acceptedGovernanceFramework, setAcceptedGovernanceFramework] = useState(false)
   const [selectedValidator, setSelectedValidator] = useState<Participant | null>(null)
   const [serviceDid, setServiceDid] = useState('')
+  const [selfCreate, setSelfCreate] = useState(EMPTY_SELF_CREATE_INPUT)
+  const [vsOperator, setVsOperator] = useState(EMPTY_VS_OPERATOR_INPUT)
   const [submitting, setSubmitting] = useState(false)
-  const [awaitingVotes, setAwaitingVotes] = useState(false)
+  const [created, setCreated] = useState<CreatedParticipant | null>(null)
+  const { participant: createdParticipant, refetch: refetchCreated } = useParticipant(created?.id)
 
   const unsupportedPricing = selectedSchema !== null && !isNativePricing(selectedSchema)
   const decision = useMemo(() => {
@@ -98,6 +114,7 @@ export default function JoinEcosystemWizard() {
   const validatorRole = decision?.validatorRole ?? undefined
   const {
     participants: validators,
+    loading: validatorsLoading,
     errorParticipants,
     hasNext: validatorsHasNext,
     loadMore: loadMoreValidators,
@@ -105,11 +122,18 @@ export default function JoinEcosystemWizard() {
     participantState: 'ACTIVE',
     trustData: 'full',
   })
-  const activeValidators = validators.filter((participant) => participant.participant_state === 'ACTIVE')
 
   const joinSigning = useActionSigning(decision?.messageType ?? '')
   const protocolParams = useProtocolParams()
-  const submitParticipant = useActionParticipant(() => setCurrentStep(7))
+  const submitParticipant = useActionParticipant(undefined, (id) => {
+    if (id) void refetchCreated(id)
+  })
+  const selfCreating = decision?.messageType === 'MsgSelfCreateParticipant'
+  const selfCreateWithFees = selectedRole === 'ISSUER'
+  const selfCreateProblem = selfCreating
+    ? selfCreateIssue(selfCreate, selectedValidator?.effective_until, new Date(), selfCreateWithFees)
+    : null
+  const vsOperatorProblem = selectedRole ? vsOperatorIssue(selectedRole, vsOperator) : null
   const activeStep = STEPS.find((step) => step.id === currentStep)
   const percentage = currentStep === 7 ? 100 : ((currentStep - 1) / STEPS.length) * 100
 
@@ -120,13 +144,13 @@ export default function JoinEcosystemWizard() {
       case 2:
         return selectedSchema !== null
       case 3:
-        return selectedRole !== null && !unsupportedPricing
+        return selectedRole !== null && !unsupportedPricing && decision?.messageType !== null
       case 4:
         return acceptedGovernanceFramework
       case 5:
         return decision?.validatorRole === null || selectedValidator !== null
       case 6:
-        return isValidDID(serviceDid) && !submitting
+        return isValidDID(serviceDid) && selfCreateProblem === null && vsOperatorProblem === null && !submitting
       case 7:
         return false
     }
@@ -141,30 +165,34 @@ export default function JoinEcosystemWizard() {
       : []
 
   async function submit() {
-    if (!decision || !selectedRole || !selectedSchema || !isValidDID(serviceDid)) return
-    if (!selectedValidator) return
-    const proposal = joinSigning.mode === 'proposal'
+    if (!decision?.messageType || !selectedRole || !selectedValidator || !isValidDID(serviceDid)) return
+    const common = { role: selectedRole, validatorParticipantId: selectedValidator.id, did: serviceDid, vsOperator }
+    const params: ParticipantActionParams =
+      decision.messageType === 'MsgSelfCreateParticipant'
+        ? {
+            ...common,
+            msgType: decision.messageType,
+            effectiveFrom: selfCreate.effectiveFrom,
+            effectiveUntil: selfCreate.effectiveUntil,
+            ...(selfCreateWithFees
+              ? {
+                  validationFees: selfCreate.validationFees.trim(),
+                  verificationFees: selfCreate.verificationFees.trim(),
+                }
+              : {}),
+          }
+        : { ...common, msgType: decision.messageType, validatorValidationFees: selectedValidator.validation_fees }
     setSubmitting(true)
     try {
-      const result = await submitParticipant(
-        decision.messageType === 'MsgSelfCreateParticipant'
-          ? {
-              msgType: decision.messageType,
-              role: selectedRole,
-              validatorParticipantId: selectedValidator.id,
-              did: serviceDid,
-            }
-          : {
-              msgType: decision.messageType,
-              role: selectedRole,
-              validatorParticipantId: selectedValidator.id,
-              did: serviceDid,
-              validatorValidationFees: selectedValidator.validation_fees,
-            }
-      )
-      setAwaitingVotes(
-        proposal && result !== undefined && 'events' in result && proposalExecution(result.events).status === 'pending'
-      )
+      const result = await submitParticipant(params)
+      if (!result || result.code !== 0 || proposalExecution(result.events).status === 'failed') return
+      setCreated({
+        id: createdParticipantId(params, result),
+        msgType: decision.messageType,
+        did: serviceDid,
+        role: selectedRole,
+      })
+      setCurrentStep(7)
     } finally {
       setSubmitting(false)
     }
@@ -172,7 +200,7 @@ export default function JoinEcosystemWizard() {
 
   function continueWizard() {
     if (!canContinue) {
-      void notify('Complete the current step before continuing.', 'error')
+      void notify(t('join.continue.incomplete'), 'error')
       return
     }
     if (currentStep === 6) {
@@ -195,40 +223,8 @@ export default function JoinEcosystemWizard() {
     )
   }
 
-  if (currentStep === 7) {
-    return (
-      <section className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-8 text-center">
-        <div className="w-20 h-20 bg-success-500 rounded-full flex items-center justify-center mx-auto mb-6">
-          <span className="text-white text-4xl">✓</span>
-        </div>
-        {awaitingVotes ? (
-          <>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              {resolveTranslatable({ key: 'join.proposal.pending.title' }, translate)}
-            </h1>
-            <p className="text-neutral-70 mb-8">
-              {resolveTranslatable({ key: 'join.proposal.pending.desc' }, translate)}
-            </p>
-          </>
-        ) : (
-          <>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Participant submitted</h1>
-            <p className="text-neutral-70 mb-8">
-              The indexer has processed the transaction. The participant page now reflects the resulting onboarding
-              state.
-            </p>
-          </>
-        )}
-        <button
-          type="button"
-          onClick={() => router.push(`/participants/${selectedSchema?.id ?? ''}`)}
-          className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium"
-        >
-          <FontAwesomeIcon className="mr-2" icon={faArrowRight} />
-          View participants
-        </button>
-      </section>
-    )
+  if (currentStep === 7 && created && selectedSchema) {
+    return <JoinSuccess created={created} participant={createdParticipant} schemaId={selectedSchema.id} />
   }
 
   return (
@@ -245,7 +241,7 @@ export default function JoinEcosystemWizard() {
       <section className="mb-8">
         <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Progress</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('join.progress')}</span>
             <span className="text-sm font-medium text-primary-600">{Math.round(percentage)}%</span>
           </div>
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
@@ -269,7 +265,7 @@ export default function JoinEcosystemWizard() {
                 >
                   {step.id < currentStep ? '✓' : step.id}
                 </div>
-                <span className="text-xs text-gray-600 dark:text-gray-300">{step.title}</span>
+                <span className="text-xs text-gray-600 dark:text-gray-300">{t(step.title)}</span>
               </div>
             ))}
           </div>
@@ -279,11 +275,16 @@ export default function JoinEcosystemWizard() {
       {activeStep ? (
         <section className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6">
           <div className="mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{activeStep.title}</h2>
-            <p className="text-sm text-neutral-70 mt-1">{activeStep.description}</p>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t(activeStep.title)}</h2>
+            <p className="text-sm text-neutral-70 mt-1">{t(activeStep.description)}</p>
           </div>
 
-          {currentStep === 1 ? <EcosystemCard ecosystem={{ ...ecosystem, role: ecosystem.role ?? '' }} /> : null}
+          {currentStep === 1 ? (
+            <div className="space-y-3 mb-6">
+              <EcosystemCard ecosystem={{ ...ecosystem, role: ecosystem.role ?? '' }} />
+              <EgfViewerToggle versions={ecosystem.versions} activeVersion={ecosystem.activeVersion} />
+            </div>
+          ) : null}
 
           {currentStep === 2 ? (
             <div className="space-y-4 mb-6">
@@ -301,7 +302,7 @@ export default function JoinEcosystemWizard() {
                 />
               ))}
               {credentialSchemas.length === 0 ? (
-                <p className="text-sm text-neutral-70">No active credential schemas are available.</p>
+                <p className="text-sm text-neutral-70">{t('join.schemas.empty')}</p>
               ) : null}
               <KeysetPagination
                 showing={credentialSchemas.length}
@@ -325,9 +326,22 @@ export default function JoinEcosystemWizard() {
                   onSelect={() => {
                     setSelectedRole(role)
                     setSelectedValidator(null)
+                    setVsOperator(EMPTY_VS_OPERATOR_INPUT)
                   }}
                 />
               ))}
+              {selectedRole === 'HOLDER' && decision?.messageType === null ? (
+                <div
+                  role="status"
+                  className="rounded-lg border border-primary-200 bg-primary-50 p-4 text-sm text-primary-800 dark:border-primary-800 dark:bg-primary-900/20 dark:text-primary-300"
+                >
+                  <p className="font-semibold">{t('join.holder.permissionless.title')}</p>
+                  <p className="mt-1">{t('join.holder.permissionless.text')}</p>
+                  <Link href={`/participants/${selectedSchema.id}`} className="mt-2 inline-block font-medium underline">
+                    {t('join.holder.permissionless.link')}
+                  </Link>
+                </div>
+              ) : null}
             </div>
           ) : null}
 
@@ -343,15 +357,27 @@ export default function JoinEcosystemWizard() {
             <div className="space-y-4 mb-6">
               {decision?.messageType === 'MsgSelfCreateParticipant' ? (
                 <div className="rounded-lg bg-green-50 dark:bg-green-900/20 p-4 text-sm text-green-800 dark:text-green-300">
-                  This role uses open onboarding. Select the ecosystem participant that anchors the new participant.
+                  {t(
+                    selectedRole === 'VERIFIER'
+                      ? 'join.createparticipant.description.open.verifier'
+                      : 'join.createparticipant.description.open.issuer'
+                  )}{' '}
+                  {t('join.validators.open.anchor')}
                 </div>
               ) : null}
               {errorParticipants ? <div className="error-pane">{errorParticipants}</div> : null}
-              {decision?.validatorRole && activeValidators.length === 0 ? (
-                <p className="text-sm text-neutral-70">No active validator participant is available.</p>
+              {decision?.validatorRole && validators.length === 0 ? (
+                validatorsLoading ? (
+                  <div className="space-y-4">
+                    <div className="skeleton-block h-16 rounded-lg" />
+                    <div className="skeleton-block h-16 rounded-lg" />
+                  </div>
+                ) : (
+                  <p className="text-sm text-neutral-70">{t('join.validators.empty')}</p>
+                )
               ) : null}
               {decision?.validatorRole
-                ? activeValidators.map((validator) => (
+                ? validators.map((validator) => (
                     <ValidatorCard
                       key={validator.id}
                       validator={validator}
@@ -368,17 +394,23 @@ export default function JoinEcosystemWizard() {
             <div className="space-y-4 mb-6">
               <div className="rounded-lg bg-gray-50 dark:bg-gray-800/50 p-4 text-sm">
                 <p>
-                  <span className="font-medium">Schema:</span> {selectedSchema?.title}
+                  <span className="font-medium">{t('join.summary.schema')}:</span> {selectedSchema?.title}
                 </p>
                 <p>
-                  <span className="font-medium">Role:</span> {selectedRole}
+                  <span className="font-medium">{t('join.success.role')}:</span> {selectedRole}
                 </p>
                 <p>
-                  <span className="font-medium">Onboarding transaction:</span> {decision?.messageType}
+                  <span className="font-medium">{t('join.summary.transaction')}:</span>{' '}
+                  {decision?.messageType
+                    ? t(`txconfirm.effect.${decision.messageType}`, {
+                        role: selectedRole,
+                        did: isValidDID(serviceDid) ? serviceDid : t('join.servicedid.label'),
+                      })
+                    : null}
                 </p>
                 {selectedValidator ? (
                   <p>
-                    <span className="font-medium">Validator participant:</span> {selectedValidator.id}
+                    <span className="font-medium">{t('join.summary.validator')}:</span> {selectedValidator.id}
                   </p>
                 ) : null}
                 {onboardingCostLines.map((line) => (
@@ -392,7 +424,7 @@ export default function JoinEcosystemWizard() {
                   htmlFor="service-did"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
-                  Service DID
+                  {t('join.servicedid.label')}
                 </label>
                 <input
                   id="service-did"
@@ -406,6 +438,22 @@ export default function JoinEcosystemWizard() {
                   )}
                 />
               </div>
+              {selfCreating ? (
+                <SelfCreateFields
+                  value={selfCreate}
+                  onChange={setSelfCreate}
+                  withFees={selfCreateWithFees}
+                  issue={selfCreateProblem}
+                />
+              ) : null}
+              {selectedRole ? (
+                <VsOperatorFields
+                  role={selectedRole}
+                  value={vsOperator}
+                  onChange={setVsOperator}
+                  issue={vsOperatorProblem}
+                />
+              ) : null}
             </div>
           ) : null}
 

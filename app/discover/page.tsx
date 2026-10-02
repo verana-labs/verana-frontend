@@ -1,88 +1,88 @@
 'use client'
 
-import { faCoins, faFileContract, faScaleBalanced, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
+import type { EcosystemSchemaPage } from '@/hooks/useCredentialSchemas'
+import { useCorporationRolesByEcosystem } from '@/hooks/useParticipants'
+import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
-import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
+import { filterEcosystems, orderEcosystems, roleFiltersPending } from '@/lib/discover-list'
 import { useDiscoverCtx } from '@/providers/api-rest-query-provider-context'
-import ClaimText from '@/ui/common/claim-text'
-import CsCard from '@/ui/common/cs-card'
-import KeysetPagination, { ShowMoreButton } from '@/ui/common/keyset-pagination'
-import LogoImage from '@/ui/common/logo-image'
+import { DiscoverEcosystemCard } from '@/ui/common/discover-ecosystem-card'
+import EcosystemsFilterBar from '@/ui/common/ecosystems-filter-bar'
+import KeysetPagination from '@/ui/common/keyset-pagination'
 import TitleAndButton from '@/ui/common/title-and-button'
-import TrustBadge from '@/ui/common/trust-badge'
-import { resolveTranslatable } from '@/ui/dataview/types'
-import { countryCodeToFlag, formatNumber, formatVNAFromUVNA, shortenDID } from '@/util/util'
+import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
+
+const NO_SCHEMAS: EcosystemSchemaPage = { items: [], hasNext: false }
 
 function scrollToTop(): void {
   document.getElementById('app-scroll')?.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+function t(key: string, values?: I18nValues): string {
+  return resolveTranslatable({ key, values }, translate) ?? key
+}
+
 export default function DiscoverJoinPage() {
   const discoverCtx = useDiscoverCtx()
-  const [search, setSearch] = useState(discoverCtx.discoverSearch)
-
-  const ecosystems = useMemo(
-    () =>
-      discoverCtx.discoverList.map((ecosystem) => ({
-        ...ecosystem,
-        credentialSchemas: discoverCtx.credentialSchemasByEcosystem[ecosystem.id]?.items ?? [],
-        credentialSchemasHasNext: discoverCtx.credentialSchemasByEcosystem[ecosystem.id]?.hasNext ?? false,
-      })),
-    [discoverCtx.discoverList, discoverCtx.credentialSchemasByEcosystem]
+  const { discoverList, discoverFilters: filters, setDiscoverFilters } = discoverCtx
+  const { actingCorporation } = useUserCorporation()
+  const actingCorporationId = actingCorporation?.corporation.id
+  const ecosystemIds = useMemo(() => discoverList.map((ecosystem) => ecosystem.id), [discoverList])
+  const { rolesByEcosystem, rolesLoading, failedEcosystemIds, failureReason } = useCorporationRolesByEcosystem(
+    actingCorporationId,
+    ecosystemIds
   )
 
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase()
-    return ecosystems.filter((ecosystem) => {
-      if (discoverCtx.hideUntrustedOnDiscover && ecosystem.trustData?.trustStatus !== 'TRUSTED') return false
-      if (!term) return true
-      return [ecosystem.did, ecosystem.trustData?.serviceName, ecosystem.trustData?.organizationName].some((value) =>
-        value?.toLowerCase().includes(term)
-      )
-    })
-  }, [discoverCtx.hideUntrustedOnDiscover, ecosystems, search])
+  const shown = useMemo(
+    () =>
+      orderEcosystems(
+        filterEcosystems(discoverList, filters, { actingCorporationId, rolesByEcosystem }),
+        filters.order
+      ),
+    [actingCorporationId, discoverList, filters, rolesByEcosystem]
+  )
 
-  useEffect(() => {
-    discoverCtx.setDiscoverSearch(search)
-  }, [discoverCtx.setDiscoverSearch, search])
-
-  const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
-  const loading = discoverCtx.loading && discoverCtx.discoverList.length === 0
+  const partial = discoverCtx.hasNext || discoverCtx.hasPrevious
+  const loading = (discoverCtx.loading && discoverList.length === 0) || roleFiltersPending(filters, rolesLoading)
+  const errors = [
+    discoverCtx.error,
+    failureReason ? t('discover.roles.failed', { count: failedEcosystemIds.length, reason: failureReason }) : null,
+  ].filter((message): message is string => message !== null)
 
   return (
     <>
-      <TitleAndButton title={t('discover.title', 'Discover & Join')} />
+      <TitleAndButton title={t('discover.title')} />
 
-      <section
-        id="search-form"
-        className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6 mb-6"
+      <EcosystemsFilterBar
+        value={filters}
+        onChange={(next) => setDiscoverFilters({ ...filters, ...next })}
+        corporationFilters={actingCorporationId !== undefined}
       >
-        <div className="flex flex-col gap-4">
-          <input
-            type="text"
-            id="search-input"
-            placeholder={resolveTranslatable({ key: 'discover.search.placeholder' }, translate)}
-            className="w-full px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <label className="flex items-center space-x-2 cursor-pointer" htmlFor="discover-hide-untrusted">
-            <input
-              id="discover-hide-untrusted"
-              type="checkbox"
-              checked={discoverCtx.hideUntrustedOnDiscover}
-              onChange={(e) => discoverCtx.setHideUntrustedOnDiscover(e.target.checked)}
-              className="w-4 h-4 text-primary-600 border-neutral-20 dark:border-neutral-70 rounded focus:ring-2 focus:ring-primary-500"
-            />
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              {t('discover.filter.hideUntrusted', 'Hide ecosystems that are not trusted')}
-            </span>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <label htmlFor="discover-order" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {t('discover.order.label')}
           </label>
+          <select
+            id="discover-order"
+            value={filters.order}
+            onChange={(e) =>
+              setDiscoverFilters({ ...filters, order: e.target.value === 'trustValue' ? 'trustValue' : 'newest' })
+            }
+            className="px-3 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500"
+          >
+            <option value="newest">{t('discover.order.newest')}</option>
+            <option value="trustValue">{t('discover.order.trustValue')}</option>
+          </select>
         </div>
-      </section>
+        {partial ? <p className="text-xs text-neutral-70 dark:text-neutral-70">{t('pagination.loadedOnly')}</p> : null}
+      </EcosystemsFilterBar>
+
+      {errors.map((message) => (
+        <div key={message} className="error-pane mb-6">
+          {message}
+        </div>
+      ))}
 
       <section id="ecosystem-list" className="space-y-6">
         {loading ? (
@@ -96,126 +96,31 @@ export default function DiscoverJoinPage() {
               </div>
             </div>
           ))
-        ) : filtered.length === 0 ? (
+        ) : shown.length === 0 ? (
           <div className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-8 text-center">
-            <p className="text-sm text-neutral-70 dark:text-neutral-70">
-              {t('discover.empty', 'No ecosystems found.')}
-            </p>
+            <p className="text-sm text-neutral-70 dark:text-neutral-70">{t('discover.empty')}</p>
           </div>
         ) : (
-          filtered.map((eco) => {
-            const egfUrl = eco.versions?.find((x) => x.version === eco.activeVersion)?.documents?.[0]?.url
-            const enrichment = eco.trustData
-            const serviceName = enrichment?.serviceName ?? shortenDID(eco.did) ?? eco.did
-            const orgName = enrichment?.organizationName ?? shortenDID(eco.did) ?? eco.did
-            const flag = countryCodeToFlag(enrichment?.countryCode)
-            return (
-              <div
-                key={eco.id}
-                className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6"
-              >
-                <div className="mb-6">
-                  <div className="flex items-start space-x-3 mb-3">
-                    <LogoImage
-                      src={enrichment?.serviceLogoUrl}
-                      fallbackSrc={serviceIdenticonUrl(eco.did)}
-                      className="w-12 h-12 rounded-lg flex-shrink-0 object-contain"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white break-words" title={serviceName}>
-                          {serviceName}
-                        </h2>
-                        <TrustBadge state={enrichment?.trustStatus} size="xl" />
-                      </div>
-                      {enrichment?.serviceDescription ? (
-                        <ClaimText
-                          text={enrichment.serviceDescription}
-                          format={enrichment.serviceDescriptionFormat}
-                          className="text-xs text-neutral-70 dark:text-neutral-70 mt-1 line-clamp-2 break-words"
-                          title={enrichment.serviceDescription}
-                        />
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-2 mb-4">
-                    <LogoImage
-                      src={enrichment?.organizationLogoUrl}
-                      fallbackSrc={serviceAvatarUrl(enrichment?.organizationName ?? eco.did)}
-                      className="w-8 h-8 rounded flex-shrink-0 object-contain"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h3 className="truncate text-sm font-medium text-gray-900 dark:text-white" title={orgName}>
-                        {orgName}
-                      </h3>
-                      <span className="text-lg leading-none" aria-hidden="true">
-                        {flag}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-4 text-sm text-neutral-70 dark:text-neutral-70 mb-4">
-                    <span>
-                      <FontAwesomeIcon className="mr-1" aria-hidden="true" icon={faFileContract} />
-                      {formatNumber(eco.activeSchemas, true)}{' '}
-                      {resolveTranslatable({ key: 'discover.cs.label' }, translate)}
-                    </span>
-                    <span>
-                      <FontAwesomeIcon className="mr-1" aria-hidden="true" icon={faCoins} />
-                      {resolveTranslatable({ key: 'discover.td.label' }, translate)}{' '}
-                      {formatVNAFromUVNA(String(eco.weight))}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-wrap gap-3">
-                    {egfUrl && (
-                      <Link
-                        href={egfUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center px-4 py-2 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors text-sm font-medium"
-                      >
-                        <FontAwesomeIcon className="mr-2" aria-hidden="true" icon={faScaleBalanced} />
-                        {resolveTranslatable({ key: 'discover.btn.egf' }, translate)}
-                      </Link>
-                    )}
-
-                    <Link
-                      href={`/ecosystems/${eco.id}`}
-                      className="inline-flex items-center px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-sm font-medium"
-                    >
-                      <FontAwesomeIcon className="mr-2" aria-hidden="true" icon={faShieldHalved} />
-                      {resolveTranslatable({ key: 'discover.btn.view' }, translate)}
-                    </Link>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {discoverCtx.errorCredentialSchemas ? (
-                    <div className="error-pane">{discoverCtx.errorCredentialSchemas}</div>
-                  ) : (
-                    <>
-                      {eco.credentialSchemas.map((schema) => (
-                        <CsCard key={schema.id} credentialSchema={schema} />
-                      ))}
-                      {eco.credentialSchemasHasNext ? (
-                        <ShowMoreButton onClick={() => discoverCtx.loadMoreCredentialSchemas(eco.id)} />
-                      ) : null}
-                    </>
-                  )}
-                </div>
-              </div>
-            )
-          })
+          shown.map((ecosystem) => (
+            <DiscoverEcosystemCard
+              key={ecosystem.id}
+              ecosystem={ecosystem}
+              credentialSchemas={discoverCtx.credentialSchemasByEcosystem[ecosystem.id] ?? NO_SCHEMAS}
+              schemasError={discoverCtx.errorCredentialSchemas}
+              onLoadMoreSchemas={() => discoverCtx.loadMoreCredentialSchemas(ecosystem.id)}
+              roles={rolesByEcosystem[ecosystem.id] ?? []}
+              canJoin={actingCorporationId !== undefined}
+            />
+          ))
         )}
       </section>
 
       <KeysetPagination
-        showing={filtered.length}
-        itemsLabel={t('datatable.ecosystem.pagination.ecosystems', 'ecosystems')}
+        showing={shown.length}
+        itemsLabel={t('datatable.ecosystem.pagination.ecosystems')}
         hasPrevious={discoverCtx.hasPrevious}
         hasNext={discoverCtx.hasNext}
+        loadedOnlyNote={false}
         onPrevious={() => {
           discoverCtx.previousPage()
           scrollToTop()

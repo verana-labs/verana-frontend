@@ -21,6 +21,7 @@ import { useDelegableMsgs } from '@/hooks/useDelegableMsgs'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { type TrustCostSubject, trustCostLines } from '@/lib/trust-costs'
+import { type VsOperatorInput, vsOperatorAuthorization } from '@/lib/vs-operator-authorization'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import {
   MSG_ERROR_ACTION_PARTICIPANT,
@@ -62,6 +63,7 @@ export type ParticipantActionParams =
       validatorParticipantId: string | number
       did: string
       validatorValidationFees?: string | number
+      vsOperator?: VsOperatorInput
     } & FeeFields)
   | ({
       msgType: 'MsgSelfCreateParticipant'
@@ -70,6 +72,7 @@ export type ParticipantActionParams =
       did: string
       effectiveFrom?: string | Date
       effectiveUntil?: string | Date
+      vsOperator?: VsOperatorInput
     } & FeeFields)
   | ({
       msgType: 'MsgCreateRootParticipant'
@@ -143,17 +146,6 @@ function date(value: string | Date | undefined, field: string): Date | undefined
   return result
 }
 
-function emptyVsOperatorAuthorization() {
-  return {
-    vsOperator: '',
-    vsOperatorAuthzMsgTypes: [],
-    vsOperatorAuthzSpendLimit: [],
-    vsOperatorAuthzWithFeegrant: false,
-    vsOperatorAuthzFeeSpendLimit: [],
-    vsOperatorAuthzPeriod: undefined,
-  }
-}
-
 export function buildParticipantMessage(params: ParticipantActionParams, context: ParticipantContext): EncodeObject {
   const common = { corporation: context.corporation, operator: context.operator }
   switch (params.msgType) {
@@ -168,7 +160,7 @@ export function buildParticipantMessage(params: ParticipantActionParams, context
           validationFees: optionalUInt64(params.validationFees, 'validationFees'),
           issuanceFees: optionalUInt64(params.issuanceFees, 'issuanceFees'),
           verificationFees: optionalUInt64(params.verificationFees, 'verificationFees'),
-          ...emptyVsOperatorAuthorization(),
+          ...vsOperatorAuthorization(params.role, params.vsOperator),
         }),
       }
     case 'MsgSelfCreateParticipant':
@@ -183,7 +175,7 @@ export function buildParticipantMessage(params: ParticipantActionParams, context
           effectiveUntil: date(params.effectiveUntil, 'effectiveUntil'),
           validationFees: number(params.validationFees, 'validationFees'),
           verificationFees: number(params.verificationFees, 'verificationFees'),
-          ...emptyVsOperatorAuthorization(),
+          ...vsOperatorAuthorization(params.role, params.vsOperator),
         }),
       }
     case 'MsgCreateRootParticipant':
@@ -198,7 +190,7 @@ export function buildParticipantMessage(params: ParticipantActionParams, context
           validationFees: number(params.validationFees, 'validationFees'),
           issuanceFees: number(params.issuanceFees, 'issuanceFees'),
           verificationFees: number(params.verificationFees, 'verificationFees'),
-          ...emptyVsOperatorAuthorization(),
+          ...vsOperatorAuthorization('ECOSYSTEM'),
         }),
       }
     case 'MsgRenewParticipantOP':

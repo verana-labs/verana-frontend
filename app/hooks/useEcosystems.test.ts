@@ -117,3 +117,30 @@ describe('ecosystem rows carry the inline trust_data', () => {
     expect(parseEcosystemsResponse({ ecosystems: [ecosystem] })[0].trustData).toBeUndefined()
   })
 })
+
+describe('ecosystem rows carry their governance documents', () => {
+  it('keeps each document digest for the verified viewer', () => {
+    const row = parseEcosystemsResponse({
+      ecosystems: [
+        {
+          ...ecosystem,
+          versions: [
+            {
+              id: 48,
+              version: 1,
+              active_since: '2026-09-25T05:16:52.515Z',
+              documents: [
+                { id: 1, url: 'https://gov.example/egf.md', language: 'en', digest_sri: 'sha384-abc' },
+                { id: 2, url: 'https://gov.example/egf-es.md', language: 'es' },
+              ],
+            },
+          ],
+        },
+      ],
+    })[0]
+    expect(row.versions?.[0]?.documents).toEqual([
+      { id: '1', url: 'https://gov.example/egf.md', language: 'en', digestSri: 'sha384-abc' },
+      { id: '2', url: 'https://gov.example/egf-es.md', language: 'es', digestSri: undefined },
+    ])
+  })
+})

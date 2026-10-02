@@ -8,10 +8,12 @@ type ParticipantOnboardingModes = {
   holderOnboardingMode: HolderOnboardingMode | null
 }
 
-export type ParticipantOnboardingDecision = {
-  messageType: 'MsgSelfCreateParticipant' | 'MsgStartParticipantOP'
-  validatorRole: 'ECOSYSTEM' | 'ISSUER_GRANTOR' | 'VERIFIER_GRANTOR' | 'ISSUER' | null
-}
+export type ParticipantOnboardingDecision =
+  | {
+      messageType: 'MsgSelfCreateParticipant' | 'MsgStartParticipantOP'
+      validatorRole: 'ECOSYSTEM' | 'ISSUER_GRANTOR' | 'VERIFIER_GRANTOR' | 'ISSUER'
+    }
+  | { messageType: null; validatorRole: null }
 
 export function getParticipantJoinMessage(
   onboardingMode: ParticipantOnboardingMode
@@ -28,9 +30,7 @@ export function getParticipantOnboardingDecision(
   }
   if (role === 'HOLDER') {
     if (modes.holderOnboardingMode === null) throw new Error('Holder onboarding mode is not configured')
-    if (modes.holderOnboardingMode === 'PERMISSIONLESS') {
-      throw new Error('Permissionless holders do not create on-chain participants')
-    }
+    if (modes.holderOnboardingMode === 'PERMISSIONLESS') return { messageType: null, validatorRole: null }
     return { messageType: 'MsgStartParticipantOP', validatorRole: 'ISSUER' }
   }
 
@@ -43,4 +43,60 @@ export function getParticipantOnboardingDecision(
     messageType: 'MsgStartParticipantOP',
     validatorRole: role === 'ISSUER' ? 'ISSUER_GRANTOR' : 'VERIFIER_GRANTOR',
   }
+}
+
+export type EffectiveWindowIssue = 'fromInPast' | 'untilNotAfterFrom' | 'untilRequired' | 'untilAfterValidator'
+
+export function effectiveWindowIssue(
+  window: { from: Date | undefined; until: Date | undefined },
+  validatorUntil: Date | undefined,
+  now: Date
+): EffectiveWindowIssue | null {
+  if (window.from && window.from.getTime() < now.getTime()) return 'fromInPast'
+  if (!window.until) return validatorUntil ? 'untilRequired' : null
+  if (window.until.getTime() <= (window.from ?? now).getTime()) return 'untilNotAfterFrom'
+  if (validatorUntil && window.until.getTime() > validatorUntil.getTime()) return 'untilAfterValidator'
+  return null
+}
+
+export type SelfCreateInput = {
+  effectiveFrom: string
+  effectiveUntil: string
+  validationFees: string
+  verificationFees: string
+}
+
+export const EMPTY_SELF_CREATE_INPUT: SelfCreateInput = {
+  effectiveFrom: '',
+  effectiveUntil: '',
+  validationFees: '',
+  verificationFees: '',
+}
+
+export type SelfCreateIssue = EffectiveWindowIssue | 'invalidFees'
+
+function optionalDate(value: string | null | undefined): Date | undefined {
+  if (!value) return undefined
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? undefined : date
+}
+
+function validFee(fee: string): boolean {
+  const value = fee.trim()
+  return value === '' || (/^\d+$/.test(value) && Number.isSafeInteger(Number(value)))
+}
+
+export function selfCreateIssue(
+  input: SelfCreateInput,
+  validatorUntil: string | null | undefined,
+  now: Date,
+  withFees: boolean
+): SelfCreateIssue | null {
+  const fees = withFees ? [input.validationFees, input.verificationFees] : []
+  if (!fees.every(validFee)) return 'invalidFees'
+  return effectiveWindowIssue(
+    { from: optionalDate(input.effectiveFrom), until: optionalDate(input.effectiveUntil) },
+    optionalDate(validatorUntil),
+    now
+  )
 }

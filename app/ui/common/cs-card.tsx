@@ -21,103 +21,121 @@ function cn(...classes: Array<string | false | null | undefined>) {
 export default function CsCard({ credentialSchema, onSelect, selected }: CsCardProps) {
   const [showJsonSchemaModal, setShowJsonSchemaModal] = useState<boolean>(false)
 
-  return (
+  const details = (
     <>
-      <div
-        onClick={onSelect ? () => onSelect() : undefined}
-        className={
-          onSelect
-            ? cn(
-                'border-2 rounded-xl p-4 cursor-pointer transition-all',
-                selected
-                  ? 'border-primary-600 shadow-[0_0_0_3px_rgba(118,62,240,0.2)]'
-                  : 'border-neutral-20 dark:border-neutral-70',
-                'hover:border-primary-300 dark:hover:border-primary-600'
-              )
-            : 'bg-gray-50 dark:bg-gray-800/50 border border-neutral-20 dark:border-neutral-70 rounded-lg p-4 cursor-default'
-        }
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') onSelect?.()
-        }}
-      >
-        <div className="flex items-start space-x-3">
-          {onSelect && <input type="radio" checked={selected} readOnly className="mt-1 w-4 h-4 text-primary-600" />}
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white">{credentialSchema.title}</h3>
+        <span className="text-sm font-mono text-neutral-70 dark:text-neutral-70">
+          {resolveTranslatable({ key: 'dataview.cs.fields.id' }, translate)}: {credentialSchema.id}
+        </span>
+      </div>
 
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white">{credentialSchema.title}</h3>
-              <span className="text-sm font-mono text-neutral-70 dark:text-neutral-70">
-                {resolveTranslatable({ key: 'dataview.cs.fields.id' }, translate)}: {credentialSchema.id}
-              </span>
-            </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+        <div>
+          <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
+            {resolveTranslatable({ key: 'dataview.cs.fields.issuerValidationValidityPeriod' }, translate)}
+          </label>
+          <p className="text-sm text-gray-900 dark:text-white">
+            {credentialSchema.issuerValidationValidityPeriod} days
+          </p>
+        </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-              <div>
-                <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
-                  {resolveTranslatable({ key: 'dataview.cs.fields.issuerValidationValidityPeriod' }, translate)}
-                </label>
-                <p className="text-sm text-gray-900 dark:text-white">
-                  {credentialSchema.issuerValidationValidityPeriod} days
-                </p>
-              </div>
+        <div>
+          <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
+            {resolveTranslatable({ key: 'dataview.cs.fields.verifierValidationValidityPeriod' }, translate)}
+          </label>
+          <p className="text-sm text-gray-900 dark:text-white">
+            {credentialSchema.verifierValidationValidityPeriod} days
+          </p>
+        </div>
 
-              <div>
-                <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
-                  {resolveTranslatable({ key: 'dataview.cs.fields.verifierValidationValidityPeriod' }, translate)}
-                </label>
-                <p className="text-sm text-gray-900 dark:text-white">
-                  {credentialSchema.verifierValidationValidityPeriod} days
-                </p>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
-                  {resolveTranslatable({ key: 'dataview.cs.fields.issuerOnboardingMode' }, translate)}
-                </label>
-                <p>
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getModePillClass(
-                      credentialSchema.issuerOnboardingMode,
-                      '_ISSUER'
-                    )}`}
-                  >
-                    {credentialSchema.issuerOnboardingMode}
-                  </span>
-                </p>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
-                  {resolveTranslatable({ key: 'dataview.cs.fields.verifierOnboardingMode' }, translate)}
-                </label>
-                <p>
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getModePillClass(
-                      credentialSchema.verifierOnboardingMode,
-                      '_VERIFIER'
-                    )}`}
-                  >
-                    {credentialSchema.verifierOnboardingMode}
-                  </span>
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowJsonSchemaModal(true)
-              }}
-              className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
-              type="button"
+        <div>
+          <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
+            {resolveTranslatable({ key: 'dataview.cs.fields.issuerOnboardingMode' }, translate)}
+          </label>
+          <p>
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getModePillClass(
+                credentialSchema.issuerOnboardingMode,
+                '_ISSUER'
+              )}`}
             >
-              {'</>'} View JSON Schema
-            </button>
-          </div>
+              {credentialSchema.issuerOnboardingMode}
+            </span>
+          </p>
+        </div>
+
+        <div>
+          <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
+            {resolveTranslatable({ key: 'dataview.cs.fields.verifierOnboardingMode' }, translate)}
+          </label>
+          <p>
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getModePillClass(
+                credentialSchema.verifierOnboardingMode,
+                '_VERIFIER'
+              )}`}
+            >
+              {credentialSchema.verifierOnboardingMode}
+            </span>
+          </p>
         </div>
       </div>
+    </>
+  )
+
+  const jsonSchemaButton = (
+    <button
+      onClick={() => setShowJsonSchemaModal(true)}
+      className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+      type="button"
+    >
+      {'</>'} {resolveTranslatable({ key: 'dataview.cs.viewJsonSchema' }, translate) ?? 'View JSON Schema'}
+    </button>
+  )
+
+  return (
+    <>
+      {onSelect ? (
+        <div
+          className={cn(
+            'border-2 rounded-xl p-4 transition-all',
+            selected
+              ? 'border-primary-600 shadow-[0_0_0_3px_rgba(118,62,240,0.2)]'
+              : 'border-neutral-20 dark:border-neutral-70',
+            'hover:border-primary-300 dark:hover:border-primary-600'
+          )}
+        >
+          <div
+            onClick={() => onSelect()}
+            role="button"
+            tabIndex={0}
+            aria-pressed={Boolean(selected)}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter' && e.key !== ' ') return
+              e.preventDefault()
+              onSelect()
+            }}
+            className="flex items-start space-x-3 cursor-pointer"
+          >
+            <input
+              type="radio"
+              checked={selected}
+              readOnly
+              className="mt-1 w-4 h-4 text-primary-600"
+              aria-hidden="true"
+              tabIndex={-1}
+            />
+            <div className="flex-1">{details}</div>
+          </div>
+          <div className="pl-7">{jsonSchemaButton}</div>
+        </div>
+      ) : (
+        <div className="bg-gray-50 dark:bg-gray-800/50 border border-neutral-20 dark:border-neutral-70 rounded-lg p-4 cursor-default">
+          {details}
+          {jsonSchemaButton}
+        </div>
+      )}
 
       {showJsonSchemaModal && credentialSchema.jsonSchema && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">

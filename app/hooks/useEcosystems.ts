@@ -10,7 +10,7 @@ import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
-const { record, string, number, decimalAmount, nullableString } = indexerValidators('ecosystem')
+const { record, string, number, decimalAmount, nullableString, optionalString } = indexerValidators('ecosystem')
 
 function parseVersions(value: unknown, path: string): EcosystemListItem['versions'] {
   if (value === undefined) return undefined
@@ -28,6 +28,7 @@ function parseVersions(value: unknown, path: string): EcosystemListItem['version
           id: String(number(doc.id, `${path}[${index}].documents[${documentIndex}].id`)),
           url: string(doc.url, `${path}[${index}].documents[${documentIndex}].url`),
           language: string(doc.language, `${path}[${index}].documents[${documentIndex}].language`),
+          digestSri: optionalString(doc.digest_sri, `${path}[${index}].documents[${documentIndex}].digest_sri`),
         }
       }),
     }
