@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { parseActivityHistory } from './activity-history'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { fetchActivityHistory, parseActivityHistory } from './activity-history'
 
 describe('parseActivityHistory', () => {
   it('reads the live activity shape newest first and tolerates a missing account', () => {
@@ -79,5 +79,55 @@ describe('parseActivityHistory', () => {
         changes: { title: 'Keplr Check 0929' },
       },
     ])
+  })
+})
+
+function item(id: number, msg: string) {
+  return {
+    id,
+    timestamp: `2026-09-${String(1 + (id % 28)).padStart(2, '0')}T10:00:00Z`,
+    block_height: id,
+    msg,
+    changes: {},
+  }
+}
+
+describe('fetchActivityHistory', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('pages past a full page of stats rows with the max_id cursor', async () => {
+    const statsPage = Array.from({ length: 64 }, (_, index) => item(200 - index, 'StatsUpdate'))
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => ({
+        activity: new URL(url).searchParams.has('max_id') ? [item(5, 'CreateCredentialSchema')] : statsPage,
+      }),
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const rows = await fetchActivityHistory('https://indexer.example/v4/credential-schema/history/1')
+
+    expect(rows.map((row) => row.msg)).toEqual(['CreateCredentialSchema'])
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      'https://indexer.example/v4/credential-schema/history/1?limit=64',
+      'https://indexer.example/v4/credential-schema/history/1?limit=64&max_id=137',
+    ])
+  })
+
+  it('stops after one request when the first page is not full', async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ activity: [item(1, 'CreateEcosystem')] }) }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchActivityHistory('https://indexer.example/v4/ecosystem/history/1')).resolves.toHaveLength(1)
+    expect(fetchMock).toHaveBeenCalledOnce()
+  })
+
+  it('fails instead of reading an unavailable history as empty', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false, status: 502, json: async () => ({}) }))
+    )
+
+    await expect(fetchActivityHistory('https://indexer.example/v4/ecosystem/history/1')).rejects.toThrow('502')
   })
 })
