@@ -8,6 +8,7 @@ import {
   vsOperatorAuthorizationsUrl,
 } from '@/hooks/useCorporationDetails'
 import { parseEcosystemsResponse } from '@/hooks/useEcosystems'
+import { useLoadMore } from '@/hooks/useKeysetPages'
 import { parseParticipantsResponse } from '@/hooks/useParticipants'
 import { translate } from '@/i18n/dataview'
 import { type IndexerEntityEvent, refreshesEntityLists, SESSION_EVENT } from '@/lib/indexer-event'
@@ -158,7 +159,6 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
   const [agentWindow, setAgentWindow] = useState<AgentWindow>(EMPTY_WINDOW)
   const requestRef = useRef(0)
   const windowRef = useRef(agentWindow)
-  const loadingMore = useRef(false)
   windowRef.current = agentWindow
 
   const states = includeInactive ? ALL_PARTICIPATION_STATES : ACTIVE_ONLY
@@ -254,13 +254,7 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
     void load()
   }, [load])
 
-  const loadMore = useCallback(() => {
-    if (loadingMore.current) return
-    loadingMore.current = true
-    void load({ append: true, background: true }).finally(() => {
-      loadingMore.current = false
-    })
-  }, [load])
+  const loadMore = useLoadMore(() => load({ append: true, background: true }))
 
   const didsKey = agents.map((agent) => agent.did).join('|')
   // biome-ignore lint/correctness/useExhaustiveDependencies: reloadToken re-runs the resolve after a cache invalidation

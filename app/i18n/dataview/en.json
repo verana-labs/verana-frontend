@@ -13,6 +13,7 @@
   "discover.empty": "No ecosystems found.",
   "discover.filter.hideUntrusted": "Hide ecosystems that are not trusted",
   "discover.cs.label": "Credential Schemas",
+  "discover.cs.more.error": "More credential schemas could not be loaded for this ecosystem.",
   "discover.td.label": "Trust Deposit:",
   "discover.btn.egf": "EGF",
   "discover.btn.view": "View Ecosystem",

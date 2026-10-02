@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
+import { useLoadMore } from '@/hooks/useKeysetPages'
 import { applyKeysetParams, indexerValidators, takeKeysetPage } from '@/lib/indexer-json'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type { ParticipantHistory } from '@/ui/dataview/datasections/participant'
@@ -39,7 +40,6 @@ export function useParticipantHistory(id?: string, pageSize = PARTICIPANT_HISTOR
   const [loading, setLoading] = useState(false)
   const [errorParticipantHistory, setError] = useState<string | null>(null)
   const participantRef = useRef<string | undefined>(undefined)
-  const loadingMore = useRef(false)
 
   const fetchPage = useCallback(
     async (participantId: string, after: string | undefined, append: boolean) => {
@@ -93,15 +93,11 @@ export function useParticipantHistory(id?: string, pageSize = PARTICIPANT_HISTOR
     if (id) void fetchParticipantHistory(id)
   }, [fetchParticipantHistory, id])
 
-  const loadMore = useCallback(() => {
+  const loadMore = useLoadMore(async () => {
     const participantId = participantRef.current
     const last = participantHistory[participantHistory.length - 1]
-    if (!participantId || !last || loadingMore.current) return
-    loadingMore.current = true
-    void fetchPage(participantId, last.id, true).finally(() => {
-      loadingMore.current = false
-    })
-  }, [fetchPage, participantHistory])
+    if (participantId && last) await fetchPage(participantId, last.id, true)
+  })
 
   return { participantHistory, loading, errorParticipantHistory, refetch: fetchParticipantHistory, hasNext, loadMore }
 }

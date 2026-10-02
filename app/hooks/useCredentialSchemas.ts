@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA } from '@/config/env'
+import { useKeysetPages } from '@/hooks/useKeysetPages'
 import { translate } from '@/i18n/dataview'
 import { applyKeysetParams, indexerValidators, takeKeysetPage } from '@/lib/indexer-json'
 import type { HolderOnboardingMode, ParticipantOnboardingMode } from '@/lib/participant-onboarding'
@@ -107,12 +108,7 @@ export function useCredentialSchemas(
   const [errorCredentialSchemas, setError] = useState<string | null>(null)
 
   const pageKey = `${all}|${ecosystemId ?? ''}|${onlyActive}|${pageSize}`
-  const [pages, setPages] = useState<{ key: string; stack: (string | undefined)[] }>({
-    key: pageKey,
-    stack: [undefined],
-  })
-  const stack = pages.key === pageKey ? pages.stack : [undefined]
-  const after = stack[stack.length - 1]
+  const { after, hasPrevious, nextPage, previousPage } = useKeysetPages(pageKey, credentialSchemas)
 
   const fetchCredentialSchemas = useCallback(async () => {
     if ((!all && !ecosystemId) || !VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA) {
@@ -151,22 +147,13 @@ export function useCredentialSchemas(
     void fetchCredentialSchemas()
   }, [fetchCredentialSchemas])
 
-  const nextPage = useCallback(() => {
-    const last = credentialSchemas[credentialSchemas.length - 1]
-    if (last) setPages({ key: pageKey, stack: [...stack, last.id] })
-  }, [credentialSchemas, pageKey, stack])
-
-  const previousPage = useCallback(() => {
-    if (stack.length > 1) setPages({ key: pageKey, stack: stack.slice(0, -1) })
-  }, [pageKey, stack])
-
   return {
     credentialSchemas,
     loading,
     errorCredentialSchemas,
     refetch: fetchCredentialSchemas,
     hasNext,
-    hasPrevious: stack.length > 1,
+    hasPrevious,
     nextPage,
     previousPage,
   }
@@ -199,6 +186,7 @@ export function useCredentialSchemasByEcosystem(ecosystemIds: string[], pageSize
   const [schemasByEcosystem, setSchemasByEcosystem] = useState<Record<string, EcosystemSchemaPage>>({})
   const [loading, setLoading] = useState(false)
   const [errorCredentialSchemas, setError] = useState<string | null>(null)
+  const [moreSchemaErrors, setMoreSchemaErrors] = useState<Record<string, string>>({})
   const requestRef = useRef(0)
   const loadingMore = useRef<Set<string>>(new Set())
   const ecosystemKey = ecosystemIds.join('|')
@@ -241,7 +229,11 @@ export function useCredentialSchemasByEcosystem(ecosystemIds: string[], pageSize
       if (!base || !after || !loaded?.hasNext || loadingMore.current.has(ecosystemId)) return
 
       loadingMore.current.add(ecosystemId)
-      setError(null)
+      setMoreSchemaErrors((current) => {
+        if (!current[ecosystemId]) return current
+        const { [ecosystemId]: _cleared, ...rest } = current
+        return rest
+      })
       try {
         const page = await fetchEcosystemSchemaPage(base, ecosystemId, pageSize, after)
         setSchemasByEcosystem((current) => {
@@ -250,7 +242,8 @@ export function useCredentialSchemasByEcosystem(ecosystemIds: string[], pageSize
           return { ...current, [ecosystemId]: { items: [...existing.items, ...page.items], hasNext: page.hasNext } }
         })
       } catch (error) {
-        setError(error instanceof Error ? error.message : String(error))
+        const message = error instanceof Error ? error.message : String(error)
+        setMoreSchemaErrors((current) => ({ ...current, [ecosystemId]: message }))
       } finally {
         loadingMore.current.delete(ecosystemId)
       }
@@ -258,5 +251,12 @@ export function useCredentialSchemasByEcosystem(ecosystemIds: string[], pageSize
     [pageSize, schemasByEcosystem]
   )
 
-  return { schemasByEcosystem, loading, errorCredentialSchemas, refetch: fetchCredentialSchemas, loadMore }
+  return {
+    schemasByEcosystem,
+    loading,
+    errorCredentialSchemas,
+    moreSchemaErrors,
+    refetch: fetchCredentialSchemas,
+    loadMore,
+  }
 }

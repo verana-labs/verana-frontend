@@ -13,6 +13,7 @@
   "discover.empty": "No se encontraron ecosistemas.",
   "discover.filter.hideUntrusted": "Ocultar los ecosistemas que no son confiables",
   "discover.cs.label": "Esquemas de Credenciales",
+  "discover.cs.more.error": "No se pudieron cargar más esquemas de credencial de este ecosistema.",
   "discover.td.label": "Depósito de Confianza:",
   "discover.btn.egf": "EGF",
   "discover.btn.view": "Ver Ecosistema",

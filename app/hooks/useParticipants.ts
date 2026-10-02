@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
+import { useLoadMore } from '@/hooks/useKeysetPages'
 import { parseParticipantRecord } from '@/hooks/useParticipant'
 import { applyKeysetParams, indexerValidators, takeKeysetPage } from '@/lib/indexer-json'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
@@ -137,10 +138,10 @@ export function useParticipants(
     if (schemaId) void fetchParticipants(schemaId, role, validatorParticipantId)
   }, [fetchParticipants, role, schemaId, validatorParticipantId])
 
-  const loadMore = useCallback(() => {
+  const loadMore = useLoadMore(async () => {
     const last = participants[participants.length - 1]
-    if (last) void fetchPage(queryRef.current, last.id, true)
-  }, [fetchPage, participants])
+    if (last) await fetchPage(queryRef.current, last.id, true)
+  })
 
   return { participants, pageKey, loading, errorParticipants, refetch: fetchParticipants, hasNext, loadMore }
 }

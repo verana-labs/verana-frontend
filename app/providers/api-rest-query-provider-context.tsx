@@ -30,6 +30,7 @@ type DiscoverCtxValue = KeysetPageControls & {
   discoverList: EcosystemListItem[]
   credentialSchemasByEcosystem: Record<string, EcosystemSchemaPage>
   errorCredentialSchemas: string | null
+  moreSchemaErrors: Record<string, string>
   loadMoreCredentialSchemas: (ecosystemId: string) => void
   loading: boolean
   refetch: () => Promise<void>
@@ -106,6 +107,7 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
     schemasByEcosystem: credentialSchemasByEcosystem,
     loading: credentialSchemasLoading,
     errorCredentialSchemas,
+    moreSchemaErrors,
     refetch: refetchCredentialSchemas,
     loadMore: loadMoreCredentialSchemas,
   } = useCredentialSchemasByEcosystem(discoverEcosystemIds)
@@ -138,6 +140,7 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
       refetch: refetchDiscover,
       credentialSchemasByEcosystem,
       errorCredentialSchemas,
+      moreSchemaErrors,
       loadMoreCredentialSchemas,
       discoverSearch,
       setDiscoverSearch,
@@ -154,6 +157,7 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
       credentialSchemasByEcosystem,
       credentialSchemasLoading,
       errorCredentialSchemas,
+      moreSchemaErrors,
       loadMoreCredentialSchemas,
       refetchDiscover,
       discoverSearch,

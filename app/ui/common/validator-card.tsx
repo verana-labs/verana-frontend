@@ -1,10 +1,10 @@
 'use client'
 
-import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
+import { serviceIdenticonUrl } from '@/lib/resolverClient'
 import LogoImage from '@/ui/common/logo-image'
 import TrustBadge from '@/ui/common/trust-badge'
 import type { Participant } from '@/ui/dataview/datasections/participant'
-import { countryCodeToFlag, formatVNAFromUVNA, isExpireSoon, participantStateBadgeClass, shortenDID } from '@/util/util'
+import { formatVNAFromUVNA, isExpireSoon, participantStateBadgeClass, shortenDID } from '@/util/util'
 
 function cn(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(' ')
@@ -17,10 +17,8 @@ export type ValidatorCardProps = {
 }
 
 export default function ValidatorCard({ validator, selected = false, onSelect }: ValidatorCardProps) {
-  const identity = validator.trustData
   const did = validator.did ?? undefined
-  const serviceName = identity?.serviceName ?? (did ? shortenDID(did) : '—')
-  const orgName = identity?.organizationName
+  const serviceName = did ? shortenDID(did) : '—'
   const { labelParticipantState, classParticipantState, expireSoon } = participantStateBadgeClass(
     validator.participant_state,
     isExpireSoon(validator.effective_until)
@@ -63,7 +61,6 @@ export default function ValidatorCard({ validator, selected = false, onSelect }:
           />
         )}
         <LogoImage
-          src={identity?.serviceLogoUrl}
           fallbackSrc={serviceIdenticonUrl(did)}
           className="w-10 h-10 rounded-lg flex-shrink-0 object-contain"
         />
@@ -74,24 +71,9 @@ export default function ValidatorCard({ validator, selected = false, onSelect }:
               <h3 className="truncate text-base font-semibold text-gray-900 dark:text-white" title={serviceName}>
                 {serviceName}
               </h3>
-              {orgName ? (
-                <span className="mt-1 flex min-w-0 items-center gap-1.5">
-                  <LogoImage
-                    src={identity?.organizationLogoUrl}
-                    fallbackSrc={serviceAvatarUrl(orgName)}
-                    className="w-4 h-4 rounded flex-shrink-0 object-contain"
-                  />
-                  <span className="truncate text-xs text-neutral-70 dark:text-neutral-70" title={orgName}>
-                    {orgName}
-                  </span>
-                </span>
-              ) : null}
             </div>
             <div className="flex flex-shrink-0 items-center gap-2">
-              <span className="text-base leading-none" aria-hidden="true">
-                {countryCodeToFlag(identity?.countryCode)}
-              </span>
-              <TrustBadge state={identity?.trustStatus} size="lg" />
+              <TrustBadge state={validator.trustData?.trustStatus} size="lg" />
               <span
                 className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${classParticipantState}`}
               >

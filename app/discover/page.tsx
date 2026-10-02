@@ -192,13 +192,18 @@ export default function DiscoverJoinPage() {
                 </div>
 
                 <div className="space-y-4">
-                  {discoverCtx.errorCredentialSchemas ? (
+                  {discoverCtx.errorCredentialSchemas && !eco.credentialSchemas.length ? (
                     <div className="error-pane">{discoverCtx.errorCredentialSchemas}</div>
                   ) : (
                     <>
                       {eco.credentialSchemas.map((schema) => (
                         <CsCard key={schema.id} credentialSchema={schema} />
                       ))}
+                      {discoverCtx.moreSchemaErrors[eco.id] ? (
+                        <p className="text-sm text-amber-700 dark:text-amber-300">
+                          {resolveTranslatable({ key: 'discover.cs.more.error' }, translate)}
+                        </p>
+                      ) : null}
                       {eco.credentialSchemasHasNext ? (
                         <ShowMoreButton onClick={() => discoverCtx.loadMoreCredentialSchemas(eco.id)} />
                       ) : null}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_ECOSYSTEM } from '@/config/env'
+import { useKeysetPages } from '@/hooks/useKeysetPages'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { applyKeysetParams, indexerValidators, takeKeysetPage } from '@/lib/indexer-json'
@@ -77,12 +78,7 @@ export function useEcosystems(all = false, onlyActive = true, pageSize = ECOSYST
   const requestRef = useRef(0)
 
   const pageKey = `${all}|${corporationId ?? ''}|${onlyActive}|${pageSize}`
-  const [pages, setPages] = useState<{ key: string; stack: (string | undefined)[] }>({
-    key: pageKey,
-    stack: [undefined],
-  })
-  const stack = pages.key === pageKey ? pages.stack : [undefined]
-  const after = stack[stack.length - 1]
+  const { after, hasPrevious, nextPage, previousPage } = useKeysetPages(pageKey, ecosystems)
 
   const fetchEcosystems = useCallback(async () => {
     const request = ++requestRef.current
@@ -127,22 +123,13 @@ export function useEcosystems(all = false, onlyActive = true, pageSize = ECOSYST
     void fetchEcosystems()
   }, [fetchEcosystems])
 
-  const nextPage = useCallback(() => {
-    const last = ecosystems[ecosystems.length - 1]
-    if (last) setPages({ key: pageKey, stack: [...stack, last.id] })
-  }, [ecosystems, pageKey, stack])
-
-  const previousPage = useCallback(() => {
-    if (stack.length > 1) setPages({ key: pageKey, stack: stack.slice(0, -1) })
-  }, [pageKey, stack])
-
   return {
     ecosystems,
     loading,
     errorEcosystems,
     refetch: fetchEcosystems,
     hasNext,
-    hasPrevious: stack.length > 1,
+    hasPrevious,
     nextPage,
     previousPage,
   }
