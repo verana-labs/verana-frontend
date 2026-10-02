@@ -1,6 +1,7 @@
 'use client'
 
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
+import { useRouter } from 'next/navigation'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { CorporationDiscoveryFailure } from '@/ui/common/corporation-discovery-failure'
@@ -9,20 +10,37 @@ import { CorporationMembershipRow } from '@/ui/common/corporation-membership-row
 function keepOpen() {}
 
 export function CorporationChooser() {
-  const { memberships, needsSelection, actingCorporationLost, attention, setActingCorporation } = useUserCorporation()
+  const router = useRouter()
+  const {
+    memberships,
+    needsSelection,
+    loading,
+    actingCorporationLost,
+    acknowledgeLost,
+    attention,
+    setActingCorporation,
+  } = useUserCorporation()
+  const lostLast = !loading && actingCorporationLost && memberships.length === 0
+
+  function continueWithoutCorporation() {
+    acknowledgeLost()
+    router.push('/dashboard')
+  }
 
   return (
-    <Dialog open={needsSelection} onClose={keepOpen} className="relative z-50">
+    <Dialog open={needsSelection || lostLast} onClose={keepOpen} className="relative z-50">
       <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <DialogPanel className="w-full max-w-md rounded-xl border border-neutral-20 dark:border-neutral-70 bg-white dark:bg-surface p-6 shadow-xl">
           <DialogTitle className="text-lg font-bold text-gray-900 dark:text-white mb-1">
-            {translate('corporation.chooser.title')}
+            {translate(lostLast ? 'corporation.chooser.losttitle' : 'corporation.chooser.title')}
           </DialogTitle>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{translate('corporation.chooser.desc')}</p>
+          {lostLast ? null : (
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{translate('corporation.chooser.desc')}</p>
+          )}
           {actingCorporationLost ? (
             <p className="mb-4 rounded-lg bg-amber-100 px-3 py-2 text-sm text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
-              {translate('corporation.chooser.lost')}
+              {translate(lostLast ? 'corporation.chooser.lostlast' : 'corporation.chooser.lost')}
             </p>
           ) : null}
           <CorporationDiscoveryFailure />
@@ -42,6 +60,15 @@ export function CorporationChooser() {
               </button>
             ))}
           </div>
+          {lostLast ? (
+            <button
+              type="button"
+              onClick={continueWithoutCorporation}
+              className="w-full px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium"
+            >
+              {translate('corporation.chooser.continue')}
+            </button>
+          ) : null}
         </DialogPanel>
       </div>
     </Dialog>

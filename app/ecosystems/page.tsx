@@ -53,7 +53,7 @@ export default function EcosystemsPage() {
     onlyActiveEcosystem,
     setOnlyActiveEcosystem,
   } = useEcosystemsCtx()
-  const { actingCorporation } = useUserCorporation()
+  const { actingCorporation, loading: corporationLoading } = useUserCorporation()
 
   const [filters, setFilters] = useState<EcosystemsFilterState>({
     ...INITIAL_ECOSYSTEMS_FILTER,
@@ -122,6 +122,10 @@ export default function EcosystemsPage() {
   const enrichmentGateActive = !filters.showUntrusted
   const hasEcosystems = ecosystemsList.length > 0
   const gridLoading = (ecosystemsLoading && !hasEcosystems) || (enrichmentGateActive && !enrichmentsReady)
+
+  if (!actingCorporation && !corporationLoading) {
+    return <p className="p-6 text-sm text-gray-600 dark:text-gray-300">{translate('corporation.page.nocorp')}</p>
+  }
 
   return (
     <>
