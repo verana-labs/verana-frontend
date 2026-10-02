@@ -106,6 +106,24 @@ export const MSG_ERROR_ACTION_ECOSYSTEM: Record<
     }),
 }
 
+export const MSG_ERROR_ACTION_CGF: Record<
+  'MsgAddGovernanceFrameworkDocument' | 'MsgIncreaseActiveGovernanceFrameworkVersion',
+  (id: string | number | undefined, code?: number, msg?: string) => string
+> = {
+  MsgAddGovernanceFrameworkDocument: (id, code, msg) =>
+    t('notification.MsgAddGovernanceFrameworkDocument.corporation.error', {
+      id,
+      code: code ? `(${code}) ` : '',
+      msg: msg ?? '',
+    }),
+  MsgIncreaseActiveGovernanceFrameworkVersion: (id, code, msg) =>
+    t('notification.MsgIncreaseActiveGovernanceFrameworkVersion.corporation.error', {
+      id,
+      code: code ? `(${code}) ` : '',
+      msg: msg ?? '',
+    }),
+}
+
 // ============================================================================
 // CREDENTIAL SCHEMA ACTIONS
 // ============================================================================

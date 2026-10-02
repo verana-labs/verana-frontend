@@ -6,7 +6,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React, { ReactNode, useId, useState } from 'react'
 import CredentialSchemaActionPage from '@/credential-schemas/[id]/action'
 import EcosystemActionPage from '@/ecosystems/[id]/action'
-import GovernanceFrameworkActionPage from '@/ecosystems/[id]/governance-framework-action'
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
 import { DataType, getMsgTypeFor } from '@/msg/constants/msgTypeForDataType'
 import { MsgTypeCS, MsgTypeEcosystem, MsgTypeParticipant } from '@/msg/constants/notificationMsgForMsgType'
@@ -121,9 +120,6 @@ export function renderObjectList<I extends object>(args: {
   ))
 }
 
-export const validGovernanceFrameworkAction = (action: string): action is MsgTypeEcosystem =>
-  ['MsgAddGovernanceFrameworkDocument', 'MsgIncreaseActiveGovernanceFrameworkVersion'].includes(action)
-
 export const validEcosystemAction = (action: string): action is MsgTypeEcosystem =>
   ['MsgUpdateEcosystem', 'MsgArchiveEcosystem', 'MsgUnarchiveEcosystem'].includes(action)
 
@@ -156,17 +152,6 @@ export function renderActionComponent(
 ): ReactNode {
   if (action === GET_VNA_ACTION) {
     return <GetVNAPanel onClose={onClose} onRefresh={onRefresh} />
-  }
-  if (validGovernanceFrameworkAction(action)) {
-    return (
-      <GovernanceFrameworkActionPage
-        action={action}
-        data={data}
-        onClose={onClose}
-        onRefresh={onRefresh}
-        setModalHidden={setModalHidden}
-      />
-    )
   }
   if (validParticipantAction(action)) {
     return (

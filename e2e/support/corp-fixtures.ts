@@ -204,6 +204,34 @@ export const HISTORY_13 = [
   activity(1, '2026-08-30T09:00:00Z', 404000, 'SlashTrustDeposit', { slashed_deposit: 2_000_000, slash_count: 1 }),
 ]
 
+export function cgfVersion(
+  corporationId: number,
+  id: number,
+  version: number,
+  activeSince: string | null,
+  languages: string[]
+) {
+  return {
+    id,
+    corporation_id: corporationId,
+    ecosystem_id: null,
+    version,
+    created: activeSince ?? '2026-09-20T10:00:00Z',
+    active_since: activeSince,
+    documents: languages.map((language, index) => ({
+      id: id * 10 + index,
+      gfv_id: id,
+      language,
+      url: `https://acme-trust.ch/cgf-v${version}-${language}.md`,
+      digest_sri: `sha384-cgf-v${version}-${language}`,
+    })),
+  }
+}
+
+export const CGF_ACTIVE_13 = cgfVersion(13, 30, 1, '2026-09-01T10:00:00Z', ['de'])
+export const CGF_VERSIONS_13 = [CGF_ACTIVE_13, cgfVersion(13, 31, 2, null, ['en'])]
+export const CGF_VERSIONS_12 = [cgfVersion(12, 20, 1, '2026-08-25T20:34:20Z', ['en'])]
+
 export const ACME_ECOSYSTEM_DID = 'did:web:acme-eco.example'
 export const AGENT_ONE_DID = 'did:web:agent-one.example'
 export const AGENT_TWO_DID = 'did:web:agent-two.example'

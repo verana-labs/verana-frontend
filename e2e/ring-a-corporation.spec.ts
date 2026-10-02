@@ -1,6 +1,10 @@
+import { fromBase64 } from '@cosmjs/encoding'
 import { expect, type Page, test } from '@playwright/test'
+import { MsgAddGovernanceFrameworkDocument } from '@verana-labs/verana-types/codec/verana/gf/v1/tx'
+import { MsgSubmitProposal } from 'cosmjs-types/cosmos/group/v1/tx'
+import { TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { connectWallet } from './support/connect'
-import { GRANTEE, REPLACEMENT_MEMBER } from './support/corp-fixtures'
+import { ACME_POLICY_ADDRESS, CGF_ACTIVE_13, cgfVersion, GRANTEE, REPLACEMENT_MEMBER } from './support/corp-fixtures'
 import {
   HARNESS_MNEMONIC,
   indexerParticipantEvent,
@@ -8,9 +12,11 @@ import {
   installEcosystemStubs,
   installIndexerSocket,
   seedActingCorporation,
+  stubCorporationGovernance,
   stubEcosystemList,
   stubTrustResolve,
 } from './support/corp-stubs'
+import { labelInput, labelSelect } from './support/forms'
 import { installMockChain } from './support/mock-chain'
 
 async function noHorizontalOverflow(page: Page) {
@@ -465,4 +471,99 @@ test('a service description claim renders as text or Markdown, never as HTML', a
       await expect(grid.locator('strong')).toHaveCount(0)
     })
   }
+})
+
+test('the governance tab lists the CGF versions and gates the increase on the primary language', async ({ page }) => {
+  await installCorporationStubs(page)
+  await seedActingCorporation(page, 13)
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubSri: false, stubCorporation: false })
+
+  await page.goto('/corporation?tab=governance')
+  const section = page.locator('#governance')
+  await expect(section.getByText('Active version: 1')).toBeVisible({ timeout: 15_000 })
+  await expect(section.getByRole('link', { name: 'https://acme-trust.ch/cgf-v1-de.md' })).toBeVisible()
+  await expect(section.getByRole('link', { name: 'https://acme-trust.ch/cgf-v2-en.md' })).toBeVisible()
+  await expect(section.getByText('Draft', { exact: true })).toBeVisible()
+  await expect(
+    section.getByRole('button', { name: /Add New CGF Document/ }).getByLabel('Opens a governance proposal')
+  ).toBeVisible()
+
+  const increase = section.getByRole('button', { name: /Increase Active CGF/ })
+  await expect(increase).toBeDisabled()
+  await expect(increase).toHaveAttribute(
+    'title',
+    /^Version 2 needs a document in .*\(de\) before it can be activated\.$/
+  )
+
+  await stubCorporationGovernance(page, [CGF_ACTIVE_13, cgfVersion(13, 31, 2, null, ['en', 'de'])])
+  await page.reload()
+  await expect(increase).toBeEnabled({ timeout: 15_000 })
+  await increase.click()
+
+  const dialog = page.getByRole('dialog', { name: 'Confirm transaction' })
+  await expect(dialog).toContainText('Activate the next governance framework version of corporation #13.', {
+    timeout: 30_000,
+  })
+  await expect(dialog.getByText('Governance proposal', { exact: true })).toBeVisible()
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(dialog).toBeHidden()
+  expect(mock.seenMethods()).not.toContain('broadcast_tx_sync')
+  await mock.teardown()
+})
+
+test('adding a CGF document proposes the exact message with no ecosystem id', async ({ page }) => {
+  const docUrl = 'https://acme-trust.ch/cgf-v2-de.md'
+  const digest = 'sha384-S8zSx8Po4dAMgxTyw/W2fksmPVbEwSZpNS/UqbSIKNGK7OUbRviXrBoM6PaJVIAg'
+  await installCorporationStubs(page)
+  await seedActingCorporation(page, 13)
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubSri: false, stubCorporation: false })
+  const digestRequests: (string | null)[] = []
+  await page.route('**/api/sri**', (route) => {
+    digestRequests.push(new URL(route.request().url()).searchParams.get('url'))
+    return route.fulfill({ json: { sri: digest } })
+  })
+
+  await page.goto('/corporation?tab=governance')
+  await page
+    .locator('#governance')
+    .getByRole('button', { name: /Add New CGF Document/ })
+    .click({ timeout: 15_000 })
+  const version = labelSelect(page, 'Governance Framework Version')
+  await expect(version.locator('option:not([disabled])')).toHaveText(['Version 2 (draft)', 'Version 3 (new)'])
+  await expect(version).toHaveValue('2')
+  await page.getByPlaceholder(/search languages/i).fill('German')
+  await page.getByRole('option', { name: /\(de\)$/ }).click()
+  await labelInput(page, 'Governance Framework Document URL').fill(docUrl)
+  await page.locator('.btn-action-confirm').click()
+
+  const dialog = page.getByRole('dialog', { name: 'Confirm transaction' })
+  await expect(dialog).toContainText('Add a governance framework document as version 2 of corporation #13.', {
+    timeout: 30_000,
+  })
+  await expect(dialog.getByText('Governance proposal', { exact: true })).toBeVisible()
+  await expect(dialog.getByText('Network fee').locator('..')).toContainText(/VNA/, { timeout: 30_000 })
+  await dialog.getByRole('button', { name: 'Submit proposal' }).click()
+  await expect.poll(() => mock.broadcastTxs().length, { timeout: 30_000 }).toBe(1)
+
+  expect(digestRequests).toEqual([docUrl])
+  const body = TxBody.decode(TxRaw.decode(fromBase64(mock.broadcastTxs()[0])).bodyBytes)
+  expect(body.messages.map((message) => message.typeUrl)).toEqual(['/cosmos.group.v1.MsgSubmitProposal'])
+  const proposal = MsgSubmitProposal.decode(body.messages[0].value)
+  expect(proposal.groupPolicyAddress).toBe(ACME_POLICY_ADDRESS)
+  expect(proposal.proposers).toEqual([wallet.bech32Address])
+  expect(proposal.messages.map((message) => message.typeUrl)).toEqual([
+    '/verana.gf.v1.MsgAddGovernanceFrameworkDocument',
+  ])
+  expect(MsgAddGovernanceFrameworkDocument.decode(proposal.messages[0].value)).toEqual({
+    corporation: ACME_POLICY_ADDRESS,
+    operator: ACME_POLICY_ADDRESS,
+    ecosystemId: 0,
+    docLanguage: 'de',
+    docUrl,
+    docDigestSri: digest,
+    version: 2,
+  })
+  await mock.teardown()
 })

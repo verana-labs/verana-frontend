@@ -3,39 +3,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { VERANA_REST_ENDPOINT_ECOSYSTEM } from '@/config/env'
 import { translate } from '@/i18n/dataview'
+import { parseGfVersions } from '@/lib/gf-document'
 import { indexerValidators } from '@/lib/indexer-json'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type { EcosystemData } from '@/ui/dataview/datasections/ecosystem'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
 const { record, string, number, decimalAmount, nullableString } = indexerValidators('ecosystem')
-
-function parseVersions(value: unknown): EcosystemData['versions'] {
-  if (!Array.isArray(value)) throw new Error('Invalid ecosystem response: ecosystem.versions')
-  return value.map((entry, index) => {
-    const source = record(entry, `ecosystem.versions[${index}]`)
-    if (!Array.isArray(source.documents)) {
-      throw new Error(`Invalid ecosystem response: ecosystem.versions[${index}].documents`)
-    }
-    return {
-      id: String(number(source.id, `ecosystem.versions[${index}].id`)),
-      version: number(source.version, `ecosystem.versions[${index}].version`),
-      activeSince: nullableString(source.active_since, `ecosystem.versions[${index}].active_since`),
-      documents: source.documents.map((document, documentIndex) => {
-        const doc = record(document, `ecosystem.versions[${index}].documents[${documentIndex}]`)
-        return {
-          id: String(number(doc.id, `ecosystem.versions[${index}].documents[${documentIndex}].id`)),
-          url: string(doc.url, `ecosystem.versions[${index}].documents[${documentIndex}].url`),
-          language: string(doc.language, `ecosystem.versions[${index}].documents[${documentIndex}].language`),
-          digestSri:
-            doc.digest_sri === undefined
-              ? undefined
-              : string(doc.digest_sri, `ecosystem.versions[${index}].documents[${documentIndex}].digest_sri`),
-        }
-      }),
-    }
-  })
-}
 
 export function parseEcosystemResponse(payload: unknown): EcosystemData {
   const envelope = record(payload, 'response')
@@ -57,7 +31,7 @@ export function parseEcosystemResponse(payload: unknown): EcosystemData {
     issued: number(source.issued, 'ecosystem.issued'),
     verified: number(source.verified, 'ecosystem.verified'),
     archived: nullableString(source.archived, 'ecosystem.archived'),
-    versions: parseVersions(source.versions),
+    versions: parseGfVersions(source.versions, 'ecosystem', 'ecosystem.versions'),
   }
 }
 

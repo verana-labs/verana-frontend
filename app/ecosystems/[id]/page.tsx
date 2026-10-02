@@ -1,6 +1,6 @@
 'use client'
 
-import { faArrowLeft, faArrowUp, faBoxArchive, faPenToSquare, faPlus } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faBoxArchive, faPenToSquare, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -20,13 +20,12 @@ import { renderActionComponent } from '@/ui/common/data-view-typed'
 import EcosystemHeader from '@/ui/common/ecosystem-header'
 import EgfDocumentsTable from '@/ui/common/egf-documents-table'
 import FieldRow from '@/ui/common/field-row'
+import { GovernanceFrameworkActions } from '@/ui/common/governance-framework-actions'
 import KeysetPagination from '@/ui/common/keyset-pagination'
 import { ModalAction } from '@/ui/common/modal-action'
 import ServiceProviderCard from '@/ui/common/service-provider-card'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { isValidDID } from '@/util/validations'
-
-type GovernanceFrameworkAction = 'MsgAddGovernanceFrameworkDocument' | 'MsgIncreaseActiveGovernanceFrameworkVersion'
 
 export default function EcosystemViewPage() {
   const params = useParams<{ id: string }>()
@@ -52,7 +51,6 @@ export default function EcosystemViewPage() {
   const [editDid, setEditDid] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [archiveActive, setArchiveActive] = useState(false)
-  const [governanceFrameworkAction, setGovernanceFrameworkAction] = useState<GovernanceFrameworkAction | null>(null)
   const [addCredentialSchema, setAddCredentialSchema] = useState(false)
 
   const refreshEcosystem = () => {
@@ -103,11 +101,6 @@ export default function EcosystemViewPage() {
 
   const owner = actingCorporation?.corporation.id === ecosystem.corporationId
   const isArchived = Boolean(ecosystem.archived)
-  const lastVersion = ecosystem.versions.reduce(
-    (latest, version) => Math.max(latest, version.version),
-    ecosystem.activeVersion
-  )
-  const canIncreaseGovernanceFramework = lastVersion > ecosystem.activeVersion
   const archiveMessageType = isArchived ? 'MsgUnarchiveEcosystem' : 'MsgArchiveEcosystem'
   const archiveTitleKey = isArchived
     ? 'dataview.ecosystem.actions.unarchiveEcosystem'
@@ -263,27 +256,15 @@ export default function EcosystemViewPage() {
             {t('datalist.egf.title', 'Governance Framework Documents')}
           </h2>
           {owner ? (
-            <div className="flex flex-col sm:flex-row gap-2">
-              <EntityActionButton
-                msgType="MsgAddGovernanceFrameworkDocument"
-                icon={faPlus}
-                label={t('dataview.ecosystem.actions.addGovernanceFrameworkDocument', 'Add New Document')}
-                onClick={() => setGovernanceFrameworkAction('MsgAddGovernanceFrameworkDocument')}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium"
-              />
-              {canIncreaseGovernanceFramework ? (
-                <EntityActionButton
-                  msgType="MsgIncreaseActiveGovernanceFrameworkVersion"
-                  icon={faArrowUp}
-                  label={t(
-                    'dataview.ecosystem.actions.increaseActiveGovernanceFrameworkVersion',
-                    'Increase Active Version'
-                  )}
-                  onClick={() => setGovernanceFrameworkAction('MsgIncreaseActiveGovernanceFrameworkVersion')}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium"
-                />
-              ) : null}
-            </div>
+            <GovernanceFrameworkActions
+              target={{
+                owner: { kind: 'ecosystem', id: ecosystem.id },
+                language: ecosystem.language,
+                activeVersion: ecosystem.activeVersion,
+                versions: ecosystem.versions,
+              }}
+              onRefresh={refreshEcosystem}
+            />
           ) : null}
         </div>
         <EgfDocumentsTable versions={ecosystem.versions} activeVersion={ecosystem.activeVersion} />
@@ -348,25 +329,6 @@ export default function EcosystemViewPage() {
 
       <ModalAction isActive={archiveActive} titleKey={archiveTitleKey} onClose={() => setArchiveActive(false)}>
         {renderActionComponent(archiveMessageType, () => setArchiveActive(false), ecosystem, refreshEcosystem)}
-      </ModalAction>
-
-      <ModalAction
-        isActive={governanceFrameworkAction !== null}
-        titleKey={
-          governanceFrameworkAction === 'MsgIncreaseActiveGovernanceFrameworkVersion'
-            ? 'dataview.ecosystem.actions.increaseActiveGovernanceFrameworkVersion'
-            : 'dataview.ecosystem.actions.addGovernanceFrameworkDocument'
-        }
-        onClose={() => setGovernanceFrameworkAction(null)}
-      >
-        {governanceFrameworkAction
-          ? renderActionComponent(
-              governanceFrameworkAction,
-              () => setGovernanceFrameworkAction(null),
-              { ...ecosystem, lastVersion },
-              refreshEcosystem
-            )
-          : null}
       </ModalAction>
 
       {addCredentialSchema ? (

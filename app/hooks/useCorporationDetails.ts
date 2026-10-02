@@ -10,6 +10,7 @@ import {
 } from '@/config/env'
 import { parseParticipantsResponse } from '@/hooks/useParticipants'
 import { type ActivityRow, parseActivityHistory } from '@/lib/activity-history'
+import { type GfVersion, parseGfVersions } from '@/lib/gf-document'
 import { degrade, fetchJson, indexerValidators } from '@/lib/indexer-json'
 import { logger } from '@/lib/logger'
 import type { Participant } from '@/ui/dataview/datasections/participant'
@@ -89,7 +90,13 @@ export interface ProposalRow {
   tally: ProposalTally
 }
 
+export interface CorporationGovernance {
+  activeVersion: number
+  versions: GfVersion[]
+}
+
 export interface DegradedSections {
+  governance: boolean
   trustDeposit: boolean
   operatorAuthorizations: boolean
   vsOperatorAuthorizations: boolean
@@ -98,6 +105,7 @@ export interface DegradedSections {
 
 export interface CorporationDetails {
   profile: CorporationProfile
+  governance: CorporationGovernance | null
   members: GroupMemberRow[]
   policy: GroupPolicy
   trustDeposit: CorporationTrustDeposit | null
@@ -125,6 +133,19 @@ export function parseProfile(payload: unknown): CorporationProfile {
     created: nullableString(corporation.created ?? null, 'corporation.created'),
     modified: nullableString(corporation.modified ?? null, 'corporation.modified'),
   }
+}
+
+export function parseGovernance(payload: unknown): CorporationGovernance {
+  const envelope = record(payload, 'corporation response')
+  const corporation = record(envelope.corporation, 'corporation')
+  const activeVersion = integer(corporation.active_version, 'corporation.active_version')
+  const versions = parseGfVersions(corporation.versions, 'corporation page', 'corporation.versions')
+  versions.forEach((version, index) => {
+    if (version.version <= activeVersion && version.activeSince === null) {
+      throw new Error(`Invalid corporation page response: corporation.versions[${index}].active_since`)
+    }
+  })
+  return { activeVersion, versions }
 }
 
 export function parseGroup(payload: unknown): { members: GroupMemberRow[]; policy: GroupPolicy } {
@@ -357,14 +378,21 @@ export function useCorporationDetails(corporationId: number | undefined) {
         fetchCorporationHistory(corporationId),
       ])
       const [profilePayload, groupPayload] = await Promise.all([
-        fetchJson(`${VERANA_REST_ENDPOINT_CORPORATION}/get/${corporationId}`, 'Unable to fetch the corporation'),
+        fetchJson(
+          `${VERANA_REST_ENDPOINT_CORPORATION}/get/${corporationId}?gf_data=all`,
+          'Unable to fetch the corporation'
+        ),
         fetchJson(`${VERANA_REST_ENDPOINT_GROUP}/get/${corporationId}`, 'Unable to fetch the group'),
       ])
       const [authorizations, proposals, trustDeposit, vsAuthorizations, participants, history] = await degrading
+      const governance = await degrade('corporation governance', null as CorporationGovernance | null, async () =>
+        parseGovernance(profilePayload)
+      )
       if (requestRef.current !== requestId) return
       const { members, policy } = parseGroup(groupPayload)
       setDetails({
         profile: parseProfile(profilePayload),
+        governance: governance.value,
         members,
         policy,
         trustDeposit: trustDeposit.value,
@@ -374,6 +402,7 @@ export function useCorporationDetails(corporationId: number | undefined) {
         proposals: proposals.value,
         history,
         degraded: {
+          governance: governance.failed,
           trustDeposit: trustDeposit.failed,
           operatorAuthorizations: authorizations.failed,
           vsOperatorAuthorizations: vsAuthorizations.failed,

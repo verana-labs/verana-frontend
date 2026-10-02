@@ -7,6 +7,8 @@ import {
   AGENT_ECOSYSTEMS,
   AGENT_PARTICIPANTS,
   AGENT_RESOLUTIONS,
+  CGF_VERSIONS_12,
+  CGF_VERSIONS_13,
   GROUP_MEMBERS,
   HARNESS_ADDRESS,
   HISTORY_13,
@@ -21,6 +23,17 @@ import {
 export { ACME_DID, ACME_ECOSYSTEM_DID, HARNESS_ADDRESS, HARNESS_MNEMONIC, PLAIN_DID } from './corp-fixtures'
 
 const unavailable = { status: 502, json: { error: 'indexer unavailable', code: 502 } }
+
+const CORPORATION_13 = {
+  id: 13,
+  did: ACME_DID,
+  policy_address: ACME_POLICY_ADDRESS,
+  language: 'de',
+  active_version: 1,
+  created: '2026-09-01T10:00:00Z',
+  modified: '2026-09-01T10:00:00Z',
+  trust_data: ACME_TRUST_DATA,
+}
 
 export type CorpStubOptions = {
   memberOnly?: boolean
@@ -113,28 +126,16 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
           did: PLAIN_DID,
           policy_address: 'verana1wfse3z8akyw3pmn8x0htzq6l5wwfgqmc2jgnhxtzm96h4ywhhr0qpua4w7',
           language: 'en',
+          active_version: 1,
           created: '2026-08-25T20:34:20Z',
           modified: '2026-08-25T20:34:20Z',
           trust_data: null,
+          versions: CGF_VERSIONS_12,
         },
       },
     })
   )
-  await page.route('**/v4/corporation/get/13*', (route) =>
-    route.fulfill({
-      json: {
-        corporation: {
-          id: 13,
-          did: ACME_DID,
-          policy_address: ACME_POLICY_ADDRESS,
-          language: 'de',
-          created: '2026-09-01T10:00:00Z',
-          modified: '2026-09-01T10:00:00Z',
-          trust_data: ACME_TRUST_DATA,
-        },
-      },
-    })
-  )
+  await stubCorporationGovernance(page, CGF_VERSIONS_13)
   await page.route('**/v4/corporation/history/12*', (route) =>
     route.fulfill({ json: { entity_type: 'Corporation', entity_id: '12', activity: [] } })
   )
@@ -210,6 +211,12 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
     return route.fulfill({ json: { ecosystems } })
   })
   await stubTrustResolve(page)
+}
+
+export async function stubCorporationGovernance(page: Page, versions: unknown[]) {
+  await page.route(/\/v4\/corporation\/get\/13(?:\?.*)?$/, (route) =>
+    route.fulfill({ json: { corporation: { ...CORPORATION_13, versions } } })
+  )
 }
 
 type ServiceDescriptionClaims = { description?: string; descriptionFormat?: string }
