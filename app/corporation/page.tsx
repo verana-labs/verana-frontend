@@ -8,14 +8,16 @@ import { useActionSigning } from '@/hooks/useSigningMode'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
-import { EVENT_COALESCE_MS, refreshTargets } from '@/lib/indexer-event'
+import { EVENT_COALESCE_MS, type IndexerRefreshTarget, refreshTargets } from '@/lib/indexer-event'
 import { logger } from '@/lib/logger'
 import { type DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
 import { corporationSigningMode, useCorporationManage } from '@/msg/actions_hooks/actionCorporationManage'
-import { useIndexerEntityEvents, useIndexerEvents } from '@/providers/indexer-events-provider'
+import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { CorporationCreateWizard } from '@/ui/common/corporation-create-wizard'
 import { ProposalComposer } from '@/ui/common/proposal-composer'
 import { type CorporationTab, type CorporationView, TABS, TabsLayout } from '@/ui/corporation/layouts'
+
+const PAGE_TARGETS: IndexerRefreshTarget[] = ['corporationDetails', 'participants']
 
 function pick<T extends string>(values: readonly T[], value: string | null, fallback: T): T {
   return (values as readonly string[]).includes(value ?? '') ? (value as T) : fallback
@@ -28,9 +30,8 @@ export default function CorporationPage() {
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
   const { actingCorporation, loading: actingLoading, refetch: refetchCorporations } = useUserCorporation()
-  const { details, loading, error, refetch, applyEvents } = useCorporationDetails(actingCorporation?.corporation.id)
+  const { details, loading, error, refetch } = useCorporationDetails(actingCorporation?.corporation.id)
   const { addIndexerEventListener } = useIndexerEvents()
-  useIndexerEntityEvents(actingCorporation?.corporation.id, applyEvents)
   const [votesVersion, setVotesVersion] = useState(0)
   const refreshAfterTx = () => {
     void refetch()
@@ -45,13 +46,13 @@ export default function CorporationPage() {
   const [wizardPinned, setWizardPinned] = useState(false)
 
   const actingCorporationId = actingCorporation?.corporation.id
-  // [VFE-DATA-WS-3] group and delegation events of the acting Corporation refresh what this page shows.
+  // [VFE-DATA-WS-3] participant, delegation and group events of the acting Corporation refresh this page.
   useEffect(() => {
     if (actingCorporationId === undefined) return
     let timer: ReturnType<typeof setTimeout> | null = null
     const unsubscribe = addIndexerEventListener((corporationId, events) => {
       if (corporationId !== actingCorporationId) return
-      if (!events.some((event) => refreshTargets(event).includes('corporationDetails'))) return
+      if (!events.some((event) => refreshTargets(event).some((target) => PAGE_TARGETS.includes(target)))) return
       if (timer) clearTimeout(timer)
       timer = setTimeout(() => {
         timer = null
