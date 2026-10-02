@@ -1,4 +1,5 @@
 import { DidTrustState } from '@/lib/resolverClient'
+import { participantAuthority } from '@/util/util'
 import type { TreeNode } from './participant-tree-types'
 
 export type ParticipantTreeFilterOptions = {
@@ -60,4 +61,21 @@ export function filterParticipantTree(
     result.push(children === node.children ? node : { ...node, children })
   }
   return result
+}
+
+export function withAuthority(nodes: TreeNode[], corporationId?: number, parent?: TreeNode): TreeNode[] {
+  return nodes.map((node) => {
+    if (node.group) return { ...node, children: withAuthority(node.children ?? [], corporationId, parent) }
+    const isCorporation = corporationId !== undefined && corporationId === node.participant?.corporation_id
+    const isValidator = parent?.isCorporation ?? false
+    const isPredecessor = Boolean(parent?.isValidator || parent?.isPredecessor)
+    const next = {
+      ...node,
+      isCorporation,
+      isValidator,
+      isPredecessor,
+      ...participantAuthority(isCorporation, isValidator, isPredecessor),
+    }
+    return { ...next, children: withAuthority(node.children ?? [], corporationId, next) }
+  })
 }

@@ -78,14 +78,12 @@ type AgentWindow = {
   participants: Participant[]
   ecosystems: EcosystemListItem[]
   participantsHasNext: boolean
-  ecosystemsHasNext: boolean
 }
 
 const EMPTY_WINDOW: AgentWindow = {
   participants: [],
   ecosystems: [],
   participantsHasNext: false,
-  ecosystemsHasNext: false,
 }
 
 function cursor(rows: { id: string }[]): string | undefined {
@@ -94,6 +92,22 @@ function cursor(rows: { id: string }[]): string | undefined {
 
 async function nextPage<T>(url: string, context: string, parse: (payload: unknown) => T[]): Promise<AgentPage<T>> {
   return takeKeysetPage(parse(await fetchJson(url, context)), AGENTS_PAGE_SIZE)
+}
+
+export async function allPages<T extends { id: string }>(
+  url: (after?: string) => string,
+  context: string,
+  parse: (payload: unknown) => T[]
+): Promise<AgentPage<T>> {
+  const items: T[] = []
+  let after: string | undefined
+  for (;;) {
+    const page = await nextPage(url(after), context, parse)
+    items.push(...page.items)
+    const last = cursor(page.items)
+    if (!page.hasNext || last === undefined || last === after) return { items, hasNext: false }
+    after = last
+  }
 }
 
 // Per [VFE-PAGE-AGENTS-1] agents come from Participant DIDs only; VSOA entries never add an agent.
@@ -190,10 +204,10 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
                 parseParticipantsResponse
               ),
           degrade('agents ecosystems', noMore<EcosystemListItem>(), async () =>
-            append && !base.ecosystemsHasNext
+            append
               ? noMore<EcosystemListItem>()
-              : nextPage(
-                  agentEcosystemsUrl(ecosystemBase, corporationId, AGENTS_PAGE_SIZE, cursor(base.ecosystems)),
+              : allPages(
+                  (after) => agentEcosystemsUrl(ecosystemBase, corporationId, AGENTS_PAGE_SIZE, after),
                   'Unable to fetch ecosystems',
                   parseEcosystemsResponse
                 )
@@ -210,7 +224,6 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
           participants: [...base.participants, ...participants.items],
           ecosystems: [...base.ecosystems, ...ecosystems.value.items],
           participantsHasNext: participants.hasNext,
-          ecosystemsHasNext: ecosystems.failed ? base.ecosystemsHasNext : ecosystems.value.hasNext,
         }
         setAgentWindow(next)
         setAgents(
@@ -224,7 +237,6 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
         setDegraded({ ecosystems: ecosystems.failed, delegations: authorizations.failed })
       } catch (cause) {
         if (requestRef.current !== requestId) return
-        // A failed append keeps the loaded cards, the pinned DIDs of [VFE-PAGE-AGENTS-1a] among them.
         if (!append) {
           setAgentWindow(base)
           setAgents([])
@@ -302,7 +314,7 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
     unavailableDids,
     loading,
     error,
-    hasNext: agentWindow.participantsHasNext || agentWindow.ecosystemsHasNext,
+    hasNext: agentWindow.participantsHasNext,
     loadMore,
     refetch: load,
     applyEvents,

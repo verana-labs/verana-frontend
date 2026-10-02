@@ -33,7 +33,6 @@ export default function AgentsPage() {
   } = useAgents(actingCorporation?.corporation, filters.includeInactive)
   useIndexerEntityEvents(applyEvents)
 
-  // A failed show more leaves the loaded cards in place and reports itself next to the degraded notices.
   const partialError = Boolean(error) && agents.length > 0
 
   // Per [VFE-PAGE-AGENTS-7] the trust gate never hides a pinned Corporation or Ecosystem DID.

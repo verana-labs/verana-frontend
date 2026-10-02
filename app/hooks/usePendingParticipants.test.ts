@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { parsePendingParticipantsResponse, pendingParticipantsUrl } from './usePendingParticipants'
 
 describe('pendingParticipantsUrl', () => {
-  it('queries by corporation id and asks for the identity claims inline', () => {
+  it('queries by corporation id and asks for the trust evaluation per [VFE-PAGE-PENDING-1]', () => {
     expect(pendingParticipantsUrl('https://indexer/v4/participant', 1)).toBe(
-      'https://indexer/v4/participant/pending/flat?corporation_id=1&trust_data=full&limit=1024'
+      'https://indexer/v4/participant/pending/flat?corporation_id=1&trust_data=summary&limit=1024'
     )
   })
 })
@@ -50,7 +50,7 @@ describe('parsePendingParticipantsResponse', () => {
     ])
   })
 
-  it('reads the name the ecosystem folder shows from the full trust_data', () => {
+  it('maps the identity claims of a full trust_data payload', () => {
     const row = parsePendingParticipantsResponse({
       ecosystems: [
         {

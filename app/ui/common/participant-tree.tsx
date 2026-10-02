@@ -335,7 +335,6 @@ export default function ParticipantTree({
     setRefreshState((current) => ({ ...current, txHeight: undefined }))
   }, [latestProcessedHeight, refreshState.joinNode, refreshState.txHeight, setNodeRequestParams])
 
-  // The joined participant may sit on a page the tree has not loaded, so the refresh is retried once and then given up.
   const retriedJoin = useRef<string>(undefined)
 
   useEffect(() => {

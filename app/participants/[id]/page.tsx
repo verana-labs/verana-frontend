@@ -11,6 +11,7 @@ import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { isNativePricing } from '@/lib/pricing-asset'
 import ParticipantTree, { mergeTrees, ROOT_NODE_ID } from '@/ui/common/participant-tree'
+import { withAuthority } from '@/ui/common/participant-tree-filter'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import type { Role } from '@/ui/common/role-card'
 import type { Participant } from '@/ui/dataview/datasections/participant'
@@ -65,8 +66,7 @@ export default function ParticipantsPage() {
   const veranaChain = useVeranaChain()
   const { isWalletConnected, connect } = useChain(veranaChain.chain_name)
   const { actingCorporation } = useUserCorporation()
-  const ownedIds = useRef<Set<string>>(new Set())
-  const predecessorIds = useRef<Set<string>>(new Set())
+  const corporationId = actingCorporation?.corporation.id
 
   const [request, setRequest] = useState<TreeRequest>({ role: 'ECOSYSTEM' })
   const [pages, setPages] = useState<Record<string, NodePage>>({})
@@ -118,19 +118,15 @@ export default function ParticipantsPage() {
   const toTreeNode = useCallback(
     (node: BuiltParticipant, childRoles: ChildRole[]): TreeNode => {
       const validatorParticipantId = node.validator_participant_id ?? ''
-      const isCorporation = actingCorporation?.corporation.id === node.corporation_id
-      const isValidator = ownedIds.current.has(validatorParticipantId)
-      const isPredecessor = predecessorIds.current.has(validatorParticipantId)
-      if (isCorporation) ownedIds.current.add(node.id)
-      if (isValidator || isPredecessor) predecessorIds.current.add(node.id)
-      const authority = participantAuthority(isCorporation, isValidator, isPredecessor)
+      const isCorporation = corporationId === node.corporation_id
+      const authority = participantAuthority(isCorporation, false, false)
       return {
         nodeId: node.id,
         name: node.did ?? node.role,
         group: false,
         parentId: validatorParticipantId || 'root',
         isCorporation,
-        isValidator,
+        isValidator: false,
         roleColorClass: roleColorClass(node.role),
         icon: authority.icon,
         iconColorClass: authority.iconColorClass,
@@ -138,7 +134,7 @@ export default function ParticipantsPage() {
         children: foldersByRole(node, childRoles),
       }
     },
-    [actingCorporation?.corporation.id, foldersByRole]
+    [corporationId, foldersByRole]
   )
 
   const setNodeRequestParams = useCallback((nodeId?: string, requestedRole?: string, requestedValidatorId?: string) => {
@@ -182,13 +178,11 @@ export default function ParticipantsPage() {
     if (target === ROOT_NODE_ID) {
       const rows = appending ? mergeBy(rootRows.current, participants, (row) => row.id) : participants
       rootRows.current = rows
-      ownedIds.current.clear()
-      predecessorIds.current.clear()
       const rebuilt = buildTreeByValidator(rows).map((node) => toTreeNode(node, childRoles))
-      setParticipantTree((current) => mergeTrees(current, rebuilt))
+      setParticipantTree((current) => withAuthority(mergeTrees(current, rebuilt), corporationId))
     } else {
       const children = participants.map((participant) => toTreeNode({ ...participant, children: [] }, childRoles))
-      setParticipantTree((current) => setChildren(current, target, children, appending))
+      setParticipantTree((current) => withAuthority(setChildren(current, target, children, appending), corporationId))
     }
 
     const last = participants[participants.length - 1]
@@ -196,7 +190,11 @@ export default function ParticipantsPage() {
       ...current,
       [target]: { role, validatorId, cursor: last?.id ?? current[target]?.cursor, hasNext },
     }))
-  }, [childRoles, hasNext, pageKey, participants, request, role, schemaId, toTreeNode, validatorId])
+  }, [childRoles, corporationId, hasNext, pageKey, participants, request, role, schemaId, toTreeNode, validatorId])
+
+  useEffect(() => {
+    setParticipantTree((current) => withAuthority(current, corporationId))
+  }, [corporationId])
 
   useEffect(() => {
     if (!refreshRoot) return

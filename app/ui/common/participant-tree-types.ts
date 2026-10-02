@@ -8,6 +8,7 @@ export type TreeNode = {
   iconColorClass: string
   isCorporation: boolean
   isValidator: boolean
+  isPredecessor?: boolean
   group?: boolean
   schemaId?: string
   parentId?: string
