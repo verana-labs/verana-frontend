@@ -83,6 +83,10 @@ export default function PendingTasksPage() {
     setRefreshRoot(false)
   }, [refetch, refreshRoot])
 
+  if (!actingCorporation && !corporationLoading) {
+    return <p className="p-6 text-sm text-gray-600 dark:text-gray-300">{translate('corporation.page.nocorp')}</p>
+  }
+
   return (
     <ParticipantTree
       tree={participantTree}
