@@ -129,7 +129,7 @@ export function useActionTrustDeposit(onCancel?: () => void, onRefresh?: (id?: s
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error)
       const notice = rejectionNotice(errorMessage(undefined, text), text)
-      await notify(notice.message, 'error', notice.title)
+      await notify(notice.message, 'error', notice.title, notice.link)
     } finally {
       inFlight.current = false
     }

@@ -10,7 +10,7 @@ import { Exec, MsgSubmitProposal } from 'cosmjs-types/cosmos/group/v1/tx'
 import { ThresholdDecisionPolicy } from 'cosmjs-types/cosmos/group/v1/types'
 import { useRef } from 'react'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
-import { useVeranaChain } from '@/hooks/useVeranaChain'
+import { explorerTxLink, useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { findCorporationMembership, type UserCorporation } from '@/lib/corporation-discovery'
 import type { CostLine, TxConfirmRequest, TxConfirmResult } from '@/lib/tx-preview'
@@ -186,12 +186,18 @@ export function useActionCorporation() {
     if (!indexed) runAfterIndexerCatchesUp(waitForBlock, height, () => actAsOnceDiscovered(corporationId))
   }
 
-  async function createCorporation({ msgs, fee }: TxConfirmResult, did: string): Promise<UserCorporation> {
+  async function createCorporation({ msgs, fee }: TxConfirmResult, did: string): Promise<UserCorporation | null> {
     void notify(translate('notification.MsgCreateCorporation.inprogress'), 'inProgress')
     const result = await sendTx({ msgs, fee, memo: 'MsgCreateCorporation' })
     if (!('code' in result)) throw new Error('Expected a transaction response')
-    if (result.code !== 0)
-      throw new Error(`${translate('notification.MsgCreateCorporation.error')} (${result.code}): ${result.rawLog}`)
+    const failure = txFailureNotice(
+      result,
+      (code, rawLog) => `${translate('notification.MsgCreateCorporation.error')} (${code}): ${rawLog}`
+    )
+    if (failure) {
+      await notify(failure.message, 'error', failure.title, failure.link)
+      return null
+    }
 
     const id = findEventAttribute(result.events, 'create_corporation', 'corporation_id')
     const policyAddress = findEventAttribute(result.events, 'create_corporation', 'policy_address')
@@ -236,7 +242,12 @@ export function useActionCorporation() {
     if (indexed) {
       const membership = await findCorporationMembership(operator, corporation.id)
       if (!membership?.operator) {
-        await notify(translate('notification.MsgGrantSelfOperatorAuthorization.pending'), 'success')
+        await notify(
+          translate('notification.MsgGrantSelfOperatorAuthorization.pending'),
+          'success',
+          undefined,
+          explorerTxLink(result.transactionHash)
+        )
         return 'pending'
       }
     }
@@ -281,7 +292,9 @@ export function useActionCorporation() {
       if (!confirmed) return null
       return await createCorporation(confirmed, params.did)
     } catch (error) {
-      await notify(error instanceof Error ? error.message : String(error), 'error')
+      const text = error instanceof Error ? error.message : String(error)
+      const notice = rejectionNotice(text, text)
+      await notify(notice.message, 'error', notice.title, notice.link)
       return null
     } finally {
       inFlight.current = false
@@ -316,7 +329,7 @@ export function useActionCorporation() {
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error)
       const notice = rejectionNotice(text, text)
-      await notify(notice.message, 'error', notice.title)
+      await notify(notice.message, 'error', notice.title, notice.link)
       return 'failed'
     } finally {
       inFlight.current = false

@@ -54,9 +54,18 @@ export function proposalExecution(events: readonly TxEvent[]): ProposalExecution
   )
 }
 
+const SUBMITTED_TX = /Transaction with ID ([0-9A-F]{64}) was submitted/
+
 export function rejectionNotice(fallback: string, text: string): TxNotice {
   const reason = authorizationRejection(text)
-  if (!reason) return { message: fallback, title: t('notification.msg.failed.title') }
+  const submitted = SUBMITTED_TX.exec(text)?.[1]
+  if (!reason) {
+    return {
+      message: fallback,
+      title: t('notification.msg.failed.title'),
+      link: submitted ? explorerTxLink(submitted) : undefined,
+    }
+  }
   logger.error('authorization rejection', text)
   return { message: t('notification.msg.unauthorized', { reason }), title: t('notification.msg.unauthorized.title') }
 }

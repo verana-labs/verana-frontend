@@ -50,10 +50,7 @@ export async function signAndBroadcastManualAmino({
     try {
       simulated = await client.simulate(address, messages, memo)
     } catch (e) {
-      if (isSequenceMismatch(e)) {
-        logger.error('Simulated Tx: ', e)
-        sequence = expectedSequence(e) ?? sequence
-      }
+      if (isSequenceMismatch(e)) logger.error('Simulated Tx: ', e)
       throw e
     }
     fee = calculateFee(Math.ceil(simulated * gasAdjustment), GasPrice.fromString(gasPrice))
@@ -76,7 +73,7 @@ export async function signAndBroadcastManualAmino({
     } catch (e) {
       if (isSequenceMismatch(e) && attempt === 0) {
         logger.error('Tx: ', e)
-        sequence = expectedSequence(e) ?? sequence
+        sequence = expectedSequence(e) ?? (await client.getSequence(address)).sequence
         continue
       }
       throw e

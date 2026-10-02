@@ -10,7 +10,14 @@ import {
   OfflineDirectSigner,
   Registry,
 } from '@cosmjs/proto-signing'
-import { calculateFee, DeliverTxResponse, GasPrice, SigningStargateClient, StdFee } from '@cosmjs/stargate'
+import {
+  BroadcastTxError,
+  calculateFee,
+  DeliverTxResponse,
+  GasPrice,
+  SigningStargateClient,
+  StdFee,
+} from '@cosmjs/stargate'
 import { createVeranaRegistry } from '@verana-labs/verana-types'
 import { TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import Long from 'long'
@@ -101,7 +108,7 @@ export async function signAndBroadcastManualDirect({
   try {
     return await signAndBroadcast(sequence)
   } catch (error) {
-    if (!isSequenceMismatch(error)) throw error
+    if (!(error instanceof BroadcastTxError) || !isSequenceMismatch(error)) throw error
     logger.warn('Retrying once after an account sequence mismatch', error)
     return signAndBroadcast(expectedSequence(error) ?? (await client.getSequence(address)).sequence)
   }

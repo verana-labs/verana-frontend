@@ -168,6 +168,20 @@ describe('txFailureNotice', () => {
 })
 
 describe('rejectionNotice', () => {
+  afterEach(() => explorer.explorerTxLink.mockReset())
+
+  it('links a submitted transaction the broadcast timed out on', () => {
+    const hash = 'A'.repeat(64)
+    const link = { href: `https://explorer.example/tx/${hash}`, label: hash }
+    explorer.explorerTxLink.mockReturnValue(link)
+    const notice = rejectionNotice(
+      'Unable to archive the ecosystem.',
+      `Direct signing failed: Transaction with ID ${hash} was submitted but was not yet found on the chain. You might want to check later. There was a wait of 60 seconds.`
+    )
+    expect(notice).toEqual({ message: 'Unable to archive the ecosystem.', title: 'Transaction failed', link })
+    expect(explorer.explorerTxLink).toHaveBeenCalledWith(hash)
+  })
+
   it('classifies a thrown simulation error', () => {
     expect(
       rejectionNotice(
