@@ -27,6 +27,7 @@ export function parseDashboardMetricsResponse(payload: unknown): DashboardData {
   return {
     ecosystems: metricCount(metrics.active_ecosystems, 'active_ecosystems'),
     schemas: metricCount(metrics.active_schemas, 'active_schemas'),
+    participants: metricCount(metrics.participants, 'participants'),
     totalLockedTrustDeposit: metricDigits(metrics.weight, 'weight'),
     issuedCredentials: metricCount(metrics.issued, 'issued'),
     verifiedCredentials: metricCount(metrics.verified, 'verified'),
