@@ -105,7 +105,6 @@ export interface CorporationGovernance {
 }
 
 export interface DegradedSections {
-  governance: boolean
   trustDeposit: boolean
   operatorAuthorizations: boolean
   vsOperatorAuthorizations: boolean
@@ -436,7 +435,6 @@ export function useCorporationDetails(corporationId: number | undefined) {
         proposals: proposals.value,
         history,
         degraded: {
-          governance: governance.failed,
           trustDeposit: trustDeposit.failed,
           operatorAuthorizations: authorizations.failed,
           vsOperatorAuthorizations: vsAuthorizations.failed,

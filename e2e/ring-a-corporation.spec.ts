@@ -4,7 +4,15 @@ import { MsgAddGovernanceFrameworkDocument } from '@verana-labs/verana-types/cod
 import { MsgSubmitProposal } from 'cosmjs-types/cosmos/group/v1/tx'
 import { TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { connectWallet } from './support/connect'
-import { ACME_POLICY_ADDRESS, CGF_ACTIVE_13, cgfVersion, GRANTEE, REPLACEMENT_MEMBER } from './support/corp-fixtures'
+import {
+  ACME_POLICY_ADDRESS,
+  CGF_ACTIVE_13,
+  cgfVersion,
+  EGF_ACTIVE_13,
+  EGF_DRAFT_13,
+  GRANTEE,
+  REPLACEMENT_MEMBER,
+} from './support/corp-fixtures'
 import {
   HARNESS_MNEMONIC,
   installCorporationStubs,
@@ -100,7 +108,7 @@ test('a member without grants gets the proposal signing mode everywhere', async 
 
 test('a member without grants gets the proposal fallback on an owned ecosystem', async ({ page }) => {
   await installCorporationStubs(page, { memberOnly: true })
-  await installEcosystemStubs(page)
+  await installEcosystemStubs(page, [EGF_ACTIVE_13, EGF_DRAFT_13])
   await seedActingCorporation(page, 13)
   const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
   const mock = await installMockChain(page, { address: wallet.bech32Address, stubSri: false, stubCorporation: false })
@@ -121,6 +129,15 @@ test('a member without grants gets the proposal fallback on an owned ecosystem',
   await expect(dialog.getByRole('button', { name: 'Submit proposal' })).toBeVisible()
   await dialog.getByRole('button', { name: 'Cancel' }).click()
   await expect(dialog).toBeHidden()
+
+  const increase = page.getByRole('button', { name: /Increase Active EGF/ })
+  await expect(increase).toBeEnabled()
+  await expect(increase.getByLabel('Opens a governance proposal')).toBeVisible()
+  await page.getByRole('button', { name: /Add New EGF Document/ }).click()
+  await expect(labelSelect(page, 'Governance Framework Version').locator('option:not([disabled])')).toHaveText([
+    'Version 2 (draft)',
+    'Version 3 (new)',
+  ])
   expect(mock.seenMethods()).not.toContain('broadcast_tx_sync')
   await mock.teardown()
 })

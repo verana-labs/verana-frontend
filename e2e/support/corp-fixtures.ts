@@ -216,6 +216,20 @@ export const CGF_ACTIVE_13 = cgfVersion(13, 30, 1, '2026-09-01T10:00:00Z', ['de'
 export const CGF_VERSIONS_13 = [CGF_ACTIVE_13, cgfVersion(13, 31, 2, null, ['en'])]
 export const CGF_VERSIONS_12 = [cgfVersion(12, 20, 1, '2026-08-25T20:34:20Z', ['en'])]
 
+export const EGF_ACTIVE_13 = {
+  id: 1,
+  version: 1,
+  active_since: '2026-09-01T10:30:00Z',
+  documents: [{ id: 1, url: 'https://acme-trust.ch/egf.md', language: 'en', digest_sri: 'sha384-acme' }],
+}
+
+export const EGF_DRAFT_13 = {
+  id: 2,
+  version: 2,
+  active_since: null,
+  documents: [{ id: 2, url: 'https://acme-trust.ch/egf-v2.md', language: 'en', digest_sri: 'sha384-acme-v2' }],
+}
+
 export const ACME_ECOSYSTEM_DID = 'did:web:acme-eco.example'
 export const AGENT_ONE_DID = 'did:web:agent-one.example'
 export const AGENT_TWO_DID = 'did:web:agent-two.example'

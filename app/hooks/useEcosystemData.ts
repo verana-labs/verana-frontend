@@ -51,7 +51,7 @@ export function useEcosystemData(id: string) {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch(`${VERANA_REST_ENDPOINT_ECOSYSTEM}/get/${id}`)
+      const response = await fetch(`${VERANA_REST_ENDPOINT_ECOSYSTEM}/get/${id}?gf_data=all`)
       const json: unknown = await response.json()
       if (!response.ok) {
         const { error, code } = json as ApiErrorResponse
