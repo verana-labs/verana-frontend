@@ -80,3 +80,16 @@ test('Ring A, a stalled indexer is flagged next to its version', async ({ page }
   await expect(stalled).toBeVisible({ timeout: 30_000 })
   await expect(stalled).toContainText('stalled')
 })
+
+test('Ring A, a stopped indexer answering 503 reads as down with its reason', async ({ page }) => {
+  await page.route('**/v4/stats/snapshot*', (route) => route.fulfill({ json: SNAPSHOT }))
+  await page.route('**/v4/indexer/status', (route) =>
+    route.fulfill({ status: 503, json: { error: 'Indexer is not responding. RPC unavailable', code: 503 } })
+  )
+
+  await page.goto('/dashboard', { timeout: 60_000 })
+
+  const down = page.getByTitle('Indexer is not responding. RPC unavailable')
+  await expect(down).toBeVisible({ timeout: 30_000 })
+  await expect(down).toContainText('down')
+})
