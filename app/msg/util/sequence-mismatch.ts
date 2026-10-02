@@ -1,3 +1,5 @@
+import { BroadcastTxError } from '@cosmjs/stargate'
+
 function errorText(error: unknown): string {
   if (error instanceof Error) return error.message
   if (typeof error === 'object' && error !== null && 'message' in error) return String(error.message)
@@ -7,6 +9,10 @@ function errorText(error: unknown): string {
 export function isSequenceMismatch(error: unknown): boolean {
   const text = errorText(error)
   return text.includes('account sequence mismatch') || text.includes('incorrect account sequence')
+}
+
+export function isBroadcastSequenceMismatch(error: unknown): boolean {
+  return error instanceof BroadcastTxError && isSequenceMismatch(error)
 }
 
 export function expectedSequence(error: unknown): number | undefined {
