@@ -22,6 +22,7 @@ import ActionFieldButtonModal from '@/ui/common/action-field-button-modal'
 import ClaimText from '@/ui/common/claim-text'
 import type { ActionFieldProps } from '@/ui/common/data-view-typed'
 import { FeeDistributionPreview } from '@/ui/common/fee-distribution'
+import { ShowMoreButton } from '@/ui/common/keyset-pagination'
 import LogoImage from '@/ui/common/logo-image'
 import ParticipantAttribute from '@/ui/common/participant-attribute'
 import ParticipantTimeline from '@/ui/common/participant-timeline'
@@ -260,7 +261,12 @@ export default function ParticipantCard({
   const did = participant?.did ?? undefined
   const { data: enrichment } = useDidTrustEnrichment(did)
   const { participant: refreshedParticipant, refetch } = useParticipant(participantId)
-  const { participantHistory, refetch: refetchHistory } = useParticipantHistory(participantId)
+  const {
+    participantHistory,
+    refetch: refetchHistory,
+    hasNext: historyHasNext,
+    loadMore: loadMoreHistory,
+  } = useParticipantHistory(participantId)
   const {
     credentialSchema,
     loading: schemaLoading,
@@ -505,6 +511,7 @@ export default function ParticipantCard({
                   key={`${history.block_height}-${index}`}
                 />
               ))}
+              {historyHasNext ? <ShowMoreButton onClick={loadMoreHistory} /> : null}
             </div>
           ) : (
             <p className="text-sm text-neutral-70">{tr('participantcard.timeline.empty', 'No activity yet.')}</p>

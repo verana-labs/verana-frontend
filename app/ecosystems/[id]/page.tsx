@@ -17,6 +17,7 @@ import { renderActionComponent } from '@/ui/common/data-view-typed'
 import EcosystemHeader from '@/ui/common/ecosystem-header'
 import EgfDocumentsTable from '@/ui/common/egf-documents-table'
 import FieldRow from '@/ui/common/field-row'
+import KeysetPagination from '@/ui/common/keyset-pagination'
 import { ModalAction } from '@/ui/common/modal-action'
 import ServiceProviderCard from '@/ui/common/service-provider-card'
 import { resolveTranslatable } from '@/ui/dataview/types'
@@ -34,6 +35,10 @@ export default function EcosystemViewPage() {
     credentialSchemas,
     errorCredentialSchemas,
     refetch: refetchCredentialSchemas,
+    hasNext: schemasHasNext,
+    hasPrevious: schemasHasPrevious,
+    nextPage: schemasNextPage,
+    previousPage: schemasPreviousPage,
   } = useCredentialSchemas(id, false, false)
 
   const [showArchived, setShowArchived] = useState(false)
@@ -322,6 +327,14 @@ export default function EcosystemViewPage() {
             ))}
           </div>
         )}
+        <KeysetPagination
+          showing={visibleSchemas.length}
+          itemsLabel={t('datatable.cs.title', 'Credential Schemas')}
+          hasPrevious={schemasHasPrevious}
+          hasNext={schemasHasNext}
+          onPrevious={schemasPreviousPage}
+          onNext={schemasNextPage}
+        />
       </section>
 
       <ModalAction isActive={archiveActive} titleKey={archiveTitleKey} onClose={() => setArchiveActive(false)}>

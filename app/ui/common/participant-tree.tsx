@@ -7,11 +7,11 @@ import { useParticipant } from '@/hooks/useParticipant'
 import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
 import type { SchemaPricing } from '@/lib/pricing-asset'
-import { type DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
 import AddJoinPage from '@/participants/add/page'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { EntityActionButton } from '@/ui/common/capability-button'
 import EcosystemBreadcrumb from '@/ui/common/ecosystem-breadcrumb'
+import { ShowMoreButton } from '@/ui/common/keyset-pagination'
 import type { ParticipantRefreshState, TreeNode } from '@/ui/common/participant-tree-types'
 import { PricingNotice, unsupportedPricingReason } from '@/ui/common/pricing-notice'
 import SchemaHeader, { type SchemaStatus } from '@/ui/common/schema-header'
@@ -21,8 +21,10 @@ import { participantAuthority, roleColorClass } from '@/util/util'
 import { renderActionComponent } from './data-view-typed'
 import { ModalAction } from './modal-action'
 import ParticipantCard from './participant-card'
-import { collectParticipantDids, filterParticipantTree } from './participant-tree-filter'
+import { collectParticipantTrust, filterParticipantTree } from './participant-tree-filter'
 import TreeNodeHeader from './tree-node-header'
+
+export const ROOT_NODE_ID = 'root'
 
 type ParticipantTreeProps = {
   tree: TreeNode[]
@@ -40,6 +42,8 @@ type ParticipantTreeProps = {
   isEcosystemController?: boolean
   viewerCorporationId?: number
   setNodeRequestParams?: (nodeId?: string, role?: string, validatorId?: string) => void
+  moreNodeIds?: ReadonlySet<string>
+  loadMore?: (nodeId: string) => void
   refreshRoot?: () => void
   onConnect?: () => void
   onRetryFetch?: () => void
@@ -67,11 +71,11 @@ function findNode(nodes: TreeNode[], id: string): TreeNode | undefined {
   }
 }
 
-function mergeTrees(previous: TreeNode[], next: TreeNode[]): TreeNode[] {
+export function mergeTrees(previous: TreeNode[], next: TreeNode[]): TreeNode[] {
   const previousById = new Map(previous.map((node) => [node.nodeId, node]))
   return next.map((node) => {
     const oldNode = previousById.get(node.nodeId)
-    if (node.group) return { ...node, children: node.children ?? [] }
+    if (node.group) return { ...node, children: node.children?.length ? node.children : (oldNode?.children ?? []) }
     return {
       ...oldNode,
       ...node,
@@ -105,6 +109,8 @@ function Tree({
   joinBlockedReason,
   feePricing,
   onConnect,
+  moreNodeIds,
+  onLoadMore,
   depth = 0,
 }: {
   type: 'participants' | 'tasks'
@@ -120,6 +126,8 @@ function Tree({
   joinBlockedReason?: string
   feePricing?: SchemaPricing
   onConnect?: () => void
+  moreNodeIds?: ReadonlySet<string>
+  onLoadMore?: (nodeId: string) => void
   depth?: number
 }) {
   return (
@@ -162,8 +170,13 @@ function Tree({
                 joinBlockedReason={joinBlockedReason}
                 feePricing={feePricing}
                 onConnect={onConnect}
+                moreNodeIds={moreNodeIds}
+                onLoadMore={onLoadMore}
                 depth={depth + 1}
               />
+            ) : null}
+            {isExpanded && moreNodeIds?.has(node.nodeId) && onLoadMore ? (
+              <ShowMoreButton onClick={() => onLoadMore(node.nodeId)} indent={(depth + 1) * 24} />
             ) : null}
           </div>
         )
@@ -188,6 +201,8 @@ export default function ParticipantTree({
   isEcosystemController,
   viewerCorporationId,
   setNodeRequestParams,
+  moreNodeIds,
+  loadMore,
   refreshRoot,
   onConnect,
   onRetryFetch,
@@ -204,35 +219,16 @@ export default function ParticipantTree({
   const [refreshState, setRefreshState] = useState<ParticipantRefreshState>({})
   const detailRef = useRef<HTMLDivElement | null>(null)
   const { latestProcessedHeight } = useIndexerEvents()
-  const [enrichmentByDid, setEnrichmentByDid] = useState<Record<string, DidEnrichment>>({})
   const joinBlockedReason = unsupportedPricing ? unsupportedPricingReason() : undefined
-
-  useEffect(() => {
-    if (type !== 'participants') return
-    let cancelled = false
-    const pending = collectParticipantDids(treeState).filter((did) => !enrichmentByDid[did])
-    for (const did of pending) {
-      fetchDidEnrichment(did)
-        .catch((): DidEnrichment => ({ did, trustStatus: 'UNRESOLVED' }))
-        .then((enrichment) => {
-          if (cancelled) return
-          setEnrichmentByDid((prev) => (prev[did] ? prev : { ...prev, [did]: enrichment }))
-        })
-    }
-    return () => {
-      cancelled = true
-    }
-  }, [type, treeState, enrichmentByDid])
 
   const visibleTree = useMemo(() => {
     if (type !== 'participants') return treeState
-    const trustByDid = Object.fromEntries(Object.entries(enrichmentByDid).map(([did, e]) => [did, e.trustStatus]))
     return filterParticipantTree(
       treeState,
       { includeUnresolvable: showUnresolvable, includeDisabled: showDisabled },
-      trustByDid
+      collectParticipantTrust(treeState)
     )
-  }, [type, treeState, enrichmentByDid, showUnresolvable, showDisabled])
+  }, [type, treeState, showUnresolvable, showDisabled])
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => (tree[0] ? { [tree[0].nodeId]: true } : {}))
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -339,13 +335,22 @@ export default function ParticipantTree({
     setRefreshState((current) => ({ ...current, txHeight: undefined }))
   }, [latestProcessedHeight, refreshState.joinNode, refreshState.txHeight, setNodeRequestParams])
 
+  const retriedJoin = useRef<string>(undefined)
+
   useEffect(() => {
     const { joinNode: refreshedJoin, id, txHeight } = refreshState
     if (!refreshedJoin || txHeight != null) return
     if (!id || !findNode(treeState, id)) {
+      const attempt = `${refreshedJoin.nodeId}:${id ?? ''}`
+      if (retriedJoin.current === attempt) {
+        setRefreshState({})
+        return
+      }
+      retriedJoin.current = attempt
       onRetryFetch?.()
       return
     }
+    retriedJoin.current = undefined
     setExpanded((current) => ({ ...current, [refreshedJoin.nodeId]: true }))
     select(id)
     setRefreshState({})
@@ -408,6 +413,12 @@ export default function ParticipantTree({
           ) : null}
         </div>
 
+        {type === 'participants' && moreNodeIds?.size ? (
+          <p className="p-2 text-xs text-neutral-70 dark:text-neutral-70">
+            {resolveTranslatable({ key: 'pagination.loadedOnly' }, translate) ??
+              'Sorting and filters apply to the loaded results only.'}
+          </p>
+        ) : null}
         {type === 'participants' && treeState.length > 0 && visibleTree.length === 0 ? (
           <p className="p-2 text-sm text-neutral-70 dark:text-neutral-70">
             {resolveTranslatable({ key: 'participants.filters.allhidden' }, translate) ??
@@ -432,7 +443,10 @@ export default function ParticipantTree({
           joinBlockedReason={joinBlockedReason}
           feePricing={unsupportedPricing}
           onConnect={onConnect}
+          moreNodeIds={moreNodeIds}
+          onLoadMore={loadMore}
         />
+        {moreNodeIds?.has(ROOT_NODE_ID) && loadMore ? <ShowMoreButton onClick={() => loadMore(ROOT_NODE_ID)} /> : null}
 
         {type === 'participants' && isEcosystemController ? (
           <EntityActionButton

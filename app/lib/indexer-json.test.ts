@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { indexerValidators } from './indexer-json'
+import { AGENTS_PAGE_SIZE, agentEcosystemsUrl, agentParticipantsUrl } from '@/hooks/useAgents'
+import { ecosystemSchemasUrl } from '@/hooks/useCredentialSchemas'
+import { participantsListUrl } from '@/hooks/useParticipants'
+import { pendingParticipantsUrl } from '@/hooks/usePendingParticipants'
+import { applyKeysetParams, indexerValidators, takeKeysetPage } from './indexer-json'
 
 const {
   record,
@@ -79,5 +83,125 @@ describe('indexerValidators', () => {
     expect(stringArray(['a', 'b'], 'msg_types')).toEqual(['a', 'b'])
     expect(() => stringArray(['a', 1], 'msg_types')).toThrow(rejected('msg_types'))
     expect(() => stringArray('a', 'msg_types')).toThrow(rejected('msg_types'))
+  })
+})
+
+describe('applyKeysetParams', () => {
+  it('asks for one row more than the page and sorts newest-first by default', () => {
+    const params = new URLSearchParams()
+    applyKeysetParams(params, { pageSize: 9 })
+    expect(params.toString()).toBe('limit=10&sort=-id')
+  })
+
+  it('keeps the parameters the caller already set', () => {
+    const params = new URLSearchParams({ trust_data: 'full', archived: 'false' })
+    applyKeysetParams(params, { pageSize: 5 })
+    expect(params.get('trust_data')).toBe('full')
+    expect(params.get('archived')).toBe('false')
+    expect(params.get('limit')).toBe('6')
+  })
+
+  it('passes the last id verbatim as the descending cursor, because max_id excludes it', () => {
+    const params = new URLSearchParams()
+    applyKeysetParams(params, { pageSize: 9, after: '24' })
+    expect(params.get('max_id')).toBe('24')
+    expect(params.get('min_id')).toBeNull()
+  })
+
+  it('advances the last id by one as the ascending cursor, because min_id includes it', () => {
+    const params = new URLSearchParams()
+    applyKeysetParams(params, { pageSize: 25, after: '20', sort: '+id' })
+    expect(params.get('min_id')).toBe('21')
+    expect(params.get('max_id')).toBeNull()
+    expect(params.get('sort')).toBe('+id')
+  })
+
+  it('advances an id above the safe integer range without losing precision', () => {
+    const params = new URLSearchParams()
+    applyKeysetParams(params, { pageSize: 25, after: '9007199254740993', sort: '+id' })
+    expect(params.get('min_id')).toBe('9007199254740994')
+  })
+})
+
+describe('takeKeysetPage', () => {
+  it('reports a next page and drops the extra row', () => {
+    expect(takeKeysetPage([1, 2, 3, 4], 3)).toEqual({ items: [1, 2, 3], hasNext: true })
+  })
+
+  it('reports no next page when the window holds the page exactly', () => {
+    expect(takeKeysetPage([1, 2, 3], 3)).toEqual({ items: [1, 2, 3], hasNext: false })
+  })
+
+  it('reports no next page for an empty window', () => {
+    expect(takeKeysetPage([], 3)).toEqual({ items: [], hasNext: false })
+  })
+})
+
+describe('the list URLs of the indexer', () => {
+  const PARTICIPANT = 'https://indexer/v4/participant'
+  const SCHEMA = 'https://indexer/v4/credential-schema'
+  const ECOSYSTEM = 'https://indexer/v4/ecosystem'
+
+  it.each([
+    [
+      'the participants of a schema role, with the claims their cards render',
+      participantsListUrl(PARTICIPANT, {
+        schema: '9',
+        role: 'ISSUER_GRANTOR',
+        participantState: 'ACTIVE',
+        trustData: 'full',
+        pageSize: 25,
+      }),
+      `${PARTICIPANT}/list?schema_id=9&trust_data=full&limit=26&sort=%2Bid&role=ISSUER_GRANTOR&participant_state=ACTIVE`,
+    ],
+    [
+      'the next ascending page of the same set, filters kept',
+      participantsListUrl(PARTICIPANT, {
+        schema: '9',
+        role: 'ISSUER_GRANTOR',
+        participantState: 'ACTIVE',
+        trustData: 'full',
+        pageSize: 25,
+        after: '40',
+      }),
+      `${PARTICIPANT}/list?schema_id=9&trust_data=full&limit=26&sort=%2Bid&min_id=41&role=ISSUER_GRANTOR&participant_state=ACTIVE`,
+    ],
+    [
+      'a tree node that shows every participant state',
+      participantsListUrl(PARTICIPANT, { schema: '9', role: 'ECOSYSTEM', trustData: 'full', pageSize: 25 }),
+      `${PARTICIPANT}/list?schema_id=9&trust_data=full&limit=26&sort=%2Bid&role=ECOSYSTEM`,
+    ],
+    [
+      'the agent participants of a Corporation, ACTIVE only',
+      agentParticipantsUrl(PARTICIPANT, 13, false, AGENTS_PAGE_SIZE),
+      `${PARTICIPANT}/list?corporation_id=13&limit=26&sort=-id&participant_state=ACTIVE`,
+    ],
+    [
+      'the agent participants with the inactive entries included',
+      agentParticipantsUrl(PARTICIPANT, 13, true, AGENTS_PAGE_SIZE),
+      `${PARTICIPANT}/list?corporation_id=13&limit=26&sort=-id`,
+    ],
+    [
+      'the next descending page of the controlled Ecosystems',
+      agentEcosystemsUrl(ECOSYSTEM, 13, AGENTS_PAGE_SIZE, '40'),
+      `${ECOSYSTEM}/list?corporation_id=13&limit=26&sort=-id&max_id=40`,
+    ],
+    [
+      'the non-archived schemas of one ecosystem',
+      ecosystemSchemasUrl(SCHEMA, '7', 12),
+      `${SCHEMA}/list?ecosystem_id=7&archived=false&limit=13&sort=-id`,
+    ],
+    [
+      'the next page of the schemas of that ecosystem',
+      ecosystemSchemasUrl(SCHEMA, '7', 12, '30'),
+      `${SCHEMA}/list?ecosystem_id=7&archived=false&limit=13&sort=-id&max_id=30`,
+    ],
+    [
+      'the pending tasks of a Corporation, on an endpoint with no cursor',
+      pendingParticipantsUrl(PARTICIPANT, 1),
+      `${PARTICIPANT}/pending/flat?corporation_id=1&trust_data=summary&limit=1024`,
+    ],
+  ])('asks for %s', (_case, url, expected) => {
+    expect(url).toBe(expected)
   })
 })
