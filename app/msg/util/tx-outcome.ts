@@ -1,8 +1,10 @@
 import type { DeliverTxResponse } from '@cosmjs/stargate'
+import { explorerTxLink } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { authorizationRejection } from '@/lib/chain-error'
 import { logger } from '@/lib/logger'
 import type { TxEvent } from '@/msg/util/txEvents'
+import type { NotificationLink } from '@/providers/notification-provider'
 import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 
 export type ProposalExecution =
@@ -12,6 +14,7 @@ export type ProposalExecution =
 export interface TxNotice {
   message: string
   title: string
+  link?: NotificationLink
 }
 
 const EVENT_EXEC = 'cosmos.group.v1.EventExec'
@@ -51,9 +54,18 @@ export function proposalExecution(events: readonly TxEvent[]): ProposalExecution
   )
 }
 
+const SUBMITTED_TX = /Transaction with ID ([0-9A-F]{64}) was submitted/
+
 export function rejectionNotice(fallback: string, text: string): TxNotice {
   const reason = authorizationRejection(text)
-  if (!reason) return { message: fallback, title: t('notification.msg.failed.title') }
+  const submitted = SUBMITTED_TX.exec(text)?.[1]
+  if (!reason) {
+    return {
+      message: fallback,
+      title: t('notification.msg.failed.title'),
+      link: submitted ? explorerTxLink(submitted) : undefined,
+    }
+  }
   logger.error('authorization rejection', text)
   return { message: t('notification.msg.unauthorized', { reason }), title: t('notification.msg.unauthorized.title') }
 }
@@ -63,7 +75,8 @@ export function txFailureNotice(
   fallback: (code: number, rawLog: string) => string
 ): TxNotice | null {
   const rawLog = result.rawLog ?? ''
-  if (result.code !== 0) return rejectionNotice(fallback(result.code, rawLog), rawLog)
+  const link = explorerTxLink(result.transactionHash)
+  if (result.code !== 0) return { ...rejectionNotice(fallback(result.code, rawLog), rawLog), link }
   const outcome = proposalExecution(result.events)
   if (outcome.status !== 'failed') return null
   const reason = authorizationRejection(outcome.logs)
@@ -74,6 +87,7 @@ export function txFailureNotice(
       reason: reason ?? outcome.logs,
     }),
     title: t('notification.proposal.failed.title'),
+    link,
   }
 }
 

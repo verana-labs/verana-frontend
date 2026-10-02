@@ -12,7 +12,7 @@ import {
   isAmountWithinLimit,
   useFaucet,
 } from '@/hooks/useFaucet'
-import { explorerTxUrl } from '@/hooks/useVeranaChain'
+import { explorerTxLink, explorerTxUrl } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { useNotification } from '@/providers/notification-provider'
 import FieldRow from '@/ui/common/field-row'
@@ -101,8 +101,7 @@ export default function GetVNAPanel({ onClose, onRefresh }: GetVNAPanelProps) {
       const result = await requestFunds(amountUVNA)
       setState({ kind: 'result', info, result })
       // Per [VFE-TX-UX-1] the notification links the transaction hash to the explorer.
-      const txUrl = explorerTxUrl(result.txHash)
-      const link = txUrl ? { href: txUrl, label: result.txHash } : undefined
+      const link = explorerTxLink(result.txHash)
       if (result.status === 'confirmed') {
         void notify(translate('notification.getvna.success'), 'success', title, link)
         // Per [VFE-TX-UX-2] the refresh waits for the indexer block, the same as the other account actions.
