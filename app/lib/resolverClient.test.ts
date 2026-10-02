@@ -279,6 +279,23 @@ describe('mapResolveResult', () => {
     expect(withFormat.serviceDescriptionFormat).toBe('text/markdown')
     expect(mapResolveResult(DID, resolveResponse()).serviceDescriptionFormat).toBeUndefined()
   })
+  it('takes the controller name and avatar from a PersonaCredential when no organization is declared', () => {
+    const raw = {
+      ...resolveResponse(),
+      ecsCredentials: [
+        resolveResponse().ecsCredentials[0],
+        {
+          ecsSchema: 'PersonaCredential',
+          issuerParticipantId: 92,
+          credentialSubject: { name: 'Ada Lovelace', avatarUri: 'https://persona.example/ada.png' },
+        },
+      ],
+    }
+    const enrichment = mapResolveResult(DID, raw)
+    expect(enrichment.organizationName).toBe('Ada Lovelace')
+    expect(enrichment.organizationLogoUrl).toBe('https://persona.example/ada.png')
+    expect(enrichment.countryCode).toBeUndefined()
+  })
 })
 
 describe('isMarkdownDescriptionFormat', () => {

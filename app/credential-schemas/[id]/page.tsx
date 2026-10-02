@@ -11,6 +11,7 @@ import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObje
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { isNativePricing } from '@/lib/pricing-asset'
+import { useProtocolParams } from '@/providers/protocol-params-context'
 import { CapabilityButton, EntityActionButton } from '@/ui/common/capability-button'
 import { renderActionComponent } from '@/ui/common/data-view-typed'
 import EcosystemBreadcrumb from '@/ui/common/ecosystem-breadcrumb'
@@ -18,7 +19,7 @@ import JsonCodeBlock from '@/ui/common/json-code-block'
 import { ModalAction } from '@/ui/common/modal-action'
 import { PricingNotice } from '@/ui/common/pricing-notice'
 import SchemaHeader, { type SchemaStatus } from '@/ui/common/schema-header'
-import type { CredentialSchemaData } from '@/ui/dataview/datasections/cs'
+import { type CredentialSchemaData, VALIDITY_MAX_DAYS } from '@/ui/dataview/datasections/cs'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
 type ValidityField = keyof Pick<
@@ -73,27 +74,32 @@ function ValidityFieldView({ labelKey, value }: { labelKey: string; value: numbe
 function ValidityFieldInput({
   labelKey,
   value,
+  max,
   onChange,
   disabled,
 }: {
   labelKey: string
   value: number
+  max: number | null
   onChange: (value: number) => void
   disabled: boolean
 }) {
   const label = resolveTranslatable({ key: labelKey }, translate) ?? labelKey
   const days = resolveTranslatable({ key: 'dataview.cs.value.daysShort' }, translate) ?? 'days'
+  const bound = max === null ? '' : `, ${translate('dataview.cs.value.maxDays', { n: max })}`
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{`${label} (${days})`}</label>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{`${label} (${days}${bound})`}</label>
       <input
         type="number"
         min={0}
+        max={max ?? undefined}
         step={1}
         value={value}
         onChange={(event) => {
           const parsed = Number(event.target.value)
-          if (Number.isFinite(parsed)) onChange(Math.max(0, Math.floor(parsed)))
+          if (Number.isFinite(parsed))
+            onChange(Math.min(max ?? Number.POSITIVE_INFINITY, Math.max(0, Math.floor(parsed))))
         }}
         disabled={disabled}
         className="w-full px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-surface text-gray-900 dark:text-white text-sm disabled:opacity-60"
@@ -111,6 +117,7 @@ export default function CredentialSchemaViewPage() {
   const { ecosystem } = useEcosystemData(ecosystemId)
   const { actingCorporation } = useUserCorporation()
   const update = useActionSigning('MsgUpdateCredentialSchema')
+  const protocolParams = useProtocolParams()
 
   const [mode, setMode] = useState<'view' | 'edit'>('view')
   const [editValues, setEditValues] = useState<ValidityValues | null>(null)
@@ -265,6 +272,7 @@ export default function CredentialSchemaViewPage() {
                     key={field}
                     labelKey={labelKey}
                     value={editValues[field]}
+                    max={protocolParams[VALIDITY_MAX_DAYS[field]]}
                     onChange={(value) => patchEditValue(field, value)}
                     disabled={submitting}
                   />

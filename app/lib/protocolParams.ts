@@ -5,11 +5,21 @@ import { resolveTranslatable } from '@/ui/dataview/types'
 export type ProtocolParams = {
   trustDepositRate: number | null
   credentialSchemaSchemaMaxSize: number | null
+  issuerGrantorValidityMaxDays: number | null
+  verifierGrantorValidityMaxDays: number | null
+  issuerValidityMaxDays: number | null
+  verifierValidityMaxDays: number | null
+  holderValidityMaxDays: number | null
 }
 
 export const protocolParamsInitialState: ProtocolParams = {
   trustDepositRate: null,
   credentialSchemaSchemaMaxSize: null,
+  issuerGrantorValidityMaxDays: null,
+  verifierGrantorValidityMaxDays: null,
+  issuerValidityMaxDays: null,
+  verifierValidityMaxDays: null,
+  holderValidityMaxDays: null,
 }
 
 type ParamConfig = {
@@ -29,6 +39,19 @@ const CONFIGS: ParamConfig[] = [
     responseKey: 'credential_schema_schema_max_size',
     endpoint: VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA,
   },
+  ...(
+    [
+      ['issuerGrantorValidityMaxDays', 'issuer_grantor'],
+      ['verifierGrantorValidityMaxDays', 'verifier_grantor'],
+      ['issuerValidityMaxDays', 'issuer'],
+      ['verifierValidityMaxDays', 'verifier'],
+      ['holderValidityMaxDays', 'holder'],
+    ] as const
+  ).map(([key, role]) => ({
+    key,
+    responseKey: `credential_schema_${role}_validation_validity_period_max_days`,
+    endpoint: VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA,
+  })),
 ]
 
 function paramsEnvelope(payload: unknown): Record<string, unknown> {
@@ -58,10 +81,17 @@ export async function getProtocolParams(): Promise<ProtocolParamsResult> {
   const params: ProtocolParams = { ...protocolParamsInitialState }
   const errors: string[] = []
 
-  async function load(base: string): Promise<Record<string, unknown>> {
-    const response = await fetch(`${base}/params`)
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-    return paramsEnvelope(await response.json())
+  const loads = new Map<string, Promise<Record<string, unknown>>>()
+
+  function load(base: string): Promise<Record<string, unknown>> {
+    const pending =
+      loads.get(base) ??
+      fetch(`${base}/params`).then(async (response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        return paramsEnvelope(await response.json())
+      })
+    loads.set(base, pending)
+    return pending
   }
 
   await Promise.all(

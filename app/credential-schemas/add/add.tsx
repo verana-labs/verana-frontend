@@ -1,10 +1,12 @@
 'use client'
 
+import { useMemo } from 'react'
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
 import { translate } from '@/i18n/dataview'
 import { NATIVE_PRICING } from '@/lib/pricing-asset'
+import { useProtocolParams } from '@/providers/protocol-params-context'
 import EditableDataView from '@/ui/common/data-edit'
-import { type CredentialSchemaData, credentialSchemaSections } from '@/ui/dataview/datasections/cs'
+import { boundedCredentialSchemaSections, type CredentialSchemaData } from '@/ui/dataview/datasections/cs'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
 type AddCredentialSchemaPageProps = {
@@ -14,6 +16,8 @@ type AddCredentialSchemaPageProps = {
 }
 
 export default function AddCredentialSchemaPage({ ecosystemId, onCancel, onRefresh }: AddCredentialSchemaPageProps) {
+  const params = useProtocolParams()
+  const sections = useMemo(() => boundedCredentialSchemaSections(params), [params])
   const { submitTx } = useSubmitTxMsgTypeFromObject(onCancel, onRefresh)
   const credentialSchema: CredentialSchemaData = {
     id: '',
@@ -36,7 +40,7 @@ export default function AddCredentialSchemaPage({ ecosystemId, onCancel, onRefre
 
   return (
     <EditableDataView<CredentialSchemaData>
-      sectionsI18n={credentialSchemaSections}
+      sectionsI18n={sections}
       id={undefined}
       messageType="MsgCreateCredentialSchema"
       data={credentialSchema}
