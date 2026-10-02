@@ -13,7 +13,7 @@ const VALIDITY_FIELDS = [
 ]
 
 async function installEcosystemStubs(page: Page) {
-  await page.route('**/v4/ecosystem/get/13', (route) =>
+  await page.route(/\/v4\/ecosystem\/get\/13(?:\?.*)?$/, (route) =>
     route.fulfill({
       json: {
         ecosystem: {

@@ -9,6 +9,7 @@ import {
   AGENT_RESOLUTIONS,
   CGF_VERSIONS_12,
   CGF_VERSIONS_13,
+  EGF_ACTIVE_13,
   GROUP_MEMBERS,
   HARNESS_ADDRESS,
   HISTORY_13,
@@ -54,9 +55,10 @@ export async function seedActingCorporation(page: Page, corporationId: number) {
   )
 }
 
-export async function installEcosystemStubs(page: Page) {
-  await page.route('**/v4/ecosystem/get/13', (route) =>
-    route.fulfill({
+export async function installEcosystemStubs(page: Page, versions: unknown[] = [EGF_ACTIVE_13]) {
+  await page.route(/\/v4\/ecosystem\/get\/13(?:\?.*)?$/, (route) => {
+    const all = new URL(route.request().url()).searchParams.get('gf_data') === 'all'
+    return route.fulfill({
       json: {
         ecosystem: {
           id: 13,
@@ -67,14 +69,7 @@ export async function installEcosystemStubs(page: Page) {
           archived: null,
           language: 'en',
           active_version: 1,
-          versions: [
-            {
-              id: 1,
-              version: 1,
-              active_since: '2026-09-01T10:30:00Z',
-              documents: [{ id: 1, url: 'https://acme-trust.ch/egf.md', language: 'en', digest_sri: 'sha384-acme' }],
-            },
-          ],
+          versions: all ? versions : versions.slice(0, 1),
           participants: 0,
           active_schemas: 0,
           weight: 0,
@@ -83,7 +78,7 @@ export async function installEcosystemStubs(page: Page) {
         },
       },
     })
-  )
+  })
   await page.route('**/v4/credential-schema/list*', (route) => route.fulfill({ json: { schemas: [] } }))
 }
 
