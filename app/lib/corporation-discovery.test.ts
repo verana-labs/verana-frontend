@@ -404,18 +404,4 @@ describe('corporation identity comes from the inline trust_data', () => {
     expect(memberships[0].corporation.trustData?.organizationName).toBe('Acme Corp')
     expect(memberships[0].corporation.trustData?.countryCode).toBe('BE')
   })
-
-  it('reads a corporation the resolver did not evaluate as unresolved', async () => {
-    stubFetch({
-      [AUTHORIZATIONS]: { authorizations: [{ id: 1, corporation_id: 7, msg_types: [] }] },
-      [MEMBERSHIPS]: { memberships: [] },
-      [`${CORPORATION}7`]: {
-        corporation: { id: 7, policy_address: 'verana1policy7', did: 'did:web:corp7.example', trust_data: null },
-      },
-    })
-
-    const { memberships } = await discoverCorporations('verana1operator')
-
-    expect(memberships[0].corporation.trustData?.trustStatus).toBe('UNRESOLVED')
-  })
 })

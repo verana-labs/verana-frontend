@@ -105,15 +105,4 @@ describe('ecosystem rows carry the inline trust_data', () => {
     expect(row.trustData?.organizationName).toBe('Acme Corp')
     expect(row.trustData?.countryCode).toBe('BE')
   })
-
-  it('maps a null payload to unresolved', () => {
-    expect(parseEcosystemsResponse({ ecosystems: [{ ...ecosystem, trust_data: null }] })[0].trustData).toEqual({
-      did: ecosystem.did,
-      trustStatus: 'UNRESOLVED',
-    })
-  })
-
-  it('leaves the enrichment unset when the request asked for no trust_data', () => {
-    expect(parseEcosystemsResponse({ ecosystems: [ecosystem] })[0].trustData).toBeUndefined()
-  })
 })

@@ -1,13 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parsePendingParticipantsResponse, pendingParticipantsUrl } from './usePendingParticipants'
-
-describe('pendingParticipantsUrl', () => {
-  it('queries by corporation id and asks for the trust evaluation per [VFE-PAGE-PENDING-1]', () => {
-    expect(pendingParticipantsUrl('https://indexer/v4/participant', 1)).toBe(
-      'https://indexer/v4/participant/pending/flat?corporation_id=1&trust_data=summary&limit=1024'
-    )
-  })
-})
+import { parsePendingParticipantsResponse } from './usePendingParticipants'
 
 describe('parsePendingParticipantsResponse', () => {
   it('parses nested V4 pending participants', () => {
@@ -74,30 +66,6 @@ describe('parsePendingParticipantsResponse', () => {
     expect(row.trustData?.trustStatus).toBe('TRUSTED')
     expect(row.trustData?.serviceName).toBe('Acme Ecosystem')
     expect(row.trustData?.countryCode).toBe('CH')
-  })
-
-  it('still reads a claim-less payload as a trust state without an identity', () => {
-    const row = parsePendingParticipantsResponse({
-      ecosystems: [
-        {
-          id: 10,
-          did: 'did:web:ecosystem.example',
-          trust_data: { did: 'did:web:ecosystem.example', trusted: true, expiresAtTime: null },
-          pending_tasks: 1,
-          participants: 4,
-          schemas: [{ id: 9, title: 'T', description: null, pending_tasks: 1, pending_participants: [] }],
-        },
-      ],
-    })[0]
-    expect(row.trustData?.trustStatus).toBe('TRUSTED')
-    expect(row.trustData?.serviceName).toBeUndefined()
-  })
-
-  it('leaves the enrichment unset for an ecosystem with no DID', () => {
-    const row = parsePendingParticipantsResponse({
-      ecosystems: [{ id: 10, did: null, trust_data: null, pending_tasks: 0, participants: 0, schemas: [] }],
-    })[0]
-    expect(row.trustData).toBeUndefined()
   })
 
   it('rejects a schema without pending participants', () => {

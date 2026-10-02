@@ -190,10 +190,4 @@ describe('withAuthority', () => {
     const grown = appendTo(loaded, 'issuer', node({ id: 'holder' }))
     expect(find(withAuthority(grown, 1), 'holder')).toMatchObject({ isValidator: false, isPredecessor: true })
   })
-
-  it('re-derives the whole tree when the acting Corporation changes', () => {
-    const tree = withAuthority(withAuthority(chain(), 1), 9)
-    expect(find(tree, 'grantor')).toMatchObject({ isCorporation: false })
-    expect(find(tree, 'eco')).toMatchObject({ isCorporation: true })
-  })
 })

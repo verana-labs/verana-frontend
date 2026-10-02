@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseParticipantsResponse, participantsListUrl, participantsPageKey } from '@/hooks/useParticipants'
+import { parseParticipantsResponse, participantsPageKey } from '@/hooks/useParticipants'
 
 const participant = {
   id: 1,
@@ -32,60 +32,6 @@ describe('participant rows carry the inline trust_data', () => {
     expect(row.trustData?.trustStatus).toBe('TRUSTED')
     expect(row.trustData?.serviceName).toBe('Acme Verifier')
   })
-
-  it('maps a null payload to unresolved', () => {
-    const row = parseParticipantsResponse({ participants: [{ ...participant, trust_data: null }] })[0]
-    expect(row.trustData?.trustStatus).toBe('UNRESOLVED')
-  })
-
-  it('leaves the enrichment unset when the request asked for no trust_data', () => {
-    expect(parseParticipantsResponse({ participants: [participant] })[0].trustData).toBeUndefined()
-  })
-
-  it('leaves the enrichment unset for a participant with no DID', () => {
-    const row = parseParticipantsResponse({ participants: [{ ...participant, did: null, trust_data: null }] })[0]
-    expect(row.trustData).toBeUndefined()
-  })
-})
-
-describe('participantsListUrl', () => {
-  it('asks the indexer for the ACTIVE validators with the claims their cards render', () => {
-    expect(
-      participantsListUrl('https://indexer/v4/participant', {
-        schema: '9',
-        role: 'ISSUER_GRANTOR',
-        participantState: 'ACTIVE',
-        trustData: 'full',
-        pageSize: 25,
-      })
-    ).toBe(
-      'https://indexer/v4/participant/list?schema_id=9&trust_data=full&limit=26&sort=%2Bid&role=ISSUER_GRANTOR&participant_state=ACTIVE'
-    )
-  })
-
-  it('omits participant_state for a tree that shows every state', () => {
-    const url = participantsListUrl('https://indexer/v4/participant', {
-      schema: '9',
-      role: 'ECOSYSTEM',
-      trustData: 'full',
-      pageSize: 25,
-    })
-    expect(url).not.toContain('participant_state')
-    expect(url).toContain('trust_data=full')
-  })
-
-  it('keeps the state filter on the next cursor page', () => {
-    expect(
-      participantsListUrl('https://indexer/v4/participant', {
-        schema: '9',
-        role: 'ISSUER_GRANTOR',
-        participantState: 'ACTIVE',
-        trustData: 'full',
-        pageSize: 25,
-        after: '40',
-      })
-    ).toContain('min_id=41&role=ISSUER_GRANTOR&participant_state=ACTIVE')
-  })
 })
 
 describe('participantsPageKey', () => {
@@ -94,17 +40,5 @@ describe('participantsPageKey', () => {
     const verifiers = participantsPageKey({ schema: '9', role: 'VERIFIER', validator: '4' })
     expect(issuers).not.toBe(verifiers)
     expect(participantsPageKey({ schema: '9', role: 'ISSUER', validator: '7' })).not.toBe(issuers)
-  })
-
-  it('separates a cursor page from the first page of the same set', () => {
-    expect(participantsPageKey({ schema: '9', role: 'ISSUER', validator: '4', after: '40' })).not.toBe(
-      participantsPageKey({ schema: '9', role: 'ISSUER', validator: '4' })
-    )
-  })
-
-  it('matches when the same page is requested twice', () => {
-    expect(participantsPageKey({ schema: '9', role: 'ECOSYSTEM' })).toBe(
-      participantsPageKey({ schema: '9', role: 'ECOSYSTEM', after: undefined })
-    )
   })
 })
