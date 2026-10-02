@@ -145,6 +145,7 @@ export function mapResolveResult(did: string, raw: ResolveResult, credentialIssu
   const credentials = Array.isArray(raw.ecsCredentials) ? raw.ecsCredentials : []
   const service = credentials.find((c) => c.ecsSchema === 'ServiceCredential')?.credentialSubject
   const org = credentials.find((c) => c.ecsSchema === 'OrganizationCredential')?.credentialSubject
+  const persona = credentials.find((c) => c.ecsSchema === 'PersonaCredential')?.credentialSubject
 
   return {
     did,
@@ -156,8 +157,8 @@ export function mapResolveResult(did: string, raw: ResolveResult, credentialIssu
     serviceMinAge: pickStringOrNumber(service, 'minimumAgeRequired'),
     serviceTermsUrl: pickString(service, 'termsAndConditionsUri'),
     servicePrivacyUrl: pickString(service, 'privacyPolicyUri'),
-    organizationName: pickString(org, 'name'),
-    organizationLogoUrl: pickString(org, 'logoUri'),
+    organizationName: pickString(org, 'name') ?? pickString(persona, 'name'),
+    organizationLogoUrl: pickString(org, 'logoUri') ?? pickString(persona, 'avatarUri'),
     countryCode: pickString(org, 'countryCode'),
     organizationAddress: pickString(org, 'address'),
     organizationRegistryId: pickString(org, 'registryId'),

@@ -1,5 +1,6 @@
 import { faBoxArchive, faEdit } from '@fortawesome/free-solid-svg-icons'
 import { HolderOnboardingMode } from '@verana-labs/verana-types/codec/verana/cs/v1/types'
+import type { ProtocolParams } from '@/lib/protocolParams'
 import type { I18nValues } from '@/ui/dataview/types'
 import { Section, typeOf } from '@/ui/dataview/types'
 import { MSG_SCHEMA_ID } from '@/util/json_schema_util'
@@ -269,3 +270,36 @@ export const credentialSchemaSections: Section<CredentialSchemaData>[] = [
     ],
   },
 ]
+
+type ValidityPeriodField =
+  | 'issuerGrantorValidationValidityPeriod'
+  | 'verifierGrantorValidationValidityPeriod'
+  | 'issuerValidationValidityPeriod'
+  | 'verifierValidationValidityPeriod'
+  | 'holderValidationValidityPeriod'
+
+export const VALIDITY_MAX_DAYS: Record<ValidityPeriodField, keyof ProtocolParams> = {
+  issuerGrantorValidationValidityPeriod: 'issuerGrantorValidityMaxDays',
+  verifierGrantorValidationValidityPeriod: 'verifierGrantorValidityMaxDays',
+  issuerValidationValidityPeriod: 'issuerValidityMaxDays',
+  verifierValidationValidityPeriod: 'verifierValidityMaxDays',
+  holderValidationValidityPeriod: 'holderValidityMaxDays',
+}
+
+function isValidityPeriodField(name: string): name is ValidityPeriodField {
+  return name in VALIDITY_MAX_DAYS
+}
+
+export function boundedCredentialSchemaSections(params: ProtocolParams): Section<CredentialSchemaData>[] {
+  return credentialSchemaSections.map((section) => ({
+    ...section,
+    fields: section.fields?.map((field) => {
+      if (field.type !== 'data' || !isValidityPeriodField(String(field.name))) return field
+      const max = params[VALIDITY_MAX_DAYS[field.name as ValidityPeriodField]]
+      return {
+        ...field,
+        validation: { type: 'Long' as const, greaterThanOrEqual: 0, ...(max === null ? {} : { lessThanOrEqual: max }) },
+      }
+    }),
+  }))
+}

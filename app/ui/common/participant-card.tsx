@@ -103,6 +103,7 @@ const metadataItems: ParticipantItem[] = [
   { label: 'DID', attr: 'did', mono: true, extraActions: didActions },
   { label: 'ID', attr: 'id', mono: true, extraActions: idActions },
   { label: tr('participantcard.meta.corporation', 'Corporation'), attr: 'corporation_id' },
+  { label: tr('participantcard.meta.ecosystem', 'Ecosystem'), attr: 'ecosystem_id' },
   {
     label: tr('participantcard.meta.vsoperator', 'VS Operator'),
     attr: 'vs_operator',
