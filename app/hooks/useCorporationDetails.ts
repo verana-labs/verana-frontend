@@ -9,7 +9,6 @@ import {
   VERANA_REST_ENDPOINT_TRUST_DEPOSIT,
 } from '@/config/env'
 import { parseParticipantsResponse } from '@/hooks/useParticipants'
-import { type IndexerEntityEvent, refreshesEntityLists } from '@/lib/indexer-event'
 import { degrade, fetchJson, indexerValidators } from '@/lib/indexer-json'
 import { logger } from '@/lib/logger'
 import type { Participant } from '@/ui/dataview/datasections/participant'
@@ -428,21 +427,5 @@ export function useCorporationDetails(corporationId: number | undefined) {
     void load()
   }, [load])
 
-  const detailsRef = useRef(details)
-  detailsRef.current = details
-  const applyEvents = useCallback(
-    (events: IndexerEntityEvent[]) => {
-      const current = detailsRef.current
-      if (corporationId === undefined || !current) return
-      const knownDids = new Set([current.profile.did])
-      for (const participant of current.participantsById.values()) {
-        if (participant.did) knownDids.add(participant.did)
-      }
-      const relevant = events.some((event) => refreshesEntityLists(event, corporationId, knownDids))
-      if (relevant) void load()
-    },
-    [corporationId, load]
-  )
-
-  return { details, loading, error, refetch: load, applyEvents }
+  return { details, loading, error, refetch: load }
 }

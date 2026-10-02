@@ -4,7 +4,7 @@ import { useChain } from '@cosmos-kit/react'
 import { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { applyLocale, forgetLocale, resolveLocale } from '@/i18n/dataview'
-import { type CorporationAttention, fetchAttention } from '@/lib/corporation-attention'
+import { type CorporationAttention, fetchAttention, fetchCorporationAttention } from '@/lib/corporation-attention'
 import {
   type CorporationMembership,
   claimIntendedMembership,
@@ -15,6 +15,9 @@ import {
   restoreActingMembership,
   saveActingCorporationId,
 } from '@/lib/corporation-discovery'
+import { EVENT_COALESCE_MS, refreshTargets, triggersDiscovery } from '@/lib/indexer-event'
+import { logger } from '@/lib/logger'
+import { useIndexerEvents } from '@/providers/indexer-events-provider'
 
 export interface CorporationContextValue {
   memberships: CorporationMembership[]
@@ -34,6 +37,7 @@ export const CorporationContext = createContext<CorporationContextValue | null>(
 export function CorporationProvider({ children }: { children: React.ReactNode }) {
   const veranaChain = useVeranaChain()
   const { address, isWalletDisconnected } = useChain(veranaChain.chain_name)
+  const { setSubscribedCorporations, addIndexerEventListener } = useIndexerEvents()
   const [memberships, setMemberships] = useState<CorporationMembership[]>([])
   const [actingCorporationId, setActingCorporationId] = useState<number | null>(null)
   const [attention, setAttention] = useState<Record<number, CorporationAttention>>({})
@@ -41,6 +45,8 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const runId = useRef(0)
+  const discoveryTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const attentionTimers = useRef(new Map<number, ReturnType<typeof setTimeout>>())
   const lastAccount = useRef<string | undefined>(undefined)
   const knownMemberships = useRef<CorporationMembership[]>([])
   const intendedActingId = useRef<number | null>(null)
@@ -95,6 +101,49 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
     }
     void discover(address)
   }, [address, isWalletDisconnected, discover])
+
+  // One subscription for each discovered Corporation, per [VFE-DATA-WS-1].
+  useEffect(() => {
+    setSubscribedCorporations(memberships.map((membership) => membership.corporation.id))
+  }, [memberships, setSubscribedCorporations])
+
+  useEffect(() => {
+    if (!address) return
+    const unsubscribe = addIndexerEventListener((corporationId, events) => {
+      if (events.some((event) => refreshTargets(event).includes('attention'))) {
+        // A recovery replays the catch-up and then each buffered block, so the counts coalesce.
+        const pending = attentionTimers.current.get(corporationId)
+        if (pending) clearTimeout(pending)
+        attentionTimers.current.set(
+          corporationId,
+          setTimeout(() => {
+            attentionTimers.current.delete(corporationId)
+            const run = runId.current
+            fetchCorporationAttention(corporationId, address)
+              .then((counts) => {
+                if (run === runId.current) setAttention((previous) => ({ ...previous, [corporationId]: counts }))
+              })
+              .catch((error: unknown) => logger.error('corporation attention refresh', error))
+          }, EVENT_COALESCE_MS)
+        )
+      }
+      if (events.some((event) => triggersDiscovery(event, address))) {
+        // Several subscriptions can ask for [VFE-CORP-DISC-4] in the same block.
+        if (discoveryTimer.current) clearTimeout(discoveryTimer.current)
+        discoveryTimer.current = setTimeout(() => {
+          discoveryTimer.current = null
+          void discover(address)
+        }, EVENT_COALESCE_MS)
+      }
+    })
+    return () => {
+      unsubscribe()
+      if (discoveryTimer.current) clearTimeout(discoveryTimer.current)
+      discoveryTimer.current = null
+      for (const timer of attentionTimers.current.values()) clearTimeout(timer)
+      attentionTimers.current.clear()
+    }
+  }, [address, addIndexerEventListener, discover])
 
   const setActingCorporation = useCallback(
     (corporationId: number) => {

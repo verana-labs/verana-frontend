@@ -1,13 +1,9 @@
 'use client'
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { VERANA_REST_ENDPOINT_INDEXER, VERANA_WEBSOCKET } from '@/config/env'
-import {
-  type IndexerBlockEvent,
-  type IndexerEntityEvent,
-  parseIndexerBlockEvent,
-  parseIndexerBlockHeight,
-} from '@/lib/indexer-event'
+import { VERANA_REST_ENDPOINT_INDEXER } from '@/config/env'
+import { type IndexerBlockEvent, type IndexerEvent, parseIndexerBlockHeight } from '@/lib/indexer-event'
+import { createIndexerSubscriptions, type IndexerSubscriptions } from '@/lib/indexer-subscription'
 import { logger } from '@/lib/logger'
 import { useComponentsVersion } from '@/providers/components-version-provider'
 
@@ -18,38 +14,43 @@ type Waiting = {
   timeoutId?: ReturnType<typeof setTimeout>
 }
 
+export type IndexerEventListener = (corporationId: number, events: IndexerEvent[]) => void
+
 type IndexerEventsContextType = {
   isConnected: boolean
   latestProcessedHeight: number
   latestProcessedTimestamp: string | null
-  latestBlockEvents: IndexerEntityEvent[]
   waitForBlock: (targetHeight: number, timeoutMs?: number) => Promise<void>
   getLatestProcessedBlock: () => number
+  setSubscribedCorporations: (corporationIds: number[]) => void
+  addIndexerEventListener: (listener: IndexerEventListener) => () => void
 }
 
 const IndexerEventsContext = createContext<IndexerEventsContextType | null>(null)
 
 export function IndexerEventsProvider({ children }: { children: React.ReactNode }) {
-  const wsRef = useRef<WebSocket | null>(null)
-  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const subscriptionsRef = useRef<IndexerSubscriptions | null>(null)
+  const corporationIdsRef = useRef<number[]>([])
+  const listenersRef = useRef<Set<IndexerEventListener>>(new Set())
   const waitingRef = useRef<Waiting[]>([])
+  const heightPollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const latestProcessedHeightRef = useRef(0)
   const latestProcessedTimestampRef = useRef<string | null>(null)
 
   const [isConnected, setIsConnected] = useState(false)
   const [latestProcessedHeight, setLatestProcessedHeight] = useState(0)
   const [latestProcessedTimestamp, setLatestProcessedTimestamp] = useState<string | null>(null)
-  const [latestBlockEvents, setLatestBlockEvents] = useState<IndexerEntityEvent[]>([])
 
   const { setState: setVersionState } = useComponentsVersion()
 
   const applyBlock = useCallback(
     (block: IndexerBlockEvent) => {
+      // Several subscriptions report the same blocks, so the height only moves forward.
+      if (block.height < latestProcessedHeightRef.current) return
       latestProcessedHeightRef.current = block.height
       latestProcessedTimestampRef.current = block.timestamp
       setLatestProcessedHeight(block.height)
       setLatestProcessedTimestamp(block.timestamp)
-      if (block.events.length > 0) setLatestBlockEvents(block.events)
       setVersionState((prev) => ({
         ...prev,
         indexer: { ...prev.indexer, lastProcessedBlock: block.height },
@@ -77,130 +78,130 @@ export function IndexerEventsProvider({ children }: { children: React.ReactNode 
     [setVersionState]
   )
 
+  const fetchProcessedHeight = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!VERANA_REST_ENDPOINT_INDEXER) return
+      const response = await fetch(`${VERANA_REST_ENDPOINT_INDEXER}/block-height`, { signal })
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const block = parseIndexerBlockHeight(await response.json())
+      if (block) applyBlock(block)
+    },
+    [applyBlock]
+  )
+
+  const heightPollWanted = useCallback(
+    () => waitingRef.current.length > 0 || corporationIdsRef.current.length === 0,
+    []
+  )
+
+  const armHeightFallback = useCallback(() => {
+    if (heightPollTimerRef.current) return
+    const tick = async () => {
+      heightPollTimerRef.current = null
+      const subscriptions = subscriptionsRef.current
+      if (!subscriptions || !heightPollWanted()) return
+      try {
+        await fetchProcessedHeight()
+      } catch (error) {
+        logger.warn('Indexer height fallback failed', error)
+      }
+      if (heightPollWanted() && !heightPollTimerRef.current) {
+        heightPollTimerRef.current = setTimeout(tick, subscriptions.getBlockIntervalMs())
+      }
+    }
+    heightPollTimerRef.current = setTimeout(tick, 2 * (subscriptionsRef.current?.getBlockIntervalMs() ?? 0))
+  }, [fetchProcessedHeight, heightPollWanted])
+
   useEffect(() => {
-    if (!VERANA_REST_ENDPOINT_INDEXER) return
     const controller = new AbortController()
-    fetch(`${VERANA_REST_ENDPOINT_INDEXER}/block-height`, { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
-        const block = parseIndexerBlockHeight(await response.json())
-        if (block && latestProcessedHeightRef.current === 0) applyBlock(block)
-      })
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === 'AbortError') return
-        logger.error('Failed to seed the indexer height', error)
-      })
+    fetchProcessedHeight(controller.signal).catch((error: unknown) => {
+      if (error instanceof DOMException && error.name === 'AbortError') return
+      logger.error('Failed to seed the indexer height', error)
+    })
     return () => controller.abort()
-  }, [applyBlock])
+  }, [fetchProcessedHeight])
 
   useEffect(() => {
-    let unmounted = false
-    let reconnectAttempts = 0
-    const cleanupSocket = () => {
-      if (wsRef.current) {
-        wsRef.current.onopen = null
-        wsRef.current.onmessage = null
-        wsRef.current.onerror = null
-        wsRef.current.onclose = null
-        wsRef.current.close()
-        wsRef.current = null
-      }
-    }
-
-    const connect = () => {
-      if (unmounted) return
-      const wsUrl = VERANA_WEBSOCKET
-      if (!wsUrl) {
-        logger.error('NEXT_PUBLIC_VERANA_WEBSOCKET is not defined')
-        return
-      }
-      const ws = new WebSocket(wsUrl)
-
-      wsRef.current = ws
-
-      ws.onopen = () => {
-        if (unmounted) return
-        ws.send(JSON.stringify({ action: 'subscribe', dids: [], corporationId: null }))
-        setIsConnected(true)
-        reconnectAttempts = 0
-      }
-
-      ws.onmessage = (event) => {
-        try {
-          const block = parseIndexerBlockEvent(JSON.parse(event.data))
-          if (block) applyBlock(block)
-        } catch (error) {
-          logger.error('Failed to parse indexer websocket event:', error)
-        }
-      }
-
-      ws.onerror = (error) => {
-        logger.error('Indexer websocket error:', error)
-      }
-
-      ws.onclose = () => {
-        if (unmounted) return
-        setIsConnected(false)
-        const delay = Math.min(1000 * 2 ** reconnectAttempts, 10000)
-        reconnectAttempts += 1
-        reconnectTimerRef.current = setTimeout(() => {
-          connect()
-        }, delay)
-      }
-    }
-
-    connect()
+    const subscriptions = createIndexerSubscriptions({
+      onProcessedBlock: (height, blockTime) => applyBlock({ height, timestamp: blockTime }),
+      onEvents: (corporationId, events) => {
+        for (const listener of listenersRef.current) listener(corporationId, events)
+      },
+      onConnectionChange: setIsConnected,
+    })
+    subscriptionsRef.current = subscriptions
+    subscriptions.setCorporations(corporationIdsRef.current)
+    if (heightPollWanted()) armHeightFallback()
 
     return () => {
-      unmounted = true
-      if (reconnectTimerRef.current) {
-        clearTimeout(reconnectTimerRef.current)
-      }
+      subscriptionsRef.current = null
+      subscriptions.close()
+      if (heightPollTimerRef.current) clearTimeout(heightPollTimerRef.current)
+      heightPollTimerRef.current = null
       for (const waiting of waitingRef.current) {
         if (waiting.timeoutId) clearTimeout(waiting.timeoutId)
         waiting.reject(new Error('IndexerEventsProvider unmounted'))
       }
       waitingRef.current = []
-      cleanupSocket()
     }
-  }, [applyBlock])
+  }, [applyBlock, armHeightFallback, heightPollWanted])
 
-  const waitForBlock = useCallback((targetHeight: number, timeoutMs = 30000) => {
-    const currentHeight = latestProcessedHeightRef.current
-    logger.info('waitForBlock:start', {
-      targetHeight,
-      latestProcessedHeight: currentHeight,
-      date: new Date().toLocaleTimeString(),
-    })
-    if (currentHeight >= targetHeight) {
-      logger.info('waitForBlock:resolved-immediately', {
+  const setSubscribedCorporations = useCallback(
+    (corporationIds: number[]) => {
+      corporationIdsRef.current = corporationIds
+      subscriptionsRef.current?.setCorporations(corporationIds)
+      if (heightPollWanted()) armHeightFallback()
+    },
+    [armHeightFallback, heightPollWanted]
+  )
+
+  const addIndexerEventListener = useCallback((listener: IndexerEventListener) => {
+    listenersRef.current.add(listener)
+    return () => {
+      listenersRef.current.delete(listener)
+    }
+  }, [])
+
+  const waitForBlock = useCallback(
+    (targetHeight: number, timeoutMs = 30000) => {
+      const currentHeight = latestProcessedHeightRef.current
+      logger.info('waitForBlock:start', {
         targetHeight,
         latestProcessedHeight: currentHeight,
         date: new Date().toLocaleTimeString(),
       })
-      return Promise.resolve()
-    }
-    return new Promise<void>((resolve, reject) => {
-      const waiting: Waiting = {
-        targetHeight,
-        resolve,
-        reject,
+      if (currentHeight >= targetHeight) {
+        logger.info('waitForBlock:resolved-immediately', {
+          targetHeight,
+          latestProcessedHeight: currentHeight,
+          date: new Date().toLocaleTimeString(),
+        })
+        return Promise.resolve()
       }
-      if (timeoutMs > 0) {
-        waiting.timeoutId = setTimeout(() => {
-          logger.error('waitForBlock:timeout', {
-            targetHeight,
-            latestProcessedHeight: latestProcessedHeightRef.current,
-            waitingCount: waitingRef.current.length,
-            date: new Date().toLocaleTimeString(),
-          })
-          waitingRef.current = waitingRef.current.filter((w) => w !== waiting)
-          reject(new Error(`Timed out waiting for indexer to process block ${targetHeight}`))
-        }, timeoutMs)
-      }
-      waitingRef.current.push(waiting)
-    })
-  }, [])
+      return new Promise<void>((resolve, reject) => {
+        const waiting: Waiting = {
+          targetHeight,
+          resolve,
+          reject,
+        }
+        if (timeoutMs > 0) {
+          waiting.timeoutId = setTimeout(() => {
+            logger.error('waitForBlock:timeout', {
+              targetHeight,
+              latestProcessedHeight: latestProcessedHeightRef.current,
+              waitingCount: waitingRef.current.length,
+              date: new Date().toLocaleTimeString(),
+            })
+            waitingRef.current = waitingRef.current.filter((w) => w !== waiting)
+            reject(new Error(`Timed out waiting for indexer to process block ${targetHeight}`))
+          }, timeoutMs)
+        }
+        waitingRef.current.push(waiting)
+        armHeightFallback()
+      })
+    },
+    [armHeightFallback]
+  )
 
   const getLatestProcessedBlock = useCallback(() => {
     return latestProcessedHeightRef.current
@@ -211,32 +212,35 @@ export function IndexerEventsProvider({ children }: { children: React.ReactNode 
       isConnected,
       latestProcessedHeight,
       latestProcessedTimestamp,
-      latestBlockEvents,
       waitForBlock,
       getLatestProcessedBlock,
+      setSubscribedCorporations,
+      addIndexerEventListener,
     }),
     [
       isConnected,
       latestProcessedHeight,
       latestProcessedTimestamp,
-      latestBlockEvents,
       waitForBlock,
       getLatestProcessedBlock,
+      setSubscribedCorporations,
+      addIndexerEventListener,
     ]
   )
 
   return <IndexerEventsContext.Provider value={value}>{children}</IndexerEventsContext.Provider>
 }
 
-// Applies the events of each new block once. The same array is never applied twice.
-export function useIndexerEntityEvents(apply: (events: IndexerEntityEvent[]) => void) {
-  const { latestBlockEvents } = useIndexerEvents()
-  const applied = useRef<IndexerEntityEvent[]>([])
+export function useIndexerEntityEvents(corporationId: number | undefined, apply: (events: IndexerEvent[]) => void) {
+  const { addIndexerEventListener } = useIndexerEvents()
+  const applyRef = useRef(apply)
+  applyRef.current = apply
   useEffect(() => {
-    if (latestBlockEvents.length === 0 || applied.current === latestBlockEvents) return
-    applied.current = latestBlockEvents
-    apply(latestBlockEvents)
-  }, [apply, latestBlockEvents])
+    if (corporationId === undefined) return
+    return addIndexerEventListener((id, events) => {
+      if (id === corporationId) applyRef.current(events)
+    })
+  }, [addIndexerEventListener, corporationId])
 }
 
 export function useIndexerEvents() {
