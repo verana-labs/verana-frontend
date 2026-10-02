@@ -87,6 +87,7 @@ function ValidityFieldInput({
   const label = resolveTranslatable({ key: labelKey }, translate) ?? labelKey
   const days = resolveTranslatable({ key: 'dataview.cs.value.daysShort' }, translate) ?? 'days'
   const bound = max === null ? '' : `, ${translate('dataview.cs.value.maxDays', { n: max })}`
+  const invalid = max !== null && value > max
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{`${label} (${days}${bound})`}</label>
@@ -98,11 +99,11 @@ function ValidityFieldInput({
         value={value}
         onChange={(event) => {
           const parsed = Number(event.target.value)
-          if (Number.isFinite(parsed))
-            onChange(Math.min(max ?? Number.POSITIVE_INFINITY, Math.max(0, Math.floor(parsed))))
+          if (Number.isFinite(parsed)) onChange(Math.max(0, Math.floor(parsed)))
         }}
         disabled={disabled}
-        className="w-full px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-surface text-gray-900 dark:text-white text-sm disabled:opacity-60"
+        aria-invalid={invalid}
+        className={`w-full px-4 py-2 border ${invalid ? 'border-red-500' : 'border-neutral-20 dark:border-neutral-70'} rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-surface text-gray-900 dark:text-white text-sm disabled:opacity-60`}
       />
     </div>
   )
@@ -192,6 +193,13 @@ export default function CredentialSchemaViewPage() {
       setSubmitting(false)
     }
   }
+
+  const outOfBounds =
+    editValues !== null &&
+    VALIDITY_FIELDS.some(({ field }) => {
+      const max = protocolParams[VALIDITY_MAX_DAYS[field]]
+      return max !== null && editValues[field] > max
+    })
 
   function patchEditValue(field: ValidityField, value: number) {
     setEditValues((previous) => (previous ? { ...previous, [field]: value } : previous))
@@ -290,7 +298,7 @@ export default function CredentialSchemaViewPage() {
                 <button
                   type="button"
                   onClick={confirmEdit}
-                  disabled={submitting}
+                  disabled={submitting || outOfBounds}
                   className="flex-1 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium disabled:opacity-60"
                 >
                   {t('messages.confirm', 'Confirm')}

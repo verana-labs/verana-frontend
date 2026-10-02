@@ -159,7 +159,7 @@ export function mapResolveResult(did: string, raw: ResolveResult, credentialIssu
     servicePrivacyUrl: pickString(service, 'privacyPolicyUri'),
     organizationName: pickString(org, 'name') ?? pickString(persona, 'name'),
     organizationLogoUrl: pickString(org, 'logoUri') ?? pickString(persona, 'avatarUri'),
-    countryCode: pickString(org, 'countryCode'),
+    countryCode: pickString(org, 'countryCode') ?? pickString(persona, 'controllerCountryCode'),
     organizationAddress: pickString(org, 'address'),
     organizationRegistryId: pickString(org, 'registryId'),
     credentialIssuerDid,
@@ -185,8 +185,10 @@ async function fetchWithTimeout(url: string, init?: RequestInit): Promise<Respon
 }
 
 async function issuerDid(raw: ResolveResult): Promise<string | undefined> {
-  const org = raw.ecsCredentials?.find((c) => c.ecsSchema === 'OrganizationCredential')
-  const participantId = org?.issuerParticipantId
+  const controller =
+    raw.ecsCredentials?.find((c) => c.ecsSchema === 'OrganizationCredential') ??
+    raw.ecsCredentials?.find((c) => c.ecsSchema === 'PersonaCredential')
+  const participantId = controller?.issuerParticipantId
   if (typeof participantId !== 'number' || !VERANA_REST_ENDPOINT_PARTICIPANT) return undefined
   try {
     const response = await fetchWithTimeout(`${VERANA_REST_ENDPOINT_PARTICIPANT}/get/${participantId}`)

@@ -22,6 +22,10 @@ describe('boundedCredentialSchemaSections', () => {
       holderValidityMaxDays: 365,
     })
     expect(bounds.holderValidationValidityPeriod).toEqual({ type: 'Long', greaterThanOrEqual: 0, lessThanOrEqual: 365 })
+    const jsonSchema = boundedCredentialSchemaSections(protocolParamsInitialState)
+      .flatMap((section) => section.fields ?? [])
+      .find((field) => field.name === 'jsonSchema')
+    expect(jsonSchema && 'validation' in jsonSchema ? jsonSchema.validation?.type : undefined).toBe('JSON_SCHEMA')
     expect(bounds.issuerValidationValidityPeriod).toEqual({
       type: 'Long',
       greaterThanOrEqual: 0,

@@ -358,6 +358,7 @@
   "dataview.cs.value.never": "Never expires",
   "dataview.cs.value.daysShort": "days",
   "dataview.cs.value.maxDays": "max {n}",
+  "dataview.cs.value.boundDays": "Up to {n} days, 0 never expires.",
   "messages.confirm": "Confirm",
   "dataview.cs.managementMode.OPEN": "OPEN",
   "dataview.cs.managementMode.GRANTOR_ONBOARDING_PROCESS": "Grantor Onboarding Process",
