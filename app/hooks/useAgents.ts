@@ -74,7 +74,6 @@ function noMore<T>(): AgentPage<T> {
   return { items: [], hasNext: false }
 }
 
-/** The rows the agent cards are derived from, grown one cursor page at a time. */
 type AgentWindow = {
   participants: Participant[]
   ecosystems: EcosystemListItem[]
