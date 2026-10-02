@@ -8,6 +8,7 @@ import type { CorporationMembership } from '@/lib/corporation-discovery'
 import type { DidEnrichment } from '@/lib/resolverClient'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import { ActivityTimeline } from './activity'
+import { GovernanceSection } from './governance'
 import { CorporationHeader, RotateDidForm } from './header'
 import { MembersSection } from './members'
 import { OperatorsSection } from './operators'
@@ -16,7 +17,7 @@ import { type ProposalContext, ProposalsSection } from './proposals'
 import { Card, SectionTitle } from './shared'
 import { TrustDepositSection } from './trust-deposit'
 
-export const TABS = ['overview', 'members', 'deposit', 'operators', 'proposals'] as const
+export const TABS = ['overview', 'members', 'governance', 'deposit', 'operators', 'proposals'] as const
 export type CorporationTab = (typeof TABS)[number]
 
 export interface CorporationView {
@@ -36,6 +37,7 @@ export interface CorporationView {
   onToggleRotate: () => void
   onRotate: (did: string) => void
   onCreate: () => void
+  onRefresh: () => void
   onGrant: (grantee: string, msgTypes: string[]) => void
   onRevoke: (operator: string) => void
   onRepay: () => void
@@ -50,6 +52,15 @@ function section(view: CorporationView, tab: CorporationTab) {
   switch (tab) {
     case 'members':
       return <MembersSection members={details.members} policy={details.policy} walletAddress={view.walletAddress} />
+    case 'governance':
+      return (
+        <GovernanceSection
+          corporationId={details.profile.id}
+          language={details.profile.language}
+          governance={details.governance}
+          onRefresh={view.onRefresh}
+        />
+      )
     case 'deposit':
       return (
         <TrustDepositSection

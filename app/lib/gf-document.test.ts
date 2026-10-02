@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest'
 import {
   displayedVersion,
   documentFileName,
+  editableVersions,
   fetchableDocumentUrl,
   type GfVersion,
+  hasDocumentIn,
   kindFromContentType,
   kindFromUrl,
+  nextVersion,
 } from '@/lib/gf-document'
 
 describe('kindFromUrl', () => {
@@ -77,5 +80,54 @@ describe('displayedVersion', () => {
     expect(displayedVersion(versions, 1)?.id).toBe('1')
     expect(displayedVersion(versions, 3)?.id).toBe('2')
     expect(displayedVersion([], 1)).toBeUndefined()
+  })
+})
+
+function version(number: number, activeSince: string | null, languages: string[] = []): GfVersion {
+  return {
+    id: String(number),
+    version: number,
+    activeSince,
+    documents: languages.map((language, index) => ({
+      id: `${number}-${index}`,
+      url: `https://x.example/v${number}-${language}.md`,
+      language,
+    })),
+  }
+}
+
+describe('editableVersions', () => {
+  it('offers only the next version when nothing is drafted', () => {
+    expect(editableVersions([version(1, '2026-01-01T00:00:00Z', ['en'])], 1)).toEqual([2])
+  })
+
+  it('offers every existing future version before the next new one', () => {
+    const versions = [
+      version(1, '2026-01-01T00:00:00Z', ['en']),
+      version(2, '2026-02-01T00:00:00Z', ['en']),
+      version(4, null, ['en']),
+      version(3, null, ['en']),
+    ]
+    expect(editableVersions(versions, 2)).toEqual([3, 4, 5])
+  })
+
+  it('never offers the active version or an older one', () => {
+    expect(editableVersions([], 3)).toEqual([4])
+  })
+})
+
+describe('nextVersion', () => {
+  it('is the version right after the active one, once it holds a document', () => {
+    const versions = [version(1, '2026-01-01T00:00:00Z', ['en']), version(2, null, ['es'])]
+    expect(nextVersion(versions, 1)?.version).toBe(2)
+    expect(nextVersion([version(1, '2026-01-01T00:00:00Z', ['en']), version(2, null)], 1)).toBeUndefined()
+    expect(nextVersion([version(1, '2026-01-01T00:00:00Z', ['en']), version(3, null, ['en'])], 1)).toBeUndefined()
+  })
+})
+
+describe('hasDocumentIn', () => {
+  it('matches the exact language tag the chain checks', () => {
+    expect(hasDocumentIn(version(2, null, ['en', 'es']), 'es')).toBe(true)
+    expect(hasDocumentIn(version(2, null, ['en']), 'de')).toBe(false)
   })
 })

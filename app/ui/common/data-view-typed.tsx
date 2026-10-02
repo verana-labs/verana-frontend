@@ -7,7 +7,6 @@ import React, { ReactNode, useId, useState } from 'react'
 import TdActionPage from '@/account/action'
 import CredentialSchemaActionPage from '@/credential-schemas/[id]/action'
 import EcosystemActionPage from '@/ecosystems/[id]/action'
-import GovernanceFrameworkActionPage from '@/ecosystems/[id]/governance-framework-action'
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
 import { DataType, getMsgTypeFor } from '@/msg/constants/msgTypeForDataType'
 import { MsgTypeCS, MsgTypeEcosystem, MsgTypeParticipant, MsgTypeTD } from '@/msg/constants/notificationMsgForMsgType'
@@ -125,9 +124,6 @@ export function renderObjectList<I extends object>(args: {
 // Define the valid actions for TD
 const validTDAction = (action: string): action is MsgTypeTD => ['MsgReclaimTrustDepositYield'].includes(action)
 
-export const validGovernanceFrameworkAction = (action: string): action is MsgTypeEcosystem =>
-  ['MsgAddGovernanceFrameworkDocument', 'MsgIncreaseActiveGovernanceFrameworkVersion'].includes(action)
-
 export const validEcosystemAction = (action: string): action is MsgTypeEcosystem =>
   ['MsgUpdateEcosystem', 'MsgArchiveEcosystem', 'MsgUnarchiveEcosystem'].includes(action)
 
@@ -163,17 +159,6 @@ export function renderActionComponent(
   }
   if (validTDAction(action)) {
     return <TdActionPage action={action} data={data} onClose={onClose} onRefresh={onRefresh} />
-  }
-  if (validGovernanceFrameworkAction(action)) {
-    return (
-      <GovernanceFrameworkActionPage
-        action={action}
-        data={data}
-        onClose={onClose}
-        onRefresh={onRefresh}
-        setModalHidden={setModalHidden}
-      />
-    )
   }
   if (validParticipantAction(action)) {
     return (
