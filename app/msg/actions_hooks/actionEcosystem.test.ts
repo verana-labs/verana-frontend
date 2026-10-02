@@ -69,11 +69,16 @@ describe('buildEcosystemMessage', () => {
     })
   })
 
-  it('round-trips the V4 governance-framework document contract', () => {
+  const owners = [
+    ['an ecosystem EGF', { kind: 'ecosystem', id: '7' }, 7],
+    ['the corporation CGF', { kind: 'corporation', id: 13 }, 0],
+  ] as const
+
+  it.each(owners)('round-trips the V4 governance-framework document contract for %s', (_, owner, ecosystemId) => {
     const message = buildEcosystemMessage(
       {
         msgType: 'MsgAddGovernanceFrameworkDocument',
-        ecosystemId: '7',
+        owner,
         targetVersion: 2,
         docLanguage: 'fr',
         docUrl: 'https://example.com/framework-v2.pdf',
@@ -89,7 +94,7 @@ describe('buildEcosystemMessage', () => {
     expect(value).toEqual({
       corporation: 'verana1policy',
       operator: 'verana1operator',
-      ecosystemId: 7,
+      ecosystemId,
       docLanguage: 'fr',
       docUrl: 'https://example.com/framework-v2.pdf',
       docDigestSri: 'sha384-v2',
@@ -97,11 +102,8 @@ describe('buildEcosystemMessage', () => {
     })
   })
 
-  it('round-trips the V4 governance-framework activation contract', () => {
-    const message = buildEcosystemMessage(
-      { msgType: 'MsgIncreaseActiveGovernanceFrameworkVersion', ecosystemId: '7' },
-      context
-    )
+  it.each(owners)('round-trips the V4 governance-framework activation contract for %s', (_, owner, ecosystemId) => {
+    const message = buildEcosystemMessage({ msgType: 'MsgIncreaseActiveGovernanceFrameworkVersion', owner }, context)
     const value = MsgIncreaseActiveGovernanceFrameworkVersion.decode(
       MsgIncreaseActiveGovernanceFrameworkVersion.encode(
         message.value as MsgIncreaseActiveGovernanceFrameworkVersion
@@ -112,7 +114,7 @@ describe('buildEcosystemMessage', () => {
     expect(value).toEqual({
       corporation: 'verana1policy',
       operator: 'verana1operator',
-      ecosystemId: 7,
+      ecosystemId,
     })
   })
 })

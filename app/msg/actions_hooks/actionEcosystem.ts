@@ -17,8 +17,10 @@ import { useRef } from 'react'
 import { useDelegableMsgs } from '@/hooks/useDelegableMsgs'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
+import type { GfOwner } from '@/lib/gf-document'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import {
+  MSG_ERROR_ACTION_CGF,
   MSG_ERROR_ACTION_ECOSYSTEM,
   MSG_INPROGRESS_ACTION_ECOSYSTEM,
   MSG_NOTIFICATION_PROPOSAL,
@@ -60,7 +62,7 @@ export type EcosystemMessageParams =
     }
   | {
       msgType: 'MsgAddGovernanceFrameworkDocument'
-      ecosystemId: string | number
+      owner: GfOwner
       targetVersion: number
       docLanguage: string
       docUrl: string
@@ -68,21 +70,19 @@ export type EcosystemMessageParams =
     }
   | {
       msgType: 'MsgIncreaseActiveGovernanceFrameworkVersion'
-      ecosystemId: string | number
+      owner: GfOwner
     }
 
 export type EcosystemActionParams =
   | Omit<Extract<EcosystemMessageParams, { msgType: 'MsgCreateEcosystem' }>, 'docDigestSri'>
   | Extract<EcosystemMessageParams, { msgType: 'MsgUpdateEcosystem' }>
   | Extract<EcosystemMessageParams, { msgType: 'MsgArchiveEcosystem' | 'MsgUnarchiveEcosystem' }>
-  | {
-      msgType: 'MsgAddGovernanceFrameworkDocument'
-      ecosystemId: string | number
-      currentVersion: number
-      docLanguage: string
-      docUrl: string
-    }
+  | Omit<Extract<EcosystemMessageParams, { msgType: 'MsgAddGovernanceFrameworkDocument' }>, 'docDigestSri'>
   | Extract<EcosystemMessageParams, { msgType: 'MsgIncreaseActiveGovernanceFrameworkVersion' }>
+
+function gfEcosystemId(owner: GfOwner): number {
+  return owner.kind === 'ecosystem' ? Number(owner.id) : 0
+}
 
 export function buildEcosystemMessage(params: EcosystemMessageParams, context: EcosystemContext): EncodeObject {
   const common = { corporation: context.corporation, operator: context.operator }
@@ -122,7 +122,7 @@ export function buildEcosystemMessage(params: EcosystemMessageParams, context: E
         typeUrl: '/verana.gf.v1.MsgAddGovernanceFrameworkDocument',
         value: MsgAddGovernanceFrameworkDocument.fromPartial({
           ...common,
-          ecosystemId: Number(params.ecosystemId),
+          ecosystemId: gfEcosystemId(params.owner),
           version: params.targetVersion,
           docLanguage: params.docLanguage,
           docUrl: params.docUrl,
@@ -134,7 +134,7 @@ export function buildEcosystemMessage(params: EcosystemMessageParams, context: E
         typeUrl: '/verana.gf.v1.MsgIncreaseActiveGovernanceFrameworkVersion',
         value: MsgIncreaseActiveGovernanceFrameworkVersion.fromPartial({
           ...common,
-          ecosystemId: Number(params.ecosystemId),
+          ecosystemId: gfEcosystemId(params.owner),
         }),
       }
   }
@@ -154,28 +154,36 @@ async function documentDigest(docUrl: string): Promise<string> {
 }
 
 async function toMessageParams(params: EcosystemActionParams): Promise<EcosystemMessageParams> {
-  if (params.msgType === 'MsgCreateEcosystem') {
+  if (params.msgType === 'MsgCreateEcosystem' || params.msgType === 'MsgAddGovernanceFrameworkDocument') {
     return { ...params, docDigestSri: await documentDigest(params.docUrl) }
-  }
-  if (params.msgType === 'MsgAddGovernanceFrameworkDocument') {
-    return {
-      msgType: params.msgType,
-      ecosystemId: params.ecosystemId,
-      targetVersion: params.currentVersion + 1,
-      docLanguage: params.docLanguage,
-      docUrl: params.docUrl,
-      docDigestSri: await documentDigest(params.docUrl),
-    }
   }
   return params
 }
 
+function subjectId(params: EcosystemActionParams): string | undefined {
+  if ('id' in params) return String(params.id)
+  if ('owner' in params) return String(params.owner.id)
+  return undefined
+}
+
+function effectKey(params: EcosystemActionParams): string {
+  const corporation = 'owner' in params && params.owner.kind === 'corporation'
+  return `txconfirm.effect.${params.msgType}${corporation ? '.corporation' : ''}`
+}
+
 function effectValues(params: EcosystemMessageParams): I18nValues {
   return {
-    id: 'id' in params ? String(params.id) : 'ecosystemId' in params ? String(params.ecosystemId) : null,
+    id: subjectId(params) ?? null,
     did: 'did' in params ? params.did : null,
     version: 'targetVersion' in params ? params.targetVersion : null,
   }
+}
+
+function failureMessage(params: EcosystemActionParams, id: string | undefined, code?: number, msg?: string): string {
+  if ('owner' in params && params.owner.kind === 'corporation') {
+    return MSG_ERROR_ACTION_CGF[params.msgType](id, code, msg)
+  }
+  return MSG_ERROR_ACTION_ECOSYSTEM[params.msgType](id, code, msg)
 }
 
 function isDeliverTxResponse(result: DeliverTxResponse | SimulateResult): result is DeliverTxResponse {
@@ -207,17 +215,15 @@ export function useActionEcosystem(onCancel?: () => void, onRefresh?: (id?: stri
     }
 
     inFlight.current = true
-    let id = 'id' in params ? String(params.id) : 'ecosystemId' in params ? String(params.ecosystemId) : undefined
+    let id = subjectId(params)
     let mode: CorporationSigningMode = 'operator'
     const errorMessage = (code?: number, msg?: string) =>
-      mode === 'proposal'
-        ? MSG_NOTIFICATION_PROPOSAL.error(code, msg)
-        : MSG_ERROR_ACTION_ECOSYSTEM[params.msgType](id, code, msg)
+      mode === 'proposal' ? MSG_NOTIFICATION_PROPOSAL.error(code, msg) : failureMessage(params, id, code, msg)
     try {
       const typeUrl = delegableTypeUrl(params.msgType)
       if (!typeUrl) throw new Error(`Unsupported message type: ${params.msgType}`)
       const messageParams = await toMessageParams(params)
-      const effect = t(`txconfirm.effect.${params.msgType}`, effectValues(messageParams))
+      const effect = t(effectKey(params), effectValues(messageParams))
       const resolved = await delegable({
         typeUrl,
         build: (corporation, operator) => buildEcosystemMessage(messageParams, { corporation, operator }),

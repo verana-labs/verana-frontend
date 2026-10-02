@@ -41,7 +41,7 @@ const messages: EncodeObject[] = [
   buildEcosystemMessage(
     {
       msgType: 'MsgAddGovernanceFrameworkDocument',
-      ecosystemId: 1,
+      owner: { kind: 'ecosystem', id: '1' },
       targetVersion: 2,
       docLanguage: 'en',
       docUrl: 'https://example.com/framework-v2.pdf',
@@ -49,7 +49,10 @@ const messages: EncodeObject[] = [
     },
     context
   ),
-  buildEcosystemMessage({ msgType: 'MsgIncreaseActiveGovernanceFrameworkVersion', ecosystemId: 1 }, context),
+  buildEcosystemMessage(
+    { msgType: 'MsgIncreaseActiveGovernanceFrameworkVersion', owner: { kind: 'ecosystem', id: '1' } },
+    context
+  ),
   buildCredentialSchemaMessage(
     {
       msgType: 'MsgCreateCredentialSchema',
