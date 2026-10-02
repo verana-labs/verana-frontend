@@ -356,6 +356,7 @@
   "dataview.cs.value.never": "Nunca expira",
   "dataview.cs.value.daysShort": "días",
   "dataview.cs.value.maxDays": "máx. {n}",
+  "dataview.cs.value.boundDays": "Hasta {n} días, 0 no expira nunca.",
   "messages.confirm": "Confirmar",
   "dataview.cs.managementMode.OPEN": "ABIERTO",
   "dataview.cs.managementMode.GRANTOR_ONBOARDING_PROCESS": "Proceso de Incorporación del otorgante",

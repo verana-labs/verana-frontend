@@ -296,9 +296,12 @@ export function boundedCredentialSchemaSections(params: ProtocolParams): Section
     fields: section.fields?.map((field) => {
       if (field.type !== 'data' || !isValidityPeriodField(String(field.name))) return field
       const max = params[VALIDITY_MAX_DAYS[field.name as ValidityPeriodField]]
+      if (max === null)
+        return { ...field, validation: { ...field.validation, type: 'Long' as const, greaterThanOrEqual: 0 } }
       return {
         ...field,
-        validation: { type: 'Long' as const, greaterThanOrEqual: 0, ...(max === null ? {} : { lessThanOrEqual: max }) },
+        description: t('dataview.cs.value.boundDays', { n: max }),
+        validation: { ...field.validation, type: 'Long' as const, greaterThanOrEqual: 0, lessThanOrEqual: max },
       }
     }),
   }))

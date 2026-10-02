@@ -9,6 +9,12 @@ import EditableDataView from '@/ui/common/data-edit'
 import { boundedCredentialSchemaSections, type CredentialSchemaData } from '@/ui/dataview/datasections/cs'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
+const DEFAULT_VALIDITY_DAYS = 365
+
+function defaultDays(max: number | null): number {
+  return max === null ? DEFAULT_VALIDITY_DAYS : Math.min(DEFAULT_VALIDITY_DAYS, max)
+}
+
 type AddCredentialSchemaPageProps = {
   ecosystemId: number
   onCancel: () => void
@@ -22,11 +28,11 @@ export default function AddCredentialSchemaPage({ ecosystemId, onCancel, onRefre
   const credentialSchema: CredentialSchemaData = {
     id: '',
     ecosystemId,
-    issuerGrantorValidationValidityPeriod: 365,
-    verifierGrantorValidationValidityPeriod: 365,
-    issuerValidationValidityPeriod: 365,
-    verifierValidationValidityPeriod: 365,
-    holderValidationValidityPeriod: 365,
+    issuerGrantorValidationValidityPeriod: defaultDays(params.issuerGrantorValidityMaxDays),
+    verifierGrantorValidationValidityPeriod: defaultDays(params.verifierGrantorValidityMaxDays),
+    issuerValidationValidityPeriod: defaultDays(params.issuerValidityMaxDays),
+    verifierValidationValidityPeriod: defaultDays(params.verifierValidityMaxDays),
+    holderValidationValidityPeriod: defaultDays(params.holderValidityMaxDays),
     issuerOnboardingMode: 1,
     verifierOnboardingMode: 1,
     holderOnboardingMode: 2,
