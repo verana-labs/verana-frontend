@@ -231,6 +231,8 @@
   "corporation.setup.docurl": "CGF document URL",
   "corporation.setup.funding": "Policy funding (uvna)",
   "notification.msg.inprogress.title": "Transaction in progress",
+  "notification.msg.processing.title": "Transaction processing",
+  "notification.msg.processing": "Included in block {height}, waiting for the indexer.",
   "notification.msg.successful.title": "Transaction successful",
   "notification.msg.confirmed.title": "Transaction confirmed",
   "notification.msg.indexer.pending": "Confirmed on-chain at block {height}, but the indexer has not caught up yet. Displayed data may still be stale.",

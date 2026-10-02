@@ -5,6 +5,7 @@ import { calculateFee, DeliverTxResponse, GasPrice, SigningStargateClient, StdFe
 import { TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { veranaAmino, veranaRegistry } from '@/config/veranaChain.sign.client'
 import { logger } from '@/lib/logger'
+import { expectedSequence, isSequenceMismatch } from '@/msg/util/sequence-mismatch'
 
 type AminoSignOptions = {
   rpcEndpoint: string
@@ -51,8 +52,7 @@ export async function signAndBroadcastManualAmino({
     } catch (e) {
       if (isSequenceMismatch(e)) {
         logger.error('Simulated Tx: ', e)
-        const { expected } = parseSequenceMismatch(e)
-        if (expected != null) sequence = expected
+        sequence = expectedSequence(e) ?? sequence
       }
       throw e
     }
@@ -76,8 +76,7 @@ export async function signAndBroadcastManualAmino({
     } catch (e) {
       if (isSequenceMismatch(e) && attempt === 0) {
         logger.error('Tx: ', e)
-        const { expected } = parseSequenceMismatch(e)
-        if (expected != null) sequence = expected
+        sequence = expectedSequence(e) ?? sequence
         continue
       }
       throw e
@@ -85,19 +84,4 @@ export async function signAndBroadcastManualAmino({
   }
 
   throw new Error('Sequence mismatch after retry')
-}
-
-function isSequenceMismatch(e: unknown): boolean {
-  const m = String((e as any)?.message ?? e)
-  return m.includes('account sequence mismatch') || m.includes('incorrect account sequence')
-}
-
-function parseSequenceMismatch(err: unknown): { expected?: number; got?: number } {
-  const msg = String((err as any)?.message ?? err)
-  const m = msg.match(/expected\s+(\d+)\s*,\s*got\s+(\d+)/i)
-  if (!m) return {}
-  return {
-    expected: Number(m[1]),
-    got: Number(m[2]),
-  }
 }

@@ -20,6 +20,11 @@ test('Ring A — create ecosystem reaches faked success without a real chain wri
   })
   await page.locator('.btn-action-confirm').click()
   await confirmTransaction(page)
+  await expect(page.locator('.notify-msg-link').first()).toHaveAttribute(
+    'href',
+    /^https:\/\/explorer\.devnet\.verana\.network\/Verana%20Devnet\/tx\/[0-9A-F]{64}$/,
+    { timeout: 30_000 }
+  )
 
   const ecosystemUrl = new RegExp(`/ecosystems/${FAKE_ECOSYSTEM_ID}(\\?|$)`)
   await expect.poll(() => page.url(), { timeout: 60_000 }).toMatch(ecosystemUrl)
