@@ -217,7 +217,6 @@ describe('indexerEventsUrl', () => {
 })
 
 describe('refreshTargets', () => {
-  // The indexer sends the abbreviated module; the long spellings are accepted too.
   it.each([
     ['pp', ['attention', 'participants']],
     ['group', ['attention', 'corporationDetails']],
@@ -226,14 +225,13 @@ describe('refreshTargets', () => {
     ['cs', ['credentialSchemas']],
     ['co', ['dashboard']],
     ['di', []],
-    ['participant', ['attention', 'participants']],
-    ['delegation', ['attention', 'corporationDetails']],
-    ['ecosystem', ['ecosystems']],
-    ['credential-schema', ['credentialSchemas']],
-    ['corporation', ['dashboard']],
-    ['digital-identity', []],
   ])('routes a %s event', (module, targets) => {
     expect(refreshTargets(event({ module }))).toEqual(targets)
+  })
+
+  it('routes no refresh for the session and resolver events of the participant module', () => {
+    expect(refreshTargets(event({ module: 'pp', eventType: 'CreateOrUpdateParticipantSession' }))).toEqual([])
+    expect(refreshTargets(event({ module: 'pp', eventType: 'TriggerResolver' }))).toEqual([])
   })
 })
 
@@ -242,12 +240,6 @@ describe('triggersDiscovery', () => {
     expect(
       triggersDiscovery(
         event({ module: 'de', eventType: 'GrantOperatorAuthorization', grantee: 'verana1me' }),
-        'verana1me'
-      )
-    ).toBe(true)
-    expect(
-      triggersDiscovery(
-        event({ module: 'delegation', eventType: 'GrantOperatorAuthorization', grantee: 'verana1me' }),
         'verana1me'
       )
     ).toBe(true)

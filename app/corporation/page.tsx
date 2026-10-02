@@ -28,9 +28,7 @@ export default function CorporationPage() {
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
   const { actingCorporation, loading: actingLoading, refetch: refetchCorporations } = useUserCorporation()
-  const { details, loading, error, refetch, proposalsPage, applyEvents } = useCorporationDetails(
-    actingCorporation?.corporation.id
-  )
+  const { details, loading, error, refetch, applyEvents } = useCorporationDetails(actingCorporation?.corporation.id)
   const { addIndexerEventListener } = useIndexerEvents()
   useIndexerEntityEvents(actingCorporation?.corporation.id, applyEvents)
   const [votesVersion, setVotesVersion] = useState(0)
@@ -156,7 +154,6 @@ export default function CorporationPage() {
         onClose={() => setComposing(false)}
       />
     ),
-    proposalsPage,
     proposalCtx: {
       policy,
       isMember: actingCorporation.member,

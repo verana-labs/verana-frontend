@@ -54,7 +54,6 @@ function integerOrNull(value: unknown): number | null {
   return typeof value === 'number' && Number.isSafeInteger(value) ? value : null
 }
 
-// The related ids only widen a refresh, so a malformed entry is dropped instead of the whole event.
 function relatedStrings(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : []
 }
@@ -138,22 +137,23 @@ export function indexerEventKey(event: IndexerEvent): string {
   return `${event.txHash}#${event.messageIndex}`
 }
 
+export const SESSION_EVENT = 'CreateOrUpdateParticipantSession'
+const RESOLVER_EVENT = 'TriggerResolver'
+const LIST_NEUTRAL_EVENTS = new Set([SESSION_EVENT, RESOLVER_EVENT])
+const ENTITY_LIST_MODULES = new Set(['pp', 'de'])
+
 export function refreshTargets(event: IndexerEvent): IndexerRefreshTarget[] {
+  if (LIST_NEUTRAL_EVENTS.has(event.eventType)) return []
   switch (event.module) {
-    case 'participant':
     case 'pp':
       return ['attention', 'participants']
-    case 'delegation':
     case 'de':
     case 'group':
       return ['attention', 'corporationDetails']
-    case 'ecosystem':
     case 'ec':
       return ['ecosystems']
-    case 'credential-schema':
     case 'cs':
       return ['credentialSchemas']
-    case 'corporation':
     case 'co':
       return ['dashboard']
     default:
@@ -162,7 +162,7 @@ export function refreshTargets(event: IndexerEvent): IndexerRefreshTarget[] {
 }
 
 export function triggersDiscovery(event: IndexerEvent, account: string): boolean {
-  if (event.module === 'delegation' || event.module === 'de') {
+  if (event.module === 'de') {
     return (
       (event.eventType === 'GrantOperatorAuthorization' || event.eventType === 'RevokeOperatorAuthorization') &&
       (event.grantee === account || event.sender === account)
@@ -171,8 +171,6 @@ export function triggersDiscovery(event: IndexerEvent, account: string): boolean
   return event.module === 'group' && event.eventType === 'UpdateGroupMembers'
 }
 
-// Per [VFE-DATA-WS-3] only events of the acting Corporation drive a refresh. A per-Corporation stream
-// already scopes them, so this stays a second filter for the views that also know the DIDs they hold.
 export function concernsCorporation(event: IndexerEvent, corporationId: number, knownDids: Set<string>): boolean {
   if (event.corporationId !== null || event.relatedCorporationIds.length > 0) {
     return event.corporationId === corporationId || event.relatedCorporationIds.includes(corporationId)
@@ -180,11 +178,6 @@ export function concernsCorporation(event: IndexerEvent, corporationId: number, 
   if (event.did !== null && knownDids.has(event.did)) return true
   return event.relatedDids.some((did) => knownDids.has(did))
 }
-
-export const SESSION_EVENT = 'CreateOrUpdateParticipantSession'
-const RESOLVER_EVENT = 'TriggerResolver'
-const LIST_NEUTRAL_EVENTS = new Set([SESSION_EVENT, RESOLVER_EVENT])
-const ENTITY_LIST_MODULES = new Set(['pp', 'de'])
 
 export function refreshesEntityLists(event: IndexerEvent, corporationId: number, knownDids: Set<string>): boolean {
   if (LIST_NEUTRAL_EVENTS.has(event.eventType)) return false

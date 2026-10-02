@@ -1,6 +1,6 @@
 'use client'
 
-import { faChevronDown, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
+import { faChevronDown } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { type ReactNode, useState } from 'react'
 import { type GroupPolicy, type ProposalRow, type ProposalTally, useProposalVotes } from '@/hooks/useCorporationDetails'
@@ -40,14 +40,6 @@ export interface ProposalActions {
   onVote: (id: number, choice: VoteChoice) => void
   onExecute: (id: number) => void
   onWithdraw: (id: number) => void
-}
-
-export interface ProposalsPage {
-  loading: boolean
-  hasPrevious: boolean
-  hasNext: boolean
-  onPrevious: () => void
-  onNext: () => void
 }
 
 export interface ProposalContext {
@@ -215,7 +207,6 @@ export function ProposalsSection({
   ctx,
   composing,
   degraded,
-  page,
   onCompose,
   composer,
 }: {
@@ -223,13 +214,11 @@ export function ProposalsSection({
   ctx: ProposalContext
   composing: boolean
   degraded: boolean
-  page: ProposalsPage
   onCompose: () => void
   composer: ReactNode
 }) {
   const [filter, setFilter] = useState<Filter>('all')
   const visible = filter === 'all' ? proposals : proposals.filter((proposal) => proposal.status === filter)
-  const partialWindow = page.hasPrevious || page.hasNext
 
   return (
     <Card id="proposals">
@@ -267,7 +256,6 @@ export function ProposalsSection({
           )
         })}
       </div>
-      {partialWindow ? <p className="text-xs text-gray-500 mb-4">{translate('corporation.proposals.scoped')}</p> : null}
       {degraded ? (
         <SectionUnavailable />
       ) : visible.length === 0 ? (
@@ -279,28 +267,6 @@ export function ProposalsSection({
           ))}
         </div>
       )}
-      {partialWindow ? (
-        <div className="mt-4 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            disabled={!page.hasPrevious || page.loading}
-            onClick={page.onPrevious}
-            aria-label={translate('corporation.proposals.newer')}
-            className="px-3 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg text-sm text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <FontAwesomeIcon icon={faChevronLeft} className="text-xs" />
-          </button>
-          <button
-            type="button"
-            disabled={!page.hasNext || page.loading}
-            onClick={page.onNext}
-            aria-label={translate('corporation.proposals.older')}
-            className="px-3 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg text-sm text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <FontAwesomeIcon icon={faChevronRight} className="text-xs" />
-          </button>
-        </div>
-      ) : null}
     </Card>
   )
 }

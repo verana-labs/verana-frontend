@@ -261,7 +261,6 @@ describe('a superseded catch-up', () => {
     stale.emit({ type: 'subscribed', block: 101, blockTime: BLOCK_TIME })
     await flush()
 
-    // A dropped socket supersedes the pending catch-up and opens a new one.
     stale.drop()
     await vi.advanceTimersByTimeAsync(500)
     expect(harness.sockets).toHaveLength(2)
@@ -278,7 +277,6 @@ describe('a superseded catch-up', () => {
     expect(healthy.closed).toBe(false)
     expect(harness.sockets).toHaveLength(2)
 
-    // The replacement still delivers, so nothing tore it down.
     healthy.emit({ type: 'block', block: 101, blockTime: BLOCK_TIME, events: [rawEvent('LIVE', 101)] })
     expect(harness.batches.at(-1)).toEqual({ corporationId: 7, txHashes: ['LIVE'] })
   })
@@ -306,7 +304,6 @@ describe('the reconnection backoff', () => {
     harness.fetchEvents.mockRejectedValue(new Error('indexer down'))
     harness.subscriptions.setCorporations([7])
 
-    // A socket that opens and acknowledges, then fails its catch-up, has not established anything.
     for (const [attempt, delay] of [1000, 2000, 4000, 8000, 10_000, 10_000].entries()) {
       const socket = harness.sockets[attempt]
       socket.accept()

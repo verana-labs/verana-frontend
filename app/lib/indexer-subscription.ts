@@ -12,6 +12,7 @@ import { logger } from '@/lib/logger'
 
 const DEFAULT_BLOCK_INTERVAL_MS = 6000
 const RECONNECT_CEILING_MS = 10_000
+const CATCH_UP_TIMEOUT_MS = 10_000
 
 export type IndexerSocketLike = {
   send: (data: string) => void
@@ -59,7 +60,7 @@ type Stream = {
 
 async function fetchIndexerEvents(corporationId: number, afterBlockHeight: number): Promise<IndexerEvent[]> {
   const url = indexerEventsUrl(corporationId, afterBlockHeight)
-  const response = await fetch(url)
+  const response = await fetch(url, { signal: AbortSignal.timeout(CATCH_UP_TIMEOUT_MS) })
   if (!response.ok) throw new Error(`${url}: ${response.status}`)
   const events = parseIndexerEventsPage(await response.json())
   if (!events) throw new Error('Invalid indexer events response')

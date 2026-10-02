@@ -320,14 +320,6 @@ export async function fetchCorporationHistory(corporationId: number): Promise<Ac
   }
 }
 
-export const PROPOSALS_PAGE_SIZE = 20
-
-// [VFE-DATA-IDX-1] keyset cursor: `max_id` is exclusive and `sort=-id` reads newest-first.
-export function proposalsUrl(corporationId: number, maxId?: number): string {
-  const cursor = maxId === undefined ? '' : `&max_id=${maxId}`
-  return `${VERANA_REST_ENDPOINT_GROUP}/proposals?corporation_id=${corporationId}&limit=${PROPOSALS_PAGE_SIZE}&sort=-id${cursor}`
-}
-
 export function useProposalVotes(proposalId: number): VoteRow[] | null | undefined {
   const [votes, setVotes] = useState<VoteRow[] | null>()
 
@@ -355,25 +347,6 @@ export function useCorporationDetails(corporationId: number | undefined) {
   const [error, setError] = useState<string | null>(null)
 
   const requestRef = useRef(0)
-  const cursorsRef = useRef<number[]>([])
-  const [cursorDepth, setCursorDepth] = useState(0)
-  const [proposalsLoading, setProposalsLoading] = useState(false)
-
-  const loadProposals = useCallback(async () => {
-    if (corporationId === undefined) return
-    setProposalsLoading(true)
-    const page = await degrade('proposals', [] as ProposalRow[], () =>
-      fetchJson(proposalsUrl(corporationId, cursorsRef.current.at(-1)), 'Unable to fetch proposals').then(
-        parseProposals
-      )
-    )
-    setDetails((previous) =>
-      previous
-        ? { ...previous, proposals: page.value, degraded: { ...previous.degraded, proposals: page.failed } }
-        : previous
-    )
-    setProposalsLoading(false)
-  }, [corporationId])
 
   const load = useCallback(async () => {
     const requestId = ++requestRef.current
@@ -393,9 +366,10 @@ export function useCorporationDetails(corporationId: number | undefined) {
           ).then(parseOperatorAuthorizations)
         ),
         degrade('proposals', [] as ProposalRow[], () =>
-          fetchJson(proposalsUrl(corporationId, cursorsRef.current.at(-1)), 'Unable to fetch proposals').then(
-            parseProposals
-          )
+          fetchJson(
+            `${VERANA_REST_ENDPOINT_GROUP}/proposals?corporation_id=${corporationId}&limit=1024`,
+            'Unable to fetch proposals'
+          ).then(parseProposals)
         ),
         degrade('trust deposit', null as CorporationTrustDeposit | null, () =>
           fetchJson(`${VERANA_REST_ENDPOINT_TRUST_DEPOSIT}/get/${corporationId}`, 'Unable to fetch the trust deposit')
@@ -451,28 +425,8 @@ export function useCorporationDetails(corporationId: number | undefined) {
 
   useEffect(() => {
     setDetails(null)
-    cursorsRef.current = []
-    setCursorDepth(0)
     void load()
   }, [load])
-
-  const proposalsPage = {
-    loading: proposalsLoading,
-    hasPrevious: cursorDepth > 0,
-    hasNext: (details?.proposals.length ?? 0) === PROPOSALS_PAGE_SIZE,
-    onNext: () => {
-      const last = details?.proposals.at(-1)
-      if (!last) return
-      cursorsRef.current = [...cursorsRef.current, last.id]
-      setCursorDepth(cursorsRef.current.length)
-      void loadProposals()
-    },
-    onPrevious: () => {
-      cursorsRef.current = cursorsRef.current.slice(0, -1)
-      setCursorDepth(cursorsRef.current.length)
-      void loadProposals()
-    },
-  }
 
   const detailsRef = useRef(details)
   detailsRef.current = details
@@ -490,5 +444,5 @@ export function useCorporationDetails(corporationId: number | undefined) {
     [corporationId, load]
   )
 
-  return { details, loading, error, refetch: load, proposalsPage, applyEvents }
+  return { details, loading, error, refetch: load, applyEvents }
 }
