@@ -1,7 +1,7 @@
 'use client'
 
-import type { ActivityRow } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
+import type { ActivityRow } from '@/lib/activity-history'
 import { shortenMiddle } from '@/util/util'
 import { formatDate } from './shared'
 

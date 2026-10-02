@@ -11,7 +11,6 @@ import { logger } from '@/lib/logger'
 import {
   fetchCorporationHistory,
   parseGroup,
-  parseHistory,
   parseOperatorAuthorizations,
   parseProfile,
   parseProposals,
@@ -238,59 +237,6 @@ describe('parseProposals', () => {
 
   it('rejects a proposal without its running tally', () => {
     expect(() => parseProposals({ proposals: [{ id: 9 }] })).toThrow('tally')
-  })
-})
-
-describe('parseHistory', () => {
-  it('reads the live activity shape newest first and tolerates a missing account', () => {
-    const rows = parseHistory({
-      entity_type: 'Corporation',
-      entity_id: '13',
-      activity: [
-        {
-          id: 1,
-          timestamp: '2026-08-30T09:00:00Z',
-          block_height: 404000,
-          entity_type: 'Corporation',
-          entity_id: '13',
-          msg: 'SlashTrustDeposit',
-          changes: null,
-        },
-        {
-          id: 3,
-          timestamp: '2026-09-01T11:00:00Z',
-          block_height: 405300,
-          entity_type: 'Corporation',
-          entity_id: '13',
-          msg: 'UpdateCorporation',
-          changes: { did: 'did:web:acme-trust.ch' },
-          account: 'verana1policy',
-        },
-        {
-          id: 2,
-          timestamp: '2026-09-01T10:00:00Z',
-          block_height: 405000,
-          entity_type: 'Corporation',
-          entity_id: '13',
-          msg: 'CreateCorporation',
-          changes: { did: 'did:web:old.example' },
-          account: 'verana1aaa',
-        },
-      ],
-    })
-    expect(rows.map((row) => row.msg)).toEqual(['UpdateCorporation', 'CreateCorporation', 'SlashTrustDeposit'])
-    expect(rows[2]).toEqual({
-      id: 1,
-      timestamp: '2026-08-30T09:00:00Z',
-      blockHeight: 404000,
-      msg: 'SlashTrustDeposit',
-      account: null,
-      changes: {},
-    })
-  })
-
-  it('rejects an envelope without the activity list', () => {
-    expect(() => parseHistory({ history: [] })).toThrow('activity')
   })
 })
 
