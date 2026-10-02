@@ -4,6 +4,9 @@ import { faBoxArchive, faPenToSquare, faSitemap } from '@fortawesome/free-solid-
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA } from '@/config/env'
+import { useActivityHistory } from '@/hooks/useActivityHistory'
+import { useCanonicalJsonSchema } from '@/hooks/useCanonicalJsonSchema'
 import { useCredentialSchemaData } from '@/hooks/useCredentialSchemaData'
 import { useEcosystemData } from '@/hooks/useEcosystemData'
 import { useActionSigning } from '@/hooks/useSigningMode'
@@ -11,6 +14,7 @@ import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObje
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { isNativePricing } from '@/lib/pricing-asset'
+import { ActivityHistorySection } from '@/ui/common/activity-history-section'
 import { CapabilityButton, EntityActionButton } from '@/ui/common/capability-button'
 import { renderActionComponent } from '@/ui/common/data-view-typed'
 import EcosystemBreadcrumb from '@/ui/common/ecosystem-breadcrumb'
@@ -107,6 +111,10 @@ export default function CredentialSchemaViewPage() {
   const id = params?.id ?? ''
   const router = useRouter()
   const { credentialSchema, errorCredentialSchema, refetch: refetchCredentialSchema } = useCredentialSchemaData(id)
+  const canonicalJsonSchema = useCanonicalJsonSchema(id)
+  const history = useActivityHistory(
+    VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA && id ? `${VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA}/history/${id}` : undefined
+  )
   const ecosystemId = credentialSchema ? String(credentialSchema.ecosystemId) : ''
   const { ecosystem } = useEcosystemData(ecosystemId)
   const { actingCorporation } = useUserCorporation()
@@ -119,6 +127,7 @@ export default function CredentialSchemaViewPage() {
 
   const refresh = () => {
     void refetchCredentialSchema()
+    void history.refetch()
   }
   const { submitTx } = useSubmitTxMsgTypeFromObject(() => setMode('view'), refresh)
 
@@ -298,9 +307,22 @@ export default function CredentialSchemaViewPage() {
           {t('dataview.cs.fields.jsonSchema', 'JSON Schema')}
         </h2>
         <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-4 sm:p-6">
-          <JsonCodeBlock value={credentialSchema.jsonSchema} />
+          {canonicalJsonSchema.schema ? (
+            <JsonCodeBlock value={canonicalJsonSchema.schema} />
+          ) : canonicalJsonSchema.failed ? (
+            <>
+              <p className="mb-3 text-sm text-amber-700 dark:text-amber-300">
+                {translate('dataview.cs.jsonSchema.stored')}
+              </p>
+              <JsonCodeBlock value={credentialSchema.jsonSchema} />
+            </>
+          ) : (
+            <div className="skeleton h-24 w-full" />
+          )}
         </div>
       </section>
+
+      <ActivityHistorySection history={history} />
 
       <ModalAction isActive={archiveActive} titleKey={archiveTitleKey} onClose={() => setArchiveActive(false)}>
         {renderActionComponent(archiveMessageType, () => setArchiveActive(false), credentialSchema, refresh)}

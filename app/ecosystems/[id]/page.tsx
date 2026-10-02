@@ -4,13 +4,16 @@ import { faArrowLeft, faArrowUp, faBoxArchive, faPenToSquare, faPlus } from '@fo
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { VERANA_REST_ENDPOINT_ECOSYSTEM } from '@/config/env'
 import AddCredentialSchemaPage from '@/credential-schemas/add/add'
+import { useActivityHistory } from '@/hooks/useActivityHistory'
 import { useCredentialSchemas } from '@/hooks/useCredentialSchemas'
 import { useEcosystemData } from '@/hooks/useEcosystemData'
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { useLanguageLabel } from '@/lib/language'
+import { ActivityHistorySection } from '@/ui/common/activity-history-section'
 import { EntityActionButton } from '@/ui/common/capability-button'
 import CsSummaryCard from '@/ui/common/cs-summary-card'
 import { renderActionComponent } from '@/ui/common/data-view-typed'
@@ -30,6 +33,9 @@ export default function EcosystemViewPage() {
   const router = useRouter()
   const { actingCorporation } = useUserCorporation()
   const { ecosystem, errorEcosystem, refetch: refetchEcosystem } = useEcosystemData(id)
+  const history = useActivityHistory(
+    VERANA_REST_ENDPOINT_ECOSYSTEM && id ? `${VERANA_REST_ENDPOINT_ECOSYSTEM}/history/${id}` : undefined
+  )
   const {
     credentialSchemas,
     errorCredentialSchemas,
@@ -46,6 +52,7 @@ export default function EcosystemViewPage() {
 
   const refreshEcosystem = () => {
     void refetchEcosystem()
+    void history.refetch()
   }
   const refreshCredentialSchemas = () => {
     void refetchCredentialSchemas()
@@ -323,6 +330,8 @@ export default function EcosystemViewPage() {
           </div>
         )}
       </section>
+
+      <ActivityHistorySection history={history} />
 
       <ModalAction isActive={archiveActive} titleKey={archiveTitleKey} onClose={() => setArchiveActive(false)}>
         {renderActionComponent(archiveMessageType, () => setArchiveActive(false), ecosystem, refreshEcosystem)}

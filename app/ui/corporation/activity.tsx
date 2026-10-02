@@ -1,11 +1,27 @@
 'use client'
 
-import type { ActivityRow } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
+import type { ActivityRow } from '@/lib/activity-history'
 import { shortenMiddle } from '@/util/util'
 import { formatDate } from './shared'
 
-const SUMMARY_KEYS = ['did', 'grantee', 'operator', 'amount', 'slashed', 'repaid', 'threshold', 'language'] as const
+const SUMMARY_KEYS = [
+  'title',
+  'did',
+  'grantee',
+  'operator',
+  'amount',
+  'slashed',
+  'repaid',
+  'threshold',
+  'language',
+  'active_version',
+  'issuer_grantor_validation_validity_period',
+  'verifier_grantor_validation_validity_period',
+  'issuer_validation_validity_period',
+  'verifier_validation_validity_period',
+  'holder_validation_validity_period',
+] as const
 
 export function humanizeMsg(msg: string): string {
   return msg.replace(/^Msg/, '').replace(/([a-z])([A-Z])/g, '$1 $2')
