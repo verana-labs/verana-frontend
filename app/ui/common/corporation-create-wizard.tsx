@@ -68,7 +68,13 @@ function StepDots({ current, created }: { current: WizardStep; created: boolean 
   )
 }
 
-export function CorporationCreateWizard({ onDone }: { onDone: () => void }) {
+export function CorporationCreateWizard({
+  onCreating,
+  onDone,
+}: {
+  onCreating: (active: boolean) => void
+  onDone: () => void
+}) {
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
   const { createOnly, grantFirstOperator } = useActionCorporation()
@@ -123,13 +129,16 @@ export function CorporationCreateWizard({ onDone }: { onDone: () => void }) {
   const totalWeight = totalMemberWeight(members)
 
   async function create() {
+    onCreating(true)
     setBusy(true)
     try {
       const corporation = await createOnly(createParams)
-      if (corporation) {
-        setCreated(corporation)
-        setStep('grant')
+      if (!corporation) {
+        onCreating(false)
+        return
       }
+      setCreated(corporation)
+      setStep('grant')
     } finally {
       setBusy(false)
     }

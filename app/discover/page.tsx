@@ -14,6 +14,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { translate } from '@/i18n/dataview'
 import { DidEnrichment, fetchDidEnrichment, serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import { useDiscoverCtx } from '@/providers/api-rest-query-provider-context'
+import ClaimText from '@/ui/common/claim-text'
 import CsCard from '@/ui/common/cs-card'
 import LogoImage from '@/ui/common/logo-image'
 import TitleAndButton from '@/ui/common/title-and-button'
@@ -178,12 +179,12 @@ export default function DiscoverJoinPage() {
                         <TrustBadge state={enrichment?.trustStatus} size="xl" />
                       </div>
                       {enrichment?.serviceDescription ? (
-                        <p
+                        <ClaimText
+                          text={enrichment.serviceDescription}
+                          format={enrichment.serviceDescriptionFormat}
                           className="text-xs text-neutral-70 dark:text-neutral-70 mt-1 line-clamp-2 break-words"
                           title={enrichment.serviceDescription}
-                        >
-                          {enrichment.serviceDescription}
-                        </p>
+                        />
                       ) : null}
                     </div>
                   </div>

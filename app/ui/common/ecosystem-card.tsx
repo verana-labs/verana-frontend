@@ -8,6 +8,7 @@ import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { translate } from '@/i18n/dataview'
 import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import { trustStateBadge } from '@/lib/trust-state'
+import ClaimText from '@/ui/common/claim-text'
 import LogoImage from '@/ui/common/logo-image'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { resolveTranslatable } from '@/ui/dataview/types'
@@ -115,12 +116,12 @@ export default function EcosystemCard({ ecosystem }: Props) {
               />
             </div>
             {ecosystemDescription ? (
-              <p
+              <ClaimText
+                text={ecosystemDescription}
+                format={enrichment?.serviceDescriptionFormat}
                 className="text-xs text-neutral-70 dark:text-neutral-70 mt-1 line-clamp-2 break-words"
                 title={ecosystemDescription}
-              >
-                {ecosystemDescription}
-              </p>
+              />
             ) : null}
           </div>
         </div>

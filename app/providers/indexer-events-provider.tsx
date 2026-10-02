@@ -231,6 +231,20 @@ export function IndexerEventsProvider({ children }: { children: React.ReactNode 
   return <IndexerEventsContext.Provider value={value}>{children}</IndexerEventsContext.Provider>
 }
 
+// Delivers the events of one Corporation's subscription, per [VFE-DATA-WS-3]. The listener identity can
+// change on every render, so the ref keeps the subscription tied to the Corporation alone.
+export function useIndexerEntityEvents(corporationId: number | undefined, apply: (events: IndexerEvent[]) => void) {
+  const { addIndexerEventListener } = useIndexerEvents()
+  const applyRef = useRef(apply)
+  applyRef.current = apply
+  useEffect(() => {
+    if (corporationId === undefined) return
+    return addIndexerEventListener((id, events) => {
+      if (id === corporationId) applyRef.current(events)
+    })
+  }, [addIndexerEventListener, corporationId])
+}
+
 export function useIndexerEvents() {
   const context = useContext(IndexerEventsContext)
   if (!context) {

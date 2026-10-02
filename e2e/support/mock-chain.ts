@@ -143,7 +143,7 @@ const broadcastSyncResult = () => ({
   hash: FAKE_TX_HASH_HEX,
 })
 
-const txSearchResult = (ecosystemId: string) => ({
+const txSearchResult = (ecosystemId: string, corporationId: number, policyAddress: string) => ({
   txs: [
     {
       hash: FAKE_TX_HASH_HEX,
@@ -162,6 +162,13 @@ const txSearchResult = (ecosystemId: string) => ({
             attributes: [
               { key: 'ecosystem_id', value: ecosystemId, index: true },
               { key: 'creator', value: 'e2e', index: true },
+            ],
+          },
+          {
+            type: 'create_corporation',
+            attributes: [
+              { key: 'corporation_id', value: String(corporationId), index: true },
+              { key: 'policy_address', value: policyAddress, index: true },
             ],
           },
         ],
@@ -237,7 +244,7 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
         if (typeof req.params?.tx === 'string') broadcasts.push(req.params.tx)
         return fulfill(broadcastSyncResult())
       case 'tx_search':
-        return fulfill(txSearchResult(ecosystemId))
+        return fulfill(txSearchResult(ecosystemId, corporationId, corporationPolicyAddress))
       case 'health':
         return fulfill({})
       default:

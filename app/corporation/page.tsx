@@ -12,7 +12,7 @@ import { EVENT_COALESCE_MS, refreshTargets } from '@/lib/indexer-event'
 import { logger } from '@/lib/logger'
 import { type DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
 import { corporationSigningMode, useCorporationManage } from '@/msg/actions_hooks/actionCorporationManage'
-import { useIndexerEvents } from '@/providers/indexer-events-provider'
+import { useIndexerEntityEvents, useIndexerEvents } from '@/providers/indexer-events-provider'
 import { CorporationCreateWizard } from '@/ui/common/corporation-create-wizard'
 import { ProposalComposer } from '@/ui/common/proposal-composer'
 import { type CorporationTab, type CorporationView, TABS, TabsLayout } from '@/ui/corporation/layouts'
@@ -28,8 +28,11 @@ export default function CorporationPage() {
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
   const { actingCorporation, loading: actingLoading, refetch: refetchCorporations } = useUserCorporation()
-  const { details, loading, error, refetch, proposalsPage } = useCorporationDetails(actingCorporation?.corporation.id)
+  const { details, loading, error, refetch, proposalsPage, applyEvents } = useCorporationDetails(
+    actingCorporation?.corporation.id
+  )
   const { addIndexerEventListener } = useIndexerEvents()
+  useIndexerEntityEvents(actingCorporation?.corporation.id, applyEvents)
   const [votesVersion, setVotesVersion] = useState(0)
   const refreshAfterTx = () => {
     void refetch()
@@ -41,6 +44,7 @@ export default function CorporationPage() {
   const [rotating, setRotating] = useState(false)
   const [composing, setComposing] = useState(false)
   const [enrichment, setEnrichment] = useState<DidEnrichment | null>(null)
+  const [wizardPinned, setWizardPinned] = useState(false)
 
   const actingCorporationId = actingCorporation?.corporation.id
   // [VFE-DATA-WS-3] group and delegation events of the acting Corporation refresh what this page shows.
@@ -88,18 +92,20 @@ export default function CorporationPage() {
     router.replace(`${pathname}${params.size ? `?${params.toString()}` : ''}`)
   }
 
-  if (actingLoading || (actingCorporation && loading && !details)) {
+  if (!wizardPinned && (actingLoading || (actingCorporation && loading && !details))) {
     return <p className="p-6 text-sm text-gray-500">{translate('corporation.page.loading')}</p>
   }
 
-  if (!actingCorporation || creating) {
+  if (!actingCorporation || creating || wizardPinned) {
     return (
       <>
         {!actingCorporation ? (
           <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">{translate('corporation.page.nocorp')}</p>
         ) : null}
         <CorporationCreateWizard
+          onCreating={setWizardPinned}
           onDone={() => {
+            setWizardPinned(false)
             void refetchCorporations()
             router.replace(pathname)
           }}

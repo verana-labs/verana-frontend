@@ -5,12 +5,30 @@ vi.mock('@/config/env', () => ({
   VERANA_REST_ENDPOINT_PARTICIPANT: 'https://indexer.test/v4/participant',
 }))
 
-import { fetchDidEnrichment, invalidateDid, mapResolveResult } from '@/lib/resolverClient'
+import {
+  ALL_PARTICIPATION_STATES,
+  fetchAgentResolution,
+  fetchDidEnrichment,
+  invalidateDid,
+  isMarkdownDescriptionFormat,
+  mapAgentResolution,
+  mapResolveResult,
+} from '@/lib/resolverClient'
 
 const DID = 'did:web:service.example'
 const ISSUER_DID = 'did:web:ecs.example'
 
-function resolveResponse({ withLogos = true, trusted = true, expiresAtTime = '2036-01-01T00:00:00.000Z' } = {}) {
+function resolveResponse({
+  withLogos = true,
+  trusted = true,
+  expiresAtTime = '2036-01-01T00:00:00.000Z',
+  descriptionFormat,
+}: {
+  withLogos?: boolean
+  trusted?: boolean
+  expiresAtTime?: string | null
+  descriptionFormat?: string
+} = {}) {
   return {
     did: DID,
     trusted,
@@ -23,6 +41,7 @@ function resolveResponse({ withLogos = true, trusted = true, expiresAtTime = '20
         credentialSubject: {
           name: 'Acme Portal',
           description: 'Acme customer portal',
+          ...(descriptionFormat ? { descriptionFormat } : {}),
           ...(withLogos ? { logoUri: 'https://service.example/logo.png' } : {}),
           minimumAgeRequired: 18,
           termsAndConditionsUri: 'https://service.example/terms',
@@ -114,6 +133,135 @@ describe('fetchDidEnrichment', () => {
   })
 })
 
+const agentResolveResponse = {
+  did: DID,
+  trusted: true,
+  ecsCredentials: [
+    {
+      id: 'urn:uuid:ecs-service',
+      ecsSchema: 'ServiceCredential',
+      credentialSchemaId: 11,
+      ecosystemId: 1,
+      credentialSubject: { name: 'Acme Portal' },
+    },
+  ],
+  participations: [
+    {
+      id: 501,
+      vsOperator: 'verana1vs',
+      role: 'ISSUER',
+      state: 'ACTIVE',
+      credentialSchemaId: 1234,
+      ecosystemId: 9876,
+      validatorParticipantId: 401,
+    },
+    { role: 'VERIFIER', state: 'ACTIVE' },
+  ],
+  services: [
+    { id: `${DID}#admin`, type: 'VsAgentAdminAPI', serviceEndpoint: 'https://service.example/admin' },
+    { serviceEndpoint: 'https://service.example/orphan' },
+  ],
+  presentations: [
+    {
+      id: 'https://service.example/vt/vp1.json',
+      vtcCredentials: [
+        { id: 'urn:uuid:vtc-1', credentialSchemaId: 30_001, ecosystemId: 9876 },
+        { credentialSchemaId: 30_002 },
+      ],
+    },
+  ],
+}
+
+describe('mapAgentResolution', () => {
+  it('maps the participations, the service endpoints and the presented credentials', () => {
+    const resolution = mapAgentResolution(DID, agentResolveResponse)
+
+    expect(resolution.enrichment.serviceName).toBe('Acme Portal')
+    expect(resolution.participations).toEqual([
+      {
+        id: 501,
+        vsOperator: 'verana1vs',
+        role: 'ISSUER',
+        state: 'ACTIVE',
+        credentialSchemaId: 1234,
+        ecosystemId: 9876,
+        validatorParticipantId: 401,
+      },
+    ])
+    expect(resolution.services).toEqual([
+      { id: `${DID}#admin`, type: 'VsAgentAdminAPI', serviceEndpoint: 'https://service.example/admin' },
+    ])
+    expect(resolution.credentials).toEqual([
+      {
+        id: 'urn:uuid:ecs-service',
+        ecsSchema: 'ServiceCredential',
+        credentialSchemaId: 11,
+        ecosystemId: 1,
+        presentationUrl: null,
+      },
+      {
+        id: 'urn:uuid:vtc-1',
+        ecsSchema: null,
+        credentialSchemaId: 30_001,
+        ecosystemId: 9876,
+        presentationUrl: 'https://service.example/vt/vp1.json',
+      },
+    ])
+  })
+
+  it('lists the ECS credentials of a resolve that identifies them by schema alone', () => {
+    const credentials = mapAgentResolution(DID, resolveResponse()).credentials
+
+    expect(credentials.map((credential) => credential.ecsSchema)).toEqual([
+      'ServiceCredential',
+      'OrganizationCredential',
+    ])
+    expect(credentials.map((credential) => credential.id)).toEqual([
+      'ecs:ServiceCredential',
+      'ecs:OrganizationCredential',
+    ])
+  })
+
+  it('returns empty sections when the resolve carries none', () => {
+    expect(mapAgentResolution(DID, { did: DID, trusted: false })).toEqual({
+      enrichment: expect.objectContaining({ trustStatus: 'UNTRUSTED' }),
+      participations: [],
+      services: [],
+      credentials: [],
+    })
+  })
+})
+
+describe('fetchAgentResolution', () => {
+  it('asks the resolver for the sections of the card, scoped to the requested participation states', async () => {
+    const fetchMock = stubFetch(agentResolveResponse)
+
+    await fetchAgentResolution(DID, ALL_PARTICIPATION_STATES)
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://indexer.test/v4/verifiable-trust/resolve',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          did: DID,
+          ecsCredentials: true,
+          participations: { states: ALL_PARTICIPATION_STATES },
+          services: true,
+          presentations: {},
+        }),
+      })
+    )
+  })
+
+  it('remembers a failed resolve, so a burst of block events does not retry it per event', async () => {
+    const fetchMock = stubFetch({ error: 'boom' }, 500)
+
+    await expect(fetchAgentResolution(DID, ALL_PARTICIPATION_STATES)).rejects.toThrow()
+    await expect(fetchAgentResolution(DID, ALL_PARTICIPATION_STATES)).rejects.toThrow()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('mapResolveResult', () => {
   it('treats an expired evaluation as untrusted', () => {
     const enrichment = mapResolveResult(DID, resolveResponse({ expiresAtTime: '2020-01-01T00:00:00.000Z' }))
@@ -123,5 +271,23 @@ describe('mapResolveResult', () => {
   it('treats a never-expiring evaluation as trusted', () => {
     const raw = { ...resolveResponse(), expiresAtTime: null }
     expect(mapResolveResult(DID, raw).trustStatus).toBe('TRUSTED')
+  })
+
+  it('carries the descriptionFormat claim of the service credential', () => {
+    const withFormat = mapResolveResult(DID, resolveResponse({ descriptionFormat: 'text/markdown' }))
+    expect(withFormat.serviceDescriptionFormat).toBe('text/markdown')
+    expect(mapResolveResult(DID, resolveResponse()).serviceDescriptionFormat).toBeUndefined()
+  })
+})
+
+describe('isMarkdownDescriptionFormat', () => {
+  it('renders as Markdown only for text/markdown', () => {
+    expect(isMarkdownDescriptionFormat('text/markdown')).toBe(true)
+  })
+
+  it('falls back to plain text for text/plain, an absent claim and any other value', () => {
+    for (const format of ['text/plain', undefined, '', 'markdown', 'Text/Markdown', 'text/html']) {
+      expect(isMarkdownDescriptionFormat(format)).toBe(false)
+    }
   })
 })

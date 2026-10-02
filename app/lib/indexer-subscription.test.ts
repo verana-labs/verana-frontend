@@ -67,12 +67,14 @@ function storedEvent(txHash: string, blockHeight: number, messageIndex = 0): Ind
     eventType: 'StartParticipantOP',
     module: 'pp',
     did: null,
+    relatedDids: [],
     blockHeight,
     txHash,
     messageIndex,
     sender: 'verana1sender',
     grantee: null,
     corporationId: null,
+    relatedCorporationIds: [],
   }
 }
 

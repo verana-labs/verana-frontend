@@ -19,6 +19,7 @@ import { translate } from '@/i18n/dataview'
 import { FEE_BEARING_PARTICIPANT_ACTIONS, formatSchemaAmount, isNativePricing } from '@/lib/pricing-asset'
 import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import ActionFieldButtonModal from '@/ui/common/action-field-button-modal'
+import ClaimText from '@/ui/common/claim-text'
 import type { ActionFieldProps } from '@/ui/common/data-view-typed'
 import { FeeDistributionPreview } from '@/ui/common/fee-distribution'
 import LogoImage from '@/ui/common/logo-image'
@@ -396,7 +397,11 @@ export default function ParticipantCard({
                 <TrustBadge state={enrichment?.trustStatus} size="xl" />
               </div>
               {enrichment?.serviceDescription ? (
-                <p className="text-sm text-neutral-70 mb-3">{enrichment.serviceDescription}</p>
+                <ClaimText
+                  text={enrichment.serviceDescription}
+                  format={enrichment.serviceDescriptionFormat}
+                  className="text-sm text-neutral-70 mb-3"
+                />
               ) : null}
               <div className="flex flex-wrap items-center gap-3 text-sm">
                 {enrichment?.serviceMinAge ? (

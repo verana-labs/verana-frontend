@@ -11,12 +11,14 @@ export type IndexerEvent = {
   eventType: string
   module: string
   did: string | null
+  relatedDids: string[]
   blockHeight: number
   txHash: string
   messageIndex: number
   sender: string
   grantee: string | null
   corporationId: number | null
+  relatedCorporationIds: number[]
 }
 
 export type IndexerSocketMessage =
@@ -48,6 +50,19 @@ function parsed<T>(build: () => T): T | null {
   }
 }
 
+function integerOrNull(value: unknown): number | null {
+  return typeof value === 'number' && Number.isSafeInteger(value) ? value : null
+}
+
+// The related ids only widen a refresh, so a malformed entry is dropped instead of the whole event.
+function relatedStrings(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : []
+}
+
+function relatedIntegers(value: unknown): number[] {
+  return Array.isArray(value) ? value.map(integerOrNull).filter((entry): entry is number => entry !== null) : []
+}
+
 function parseEvent(value: unknown, path: string): IndexerEvent {
   const event = record(value, path)
   const payload = record(event.payload, `${path}.payload`)
@@ -55,6 +70,7 @@ function parseEvent(value: unknown, path: string): IndexerEvent {
     eventType: string(event.event_type, `${path}.event_type`),
     module: string(payload.module, `${path}.payload.module`),
     did: nullableString(event.did, `${path}.did`),
+    relatedDids: relatedStrings(payload.related_dids),
     blockHeight: integer(event.block_height, `${path}.block_height`),
     txHash: string(event.tx_hash, `${path}.tx_hash`),
     messageIndex: integer(payload.message_index, `${path}.payload.message_index`),
@@ -64,6 +80,7 @@ function parseEvent(value: unknown, path: string): IndexerEvent {
       payload.corporation_id === undefined || payload.corporation_id === null
         ? null
         : integer(payload.corporation_id, `${path}.payload.corporation_id`),
+    relatedCorporationIds: relatedIntegers(payload.related_corporation_ids),
   }
 }
 
@@ -152,4 +169,25 @@ export function triggersDiscovery(event: IndexerEvent, account: string): boolean
     )
   }
   return event.module === 'group' && event.eventType === 'UpdateGroupMembers'
+}
+
+// Per [VFE-DATA-WS-3] only events of the acting Corporation drive a refresh. A per-Corporation stream
+// already scopes them, so this stays a second filter for the views that also know the DIDs they hold.
+export function concernsCorporation(event: IndexerEvent, corporationId: number, knownDids: Set<string>): boolean {
+  if (event.corporationId !== null || event.relatedCorporationIds.length > 0) {
+    return event.corporationId === corporationId || event.relatedCorporationIds.includes(corporationId)
+  }
+  if (event.did !== null && knownDids.has(event.did)) return true
+  return event.relatedDids.some((did) => knownDids.has(did))
+}
+
+export const SESSION_EVENT = 'CreateOrUpdateParticipantSession'
+const RESOLVER_EVENT = 'TriggerResolver'
+const LIST_NEUTRAL_EVENTS = new Set([SESSION_EVENT, RESOLVER_EVENT])
+const ENTITY_LIST_MODULES = new Set(['pp', 'de'])
+
+export function refreshesEntityLists(event: IndexerEvent, corporationId: number, knownDids: Set<string>): boolean {
+  if (LIST_NEUTRAL_EVENTS.has(event.eventType)) return false
+  if (!ENTITY_LIST_MODULES.has(event.module)) return false
+  return concernsCorporation(event, corporationId, knownDids)
 }

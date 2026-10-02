@@ -5,15 +5,20 @@ vi.mock('@/config/env', () => ({ VERANA_REST_ENDPOINT_INDEXER: 'https://indexer.
 vi.mock('@/lib/logger', () => ({ logger: { warn: vi.fn(), error: vi.fn() } }))
 
 import {
+  concernsCorporation,
   type IndexerEvent,
   indexerEventKey,
   indexerEventsUrl,
   parseIndexerBlockHeight,
   parseIndexerEventsPage,
   parseIndexerSocketMessage,
+  refreshesEntityLists,
   refreshTargets,
   triggersDiscovery,
 } from '@/lib/indexer-event'
+
+const AGENT_DID = 'did:web:agent.example'
+const known = new Set([AGENT_DID])
 
 const participantEvent = {
   type: 'indexer-event',
@@ -45,12 +50,14 @@ function event(overrides: Partial<IndexerEvent>): IndexerEvent {
     eventType: 'StartParticipantOP',
     module: 'pp',
     did: 'did:web:participant.example',
+    relatedDids: [],
     blockHeight: 102,
     txHash: 'AB12',
     messageIndex: 0,
     sender: 'verana1sender',
     grantee: null,
     corporationId: 7,
+    relatedCorporationIds: [],
     ...overrides,
   }
 }
@@ -93,12 +100,14 @@ describe('parseIndexerSocketMessage', () => {
           eventType: 'StartParticipantOP',
           module: 'pp',
           did: 'did:web:participant.example',
+          relatedDids: [],
           blockHeight: 102,
           txHash: 'AB12',
           messageIndex: 0,
           sender: 'verana1sender',
           grantee: null,
           corporationId: 7,
+          relatedCorporationIds: [],
         },
       ],
     })
@@ -118,6 +127,58 @@ describe('parseIndexerSocketMessage', () => {
   it('ignores legacy and malformed messages', () => {
     expect(parseIndexerSocketMessage({ type: 'block-indexed', height: 10_928 })).toBeNull()
     expect(parseIndexerSocketMessage({ type: 'block', block: '10928' })).toBeNull()
+  })
+
+  it('drops the unusable entries of the related DIDs and Corporation ids', () => {
+    const message = parseIndexerSocketMessage({
+      type: 'block',
+      block: 102,
+      events: [
+        {
+          ...participantEvent,
+          did: AGENT_DID,
+          payload: {
+            ...participantEvent.payload,
+            related_dids: ['did:web:validator.example', 7],
+            related_corporation_ids: [43, 'nope'],
+          },
+        },
+      ],
+    })
+
+    expect(message?.type === 'block' && message.events[0]).toMatchObject({
+      did: AGENT_DID,
+      relatedDids: ['did:web:validator.example'],
+      relatedCorporationIds: [43],
+    })
+  })
+})
+
+describe('concernsCorporation', () => {
+  it('matches on the Corporation ids of the payload', () => {
+    expect(concernsCorporation(event({ corporationId: 42 }), 42, known)).toBe(true)
+    expect(concernsCorporation(event({ relatedCorporationIds: [9, 42] }), 42, known)).toBe(true)
+  })
+
+  it('rejects another Corporation even when the event carries a known DID', () => {
+    expect(concernsCorporation(event({ corporationId: 7, did: AGENT_DID }), 42, known)).toBe(false)
+  })
+
+  it('falls back to the known DIDs when the payload carries no Corporation id', () => {
+    expect(concernsCorporation(event({ corporationId: null, did: AGENT_DID }), 42, known)).toBe(true)
+    expect(concernsCorporation(event({ corporationId: null, relatedDids: [AGENT_DID] }), 42, known)).toBe(true)
+    expect(concernsCorporation(event({ corporationId: null, did: 'did:web:other.example' }), 42, known)).toBe(false)
+  })
+})
+
+describe('refreshesEntityLists', () => {
+  it('skips the session and resolver events of the acting Corporation', () => {
+    const session = event({ eventType: 'CreateOrUpdateParticipantSession', corporationId: 42 })
+    const resolver = event({ eventType: 'TriggerResolver', corporationId: 42 })
+
+    expect(refreshesEntityLists(session, 42, known)).toBe(false)
+    expect(refreshesEntityLists(resolver, 42, known)).toBe(false)
+    expect(refreshesEntityLists(event({ corporationId: 42 }), 42, known)).toBe(true)
   })
 })
 

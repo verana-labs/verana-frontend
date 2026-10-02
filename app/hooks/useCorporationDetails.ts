@@ -5,10 +5,14 @@ import {
   VERANA_REST_ENDPOINT_CORPORATION,
   VERANA_REST_ENDPOINT_DELEGATION,
   VERANA_REST_ENDPOINT_GROUP,
+  VERANA_REST_ENDPOINT_PARTICIPANT,
   VERANA_REST_ENDPOINT_TRUST_DEPOSIT,
 } from '@/config/env'
-import { indexerValidators } from '@/lib/indexer-json'
+import { parseParticipantsResponse } from '@/hooks/useParticipants'
+import { type IndexerEvent, refreshesEntityLists } from '@/lib/indexer-event'
+import { degrade, fetchJson, indexerValidators } from '@/lib/indexer-json'
 import { logger } from '@/lib/logger'
+import type { Participant } from '@/ui/dataview/datasections/participant'
 
 const { record, string, integer, optionalString, nullableString, stringArray, decimalAmount } =
   indexerValidators('corporation page')
@@ -50,11 +54,21 @@ export interface OperatorAuthorizationRow {
   msgTypes: string[]
 }
 
+export interface CoinAmount {
+  denom: string
+  amount: string
+}
+
 export interface VsOperatorAuthorizationRow {
   vsOperator: string
   participantId: number
   msgTypes: string[]
+  spendLimit: CoinAmount[] | null
+  remainingSpend: CoinAmount[] | null
+  feeSpendLimit: CoinAmount[] | null
+  withFeegrant: boolean
   expiration: string | null
+  period: string | null
 }
 
 export interface ProposalTally {
@@ -87,6 +101,7 @@ export interface ActivityRow {
 export interface DegradedSections {
   trustDeposit: boolean
   operatorAuthorizations: boolean
+  vsOperatorAuthorizations: boolean
   proposals: boolean
 }
 
@@ -97,29 +112,10 @@ export interface CorporationDetails {
   trustDeposit: CorporationTrustDeposit | null
   operatorAuthorizations: OperatorAuthorizationRow[]
   vsOperatorAuthorizations: VsOperatorAuthorizationRow[]
+  participantsById: Map<number, Participant>
   proposals: ProposalRow[]
   history: ActivityRow[]
   degraded: DegradedSections
-}
-
-async function fetchJson(url: string, context: string): Promise<unknown> {
-  const response = await fetch(url)
-  if (!response.ok) throw new Error(`${context}: ${response.status}`)
-  return response.json()
-}
-
-interface Degradable<T> {
-  value: T
-  failed: boolean
-}
-
-async function degrade<T>(context: string, fallback: T, task: () => Promise<T>): Promise<Degradable<T>> {
-  try {
-    return { value: await task(), failed: false }
-  } catch (cause) {
-    logger.error(context, cause)
-    return { value: fallback, failed: true }
-  }
 }
 
 function nullWhenMissing(cause: unknown): null {
@@ -191,6 +187,18 @@ export function parseOperatorAuthorizations(payload: unknown): OperatorAuthoriza
   })
 }
 
+function coinAmounts(value: unknown, path: string): CoinAmount[] | null {
+  if (value === undefined || value === null) return null
+  if (!Array.isArray(value)) throw new Error(`Invalid corporation page response: ${path}`)
+  return value.map((entry, index) => {
+    const coin = record(entry, `${path}[${index}]`)
+    return {
+      denom: string(coin.denom, `${path}[${index}].denom`),
+      amount: decimalAmount(coin.amount, `${path}[${index}].amount`),
+    }
+  })
+}
+
 export function parseVsOperatorAuthorizations(payload: unknown): VsOperatorAuthorizationRow[] {
   const envelope = record(payload, 'vs authorizations response')
   const rows = Array.isArray(envelope.authorizations) ? envelope.authorizations : []
@@ -206,10 +214,20 @@ export function parseVsOperatorAuthorizations(payload: unknown): VsOperatorAutho
         vsOperator,
         participantId: integer(authorization.participant_id, `${recordPath}.participant_id`),
         msgTypes: stringArray(authorization.msg_types, `${recordPath}.msg_types`),
+        spendLimit: coinAmounts(authorization.spend_limit, `${recordPath}.spend_limit`),
+        remainingSpend: coinAmounts(authorization.remaining_spend, `${recordPath}.remaining_spend`),
+        feeSpendLimit: coinAmounts(authorization.fee_spend_limit, `${recordPath}.fee_spend_limit`),
+        withFeegrant: authorization.with_feegrant === true,
         expiration: nullableString(authorization.expiration ?? null, `${recordPath}.expiration`),
+        period: nullableString(authorization.period ?? null, `${recordPath}.period`),
       }
     })
   })
+}
+
+export function vsOperatorAuthorizationsUrl(corporationId: number, onlyActive: boolean): string {
+  const active = onlyActive ? '&only_active=true' : ''
+  return `${VERANA_REST_ENDPOINT_DELEGATION}/vs-operator-authorizations?corporation_id=${corporationId}${active}&limit=1024`
 }
 
 function parseTally(value: unknown, path: string): ProposalTally {
@@ -386,9 +404,15 @@ export function useCorporationDetails(corporationId: number | undefined) {
         ),
         degrade('vs operator authorizations', [] as VsOperatorAuthorizationRow[], () =>
           fetchJson(
-            `${VERANA_REST_ENDPOINT_DELEGATION}/vs-operator-authorizations?corporation_id=${corporationId}&only_active=true&limit=1024`,
+            vsOperatorAuthorizationsUrl(corporationId, true),
             'Unable to fetch VS operator authorizations'
           ).then(parseVsOperatorAuthorizations)
+        ),
+        degrade('corporation participants', new Map<number, Participant>(), () =>
+          fetchJson(
+            `${VERANA_REST_ENDPOINT_PARTICIPANT}/list?corporation_id=${corporationId}&limit=1024`,
+            'Unable to fetch the corporation participants'
+          ).then((payload) => new Map(parseParticipantsResponse(payload).map((row) => [Number(row.id), row])))
         ),
         fetchCorporationHistory(corporationId),
       ])
@@ -396,7 +420,7 @@ export function useCorporationDetails(corporationId: number | undefined) {
         fetchJson(`${VERANA_REST_ENDPOINT_CORPORATION}/get/${corporationId}`, 'Unable to fetch the corporation'),
         fetchJson(`${VERANA_REST_ENDPOINT_GROUP}/get/${corporationId}`, 'Unable to fetch the group'),
       ])
-      const [authorizations, proposals, trustDeposit, vsAuthorizations, history] = await degrading
+      const [authorizations, proposals, trustDeposit, vsAuthorizations, participants, history] = await degrading
       if (requestRef.current !== requestId) return
       const { members, policy } = parseGroup(groupPayload)
       setDetails({
@@ -406,11 +430,13 @@ export function useCorporationDetails(corporationId: number | undefined) {
         trustDeposit: trustDeposit.value,
         operatorAuthorizations: authorizations.value,
         vsOperatorAuthorizations: vsAuthorizations.value,
+        participantsById: participants.value,
         proposals: proposals.value,
         history,
         degraded: {
           trustDeposit: trustDeposit.failed,
           operatorAuthorizations: authorizations.failed,
+          vsOperatorAuthorizations: vsAuthorizations.failed,
           proposals: proposals.failed,
         },
       })
@@ -448,5 +474,21 @@ export function useCorporationDetails(corporationId: number | undefined) {
     },
   }
 
-  return { details, loading, error, refetch: load, proposalsPage }
+  const detailsRef = useRef(details)
+  detailsRef.current = details
+  const applyEvents = useCallback(
+    (events: IndexerEvent[]) => {
+      const current = detailsRef.current
+      if (corporationId === undefined || !current) return
+      const knownDids = new Set([current.profile.did])
+      for (const participant of current.participantsById.values()) {
+        if (participant.did) knownDids.add(participant.did)
+      }
+      const relevant = events.some((event) => refreshesEntityLists(event, corporationId, knownDids))
+      if (relevant) void load()
+    },
+    [corporationId, load]
+  )
+
+  return { details, loading, error, refetch: load, proposalsPage, applyEvents }
 }

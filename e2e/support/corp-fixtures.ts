@@ -187,3 +187,122 @@ export const HISTORY_13 = [
   ),
   activity(1, '2026-08-30T09:00:00Z', 404000, 'SlashTrustDeposit', { slashed_deposit: 2_000_000, slash_count: 1 }),
 ]
+
+export const ACME_ECOSYSTEM_DID = 'did:web:acme-eco.example'
+export const AGENT_ONE_DID = 'did:web:agent-one.example'
+export const AGENT_TWO_DID = 'did:web:agent-two.example'
+export const AGENT_IDLE_DID = 'did:web:agent-idle.example'
+export const AGENT_UNVERIFIABLE_DID = 'did:web:agent-unverifiable.example'
+export const VS_OPERATOR = 'verana1vs0per8t0rzk7d4uwqe9nzx3myl5h2gfe4ptas'
+export const AGENT_ADMIN_ENDPOINT = 'https://agent-one.example/admin'
+export const AGENT_ONE_SERVICE_NAME = 'Acme Issuance Agent'
+export const ACME_SERVICE_NAME = 'Acme Trust Registry'
+
+type ParticipantState = 'ACTIVE' | 'INACTIVE'
+type ParticipantRole = 'ECOSYSTEM' | 'ISSUER_GRANTOR' | 'ISSUER' | 'VERIFIER'
+
+function agentParticipant(id: number, did: string, role: ParticipantRole, participantState: ParticipantState) {
+  return {
+    id,
+    schema_id: 26,
+    ecosystem_id: 13,
+    role,
+    did,
+    corporation_id: 13,
+    participant_state: participantState,
+    corporation_available_actions: [],
+    validator_available_actions: [],
+    vs_operator: id === 102 ? VS_OPERATOR : null,
+    created: '2026-09-01T10:30:00Z',
+    modified: '2026-09-01T10:30:00Z',
+  }
+}
+
+export const AGENT_PARTICIPANTS = [
+  agentParticipant(101, ACME_ECOSYSTEM_DID, 'ECOSYSTEM', 'ACTIVE'),
+  agentParticipant(102, AGENT_ONE_DID, 'ISSUER', 'ACTIVE'),
+  agentParticipant(103, AGENT_TWO_DID, 'VERIFIER', 'ACTIVE'),
+  agentParticipant(104, AGENT_IDLE_DID, 'ISSUER', 'INACTIVE'),
+  agentParticipant(105, AGENT_UNVERIFIABLE_DID, 'VERIFIER', 'ACTIVE'),
+]
+
+export const AGENT_ECOSYSTEMS = [
+  {
+    id: 13,
+    did: ACME_ECOSYSTEM_DID,
+    corporation_id: 13,
+    created: '2026-09-01T10:30:00Z',
+    modified: '2026-09-01T10:30:00Z',
+    archived: null,
+    language: 'en',
+    active_version: 1,
+    versions: [{ id: 1, version: 1, active_since: '2026-09-01T10:30:00Z', documents: [] }],
+    participants: 5,
+    active_schemas: 1,
+    weight: 0,
+    issued: 0,
+    verified: 0,
+  },
+]
+
+export const AGENT_SPEND_LIMIT = '5000000'
+export const AGENT_REMAINING_SPEND = '4250000'
+
+export const VS_OPERATOR_AUTHORIZATIONS = [
+  {
+    id: 7,
+    corporation_id: 13,
+    vs_operator: VS_OPERATOR,
+    records: [
+      {
+        participant_id: 102,
+        msg_types: ['/verana.pp.v1.MsgTriggerResolver', '/verana.pp.v1.MsgSetParticipantOPToValidated'],
+        spend_limit: [{ denom: 'uvna', amount: AGENT_SPEND_LIMIT }],
+        remaining_spend: [{ denom: 'uvna', amount: AGENT_REMAINING_SPEND }],
+        fee_spend_limit: [{ denom: 'uvna', amount: '1000000' }],
+        with_feegrant: true,
+        expiration: '2026-10-27T12:00:00Z',
+        period: '2592000s',
+      },
+    ],
+  },
+]
+
+type AgentResolution = {
+  trusted?: boolean
+  serviceName?: string
+  participations?: { id: number; role: ParticipantRole; state: ParticipantState }[]
+  services?: { id: string; type: string; serviceEndpoint: string }[]
+  presentations?: { id: string; vtcCredentials: { id: string; credentialSchemaId: number; ecosystemId: number }[] }[]
+}
+
+export const AGENT_RESOLUTIONS: Record<string, AgentResolution> = {
+  [ACME_DID]: { serviceName: ACME_SERVICE_NAME, participations: [] },
+  [ACME_ECOSYSTEM_DID]: {
+    serviceName: 'Acme Ecosystem Registry',
+    participations: [{ id: 101, role: 'ECOSYSTEM', state: 'ACTIVE' }],
+  },
+  [AGENT_ONE_DID]: {
+    serviceName: AGENT_ONE_SERVICE_NAME,
+    participations: [{ id: 102, role: 'ISSUER', state: 'ACTIVE' }],
+    services: [
+      { id: '#admin', type: 'VsAgentAdminAPI', serviceEndpoint: AGENT_ADMIN_ENDPOINT },
+      { id: '#vp', type: 'LinkedVerifiablePresentation', serviceEndpoint: 'https://agent-one.example/vp.json' },
+    ],
+    presentations: [
+      {
+        id: 'https://agent-one.example/vp.json',
+        vtcCredentials: [{ id: 'urn:uuid:vtc-102', credentialSchemaId: 26, ecosystemId: 13 }],
+      },
+    ],
+  },
+  [AGENT_TWO_DID]: {
+    serviceName: 'Acme Verification Agent',
+    participations: [{ id: 103, role: 'VERIFIER', state: 'ACTIVE' }],
+  },
+  [AGENT_IDLE_DID]: {
+    serviceName: 'Acme Retired Agent',
+    participations: [{ id: 104, role: 'ISSUER', state: 'INACTIVE' }],
+  },
+  [AGENT_UNVERIFIABLE_DID]: { trusted: false, serviceName: 'Acme Unverifiable Agent', participations: [] },
+}
