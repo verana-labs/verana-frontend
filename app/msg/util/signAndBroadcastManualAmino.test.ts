@@ -98,4 +98,17 @@ describe('signAndBroadcastManualAmino', () => {
     expect(stargate.sign.mock.calls[1]?.[4]).toMatchObject({ sequence: 4 })
     expect(stargate.broadcastTx).toHaveBeenCalledOnce()
   })
+
+  it('reads the sequence again when the mismatch does not carry the expected one', async () => {
+    stargate.getSequence
+      .mockResolvedValueOnce({ accountNumber: 7, sequence: 3 })
+      .mockResolvedValueOnce({ accountNumber: 7, sequence: 6 })
+    stargate.sign
+      .mockRejectedValueOnce(new Error('account sequence mismatch'))
+      .mockResolvedValueOnce(TxRaw.fromPartial({}))
+
+    await send({ fee: confirmedFee })
+
+    expect(stargate.sign.mock.calls[1]?.[4]).toMatchObject({ sequence: 6 })
+  })
 })

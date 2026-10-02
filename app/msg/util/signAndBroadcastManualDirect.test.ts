@@ -1,5 +1,6 @@
 import { toBase64 } from '@cosmjs/encoding'
 import type { OfflineDirectSigner } from '@cosmjs/proto-signing'
+import { BroadcastTxError } from '@cosmjs/stargate'
 import { MsgStoreDigest } from '@verana-labs/verana-types/codec/verana/di/v1/tx'
 import { AuthInfo, TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -173,8 +174,10 @@ describe('signAndBroadcastManualDirect', () => {
   describe('on an account sequence mismatch', () => {
     const address = 'verana1operator'
     const publicKey = Uint8Array.from([2, ...new Array<number>(32).fill(1)])
-    const mismatch = new Error(
-      'Broadcasting transaction failed with code 32 (codespace: sdk). Log: account sequence mismatch, expected 5, got 3: incorrect account sequence'
+    const mismatch = new BroadcastTxError(
+      32,
+      'sdk',
+      'account sequence mismatch, expected 5, got 3: incorrect account sequence'
     )
 
     function directSigner() {
@@ -238,7 +241,7 @@ describe('signAndBroadcastManualDirect', () => {
         .mockResolvedValueOnce({ accountNumber: 7, sequence: 3 })
         .mockResolvedValueOnce({ accountNumber: 7, sequence: 4 })
       stargate.broadcastTx
-        .mockRejectedValueOnce(new Error('account sequence mismatch'))
+        .mockRejectedValueOnce(new BroadcastTxError(32, 'sdk', 'account sequence mismatch'))
         .mockResolvedValueOnce({ code: 0, height: 124, transactionHash: 'DEF', events: [] })
 
       await send(signer)
@@ -251,6 +254,15 @@ describe('signAndBroadcastManualDirect', () => {
 
       await expect(send(signer)).rejects.toThrow('account sequence mismatch')
       expect(signDirect).toHaveBeenCalledTimes(2)
+    })
+
+    it('does not retry a mismatch that did not come from the broadcast', async () => {
+      const { signer, signDirect } = directSigner()
+      signDirect.mockRejectedValueOnce(new Error('account sequence mismatch, expected 5, got 3'))
+
+      await expect(send(signer)).rejects.toThrow('account sequence mismatch')
+      expect(signDirect).toHaveBeenCalledOnce()
+      expect(stargate.broadcastTx).not.toHaveBeenCalled()
     })
 
     it('does not retry any other broadcast error', async () => {

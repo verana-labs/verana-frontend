@@ -327,7 +327,7 @@ export function useCorporationManage(onDone?: () => void) {
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error)
       const notice = rejectionNotice(text, text)
-      await notify(notice.message, 'error', notice.title)
+      await notify(notice.message, 'error', notice.title, notice.link)
       return false
     } finally {
       inFlight.current = false
