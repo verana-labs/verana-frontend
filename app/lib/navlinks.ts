@@ -53,6 +53,7 @@ export function getNavLinks(pendingCount?: number, pendingVotes?: number): NavLi
       iconClass: 'bg-gradient-to-br from-orange-500 to-orange-700 text-white',
       featuredService: true,
       description: resolveTranslatable({ key: 'ecosystemList.description' }, translate),
+      requiresCorporation: true,
     },
     {
       name: resolveTranslatable({ key: 'agents.title' }, translate) ?? 'Agents',
@@ -75,6 +76,7 @@ export function getNavLinks(pendingCount?: number, pendingVotes?: number): NavLi
       icon: faTasks,
       className: 'bg-red-500',
       count: pendingCount,
+      requiresCorporation: true,
     },
     {
       name: resolveTranslatable({ key: 'navbar.settings.title' }, translate) ?? 'Settings',

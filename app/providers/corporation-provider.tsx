@@ -23,6 +23,7 @@ export interface CorporationContextValue {
   loading: boolean
   error: string | null
   actingCorporationLost: boolean
+  acknowledgeLost: () => void
   attention: Record<number, CorporationAttention>
   setActingCorporation: (corporationId: number) => void
   actAsOnceDiscovered: (corporationId: number) => void
@@ -39,6 +40,7 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
   const [attention, setAttention] = useState<Record<number, CorporationAttention>>({})
   const [actingCorporationLost, setActingCorporationLost] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [discoveredFor, setDiscoveredFor] = useState<string | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
   const runId = useRef(0)
   const lastAccount = useRef<string | undefined>(undefined)
@@ -65,6 +67,7 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
     setActingCorporationLost(restored.lost)
     setError(discovered.error)
     setLoading(false)
+    setDiscoveredFor(account)
     if (known.length === 0) return
     const counts = await fetchAttention(
       known.map((membership) => membership.corporation.id),
@@ -89,6 +92,7 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
     setActingCorporationLost(false)
     setAttention({})
     setError(null)
+    setDiscoveredFor(undefined)
     if (!address) {
       setLoading(false)
       return
@@ -115,6 +119,8 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
     [address, discover]
   )
 
+  const acknowledgeLost = useCallback(() => setActingCorporationLost(false), [])
+
   const refetch = useCallback(async () => {
     if (address) await discover(address)
   }, [address, discover])
@@ -122,13 +128,15 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
   const value = useMemo<CorporationContextValue>(() => {
     const actingCorporation =
       memberships.find((membership) => membership.corporation.id === actingCorporationId) ?? null
+    const pending = loading || (address !== undefined && discoveredFor !== address)
     return {
       memberships,
       actingCorporation,
-      needsSelection: !loading && !actingCorporation && memberships.length > 0,
-      loading,
+      needsSelection: !pending && !actingCorporation && memberships.length > 0,
+      loading: pending,
       error,
       actingCorporationLost,
+      acknowledgeLost,
       attention,
       setActingCorporation,
       actAsOnceDiscovered,
@@ -138,8 +146,11 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
     memberships,
     actingCorporationId,
     loading,
+    address,
+    discoveredFor,
     error,
     actingCorporationLost,
+    acknowledgeLost,
     attention,
     setActingCorporation,
     actAsOnceDiscovered,

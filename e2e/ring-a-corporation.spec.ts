@@ -21,6 +21,7 @@ test('first-connect chooser, persistence and picker re-scoping', async ({ page }
   await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
 
   await expect(page.getByText('Choose your acting corporation')).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('heading', { name: 'Create your corporation' })).toBeHidden()
   await page.getByRole('button', { name: /Acme Trust AG/ }).click()
   await expect(page.getByText('Choose your acting corporation')).toBeHidden()
 
@@ -123,14 +124,57 @@ test('a fresh wallet sees no corporation nav and lands on the wizard', async ({ 
   await installCorporationStubs(page, { fresh: true })
   await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
 
-  await expect(page.getByRole('link', { name: 'Corporation' })).toBeHidden()
+  const createCorporation = page.getByRole('link', { name: /Create new Corporation/ })
+  await expect(page.getByRole('heading', { name: 'Create your corporation' })).toBeVisible({ timeout: 15_000 })
+  const sidebar = page.locator('nav')
+  await expect(sidebar.locator('a[href="/account"]')).toBeVisible()
+  for (const href of ['/corporation', '/ecosystems', '/agents', '/pendingtasks']) {
+    await expect(sidebar.locator(`a[href="${href}"]`)).toHaveCount(0)
+  }
+  await expect(page.getByText('Acting corporation required')).toBeVisible()
 
-  await page.goto('/corporation')
+  for (const path of ['/ecosystems', '/pendingtasks']) {
+    await page.goto(path)
+    await expect(page.getByText('This wallet operates no corporation yet.')).toBeVisible({ timeout: 15_000 })
+  }
+  await page.goto('/dashboard')
+
+  await createCorporation.click()
   await expect(page.getByRole('heading', { name: 'Create Corporation' })).toBeVisible({ timeout: 15_000 })
 
   await page.getByRole('button', { name: 'No corporation' }).click()
   await expect(page.getByRole('menu').getByText('This wallet operates no corporation yet.')).toBeVisible()
   await expect(page.getByRole('menuitem', { name: /Create new Corporation/ })).toBeVisible()
+})
+
+test('losing the last corporation blocks with a notice and returns to the dashboard', async ({ page }) => {
+  await installCorporationStubs(page, { fresh: true })
+  await seedActingCorporation(page, 13)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  await page.goto('/pendingtasks')
+  const notice = page.getByText('Corporation no longer available')
+  await expect(notice).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByText(/it acts for no other one/)).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(notice).toBeVisible()
+  await page.getByRole('button', { name: 'Continue without a corporation' }).click()
+
+  await expect(notice).toBeHidden()
+  await expect(page).toHaveURL(/\/dashboard$/)
+  await expect(page.getByRole('heading', { name: 'Create your corporation' })).toBeVisible()
+})
+
+test('losing the acting corporation while others remain asks for another one', async ({ page }) => {
+  await installCorporationStubs(page)
+  await seedActingCorporation(page, 99)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  await expect(page.getByText('Choose your acting corporation')).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByText(/The corporation you were acting for is no longer available/)).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Continue without a corporation' })).toHaveCount(0)
+  await page.getByRole('button', { name: /Acme Trust AG/ }).click()
+  await expect(page.getByText('Choose your acting corporation')).toBeHidden()
 })
 
 test('the creation wizard gates each step and confirms the built message before broadcasting', async ({ page }) => {
