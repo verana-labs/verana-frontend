@@ -58,6 +58,7 @@ test('Ring A, the dashboard stat cards render from the stats snapshot route', as
 
   await expect(statValue(page, 'Ecosystems')).toHaveText('13')
   await expect(statValue(page, 'Schemas')).toHaveText('25')
+  await expect(statValue(page, 'Participants')).toHaveText('31')
   await expect(statValue(page, 'Total Locked Trust Deposit')).toHaveText('9,007,199,254,740.993123 VNA')
   await expect(statValue(page, 'Issued Credentials')).toHaveText('184')
   await expect(statValue(page, 'Verified Credentials')).toHaveText('2,671')
@@ -65,4 +66,30 @@ test('Ring A, the dashboard stat cards render from the stats snapshot route', as
   expect(snapshotUrls.length).toBeGreaterThan(0)
   for (const url of snapshotUrls) expect(url).toContain('entity_type=GLOBAL')
   expect(retiredUrls).toEqual([])
+})
+
+test('Ring A, a stalled indexer is flagged next to its version', async ({ page }) => {
+  await page.route('**/v4/stats/snapshot*', (route) => route.fulfill({ json: SNAPSHOT }))
+  await page.route('**/v4/indexer/status', (route) =>
+    route.fulfill({ json: { is_running: true, is_crawling: false, stopped_reason: 'RPC unavailable' } })
+  )
+
+  await page.goto('/dashboard', { timeout: 60_000 })
+
+  const stalled = page.getByTitle('RPC unavailable')
+  await expect(stalled).toBeVisible({ timeout: 30_000 })
+  await expect(stalled).toContainText('stalled')
+})
+
+test('Ring A, a stopped indexer answering 503 reads as down with its reason', async ({ page }) => {
+  await page.route('**/v4/stats/snapshot*', (route) => route.fulfill({ json: SNAPSHOT }))
+  await page.route('**/v4/indexer/status', (route) =>
+    route.fulfill({ status: 503, json: { error: 'Indexer is not responding. RPC unavailable', code: 503 } })
+  )
+
+  await page.goto('/dashboard', { timeout: 60_000 })
+
+  const down = page.getByTitle('Indexer is not responding. RPC unavailable')
+  await expect(down).toBeVisible({ timeout: 30_000 })
+  await expect(down).toContainText('down')
 })
