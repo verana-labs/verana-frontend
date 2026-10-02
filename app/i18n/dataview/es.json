@@ -815,6 +815,7 @@
   "meta.agents.description": "Agentes VS que operan Servicios Verificables en nombre de tu corporación.",
   "agents.loading": "Cargando agentes…",
   "agents.error": "No se pudieron cargar los agentes.",
+  "agents.error.more": "No se pudieron cargar más agentes, las tarjetas de abajo son las ya obtenidas.",
   "agents.empty": "Ningún agente coincide con los filtros.",
   "agents.rawlink": "Autorizaciones en bruto",
   "agents.filter.includeInactive": "Incluir entradas de participante inactivas",

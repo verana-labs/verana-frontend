@@ -33,6 +33,9 @@ export default function AgentsPage() {
   } = useAgents(actingCorporation?.corporation, filters.includeInactive)
   useIndexerEntityEvents(applyEvents)
 
+  // A failed show more leaves the loaded cards in place and reports itself next to the degraded notices.
+  const partialError = Boolean(error) && agents.length > 0
+
   // Per [VFE-PAGE-AGENTS-7] the trust gate never hides a pinned Corporation or Ecosystem DID.
   const visible = useMemo(
     () =>
@@ -70,10 +73,11 @@ export default function AgentsPage() {
 
       <AgentsFilterBar value={filters} onChange={setFilters} />
 
-      {degraded.ecosystems || degraded.delegations ? (
+      {degraded.ecosystems || degraded.delegations || partialError ? (
         <div className="mb-4 space-y-1">
           {degraded.ecosystems ? <p className={DEGRADED}>{translate('agents.degraded.ecosystems')}</p> : null}
           {degraded.delegations ? <p className={DEGRADED}>{translate('agents.degraded.delegations')}</p> : null}
+          {partialError ? <p className={DEGRADED}>{translate('agents.error.more')}</p> : null}
         </div>
       ) : null}
 
@@ -81,7 +85,7 @@ export default function AgentsPage() {
         {hasNext ? (
           <p className="pb-2 text-xs text-neutral-70 dark:text-neutral-70">{translate('pagination.loadedOnly')}</p>
         ) : null}
-        {error ? (
+        {error && !partialError ? (
           <div className="p-6 error-pane">{translate('agents.error')}</div>
         ) : loading ? (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
@@ -106,7 +110,7 @@ export default function AgentsPage() {
             ))}
           </div>
         )}
-        {!error && !loading && hasNext ? <ShowMoreButton onClick={loadMore} /> : null}
+        {(!error || partialError) && !loading && hasNext ? <ShowMoreButton onClick={loadMore} /> : null}
       </section>
     </>
   )

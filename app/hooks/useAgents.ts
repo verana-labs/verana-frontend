@@ -224,9 +224,12 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
         setDegraded({ ecosystems: ecosystems.failed, delegations: authorizations.failed })
       } catch (cause) {
         if (requestRef.current !== requestId) return
-        setAgentWindow(base)
-        setAgents([])
-        setDegraded(NOTHING_DEGRADED)
+        // A failed append keeps the loaded cards, the pinned DIDs of [VFE-PAGE-AGENTS-1a] among them.
+        if (!append) {
+          setAgentWindow(base)
+          setAgents([])
+          setDegraded(NOTHING_DEGRADED)
+        }
         setError(cause instanceof Error ? cause.message : String(cause))
       } finally {
         if (requestRef.current === requestId) setLoading(false)

@@ -815,6 +815,7 @@
   "meta.agents.description": "VS Agents operating Verifiable Services on behalf of your corporation.",
   "agents.loading": "Loading agents…",
   "agents.error": "The agents could not be loaded.",
+  "agents.error.more": "More agents could not be loaded, the cards below are the ones already fetched.",
   "agents.empty": "No agents match your filters.",
   "agents.rawlink": "Raw authorizations",
   "agents.filter.includeInactive": "Include inactive participant entries",
