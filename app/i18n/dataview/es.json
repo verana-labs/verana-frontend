@@ -239,6 +239,8 @@
   "corporation.setup.docurl": "URL del documento CGF",
   "corporation.setup.funding": "Fondos de la política (uvna)",
   "notification.msg.inprogress.title": "Transacción en progreso",
+  "notification.msg.processing.title": "Transacción en proceso",
+  "notification.msg.processing": "Incluida en el bloque {height}, esperando al indexador.",
   "notification.msg.successful.title": "Transacción exitosa",
   "notification.msg.confirmed.title": "Transacción confirmada",
   "notification.msg.indexer.pending": "Confirmada en la cadena en el bloque {height}, pero el indexador aún no se ha puesto al día. Los datos mostrados pueden seguir desactualizados.",

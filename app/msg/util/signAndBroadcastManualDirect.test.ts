@@ -169,4 +169,96 @@ describe('signAndBroadcastManualDirect', () => {
     const txRaw = TxRaw.decode(stargate.broadcastTx.mock.calls[0]?.[0] ?? new Uint8Array())
     expect(AuthInfo.decode(txRaw.authInfoBytes).fee?.amount).toEqual([{ denom: 'uvna', amount: '293754' }])
   })
+
+  describe('on an account sequence mismatch', () => {
+    const address = 'verana1operator'
+    const publicKey = Uint8Array.from([2, ...new Array<number>(32).fill(1)])
+    const mismatch = new Error(
+      'Broadcasting transaction failed with code 32 (codespace: sdk). Log: account sequence mismatch, expected 5, got 3: incorrect account sequence'
+    )
+
+    function directSigner() {
+      const signDirect = vi.fn(async (_signerAddress, signDoc) => ({
+        signed: signDoc,
+        signature: {
+          pub_key: { type: 'tendermint/PubKeySecp256k1', value: toBase64(publicKey) },
+          signature: toBase64(new Uint8Array(64).fill(2)),
+        },
+      }))
+      const signer: OfflineDirectSigner = {
+        getAccounts: vi.fn(async () => [{ address, algo: 'secp256k1' as const, pubkey: publicKey }]),
+        signDirect,
+      }
+      return { signer, signDirect }
+    }
+
+    function send(signer: OfflineDirectSigner) {
+      return signAndBroadcastManualDirect({
+        rpcEndpoint: 'https://rpc.example',
+        chainId: 'vna-devnet-1',
+        signer,
+        address,
+        registry: makeRegistry(),
+        messages: [
+          {
+            typeUrl: '/verana.di.v1.MsgStoreDigest',
+            value: MsgStoreDigest.fromPartial({ authority: 'verana1corporation', operator: address, digest: 'sha384' }),
+          },
+        ],
+        gasPrice: '3uvna',
+        fee: { amount: [{ denom: 'uvna', amount: '300000' }], gas: '100000' },
+      })
+    }
+
+    function signedSequence(signDirect: ReturnType<typeof directSigner>['signDirect'], call: number) {
+      const authInfo = AuthInfo.decode(signDirect.mock.calls[call]?.[1]?.authInfoBytes ?? new Uint8Array())
+      return authInfo.signerInfos[0]?.sequence
+    }
+
+    beforeEach(() => {
+      stargate.getSequence.mockResolvedValue({ accountNumber: 7, sequence: 3 })
+    })
+
+    it('signs again once with the sequence the chain expects', async () => {
+      const { signer, signDirect } = directSigner()
+      stargate.broadcastTx
+        .mockRejectedValueOnce(mismatch)
+        .mockResolvedValueOnce({ code: 0, height: 124, transactionHash: 'DEF', events: [] })
+
+      await expect(send(signer)).resolves.toMatchObject({ code: 0, transactionHash: 'DEF' })
+      expect(signDirect).toHaveBeenCalledTimes(2)
+      expect(signedSequence(signDirect, 0)).toBe(BigInt(3))
+      expect(signedSequence(signDirect, 1)).toBe(BigInt(5))
+      expect(stargate.broadcastTx).toHaveBeenCalledTimes(2)
+    })
+
+    it('reads the sequence again when the error does not carry the expected one', async () => {
+      const { signer, signDirect } = directSigner()
+      stargate.getSequence
+        .mockResolvedValueOnce({ accountNumber: 7, sequence: 3 })
+        .mockResolvedValueOnce({ accountNumber: 7, sequence: 4 })
+      stargate.broadcastTx
+        .mockRejectedValueOnce(new Error('account sequence mismatch'))
+        .mockResolvedValueOnce({ code: 0, height: 124, transactionHash: 'DEF', events: [] })
+
+      await send(signer)
+      expect(signedSequence(signDirect, 1)).toBe(BigInt(4))
+    })
+
+    it('fails to the user after the single retry', async () => {
+      const { signer, signDirect } = directSigner()
+      stargate.broadcastTx.mockRejectedValue(mismatch)
+
+      await expect(send(signer)).rejects.toThrow('account sequence mismatch')
+      expect(signDirect).toHaveBeenCalledTimes(2)
+    })
+
+    it('does not retry any other broadcast error', async () => {
+      const { signer, signDirect } = directSigner()
+      stargate.broadcastTx.mockRejectedValue(new Error('insufficient fees'))
+
+      await expect(send(signer)).rejects.toThrow('insufficient fees')
+      expect(signDirect).toHaveBeenCalledOnce()
+    })
+  })
 })

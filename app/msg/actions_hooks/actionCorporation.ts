@@ -15,7 +15,12 @@ import { translate } from '@/i18n/dataview'
 import { findCorporationMembership, type UserCorporation } from '@/lib/corporation-discovery'
 import type { CostLine, TxConfirmRequest, TxConfirmResult } from '@/lib/tx-preview'
 import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
-import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
+import {
+  processingTxNotification,
+  runAfterIndexerCatchesUp,
+  successfulTxNotification,
+  waitForIndexerAfterTx,
+} from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import { extractTxHeight } from '@/msg/util/signerUtil'
 import { rejectionNotice, txFailureNotice } from '@/msg/util/tx-outcome'
@@ -192,14 +197,17 @@ export function useActionCorporation() {
     const policyAddress = findEventAttribute(result.events, 'create_corporation', 'policy_address')
     if (!id || !policyAddress) throw new Error('Create corporation transaction did not emit its identifiers')
     const height = txHeight(result)
+    const processing = processingTxNotification(result.transactionHash, height)
+    void notify(processing.message, processing.type, processing.title, processing.link)
     const indexed = await waitForIndexerAfterTx(waitForBlock, height)
     adoptActingCorporation(Number(id), height, indexed)
     const notification = successfulTxNotification(
       translate('notification.MsgCreateCorporation.success'),
       height,
-      indexed
+      indexed,
+      result.transactionHash
     )
-    await notify(notification.message, notification.type, notification.title)
+    await notify(notification.message, notification.type, notification.title, notification.link)
     return { id: Number(id), policyAddress, did }
   }
 
@@ -216,11 +224,13 @@ export function useActionCorporation() {
       (code, rawLog) => `${translate('notification.MsgGrantSelfOperatorAuthorization.error')} (${code}): ${rawLog}`
     )
     if (failure) {
-      await notify(failure.message, 'error', failure.title)
+      await notify(failure.message, 'error', failure.title, failure.link)
       return 'failed'
     }
 
     const height = txHeight(result)
+    const processing = processingTxNotification(result.transactionHash, height)
+    void notify(processing.message, processing.type, processing.title, processing.link)
     const indexed = await waitForIndexerAfterTx(waitForBlock, height)
     adoptActingCorporation(corporation.id, height, indexed)
     if (indexed) {
@@ -233,9 +243,10 @@ export function useActionCorporation() {
     const notification = successfulTxNotification(
       translate('notification.MsgGrantSelfOperatorAuthorization.success'),
       height,
-      indexed
+      indexed,
+      result.transactionHash
     )
-    await notify(notification.message, notification.type, notification.title)
+    await notify(notification.message, notification.type, notification.title, notification.link)
     return indexed ? 'granted' : 'pending'
   }
 
