@@ -7,6 +7,7 @@ vi.mock('@/config/env', () => ({
 
 import {
   ALL_PARTICIPATION_STATES,
+  enrichmentFromTrustData,
   fetchAgentResolution,
   fetchDidEnrichment,
   invalidateDid,
@@ -289,5 +290,40 @@ describe('isMarkdownDescriptionFormat', () => {
     for (const format of ['text/plain', undefined, '', 'markdown', 'Text/Markdown', 'text/html']) {
       expect(isMarkdownDescriptionFormat(format)).toBe(false)
     }
+  })
+})
+
+describe('enrichmentFromTrustData', () => {
+  it('maps an inline row exactly like the resolver response', () => {
+    const row = resolveResponse()
+    expect(enrichmentFromTrustData(DID, row)).toEqual(mapResolveResult(DID, row))
+  })
+
+  it('returns no enrichment when the row carries no trust_data key', () => {
+    expect(enrichmentFromTrustData(DID, undefined)).toBeUndefined()
+  })
+
+  it('reads a null payload as unresolved, not untrusted', () => {
+    expect(enrichmentFromTrustData(DID, null)).toEqual({ did: DID, trustStatus: 'UNRESOLVED' })
+  })
+
+  it('reads a malformed payload as unresolved', () => {
+    expect(enrichmentFromTrustData(DID, 'not an object')).toEqual({ did: DID, trustStatus: 'UNRESOLVED' })
+    expect(enrichmentFromTrustData(DID, [])).toEqual({ did: DID, trustStatus: 'UNRESOLVED' })
+  })
+
+  it('keeps the identity of an evaluated but untrusted DID', () => {
+    const enrichment = enrichmentFromTrustData(DID, resolveResponse({ trusted: false }))
+    expect(enrichment?.trustStatus).toBe('UNTRUSTED')
+    expect(enrichment?.serviceName).toBe('Acme Portal')
+    expect(enrichment?.organizationName).toBe('Acme Corp')
+  })
+
+  it('leaves the names undefined when the summary payload carries no ecsCredentials', () => {
+    const { ecsCredentials: _full, ...summary } = resolveResponse()
+    const enrichment = enrichmentFromTrustData(DID, summary)
+    expect(enrichment?.trustStatus).toBe('TRUSTED')
+    expect(enrichment?.serviceName).toBeUndefined()
+    expect(enrichment?.organizationName).toBeUndefined()
   })
 })

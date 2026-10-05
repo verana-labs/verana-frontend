@@ -20,6 +20,7 @@ import { CapabilityButton } from '@/ui/common/capability-button'
 import CsCard from '@/ui/common/cs-card'
 import EcosystemCard from '@/ui/common/ecosystem-card'
 import EgfCard from '@/ui/common/egf-card'
+import KeysetPagination, { ShowMoreButton } from '@/ui/common/keyset-pagination'
 import { PricingNotice } from '@/ui/common/pricing-notice'
 import RoleCard from '@/ui/common/role-card'
 import ValidatorCard from '@/ui/common/validator-card'
@@ -65,7 +66,14 @@ export default function JoinEcosystemWizard() {
   const router = useRouter()
   const { notify } = useNotification()
   const { ecosystem, errorEcosystem } = useEcosystemData(ecosystemId)
-  const { credentialSchemas, errorCredentialSchemas } = useCredentialSchemas(ecosystemId, false, true)
+  const {
+    credentialSchemas,
+    errorCredentialSchemas,
+    hasNext: schemasHasNext,
+    hasPrevious: schemasHasPrevious,
+    nextPage: schemasNextPage,
+    previousPage: schemasPreviousPage,
+  } = useCredentialSchemas(ecosystemId, false, true)
 
   const [currentStep, setCurrentStep] = useState<WizardStep>(1)
   const [selectedSchema, setSelectedSchema] = useState<CredentialSchemaListItem | null>(null)
@@ -88,7 +96,15 @@ export default function JoinEcosystemWizard() {
   }, [selectedRole, selectedSchema])
 
   const validatorRole = decision?.validatorRole ?? undefined
-  const { participants: validators, errorParticipants } = useParticipants(selectedSchema?.id, validatorRole)
+  const {
+    participants: validators,
+    errorParticipants,
+    hasNext: validatorsHasNext,
+    loadMore: loadMoreValidators,
+  } = useParticipants(selectedSchema?.id, validatorRole, undefined, {
+    participantState: 'ACTIVE',
+    trustData: 'summary',
+  })
   const activeValidators = validators.filter((participant) => participant.participant_state === 'ACTIVE')
 
   const joinSigning = useActionSigning(decision?.messageType ?? '')
@@ -287,6 +303,14 @@ export default function JoinEcosystemWizard() {
               {credentialSchemas.length === 0 ? (
                 <p className="text-sm text-neutral-70">No active credential schemas are available.</p>
               ) : null}
+              <KeysetPagination
+                showing={credentialSchemas.length}
+                itemsLabel={resolveTranslatable({ key: 'datatable.cs.title' }, translate) ?? 'Credential Schemas'}
+                hasPrevious={schemasHasPrevious}
+                hasNext={schemasHasNext}
+                onPrevious={schemasPreviousPage}
+                onNext={schemasNextPage}
+              />
             </div>
           ) : null}
 
@@ -336,6 +360,7 @@ export default function JoinEcosystemWizard() {
                     />
                   ))
                 : null}
+              {decision?.validatorRole && validatorsHasNext ? <ShowMoreButton onClick={loadMoreValidators} /> : null}
             </div>
           ) : null}
 

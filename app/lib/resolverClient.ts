@@ -167,6 +167,12 @@ export function mapResolveResult(did: string, raw: ResolveResult, credentialIssu
   }
 }
 
+export function enrichmentFromTrustData(did: string, value: unknown): DidEnrichment | undefined {
+  if (value === undefined) return undefined
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return unresolved(did)
+  return mapResolveResult(did, value as ResolveResult)
+}
+
 async function fetchWithTimeout(url: string, init?: RequestInit): Promise<Response> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)

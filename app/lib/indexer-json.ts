@@ -69,6 +69,27 @@ export function indexerValidators(label: string) {
   }
 }
 
+export type KeysetSort = '+id' | '-id'
+
+export interface KeysetPageRequest {
+  pageSize: number
+  after?: string
+  sort?: KeysetSort
+}
+
+export function applyKeysetParams(params: URLSearchParams, request: KeysetPageRequest): void {
+  const sort = request.sort ?? '-id'
+  params.set('limit', String(request.pageSize + 1))
+  params.set('sort', sort)
+  if (request.after === undefined) return
+  if (sort === '-id') params.set('max_id', request.after)
+  else params.set('min_id', (BigInt(request.after) + BigInt(1)).toString())
+}
+
+export function takeKeysetPage<T>(window: T[], pageSize: number): { items: T[]; hasNext: boolean } {
+  return { items: window.slice(0, pageSize), hasNext: window.length > pageSize }
+}
+
 export interface Degradable<T> {
   value: T
   failed: boolean

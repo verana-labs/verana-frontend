@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { agentRefreshNeeded, buildAgentList } from '@/hooks/useAgents'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { AGENTS_PAGE_SIZE, agentRefreshNeeded, allPages, buildAgentList } from '@/hooks/useAgents'
 import type { IndexerEvent } from '@/lib/indexer-event'
 
 const CORPORATION_DID = 'did:web:corp.example'
@@ -80,5 +80,34 @@ describe('agentRefreshNeeded', () => {
     ]
 
     expect(agentRefreshNeeded(events, 7, known).dids).toEqual([AGENT_DID, CORPORATION_DID])
+  })
+})
+
+describe('allPages', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  const parse = (payload: unknown) => (payload as { items: { id: string }[] }).items
+  const url = (after?: string) => `https://indexer/list${after ? `?max_id=${after}` : ''}`
+  const rows = (count: number, from: number) => Array.from({ length: count }, (_, i) => ({ id: String(from - i) }))
+
+  function stubPages(pages: { id: string }[][]) {
+    const urls: string[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (requested: string) => {
+        urls.push(requested)
+        return { ok: true, json: async () => ({ items: pages[Math.min(urls.length - 1, pages.length - 1)] }) }
+      })
+    )
+    return urls
+  }
+
+  it('follows the cursor to the end, so every controlled Ecosystem is pinned', async () => {
+    const urls = stubPages([rows(AGENTS_PAGE_SIZE + 1, 30), rows(2, 4)])
+    const page = await allPages(url, 'ctx', parse)
+    expect(page.items).toHaveLength(AGENTS_PAGE_SIZE + 2)
+    expect(urls).toEqual(['https://indexer/list', 'https://indexer/list?max_id=6'])
   })
 })

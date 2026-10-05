@@ -1,4 +1,5 @@
 import { DidTrustState } from '@/lib/resolverClient'
+import { participantAuthority } from '@/util/util'
 import type { TreeNode } from './participant-tree-types'
 
 export type ParticipantTreeFilterOptions = {
@@ -8,18 +9,18 @@ export type ParticipantTreeFilterOptions = {
   includeDisabled: boolean
 }
 
-/** Collect the unique participant DIDs present in the (loaded part of the) tree. */
-export function collectParticipantDids(nodes: TreeNode[]): string[] {
-  const dids = new Set<string>()
+/** Read the trust state of every participant DID in the (loaded part of the) tree. */
+export function collectParticipantTrust(nodes: TreeNode[]): Record<string, DidTrustState | undefined> {
+  const trustByDid: Record<string, DidTrustState | undefined> = {}
   const walk = (list: TreeNode[]) => {
     for (const node of list) {
       const did = node.participant?.did
-      if (did && !node.group) dids.add(did)
+      if (did && !node.group) trustByDid[did] = node.participant?.trustData?.trustStatus
       if (node.children?.length) walk(node.children)
     }
   }
   walk(nodes)
-  return [...dids]
+  return trustByDid
 }
 
 function isNodeVisible(
@@ -45,8 +46,8 @@ function isNodeVisible(
  * pruned together with its whole subtree: children are lazy-loaded, so a
  * hidden node's descendants cannot be evaluated independently.
  *
- * A DID whose trust state is still being resolved (absent from `trustByDid`)
- * counts as unresolvable until the resolution lands.
+ * A DID the indexer did not evaluate (absent from `trustByDid`) counts as
+ * unresolvable.
  */
 export function filterParticipantTree(
   nodes: TreeNode[],
@@ -60,4 +61,21 @@ export function filterParticipantTree(
     result.push(children === node.children ? node : { ...node, children })
   }
   return result
+}
+
+export function withAuthority(nodes: TreeNode[], corporationId?: number, parent?: TreeNode): TreeNode[] {
+  return nodes.map((node) => {
+    if (node.group) return { ...node, children: withAuthority(node.children ?? [], corporationId, parent) }
+    const isCorporation = corporationId !== undefined && corporationId === node.participant?.corporation_id
+    const isValidator = parent?.isCorporation ?? false
+    const isPredecessor = Boolean(parent?.isValidator || parent?.isPredecessor)
+    const next = {
+      ...node,
+      isCorporation,
+      isValidator,
+      isPredecessor,
+      ...participantAuthority(isCorporation, isValidator, isPredecessor),
+    }
+    return { ...next, children: withAuthority(node.children ?? [], corporationId, next) }
+  })
 }

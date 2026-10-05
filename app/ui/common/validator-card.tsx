@@ -1,9 +1,10 @@
 'use client'
 
-import { faShieldHalved } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { serviceIdenticonUrl } from '@/lib/resolverClient'
+import LogoImage from '@/ui/common/logo-image'
+import TrustBadge from '@/ui/common/trust-badge'
 import type { Participant } from '@/ui/dataview/datasections/participant'
-import { formatVNAFromUVNA } from '@/util/util'
+import { formatVNAFromUVNA, isExpireSoon, participantStateBadgeClass } from '@/util/util'
 
 function cn(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(' ')
@@ -16,6 +17,13 @@ export type ValidatorCardProps = {
 }
 
 export default function ValidatorCard({ validator, selected = false, onSelect }: ValidatorCardProps) {
+  const did = validator.did ?? undefined
+  const serviceName = validator.trustData?.serviceName
+  const { labelParticipantState, classParticipantState, expireSoon } = participantStateBadgeClass(
+    validator.participant_state,
+    isExpireSoon(validator.effective_until)
+  )
+
   const feeLabel = validator.issuance_fees ? 'Issuance Fee' : 'Verification Fee'
   const feeValue = validator.issuance_fees
     ? formatVNAFromUVNA(String(validator.issuance_fees))
@@ -41,56 +49,77 @@ export default function ValidatorCard({ validator, selected = false, onSelect }:
         if ((e.key === 'Enter' || e.key === ' ') && onSelect) onSelect()
       }}
     >
-      <div className="flex flex-col lg:flex-row lg:items-center lg:space-x-6 space-y-4 lg:space-y-0">
-        <div className="flex items-center space-x-3">
-          {onSelect && (
-            <input
-              type="radio"
-              checked={selected}
-              readOnly
-              className="w-4 h-4 text-primary-600"
-              aria-hidden="true"
-              tabIndex={-1}
-            />
-          )}
-          <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center flex-shrink-0">
-            <FontAwesomeIcon className="text-white" icon={faShieldHalved} />
-          </div>
-        </div>
+      <div className="flex items-start space-x-3">
+        {onSelect && (
+          <input
+            type="radio"
+            checked={selected}
+            readOnly
+            className="mt-1 w-4 h-4 text-primary-600 flex-shrink-0"
+            aria-hidden="true"
+            tabIndex={-1}
+          />
+        )}
+        <LogoImage
+          fallbackSrc={serviceIdenticonUrl(did)}
+          className="w-10 h-10 rounded-lg flex-shrink-0 object-contain"
+        />
 
-        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-          <div>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-3">
+            {serviceName ? (
+              <div className="min-w-0">
+                <h3 className="truncate text-base font-semibold text-gray-900 dark:text-white" title={serviceName}>
+                  {serviceName}
+                </h3>
+              </div>
+            ) : null}
+            <div className="flex flex-shrink-0 items-center gap-2">
+              <TrustBadge state={validator.trustData?.trustStatus} size="lg" />
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${classParticipantState}`}
+              >
+                {labelParticipantState}
+              </span>
+              {expireSoon ? (
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${expireSoon.classExpireSoon}`}
+                >
+                  {expireSoon.labelExpireSoon}
+                </span>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="mb-3">
             <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">Validator DID</label>
-            <p className="text-sm font-mono text-gray-900 dark:text-white break-all">{validator.did ?? '—'}</p>
+            <p className="text-sm font-mono text-gray-900 dark:text-white break-all">{did ?? '—'}</p>
           </div>
 
-          <div>
-            <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">Corporation</label>
-            <p className="text-sm font-mono text-gray-900 dark:text-white break-all">{validator.corporation_id}</p>
-          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="min-w-0">
+              <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">Corporation</label>
+              <p className="truncate text-sm font-mono text-gray-900 dark:text-white">{validator.corporation_id}</p>
+            </div>
 
-          <div>
-            <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">Deposit</label>
-            <p className="text-sm font-mono text-gray-900 dark:text-white">
-              {formatVNAFromUVNA(String(validator.deposit ?? 0))}
-            </p>
-          </div>
+            <div className="min-w-0">
+              <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">Deposit</label>
+              <p className="truncate text-sm font-mono text-gray-900 dark:text-white">
+                {formatVNAFromUVNA(String(validator.deposit ?? 0))}
+              </p>
+            </div>
 
-          <div>
-            <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">Validation Fee</label>
-            <p className="text-sm font-mono text-gray-900 dark:text-white">
-              {validator.validation_fees ? formatVNAFromUVNA(String(validator.validation_fees)) : '—'}
-            </p>
-          </div>
+            <div className="min-w-0">
+              <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">Validation Fee</label>
+              <p className="truncate text-sm font-mono text-gray-900 dark:text-white">
+                {validator.validation_fees ? formatVNAFromUVNA(String(validator.validation_fees)) : '—'}
+              </p>
+            </div>
 
-          <div>
-            <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">{feeLabel}</label>
-            <p className="text-sm font-mono text-gray-900 dark:text-white">{feeValue}</p>
-          </div>
-
-          <div>
-            <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">State</label>
-            <p className="text-sm text-gray-900 dark:text-white">{validator.participant_state}</p>
+            <div className="min-w-0">
+              <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">{feeLabel}</label>
+              <p className="truncate text-sm font-mono text-gray-900 dark:text-white">{feeValue}</p>
+            </div>
           </div>
         </div>
       </div>

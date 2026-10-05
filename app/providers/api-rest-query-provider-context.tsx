@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { useCredentialSchemas } from '@/hooks/useCredentialSchemas'
+import { type EcosystemSchemaPage, useCredentialSchemasByEcosystem } from '@/hooks/useCredentialSchemas'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { useEcosystems } from '@/hooks/useEcosystems'
 import { usePendingParticipants } from '@/hooks/usePendingParticipants'
@@ -9,7 +9,6 @@ import { TrustDepositAccountData, useTrustDepositAccountData } from '@/hooks/use
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { coalesceIndexerEvents, refreshTargets } from '@/lib/indexer-event'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
-import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { DashboardData } from '@/ui/dataview/datasections/dashboard'
 import type { PendingEcosystem } from '@/ui/dataview/datasections/participant'
@@ -23,18 +22,28 @@ type PendingTasksCtxValue = {
   refetch: () => Promise<void>
 }
 
-type DiscoverCtxValue = {
+type KeysetPageControls = {
+  hasNext: boolean
+  hasPrevious: boolean
+  nextPage: () => void
+  previousPage: () => void
+}
+
+type DiscoverCtxValue = KeysetPageControls & {
   discoverList: EcosystemListItem[]
-  credentialSchemas: CredentialSchemaListItem[]
+  credentialSchemasByEcosystem: Record<string, EcosystemSchemaPage>
+  errorCredentialSchemas: string | null
+  moreSchemaErrors: Record<string, string>
+  loadMoreCredentialSchemas: (ecosystemId: string) => void
   loading: boolean
   refetch: () => Promise<void>
   discoverSearch: string
   setDiscoverSearch: React.Dispatch<React.SetStateAction<string>>
-  discoverPage: number
-  setDiscoverPage: React.Dispatch<React.SetStateAction<number>>
+  hideUntrustedOnDiscover: boolean
+  setHideUntrustedOnDiscover: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-type EcosystemsCtxValue = {
+type EcosystemsCtxValue = KeysetPageControls & {
   ecosystemsList: EcosystemListItem[]
   ecosystemsLoading: boolean
   refetch: () => Promise<void>
@@ -53,6 +62,8 @@ type DashboardCtxValue = {
   dashboardData: DashboardData | null
   refetch: () => Promise<void>
 }
+
+export const DISCOVER_PAGE_SIZE = 5
 
 const PendingTasksContext = createContext<PendingTasksCtxValue | undefined>(undefined)
 const DiscoverContext = createContext<DiscoverCtxValue | undefined>(undefined)
@@ -77,16 +88,32 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
     ecosystems: ecosystemsList,
     loading: ecosystemsLoading,
     refetch: refetchEcosystems,
+    hasNext: ecosystemsHasNext,
+    hasPrevious: ecosystemsHasPrevious,
+    nextPage: ecosystemsNextPage,
+    previousPage: ecosystemsPreviousPage,
   } = useEcosystems(false, onlyActiveEcosystem)
 
   const [discoverSearch, setDiscoverSearch] = useState<string>('')
-  const [discoverPage, setDiscoverPage] = useState<number>(1)
-  const { ecosystems: discoverList, loading: discoverLoading, refetch: refetchDiscoverList } = useEcosystems(true)
+  const [hideUntrustedOnDiscover, setHideUntrustedOnDiscover] = useState(false)
   const {
-    credentialSchemas,
+    ecosystems: discoverList,
+    loading: discoverLoading,
+    refetch: refetchDiscoverList,
+    hasNext: discoverHasNext,
+    hasPrevious: discoverHasPrevious,
+    nextPage: discoverNextPage,
+    previousPage: discoverPreviousPage,
+  } = useEcosystems(true, true, DISCOVER_PAGE_SIZE)
+  const discoverEcosystemIds = useMemo(() => discoverList.map((ecosystem) => ecosystem.id), [discoverList])
+  const {
+    schemasByEcosystem: credentialSchemasByEcosystem,
     loading: credentialSchemasLoading,
+    errorCredentialSchemas,
+    moreSchemaErrors,
     refetch: refetchCredentialSchemas,
-  } = useCredentialSchemas(undefined, true)
+    loadMore: loadMoreCredentialSchemas,
+  } = useCredentialSchemasByEcosystem(discoverEcosystemIds)
 
   const refetchDiscover = React.useCallback(async () => {
     await Promise.all([refetchDiscoverList(), refetchCredentialSchemas()])
@@ -144,20 +171,34 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
       discoverList,
       loading: discoverLoading || credentialSchemasLoading,
       refetch: refetchDiscover,
-      credentialSchemas,
+      credentialSchemasByEcosystem,
+      errorCredentialSchemas,
+      moreSchemaErrors,
+      loadMoreCredentialSchemas,
       discoverSearch,
       setDiscoverSearch,
-      discoverPage,
-      setDiscoverPage,
+      hideUntrustedOnDiscover,
+      setHideUntrustedOnDiscover,
+      hasNext: discoverHasNext,
+      hasPrevious: discoverHasPrevious,
+      nextPage: discoverNextPage,
+      previousPage: discoverPreviousPage,
     }),
     [
       discoverList,
       discoverLoading,
-      credentialSchemas,
+      credentialSchemasByEcosystem,
       credentialSchemasLoading,
+      errorCredentialSchemas,
+      moreSchemaErrors,
+      loadMoreCredentialSchemas,
       refetchDiscover,
       discoverSearch,
-      discoverPage,
+      hideUntrustedOnDiscover,
+      discoverHasNext,
+      discoverHasPrevious,
+      discoverNextPage,
+      discoverPreviousPage,
     ]
   )
 
@@ -170,8 +211,22 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
       setOnlyActiveEcosystem,
       ecosystemFilters,
       setEcosystemFilters,
+      hasNext: ecosystemsHasNext,
+      hasPrevious: ecosystemsHasPrevious,
+      nextPage: ecosystemsNextPage,
+      previousPage: ecosystemsPreviousPage,
     }),
-    [ecosystemsList, ecosystemsLoading, refetchEcosystems, onlyActiveEcosystem, ecosystemFilters]
+    [
+      ecosystemsList,
+      ecosystemsLoading,
+      refetchEcosystems,
+      onlyActiveEcosystem,
+      ecosystemFilters,
+      ecosystemsHasNext,
+      ecosystemsHasPrevious,
+      ecosystemsNextPage,
+      ecosystemsPreviousPage,
+    ]
   )
 
   const accountValue = useMemo(
@@ -217,9 +272,13 @@ export function useDiscoverCtx() {
 
 // Schema titles and ecosystem DIDs for ids, from the loaded discover window; the id is the fallback.
 export function useRegistryLabels() {
-  const { credentialSchemas, discoverList } = useDiscoverCtx()
+  const { credentialSchemasByEcosystem, discoverList } = useDiscoverCtx()
   return useMemo(() => {
-    const schemas = new Map(credentialSchemas.map((schema) => [schema.id, schema.title]))
+    const schemas = new Map(
+      Object.values(credentialSchemasByEcosystem).flatMap((page) =>
+        page.items.map((schema) => [schema.id, schema.title] as const)
+      )
+    )
     const ecosystems = new Map(discoverList.map((ecosystem) => [ecosystem.id, ecosystem.did]))
     return {
       schemaLabel: (id: number | null) => (id === null ? '' : schemas.get(String(id)) || `#${id}`),
@@ -229,7 +288,7 @@ export function useRegistryLabels() {
         return did ? shortenDID(did) : `#${id}`
       },
     }
-  }, [credentialSchemas, discoverList])
+  }, [credentialSchemasByEcosystem, discoverList])
 }
 
 export function useEcosystemsCtx() {
