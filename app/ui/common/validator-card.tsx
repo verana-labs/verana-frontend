@@ -4,7 +4,7 @@ import { serviceIdenticonUrl } from '@/lib/resolverClient'
 import LogoImage from '@/ui/common/logo-image'
 import TrustBadge from '@/ui/common/trust-badge'
 import type { Participant } from '@/ui/dataview/datasections/participant'
-import { formatVNAFromUVNA, isExpireSoon, participantStateBadgeClass, shortenDID } from '@/util/util'
+import { formatVNAFromUVNA, isExpireSoon, participantStateBadgeClass } from '@/util/util'
 
 function cn(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(' ')
@@ -18,7 +18,7 @@ export type ValidatorCardProps = {
 
 export default function ValidatorCard({ validator, selected = false, onSelect }: ValidatorCardProps) {
   const did = validator.did ?? undefined
-  const serviceName = did ? shortenDID(did) : '—'
+  const serviceName = validator.trustData?.serviceName
   const { labelParticipantState, classParticipantState, expireSoon } = participantStateBadgeClass(
     validator.participant_state,
     isExpireSoon(validator.effective_until)
@@ -67,11 +67,13 @@ export default function ValidatorCard({ validator, selected = false, onSelect }:
 
         <div className="flex-1 min-w-0">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-3">
-            <div className="min-w-0">
-              <h3 className="truncate text-base font-semibold text-gray-900 dark:text-white" title={serviceName}>
-                {serviceName}
-              </h3>
-            </div>
+            {serviceName ? (
+              <div className="min-w-0">
+                <h3 className="truncate text-base font-semibold text-gray-900 dark:text-white" title={serviceName}>
+                  {serviceName}
+                </h3>
+              </div>
+            ) : null}
             <div className="flex flex-shrink-0 items-center gap-2">
               <TrustBadge state={validator.trustData?.trustStatus} size="lg" />
               <span

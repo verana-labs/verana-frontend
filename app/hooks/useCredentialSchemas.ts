@@ -197,11 +197,13 @@ export function useCredentialSchemasByEcosystem(ecosystemIds: string[], pageSize
     const base = VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA
     if (ids.length === 0 || !base) {
       setSchemasByEcosystem({})
+      setMoreSchemaErrors((current) => (Object.keys(current).length ? {} : current))
       setLoading(false)
       return
     }
 
     setError(null)
+    setMoreSchemaErrors((current) => (Object.keys(current).length ? {} : current))
     setLoading(true)
     try {
       const pages = await Promise.all(

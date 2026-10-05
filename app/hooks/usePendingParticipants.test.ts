@@ -68,6 +68,13 @@ describe('parsePendingParticipantsResponse', () => {
     expect(row.trustData?.countryCode).toBe('CH')
   })
 
+  it('leaves the enrichment unset for an ecosystem with no DID', () => {
+    const row = parsePendingParticipantsResponse({
+      ecosystems: [{ id: 10, did: null, trust_data: null, pending_tasks: 0, participants: 0, schemas: [] }],
+    })[0]
+    expect(row.trustData).toBeUndefined()
+  })
+
   it('rejects a schema without pending participants', () => {
     expect(() =>
       parsePendingParticipantsResponse({

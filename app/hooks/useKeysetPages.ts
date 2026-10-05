@@ -2,7 +2,6 @@
 
 import { useCallback, useRef, useState } from 'react'
 
-/** Cursor stack for the previous/next controls of a keyset list. The stack resets when `pageKey` changes. */
 export function useKeysetPages<T extends { id: string }>(pageKey: string, items: T[]) {
   const [pages, setPages] = useState<{ key: string; stack: (string | undefined)[] }>({
     key: pageKey,
@@ -22,7 +21,6 @@ export function useKeysetPages<T extends { id: string }>(pageKey: string, items:
   return { after: stack[stack.length - 1], hasPrevious: stack.length > 1, nextPage, previousPage }
 }
 
-/** Appends the next page on demand, and ignores the calls that arrive while one append is in flight. */
 export function useLoadMore(run: () => Promise<void>): () => void {
   const running = useRef(false)
   const runRef = useRef(run)
