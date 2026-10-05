@@ -1,11 +1,14 @@
 'use client'
 
-import React, { createContext, useContext, useMemo, useState } from 'react'
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useCredentialSchemas } from '@/hooks/useCredentialSchemas'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { useEcosystems } from '@/hooks/useEcosystems'
 import { usePendingParticipants } from '@/hooks/usePendingParticipants'
 import { TrustDepositAccountData, useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
+import { useUserCorporation } from '@/hooks/useUserCorporation'
+import { coalesceIndexerEvents, refreshTargets } from '@/lib/indexer-event'
+import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { DashboardData } from '@/ui/dataview/datasections/dashboard'
@@ -88,6 +91,36 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
   const refetchDiscover = React.useCallback(async () => {
     await Promise.all([refetchDiscoverList(), refetchCredentialSchemas()])
   }, [refetchDiscoverList, refetchCredentialSchemas])
+
+  const { addIndexerEventListener } = useIndexerEvents()
+  const { actingCorporation } = useUserCorporation()
+
+  // Events of the acting Corporation drive the targeted refreshes of [VFE-DATA-WS-3].
+  useEffect(() => {
+    const actingCorporationId = actingCorporation?.corporation.id
+    if (actingCorporationId === undefined) return
+    const coalesced = coalesceIndexerEvents((_corporationId, events) => {
+      const targets = new Set(events.flatMap(refreshTargets))
+      if (targets.has('participants')) void refetchPendingParticipants()
+      if (targets.has('ecosystems')) void refetchEcosystems()
+      if (targets.has('credentialSchemas')) void refetchCredentialSchemas()
+      if (targets.has('dashboard')) void refetchDashboard()
+    })
+    const unsubscribe = addIndexerEventListener((corporationId, events) => {
+      if (corporationId === actingCorporationId) coalesced.listener(corporationId, events)
+    })
+    return () => {
+      unsubscribe()
+      coalesced.cancel()
+    }
+  }, [
+    actingCorporation,
+    addIndexerEventListener,
+    refetchPendingParticipants,
+    refetchEcosystems,
+    refetchCredentialSchemas,
+    refetchDashboard,
+  ])
 
   const pendingTasksValue = useMemo(
     () => ({

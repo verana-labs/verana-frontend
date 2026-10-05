@@ -22,7 +22,7 @@ export default function AgentsPage() {
     actingCorporation?.corporation,
     filters.includeInactive
   )
-  useIndexerEntityEvents(applyEvents)
+  useIndexerEntityEvents(actingCorporation?.corporation.id, applyEvents)
 
   // Per [VFE-PAGE-AGENTS-7] the trust gate never hides a pinned Corporation or Ecosystem DID.
   const visible = useMemo(

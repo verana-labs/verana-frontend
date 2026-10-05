@@ -9,7 +9,7 @@ import {
 } from '@/hooks/useCorporationDetails'
 import { parseEcosystemsResponse } from '@/hooks/useEcosystems'
 import { parseParticipantsResponse } from '@/hooks/useParticipants'
-import { type IndexerEntityEvent, refreshesEntityLists, SESSION_EVENT } from '@/lib/indexer-event'
+import { type IndexerEvent, refreshesEntityLists, SESSION_EVENT } from '@/lib/indexer-event'
 import { degrade, fetchJson } from '@/lib/indexer-json'
 import { logger } from '@/lib/logger'
 import {
@@ -60,7 +60,7 @@ export function buildAgentList({ corporationDid, ecosystemDids, participantDids 
 }
 
 export function agentRefreshNeeded(
-  events: IndexerEntityEvent[],
+  events: IndexerEvent[],
   corporationId: number,
   knownDids: Set<string>
 ): { lists: boolean; dids: string[] } {
@@ -186,7 +186,7 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
 
   const knownDids = useMemo(() => new Set(didsKey ? didsKey.split('|') : []), [didsKey])
   const applyEvents = useCallback(
-    (events: IndexerEntityEvent[]) => {
+    (events: IndexerEvent[]) => {
       if (corporationId === undefined) return
       const { lists, dids } = agentRefreshNeeded(events, corporationId, knownDids)
       for (const did of dids) invalidateDid(did)
