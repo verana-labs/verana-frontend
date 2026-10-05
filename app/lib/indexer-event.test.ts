@@ -1,11 +1,13 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/config/env', () => ({ VERANA_REST_ENDPOINT_INDEXER: 'https://indexer.example/v4/indexer' }))
 
 vi.mock('@/lib/logger', () => ({ logger: { warn: vi.fn(), error: vi.fn() } }))
 
 import {
+  coalesceIndexerEvents,
   concernsCorporation,
+  EVENT_COALESCE_MS,
   type IndexerEvent,
   indexerEventKey,
   indexerEventsUrl,
@@ -223,7 +225,7 @@ describe('refreshTargets', () => {
     ['de', ['attention', 'corporationDetails']],
     ['ec', ['ecosystems']],
     ['cs', ['credentialSchemas']],
-    ['co', ['dashboard']],
+    ['co', ['dashboard', 'corporationDetails']],
     ['di', []],
   ])('routes a %s event', (module, targets) => {
     expect(refreshTargets(event({ module }))).toEqual(targets)
@@ -257,5 +259,38 @@ describe('triggersDiscovery', () => {
   it('re-runs discovery for a membership change and not for a vote', () => {
     expect(triggersDiscovery(event({ module: 'group', eventType: 'UpdateGroupMembers' }), 'verana1me')).toBe(true)
     expect(triggersDiscovery(event({ module: 'group', eventType: 'Vote' }), 'verana1me')).toBe(false)
+  })
+})
+
+describe('coalesceIndexerEvents', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('holds the replayed blocks of one window in a single call per corporation', () => {
+    vi.useFakeTimers()
+    const calls: [number, string[]][] = []
+    const coalesced = coalesceIndexerEvents((corporationId, events) =>
+      calls.push([corporationId, events.map((entry) => entry.txHash)])
+    )
+    coalesced.listener(7, [event({ txHash: 'A' })])
+    vi.advanceTimersByTime(100)
+    coalesced.listener(7, [event({ txHash: 'B' })])
+    coalesced.listener(9, [event({ txHash: 'C', corporationId: 9 })])
+    vi.advanceTimersByTime(EVENT_COALESCE_MS)
+    expect(calls).toEqual([
+      [7, ['A', 'B']],
+      [9, ['C']],
+    ])
+  })
+
+  it('drops the buffered events the cancelled window never delivered', () => {
+    vi.useFakeTimers()
+    const listener = vi.fn()
+    const coalesced = coalesceIndexerEvents(listener)
+    coalesced.listener(7, [event({ txHash: 'A' })])
+    coalesced.cancel()
+    vi.advanceTimersByTime(EVENT_COALESCE_MS)
+    expect(listener).not.toHaveBeenCalled()
   })
 })

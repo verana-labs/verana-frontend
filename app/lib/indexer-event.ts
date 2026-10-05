@@ -137,6 +137,39 @@ export function indexerEventKey(event: IndexerEvent): string {
   return `${event.txHash}#${event.messageIndex}`
 }
 
+export type IndexerEventListener = (corporationId: number, events: IndexerEvent[]) => void
+
+export function coalesceIndexerEvents(listener: IndexerEventListener): {
+  listener: IndexerEventListener
+  cancel: () => void
+} {
+  const timers = new Map<number, ReturnType<typeof setTimeout>>()
+  const buffered = new Map<number, IndexerEvent[]>()
+  return {
+    listener: (corporationId, events) => {
+      const pending = buffered.get(corporationId)
+      if (pending) pending.push(...events)
+      else buffered.set(corporationId, [...events])
+      const timer = timers.get(corporationId)
+      if (timer) clearTimeout(timer)
+      timers.set(
+        corporationId,
+        setTimeout(() => {
+          timers.delete(corporationId)
+          const batch = buffered.get(corporationId)
+          buffered.delete(corporationId)
+          if (batch?.length) listener(corporationId, batch)
+        }, EVENT_COALESCE_MS)
+      )
+    },
+    cancel: () => {
+      for (const timer of timers.values()) clearTimeout(timer)
+      timers.clear()
+      buffered.clear()
+    },
+  }
+}
+
 export const SESSION_EVENT = 'CreateOrUpdateParticipantSession'
 const RESOLVER_EVENT = 'TriggerResolver'
 const LIST_NEUTRAL_EVENTS = new Set([SESSION_EVENT, RESOLVER_EVENT])
@@ -155,7 +188,7 @@ export function refreshTargets(event: IndexerEvent): IndexerRefreshTarget[] {
     case 'cs':
       return ['credentialSchemas']
     case 'co':
-      return ['dashboard']
+      return ['dashboard', 'corporationDetails']
     default:
       return []
   }

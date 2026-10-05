@@ -7,7 +7,7 @@ import { useEcosystems } from '@/hooks/useEcosystems'
 import { usePendingParticipants } from '@/hooks/usePendingParticipants'
 import { TrustDepositAccountData, useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
-import { refreshTargets } from '@/lib/indexer-event'
+import { coalesceIndexerEvents, refreshTargets } from '@/lib/indexer-event'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
@@ -99,14 +99,20 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const actingCorporationId = actingCorporation?.corporation.id
     if (actingCorporationId === undefined) return
-    return addIndexerEventListener((corporationId, events) => {
-      if (corporationId !== actingCorporationId) return
+    const coalesced = coalesceIndexerEvents((_corporationId, events) => {
       const targets = new Set(events.flatMap(refreshTargets))
       if (targets.has('participants')) void refetchPendingParticipants()
       if (targets.has('ecosystems')) void refetchEcosystems()
       if (targets.has('credentialSchemas')) void refetchCredentialSchemas()
       if (targets.has('dashboard')) void refetchDashboard()
     })
+    const unsubscribe = addIndexerEventListener((corporationId, events) => {
+      if (corporationId === actingCorporationId) coalesced.listener(corporationId, events)
+    })
+    return () => {
+      unsubscribe()
+      coalesced.cancel()
+    }
   }, [
     actingCorporation,
     addIndexerEventListener,

@@ -51,9 +51,9 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
   const knownMemberships = useRef<CorporationMembership[]>([])
   const intendedActingId = useRef<number | null>(null)
 
-  const discover = useCallback(async (account: string) => {
+  const discover = useCallback(async (account: string, { background = false }: { background?: boolean } = {}) => {
     const run = ++runId.current
-    setLoading(true)
+    if (!background) setLoading(true)
     setError(null)
     const discovered = await discoverCorporations(account)
     if (run !== runId.current) return
@@ -132,7 +132,7 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
         if (discoveryTimer.current) clearTimeout(discoveryTimer.current)
         discoveryTimer.current = setTimeout(() => {
           discoveryTimer.current = null
-          void discover(address)
+          void discover(address, { background: true })
         }, EVENT_COALESCE_MS)
       }
     })

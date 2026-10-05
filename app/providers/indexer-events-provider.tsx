@@ -2,7 +2,13 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_INDEXER } from '@/config/env'
-import { type IndexerBlockEvent, type IndexerEvent, parseIndexerBlockHeight } from '@/lib/indexer-event'
+import {
+  coalesceIndexerEvents,
+  type IndexerBlockEvent,
+  type IndexerEvent,
+  type IndexerEventListener,
+  parseIndexerBlockHeight,
+} from '@/lib/indexer-event'
 import { createIndexerSubscriptions, type IndexerSubscriptions } from '@/lib/indexer-subscription'
 import { logger } from '@/lib/logger'
 import { useComponentsVersion } from '@/providers/components-version-provider'
@@ -13,8 +19,6 @@ type Waiting = {
   reject: (reason?: unknown) => void
   timeoutId?: ReturnType<typeof setTimeout>
 }
-
-export type IndexerEventListener = (corporationId: number, events: IndexerEvent[]) => void
 
 type IndexerEventsContextType = {
   isConnected: boolean
@@ -237,9 +241,14 @@ export function useIndexerEntityEvents(corporationId: number | undefined, apply:
   applyRef.current = apply
   useEffect(() => {
     if (corporationId === undefined) return
-    return addIndexerEventListener((id, events) => {
-      if (id === corporationId) applyRef.current(events)
+    const coalesced = coalesceIndexerEvents((_id, events) => applyRef.current(events))
+    const unsubscribe = addIndexerEventListener((id, events) => {
+      if (id === corporationId) coalesced.listener(id, events)
     })
+    return () => {
+      unsubscribe()
+      coalesced.cancel()
+    }
   }, [addIndexerEventListener, corporationId])
 }
 
