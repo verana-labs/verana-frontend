@@ -1,17 +1,22 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AGENTS_PAGE_SIZE, agentRefreshNeeded, allPages, buildAgentList } from '@/hooks/useAgents'
-import type { IndexerEntityEvent } from '@/lib/indexer-event'
+import type { IndexerEvent } from '@/lib/indexer-event'
 
 const CORPORATION_DID = 'did:web:corp.example'
 const ECOSYSTEM_DID = 'did:web:ecosystem.example'
 const AGENT_DID = 'did:web:agent.example'
 
-function event(overrides: Partial<IndexerEntityEvent>): IndexerEntityEvent {
+function event(overrides: Partial<IndexerEvent>): IndexerEvent {
   return {
     eventType: 'participant_updated',
     module: 'pp',
     did: null,
     relatedDids: [],
+    blockHeight: 1,
+    txHash: 'AB12',
+    messageIndex: 0,
+    sender: 'verana1sender',
+    grantee: null,
     corporationId: null,
     relatedCorporationIds: [],
     ...overrides,

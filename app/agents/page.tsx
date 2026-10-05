@@ -31,7 +31,7 @@ export default function AgentsPage() {
     loadMore,
     applyEvents,
   } = useAgents(actingCorporation?.corporation, filters.includeInactive)
-  useIndexerEntityEvents(applyEvents)
+  useIndexerEntityEvents(actingCorporation?.corporation.id, applyEvents)
 
   const partialError = Boolean(error) && agents.length > 0
 
