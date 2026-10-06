@@ -113,7 +113,7 @@ test('Ring A, the Get VNA card is hidden when the faucet url is unset', async ({
 
   await page.goto('/account?getVNA=true')
   await expect(page.getByRole('heading', { name: 'Account', exact: true })).toBeVisible({ timeout: 15_000 })
-  await expect(page.getByRole('heading', { name: 'Trust Deposit', exact: true })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('heading', { name: 'Main Balance', exact: true })).toBeVisible({ timeout: 15_000 })
   await expect(getVNACard(page)).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Account Actions' })).toHaveCount(0)
 })

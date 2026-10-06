@@ -115,7 +115,7 @@ describe('resolveDelegableMsgs', () => {
 describe('delegableTypeUrl', () => {
   it('maps entity message names to their delegable type url', () => {
     expect(delegableTypeUrl('MsgCreateEcosystem')).toBe(CREATE)
-    expect(delegableTypeUrl('MsgReclaimTrustDepositYield')).toBe('/verana.td.v1.MsgReclaimTrustDepositYield')
+    expect(delegableTypeUrl('MsgRepaySlashedTrustDeposit')).toBe('/verana.td.v1.MsgRepaySlashedTrustDeposit')
     expect(delegableTypeUrl('MsgRevokeParticipant')).toBe('/verana.pp.v1.MsgRevokeParticipant')
   })
 
@@ -126,6 +126,7 @@ describe('delegableTypeUrl', () => {
 
   it('is null for non-delegable and unknown actions', () => {
     expect(delegableTypeUrl('MsgCreateCorporation')).toBeNull()
+    expect(delegableTypeUrl('MsgReclaimTrustDepositYield')).toBeNull()
     expect(delegableTypeUrl('MsgVote')).toBeNull()
     expect(delegableTypeUrl('GetVNATrustDeposit')).toBeNull()
   })
