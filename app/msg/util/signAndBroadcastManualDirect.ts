@@ -15,7 +15,11 @@ import { createVeranaRegistry } from '@verana-labs/verana-types'
 import { TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import Long from 'long'
 import { logger } from '@/lib/logger'
-import { expectedSequence, isBroadcastSequenceMismatch } from '@/msg/util/sequence-mismatch'
+import {
+  expectedSequence,
+  isBroadcastSequenceMismatch,
+  isDeliverTxSequenceMismatch,
+} from '@/msg/util/sequence-mismatch'
 import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
 
 export function makeRegistry(): Registry {
@@ -98,11 +102,15 @@ export async function signAndBroadcastManualDirect({
     return client.broadcastTx(TxRaw.encode(txRaw).finish())
   }
 
+  let mismatch: unknown
   try {
-    return await signAndBroadcast(sequence)
+    const response = await signAndBroadcast(sequence)
+    if (!isDeliverTxSequenceMismatch(response)) return response
+    mismatch = response.rawLog
   } catch (error) {
     if (!isBroadcastSequenceMismatch(error)) throw error
-    logger.warn('Retrying once after an account sequence mismatch', error)
-    return signAndBroadcast(expectedSequence(error) ?? (await client.getSequence(address)).sequence)
+    mismatch = error
   }
+  logger.warn('Retrying once after an account sequence mismatch', mismatch)
+  return signAndBroadcast(expectedSequence(mismatch) ?? (await client.getSequence(address)).sequence)
 }

@@ -1,4 +1,4 @@
-import { BroadcastTxError } from '@cosmjs/stargate'
+import { BroadcastTxError, type DeliverTxResponse } from '@cosmjs/stargate'
 
 function errorText(error: unknown): string {
   if (error instanceof Error) return error.message
@@ -13,6 +13,10 @@ export function isSequenceMismatch(error: unknown): boolean {
 
 export function isBroadcastSequenceMismatch(error: unknown): boolean {
   return error instanceof BroadcastTxError && isSequenceMismatch(error)
+}
+
+export function isDeliverTxSequenceMismatch(response: Pick<DeliverTxResponse, 'code'>): boolean {
+  return response.code === 32
 }
 
 export function expectedSequence(error: unknown): number | undefined {

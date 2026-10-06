@@ -117,4 +117,39 @@ describe('signAndBroadcastManualAmino', () => {
     expect(stargate.sign).toHaveBeenCalledOnce()
     expect(stargate.broadcastTx).not.toHaveBeenCalled()
   })
+
+  describe('when the block rejects the sequence', () => {
+    const rejected = {
+      code: 32,
+      height: 124,
+      transactionHash: 'BAD',
+      rawLog: 'account sequence mismatch, expected 4, got 3: incorrect account sequence',
+      events: [],
+    }
+
+    it('retries once with the sequence from the log and returns the second result', async () => {
+      stargate.broadcastTx.mockResolvedValueOnce(rejected)
+
+      await expect(send({ fee: confirmedFee })).resolves.toMatchObject({ code: 0, transactionHash: 'ABC' })
+      expect(stargate.sign).toHaveBeenCalledTimes(2)
+      expect(stargate.sign.mock.calls[1]?.[4]).toMatchObject({ sequence: 4 })
+      expect(stargate.broadcastTx).toHaveBeenCalledTimes(2)
+    })
+
+    it('returns a second rejection as is without retrying again', async () => {
+      stargate.broadcastTx.mockResolvedValue(rejected)
+
+      await expect(send({ fee: confirmedFee })).resolves.toMatchObject({ code: 32, transactionHash: 'BAD' })
+      expect(stargate.sign).toHaveBeenCalledTimes(2)
+      expect(stargate.broadcastTx).toHaveBeenCalledTimes(2)
+    })
+
+    it('does not retry any other failure code', async () => {
+      stargate.broadcastTx.mockResolvedValue({ ...rejected, code: 5, rawLog: 'insufficient funds' })
+
+      await expect(send({ fee: confirmedFee })).resolves.toMatchObject({ code: 5 })
+      expect(stargate.sign).toHaveBeenCalledOnce()
+      expect(stargate.broadcastTx).toHaveBeenCalledOnce()
+    })
+  })
 })

@@ -10,7 +10,7 @@ import { Exec, MsgSubmitProposal } from 'cosmjs-types/cosmos/group/v1/tx'
 import { ThresholdDecisionPolicy } from 'cosmjs-types/cosmos/group/v1/types'
 import { useRef } from 'react'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
-import { explorerTxLink, useVeranaChain } from '@/hooks/useVeranaChain'
+import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { findCorporationMembership, type UserCorporation } from '@/lib/corporation-discovery'
 import type { CostLine, TxConfirmRequest, TxConfirmResult } from '@/lib/tx-preview'
@@ -242,12 +242,13 @@ export function useActionCorporation() {
     if (indexed) {
       const membership = await findCorporationMembership(operator, corporation.id)
       if (!membership?.operator) {
-        await notify(
+        const pending = successfulTxNotification(
           translate('notification.MsgGrantSelfOperatorAuthorization.pending'),
-          'success',
-          undefined,
-          explorerTxLink(result.transactionHash)
+          height,
+          true,
+          result.transactionHash
         )
+        await notify(pending.message, pending.type, pending.title, pending.link)
         return 'pending'
       }
     }

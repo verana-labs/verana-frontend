@@ -272,5 +272,58 @@ describe('signAndBroadcastManualDirect', () => {
       await expect(send(signer)).rejects.toThrow('insufficient fees')
       expect(signDirect).toHaveBeenCalledOnce()
     })
+
+    describe('rejected in the block', () => {
+      const rejected = {
+        code: 32,
+        height: 124,
+        transactionHash: 'BAD',
+        rawLog: 'account sequence mismatch, expected 5, got 3: incorrect account sequence',
+        events: [],
+      }
+
+      it('signs again once with the sequence from the log and returns the second result', async () => {
+        const { signer, signDirect } = directSigner()
+        stargate.broadcastTx
+          .mockResolvedValueOnce(rejected)
+          .mockResolvedValueOnce({ code: 0, height: 125, transactionHash: 'DEF', events: [] })
+
+        await expect(send(signer)).resolves.toMatchObject({ code: 0, transactionHash: 'DEF' })
+        expect(signDirect).toHaveBeenCalledTimes(2)
+        expect(signedSequence(signDirect, 1)).toBe(BigInt(5))
+        expect(stargate.broadcastTx).toHaveBeenCalledTimes(2)
+      })
+
+      it('reads the sequence again when the response has no log', async () => {
+        const { signer, signDirect } = directSigner()
+        stargate.getSequence
+          .mockResolvedValueOnce({ accountNumber: 7, sequence: 3 })
+          .mockResolvedValueOnce({ accountNumber: 7, sequence: 4 })
+        stargate.broadcastTx
+          .mockResolvedValueOnce({ ...rejected, rawLog: undefined })
+          .mockResolvedValueOnce({ code: 0, height: 125, transactionHash: 'DEF', events: [] })
+
+        await send(signer)
+        expect(signedSequence(signDirect, 1)).toBe(BigInt(4))
+      })
+
+      it('returns a second rejection as is without retrying again', async () => {
+        const { signer, signDirect } = directSigner()
+        stargate.broadcastTx.mockResolvedValue(rejected)
+
+        await expect(send(signer)).resolves.toMatchObject({ code: 32, transactionHash: 'BAD' })
+        expect(signDirect).toHaveBeenCalledTimes(2)
+        expect(stargate.broadcastTx).toHaveBeenCalledTimes(2)
+      })
+
+      it('does not retry any other failure code', async () => {
+        const { signer, signDirect } = directSigner()
+        stargate.broadcastTx.mockResolvedValue({ ...rejected, code: 5, rawLog: 'insufficient funds' })
+
+        await expect(send(signer)).resolves.toMatchObject({ code: 5 })
+        expect(signDirect).toHaveBeenCalledOnce()
+        expect(stargate.broadcastTx).toHaveBeenCalledOnce()
+      })
+    })
   })
 })

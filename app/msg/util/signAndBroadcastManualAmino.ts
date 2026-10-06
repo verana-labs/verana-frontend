@@ -5,7 +5,12 @@ import { calculateFee, DeliverTxResponse, GasPrice, SigningStargateClient, StdFe
 import { TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { veranaAmino, veranaRegistry } from '@/config/veranaChain.sign.client'
 import { logger } from '@/lib/logger'
-import { expectedSequence, isBroadcastSequenceMismatch, isSequenceMismatch } from '@/msg/util/sequence-mismatch'
+import {
+  expectedSequence,
+  isBroadcastSequenceMismatch,
+  isDeliverTxSequenceMismatch,
+  isSequenceMismatch,
+} from '@/msg/util/sequence-mismatch'
 
 type AminoSignOptions = {
   rpcEndpoint: string
@@ -69,7 +74,13 @@ export async function signAndBroadcastManualAmino({
         chainId,
       })
       const txBytes = TxRaw.encode(txRaw).finish()
-      return await client.broadcastTx(txBytes)
+      const response = await client.broadcastTx(txBytes)
+      if (isDeliverTxSequenceMismatch(response) && attempt === 0) {
+        logger.error('Tx: ', response.rawLog)
+        sequence = expectedSequence(response.rawLog) ?? (await client.getSequence(address)).sequence
+        continue
+      }
+      return response
     } catch (e) {
       if (isBroadcastSequenceMismatch(e) && attempt === 0) {
         logger.error('Tx: ', e)

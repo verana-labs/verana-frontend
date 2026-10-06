@@ -1,6 +1,11 @@
 import { BroadcastTxError } from '@cosmjs/stargate'
 import { describe, expect, it } from 'vitest'
-import { expectedSequence, isBroadcastSequenceMismatch, isSequenceMismatch } from './sequence-mismatch'
+import {
+  expectedSequence,
+  isBroadcastSequenceMismatch,
+  isDeliverTxSequenceMismatch,
+  isSequenceMismatch,
+} from './sequence-mismatch'
 
 const CHECK_TX =
   'Broadcasting transaction failed with code 32 (codespace: sdk). Log: account sequence mismatch, expected 5, got 3: incorrect account sequence'
@@ -26,9 +31,18 @@ describe('isBroadcastSequenceMismatch', () => {
   })
 })
 
+describe('isDeliverTxSequenceMismatch', () => {
+  it('only accepts a wrong sequence the block rejected', () => {
+    expect(isDeliverTxSequenceMismatch({ code: 32 })).toBe(true)
+    expect(isDeliverTxSequenceMismatch({ code: 0 })).toBe(false)
+    expect(isDeliverTxSequenceMismatch({ code: 5 })).toBe(false)
+  })
+})
+
 describe('expectedSequence', () => {
   it('reads the sequence the chain expects', () => {
     expect(expectedSequence(new Error(CHECK_TX))).toBe(5)
+    expect(expectedSequence('account sequence mismatch, expected 6, got 3: incorrect account sequence')).toBe(6)
   })
 
   it('returns undefined when the error does not carry it', () => {
