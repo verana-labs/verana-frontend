@@ -159,7 +159,7 @@ export function mapResolveResult(did: string, raw: ResolveResult, credentialIssu
     servicePrivacyUrl: pickString(service, 'privacyPolicyUri'),
     organizationName: pickString(org, 'name') ?? pickString(persona, 'name'),
     organizationLogoUrl: pickString(org, 'logoUri') ?? pickString(persona, 'avatarUri'),
-    countryCode: pickString(org, 'countryCode') ?? pickString(persona, 'controllerCountryCode'),
+    countryCode: pickString(org, 'countryCode'),
     organizationAddress: pickString(org, 'address'),
     organizationRegistryId: pickString(org, 'registryId'),
     credentialIssuerDid,

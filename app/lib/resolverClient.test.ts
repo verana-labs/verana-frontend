@@ -314,7 +314,7 @@ describe('mapResolveResult', () => {
     const enrichment = mapResolveResult(DID, raw)
     expect(enrichment.organizationName).toBe('Ada Lovelace')
     expect(enrichment.organizationLogoUrl).toBe('https://persona.example/ada.png')
-    expect(enrichment.countryCode).toBe('GB')
+    expect(enrichment.countryCode).toBeUndefined()
     expect(enrichment.organizationRegistryId).toBeUndefined()
   })
 })

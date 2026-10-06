@@ -81,15 +81,28 @@ export async function getProtocolParams(): Promise<ProtocolParamsResult> {
   const params: ProtocolParams = { ...protocolParamsInitialState }
   const errors: string[] = []
 
-  const loads = new Map<string, Promise<Record<string, unknown>>>()
+  function fail(subject: string, error: unknown) {
+    errors.push(
+      `${resolveTranslatable({ key: 'error.fetch.td.param.failed' }, translate)} ${subject}: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    )
+  }
 
-  function load(base: string): Promise<Record<string, unknown>> {
+  const loads = new Map<string, Promise<Record<string, unknown> | null>>()
+
+  function load(base: string): Promise<Record<string, unknown> | null> {
     const pending =
       loads.get(base) ??
-      fetch(`${base}/params`).then(async (response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
-        return paramsEnvelope(await response.json())
-      })
+      fetch(`${base}/params`)
+        .then(async (response) => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`)
+          return paramsEnvelope(await response.json())
+        })
+        .catch((error: unknown) => {
+          fail(`${base}/params`, error)
+          return null
+        })
     loads.set(base, pending)
     return pending
   }
@@ -100,16 +113,13 @@ export async function getProtocolParams(): Promise<ProtocolParamsResult> {
         errors.push(`${resolveTranslatable({ key: 'error.fetch.td.param.missing' }, translate)} ${responseKey}`)
         return
       }
+      const responseParams = await load(endpoint)
+      if (!responseParams) return
       try {
-        const responseParams = await load(endpoint)
         if (!(responseKey in responseParams)) throw new Error(`${responseKey} not found in response`)
         params[key] = numeric(responseParams[responseKey], responseKey)
       } catch (error) {
-        errors.push(
-          `${resolveTranslatable({ key: 'error.fetch.td.param.failed' }, translate)} ${responseKey}: ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        )
+        fail(responseKey, error)
       }
     })
   )

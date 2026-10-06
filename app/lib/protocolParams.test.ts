@@ -56,4 +56,17 @@ describe('getProtocolParams', () => {
     expect(result.params).toEqual(protocolParamsInitialState)
     expect(result.errorProtocolParams).toContain('missing params envelope')
   })
+
+  it('reports a failed params request once, naming the endpoint', async () => {
+    vi.mocked(fetch).mockImplementation(async (input) =>
+      String(input).includes('credential-schema')
+        ? ({ ok: false, status: 503 } as Response)
+        : ({ ok: true, status: 200, json: async () => ({ params: { trust_deposit_rate: 0.2 } }) } as Response)
+    )
+    const result = await getProtocolParams()
+    expect(result.params.trustDepositRate).toBe(0.2)
+    expect(result.errorProtocolParams).toBe(
+      'Failed to fetch parameters for https://indexer/v4/credential-schema/params: HTTP 503'
+    )
+  })
 })
