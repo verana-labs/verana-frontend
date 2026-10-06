@@ -221,7 +221,7 @@
   "notconnected.dashboard.title": "Connect Your Wallet",
   "notconnected.dashboard.msg": "Access your account and create or join ecosystems.",
   "nocorporation.dashboard.title": "Create your corporation",
-  "nocorporation.dashboard.msg": "This wallet acts for no corporation yet. A corporation owns your ecosystems and credential schemas.",
+  "nocorporation.dashboard.msg": "This wallet operates no corporation yet. A corporation owns your ecosystems and credential schemas.",
   "wallet.nav.connect": "Connect",
   "wallet.dashboard.connect": "Connect Wallet",
   "wallet.wallet": "My Wallet",

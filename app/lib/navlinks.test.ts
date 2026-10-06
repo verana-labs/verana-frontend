@@ -27,7 +27,7 @@ describe('getNavLinks', () => {
     const gated = getNavLinks()
       .filter((link) => link.requiresCorporation === true)
       .map((link) => link.href)
-    expect(gated).toEqual(['/corporation', '/ecosystems', '/agents', '/pendingtasks'])
+    expect(gated.sort()).toEqual(['/agents', '/corporation', '/ecosystems', '/pendingtasks'])
   })
 
   it('gives every link a non-empty name and an icon', () => {

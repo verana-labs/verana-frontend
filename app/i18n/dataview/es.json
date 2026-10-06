@@ -221,7 +221,7 @@
   "notconnected.dashboard.title": "Conecta tu Wallet",
   "notconnected.dashboard.msg": "Accede a tu cuenta y crea o únete a ecosistemas.",
   "nocorporation.dashboard.title": "Crea tu corporación",
-  "nocorporation.dashboard.msg": "Esta billetera aún no actúa para ninguna corporación. Una corporación es dueña de tus ecosistemas y esquemas de credenciales.",
+  "nocorporation.dashboard.msg": "Esta billetera aún no opera ninguna corporación. Una corporación es dueña de tus ecosistemas y esquemas de credenciales.",
   "wallet.nav.connect": "Conectar",
   "wallet.dashboard.connect": "Conectar Wallet",
   "wallet.wallet": "Mi Billetera",

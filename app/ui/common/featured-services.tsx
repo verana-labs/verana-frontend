@@ -6,7 +6,7 @@ import { resolveTranslatable } from '../dataview/types'
 
 type FeaturedServicesProps = {
   isWalletConnected: boolean
-  hasCorporation: boolean
+  hasCorporation: boolean | undefined
 }
 
 export default function FeaturedServices({ isWalletConnected, hasCorporation }: FeaturedServicesProps) {
@@ -42,14 +42,15 @@ export default function FeaturedServices({ isWalletConnected, hasCorporation }: 
                     </span>
                   ) : (
                     <span className="text-sm text-neutral-70 dark:text-neutral-70">
-                      {resolveTranslatable(
-                        {
-                          key: isWalletConnected
-                            ? 'featuredservices.corporationrequired'
-                            : 'featuredservices.connectrequired',
-                        },
-                        translate
-                      )}
+                      {(!isWalletConnected || hasCorporation === false) &&
+                        resolveTranslatable(
+                          {
+                            key: isWalletConnected
+                              ? 'featuredservices.corporationrequired'
+                              : 'featuredservices.connectrequired',
+                          },
+                          translate
+                        )}
                     </span>
                   )}
                   <Link

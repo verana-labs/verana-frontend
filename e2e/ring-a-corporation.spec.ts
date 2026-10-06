@@ -149,6 +149,27 @@ test('a fresh wallet sees no corporation nav and lands on the wizard', async ({ 
   await expect(page.getByRole('menuitem', { name: /Create new Corporation/ })).toBeVisible()
 })
 
+test('the create corporation call to action waits for a successful discovery', async ({ page }) => {
+  await installCorporationStubs(page, { fresh: true })
+  let release: () => void = () => {}
+  const released = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  await page.route('**/v4/group/corporations-by-member*', async (route) => {
+    await released
+    await route.fulfill({ status: 502, json: { error: 'indexer unavailable', code: 502 } })
+  })
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  const callToAction = page.getByRole('heading', { name: 'Create your corporation' })
+  await expect(callToAction).toBeHidden()
+  await expect(page.getByText('Acting corporation required')).toBeHidden()
+
+  release()
+  await expect(page.getByText('Discovery failed', { exact: true })).toBeVisible({ timeout: 15_000 })
+  await expect(callToAction).toBeHidden()
+})
+
 test('losing the last corporation blocks with a notice and returns to the dashboard', async ({ page }) => {
   await installCorporationStubs(page, { fresh: true })
   await seedActingCorporation(page, 13)

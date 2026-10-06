@@ -106,7 +106,10 @@ export default function Page() {
       )}
 
       {/* Featured Services */}
-      <FeaturedServices isWalletConnected={isWalletConnected} hasCorporation={actingCorporation !== null} />
+      <FeaturedServices
+        isWalletConnected={isWalletConnected}
+        hasCorporation={actingCorporation !== null || (corporationsLoading || discoveryError ? undefined : false)}
+      />
 
       {/* Getting Started Guide */}
       <GettingStarted />
