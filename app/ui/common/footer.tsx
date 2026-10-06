@@ -18,13 +18,21 @@ const HEALTH_DOT: Record<ChainHealth | IndexerHealth['state'], string> = {
   unreachable: 'bg-red-500',
 }
 
+const HEALTH_LABEL: Record<ChainHealth | IndexerHealth['state'], string> = {
+  synced: 'sr-only',
+  crawling: 'sr-only',
+  syncing: 'text-amber-700 dark:text-amber-400',
+  stalled: 'text-amber-700 dark:text-amber-400',
+  down: 'text-red-700 dark:text-red-400',
+  unreachable: 'text-red-700 dark:text-red-400',
+}
+
 function HealthBadge({ state, reason }: { state: ChainHealth | IndexerHealth['state']; reason?: string | null }) {
   const label = translate(`footer.health.${state}`)
-  const healthy = state === 'synced' || state === 'crawling'
   return (
     <span className="inline-flex items-center gap-1" title={reason ?? undefined}>
       <span aria-hidden="true" className={`inline-block w-1.5 h-1.5 rounded-full ${HEALTH_DOT[state]}`} />
-      <span className={healthy ? 'sr-only' : 'text-amber-700 dark:text-amber-400'}>{label}</span>
+      <span className={HEALTH_LABEL[state]}>{label}</span>
     </span>
   )
 }
