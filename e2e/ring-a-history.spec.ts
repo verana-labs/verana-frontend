@@ -13,12 +13,20 @@ const SCHEMA_HISTORY = {
   activity: [
     { id: 9, timestamp: '2026-09-30T10:00:00Z', block_height: 47394, msg: 'StatsUpdate', changes: {} },
     {
+      id: 4,
+      timestamp: '2026-09-30T09:00:00Z',
+      block_height: 47300,
+      msg: 'ArchiveCredentialSchema',
+      account: 'verana1policy',
+      changes: { archived: '2026-09-30T09:00:00Z' },
+    },
+    {
       id: 3,
       timestamp: '2026-09-29T10:24:51Z',
       block_height: 9390,
       msg: 'UpdateCredentialSchema',
       account: 'verana1policy',
-      changes: {},
+      changes: { issuer_validation_validity_period: 730 },
     },
     {
       id: 1,
@@ -99,6 +107,9 @@ test('a credential schema shows its canonical JSON Schema and its history', asyn
   await expect(page.getByText('"stored-id"')).toHaveCount(0)
   const activity = page.locator('#activity')
   await expect(activity.getByText('Update Credential Schema')).toBeVisible()
+  await expect(activity).toContainText('issuer_validation_validity_period: 730')
+  await expect(activity.getByText('Archive Credential Schema')).toBeVisible()
+  await expect(activity).toContainText('archived: 2026-09-30T09:00:00Z')
   await expect(activity.getByText('Create Credential Schema')).toBeVisible()
   await expect(activity.getByText('Stats Update')).toHaveCount(0)
 })

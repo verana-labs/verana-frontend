@@ -46,7 +46,7 @@ export function parseActivityHistory(payload: unknown): ActivityRow[] {
   return vprRows(parseActivityItems(payload)).sort(newestFirst)
 }
 
-export async function fetchActivityHistory(baseUrl: string): Promise<ActivityRow[]> {
+export async function fetchActivityHistory(baseUrl: string): Promise<{ rows: ActivityRow[]; partial: boolean }> {
   const rows: ActivityRow[] = []
   let maxId: number | undefined
   for (let page = 0; page < MAX_PAGES && rows.length < PAGE_SIZE; page++) {
@@ -55,8 +55,8 @@ export async function fetchActivityHistory(baseUrl: string): Promise<ActivityRow
     if (maxId !== undefined) url.searchParams.set('max_id', String(maxId))
     const items = parseActivityItems(await fetchJson(url.toString(), 'Unable to fetch the history'))
     rows.push(...vprRows(items))
-    if (items.length < PAGE_SIZE) break
+    if (items.length < PAGE_SIZE) return { rows: rows.sort(newestFirst), partial: false }
     maxId = Math.min(...items.map((item) => item.id))
   }
-  return rows.sort(newestFirst)
+  return { rows: rows.sort(newestFirst), partial: true }
 }

@@ -105,9 +105,10 @@ describe('fetchActivityHistory', () => {
     }))
     vi.stubGlobal('fetch', fetchMock)
 
-    const rows = await fetchActivityHistory('https://indexer.example/v4/credential-schema/history/1')
+    const { rows, partial } = await fetchActivityHistory('https://indexer.example/v4/credential-schema/history/1')
 
     expect(rows.map((row) => row.msg)).toEqual(['CreateCredentialSchema'])
+    expect(partial).toBe(false)
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
       'https://indexer.example/v4/credential-schema/history/1?limit=64',
       'https://indexer.example/v4/credential-schema/history/1?limit=64&max_id=137',
@@ -118,7 +119,22 @@ describe('fetchActivityHistory', () => {
     const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ activity: [item(1, 'CreateEcosystem')] }) }))
     vi.stubGlobal('fetch', fetchMock)
 
-    await expect(fetchActivityHistory('https://indexer.example/v4/ecosystem/history/1')).resolves.toHaveLength(1)
+    const { rows, partial } = await fetchActivityHistory('https://indexer.example/v4/ecosystem/history/1')
+
+    expect(rows).toHaveLength(1)
+    expect(partial).toBe(false)
+    expect(fetchMock).toHaveBeenCalledOnce()
+  })
+
+  it('flags a partial window when it stops at the row cap', async () => {
+    const fullPage = Array.from({ length: 64 }, (_, index) => item(200 - index, 'UpdateEcosystem'))
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ activity: fullPage }) }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { rows, partial } = await fetchActivityHistory('https://indexer.example/v4/ecosystem/history/1')
+
+    expect(rows).toHaveLength(64)
+    expect(partial).toBe(true)
     expect(fetchMock).toHaveBeenCalledOnce()
   })
 

@@ -144,7 +144,7 @@ export function TabsLayout({
         <div className="mt-6">
           <Card id="activity">
             <div className="mb-3">
-              <SectionTitle>{translate('corporation.page.activity')}</SectionTitle>
+              <SectionTitle>{translate('activity.title')}</SectionTitle>
             </div>
             <ActivityTimeline rows={view.details.history} limit={5} />
           </Card>
