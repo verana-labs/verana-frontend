@@ -808,6 +808,7 @@
   "corporation.grant.feegrant": "La corporación paga las comisiones de red de este operador (concesión de comisiones)",
   "corporation.grant.feegrant.revokewarning": "Esta cuenta ya tiene una concesión de comisiones de la corporación. Si concede la autorización sin ella, se revoca.",
   "corporation.grant.feegrant.revoked": "Revocada, se elimina la concesión de comisiones actual",
+  "corporation.grant.feegrant.line": "Concesión de comisiones al beneficiario",
   "corporation.grant.feespendlimit": "Límite de comisiones (VNA)",
   "corporation.grant.feeperiod": "Periodo de comisiones (días)",
   "corporation.grant.limit.every": "{amount} cada {period}",

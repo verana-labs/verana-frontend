@@ -230,7 +230,7 @@ export function grantOptionLines(options: OperatorGrantOptions, replacesFeeGrant
   }
   const feeGrant = options.feeGrant
   lines.push({
-    label: translate('delegation.withFeegrant'),
+    label: translate('corporation.grant.feegrant.line'),
     value: !feeGrant
       ? translate(replacesFeeGrant ? 'corporation.grant.feegrant.revoked' : 'common.none')
       : feeGrant.spendLimit

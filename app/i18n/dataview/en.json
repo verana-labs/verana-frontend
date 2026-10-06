@@ -808,6 +808,7 @@
   "corporation.grant.feegrant": "The corporation pays this operator's network fees (fee grant)",
   "corporation.grant.feegrant.revokewarning": "This account already has a fee grant from the corporation. Granting without one revokes it.",
   "corporation.grant.feegrant.revoked": "Revoked, the current fee grant is removed",
+  "corporation.grant.feegrant.line": "Grantee fee grant",
   "corporation.grant.feespendlimit": "Fee spend limit (VNA)",
   "corporation.grant.feeperiod": "Fee period (days)",
   "corporation.grant.limit.every": "{amount} every {period}",

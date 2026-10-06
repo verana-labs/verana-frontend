@@ -224,12 +224,12 @@ describe('readGrantOptions', () => {
 
 describe('grantOptionLines', () => {
   it('states that no fee grant is attached', () => {
-    expect(grantOptionLines(NO_GRANT_OPTIONS, false)).toEqual([{ label: 'Fee grant', value: 'None' }])
+    expect(grantOptionLines(NO_GRANT_OPTIONS, false)).toEqual([{ label: 'Grantee fee grant', value: 'None' }])
   })
 
   it('reads as a revoke when the grantee already holds a fee grant', () => {
     expect(grantOptionLines(NO_GRANT_OPTIONS, true)).toEqual([
-      { label: 'Fee grant', value: 'Revoked, the current fee grant is removed' },
+      { label: 'Grantee fee grant', value: 'Revoked, the current fee grant is removed' },
     ])
   })
 
@@ -245,7 +245,7 @@ describe('grantOptionLines', () => {
     expect(lines).toEqual([
       { label: 'Spend limit', value: '5 VNA every 30d' },
       { label: 'Expiration', value: LATER.toLocaleString() },
-      { label: 'Fee grant', value: 'Unlimited' },
+      { label: 'Grantee fee grant', value: 'Unlimited' },
     ])
   })
 
@@ -257,7 +257,7 @@ describe('grantOptionLines', () => {
       },
       false
     )
-    expect(lines).toEqual([{ label: 'Fee grant', value: '2 VNA every 7d' }])
+    expect(lines).toEqual([{ label: 'Grantee fee grant', value: '2 VNA every 7d' }])
   })
 })
 

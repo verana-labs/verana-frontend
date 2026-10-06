@@ -682,7 +682,7 @@ test('a grant with an expiration, spend limits and a fee grant confirms and broa
   await expect(fact(dialog, 'Expiration')).toContainText(
     await page.evaluate((value) => new Date(value).toLocaleString(), expiration)
   )
-  await expect(fact(dialog, 'Fee grant')).toContainText('2 VNA every 7d')
+  await expect(fact(dialog, 'Grantee fee grant')).toContainText('2 VNA every 7d')
   await expect(fact(dialog, 'Network fee')).toContainText(/VNA/, { timeout: 30_000 })
   await dialog.getByRole('button', { name: 'Confirm' }).click()
   await expect.poll(() => mock.broadcastTxs().length, { timeout: 30_000 }).toBe(1)
@@ -744,7 +744,7 @@ test('a re-grant keeps the current fee grant unless turned off, and then warns t
 
   const dialog = page.getByRole('dialog', { name: 'Confirm transaction' })
   await expect(dialog).toBeVisible({ timeout: 30_000 })
-  await expect(fact(dialog, 'Fee grant')).toContainText('Revoked, the current fee grant is removed')
+  await expect(fact(dialog, 'Grantee fee grant')).toContainText('Revoked, the current fee grant is removed')
   await dialog.getByRole('button', { name: 'Cancel' }).click()
   await expect(dialog).toBeHidden()
   expect(mock.seenMethods()).not.toContain('broadcast_tx_sync')
