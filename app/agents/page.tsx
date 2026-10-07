@@ -17,7 +17,7 @@ const SKELETONS = 3
 const DEGRADED = 'text-sm text-amber-700 dark:text-amber-300'
 
 export default function AgentsPage() {
-  const { actingCorporation, loading: actingLoading } = useUserCorporation()
+  const { actingCorporation, loading: actingLoading, error: discoveryError } = useUserCorporation()
   const [filters, setFilters] = useState<AgentsFilterState>(INITIAL_AGENTS_FILTER)
   const {
     agents,
@@ -49,6 +49,7 @@ export default function AgentsPage() {
     return <p className="p-6 text-sm text-gray-500">{translate('agents.loading')}</p>
   }
   if (!actingCorporation) {
+    if (discoveryError) return <div className="p-6 error-pane">{translate('corporation.page.error')}</div>
     return <p className="p-6 text-sm text-gray-600 dark:text-gray-300">{translate('corporation.page.nocorp')}</p>
   }
 

@@ -29,7 +29,12 @@ export default function CorporationPage() {
   const searchParams = useSearchParams()
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
-  const { actingCorporation, loading: actingLoading, refetch: refetchCorporations } = useUserCorporation()
+  const {
+    actingCorporation,
+    loading: actingLoading,
+    error: discoveryError,
+    refetch: refetchCorporations,
+  } = useUserCorporation()
   const { details, loading, error, refetch } = useCorporationDetails(actingCorporation?.corporation.id)
   const { addIndexerEventListener } = useIndexerEvents()
   const [votesVersion, setVotesVersion] = useState(0)
@@ -98,7 +103,10 @@ export default function CorporationPage() {
   if (!actingCorporation || creating || wizardPinned) {
     return (
       <>
-        {!actingCorporation ? (
+        {!actingCorporation && discoveryError ? (
+          <div className="mb-4 error-pane">{translate('corporation.page.error')}</div>
+        ) : null}
+        {!actingCorporation && !discoveryError ? (
           <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">{translate('corporation.page.nocorp')}</p>
         ) : null}
         <CorporationCreateWizard

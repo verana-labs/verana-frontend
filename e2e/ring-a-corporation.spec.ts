@@ -168,6 +168,11 @@ test('the create corporation call to action waits for a successful discovery', a
   release()
   await expect(page.getByText('Discovery failed', { exact: true })).toBeVisible({ timeout: 15_000 })
   await expect(callToAction).toBeHidden()
+
+  for (const path of ['/ecosystems', '/pendingtasks', '/agents', '/corporation']) {
+    await page.goto(path)
+    await expect(page.getByText('Unable to load the corporation.')).toBeVisible({ timeout: 15_000 })
+  }
 })
 
 test('losing the last corporation blocks with a notice and returns to the dashboard', async ({ page }) => {
