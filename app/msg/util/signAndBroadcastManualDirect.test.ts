@@ -16,10 +16,15 @@ vi.mock('@cosmjs/stargate', async () => {
   return {
     ...actual,
     SigningStargateClient: {
-      connectWithSigner: vi.fn(async () => stargate),
+      createWithSigner: vi.fn(async () => stargate),
     },
   }
 })
+
+vi.mock('@cosmjs/tendermint-rpc', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cosmjs/tendermint-rpc')>()),
+  Comet38Client: { connect: vi.fn(async () => ({})) },
+}))
 
 describe('signAndBroadcastManualDirect', () => {
   beforeEach(() => {

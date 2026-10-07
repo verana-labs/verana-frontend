@@ -11,6 +11,7 @@ import {
   Registry,
 } from '@cosmjs/proto-signing'
 import { calculateFee, DeliverTxResponse, GasPrice, SigningStargateClient, StdFee } from '@cosmjs/stargate'
+import { Comet38Client } from '@cosmjs/tendermint-rpc'
 import { createVeranaRegistry } from '@verana-labs/verana-types'
 import { TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import Long from 'long'
@@ -55,7 +56,9 @@ export async function signAndBroadcastManualDirect({
   logger.log('Any.value(hex):', toHex(anys[0].value))
 
   // Connect a client — only used for simulate and broadcast
-  const client = await SigningStargateClient.connectWithSigner(rpcEndpoint, signer, { registry })
+  const client = await SigningStargateClient.createWithSigner(await Comet38Client.connect(rpcEndpoint), signer, {
+    registry,
+  })
 
   let fee = givenFee
   if (!fee) {

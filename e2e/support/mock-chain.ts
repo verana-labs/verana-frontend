@@ -45,14 +45,14 @@ const jsonRpcResult = (id: number | string, result: unknown) => ({
   result,
 })
 
-// CometBFT 0.38 status; version must start with "0.38." or CosmJS connectComet rejects it
+// CometBFT 0.39 status; CosmJS connectComet would pick its 0.34 client for it
 const statusResult = (chainId: string) => ({
   node_info: {
     protocol_version: { p2p: '8', block: '11', app: '0' },
     id: '0000000000000000000000000000000000000000',
     listen_addr: 'tcp://0.0.0.0:26656',
     network: chainId,
-    version: '0.38.0',
+    version: '0.39.4',
     channels: '40202122233038606100',
     moniker: 'e2e-mock',
     other: { tx_index: 'on', rpc_address: 'tcp://0.0.0.0:26657' },
