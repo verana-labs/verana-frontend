@@ -107,6 +107,22 @@ describe('fetchDidEnrichment', () => {
     expect(enrichment.evaluatedAtBlock).toBe(42)
   })
 
+  it('links the issuer of a PersonaCredential when the DID declares no organization', async () => {
+    const response = resolveResponse()
+    stubFetch({
+      ...response,
+      ecsCredentials: [
+        response.ecsCredentials[0],
+        { ecsSchema: 'PersonaCredential', issuerParticipantId: 75, credentialSubject: { name: 'Ada Lovelace' } },
+      ],
+    })
+
+    const enrichment = await fetchDidEnrichment(DID, { force: true })
+
+    expect(enrichment.organizationName).toBe('Ada Lovelace')
+    expect(enrichment.credentialIssuerDid).toBe(ISSUER_DID)
+  })
+
   it('leaves logo fields undefined when the claims carry none', async () => {
     stubFetch(resolveResponse({ withLogos: false }))
 
@@ -278,6 +294,28 @@ describe('mapResolveResult', () => {
     const withFormat = mapResolveResult(DID, resolveResponse({ descriptionFormat: 'text/markdown' }))
     expect(withFormat.serviceDescriptionFormat).toBe('text/markdown')
     expect(mapResolveResult(DID, resolveResponse()).serviceDescriptionFormat).toBeUndefined()
+  })
+  it('takes the controller name and avatar from a PersonaCredential when no organization is declared', () => {
+    const raw = {
+      ...resolveResponse(),
+      ecsCredentials: [
+        resolveResponse().ecsCredentials[0],
+        {
+          ecsSchema: 'PersonaCredential',
+          issuerParticipantId: 92,
+          credentialSubject: {
+            name: 'Ada Lovelace',
+            avatarUri: 'https://persona.example/ada.png',
+            controllerCountryCode: 'GB',
+          },
+        },
+      ],
+    }
+    const enrichment = mapResolveResult(DID, raw)
+    expect(enrichment.organizationName).toBe('Ada Lovelace')
+    expect(enrichment.organizationLogoUrl).toBe('https://persona.example/ada.png')
+    expect(enrichment.countryCode).toBeUndefined()
+    expect(enrichment.organizationRegistryId).toBeUndefined()
   })
 })
 

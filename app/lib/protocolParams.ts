@@ -5,11 +5,21 @@ import { resolveTranslatable } from '@/ui/dataview/types'
 export type ProtocolParams = {
   trustDepositRate: number | null
   credentialSchemaSchemaMaxSize: number | null
+  issuerGrantorValidityMaxDays: number | null
+  verifierGrantorValidityMaxDays: number | null
+  issuerValidityMaxDays: number | null
+  verifierValidityMaxDays: number | null
+  holderValidityMaxDays: number | null
 }
 
 export const protocolParamsInitialState: ProtocolParams = {
   trustDepositRate: null,
   credentialSchemaSchemaMaxSize: null,
+  issuerGrantorValidityMaxDays: null,
+  verifierGrantorValidityMaxDays: null,
+  issuerValidityMaxDays: null,
+  verifierValidityMaxDays: null,
+  holderValidityMaxDays: null,
 }
 
 type ParamConfig = {
@@ -29,6 +39,19 @@ const CONFIGS: ParamConfig[] = [
     responseKey: 'credential_schema_schema_max_size',
     endpoint: VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA,
   },
+  ...(
+    [
+      ['issuerGrantorValidityMaxDays', 'issuer_grantor'],
+      ['verifierGrantorValidityMaxDays', 'verifier_grantor'],
+      ['issuerValidityMaxDays', 'issuer'],
+      ['verifierValidityMaxDays', 'verifier'],
+      ['holderValidityMaxDays', 'holder'],
+    ] as const
+  ).map(([key, role]) => ({
+    key,
+    responseKey: `credential_schema_${role}_validation_validity_period_max_days`,
+    endpoint: VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA,
+  })),
 ]
 
 function paramsEnvelope(payload: unknown): Record<string, unknown> {
@@ -58,10 +81,30 @@ export async function getProtocolParams(): Promise<ProtocolParamsResult> {
   const params: ProtocolParams = { ...protocolParamsInitialState }
   const errors: string[] = []
 
-  async function load(base: string): Promise<Record<string, unknown>> {
-    const response = await fetch(`${base}/params`)
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-    return paramsEnvelope(await response.json())
+  function fail(subject: string, error: unknown) {
+    errors.push(
+      `${resolveTranslatable({ key: 'error.fetch.td.param.failed' }, translate)} ${subject}: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    )
+  }
+
+  const loads = new Map<string, Promise<Record<string, unknown> | null>>()
+
+  function load(base: string): Promise<Record<string, unknown> | null> {
+    const pending =
+      loads.get(base) ??
+      fetch(`${base}/params`)
+        .then(async (response) => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`)
+          return paramsEnvelope(await response.json())
+        })
+        .catch((error: unknown) => {
+          fail(`${base}/params`, error)
+          return null
+        })
+    loads.set(base, pending)
+    return pending
   }
 
   await Promise.all(
@@ -70,16 +113,13 @@ export async function getProtocolParams(): Promise<ProtocolParamsResult> {
         errors.push(`${resolveTranslatable({ key: 'error.fetch.td.param.missing' }, translate)} ${responseKey}`)
         return
       }
+      const responseParams = await load(endpoint)
+      if (!responseParams) return
       try {
-        const responseParams = await load(endpoint)
         if (!(responseKey in responseParams)) throw new Error(`${responseKey} not found in response`)
         params[key] = numeric(responseParams[responseKey], responseKey)
       } catch (error) {
-        errors.push(
-          `${resolveTranslatable({ key: 'error.fetch.td.param.failed' }, translate)} ${responseKey}: ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        )
+        fail(responseKey, error)
       }
     })
   )
