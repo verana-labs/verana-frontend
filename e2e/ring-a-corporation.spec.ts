@@ -15,6 +15,7 @@ import {
   OPERATOR_GRANT_MESSAGE_TYPES,
   REPLACEMENT_MEMBER,
   SECOND_OPERATOR,
+  SECOND_OPERATOR_CYCLE_END,
 } from './support/corp-fixtures'
 import {
   HARNESS_ADDRESS,
@@ -613,7 +614,7 @@ test('an operator row shows its spend limit, expiration and matching fee grant',
   await page.goto('/corporation?tab=operators')
   const row = page.locator('#operators li').filter({ hasText: SECOND_OPERATOR })
   const toggle = row.getByRole('button', { name: new RegExp(SECOND_OPERATOR) })
-  await expect(toggle).toContainText('23 message types · 5 VNA every 30d · Fee grant', { timeout: 15_000 })
+  await expect(toggle).toContainText('22 message types · 5 VNA every 30d · Fee grant', { timeout: 15_000 })
   await expect(
     page.locator('#operators li').filter({ hasText: HARNESS_ADDRESS }).getByRole('button').first()
   ).not.toContainText('Fee grant')
@@ -622,19 +623,19 @@ test('an operator row shows its spend limit, expiration and matching fee grant',
   await expect(fact(row, 'Spend limit')).toContainText('5 VNA')
   await expect(fact(row, 'Remaining spend')).toContainText('3.5 VNA')
   await expect(fact(row, 'Period')).toContainText('30d')
-  const cycleEnd = await page.evaluate((iso) => new Date(iso).toLocaleString(), '2026-12-01T00:00:00Z')
+  const cycleEnd = await page.evaluate((iso) => new Date(iso).toLocaleString(), SECOND_OPERATOR_CYCLE_END)
   await expect(fact(row, 'Spend cycle ends')).toContainText(cycleEnd)
   await expect(fact(row, 'Fee grant')).toContainText('Yes')
   await expect(fact(row, 'Fee spend limit')).toContainText('2 VNA')
   await expect(fact(row, 'Fee remaining')).toContainText('1.25 VNA')
   await expect(fact(row, 'Fee period')).toContainText('7d')
-  await expect(fact(row, 'Fee grant covers')).toContainText('The same 23 message types')
+  await expect(fact(row, 'Fee grant covers')).toContainText('The same 22 message types')
 
   await page.route('**/v4/delegation/fee-grants*', (route) =>
     route.fulfill({ status: 502, json: { error: 'indexer unavailable', code: 502 } })
   )
   await page.reload()
-  await expect(toggle).toContainText('23 message types · 5 VNA every 30d', { timeout: 15_000 })
+  await expect(toggle).toContainText('22 message types · 5 VNA every 30d', { timeout: 15_000 })
   await expect(toggle).not.toContainText('Fee grant')
   await toggle.click()
   await expect(fact(row, 'Remaining spend')).toContainText('3.5 VNA')
@@ -677,7 +678,7 @@ test('a grant with an expiration, spend limits and a fee grant confirms and broa
 
   const dialog = page.getByRole('dialog', { name: 'Confirm transaction' })
   await expect(dialog).toBeVisible({ timeout: 30_000 })
-  await expect(dialog).toContainText('for 23 message types')
+  await expect(dialog).toContainText('for 22 message types')
   await expect(fact(dialog, 'Spend limit')).toContainText('5 VNA every 30d')
   await expect(fact(dialog, 'Expiration')).toContainText(
     await page.evaluate((value) => new Date(value).toLocaleString(), expiration)
@@ -728,6 +729,8 @@ test('a re-grant keeps the current fee grant unless turned off, and then warns t
   ).toBeVisible()
 
   await grantee.fill(SECOND_OPERATOR)
+  await expect(page.getByLabel('Spend limit (VNA)', { exact: true })).toHaveValue('5')
+  await expect(page.getByLabel('Period (days)', { exact: true })).toHaveValue('30')
   const feeGrant = page.getByRole('checkbox', { name: /network fees/ })
   await expect(feeGrant).toBeChecked()
   await expect(page.getByLabel('Fee spend limit (VNA)', { exact: true })).toHaveValue('2')
@@ -744,6 +747,7 @@ test('a re-grant keeps the current fee grant unless turned off, and then warns t
 
   const dialog = page.getByRole('dialog', { name: 'Confirm transaction' })
   await expect(dialog).toBeVisible({ timeout: 30_000 })
+  await expect(fact(dialog, 'Spend limit')).toContainText('5 VNA every 30d')
   await expect(fact(dialog, 'Grantee fee grant')).toContainText('Revoked, the current fee grant is removed')
   await dialog.getByRole('button', { name: 'Cancel' }).click()
   await expect(dialog).toBeHidden()

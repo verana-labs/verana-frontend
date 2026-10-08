@@ -1,8 +1,11 @@
 import { MsgGrantOperatorAuthorization } from '@verana-labs/verana-types/codec/verana/de/v1/tx'
 import { describe, expect, it } from 'vitest'
 import {
+  authorizationFor,
   EMPTY_GRANT_OPTIONS_INPUT,
+  type ExistingAuthorization,
   type ExistingFeeGrant,
+  existingAuthorizationFields,
   existingFeeGrantFields,
   feeGrantFor,
   formatIndexerPeriod,
@@ -14,6 +17,7 @@ import {
   type OperatorGrantOptions,
   operatorGrantIssue,
   readGrantOptions,
+  retargetAuthorizationOptions,
   retargetGrantOptions,
   updateGrantOptions,
   uvnaToVna,
@@ -354,5 +358,75 @@ describe('existing fee grants', () => {
       options: NO_GRANT_OPTIONS,
       issue: null,
     })
+  })
+})
+
+describe('existing authorizations', () => {
+  const capped: ExistingAuthorization = {
+    operator: 'verana1op',
+    spendLimit: [{ denom: 'uvna', amount: '5000000' }],
+    period: '2592000s',
+    expiration: '2026-12-01T00:00:00Z',
+  }
+  const unlimited: ExistingAuthorization = {
+    operator: 'verana1other',
+    spendLimit: null,
+    period: null,
+    expiration: null,
+  }
+
+  it('finds the authorization of the typed grantee only', () => {
+    expect(authorizationFor([capped, unlimited], 'verana1op')).toBe(capped)
+    expect(authorizationFor([capped, unlimited], 'verana1nobody')).toBeUndefined()
+    expect(authorizationFor([{ operator: '' }], '')).toBeUndefined()
+  })
+
+  it('prefills the current expiration, limit and period so a re-grant sends the same ones', () => {
+    const prefilled = retargetAuthorizationOptions(EMPTY_GRANT_OPTIONS_INPUT, undefined, capped)
+    expect(prefilled).toEqual(input(existingAuthorizationFields(capped)))
+    expect(prefilled.spendLimit).toBe('5')
+    expect(prefilled.spendPeriodDays).toBe('30')
+    expect(new Date(prefilled.expiration).getTime()).toBe(LATER.getTime())
+    expect(readGrantOptions(prefilled, NOW)).toEqual({
+      options: {
+        ...NO_GRANT_OPTIONS,
+        expiration: LATER,
+        spendLimit: { amountUvna: '5000000', periodSeconds: 30 * DAY },
+      },
+      issue: null,
+    })
+    expect(existingAuthorizationFields({ ...capped, period: '3600s' })).toMatchObject({
+      spendLimit: '5',
+      spendPeriodDays: '',
+    })
+  })
+
+  it('leaves the fields empty for an unlimited authorization', () => {
+    expect(existingAuthorizationFields(unlimited)).toEqual({ expiration: '', spendLimit: '', spendPeriodDays: '' })
+    expect(retargetAuthorizationOptions(EMPTY_GRANT_OPTIONS_INPUT, undefined, unlimited)).toEqual(
+      EMPTY_GRANT_OPTIONS_INPUT
+    )
+  })
+
+  it('replaces the prefill when the grantee changes and clears it for a grantee without one', () => {
+    const prefilled = retargetAuthorizationOptions(EMPTY_GRANT_OPTIONS_INPUT, undefined, capped)
+    const other = {
+      ...capped,
+      operator: 'verana1third',
+      spendLimit: [{ denom: 'uvna', amount: '1500000' }],
+      period: null,
+    }
+    expect(retargetAuthorizationOptions(prefilled, capped, other)).toEqual(
+      input({ expiration: prefilled.expiration, spendLimit: '1.5' })
+    )
+    expect(retargetAuthorizationOptions(prefilled, capped, undefined)).toEqual(EMPTY_GRANT_OPTIONS_INPUT)
+    expect(retargetAuthorizationOptions(prefilled, capped, unlimited)).toEqual(EMPTY_GRANT_OPTIONS_INPUT)
+  })
+
+  it('keeps limits the user already set and leaves the fee inputs alone', () => {
+    const prefilled = retargetAuthorizationOptions(input({ withFeegrant: true }), undefined, capped)
+    const edited = { ...prefilled, spendLimit: '9' }
+    expect(retargetAuthorizationOptions(edited, capped, undefined)).toBe(edited)
+    expect(retargetAuthorizationOptions(prefilled, capped, undefined)).toEqual(input({ withFeegrant: true }))
   })
 })

@@ -153,6 +153,7 @@ export default function CorporationPage() {
         membership={actingCorporation}
         policy={policy}
         members={members}
+        authorizations={details.operatorAuthorizations}
         feeGrants={details.feeGrants}
         onDone={refreshAfterTx}
         onClose={() => setComposing(false)}

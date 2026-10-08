@@ -71,18 +71,36 @@ export function updateGrantOptions(input: GrantOptionsInput, patch: Partial<Gran
   return next
 }
 
+type ExistingCoins = { denom: string; amount: string }[] | null
+
 export interface ExistingFeeGrant {
   grantee: string
-  spendLimit: { denom: string; amount: string }[] | null
+  spendLimit: ExistingCoins
   period: string | null
 }
 
+export interface ExistingAuthorization {
+  operator: string
+  spendLimit: ExistingCoins
+  period: string | null
+  expiration: string | null
+}
+
 type FeeGrantFields = Pick<GrantOptionsInput, 'withFeegrant' | 'feeSpendLimit' | 'feePeriodDays'>
+type AuthorizationFields = Pick<GrantOptionsInput, 'expiration' | 'spendLimit' | 'spendPeriodDays'>
 
 const NO_FEE_GRANT_FIELDS: FeeGrantFields = { withFeegrant: false, feeSpendLimit: '', feePeriodDays: '' }
+const NO_AUTHORIZATION_FIELDS: AuthorizationFields = { expiration: '', spendLimit: '', spendPeriodDays: '' }
 
 export function feeGrantFor<T extends { grantee: string }>(grants: readonly T[], grantee: string): T | undefined {
   return grantee ? grants.find((grant) => grant.grantee === grantee) : undefined
+}
+
+export function authorizationFor<T extends { operator: string }>(
+  authorizations: readonly T[],
+  operator: string
+): T | undefined {
+  return operator ? authorizations.find((authorization) => authorization.operator === operator) : undefined
 }
 
 function indexerPeriodSeconds(value: string | null): number | null {
@@ -90,24 +108,44 @@ function indexerPeriodSeconds(value: string | null): number | null {
   return match ? Number(match[1]) : null
 }
 
-export function existingFeeGrantFields(grant: ExistingFeeGrant): FeeGrantFields {
-  if (!grant.spendLimit) return { ...NO_FEE_GRANT_FIELDS, withFeegrant: true }
-  const [coin, ...others] = grant.spendLimit
-  if (!coin || others.length > 0 || coin.denom !== veranaDenom) return NO_FEE_GRANT_FIELDS
-  const seconds = indexerPeriodSeconds(grant.period)
+function limitInputs(spendLimit: ExistingCoins, period: string | null): { amount: string; days: string } | null {
+  const [coin, ...others] = spendLimit ?? []
+  if (!coin || others.length > 0 || coin.denom !== veranaDenom) return null
+  const seconds = indexerPeriodSeconds(period)
   return {
-    withFeegrant: true,
-    feeSpendLimit: uvnaToVna(coin.amount),
-    feePeriodDays: seconds !== null && seconds % SECONDS_PER_DAY === 0 ? String(seconds / SECONDS_PER_DAY) : '',
+    amount: uvnaToVna(coin.amount),
+    days: seconds !== null && seconds % SECONDS_PER_DAY === 0 ? String(seconds / SECONDS_PER_DAY) : '',
   }
 }
 
-function sameFeeFields(input: GrantOptionsInput, fields: FeeGrantFields): boolean {
-  return (
-    input.withFeegrant === fields.withFeegrant &&
-    input.feeSpendLimit === fields.feeSpendLimit &&
-    input.feePeriodDays === fields.feePeriodDays
-  )
+function dateTimeInput(iso: string): string {
+  const date = new Date(iso)
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+export function existingFeeGrantFields(grant: ExistingFeeGrant): FeeGrantFields {
+  if (!grant.spendLimit) return { ...NO_FEE_GRANT_FIELDS, withFeegrant: true }
+  const limit = limitInputs(grant.spendLimit, grant.period)
+  return limit ? { withFeegrant: true, feeSpendLimit: limit.amount, feePeriodDays: limit.days } : NO_FEE_GRANT_FIELDS
+}
+
+export function existingAuthorizationFields(authorization: ExistingAuthorization): AuthorizationFields {
+  const limit = limitInputs(authorization.spendLimit, authorization.period)
+  return {
+    expiration: authorization.expiration ? dateTimeInput(authorization.expiration) : '',
+    spendLimit: limit?.amount ?? '',
+    spendPeriodDays: limit?.days ?? '',
+  }
+}
+
+function retargetFields<K extends keyof GrantOptionsInput>(
+  input: GrantOptionsInput,
+  previous: Pick<GrantOptionsInput, K>,
+  next: Pick<GrantOptionsInput, K>
+): GrantOptionsInput {
+  const untouched = (Object.keys(previous) as K[]).every((key) => input[key] === previous[key])
+  return untouched ? { ...input, ...next } : input
 }
 
 export function retargetGrantOptions(
@@ -115,9 +153,23 @@ export function retargetGrantOptions(
   previous: ExistingFeeGrant | undefined,
   next: ExistingFeeGrant | undefined
 ): GrantOptionsInput {
-  const untouched = sameFeeFields(input, previous ? existingFeeGrantFields(previous) : NO_FEE_GRANT_FIELDS)
-  if (!untouched) return input
-  return { ...input, ...(next ? existingFeeGrantFields(next) : NO_FEE_GRANT_FIELDS) }
+  return retargetFields(
+    input,
+    previous ? existingFeeGrantFields(previous) : NO_FEE_GRANT_FIELDS,
+    next ? existingFeeGrantFields(next) : NO_FEE_GRANT_FIELDS
+  )
+}
+
+export function retargetAuthorizationOptions(
+  input: GrantOptionsInput,
+  previous: ExistingAuthorization | undefined,
+  next: ExistingAuthorization | undefined
+): GrantOptionsInput {
+  return retargetFields(
+    input,
+    previous ? existingAuthorizationFields(previous) : NO_AUTHORIZATION_FIELDS,
+    next ? existingAuthorizationFields(next) : NO_AUTHORIZATION_FIELDS
+  )
 }
 
 function validPeriod(seconds: number): boolean {

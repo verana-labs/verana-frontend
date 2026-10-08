@@ -4,7 +4,7 @@ import type { EncodeObject } from '@cosmjs/proto-signing'
 import { faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useState } from 'react'
-import type { FeeGrantRow, GroupMemberRow, GroupPolicy } from '@/hooks/useCorporationDetails'
+import type { FeeGrantRow, GroupMemberRow, GroupPolicy, OperatorAuthorizationRow } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import { grantOptionLines, readGrantOptions } from '@/lib/operator-grant'
@@ -34,6 +34,7 @@ export function ProposalComposer({
   membership,
   policy,
   members,
+  authorizations,
   feeGrants,
   onDone,
   onClose,
@@ -41,13 +42,14 @@ export function ProposalComposer({
   membership: CorporationMembership
   policy: GroupPolicy
   members: GroupMemberRow[]
+  authorizations: OperatorAuthorizationRow[]
   feeGrants: FeeGrantRow[]
   onDone: () => void
   onClose: () => void
 }) {
   const manage = useCorporationManage(onDone)
   const [kind, setKind] = useState<ComposerKind>('grant')
-  const draft = useOperatorGrantDraft(feeGrants)
+  const draft = useOperatorGrantDraft(feeGrants, authorizations)
   const [msgTypes, setMsgTypes] = useState<string[]>([...OPERATOR_GRANT_MESSAGE_TYPES])
   const [memberUpdates, setMemberUpdates] = useState<GroupMemberUpdate[]>(
     members.map((member) => ({ address: member.address, weight: member.weight }))

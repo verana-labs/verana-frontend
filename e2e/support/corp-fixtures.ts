@@ -46,7 +46,6 @@ export const OPERATOR_GRANT_MESSAGE_TYPES = [
   '/verana.pp.v1.MsgCancelParticipantOPLastRequest',
   '/verana.pp.v1.MsgSlashParticipantTrustDeposit',
   '/verana.pp.v1.MsgRepayParticipantSlashedTrustDeposit',
-  '/verana.td.v1.MsgReclaimTrustDepositYield',
   '/verana.td.v1.MsgRepaySlashedTrustDeposit',
   '/verana.di.v1.MsgStoreDigest',
 ]
@@ -58,6 +57,8 @@ const HARNESS_GRANTS_13 = [
   '/verana.td.v1.MsgRepaySlashedTrustDeposit',
 ]
 
+export const SECOND_OPERATOR_CYCLE_END = new Date(Date.now() + 60 * 86_400_000).toISOString()
+
 export const OPERATOR_AUTHORIZATIONS = [
   { id: 1, corporation_id: 12, operator: HARNESS_ADDRESS, msg_types: ['/verana.ec.v1.MsgCreateEcosystem'] },
   { id: 2, corporation_id: 13, operator: HARNESS_ADDRESS, msg_types: HARNESS_GRANTS_13 },
@@ -68,7 +69,7 @@ export const OPERATOR_AUTHORIZATIONS = [
     msg_types: OPERATOR_GRANT_MESSAGE_TYPES,
     spend_limit: [{ denom: 'uvna', amount: '5000000' }],
     remaining_spend: [{ denom: 'uvna', amount: '3500000' }],
-    expiration: '2026-12-01T00:00:00Z',
+    expiration: SECOND_OPERATOR_CYCLE_END,
     period: '2592000s',
   },
 ]

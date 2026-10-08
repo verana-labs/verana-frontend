@@ -3,10 +3,13 @@
 import { type ReactNode, useState } from 'react'
 import { translate } from '@/i18n/dataview'
 import {
+  authorizationFor,
   EMPTY_GRANT_OPTIONS_INPUT,
+  type ExistingAuthorization,
   type ExistingFeeGrant,
   feeGrantFor,
   type GrantOptionsInput,
+  retargetAuthorizationOptions,
   retargetGrantOptions,
   updateGrantOptions,
 } from '@/lib/operator-grant'
@@ -28,17 +31,28 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   )
 }
 
-export function useOperatorGrantDraft(feeGrants: readonly ExistingFeeGrant[]) {
+export function useOperatorGrantDraft(
+  feeGrants: readonly ExistingFeeGrant[],
+  authorizations: readonly ExistingAuthorization[]
+) {
   const [grantee, setGranteeText] = useState('')
   const [options, setOptions] = useState(EMPTY_GRANT_OPTIONS_INPUT)
   const target = grantee.trim()
   const existingFeeGrant = feeGrantFor(feeGrants, target)
+  const existingAuthorization = authorizationFor(authorizations, target)
 
-  function setGrantee(next: string): ExistingFeeGrant | undefined {
+  function setGrantee(next: string): boolean {
     const nextFeeGrant = feeGrantFor(feeGrants, next.trim())
-    setOptions((current) => retargetGrantOptions(current, existingFeeGrant, nextFeeGrant))
+    const nextAuthorization = authorizationFor(authorizations, next.trim())
+    setOptions((current) =>
+      retargetAuthorizationOptions(
+        retargetGrantOptions(current, existingFeeGrant, nextFeeGrant),
+        existingAuthorization,
+        nextAuthorization
+      )
+    )
     setGranteeText(next)
-    return nextFeeGrant
+    return nextFeeGrant !== undefined || nextAuthorization !== undefined
   }
 
   function reset() {

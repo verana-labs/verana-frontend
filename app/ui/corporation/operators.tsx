@@ -219,11 +219,13 @@ function OperatorRow({
 export function GrantOperatorForm({
   mode,
   walletAddress,
+  authorizations,
   feeGrants,
   onGrant,
 }: {
   mode: CorporationSigningMode
   walletAddress: string | undefined
+  authorizations: OperatorAuthorizationRow[]
   feeGrants: FeeGrantRow[]
   onGrant: (
     grantee: string,
@@ -232,7 +234,7 @@ export function GrantOperatorForm({
     replacesFeeGrant: boolean
   ) => Promise<boolean>
 }) {
-  const draft = useOperatorGrantDraft(feeGrants)
+  const draft = useOperatorGrantDraft(feeGrants, authorizations)
   const [selected, setSelected] = useState(() => new Set<string>(OPERATOR_GRANT_MESSAGE_TYPES))
   const [showTypes, setShowTypes] = useState(false)
   const [showOptions, setShowOptions] = useState(false)
@@ -532,7 +534,13 @@ export function OperatorsSection({
           ) : null}
         </ul>
         {grantMode ? (
-          <GrantOperatorForm mode={grantMode} walletAddress={walletAddress} feeGrants={feeGrants} onGrant={onGrant} />
+          <GrantOperatorForm
+            mode={grantMode}
+            walletAddress={walletAddress}
+            authorizations={authorizations}
+            feeGrants={feeGrants}
+            onGrant={onGrant}
+          />
         ) : null}
       </Card>
       <Card id="agents">
