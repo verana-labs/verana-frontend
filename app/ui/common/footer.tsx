@@ -4,9 +4,38 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Image from 'next/image'
 import Link from 'next/link'
 import { translate } from '@/i18n/dataview'
+import type { ChainHealth, IndexerHealth } from '@/lib/component-health'
 import { communityLinks, configFooter } from '@/lib/dashlinks'
 import { useComponentsVersion } from '@/providers/components-version-provider'
 import { resolveTranslatable } from '../dataview/types'
+
+const HEALTH_DOT: Record<ChainHealth | IndexerHealth['state'], string> = {
+  synced: 'bg-green-500',
+  crawling: 'bg-green-500',
+  syncing: 'bg-amber-500',
+  stalled: 'bg-amber-500',
+  down: 'bg-red-500',
+  unreachable: 'bg-red-500',
+}
+
+const HEALTH_LABEL: Record<ChainHealth | IndexerHealth['state'], string> = {
+  synced: 'sr-only',
+  crawling: 'sr-only',
+  syncing: 'text-amber-700 dark:text-amber-400',
+  stalled: 'text-amber-700 dark:text-amber-400',
+  down: 'text-red-700 dark:text-red-400',
+  unreachable: 'text-red-700 dark:text-red-400',
+}
+
+function HealthBadge({ state, reason }: { state: ChainHealth | IndexerHealth['state']; reason?: string | null }) {
+  const label = translate(`footer.health.${state}`)
+  return (
+    <span className="inline-flex items-center gap-1" title={reason ?? undefined}>
+      <span aria-hidden="true" className={`inline-block w-1.5 h-1.5 rounded-full ${HEALTH_DOT[state]}`} />
+      <span className={HEALTH_LABEL[state]}>{label}</span>
+    </span>
+  )
+}
 
 export function Footer() {
   const { state } = useComponentsVersion()
@@ -22,9 +51,17 @@ export function Footer() {
       </div>
       <div className="mt-1 grid grid-cols-2 text-xs text-neutral-70 dark:text-neutral-70">
         <span>{resolveTranslatable({ key: 'footer.network' }, translate)}</span>
-        <span>{state.ledger.version ?? resolveTranslatable({ key: 'footer.version' }, translate)}</span>
+        <span className="inline-flex items-center gap-1.5">
+          {state.ledger.version ?? resolveTranslatable({ key: 'footer.version' }, translate)}
+          {state.ledger.health ? <HealthBadge state={state.ledger.health} /> : null}
+        </span>
         <span>{resolveTranslatable({ key: 'footer.indexer' }, translate)}</span>
-        <span>{state.indexer.version ?? resolveTranslatable({ key: 'footer.version' }, translate)}</span>
+        <span className="inline-flex items-center gap-1.5">
+          {state.indexer.version ?? resolveTranslatable({ key: 'footer.version' }, translate)}
+          {state.indexer.health ? (
+            <HealthBadge state={state.indexer.health.state} reason={state.indexer.health.reason} />
+          ) : null}
+        </span>
         <span>{resolveTranslatable({ key: 'footer.frontend' }, translate)}</span>
         <span>{state.frontend.version ?? resolveTranslatable({ key: 'footer.version' }, translate)}</span>
       </div>

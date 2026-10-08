@@ -6,6 +6,7 @@ import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react
 import Link from 'next/link'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
+import { Footer } from '@/ui/common/footer'
 import NavLinks from '@/ui/common/nav-links'
 import ToggleTheme from '@/ui/common/toggle-theme'
 import VeranaLog from '@/ui/common/verana-logo'
@@ -70,6 +71,7 @@ export default function NavBar() {
             </div> */}
             {/* Links - Sublinks */}
             <NavLinks />
+            <Footer />
           </DisclosurePanel>
         </>
       )}
