@@ -141,6 +141,7 @@ export default function CorporationPage() {
       })
     },
     onCreate: () => router.push(`${pathname}?create=1`),
+    onRefresh: refreshAfterTx,
     onGrant: (grantee, msgTypes) => void manage.grantOperator(actingCorporation, grantee, msgTypes),
     onRevoke: (operator) => void manage.revokeOperator(actingCorporation, operator),
     onRepay: () => void manage.repaySlashed(actingCorporation, unrepaidSlash),

@@ -10,6 +10,7 @@ vi.mock('@/config/env', () => ({
 import { logger } from '@/lib/logger'
 import {
   fetchCorporationHistory,
+  parseGovernance,
   parseGroup,
   parseOperatorAuthorizations,
   parseProfile,
@@ -42,6 +43,96 @@ describe('parseProfile', () => {
 
   it('rejects a payload without the corporation envelope', () => {
     expect(() => parseProfile({})).toThrow('corporation')
+  })
+})
+
+describe('parseGovernance', () => {
+  const corporation = {
+    id: 1,
+    did: 'did:web:keplr-corp-0929.devnet.verana.network',
+    policy_address: 'verana1afk9zr2hn2jsac63h4hm60vl9z3e5u69gndzf7c99cqge3vzwjzsh3z8fv',
+    language: 'en',
+    active_version: 1,
+    created: '2026-09-29T10:21:17.695Z',
+    modified: '2026-09-29T10:21:17.695Z',
+  }
+  const active = {
+    id: 1,
+    corporation_id: 1,
+    ecosystem_id: null,
+    version: 1,
+    created: '2026-09-29T10:21:17.695Z',
+    active_since: '2026-09-29T10:21:17.695Z',
+    gfv_id: 1,
+    documents: [
+      {
+        id: 1,
+        gfv_id: 1,
+        language: 'en',
+        url: 'https://raw.githubusercontent.com/verana-labs/verana-spec/main/README.md',
+        digest_sri: 'sha384-S8zSx8Po4dAMgxTyw/W2fksmPVbEwSZpNS/UqbSIKNGK7OUbRviXrBoM6PaJVIAg',
+        created: '2026-09-29T10:21:17.695Z',
+        gfd_id: 1,
+      },
+    ],
+  }
+  const draft = {
+    id: 9,
+    corporation_id: 1,
+    ecosystem_id: null,
+    version: 2,
+    created: '2026-10-01T08:00:00.000Z',
+    active_since: null,
+    documents: [{ id: 12, language: 'es', url: 'https://example.com/cgf-v2-es.md', digest_sri: 'sha384-draft' }],
+  }
+
+  it('reads the live CGF versions, drafts included', () => {
+    expect(
+      parseGovernance({ corporation: { ...corporation, versions: [active, draft] }, block_height: 57429 })
+    ).toEqual({
+      activeVersion: 1,
+      versions: [
+        {
+          id: '1',
+          version: 1,
+          activeSince: '2026-09-29T10:21:17.695Z',
+          documents: [
+            {
+              id: '1',
+              url: 'https://raw.githubusercontent.com/verana-labs/verana-spec/main/README.md',
+              language: 'en',
+              digestSri: 'sha384-S8zSx8Po4dAMgxTyw/W2fksmPVbEwSZpNS/UqbSIKNGK7OUbRviXrBoM6PaJVIAg',
+            },
+          ],
+        },
+        {
+          id: '9',
+          version: 2,
+          activeSince: null,
+          documents: [{ id: '12', url: 'https://example.com/cgf-v2-es.md', language: 'es', digestSri: 'sha384-draft' }],
+        },
+      ],
+    })
+  })
+
+  it('rejects a response without versions or active version', () => {
+    expect(() => parseGovernance({ corporation })).toThrow('corporation.versions')
+    expect(() =>
+      parseGovernance({ corporation: { ...corporation, active_version: null, versions: [active] } })
+    ).toThrow('corporation.active_version')
+  })
+
+  it('rejects an activated version without an activation date', () => {
+    expect(() =>
+      parseGovernance({ corporation: { ...corporation, versions: [{ ...active, active_since: null }] } })
+    ).toThrow('corporation.versions[0].active_since')
+  })
+
+  it('rejects a document without a url', () => {
+    const broken = { ...draft, documents: [{ id: 12, language: 'es', digest_sri: 'sha384-draft' }] }
+    expect(() => parseGovernance({ corporation: { ...corporation, versions: [active, broken] } })).toThrow(
+      'corporation.versions[1].documents[0].url'
+    )
   })
 })
 

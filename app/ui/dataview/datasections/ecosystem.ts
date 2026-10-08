@@ -26,7 +26,6 @@ export interface EcosystemData {
   docs?: string[]
   addGovernanceFrameworkDocument?: string
   increaseActiveGovernanceFrameworkVersion?: string
-  lastVersion?: number
   credentialSchemas?: CredentialSchemaData[]
   title?: string
   description?: string
