@@ -29,6 +29,9 @@ importers:
       '@cosmjs/stargate':
         specifier: ^0.32.3
         version: 0.32.4(bufferutil@4.1.0)(utf-8-validate@5.0.10)
+      '@cosmjs/tendermint-rpc':
+        specifier: ^0.32.3
+        version: 0.32.4(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       '@cosmos-kit/react':
         specifier: 2.22.0
         version: 2.22.0(@cosmjs/amino@0.32.4)(@cosmjs/proto-signing@0.32.4)(@interchain-ui/react@1.26.3(@types/react@19.0.7)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@types/react-dom@19.0.3(@types/react@19.0.7))(@types/react@19.0.7)(bufferutil@4.1.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(utf-8-validate@5.0.10)
@@ -57,8 +60,8 @@ importers:
         specifier: ^0.5.10
         version: 0.5.11(tailwindcss@3.4.17)
       '@verana-labs/verana-types':
-        specifier: 0.10.5
-        version: 0.10.5(@cosmjs/proto-signing@0.32.4)(@cosmjs/stargate@0.32.4(bufferutil@4.1.0)(utf-8-validate@5.0.10))
+        specifier: 0.10.6
+        version: 0.10.6(@cosmjs/proto-signing@0.32.4)(@cosmjs/stargate@0.32.4(bufferutil@4.1.0)(utf-8-validate@5.0.10))
       autoprefixer:
         specifier: 10.4.20
         version: 10.4.20(postcss@8.5.23)
@@ -1491,11 +1494,11 @@ packages:
     peerDependencies:
       '@vanilla-extract/css': ^1.0.0
 
-  '@verana-labs/verana-types@0.10.5':
-    resolution: {integrity: sha512-neL+2Noz2FhkAyxAQn3NJJUuFm+jECXscvTXxK43dTVsJkStkrbtuWvZbN+Y/SYXPqVfEPBPMPCYVkd7t8tTPA==}
+  '@verana-labs/verana-types@0.10.6':
+    resolution: {integrity: sha512-Q9lru7i7styJ8vGBnHOvs6RTnuTk4OV3KxTzrVbKDLWMUHgK238A98eklBIJlZJMu7WfzOrZnEc6v+joSsgf4g==}
     peerDependencies:
-      '@cosmjs/proto-signing': ^0.32.3
-      '@cosmjs/stargate': ^0.32.3
+      '@cosmjs/proto-signing': ^0.32.3 || ^0.39.0
+      '@cosmjs/stargate': ^0.32.3 || ^0.39.0
 
   '@vitest/mocker@5.0.1':
     resolution: {integrity: sha512-6K1DoBNAPGvuOcSsGA4D6x+5zEEff/KmOOP3uetT2TrGpVfI+HRHRnJJfKi5ib/g1vx8IYHQD8s0pbJz8WQI7Q==}
@@ -4140,8 +4143,8 @@ snapshots:
   '@cosmjs/socket@0.32.4(bufferutil@4.1.0)(utf-8-validate@5.0.10)':
     dependencies:
       '@cosmjs/stream': 0.32.4
-      isomorphic-ws: 4.0.1(ws@7.5.10(bufferutil@4.1.0)(utf-8-validate@5.0.10))
-      ws: 7.5.10(bufferutil@4.1.0)(utf-8-validate@5.0.10)
+      isomorphic-ws: 4.0.1(ws@7.5.13(bufferutil@4.1.0)(utf-8-validate@5.0.10))
+      ws: 7.5.13(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       xstream: 11.14.0
     transitivePeerDependencies:
       - bufferutil
@@ -6982,7 +6985,7 @@ snapshots:
     dependencies:
       '@vanilla-extract/css': 1.20.1
 
-  '@verana-labs/verana-types@0.10.5(@cosmjs/proto-signing@0.32.4)(@cosmjs/stargate@0.32.4(bufferutil@4.1.0)(utf-8-validate@5.0.10))':
+  '@verana-labs/verana-types@0.10.6(@cosmjs/proto-signing@0.32.4)(@cosmjs/stargate@0.32.4(bufferutil@4.1.0)(utf-8-validate@5.0.10))':
     dependencies:
       '@cosmjs/proto-signing': 0.32.4
       '@cosmjs/stargate': 0.32.4(bufferutil@4.1.0)(utf-8-validate@5.0.10)
@@ -8293,6 +8296,10 @@ snapshots:
   isomorphic-ws@4.0.1(ws@7.5.10(bufferutil@4.1.0)(utf-8-validate@5.0.10)):
     dependencies:
       ws: 7.5.10(bufferutil@4.1.0)(utf-8-validate@5.0.10)
+
+  isomorphic-ws@4.0.1(ws@7.5.13(bufferutil@4.1.0)(utf-8-validate@5.0.10)):
+    dependencies:
+      ws: 7.5.13(bufferutil@4.1.0)(utf-8-validate@5.0.10)
 
   jiti@1.21.7: {}
 

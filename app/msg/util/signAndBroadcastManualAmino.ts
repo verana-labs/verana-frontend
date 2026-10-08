@@ -2,6 +2,7 @@
 
 import { EncodeObject, OfflineSigner as OfflineSignerAmino } from '@cosmjs/proto-signing'
 import { calculateFee, DeliverTxResponse, GasPrice, SigningStargateClient, StdFee } from '@cosmjs/stargate'
+import { Comet38Client } from '@cosmjs/tendermint-rpc'
 import { TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { veranaAmino, veranaRegistry } from '@/config/veranaChain.sign.client'
 import { logger } from '@/lib/logger'
@@ -32,7 +33,7 @@ export async function signAndBroadcastManualAmino({
   fee: givenFee,
 }: AminoSignOptions): Promise<DeliverTxResponse | SimulateResult> {
   // Connect a client — only used for simulate and broadcast
-  const client = await SigningStargateClient.connectWithSigner(rpcEndpoint, signer, {
+  const client = await SigningStargateClient.createWithSigner(await Comet38Client.connect(rpcEndpoint), signer, {
     aminoTypes: veranaAmino,
     registry: veranaRegistry,
     gasPrice: GasPrice.fromString(gasPrice),
