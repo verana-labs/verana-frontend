@@ -17,7 +17,7 @@ describe('trust deposit account parsing', () => {
           slash_count: 1,
         },
       })
-    ).toEqual({ totalTrustDeposit: '150', claimableInterests: '12', reclaimable: '12', slashCount: 1 })
+    ).toEqual({ totalTrustDeposit: '150', slashCount: 1 })
   })
 
   it('accepts the scaled V4 share returned for a funded corporation', () => {
@@ -35,7 +35,7 @@ describe('trust deposit account parsing', () => {
           slash_count: 0,
         },
       })
-    ).toEqual({ totalTrustDeposit: '2', claimableInterests: '0', reclaimable: '0', slashCount: 0 })
+    ).toEqual({ totalTrustDeposit: '2', slashCount: 0 })
   })
 
   it('rejects V3 field aliases', () => {

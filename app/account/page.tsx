@@ -56,16 +56,11 @@ export default function AccountPage() {
     if (accountData) {
       // Prepare constants and process fields for the UI
       const typedAccountData = accountData as AccountData
-      const claimableInterests =
-        Number(typedAccountData.claimableInterests) > 0 ? typedAccountData.claimableInterests : null
       // Per [VFE-PAGE-ACCT-3]: no faucet URL, no Get VNA action.
       const getVNA = VERANA_FAUCET_URL ? GET_VNA_ACTION : null
-      const claimInterests = 'MsgReclaimTrustDepositYield'
       setData({
         ...typedAccountData,
-        claimableInterests,
         getVNA,
-        claimInterests,
         corporationId: actingCorporation?.corporation.id ?? null,
         policyAddress: actingCorporation?.corporation.policyAddress ?? null,
         operatorAuthorized: actingCorporation?.operator ?? false,

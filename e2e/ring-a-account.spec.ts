@@ -100,8 +100,9 @@ test('Ring A, the Get VNA card is shown when the faucet url is set', async ({ pa
 
   await page.goto('/account')
   await expect(page.getByRole('heading', { name: 'Account', exact: true })).toBeVisible({ timeout: 15_000 })
-  await expect(page.getByRole('button', { name: /claim yield/i }).first()).toBeVisible({ timeout: 15_000 })
-  await expect(getVNACard(page).first()).toBeVisible()
+  await expect(getVNACard(page).first()).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('button', { name: /claim yield/i })).toHaveCount(0)
+  await expect(page.getByText(/APY/)).toHaveCount(0)
 })
 
 test('Ring A, the Get VNA card is hidden when the faucet url is unset', async ({ page }) => {
@@ -112,6 +113,7 @@ test('Ring A, the Get VNA card is hidden when the faucet url is unset', async ({
 
   await page.goto('/account?getVNA=true')
   await expect(page.getByRole('heading', { name: 'Account', exact: true })).toBeVisible({ timeout: 15_000 })
-  await expect(page.getByRole('button', { name: /claim yield/i }).first()).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('heading', { name: 'Main Balance', exact: true })).toBeVisible({ timeout: 15_000 })
   await expect(getVNACard(page)).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Account Actions' })).toHaveCount(0)
 })

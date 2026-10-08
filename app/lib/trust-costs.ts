@@ -12,7 +12,6 @@ export type TrustCostSubject =
       msgType: 'MsgRepaySlashedTrustDeposit' | 'MsgRepayParticipantSlashedTrustDeposit'
       amount: string | number | undefined
     }
-  | { msgType: 'MsgReclaimTrustDepositYield'; claimable: string | number | null | undefined }
 
 function label(key: string): string {
   return resolveTranslatable({ key: `txconfirm.cost.${key}` }, translate) ?? key
@@ -42,10 +41,6 @@ export function trustCostLines(subject: TrustCostSubject, rates: TrustCostRates)
     case 'MsgRepayParticipantSlashedTrustDeposit': {
       const amount = uvna(subject.amount)
       return amount === null ? [] : [debit('repay', amount)]
-    }
-    case 'MsgReclaimTrustDepositYield': {
-      const amount = uvna(subject.claimable)
-      return amount === null ? [] : [{ label: label('yield'), value: formatVNAFromUVNA(String(amount)) }]
     }
   }
 }

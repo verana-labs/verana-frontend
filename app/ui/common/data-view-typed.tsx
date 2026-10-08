@@ -4,13 +4,12 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React, { ReactNode, useId, useState } from 'react'
-import TdActionPage from '@/account/action'
 import CredentialSchemaActionPage from '@/credential-schemas/[id]/action'
 import EcosystemActionPage from '@/ecosystems/[id]/action'
 import GovernanceFrameworkActionPage from '@/ecosystems/[id]/governance-framework-action'
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
 import { DataType, getMsgTypeFor } from '@/msg/constants/msgTypeForDataType'
-import { MsgTypeCS, MsgTypeEcosystem, MsgTypeParticipant, MsgTypeTD } from '@/msg/constants/notificationMsgForMsgType'
+import { MsgTypeCS, MsgTypeEcosystem, MsgTypeParticipant } from '@/msg/constants/notificationMsgForMsgType'
 import ParticipantActionPage from '@/participants/[id]/action'
 import EditableDataView from '@/ui/common/data-edit'
 import ColumnsDataView from '@/ui/common/data-view-columns'
@@ -122,9 +121,6 @@ export function renderObjectList<I extends object>(args: {
   ))
 }
 
-// Define the valid actions for TD
-const validTDAction = (action: string): action is MsgTypeTD => ['MsgReclaimTrustDepositYield'].includes(action)
-
 export const validGovernanceFrameworkAction = (action: string): action is MsgTypeEcosystem =>
   ['MsgAddGovernanceFrameworkDocument', 'MsgIncreaseActiveGovernanceFrameworkVersion'].includes(action)
 
@@ -160,9 +156,6 @@ export function renderActionComponent(
 ): ReactNode {
   if (action === GET_VNA_ACTION) {
     return <GetVNAPanel onClose={onClose} onRefresh={onRefresh} />
-  }
-  if (validTDAction(action)) {
-    return <TdActionPage action={action} data={data} onClose={onClose} onRefresh={onRefresh} />
   }
   if (validGovernanceFrameworkAction(action)) {
     return (

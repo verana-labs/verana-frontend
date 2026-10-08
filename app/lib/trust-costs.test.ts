@@ -69,11 +69,4 @@ describe('trustCostLines', () => {
     expect(balanceWarning('999999', 90_000, [], '1000000', false)).toEqual({ kind: 'low', requiredUvna: 90_000 })
     expect(balanceWarning('nope', 90_000, [], '1000000', false)).toBeNull()
   })
-
-  it('shows the claimed yield without counting it as a debit', () => {
-    const lines = trustCostLines({ msgType: 'MsgReclaimTrustDepositYield', claimable: '150000' }, RATES)
-    expect(lines).toEqual([{ label: 'Claimed yield', value: '0.15 VNA' }])
-    expect(totalDebitUvna(lines)).toBe(0)
-    expect(trustCostLines({ msgType: 'MsgReclaimTrustDepositYield', claimable: null }, RATES)).toEqual([])
-  })
 })

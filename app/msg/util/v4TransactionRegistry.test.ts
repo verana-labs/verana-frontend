@@ -5,7 +5,6 @@ import { buildCreateCorporationMessage, buildGrantOperatorMessages } from '@/msg
 import { buildCredentialSchemaMessage } from '@/msg/actions_hooks/actionCredentialSchema'
 import { buildEcosystemMessage } from '@/msg/actions_hooks/actionEcosystem'
 import { buildParticipantMessage } from '@/msg/actions_hooks/actionParticipant'
-import { buildTrustDepositMessage } from '@/msg/actions_hooks/actionTrustDeposit'
 
 const context = { corporation: 'verana1policy', operator: 'verana1operator' }
 const effectiveFrom = new Date('2026-07-18T00:00:00.000Z')
@@ -138,7 +137,6 @@ const messages: EncodeObject[] = [
   buildParticipantMessage({ msgType: 'MsgRevokeParticipant', id: 1 }, context),
   buildParticipantMessage({ msgType: 'MsgSlashParticipantTrustDeposit', id: 1, amount: 11, reason: 'test' }, context),
   buildParticipantMessage({ msgType: 'MsgRepayParticipantSlashedTrustDeposit', id: 1 }, context),
-  buildTrustDepositMessage({ msgType: 'MsgReclaimTrustDepositYield' }, context),
 ]
 
 describe('dev.25 transaction registries', () => {

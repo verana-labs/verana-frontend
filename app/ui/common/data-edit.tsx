@@ -8,7 +8,6 @@ import { canonicalizeLanguageTag } from '@/lib/language'
 import { getCostMessage, msgTypeStyle } from '@/msg/constants/msgTypeConfig'
 import { resolveMsgCopy } from '@/msg/constants/resolveMsgTypeConfig'
 import type { MessageType } from '@/msg/constants/types'
-import ActionCard, { ActionCardProps } from '@/ui/common/action-card'
 import JsonCodeBlock from '@/ui/common/json-code-block'
 import { LanguageCombobox } from '@/ui/common/language-combobox'
 import {
@@ -31,7 +30,6 @@ type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & 
   noForm?: boolean
   noFormReady?: boolean
   isModal?: boolean
-  actionCard?: ActionCardProps
   withinView?: boolean
   setModalHidden?: () => void
   transactionCost?: string
@@ -52,7 +50,6 @@ export default function EditableDataView<T extends object>({
   noForm = false,
   noFormReady = true,
   isModal,
-  actionCard,
   withinView,
   setModalHidden,
   transactionCost,
@@ -148,12 +145,11 @@ export default function EditableDataView<T extends object>({
       setModalHidden?.()
       return
     }
-    if (messageType === 'MsgReclaimTrustDepositYield' || corporationLoading || !noFormReady || autoSaveRan.current)
-      return
+    if (corporationLoading || !noFormReady || autoSaveRan.current) return
     autoSaveRan.current = true
     void handleSave()
     onCancel?.()
-  }, [corporationLoading, handleSave, messageType, noForm, noFormReady, onCancel, setModalHidden])
+  }, [corporationLoading, handleSave, noForm, noFormReady, onCancel, setModalHidden])
 
   // Handles cancel action; disables button while submitting
   function handleCancel() {
@@ -295,8 +291,6 @@ export default function EditableDataView<T extends object>({
       {(basicSection?.name || basicSection?.nameCreate) && action === 'create' && (
         <h2 className="data-edit-section-title">{basicSection?.nameCreate ?? basicSection?.name}</h2>
       )}
-      {actionCard && <ActionCard {...actionCard} />}
-
       {!noForm && normalInputs.length > 0 && (
         <div
           className={`${action === 'create' && basicSection?.classFormCreate !== undefined ? basicSection?.classFormCreate : basicSection?.classFormEdit}`}
@@ -309,13 +303,8 @@ export default function EditableDataView<T extends object>({
       {textareaInputs.length > 0 && textareaInputs}
 
       {/* Transaction cost */}
-      {transactionCost && (!actionCard || actionCard.available) && (
-        <div
-          className={clsx(
-            'bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4',
-            actionCard?.available ? 'w-fit mx-auto text-center mb-6' : 'mb-4'
-          )}
-        >
+      {transactionCost && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
           <p className="data-edit-form-description">
             {getCostMessage(uiMsgType.cost, formatVNAFromUVNA(transactionCost))}
           </p>
@@ -355,33 +344,31 @@ export default function EditableDataView<T extends object>({
       )}
 
       {/* Action buttons: disabled if submitting or validation fails */}
-      {(!actionCard || actionCard.available) && (
-        <div className={clsx('actions-center', actionCard?.available ? 'w-fit mx-auto text-center mb-6' : '')}>
-          {onCancel && (
-            <button
-              className={clsx(
-                'btn-action-cancel', // base
-                isModal ? 'flex-1' : ''
-              )}
-              onClick={handleCancel}
-              disabled={submitting || corporationLoading}
-            >
-              {resolveTranslatable({ key: 'messages.cancel' }, translate)}
-            </button>
-          )}
+      <div className="actions-center">
+        {onCancel && (
           <button
             className={clsx(
-              'btn-action-confirm', // base
-              isModal ? 'flex-1' : '',
-              msgTypeStyle[messageType].button // specific
+              'btn-action-cancel', // base
+              isModal ? 'flex-1' : ''
             )}
-            onClick={handleSave}
-            disabled={submitting || corporationLoading || !noFormReady}
+            onClick={handleCancel}
+            disabled={submitting || corporationLoading}
           >
-            {uiMsgType.label}
+            {resolveTranslatable({ key: 'messages.cancel' }, translate)}
           </button>
-        </div>
-      )}
+        )}
+        <button
+          className={clsx(
+            'btn-action-confirm', // base
+            isModal ? 'flex-1' : '',
+            msgTypeStyle[messageType].button // specific
+          )}
+          onClick={handleSave}
+          disabled={submitting || corporationLoading || !noFormReady}
+        >
+          {uiMsgType.label}
+        </button>
+      </div>
     </div>
   )
 }
