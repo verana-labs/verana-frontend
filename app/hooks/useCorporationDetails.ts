@@ -9,6 +9,7 @@ import {
   VERANA_REST_ENDPOINT_TRUST_DEPOSIT,
 } from '@/config/env'
 import { parseParticipantsResponse } from '@/hooks/useParticipants'
+import { type ActivityRow, parseActivityHistory } from '@/lib/activity-history'
 import { degrade, fetchJson, indexerValidators } from '@/lib/indexer-json'
 import { logger } from '@/lib/logger'
 import type { Participant } from '@/ui/dataview/datasections/participant'
@@ -86,15 +87,6 @@ export interface ProposalRow {
   proposers: string[]
   messages: Record<string, unknown>[]
   tally: ProposalTally
-}
-
-export interface ActivityRow {
-  id: number
-  timestamp: string
-  blockHeight: number
-  msg: string
-  account: string | null
-  changes: Record<string, unknown>
 }
 
 export interface DegradedSections {
@@ -281,38 +273,13 @@ export async function fetchProposalVotes(proposalId: number): Promise<VoteRow[]>
   })
 }
 
-function newestFirst(a: ActivityRow, b: ActivityRow): number {
-  const byTime = Date.parse(b.timestamp) - Date.parse(a.timestamp)
-  if (Number.isFinite(byTime) && byTime !== 0) return byTime
-  return b.blockHeight - a.blockHeight || b.id - a.id
-}
-
-export function parseHistory(payload: unknown): ActivityRow[] {
-  const envelope = record(payload, 'history response')
-  if (!Array.isArray(envelope.activity)) throw new Error('Invalid corporation page response: history.activity')
-  return envelope.activity
-    .map((entry, index) => {
-      const row = record(entry, `activity[${index}]`)
-      const changes = row.changes
-      return {
-        id: integer(row.id, `activity[${index}].id`),
-        timestamp: string(row.timestamp, `activity[${index}].timestamp`),
-        blockHeight: integer(row.block_height, `activity[${index}].block_height`),
-        msg: string(row.msg, `activity[${index}].msg`),
-        account: nullableString(row.account ?? null, `activity[${index}].account`),
-        changes: changes === undefined || changes === null ? {} : record(changes, `activity[${index}].changes`),
-      }
-    })
-    .sort(newestFirst)
-}
-
 export async function fetchCorporationHistory(corporationId: number): Promise<ActivityRow[]> {
   try {
     const payload = await fetchJson(
       `${VERANA_REST_ENDPOINT_CORPORATION}/history/${corporationId}?limit=64`,
       'Unable to fetch the history'
     )
-    return parseHistory(payload)
+    return parseActivityHistory(payload)
   } catch (cause) {
     logger.error('corporation history', cause)
     return []
