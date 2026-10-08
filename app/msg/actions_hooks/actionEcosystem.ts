@@ -27,7 +27,12 @@ import {
   MSG_SUCCESS_ACTION_ECOSYSTEM,
 } from '@/msg/constants/notificationMsgForMsgType'
 import { delegableTypeUrl, proposalTitleFrom } from '@/msg/util/delegable-msgs'
-import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
+import {
+  processingTxNotification,
+  runAfterIndexerCatchesUp,
+  successfulTxNotification,
+  waitForIndexerAfterTx,
+} from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
 import { extractTxHeight } from '@/msg/util/signerUtil'
@@ -243,7 +248,7 @@ export function useActionEcosystem(onCancel?: () => void, onRefresh?: (id?: stri
       if (!isDeliverTxResponse(result)) throw new Error('Expected a transaction response')
       const failure = txFailureNotice(result, errorMessage)
       if (failure) {
-        await notify(failure.message, 'error', failure.title)
+        await notify(failure.message, 'error', failure.title, failure.link)
         return result
       }
 
@@ -256,13 +261,16 @@ export function useActionEcosystem(onCancel?: () => void, onRefresh?: (id?: stri
       }
       const txHeight = extractTxHeight(result)
       if (txHeight === undefined) throw new Error('Successful transaction did not include a block height')
+      const processing = processingTxNotification(result.transactionHash, txHeight)
+      void notify(processing.message, processing.type, processing.title, processing.link)
       const indexed = await waitForIndexerAfterTx(waitForBlock, txHeight)
       const notification = successfulTxNotification(
         mode === 'proposal' ? proposalSubmittedMessage(result.events) : MSG_SUCCESS_ACTION_ECOSYSTEM[params.msgType](),
         txHeight,
-        indexed
+        indexed,
+        result.transactionHash
       )
-      await notify(notification.message, notification.type, notification.title)
+      await notify(notification.message, notification.type, notification.title, notification.link)
       if (created) {
         if (indexed) {
           router.push(`/ecosystems/${id}`)
@@ -282,7 +290,7 @@ export function useActionEcosystem(onCancel?: () => void, onRefresh?: (id?: stri
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error)
       const notice = rejectionNotice(errorMessage(undefined, text), text)
-      await notify(notice.message, 'error', notice.title)
+      await notify(notice.message, 'error', notice.title, notice.link)
     } finally {
       inFlight.current = false
     }

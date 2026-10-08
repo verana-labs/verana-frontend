@@ -34,7 +34,12 @@ import {
   txSeverity,
   txWarning,
 } from '@/lib/tx-preview'
-import { runAfterIndexerCatchesUp, successfulTxNotification, waitForIndexerAfterTx } from '@/msg/util/indexerWait'
+import {
+  processingTxNotification,
+  runAfterIndexerCatchesUp,
+  successfulTxNotification,
+  waitForIndexerAfterTx,
+} from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import { extractTxHeight } from '@/msg/util/signerUtil'
 import { proposalSubmittedMessage, rejectionNotice, txFailureNotice } from '@/msg/util/tx-outcome'
@@ -299,27 +304,30 @@ export function useCorporationManage(onDone?: () => void) {
       if (!('code' in result)) throw new Error('Expected a transaction response')
       const failure = txFailureNotice(result, (code, rawLog) => failureText(notificationKey, code, rawLog))
       if (failure) {
-        await notify(failure.message, 'error', failure.title)
+        await notify(failure.message, 'error', failure.title, failure.link)
         if (result.code === 0) runAfterIndexerCatchesUp(waitForBlock, txHeight(result), () => onDone?.())
         return false
       }
       const height = txHeight(result)
+      const processing = processingTxNotification(result.transactionHash, height)
+      void notify(processing.message, processing.type, processing.title, processing.link)
       const indexed = await waitForIndexerAfterTx(waitForBlock, height)
       const notification = successfulTxNotification(
         notificationKey === 'MsgSubmitProposal'
           ? proposalSubmittedMessage(result.events)
           : translate(`notification.${notificationKey}.success`),
         height,
-        indexed
+        indexed,
+        result.transactionHash
       )
-      await notify(notification.message, notification.type, notification.title)
+      await notify(notification.message, notification.type, notification.title, notification.link)
       if (indexed) onDone?.()
       else runAfterIndexerCatchesUp(waitForBlock, height, () => onDone?.())
       return true
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error)
       const notice = rejectionNotice(text, text)
-      await notify(notice.message, 'error', notice.title)
+      await notify(notice.message, 'error', notice.title, notice.link)
       return false
     } finally {
       inFlight.current = false

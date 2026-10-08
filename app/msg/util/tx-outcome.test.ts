@@ -1,7 +1,10 @@
 import type { DeliverTxResponse } from '@cosmjs/stargate'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { proposalExecution, proposalSubmittedMessage, rejectionNotice, txFailureNotice } from './tx-outcome'
 import type { TxEvent } from './txEvents'
+
+const explorer = vi.hoisted(() => ({ explorerTxLink: vi.fn() }))
+vi.mock('@/hooks/useVeranaChain', () => explorer)
 
 const INSUFFICIENT_FUNDS =
   'message /cosmos.bank.v1beta1.MsgSend at position 0: spendable balance 0uvna is smaller than 100000000uvna: insufficient funds'
@@ -94,6 +97,18 @@ describe('proposalExecution', () => {
 })
 
 describe('txFailureNotice', () => {
+  afterEach(() => explorer.explorerTxLink.mockReset())
+
+  it('links a rejected broadcast and a failed proposal execution to the explorer', () => {
+    const link = { href: 'https://explorer.example/tx/2E58', label: '2E58' }
+    explorer.explorerTxLink.mockReturnValue(link)
+    expect(txFailureNotice(deliverTx({ code: 11, rawLog: 'out of gas' }), fallback)?.link).toEqual(link)
+    expect(txFailureNotice(deliverTx({ events: DEVNET_TX_2E589E9C_EVENTS }), fallback)?.link).toEqual(link)
+    expect(explorer.explorerTxLink).toHaveBeenCalledWith(
+      '2E589E9C4CC492D6BD60F6D4464B11CD75DBD6B2F8DD7F066DD116621B4DFE78'
+    )
+  })
+
   it('reports the failed execution of a code 0 proposal transaction with its logs', () => {
     expect(txFailureNotice(deliverTx({ events: DEVNET_TX_2E589E9C_EVENTS }), fallback)).toEqual({
       title: 'Proposal not executed',
@@ -153,6 +168,20 @@ describe('txFailureNotice', () => {
 })
 
 describe('rejectionNotice', () => {
+  afterEach(() => explorer.explorerTxLink.mockReset())
+
+  it('links a submitted transaction the broadcast timed out on', () => {
+    const hash = 'A'.repeat(64)
+    const link = { href: `https://explorer.example/tx/${hash}`, label: hash }
+    explorer.explorerTxLink.mockReturnValue(link)
+    const notice = rejectionNotice(
+      'Unable to archive the ecosystem.',
+      `Direct signing failed: Transaction with ID ${hash} was submitted but was not yet found on the chain. You might want to check later. There was a wait of 60 seconds.`
+    )
+    expect(notice).toEqual({ message: 'Unable to archive the ecosystem.', title: 'Transaction failed', link })
+    expect(explorer.explorerTxLink).toHaveBeenCalledWith(hash)
+  })
+
   it('classifies a thrown simulation error', () => {
     expect(
       rejectionNotice(
