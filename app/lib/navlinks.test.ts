@@ -23,10 +23,11 @@ describe('getNavLinks', () => {
     ])
   })
 
-  it('gates the corporation entry on an acting corporation', () => {
-    const byHref = new Map(getNavLinks().map((link) => [link.href, link]))
-    expect(byHref.get('/corporation')?.requiresCorporation).toBe(true)
-    expect(byHref.get('/agents')?.requiresCorporation).toBe(true)
+  it('gates corporation, ecosystems, agents and pending tasks on an acting corporation per VFE-PAGE-NAV-2', () => {
+    const gated = getNavLinks()
+      .filter((link) => link.requiresCorporation === true)
+      .map((link) => link.href)
+    expect(gated.sort()).toEqual(['/agents', '/corporation', '/ecosystems', '/pendingtasks'])
   })
 
   it('gives every link a non-empty name and an icon', () => {

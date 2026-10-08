@@ -60,7 +60,7 @@ export default function EcosystemsPage() {
     nextPage,
     previousPage,
   } = useEcosystemsCtx()
-  const { actingCorporation } = useUserCorporation()
+  const { actingCorporation, loading: corporationLoading, error: discoveryError } = useUserCorporation()
 
   const [filters, setFilters] = useState<EcosystemsFilterState>({
     ...INITIAL_ECOSYSTEMS_FILTER,
@@ -82,6 +82,11 @@ export default function EcosystemsPage() {
 
   const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
   const gridLoading = ecosystemsLoading && ecosystemsList.length === 0
+
+  if (!actingCorporation && !corporationLoading) {
+    if (discoveryError) return <div className="p-6 error-pane">{translate('corporation.page.error')}</div>
+    return <p className="p-6 text-sm text-gray-600 dark:text-gray-300">{translate('corporation.page.nocorp')}</p>
+  }
 
   return (
     <>

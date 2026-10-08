@@ -6,10 +6,13 @@ import { resolveTranslatable } from '../dataview/types'
 
 type FeaturedServicesProps = {
   isWalletConnected: boolean
+  hasCorporation: boolean | undefined
 }
 
-export default function FeaturedServices({ isWalletConnected }: FeaturedServicesProps) {
+export default function FeaturedServices({ isWalletConnected, hasCorporation }: FeaturedServicesProps) {
   const links = getNavLinks()
+  const available = (link: { availableOffline?: boolean; requiresCorporation?: boolean }) =>
+    link.availableOffline === true || (isWalletConnected && (!link.requiresCorporation || hasCorporation))
 
   return (
     <section className="mb-8">
@@ -33,18 +36,26 @@ export default function FeaturedServices({ isWalletConnected }: FeaturedServices
                 </div>
                 <p className="text-gray-600 dark:text-gray-400">{link.description}</p>
                 <div className="flex items-center justify-between mt-auto pt-4">
-                  {isWalletConnected || link.availableOffline ? (
+                  {available(link) ? (
                     <span className="text-sm text-success-600 dark:text-success-400">
                       {resolveTranslatable({ key: 'featuredservices.available' }, translate)}
                     </span>
                   ) : (
                     <span className="text-sm text-neutral-70 dark:text-neutral-70">
-                      {resolveTranslatable({ key: 'featuredservices.connectrequired' }, translate)}
+                      {(!isWalletConnected || hasCorporation === false) &&
+                        resolveTranslatable(
+                          {
+                            key: isWalletConnected
+                              ? 'featuredservices.corporationrequired'
+                              : 'featuredservices.connectrequired',
+                          },
+                          translate
+                        )}
                     </span>
                   )}
                   <Link
-                    className={`text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium text-sm opacity-50 ${isWalletConnected || link.availableOffline ? '' : 'cursor-not-allowed'}`}
-                    href={isWalletConnected || link.availableOffline ? link.href : ''}
+                    className={`text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium text-sm opacity-50 ${available(link) ? '' : 'cursor-not-allowed'}`}
+                    href={available(link) ? link.href : ''}
                   >
                     {resolveTranslatable({ key: 'featuredservices.explore' }, translate)}
                   </Link>

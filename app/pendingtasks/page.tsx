@@ -69,7 +69,7 @@ function treePlaceholder(count: number, settled: boolean, error: string | null):
 }
 
 export default function PendingTasksPage() {
-  const { actingCorporation, loading: corporationLoading } = useUserCorporation()
+  const { actingCorporation, loading: corporationLoading, error: discoveryError } = useUserCorporation()
   const { pendingParticipants, settled, error, refetch } = usePendingTasksCtx()
   const [refreshRoot, setRefreshRoot] = useState(true)
   const participantTree = useMemo(
@@ -82,6 +82,11 @@ export default function PendingTasksPage() {
     void refetch()
     setRefreshRoot(false)
   }, [refetch, refreshRoot])
+
+  if (!actingCorporation && !corporationLoading) {
+    if (discoveryError) return <div className="p-6 error-pane">{translate('corporation.page.error')}</div>
+    return <p className="p-6 text-sm text-gray-600 dark:text-gray-300">{translate('corporation.page.nocorp')}</p>
+  }
 
   return (
     <ParticipantTree
