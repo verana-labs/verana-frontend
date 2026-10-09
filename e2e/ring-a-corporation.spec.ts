@@ -1,5 +1,6 @@
 import { fromBase64 } from '@cosmjs/encoding'
-import { expect, type Page, test } from '@playwright/test'
+import { expect, type Locator, type Page, test } from '@playwright/test'
+import { MsgGrantOperatorAuthorization } from '@verana-labs/verana-types/codec/verana/de/v1/tx'
 import { MsgAddGovernanceFrameworkDocument } from '@verana-labs/verana-types/codec/verana/gf/v1/tx'
 import { MsgSubmitProposal } from 'cosmjs-types/cosmos/group/v1/tx'
 import { TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
@@ -11,9 +12,13 @@ import {
   EGF_ACTIVE_13,
   EGF_DRAFT_13,
   GRANTEE,
+  OPERATOR_GRANT_MESSAGE_TYPES,
   REPLACEMENT_MEMBER,
+  SECOND_OPERATOR,
+  SECOND_OPERATOR_CYCLE_END,
 } from './support/corp-fixtures'
 import {
+  HARNESS_ADDRESS,
   HARNESS_MNEMONIC,
   indexerParticipantEvent,
   installCorporationStubs,
@@ -26,6 +31,17 @@ import {
 } from './support/corp-stubs'
 import { labelInput, labelSelect } from './support/forms'
 import { installMockChain } from './support/mock-chain'
+
+const DAY_MS = 86_400_000
+
+function localDateTimeInput(date: Date): string {
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+function fact(scope: Locator, label: string) {
+  return scope.getByText(label, { exact: true }).locator('..')
+}
 
 async function noHorizontalOverflow(page: Page) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
@@ -374,6 +390,11 @@ test('the proposal composer gates each kind on valid input', async ({ page }) =>
   await expect(submit).toBeDisabled()
   await page.getByLabel('Grantee account').fill(GRANTEE)
   await expect(submit).toBeEnabled()
+  await page.getByLabel('Spend limit (VNA)', { exact: true }).fill('0')
+  await expect(submit).toBeDisabled()
+  await expect(page.getByText('Enter spend limits in VNA, above 0 and with at most 6 decimals.')).toBeVisible()
+  await page.getByLabel('Spend limit (VNA)', { exact: true }).fill('5')
+  await expect(submit).toBeEnabled()
 
   await page.getByLabel('Proposal type').selectOption('members')
   await expect(
@@ -652,5 +673,155 @@ test('adding a CGF document proposes the exact message with no ecosystem id', as
     docDigestSri: digest,
     version: 2,
   })
+  await mock.teardown()
+})
+
+test('an operator row shows its spend limit, expiration and matching fee grant', async ({ page }) => {
+  await installCorporationStubs(page)
+  await seedActingCorporation(page, 13)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  await page.goto('/corporation?tab=operators')
+  const row = page.locator('#operators li').filter({ hasText: SECOND_OPERATOR })
+  const toggle = row.getByRole('button', { name: new RegExp(SECOND_OPERATOR) })
+  await expect(toggle).toContainText('22 message types · 5 VNA every 30d · Fee grant', { timeout: 15_000 })
+  await expect(
+    page.locator('#operators li').filter({ hasText: HARNESS_ADDRESS }).getByRole('button').first()
+  ).not.toContainText('Fee grant')
+
+  await toggle.click()
+  await expect(fact(row, 'Spend limit')).toContainText('5 VNA')
+  await expect(fact(row, 'Remaining spend')).toContainText('3.5 VNA')
+  await expect(fact(row, 'Period')).toContainText('30d')
+  const cycleEnd = await page.evaluate((iso) => new Date(iso).toLocaleString(), SECOND_OPERATOR_CYCLE_END)
+  await expect(fact(row, 'Spend cycle ends')).toContainText(cycleEnd)
+  await expect(fact(row, 'Fee grant')).toContainText('Yes')
+  await expect(fact(row, 'Fee spend limit')).toContainText('2 VNA')
+  await expect(fact(row, 'Fee remaining')).toContainText('1.25 VNA')
+  await expect(fact(row, 'Fee period')).toContainText('7d')
+  await expect(fact(row, 'Fee grant covers')).toContainText('The same 22 message types')
+
+  await page.route('**/v4/delegation/fee-grants*', (route) =>
+    route.fulfill({ status: 502, json: { error: 'indexer unavailable', code: 502 } })
+  )
+  await page.reload()
+  await expect(toggle).toContainText('22 message types · 5 VNA every 30d', { timeout: 15_000 })
+  await expect(toggle).not.toContainText('Fee grant')
+  await toggle.click()
+  await expect(fact(row, 'Remaining spend')).toContainText('3.5 VNA')
+  await expect(row.getByText('This section could not be loaded, the rest of the page is unaffected.')).toBeVisible()
+})
+
+test('a grant with an expiration, spend limits and a fee grant confirms and broadcasts that message', async ({
+  page,
+}) => {
+  await installCorporationStubs(page)
+  await seedActingCorporation(page, 13)
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubSri: false, stubCorporation: false })
+
+  await page.goto('/corporation?tab=operators')
+  await page.getByLabel('Grant operator authorization').fill(GRANTEE)
+  await page.getByRole('button', { name: 'Expiration, spend limits and fee grant' }).click()
+  const grant = page.getByRole('button', { name: /Grant$/ })
+
+  const spendLimit = page.getByLabel('Spend limit (VNA)', { exact: true })
+  const period = page.getByLabel('Period (days)', { exact: true })
+  await spendLimit.fill('1')
+  await period.fill('3')
+  await spendLimit.fill('')
+  await expect(period).toHaveValue('')
+  await expect(period).toBeDisabled()
+
+  await spendLimit.fill('5')
+  await period.fill('30')
+  await expect(grant).toBeDisabled()
+  await expect(page.getByText('A period needs an expiration date, which ends the first period.')).toBeVisible()
+
+  const expiration = localDateTimeInput(new Date(Date.now() + 60 * DAY_MS))
+  await page.getByLabel('Expiration', { exact: true }).fill(expiration)
+  await page.getByRole('checkbox', { name: /network fees/ }).check()
+  await page.getByLabel('Fee spend limit (VNA)', { exact: true }).fill('2')
+  await page.getByLabel('Fee period (days)', { exact: true }).fill('7')
+  await expect(grant).toBeEnabled()
+  await grant.click()
+
+  const dialog = page.getByRole('dialog', { name: 'Confirm transaction' })
+  await expect(dialog).toBeVisible({ timeout: 30_000 })
+  await expect(dialog).toContainText('for 22 message types')
+  await expect(fact(dialog, 'Spend limit')).toContainText('5 VNA every 30d')
+  await expect(fact(dialog, 'Expiration')).toContainText(
+    await page.evaluate((value) => new Date(value).toLocaleString(), expiration)
+  )
+  await expect(fact(dialog, 'Grantee fee grant')).toContainText('2 VNA every 7d')
+  await expect(fact(dialog, 'Network fee')).toContainText(/VNA/, { timeout: 30_000 })
+  await dialog.getByRole('button', { name: 'Confirm' }).click()
+  await expect.poll(() => mock.broadcastTxs().length, { timeout: 30_000 }).toBe(1)
+
+  const body = TxBody.decode(TxRaw.decode(fromBase64(mock.broadcastTxs()[0])).bodyBytes)
+  expect(body.messages.map((message) => message.typeUrl)).toEqual(['/verana.de.v1.MsgGrantOperatorAuthorization'])
+  expect(MsgGrantOperatorAuthorization.decode(body.messages[0].value)).toEqual({
+    corporation: ACME_POLICY_ADDRESS,
+    operator: wallet.bech32Address,
+    grantee: GRANTEE,
+    msgTypes: OPERATOR_GRANT_MESSAGE_TYPES,
+    expiration: new Date(expiration),
+    authzSpendLimit: [{ denom: 'uvna', amount: '5000000' }],
+    authzSpendLimitPeriod: { seconds: 30 * 86_400, nanos: 0 },
+    withFeegrant: true,
+    feegrantSpendLimit: [{ denom: 'uvna', amount: '2000000' }],
+    feegrantSpendLimitPeriod: { seconds: 7 * 86_400, nanos: 0 },
+  })
+  await expect(page.getByLabel('Grant operator authorization')).toHaveValue('', { timeout: 45_000 })
+  const optionsToggle = page.getByRole('button', { name: 'Expiration, spend limits and fee grant' })
+  if ((await optionsToggle.getAttribute('aria-expanded')) !== 'true') await optionsToggle.click()
+  await expect(page.getByLabel('Expiration', { exact: true })).toHaveValue('')
+  await expect(spendLimit).toHaveValue('')
+  await expect(page.getByRole('checkbox', { name: /network fees/ })).not.toBeChecked()
+  await mock.teardown()
+})
+
+test('a re-grant keeps the current fee grant unless turned off, and then warns that it is revoked', async ({
+  page,
+}) => {
+  await installCorporationStubs(page)
+  await seedActingCorporation(page, 13)
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubSri: false, stubCorporation: false })
+
+  await page.goto('/corporation?tab=operators')
+  const grantee = page.getByLabel('Grant operator authorization')
+  const grant = page.getByRole('button', { name: /Grant$/ })
+  await grantee.fill(HARNESS_ADDRESS)
+  await expect(grant).toBeDisabled()
+  await expect(
+    page.getByText('You cannot grant yourself while signing as operator, use a group proposal instead.')
+  ).toBeVisible()
+
+  await grantee.fill(SECOND_OPERATOR)
+  await expect(page.getByLabel('Spend limit (VNA)', { exact: true })).toHaveValue('5')
+  await expect(page.getByLabel('Period (days)', { exact: true })).toHaveValue('30')
+  const feeGrant = page.getByRole('checkbox', { name: /network fees/ })
+  await expect(feeGrant).toBeChecked()
+  await expect(page.getByLabel('Fee spend limit (VNA)', { exact: true })).toHaveValue('2')
+  await expect(page.getByLabel('Fee period (days)', { exact: true })).toHaveValue('7')
+  const warning = page.getByText(
+    'This account already has a fee grant from the corporation. Granting without one revokes it.'
+  )
+  await expect(warning).toBeHidden()
+
+  await feeGrant.uncheck()
+  await expect(warning).toBeVisible()
+  await expect(grant).toBeEnabled()
+  await grant.click()
+
+  const dialog = page.getByRole('dialog', { name: 'Confirm transaction' })
+  await expect(dialog).toBeVisible({ timeout: 30_000 })
+  await expect(fact(dialog, 'Spend limit')).toContainText('5 VNA every 30d')
+  await expect(fact(dialog, 'Grantee fee grant')).toContainText('Revoked, the current fee grant is removed')
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(dialog).toBeHidden()
+  expect(mock.seenMethods()).not.toContain('broadcast_tx_sync')
+  await expect(grantee).toHaveValue(SECOND_OPERATOR)
   await mock.teardown()
 })

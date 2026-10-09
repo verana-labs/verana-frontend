@@ -49,15 +49,27 @@ export interface CorporationTrustDeposit {
   lastRepaid: string | null
 }
 
-export interface OperatorAuthorizationRow {
+export interface CoinAmount {
+  denom: string
+  amount: string
+}
+
+export interface GrantLimits {
+  spendLimit: CoinAmount[] | null
+  remainingSpend: CoinAmount[] | null
+  expiration: string | null
+  period: string | null
+}
+
+export interface OperatorAuthorizationRow extends GrantLimits {
   id: number
   operator: string
   msgTypes: string[]
 }
 
-export interface CoinAmount {
-  denom: string
-  amount: string
+export interface FeeGrantRow extends GrantLimits {
+  grantee: string
+  msgTypes: string[]
 }
 
 export interface VsOperatorAuthorizationRow {
@@ -99,6 +111,7 @@ export interface DegradedSections {
   trustDeposit: boolean
   operatorAuthorizations: boolean
   vsOperatorAuthorizations: boolean
+  feeGrants: boolean
   proposals: boolean
 }
 
@@ -110,6 +123,7 @@ export interface CorporationDetails {
   trustDeposit: CorporationTrustDeposit | null
   operatorAuthorizations: OperatorAuthorizationRow[]
   vsOperatorAuthorizations: VsOperatorAuthorizationRow[]
+  feeGrants: FeeGrantRow[]
   participantsById: Map<number, Participant>
   proposals: ProposalRow[]
   history: ActivityRow[]
@@ -185,19 +199,6 @@ export function parseTrustDeposit(payload: unknown): CorporationTrustDeposit {
   }
 }
 
-export function parseOperatorAuthorizations(payload: unknown): OperatorAuthorizationRow[] {
-  const envelope = record(payload, 'authorizations response')
-  const rows = Array.isArray(envelope.authorizations) ? envelope.authorizations : []
-  return rows.map((entry, index) => {
-    const row = record(entry, `authorizations[${index}]`)
-    return {
-      id: integer(row.id, `authorizations[${index}].id`),
-      operator: string(row.operator, `authorizations[${index}].operator`),
-      msgTypes: stringArray(row.msg_types, `authorizations[${index}].msg_types`),
-    }
-  })
-}
-
 function coinAmounts(value: unknown, path: string): CoinAmount[] | null {
   if (value === undefined || value === null) return null
   if (!Array.isArray(value)) throw new Error(`Invalid corporation page response: ${path}`)
@@ -208,6 +209,59 @@ function coinAmounts(value: unknown, path: string): CoinAmount[] | null {
       amount: decimalAmount(coin.amount, `${path}[${index}].amount`),
     }
   })
+}
+
+function remainingPerDenom(spendLimit: CoinAmount[], remaining: CoinAmount[] | null): CoinAmount[] {
+  return spendLimit.map((limit) => ({
+    denom: limit.denom,
+    amount: remaining?.find((coin) => coin.denom === limit.denom)?.amount ?? '0',
+  }))
+}
+
+function grantLimits(row: Record<string, unknown>, path: string): GrantLimits {
+  const spendLimit = coinAmounts(row.spend_limit, `${path}.spend_limit`)
+  const limited = spendLimit !== null && spendLimit.length > 0
+  return {
+    spendLimit: limited ? spendLimit : null,
+    remainingSpend: limited
+      ? remainingPerDenom(spendLimit, coinAmounts(row.remaining_spend, `${path}.remaining_spend`))
+      : null,
+    expiration: nullableString(row.expiration ?? null, `${path}.expiration`),
+    period: nullableString(row.period ?? null, `${path}.period`),
+  }
+}
+
+export function parseOperatorAuthorizations(payload: unknown): OperatorAuthorizationRow[] {
+  const envelope = record(payload, 'authorizations response')
+  const rows = Array.isArray(envelope.authorizations) ? envelope.authorizations : []
+  return rows.map((entry, index) => {
+    const path = `authorizations[${index}]`
+    const row = record(entry, path)
+    return {
+      id: integer(row.id, `${path}.id`),
+      operator: string(row.operator, `${path}.operator`),
+      msgTypes: stringArray(row.msg_types, `${path}.msg_types`),
+      ...grantLimits(row, path),
+    }
+  })
+}
+
+export function parseCorporationFeeGrants(payload: unknown): FeeGrantRow[] {
+  const envelope = record(payload, 'fee grants response')
+  const rows = Array.isArray(envelope.fee_grants) ? envelope.fee_grants : []
+  return rows.map((entry, index) => {
+    const path = `fee_grants[${index}]`
+    const row = record(entry, path)
+    return {
+      grantee: string(row.grantee, `${path}.grantee`),
+      msgTypes: stringArray(row.msg_types, `${path}.msg_types`),
+      ...grantLimits(row, path),
+    }
+  })
+}
+
+export function corporationFeeGrantsUrl(corporationId: number): string {
+  return `${VERANA_REST_ENDPOINT_DELEGATION}/fee-grants?grantor_corporation_id=${corporationId}&only_active=true&limit=1024`
 }
 
 export function parseVsOperatorAuthorizations(payload: unknown): VsOperatorAuthorizationRow[] {
@@ -368,6 +422,11 @@ export function useCorporationDetails(corporationId: number | undefined) {
             'Unable to fetch VS operator authorizations'
           ).then(parseVsOperatorAuthorizations)
         ),
+        degrade('fee grants', [] as FeeGrantRow[], () =>
+          fetchJson(corporationFeeGrantsUrl(corporationId), 'Unable to fetch fee grants').then(
+            parseCorporationFeeGrants
+          )
+        ),
         degrade('corporation participants', new Map<number, Participant>(), () =>
           fetchJson(
             `${VERANA_REST_ENDPOINT_PARTICIPANT}/list?corporation_id=${corporationId}&limit=1024`,
@@ -383,7 +442,8 @@ export function useCorporationDetails(corporationId: number | undefined) {
         ),
         fetchJson(`${VERANA_REST_ENDPOINT_GROUP}/get/${corporationId}`, 'Unable to fetch the group'),
       ])
-      const [authorizations, proposals, trustDeposit, vsAuthorizations, participants, history] = await degrading
+      const [authorizations, proposals, trustDeposit, vsAuthorizations, feeGrants, participants, history] =
+        await degrading
       const governance = await degrade('corporation governance', null as CorporationGovernance | null, async () =>
         parseGovernance(profilePayload)
       )
@@ -397,6 +457,7 @@ export function useCorporationDetails(corporationId: number | undefined) {
         trustDeposit: trustDeposit.value,
         operatorAuthorizations: authorizations.value,
         vsOperatorAuthorizations: vsAuthorizations.value,
+        feeGrants: feeGrants.value,
         participantsById: participants.value,
         proposals: proposals.value,
         history,
@@ -404,6 +465,7 @@ export function useCorporationDetails(corporationId: number | undefined) {
           trustDeposit: trustDeposit.failed,
           operatorAuthorizations: authorizations.failed,
           vsOperatorAuthorizations: vsAuthorizations.failed,
+          feeGrants: feeGrants.failed,
           proposals: proposals.failed,
         },
       })

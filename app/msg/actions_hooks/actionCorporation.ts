@@ -13,6 +13,7 @@ import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { findCorporationMembership, type UserCorporation } from '@/lib/corporation-discovery'
+import { grantOperatorAuthorization, NO_GRANT_OPTIONS } from '@/lib/operator-grant'
 import type { CostLine, TxConfirmRequest, TxConfirmResult } from '@/lib/tx-preview'
 import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
 import {
@@ -89,18 +90,15 @@ export function buildGrantOperatorMessages(
   fundingUvna: string
 ): EncodeObject[] {
   if (!/^\d+$/.test(fundingUvna)) throw new Error('fundingUvna must be a non-negative integer')
-  const grant = MsgGrantOperatorAuthorization.fromPartial({
-    corporation: corporation.policyAddress,
-    operator: corporation.policyAddress,
-    grantee,
-    msgTypes: [...OPERATOR_GRANT_MESSAGE_TYPES],
-    expiration: undefined,
-    authzSpendLimit: [],
-    authzSpendLimitPeriod: undefined,
-    withFeegrant: false,
-    feegrantSpendLimit: [],
-    feegrantSpendLimitPeriod: undefined,
-  })
+  const grant = grantOperatorAuthorization(
+    {
+      corporation: corporation.policyAddress,
+      operator: corporation.policyAddress,
+      grantee,
+      msgTypes: [...OPERATOR_GRANT_MESSAGE_TYPES],
+    },
+    NO_GRANT_OPTIONS
+  )
   const proposal: EncodeObject = {
     typeUrl: '/cosmos.group.v1.MsgSubmitProposal',
     value: MsgSubmitProposal.fromPartial({

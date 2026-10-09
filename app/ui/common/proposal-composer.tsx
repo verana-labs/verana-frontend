@@ -4,9 +4,11 @@ import type { EncodeObject } from '@cosmjs/proto-signing'
 import { faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useState } from 'react'
-import type { GroupMemberRow, GroupPolicy } from '@/hooks/useCorporationDetails'
+import type { FeeGrantRow, GroupMemberRow, GroupPolicy, OperatorAuthorizationRow } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
+import { grantOptionLines, readGrantOptions } from '@/lib/operator-grant'
+import type { CostLine } from '@/lib/tx-preview'
 import {
   buildGrantOperatorMessage,
   buildRevokeOperatorMessage,
@@ -18,6 +20,7 @@ import {
 } from '@/msg/actions_hooks/actionCorporationManage'
 import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
 import { AddressIssueNote, addressIssue } from '@/ui/common/address-issue'
+import { OperatorGrantOptionsFields, useOperatorGrantDraft } from '@/ui/common/operator-grant-options'
 import { ThresholdHint } from '@/ui/common/threshold-hint'
 import { isValidDID } from '@/util/validations'
 
@@ -31,18 +34,22 @@ export function ProposalComposer({
   membership,
   policy,
   members,
+  authorizations,
+  feeGrants,
   onDone,
   onClose,
 }: {
   membership: CorporationMembership
   policy: GroupPolicy
   members: GroupMemberRow[]
+  authorizations: OperatorAuthorizationRow[]
+  feeGrants: FeeGrantRow[]
   onDone: () => void
   onClose: () => void
 }) {
   const manage = useCorporationManage(onDone)
   const [kind, setKind] = useState<ComposerKind>('grant')
-  const [grantee, setGrantee] = useState('')
+  const draft = useOperatorGrantDraft(feeGrants, authorizations)
   const [msgTypes, setMsgTypes] = useState<string[]>([...OPERATOR_GRANT_MESSAGE_TYPES])
   const [memberUpdates, setMemberUpdates] = useState<GroupMemberUpdate[]>(
     members.map((member) => ({ address: member.address, weight: member.weight }))
@@ -53,9 +60,10 @@ export function ProposalComposer({
   const [submitting, setSubmitting] = useState(false)
 
   const policyAddress = membership.corporation.policyAddress
-  const target = grantee.trim()
+  const target = draft.target
   const granteeIssue = addressIssue(target, [])
   const granteeValid = target.length > 0 && granteeIssue === null
+  const grantReading = readGrantOptions(draft.options)
   const trimmedUpdates = memberUpdates.map((update) => ({ ...update, address: update.address.trim() }))
   const updateIssues = trimmedUpdates.map((update, index) =>
     addressIssue(
@@ -73,7 +81,7 @@ export function ProposalComposer({
 
   const ready =
     kind === 'grant'
-      ? granteeValid && msgTypes.length > 0
+      ? granteeValid && msgTypes.length > 0 && grantReading.issue === null
       : kind === 'revoke'
         ? granteeValid
         : kind === 'members'
@@ -82,13 +90,16 @@ export function ProposalComposer({
             ? policyValid
             : isValidDID(did.trim())
 
-  function compose(): { message: EncodeObject; title: string } {
+  function compose(): { message: EncodeObject; title: string; costLines?: CostLine[] } {
     switch (kind) {
-      case 'grant':
+      case 'grant': {
+        if (!grantReading.options) throw new Error(translate(grantReading.issue))
         return {
-          message: buildGrantOperatorMessage(membership, target, msgTypes, policyAddress),
+          message: buildGrantOperatorMessage(membership, target, msgTypes, policyAddress, grantReading.options),
           title: `Grant operator authorization to ${target}`,
+          costLines: grantOptionLines(grantReading.options, draft.existingFeeGrant !== undefined),
         }
+      }
       case 'revoke':
         return {
           message: buildRevokeOperatorMessage(membership, target, policyAddress),
@@ -115,8 +126,11 @@ export function ProposalComposer({
   async function submit() {
     setSubmitting(true)
     try {
-      const { message, title } = compose()
-      if (await manage.propose(membership, message, title)) onClose()
+      const { message, title, costLines } = compose()
+      if (await manage.propose(membership, message, title, costLines)) {
+        draft.reset()
+        onClose()
+      }
     } finally {
       setSubmitting(false)
     }
@@ -147,8 +161,8 @@ export function ProposalComposer({
         <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block max-w-xl mt-3">
           {translate('corporation.composer.grantee')}
           <input
-            value={grantee}
-            onChange={(event) => setGrantee(event.target.value)}
+            value={draft.grantee}
+            onChange={(event) => draft.setGrantee(event.target.value)}
             placeholder="verana1…"
             className={inputClass}
           />
@@ -181,6 +195,17 @@ export function ProposalComposer({
             ))}
           </div>
         </fieldset>
+      ) : null}
+
+      {kind === 'grant' ? (
+        <div className="mt-3">
+          <OperatorGrantOptionsFields
+            value={draft.options}
+            onChange={draft.setOptions}
+            replacesFeeGrant={draft.existingFeeGrant !== undefined}
+          />
+          <AddressIssueNote issue={grantReading.issue} />
+        </div>
       ) : null}
 
       {kind === 'members' ? (
