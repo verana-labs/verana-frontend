@@ -27,6 +27,8 @@ vi.mock('@cosmjs/tendermint-rpc', async (importOriginal) => ({
   Comet38Client: { connect: vi.fn(async () => ({})) },
 }))
 
+const accountNumber = BigInt('15667172330941460096')
+
 describe('signAndBroadcastManualDirect', () => {
   beforeEach(() => {
     stargate.broadcastTx.mockReset()
@@ -86,7 +88,7 @@ describe('signAndBroadcastManualDirect', () => {
       getAccounts: vi.fn(async () => [{ address, algo: 'secp256k1' as const, pubkey: publicKey }]),
       signDirect,
     }
-    stargate.getSequence.mockResolvedValue({ accountNumber: 7, sequence: 3 })
+    stargate.getSequence.mockResolvedValue({ accountNumber, sequence: 3 })
     stargate.broadcastTx.mockResolvedValue({ code: 0, height: 123, transactionHash: 'ABC', events: [] })
 
     const result = await signAndBroadcastManualDirect({
@@ -115,7 +117,7 @@ describe('signAndBroadcastManualDirect', () => {
     expect(signDirect.mock.calls[0]?.[0]).toBe(address)
     const signDoc = signDirect.mock.calls[0]?.[1]
     expect(signDoc?.chainId).toBe('vna-devnet-1')
-    expect(signDoc?.accountNumber).toBe(BigInt(7))
+    expect(signDoc?.accountNumber).toBe(accountNumber)
 
     const body = TxBody.decode(signDoc?.bodyBytes ?? new Uint8Array())
     expect(body.memo).toBe('MsgStoreDigest')
@@ -147,7 +149,7 @@ describe('signAndBroadcastManualDirect', () => {
       getAccounts: vi.fn(async () => [{ address, algo: 'secp256k1' as const, pubkey: publicKey }]),
       signDirect,
     }
-    stargate.getSequence.mockResolvedValue({ accountNumber: 7, sequence: 3 })
+    stargate.getSequence.mockResolvedValue({ accountNumber, sequence: 3 })
     stargate.broadcastTx.mockResolvedValue({ code: 0, height: 123, transactionHash: 'ABC', events: [] })
 
     await signAndBroadcastManualDirect({
@@ -224,7 +226,7 @@ describe('signAndBroadcastManualDirect', () => {
     }
 
     beforeEach(() => {
-      stargate.getSequence.mockResolvedValue({ accountNumber: 7, sequence: 3 })
+      stargate.getSequence.mockResolvedValue({ accountNumber, sequence: 3 })
     })
 
     it('signs again once with the sequence the chain expects', async () => {
@@ -243,8 +245,8 @@ describe('signAndBroadcastManualDirect', () => {
     it('reads the sequence again when the error does not carry the expected one', async () => {
       const { signer, signDirect } = directSigner()
       stargate.getSequence
-        .mockResolvedValueOnce({ accountNumber: 7, sequence: 3 })
-        .mockResolvedValueOnce({ accountNumber: 7, sequence: 4 })
+        .mockResolvedValueOnce({ accountNumber, sequence: 3 })
+        .mockResolvedValueOnce({ accountNumber, sequence: 4 })
       stargate.broadcastTx
         .mockRejectedValueOnce(new BroadcastTxError(32, 'sdk', 'account sequence mismatch'))
         .mockResolvedValueOnce({ code: 0, height: 124, transactionHash: 'DEF', events: [] })
@@ -302,8 +304,8 @@ describe('signAndBroadcastManualDirect', () => {
       it('reads the sequence again when the response has no log', async () => {
         const { signer, signDirect } = directSigner()
         stargate.getSequence
-          .mockResolvedValueOnce({ accountNumber: 7, sequence: 3 })
-          .mockResolvedValueOnce({ accountNumber: 7, sequence: 4 })
+          .mockResolvedValueOnce({ accountNumber, sequence: 3 })
+          .mockResolvedValueOnce({ accountNumber, sequence: 4 })
         stargate.broadcastTx
           .mockResolvedValueOnce({ ...rejected, rawLog: undefined })
           .mockResolvedValueOnce({ code: 0, height: 125, transactionHash: 'DEF', events: [] })

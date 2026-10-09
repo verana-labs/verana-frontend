@@ -21,7 +21,7 @@ export type MockChainOptions = {
   rpcEndpoint?: string
   chainId?: string
   address: string
-  accountNumber?: number
+  accountNumber?: bigint
   sequence?: number
   gasUsed?: number
   gasDriftPerSimulation?: number
@@ -72,10 +72,10 @@ const statusResult = (chainId: string) => ({
 })
 
 // height must be a non-zero string or CosmJS queryAbci throws
-const accountQueryResult = (address: string, accountNumber: number, sequence: number) => {
+const accountQueryResult = (address: string, accountNumber: bigint, sequence: number) => {
   const baseAccount = BaseAccount.fromPartial({
     address,
-    accountNumber: BigInt(accountNumber),
+    accountNumber,
     sequence: BigInt(sequence),
   })
   const accountAny = Any.fromPartial({
@@ -195,7 +195,7 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
     rpcEndpoint = process.env.NEXT_PUBLIC_VERANA_RPC_ENDPOINT ?? 'https://rpc.devnet.verana.network',
     chainId = process.env.NEXT_PUBLIC_VERANA_CHAIN_ID ?? 'vna-devnet-1',
     address,
-    accountNumber = 12,
+    accountNumber = BigInt('15667172330941460096'),
     sequence = 7,
     gasUsed = 200_000,
     gasDriftPerSimulation = 0,
