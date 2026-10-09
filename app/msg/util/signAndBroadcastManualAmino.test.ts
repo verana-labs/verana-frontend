@@ -29,6 +29,7 @@ vi.mock('@cosmjs/tendermint-rpc', async (importOriginal) => ({
 }))
 
 const address = 'verana1operator'
+const accountNumber = BigInt('15667172330941460096')
 const signer: OfflineAminoSigner = {
   getAccounts: vi.fn(async () => []),
   signAmino: vi.fn(async () => {
@@ -63,7 +64,7 @@ describe('signAndBroadcastManualAmino', () => {
   beforeEach(() => {
     stargate.broadcastTx.mockReset().mockResolvedValue({ code: 0, height: 123, transactionHash: 'ABC', events: [] })
     stargate.getChainId.mockReset().mockResolvedValue('vna-devnet-1')
-    stargate.getSequence.mockReset().mockResolvedValue({ accountNumber: 7, sequence: 3 })
+    stargate.getSequence.mockReset().mockResolvedValue({ accountNumber, sequence: 3 })
     stargate.simulate.mockReset().mockResolvedValue(100)
     stargate.sign.mockReset().mockResolvedValue(TxRaw.fromPartial({}))
   })
@@ -83,7 +84,7 @@ describe('signAndBroadcastManualAmino', () => {
     expect(stargate.simulate).not.toHaveBeenCalled()
     expect(stargate.sign).toHaveBeenCalledOnce()
     expect(stargate.sign).toHaveBeenCalledWith(address, messages, confirmedFee, 'MsgStoreDigest', {
-      accountNumber: 7,
+      accountNumber,
       sequence: 3,
       chainId: 'vna-devnet-1',
     })
@@ -106,8 +107,8 @@ describe('signAndBroadcastManualAmino', () => {
 
   it('reads the sequence again when the mismatch does not carry the expected one', async () => {
     stargate.getSequence
-      .mockResolvedValueOnce({ accountNumber: 7, sequence: 3 })
-      .mockResolvedValueOnce({ accountNumber: 7, sequence: 6 })
+      .mockResolvedValueOnce({ accountNumber, sequence: 3 })
+      .mockResolvedValueOnce({ accountNumber, sequence: 6 })
     stargate.broadcastTx.mockRejectedValueOnce(new BroadcastTxError(32, 'sdk', 'account sequence mismatch'))
 
     await send({ fee: confirmedFee })
