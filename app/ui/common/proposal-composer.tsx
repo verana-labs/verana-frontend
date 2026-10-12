@@ -50,7 +50,7 @@ export function ProposalComposer({
   const manage = useCorporationManage(onDone)
   const [kind, setKind] = useState<ComposerKind>('grant')
   const draft = useOperatorGrantDraft(feeGrants, authorizations)
-  const [msgTypes, setMsgTypes] = useState<string[]>([...OPERATOR_GRANT_MESSAGE_TYPES])
+  const { msgTypes, setMsgTypes } = draft
   const [memberUpdates, setMemberUpdates] = useState<GroupMemberUpdate[]>(
     members.map((member) => ({ address: member.address, weight: member.weight }))
   )

@@ -1,5 +1,6 @@
 import { MsgGrantOperatorAuthorization } from '@verana-labs/verana-types/codec/verana/de/v1/tx'
 import { describe, expect, it } from 'vitest'
+import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
 import {
   authorizationFor,
   EMPTY_GRANT_OPTIONS_INPUT,
@@ -11,6 +12,7 @@ import {
   formatIndexerPeriod,
   GRANT_ISSUES,
   type GrantOptionsInput,
+  grantMessageTypes,
   grantOperatorAuthorization,
   grantOptionLines,
   NO_GRANT_OPTIONS,
@@ -19,6 +21,8 @@ import {
   readGrantOptions,
   retargetAuthorizationOptions,
   retargetGrantOptions,
+  retargetMessageTypes,
+  sameMsgTypes,
   updateGrantOptions,
   uvnaToVna,
   vnaToUvna,
@@ -364,12 +368,14 @@ describe('existing fee grants', () => {
 describe('existing authorizations', () => {
   const capped: ExistingAuthorization = {
     operator: 'verana1op',
+    msgTypes: ['/verana.co.v1.MsgUpdateCorporation', '/verana.de.v1.MsgGrantOperatorAuthorization'],
     spendLimit: [{ denom: 'uvna', amount: '5000000' }],
     period: '2592000s',
     expiration: '2026-12-01T00:00:00Z',
   }
   const unlimited: ExistingAuthorization = {
     operator: 'verana1other',
+    msgTypes: [...OPERATOR_GRANT_MESSAGE_TYPES],
     spendLimit: null,
     period: null,
     expiration: null,
@@ -428,5 +434,26 @@ describe('existing authorizations', () => {
     const edited = { ...prefilled, spendLimit: '9' }
     expect(retargetAuthorizationOptions(edited, capped, undefined)).toBe(edited)
     expect(retargetAuthorizationOptions(prefilled, capped, undefined)).toEqual(input({ withFeegrant: true }))
+  })
+
+  it('starts a re-grant from the grantable types the grantee holds and a new grant from all of them', () => {
+    expect(grantMessageTypes(undefined)).toEqual([...OPERATOR_GRANT_MESSAGE_TYPES])
+    expect(grantMessageTypes(capped)).toEqual(['/verana.co.v1.MsgUpdateCorporation'])
+    expect(grantMessageTypes(unlimited)).toEqual([...OPERATOR_GRANT_MESSAGE_TYPES])
+  })
+
+  it('compares message types as sets', () => {
+    expect(sameMsgTypes(['a', 'b'], ['b', 'a'])).toBe(true)
+    expect(sameMsgTypes(['a', 'a'], ['a', 'b'])).toBe(false)
+    expect(sameMsgTypes(['a'], ['a', 'b'])).toBe(false)
+  })
+
+  it('moves an untouched type selection with the grantee and keeps one the user changed', () => {
+    const all = grantMessageTypes(undefined)
+    const prefilled = retargetMessageTypes(all, undefined, capped)
+    expect(prefilled).toEqual(['/verana.co.v1.MsgUpdateCorporation'])
+    expect(retargetMessageTypes(prefilled, capped, undefined)).toEqual(all)
+    const edited = [...prefilled, OPERATOR_GRANT_MESSAGE_TYPES[1]]
+    expect(retargetMessageTypes(edited, capped, undefined)).toEqual(edited)
   })
 })

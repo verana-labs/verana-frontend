@@ -797,7 +797,12 @@ test('a re-grant keeps the current fee grant unless turned off, and then warns t
   await expect(
     page.getByText('You cannot grant yourself while signing as operator, use a group proposal instead.')
   ).toBeVisible()
+  await expect(page.getByText('2 of 22 message types selected', { exact: true })).toBeVisible()
 
+  await grantee.fill(SECOND_OPERATOR)
+  await expect(page.getByText('22 of 22 message types selected', { exact: true })).toBeVisible()
+  await grantee.fill(HARNESS_ADDRESS)
+  await expect(page.getByText('2 of 22 message types selected', { exact: true })).toBeVisible()
   await grantee.fill(SECOND_OPERATOR)
   await expect(page.getByLabel('Spend limit (VNA)', { exact: true })).toHaveValue('5')
   await expect(page.getByLabel('Period (days)', { exact: true })).toHaveValue('30')

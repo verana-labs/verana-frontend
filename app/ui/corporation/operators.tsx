@@ -12,7 +12,13 @@ import type {
   VsOperatorAuthorizationRow,
 } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
-import { feeGrantFor, formatIndexerPeriod, type OperatorGrantOptions, readGrantOptions } from '@/lib/operator-grant'
+import {
+  feeGrantFor,
+  formatIndexerPeriod,
+  type OperatorGrantOptions,
+  readGrantOptions,
+  sameMsgTypes,
+} from '@/lib/operator-grant'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
 import { useRegistryLabels } from '@/providers/api-rest-query-provider-context'
@@ -99,11 +105,6 @@ function FactGrid({ facts }: { facts: [string, ReactNode][] }) {
       ))}
     </div>
   )
-}
-
-function sameMsgTypes(left: readonly string[], right: readonly string[]): boolean {
-  const set = new Set(right)
-  return left.length === set.size && left.every((msgType) => set.has(msgType))
 }
 
 function feeMsgTypesText(feeMsgTypes: readonly string[], grantMsgTypes: readonly string[]): string {
@@ -235,7 +236,7 @@ export function GrantOperatorForm({
   ) => Promise<boolean>
 }) {
   const draft = useOperatorGrantDraft(feeGrants, authorizations)
-  const [selected, setSelected] = useState(() => new Set<string>(OPERATOR_GRANT_MESSAGE_TYPES))
+  const selected = new Set(draft.msgTypes)
   const [showTypes, setShowTypes] = useState(false)
   const [showOptions, setShowOptions] = useState(false)
   const target = draft.target
@@ -246,12 +247,9 @@ export function GrantOperatorForm({
   const canSubmit = target.length > 0 && granteeIssue === null && selected.size > 0 && reading.issue === null
 
   function toggle(typeUrl: string) {
-    setSelected((previous) => {
-      const next = new Set(previous)
-      if (next.has(typeUrl)) next.delete(typeUrl)
-      else next.add(typeUrl)
-      return next
-    })
+    draft.setMsgTypes((current) =>
+      current.includes(typeUrl) ? current.filter((entry) => entry !== typeUrl) : [...current, typeUrl]
+    )
   }
 
   return (
@@ -260,7 +258,7 @@ export function GrantOperatorForm({
       onSubmit={(event) => {
         event.preventDefault()
         if (!canSubmit || !reading.options) return
-        void onGrant(target, [...selected], reading.options, draft.existingFeeGrant !== undefined).then((granted) => {
+        void onGrant(target, draft.msgTypes, reading.options, draft.existingFeeGrant !== undefined).then((granted) => {
           if (granted) draft.reset()
         })
       }}
@@ -305,14 +303,14 @@ export function GrantOperatorForm({
           <div className="flex gap-3 text-xs">
             <button
               type="button"
-              onClick={() => setSelected(new Set(OPERATOR_GRANT_MESSAGE_TYPES))}
+              onClick={() => draft.setMsgTypes([...OPERATOR_GRANT_MESSAGE_TYPES])}
               className="py-1 text-primary-700 dark:text-primary-300"
             >
               {translate('corporation.page.msgtypes.all')}
             </button>
             <button
               type="button"
-              onClick={() => setSelected(new Set())}
+              onClick={() => draft.setMsgTypes([])}
               className="py-1 text-primary-700 dark:text-primary-300"
             >
               {translate('corporation.page.msgtypes.none')}
