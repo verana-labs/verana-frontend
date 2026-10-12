@@ -6,8 +6,8 @@ import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { LOW_BALANCE_WARN_UVNA, VERANA_FAUCET_URL } from '@/config/env'
+import { useAccountBalance } from '@/hooks/useAccountBalance'
 import { type FeeGrantLookup, useFeeGrant } from '@/hooks/useFeeGrant'
-import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
 import { simulationFor, type TxSimulation, useTxSimulation } from '@/hooks/useTxSimulation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
@@ -143,7 +143,7 @@ export function ConfirmTransactionModal({
   const { msgs, buildProposalMsgs } = request
   const fallbackTitle = request.proposalTitle ?? ''
   const composing = request.mode === 'proposal' && buildProposalMsgs !== undefined
-  const { accountData, errorAccountData } = useTrustDepositAccountData()
+  const { accountData, errorAccountData } = useAccountBalance()
   const [balanceWaitOver, setBalanceWaitOver] = useState(false)
   const balanceUnknown = accountData.balance === null && (errorAccountData !== null || balanceWaitOver)
   const [title, setTitle] = useState(fallbackTitle)

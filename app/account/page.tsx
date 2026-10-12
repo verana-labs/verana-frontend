@@ -3,7 +3,6 @@
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { VERANA_FAUCET_URL } from '@/config/env'
-import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
 import { RefreshState } from '@/msg/util/signerUtil'
@@ -22,10 +21,7 @@ export default function AccountPage() {
   // Only pre-open the "getVNA" action if the URL includes ?getVNA=true
   const openGetVNA = searchParams.get('getVNA') === 'true'
 
-  // Custom hook to fetch account/trust deposit data
   const { accountData, refetch: refetchAccount } = useAccountCtx()
-  const { actingCorporation, refetch: refetchCorporation } = useUserCorporation()
-  // Refresh account/trust deposit data
   const [refresh, setRefresh] = useState<boolean>(true)
   const [refreshState, setRefreshState] = useState<RefreshState>({})
   const { latestProcessedHeight } = useIndexerEvents()
@@ -33,10 +29,10 @@ export default function AccountPage() {
   useEffect(() => {
     if (!refresh) return
     ;(async () => {
-      await Promise.all([refetchAccount(), refetchCorporation()])
+      await refetchAccount()
       setRefresh(false)
     })()
-  }, [refresh, refetchAccount, refetchCorporation])
+  }, [refresh, refetchAccount])
 
   useEffect(() => {
     if (refreshState.txHeight == null) return
@@ -54,19 +50,11 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (accountData) {
-      // Prepare constants and process fields for the UI
-      const typedAccountData = accountData as AccountData
       // Per [VFE-PAGE-ACCT-3]: no faucet URL, no Get VNA action.
       const getVNA = VERANA_FAUCET_URL ? GET_VNA_ACTION : null
-      setData({
-        ...typedAccountData,
-        getVNA,
-        corporationId: actingCorporation?.corporation.id ?? null,
-        policyAddress: actingCorporation?.corporation.policyAddress ?? null,
-        operatorAuthorized: actingCorporation?.operator ?? false,
-      })
+      setData({ ...accountData, getVNA })
     }
-  }, [accountData, actingCorporation])
+  }, [accountData])
 
   return (
     <>
