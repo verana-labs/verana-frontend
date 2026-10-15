@@ -295,9 +295,11 @@ export async function installAgentStubs(page: Page, opts: AgentStubOptions = {})
     const params = new URL(route.request().url()).searchParams
     if (params.get('corporation_id') !== '13') return route.fulfill({ json: { participants: [] } })
     const wanted = params.get('participant_state')
-    const participants = wanted
-      ? AGENT_PARTICIPANTS.filter((participant) => participant.participant_state === wanted)
-      : AGENT_PARTICIPANTS
+    const opState = params.get('op_state')
+    const participants = AGENT_PARTICIPANTS.filter(
+      (participant) =>
+        (!wanted || participant.participant_state === wanted) && (!opState || participant.op_state === opState)
+    )
     return route.fulfill({ json: { participants } })
   })
   await page.route('**/v4/ecosystem/list*', (route) => {
