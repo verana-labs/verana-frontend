@@ -4,10 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { VERANA_FAUCET_URL } from '@/config/env'
 import { translate } from '@/i18n/dataview'
-import { logger } from '@/lib/logger'
-import { RefreshState } from '@/msg/util/signerUtil'
 import { useAccountCtx } from '@/providers/api-rest-query-provider-context'
-import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { AccountAddress } from '@/ui/account/account-address'
 import { AccountCorporations } from '@/ui/account/account-corporations'
 import ColumnsDataView from '@/ui/common/data-view-columns'
@@ -23,8 +20,6 @@ export default function AccountPage() {
 
   const { accountData, refetch: refetchAccount } = useAccountCtx()
   const [refresh, setRefresh] = useState<boolean>(true)
-  const [refreshState, setRefreshState] = useState<RefreshState>({})
-  const { latestProcessedHeight } = useIndexerEvents()
 
   useEffect(() => {
     if (!refresh) return
@@ -33,17 +28,6 @@ export default function AccountPage() {
       setRefresh(false)
     })()
   }, [refresh, refetchAccount])
-
-  useEffect(() => {
-    if (refreshState.txHeight == null) return
-    logger.info('AccountPage', {
-      txHeight: refreshState.txHeight,
-      latestProcessedHeight,
-      'ss.mmm': new Date().toISOString().slice(17, 23),
-    })
-    if (latestProcessedHeight < refreshState.txHeight) return
-    setRefresh(true)
-  }, [refreshState.txHeight, latestProcessedHeight])
 
   // State for processed account data to display in DataView
   const [data, setData] = useState<AccountData>()
@@ -67,9 +51,7 @@ export default function AccountPage() {
         <ColumnsDataView<AccountData>
           sectionsI18n={accountSections}
           data={data}
-          onRefresh={(id?: string, txHeight?: number) => {
-            setRefreshState({ id, txHeight })
-          }}
+          onRefresh={() => setRefresh(true)}
           activeActionField={openGetVNA ? 'getVNA' : undefined}
           loading={false}
         />
