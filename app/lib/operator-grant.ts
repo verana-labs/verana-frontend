@@ -2,7 +2,7 @@ import { MsgGrantOperatorAuthorization } from '@verana-labs/verana-types/codec/v
 import { veranaDenom } from '@/config/veranaChain.sign.client'
 import { translate } from '@/i18n/dataview'
 import type { CostLine } from '@/lib/tx-preview'
-import { formatVNAFromUVNA, parseVNAExact } from '@/util/util'
+import { formatDateTime, formatVNAFromUVNA, parseVNAExact } from '@/util/util'
 
 export interface GrantLimit {
   amountUvna: string
@@ -276,7 +276,7 @@ export function grantOptionLines(options: OperatorGrantOptions, replacesFeeGrant
     lines.push({ label: translate('delegation.spendLimit'), value: formatGrantLimit(options.spendLimit) })
   }
   if (options.expiration) {
-    lines.push({ label: translate('delegation.expiration'), value: options.expiration.toLocaleString() })
+    lines.push({ label: translate('delegation.expiration'), value: formatDateTime(options.expiration) })
   }
   const feeGrant = options.feeGrant
   lines.push({

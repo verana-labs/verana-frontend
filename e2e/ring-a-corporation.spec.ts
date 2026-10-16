@@ -765,9 +765,7 @@ test('a grant with an expiration, spend limits and a fee grant confirms and broa
   await expect(dialog).toBeVisible({ timeout: 30_000 })
   await expect(dialog).toContainText('for 22 message types')
   await expect(fact(dialog, 'Spend limit')).toContainText('5 VNA every 30d')
-  await expect(fact(dialog, 'Expiration')).toContainText(
-    await page.evaluate((value) => new Date(value).toLocaleString(), expiration)
-  )
+  await expect(fact(dialog, 'Expiration')).toContainText(`${expiration.replace('T', ' ')}:00`)
   await expect(fact(dialog, 'Grantee fee grant')).toContainText('2 VNA every 7d')
   await expect(fact(dialog, 'Network fee')).toContainText(/VNA/, { timeout: 30_000 })
   await dialog.getByRole('button', { name: 'Confirm' }).click()
