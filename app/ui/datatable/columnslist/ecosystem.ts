@@ -1,3 +1,4 @@
+import type { GfVersion } from '@/lib/gf-document'
 import type { DidEnrichment } from '@/lib/resolverClient'
 import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
 import type { Column, Filter } from '@/ui/datatable/types'
@@ -14,16 +15,7 @@ export interface EcosystemListItem {
   modified: string
   language: string
   role: string
-  versions?: {
-    id: string
-    version: number
-    activeSince: string | null
-    documents?: {
-      id: string
-      url: string
-      language: string
-    }[]
-  }[]
+  versions?: GfVersion[]
   activeVersion: number
   activeSchemas: number
   participants: number

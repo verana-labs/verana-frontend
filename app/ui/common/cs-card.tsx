@@ -1,7 +1,8 @@
 'use client'
 
-import { faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faRightToBracket, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import Link from 'next/link'
 import { useState } from 'react'
 import { translate } from '@/i18n/dataview'
 import { type CredentialSchemaListItem, getModePillClass } from '../datatable/columnslist/cs'
@@ -10,9 +11,10 @@ import JsonCodeBlock from './json-code-block'
 
 export type CsCardProps = {
   credentialSchema: CredentialSchemaListItem
+  joinHref?: string
 }
 
-export default function CsCard({ credentialSchema }: CsCardProps) {
+export default function CsCard({ credentialSchema, joinHref }: CsCardProps) {
   const [showJsonSchemaModal, setShowJsonSchemaModal] = useState<boolean>(false)
 
   return (
@@ -79,13 +81,24 @@ export default function CsCard({ credentialSchema }: CsCardProps) {
               </div>
             </div>
 
-            <button
-              onClick={() => setShowJsonSchemaModal(true)}
-              className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
-              type="button"
-            >
-              {'</>'} View JSON Schema
-            </button>
+            <div className="flex flex-wrap items-center gap-4">
+              <button
+                onClick={() => setShowJsonSchemaModal(true)}
+                className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                type="button"
+              >
+                {'</>'} {resolveTranslatable({ key: 'dataview.cs.viewJsonSchema' }, translate)}
+              </button>
+              {joinHref ? (
+                <Link
+                  href={joinHref}
+                  className="inline-flex items-center px-3 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
+                >
+                  <FontAwesomeIcon className="mr-2" aria-hidden="true" icon={faRightToBracket} />
+                  {resolveTranslatable({ key: 'discover.btn.join' }, translate)}
+                </Link>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
