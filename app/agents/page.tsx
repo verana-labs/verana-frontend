@@ -22,6 +22,7 @@ export default function AgentsPage() {
   const {
     agents,
     delegations,
+    pending,
     degraded,
     resolutions,
     unavailableDids,
@@ -106,6 +107,7 @@ export default function AgentsPage() {
                 resolution={resolutions.get(agent.did)}
                 unavailable={unavailableDids.has(agent.did)}
                 delegations={delegations}
+                pending={pending}
               />
             ))}
           </div>

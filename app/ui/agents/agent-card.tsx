@@ -3,13 +3,12 @@
 import { faChevronDown, faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { type ReactNode, useState } from 'react'
-import type { AgentEntry } from '@/hooks/useAgents'
+import { type AccreditationRowData, type AgentEntry, withPendingAccreditations } from '@/hooks/useAgents'
 import type { VsOperatorAuthorizationRow } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
 import {
   type AgentResolution,
   type PresentedCredential,
-  type ResolvedParticipation,
   serviceAvatarUrl,
   serviceIdenticonUrl,
 } from '@/lib/resolverClient'
@@ -17,9 +16,10 @@ import { useRegistryLabels } from '@/providers/api-rest-query-provider-context'
 import LogoImage from '@/ui/common/logo-image'
 import TrustBadge from '@/ui/common/trust-badge'
 import { DelegationDetail } from '@/ui/corporation/operators'
-import type { ParticipantRole, ParticipantState } from '@/ui/dataview/datasections/participant'
+import type { Participant, ParticipantRole, ParticipantState } from '@/ui/dataview/datasections/participant'
 import {
   countryCodeToFlag,
+  onboardingStateColor,
   participantCardHref,
   participantStateBadgeClass,
   roleBadgeClass,
@@ -59,18 +59,24 @@ function AccreditationRow({
   participation,
   delegation,
 }: {
-  participation: ResolvedParticipation
+  participation: AccreditationRowData
   delegation: VsOperatorAuthorizationRow | undefined
 }) {
   const labels = useRegistryLabels()
   const [open, setOpen] = useState(false)
   const state = participantStateBadgeClass(participation.state as ParticipantState, false, 'header')
+  const onboarding = participation.opState === 'PENDING' ? onboardingStateColor(participation.opState) : undefined
   const summary = (
     <>
       <span className={`${PILL} ${roleBadgeClass(participation.role as ParticipantRole)}`}>{participation.role}</span>
       <span className="text-gray-900 dark:text-white">{labels.schemaLabel(participation.credentialSchemaId)}</span>
       <span className="text-gray-500 dark:text-gray-400">{labels.ecosystemLabel(participation.ecosystemId)}</span>
       <span className={`${PILL} ${state.classParticipantState}`}>{state.labelParticipantState}</span>
+      {onboarding ? (
+        <span className={`${PILL} uppercase ${onboarding.classOnboardingState}`}>
+          {onboarding.labelOnboardingState}
+        </span>
+      ) : null}
     </>
   )
   return (
@@ -129,13 +135,16 @@ export default function AgentCard({
   resolution,
   unavailable,
   delegations,
+  pending,
 }: {
   agent: AgentEntry
   resolution: AgentResolution | undefined
   unavailable: boolean
   delegations: Map<number, VsOperatorAuthorizationRow>
+  pending: Participant[]
 }) {
   const enrichment = resolution?.enrichment
+  const accreditations = resolution ? withPendingAccreditations(agent.did, resolution.participations, pending) : []
   const serviceName = enrichment?.serviceName ?? shortenDID(agent.did)
   const controllerName = enrichment?.organizationName
   return (
@@ -201,9 +210,9 @@ export default function AgentCard({
           resolved={Boolean(resolution)}
           emptyKey="agents.card.accreditations.empty"
         >
-          {resolution && resolution.participations.length > 0 ? (
+          {accreditations.length > 0 ? (
             <ul className="divide-y divide-neutral-20 dark:divide-neutral-70">
-              {resolution.participations.map((participation) => (
+              {accreditations.map((participation) => (
                 <AccreditationRow
                   key={participation.id}
                   participation={participation}

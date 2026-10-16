@@ -291,6 +291,7 @@ function agentParticipant(id: number, did: string, role: ParticipantRole, partic
     did,
     corporation_id: 13,
     participant_state: participantState,
+    op_state: 'VALIDATED',
     corporation_available_actions: [],
     validator_available_actions: [],
     vs_operator: id === 102 ? VS_OPERATOR : null,
