@@ -4,9 +4,9 @@ import { faCircleCheck, faClock, faTriangleExclamation } from '@fortawesome/free
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  FaucetError,
   type FaucetInfo,
   type FaucetResult,
+  faucetErrorDetails,
   faucetErrorMessage,
   faucetUnavailableMessage,
   isAmountWithinLimit,
@@ -113,9 +113,8 @@ export default function GetVNAPanel({ onClose, onRefresh }: GetVNAPanelProps) {
       const message = faucetErrorMessage(error)
       setState({ kind: 'error', info, message })
       // Per [VFE-TX-UX-1] the raw error stays in the notification details.
-      const code = error instanceof FaucetError ? error.code : 'ERROR'
-      const raw = error instanceof Error ? error.message : String(error)
-      void notify(`${code}: ${raw}`, 'error', message)
+      const details = faucetErrorDetails(error)
+      void notify(details ?? message, 'error', details === null ? title : message)
     }
   }
 

@@ -34,7 +34,9 @@ import {
   buildUpdateMembersMessage,
   buildVoteMessage,
   corporationSigningMode,
+  decisionPolicyChangeLines,
   delegablePreview,
+  memberChangeLines,
   VOTE_OPTIONS,
   wrapInProposal,
 } from './actionCorporationManage'
@@ -169,6 +171,40 @@ describe('group admin builders', () => {
     const decision = ThresholdDecisionPolicy.decode(value.decisionPolicy?.value ?? new Uint8Array())
     expect(decision.threshold).toBe('3')
     expect(decision.windows?.votingPeriod?.seconds).toBe(BigInt(300))
+  })
+})
+
+describe('proposal change lines', () => {
+  const members = [
+    { address: 'verana1aaa', weight: '3' },
+    { address: 'verana1bbb', weight: '2' },
+    { address: 'verana1ccc', weight: '1' },
+  ]
+
+  it('lists the added, removed and reweighted members and skips the unchanged ones', () => {
+    const lines = memberChangeLines(members, [
+      { address: 'verana1aaa', weight: '3' },
+      { address: 'verana1bbb', weight: '0' },
+      { address: 'verana1ccc', weight: '4' },
+      { address: 'verana1ddd', weight: '1' },
+      { address: 'verana1eee', weight: '0' },
+    ])
+    expect(lines).toEqual([
+      { label: 'verana1bbb', value: 'Removed' },
+      { label: 'verana1ccc', value: 'Weight 1 → 4' },
+      { label: 'verana1ddd', value: 'Added with weight 1' },
+    ])
+  })
+
+  it('shows the threshold and voting period before and after the change', () => {
+    expect(decisionPolicyChangeLines({ threshold: '1', votingPeriod: '300s' }, '2', 3_600)).toEqual([
+      { label: 'Threshold', value: '1 → 2' },
+      { label: 'Voting period', value: '5m → 1h' },
+    ])
+    expect(decisionPolicyChangeLines({ threshold: '2', votingPeriod: null }, '2', 60)).toEqual([
+      { label: 'Threshold', value: '2' },
+      { label: 'Voting period', value: '1m' },
+    ])
   })
 })
 

@@ -1,6 +1,6 @@
 import { faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { translate } from '@/i18n/dataview'
 import { resolveTranslatable } from '../dataview/types'
 
@@ -21,6 +21,15 @@ export const ModalAction: React.FC<ModalActionProps> = ({
   classModal,
   modalHidden,
 }) => {
+  useEffect(() => {
+    if (!isActive || modalHidden) return
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape' && !event.defaultPrevented) onClose()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [isActive, modalHidden, onClose])
+
   if (!isActive) return null
   return (
     <div

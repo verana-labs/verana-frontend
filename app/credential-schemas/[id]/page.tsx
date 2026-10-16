@@ -3,7 +3,7 @@
 import { faBoxArchive, faPenToSquare, faSitemap } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useParams, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA } from '@/config/env'
 import { useActivityHistory } from '@/hooks/useActivityHistory'
 import { useCanonicalJsonSchema } from '@/hooks/useCanonicalJsonSchema'
@@ -92,6 +92,7 @@ function ValidityFieldInput({
   const days = resolveTranslatable({ key: 'dataview.cs.value.daysShort' }, translate) ?? 'days'
   const bound = max === null ? '' : `, ${translate('dataview.cs.value.maxDays', { n: max })}`
   const invalid = max !== null && value > max
+  const errorId = useId()
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{`${label} (${days}${bound})`}</label>
@@ -107,8 +108,14 @@ function ValidityFieldInput({
         }}
         disabled={disabled}
         aria-invalid={invalid}
+        aria-describedby={invalid ? errorId : undefined}
         className={`w-full px-4 py-2 border ${invalid ? 'border-red-500' : 'border-neutral-20 dark:border-neutral-70'} rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-surface text-gray-900 dark:text-white text-sm disabled:opacity-60`}
       />
+      {invalid ? (
+        <p id={errorId} className="data-edit-error">
+          {translate('dataview.cs.value.overMax', { n: max })}
+        </p>
+      ) : null}
     </div>
   )
 }
