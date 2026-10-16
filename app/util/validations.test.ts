@@ -116,6 +116,19 @@ describe('isValidField', () => {
     expect(isValidField(field, 11)).toBe(false)
     expect(isValidField(field, 'abc')).toBe(false)
   })
+
+  it('accepts VNA amounts with at most 6 decimals and applies the range', () => {
+    const fee = dataField({ validation: { type: 'VNA' } })
+    expect(isValidField(fee, 0)).toBe(true)
+    expect(isValidField(fee, 1.5)).toBe(true)
+    expect(isValidField(fee, 0.000001)).toBe(true)
+    expect(isValidField(fee, 0.0000001)).toBe(false)
+    expect(isValidField(fee, -1)).toBe(false)
+    expect(isValidField(fee, '1,5')).toBe(false)
+    const slash = dataField({ validation: { type: 'VNA', greaterThan: 0 } })
+    expect(isValidField(slash, 0)).toBe(false)
+    expect(isValidField(slash, 2)).toBe(true)
+  })
 })
 
 describe('getErrorMessage', () => {
@@ -127,5 +140,11 @@ describe('getErrorMessage', () => {
   it('describes URL and number constraints', () => {
     expect(getErrorMessage(dataField({ validation: { type: 'URL' } }))).toBe('Enter a valid URL.')
     expect(getErrorMessage(dataField({ validation: { type: 'Number', greaterThanOrEqual: 1 } }))).toContain('>= 1')
+  })
+
+  it('names the VNA unit and its decimals', () => {
+    expect(getErrorMessage(dataField({ validation: { type: 'VNA', greaterThan: 0 } }))).toBe(
+      'Enter an amount in VNA with at most 6 decimals (> 0).'
+    )
   })
 })
