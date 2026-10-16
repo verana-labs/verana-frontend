@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
-import { VERANA_REST_ENDPOINT_INDEXER } from '@/config/env'
+import { useEffect, useRef } from 'react'
+import { VERANA_GRAPH_URL, VERANA_REST_ENDPOINT_INDEXER } from '@/config/env'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
-import { indexerHealthFromResponse, parseRpcStatus } from '@/lib/component-health'
+import { indexerHealthFromResponse, parseGraphHealth, parseRpcStatus } from '@/lib/component-health'
 import { logger } from '@/lib/logger'
 import { useComponentsVersion } from '@/providers/components-version-provider'
 
@@ -21,7 +21,13 @@ async function readStatus(url: string, signal: AbortSignal): Promise<{ status: n
 export function useComponentsHealth() {
   const veranaChain = useVeranaChain()
   const rpcEndpoint = veranaChain?.apis?.rpc?.[0]?.address
-  const { setState } = useComponentsVersion()
+  const { state, setState } = useComponentsVersion()
+  const indexerBlock = useRef<number | null>(null)
+  const indexerKnown = state.indexer.lastProcessedBlock !== null
+
+  useEffect(() => {
+    indexerBlock.current = state.indexer.lastProcessedBlock
+  }, [state.indexer.lastProcessedBlock])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -53,9 +59,24 @@ export function useComponentsHealth() {
       }
     }
 
+    const checkGraph = async () => {
+      if (!VERANA_GRAPH_URL || !indexerKnown) return
+      try {
+        const { status, body } = await readStatus(`${VERANA_GRAPH_URL}/health`, controller.signal)
+        if (status < 200 || status >= 300) throw new Error(`Graph health responded ${status}`)
+        const health = parseGraphHealth(body, indexerBlock.current)
+        setState((prev) => ({ ...prev, graph: { ...prev.graph, health } }))
+      } catch (error) {
+        if (controller.signal.aborted) return
+        logger.error('Failed to load graph health', error)
+        setState((prev) => ({ ...prev, graph: { ...prev.graph, health: 'unreachable' } }))
+      }
+    }
+
     const check = () => {
       void checkChain()
       void checkIndexer()
+      void checkGraph()
     }
 
     check()
@@ -66,5 +87,5 @@ export function useComponentsHealth() {
       controller.abort()
       window.clearInterval(timer)
     }
-  }, [rpcEndpoint, setState])
+  }, [rpcEndpoint, setState, indexerKnown])
 }
