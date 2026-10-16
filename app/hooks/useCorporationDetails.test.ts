@@ -171,11 +171,35 @@ describe('parseGroup', () => {
     ])
     expect(policy).toEqual({
       threshold: '3',
+      percentage: null,
       votingPeriod: '300s',
+      minExecutionPeriod: '0s',
       totalWeight: '5',
       groupId: 12,
       groupVersion: 2,
       policyVersion: 2,
+    })
+  })
+
+  it('reads a percentage policy and its minimum execution period', () => {
+    const percentage = {
+      group: {
+        ...payload.group,
+        policy: {
+          ...payload.group.policy,
+          decision_policy: {
+            '@type': '/cosmos.group.v1.PercentageDecisionPolicy',
+            percentage: '0.5',
+            windows: { voting_period: '86400s', min_execution_period: '3600s' },
+          },
+        },
+      },
+    }
+    expect(parseGroup(percentage).policy).toMatchObject({
+      threshold: null,
+      percentage: '0.5',
+      votingPeriod: '86400s',
+      minExecutionPeriod: '3600s',
     })
   })
 
@@ -477,7 +501,9 @@ describe('parseProposals', () => {
 describe('proposalTallyScale', () => {
   const policy = {
     threshold: '2',
+    percentage: null,
     votingPeriod: '300s',
+    minExecutionPeriod: '0s',
     totalWeight: '3',
     groupId: 12,
     groupVersion: 4,
@@ -488,6 +514,7 @@ describe('proposalTallyScale', () => {
     expect(proposalTallyScale({ status: 'ACCEPTED', groupVersion: 4, policyVersion: 3 }, policy)).toEqual({
       total: 3,
       threshold: 2,
+      percentage: null,
     })
   })
 
@@ -495,19 +522,45 @@ describe('proposalTallyScale', () => {
     expect(proposalTallyScale({ status: 'ACCEPTED', groupVersion: 3, policyVersion: 3 }, policy)).toEqual({
       total: null,
       threshold: 2,
+      percentage: null,
     })
     expect(proposalTallyScale({ status: 'REJECTED', groupVersion: 4, policyVersion: 2 }, policy)).toEqual({
       total: 3,
       threshold: null,
+      percentage: null,
+    })
+  })
+
+  it('places a percentage marker in weight units while the total is known', () => {
+    const percentage = { ...policy, threshold: null, percentage: '0.7' }
+    expect(proposalTallyScale({ status: 'ACCEPTED', groupVersion: 4, policyVersion: 3 }, percentage)).toEqual({
+      total: 3,
+      threshold: 2.1,
+      percentage: '0.7',
+    })
+    expect(proposalTallyScale({ status: 'ACCEPTED', groupVersion: 3, policyVersion: 3 }, percentage)).toEqual({
+      total: null,
+      threshold: null,
+      percentage: null,
+    })
+    expect(proposalTallyScale({ status: 'REJECTED', groupVersion: 4, policyVersion: 2 }, percentage)).toEqual({
+      total: 3,
+      threshold: null,
+      percentage: null,
     })
   })
 
   it('without version snapshots, only an open proposal uses the current group', () => {
     const unversioned = { groupVersion: null, policyVersion: null }
-    expect(proposalTallyScale({ status: 'SUBMITTED', ...unversioned }, policy)).toEqual({ total: 3, threshold: 2 })
+    expect(proposalTallyScale({ status: 'SUBMITTED', ...unversioned }, policy)).toEqual({
+      total: 3,
+      threshold: 2,
+      percentage: null,
+    })
     expect(proposalTallyScale({ status: 'ACCEPTED', ...unversioned }, policy)).toEqual({
       total: null,
       threshold: null,
+      percentage: null,
     })
   })
 })

@@ -11,6 +11,13 @@ export interface DecisionPolicyInput {
   minExecutionPeriodSeconds: number
 }
 
+export interface CurrentDecisionPolicy {
+  threshold: string | null
+  percentage: string | null
+  votingPeriod: string | null
+  minExecutionPeriod: string | null
+}
+
 export interface DecisionPolicyDraft {
   kind: DecisionPolicyKind
   threshold: string
@@ -84,6 +91,14 @@ export function decimalToPercent(decimal: string): string | null {
 
 export function formatDecisionRule(rule: DecisionRule): string {
   return rule.kind === 'threshold' ? rule.threshold : `${decimalToPercent(rule.percentage) ?? rule.percentage}%`
+}
+
+export function currentDecisionRule(
+  policy: Pick<CurrentDecisionPolicy, 'threshold' | 'percentage'>
+): DecisionRule | null {
+  if (policy.percentage !== null) return { kind: 'percentage', percentage: policy.percentage }
+  if (policy.threshold !== null) return { kind: 'threshold', threshold: policy.threshold }
+  return null
 }
 
 export function exceedsExecutionWindow(

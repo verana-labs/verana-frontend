@@ -42,6 +42,13 @@ export type CorpStubOptions = {
   trustDeposit404?: boolean
   fresh?: boolean
   sectionsDown?: boolean
+  decisionPolicy?: Record<string, unknown>
+}
+
+const THRESHOLD_POLICY = {
+  '@type': '/cosmos.group.v1.ThresholdDecisionPolicy',
+  threshold: '3',
+  windows: { voting_period: '300s', min_execution_period: '0s' },
 }
 
 export async function seedActingCorporation(page: Page, corporationId: number) {
@@ -84,7 +91,13 @@ export async function installEcosystemStubs(page: Page, versions: unknown[] = [E
 }
 
 export async function installCorporationStubs(page: Page, opts: CorpStubOptions = {}) {
-  const { memberOnly = false, trustDeposit404 = false, fresh = false, sectionsDown = false } = opts
+  const {
+    memberOnly = false,
+    trustDeposit404 = false,
+    fresh = false,
+    sectionsDown = false,
+    decisionPolicy = THRESHOLD_POLICY,
+  } = opts
 
   await page.route('**/v4/delegation/operator-authorizations*', (route) => {
     if (fresh || memberOnly) return route.fulfill({ json: { authorizations: [] } })
@@ -151,11 +164,7 @@ export async function installCorporationStubs(page: Page, opts: CorpStubOptions 
             policy: {
               address: 'verana1policy',
               version: 2,
-              decision_policy: {
-                '@type': '/cosmos.group.v1.ThresholdDecisionPolicy',
-                threshold: '3',
-                windows: { voting_period: '300s', min_execution_period: '0s' },
-              },
+              decision_policy: decisionPolicy,
             },
             members: GROUP_MEMBERS,
           },

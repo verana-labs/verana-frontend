@@ -35,7 +35,9 @@ export interface GroupMemberRow {
 
 export interface GroupPolicy {
   threshold: string | null
+  percentage: string | null
   votingPeriod: string | null
+  minExecutionPeriod: string | null
   totalWeight: string
   groupId: number
   groupVersion: number | null
@@ -109,6 +111,13 @@ export interface ProposalRow {
 export interface TallyScale {
   total: number | null
   threshold: number | null
+  percentage: string | null
+}
+
+function tallyThreshold(policy: GroupPolicy, total: number | null): number | null {
+  if (policy.threshold !== null) return Number(policy.threshold) || 0
+  if (policy.percentage === null || total === null) return null
+  return Number((Number(policy.percentage) * total).toPrecision(12)) || 0
 }
 
 export function proposalTallyScale(
@@ -117,12 +126,12 @@ export function proposalTallyScale(
 ): TallyScale {
   const unchangedSince = (submitted: number | null, current: number | null) =>
     submitted !== null && current !== null ? submitted === current : proposal.status === 'SUBMITTED'
+  const total = unchangedSince(proposal.groupVersion, policy.groupVersion) ? Number(policy.totalWeight) || 0 : null
+  const threshold = unchangedSince(proposal.policyVersion, policy.policyVersion) ? tallyThreshold(policy, total) : null
   return {
-    total: unchangedSince(proposal.groupVersion, policy.groupVersion) ? Number(policy.totalWeight) || 0 : null,
-    threshold:
-      policy.threshold !== null && unchangedSince(proposal.policyVersion, policy.policyVersion)
-        ? Number(policy.threshold) || 0
-        : null,
+    total,
+    threshold,
+    percentage: threshold !== null && policy.threshold === null ? policy.percentage : null,
   }
 }
 
@@ -203,7 +212,12 @@ export function parseGroup(payload: unknown): { members: GroupMemberRow[]; polic
     }),
     policy: {
       threshold: nullableString(decision.threshold ?? null, 'group.policy.decision_policy.threshold'),
+      percentage: nullableString(decision.percentage ?? null, 'group.policy.decision_policy.percentage'),
       votingPeriod: nullableString(windows.voting_period ?? null, 'group.policy.decision_policy.windows.voting_period'),
+      minExecutionPeriod: nullableString(
+        windows.min_execution_period ?? null,
+        'group.policy.decision_policy.windows.min_execution_period'
+      ),
       totalWeight: string(group.total_weight, 'group.total_weight'),
       groupId: integer(group.group_id, 'group.group_id'),
       groupVersion: group.version == null ? null : integer(group.version, 'group.version'),

@@ -35,6 +35,12 @@ import { installMockChain } from './support/mock-chain'
 
 const DAY_MS = 86_400_000
 
+const PERCENTAGE_POLICY = {
+  '@type': '/cosmos.group.v1.PercentageDecisionPolicy',
+  percentage: '0.5',
+  windows: { voting_period: '300s', min_execution_period: '3600s' },
+}
+
 function localDateTimeInput(date: Date): string {
   const pad = (value: number) => String(value).padStart(2, '0')
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
@@ -146,6 +152,21 @@ test('tabs, deep links and proposal actions', async ({ page }) => {
   const repay = page.getByRole('button', { name: /Repay Slashed Deposit/ })
   await expect(repay).toBeVisible()
   await expect(repay.getByLabel('Executes directly as operator')).toBeVisible()
+})
+
+test('a percentage policy shows on the members tab with its minimum execution period', async ({ page }) => {
+  await installCorporationStubs(page, { decisionPolicy: PERCENTAGE_POLICY })
+  await seedActingCorporation(page, 13)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  await page.goto('/corporation?tab=members')
+  const members = page.locator('#members')
+  await expect(fact(members, 'Percentage')).toContainText('50%', { timeout: 15_000 })
+  await expect(fact(members, 'Minimum execution period')).toContainText('3600s')
+  await expect(members.getByText('Threshold', { exact: true })).toBeHidden()
+
+  await page.goto('/corporation?tab=proposals')
+  await expect(page.getByText('2 of 6 yes · threshold 50%')).toBeVisible({ timeout: 15_000 })
 })
 
 test('a member without grants gets the proposal signing mode everywhere', async ({ page }) => {

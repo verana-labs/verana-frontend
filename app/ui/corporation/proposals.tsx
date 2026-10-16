@@ -12,6 +12,7 @@ import {
   useProposalVotes,
 } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
+import { formatDecisionRule } from '@/lib/decision-policy'
 import type { VoteChoice } from '@/msg/actions_hooks/actionCorporationManage'
 import { shortenMiddle } from '@/util/util'
 import { Card, formatDate, formatRelative, SectionTitle, SectionUnavailable, StatusBadge } from './shared'
@@ -60,7 +61,7 @@ export interface ProposalContext {
 const TALLY_TEXT = 'mt-1 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap'
 
 export function TallyBar({ tally, scale }: { tally: ProposalTally; scale: TallyScale }) {
-  const { total, threshold } = scale
+  const { total, threshold, percentage } = scale
   if (total === null) {
     return (
       <p className={TALLY_TEXT}>
@@ -91,7 +92,11 @@ export function TallyBar({ tally, scale }: { tally: ProposalTally; scale: TallyS
       <p className={TALLY_TEXT}>
         {threshold === null
           ? translate('corporation.proposals.tally.total', { yes: tally.yes, total })
-          : translate('corporation.proposals.tally', { yes: tally.yes, total, threshold })}
+          : translate('corporation.proposals.tally', {
+              yes: tally.yes,
+              total,
+              threshold: percentage === null ? threshold : formatDecisionRule({ kind: 'percentage', percentage }),
+            })}
       </p>
     </div>
   )
