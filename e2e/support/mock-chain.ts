@@ -21,7 +21,7 @@ export type MockChainOptions = {
   rpcEndpoint?: string
   chainId?: string
   address: string
-  accountNumber?: number
+  accountNumber?: bigint
   sequence?: number
   gasUsed?: number
   gasDriftPerSimulation?: number
@@ -38,6 +38,7 @@ const ZERO_HASH_HEX = '0'.repeat(64)
 const ZERO_HASH_B64 = toBase64(new Uint8Array(32))
 const FAKE_TX_HASH_HEX = 'A'.repeat(64)
 const FAKE_TX_HASH_B64 = Buffer.from(FAKE_TX_HASH_HEX, 'hex').toString('base64')
+const ACCOUNT_NUMBER_ABOVE_MAX_SAFE_INTEGER = BigInt('15667172330941460096')
 
 const jsonRpcResult = (id: number | string, result: unknown) => ({
   jsonrpc: '2.0',
@@ -72,10 +73,10 @@ const statusResult = (chainId: string) => ({
 })
 
 // height must be a non-zero string or CosmJS queryAbci throws
-const accountQueryResult = (address: string, accountNumber: number, sequence: number) => {
+const accountQueryResult = (address: string, accountNumber: bigint, sequence: number) => {
   const baseAccount = BaseAccount.fromPartial({
     address,
-    accountNumber: BigInt(accountNumber),
+    accountNumber,
     sequence: BigInt(sequence),
   })
   const accountAny = Any.fromPartial({
@@ -195,7 +196,7 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
     rpcEndpoint = process.env.NEXT_PUBLIC_VERANA_RPC_ENDPOINT ?? 'https://rpc.devnet.verana.network',
     chainId = process.env.NEXT_PUBLIC_VERANA_CHAIN_ID ?? 'vna-devnet-1',
     address,
-    accountNumber = 12,
+    accountNumber = ACCOUNT_NUMBER_ABOVE_MAX_SAFE_INTEGER,
     sequence = 7,
     gasUsed = 200_000,
     gasDriftPerSimulation = 0,
