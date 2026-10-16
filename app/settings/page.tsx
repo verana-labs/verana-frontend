@@ -1,8 +1,8 @@
 'use client'
 
 import { useTheme } from 'next-themes'
-import type { ReactNode } from 'react'
-import { VERANA_INDEXER_BASE_URL } from '@/config/env'
+import { type ReactNode, useEffect, useState } from 'react'
+import { VERANA_GRAPH_URL, VERANA_INDEXER_BASE_URL } from '@/config/env'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { getLocale, isLocale, SUPPORTED_LOCALES, saveLocale, setLocale, translate } from '@/i18n/dataview'
 import TitleAndButton from '@/ui/common/title-and-button'
@@ -10,7 +10,7 @@ import { resolveTranslatable } from '@/ui/dataview/types'
 
 const t = (key: string) => resolveTranslatable({ key }, translate) ?? key
 
-const THEMES = ['light', 'dark'] as const
+const THEMES = ['system', 'light', 'dark'] as const
 
 function SettingsSection({
   title,
@@ -32,8 +32,13 @@ function SettingsSection({
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
   const chain = useVeranaChain()
   const locale = getLocale()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const changeLocale = (value: string) => {
     if (!isLocale(value) || value === locale) return
@@ -48,6 +53,7 @@ export default function SettingsPage() {
     ['chainId', chain.chain_id],
     ['rpc', chain.apis?.rpc?.[0]?.address],
     ['indexer', VERANA_INDEXER_BASE_URL],
+    ['graph', VERANA_GRAPH_URL],
     ['explorer', chain.explorers?.[0]?.url],
   ]
 
@@ -81,7 +87,7 @@ export default function SettingsPage() {
                 type="radio"
                 name="settings-theme"
                 value={option}
-                checked={(theme ?? 'light') === option}
+                checked={mounted && theme === option}
                 onChange={() => setTheme(option)}
               />
               {t(`settings.theme.${option}`)}
@@ -96,7 +102,7 @@ export default function SettingsPage() {
             <div key={key} className="contents">
               <dt className="text-sm text-neutral-70 dark:text-neutral-70">{t(`settings.network.${key}`)}</dt>
               <dd className="text-sm font-mono break-all text-gray-900 dark:text-white">
-                {value ?? t('settings.network.missing')}
+                {value || t('settings.network.missing')}
               </dd>
             </div>
           ))}
