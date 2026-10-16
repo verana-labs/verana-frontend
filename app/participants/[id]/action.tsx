@@ -1,15 +1,17 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParticipant } from '@/hooks/useParticipant'
 import { translate } from '@/i18n/dataview'
 import { totalDebitUvna, trustCostLines } from '@/lib/trust-costs'
+import { EMPTY_VS_OPERATOR_INPUT, permittedVsOperatorMsgTypes, vsOperatorIssue } from '@/lib/vs-operator-authorization'
 import { type ParticipantActionParams, useActionParticipant } from '@/msg/actions_hooks/actionParticipant'
 import type { MsgTypeParticipant } from '@/msg/constants/notificationMsgForMsgType'
 import type { MessageType } from '@/msg/constants/types'
 import { useNotification } from '@/providers/notification-provider'
 import { useProtocolParams } from '@/providers/protocol-params-context'
 import EditableDataView from '@/ui/common/data-edit'
+import { VsOperatorFields } from '@/ui/common/vs-operator-fields'
 import {
   getParticipantActionSections,
   type Participant,
@@ -44,6 +46,11 @@ export default function ParticipantActionPage({
   const validatorSettled = validatorId === undefined || validator !== null
   const { notify } = useNotification()
   const validatorFailureReported = useRef(false)
+  const [vsOperator, setVsOperator] = useState(EMPTY_VS_OPERATOR_INPUT)
+  const offersVsOperator =
+    (action === 'MsgStartParticipantOP' || action === 'MsgSelfCreateParticipant') &&
+    permittedVsOperatorMsgTypes(participant.role).length > 0
+  const vsOperatorProblem = offersVsOperator ? vsOperatorIssue(participant.role, vsOperator) : null
 
   useEffect(() => {
     if (!validatorError || validatorFailureReported.current) return
@@ -118,6 +125,7 @@ export default function ParticipantActionPage({
           issuanceFees: form.issuanceFees,
           verificationFees: form.verificationFees,
           validatorValidationFees,
+          vsOperator,
         }
         break
       case 'MsgSelfCreateParticipant':
@@ -131,6 +139,7 @@ export default function ParticipantActionPage({
           validationFees: form.validationFees,
           issuanceFees: form.issuanceFees,
           verificationFees: form.verificationFees,
+          vsOperator,
         }
         break
     }
@@ -156,6 +165,16 @@ export default function ParticipantActionPage({
       noFormReady={validatorSettled}
       setModalHidden={setModalHidden}
       transactionCost={transactionCost > 0 ? String(transactionCost) : undefined}
-    />
+      saveDisabled={vsOperatorProblem !== null}
+    >
+      {offersVsOperator ? (
+        <VsOperatorFields
+          role={participant.role}
+          value={vsOperator}
+          onChange={setVsOperator}
+          issue={vsOperatorProblem}
+        />
+      ) : null}
+    </EditableDataView>
   )
 }

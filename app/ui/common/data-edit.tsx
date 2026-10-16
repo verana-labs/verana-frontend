@@ -1,7 +1,7 @@
 'use client'
 
 import clsx from 'clsx'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { canonicalizeLanguageTag } from '@/lib/language'
@@ -33,6 +33,8 @@ type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & 
   withinView?: boolean
   setModalHidden?: () => void
   transactionCost?: string
+  saveDisabled?: boolean
+  children?: ReactNode
 }
 
 type FieldValidationError = {
@@ -53,6 +55,8 @@ export default function EditableDataView<T extends object>({
   withinView,
   setModalHidden,
   transactionCost,
+  saveDisabled = false,
+  children,
 }: EditableDataViewProps<T>) {
   const sections = useMemo(() => translateSections(sectionsI18n), [sectionsI18n])
   const [formData, setFormData] = useState<T>(data)
@@ -302,6 +306,8 @@ export default function EditableDataView<T extends object>({
       {/* Inputs Textarea */}
       {textareaInputs.length > 0 && textareaInputs}
 
+      {children}
+
       {/* Transaction cost */}
       {transactionCost && (
         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
@@ -364,7 +370,7 @@ export default function EditableDataView<T extends object>({
             msgTypeStyle[messageType].button // specific
           )}
           onClick={handleSave}
-          disabled={submitting || corporationLoading || !noFormReady}
+          disabled={submitting || corporationLoading || !noFormReady || saveDisabled}
         >
           {uiMsgType.label}
         </button>
