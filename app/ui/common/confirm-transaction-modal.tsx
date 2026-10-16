@@ -11,7 +11,7 @@ import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
 import { simulationFor, type TxSimulation, useTxSimulation } from '@/hooks/useTxSimulation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
-import { authorizationRejection } from '@/lib/chain-error'
+import { authorizationRejection, chainRejection } from '@/lib/chain-error'
 import { feeGrantCovering, nativeFeeAmount } from '@/lib/fee-grant'
 import { balanceWarning, totalDebitUvna } from '@/lib/trust-costs'
 import {
@@ -41,7 +41,7 @@ function simulationRejection(message: string): string {
   const reason = authorizationRejection(message)
   return reason
     ? t('txconfirm.simulation.unauthorized', { reason })
-    : t('txconfirm.simulation.rejected', { msg: message })
+    : t('txconfirm.simulation.rejected', { msg: chainRejection(message) ?? message })
 }
 
 function proposalPolicy(msgs: EncodeObject[]): string {
