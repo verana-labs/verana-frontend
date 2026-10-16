@@ -82,7 +82,7 @@ export function ProposalComposer({
 
   const ready =
     kind === 'grant'
-      ? granteeValid && msgTypes.length > 0 && grantReading.issue === null
+      ? granteeValid && msgTypes.length + draft.keptMsgTypes.length > 0 && grantReading.issue === null
       : kind === 'revoke'
         ? granteeValid
         : kind === 'members'

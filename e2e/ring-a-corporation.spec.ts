@@ -834,12 +834,32 @@ test('a re-grant keeps the current fee grant unless turned off, and then warns t
   await expect(dialog).toBeHidden()
   expect(mock.seenMethods()).not.toContain('broadcast_tx_sync')
   await expect(grantee).toHaveValue(SECOND_OPERATOR)
+  await mock.teardown()
+})
+
+test('a re-grant proposal keeps the held types the picker does not list, even with no listed type selected', async ({
+  page,
+}) => {
+  await installCorporationStubs(page)
+  await seedActingCorporation(page, 13)
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubSri: false, stubCorporation: false })
 
   await page.goto('/corporation?tab=proposals')
   await page.getByRole('button', { name: 'New proposal' }).click()
   await page.getByLabel('Grantee account').fill(HARNESS_ADDRESS)
   await expect(page.getByText('Kept from the current authorization')).toBeVisible()
-  await page.getByRole('button', { name: 'Submit proposal' }).click()
+  const submit = page.getByRole('button', { name: 'Submit proposal' })
+  const listedHeld = [
+    page.getByRole('checkbox', { name: 'UpdateCorporation', exact: true }),
+    page.getByRole('checkbox', { name: 'RepaySlashedTrustDeposit', exact: true }),
+  ]
+  for (const checkbox of listedHeld) await checkbox.uncheck()
+  await expect(submit).toBeEnabled()
+  for (const checkbox of listedHeld) await checkbox.check()
+  await submit.click()
+
+  const dialog = page.getByRole('dialog', { name: 'Confirm transaction' })
   await expect(fact(dialog, 'Network fee')).toContainText(/VNA/, { timeout: 30_000 })
   await dialog.getByRole('button', { name: 'Confirm' }).click()
   await expect.poll(() => mock.broadcastTxs().length, { timeout: 30_000 }).toBe(1)

@@ -245,7 +245,11 @@ export function GrantOperatorForm({
     addressIssue(target, []) ??
     (mode === 'operator' && target === walletAddress ? 'corporation.grant.issue.self' : null)
   const reading = readGrantOptions(draft.options)
-  const canSubmit = target.length > 0 && granteeIssue === null && selected.size > 0 && reading.issue === null
+  const canSubmit =
+    target.length > 0 &&
+    granteeIssue === null &&
+    selected.size + draft.keptMsgTypes.length > 0 &&
+    reading.issue === null
 
   function toggle(typeUrl: string) {
     draft.setMsgTypes((current) =>
