@@ -51,3 +51,20 @@ test('switching corporation drops the previous tasks when the new list fails', a
   await expect(page.getByText(FAILED)).toBeVisible({ timeout: 15_000 })
   await expect(page.getByText('Ecosystem 1')).toBeHidden()
 })
+
+test('the pending tasks badge adds the proposals awaiting a vote and the page links to them', async ({ page }) => {
+  await installCorporationStubs(page)
+  await page.route('**/v4/participant/pending/flat*', (route) =>
+    route.fulfill({ json: { ecosystems: [{ id: 1, did: null, pending_tasks: 2, participants: 2, schemas: [] }] } })
+  )
+  await seedActingCorporation(page, 13)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  await page.goto('/pendingtasks')
+  await expect(page.locator('a[href="/pendingtasks"]').first()).toContainText('3', { timeout: 15_000 })
+  await expect(page.locator('a[href="/corporation"]').first()).toContainText('1')
+  await expect(page.getByText('Proposals awaiting your vote: 1.')).toBeVisible()
+
+  await page.getByRole('link', { name: 'Open the proposals' }).click()
+  await expect(page).toHaveURL(/\/corporation\?tab=proposals/)
+})
