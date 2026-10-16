@@ -6,7 +6,7 @@ import { useLoadMore } from '@/hooks/useKeysetPages'
 import { parseParticipantRecord } from '@/hooks/useParticipant'
 import { applyKeysetParams, indexerValidators, takeKeysetPage } from '@/lib/indexer-json'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
-import type { Participant, ParticipantState } from '@/ui/dataview/datasections/participant'
+import type { Participant } from '@/ui/dataview/datasections/participant'
 
 const { record } = indexerValidators('participants')
 
@@ -25,8 +25,6 @@ export const PARTICIPANTS_PAGE_SIZE = 25
 type ParticipantQuery = { schema?: string; role?: string; validator?: string }
 
 export type ParticipantsOptions = {
-  participantState?: ParticipantState
-  trustData?: 'summary' | 'full'
   pageSize?: number
   after?: string
 }
@@ -39,7 +37,6 @@ type ParticipantsRequest = {
   schema: string
   role?: string
   validator?: string
-  participantState?: ParticipantState
   trustData: 'summary' | 'full'
   pageSize: number
   after?: string
@@ -50,7 +47,6 @@ export function participantsListUrl(base: string, request: ParticipantsRequest):
   applyKeysetParams(params, { pageSize: request.pageSize, after: request.after, sort: '+id' })
   if (request.role) params.set('role', request.role)
   if (request.validator) params.set('validator_participant_id', request.validator)
-  if (request.participantState) params.set('participant_state', request.participantState)
   return `${base}/list?${params.toString()}`
 }
 
@@ -60,7 +56,7 @@ export function useParticipants(
   validatorParticipantId?: string,
   options: ParticipantsOptions = {}
 ) {
-  const { participantState, trustData = 'full', pageSize = PARTICIPANTS_PAGE_SIZE, after } = options
+  const { pageSize = PARTICIPANTS_PAGE_SIZE, after } = options
   const [participants, setParticipants] = useState<Participant[]>([])
   const [pageKey, setPageKey] = useState('')
   const [hasNext, setHasNext] = useState(false)
@@ -96,8 +92,7 @@ export function useParticipants(
           schema: query.schema,
           role: query.role,
           validator: query.validator,
-          participantState,
-          trustData,
+          trustData: 'full',
           pageSize,
           after: cursor,
         })
@@ -118,7 +113,7 @@ export function useParticipants(
         if (request === requestRef.current) setLoading(false)
       }
     },
-    [pageSize, participantState, trustData]
+    [pageSize]
   )
 
   const fetchParticipants = useCallback(

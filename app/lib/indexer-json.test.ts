@@ -148,23 +148,21 @@ describe('the list URLs of the indexer', () => {
       participantsListUrl(PARTICIPANT, {
         schema: '9',
         role: 'ISSUER_GRANTOR',
-        participantState: 'ACTIVE',
         trustData: 'full',
         pageSize: 25,
       }),
-      `${PARTICIPANT}/list?schema_id=9&trust_data=full&limit=26&sort=%2Bid&role=ISSUER_GRANTOR&participant_state=ACTIVE`,
+      `${PARTICIPANT}/list?schema_id=9&trust_data=full&limit=26&sort=%2Bid&role=ISSUER_GRANTOR`,
     ],
     [
       'the next ascending page of the same set, filters kept',
       participantsListUrl(PARTICIPANT, {
         schema: '9',
         role: 'ISSUER_GRANTOR',
-        participantState: 'ACTIVE',
         trustData: 'full',
         pageSize: 25,
         after: '40',
       }),
-      `${PARTICIPANT}/list?schema_id=9&trust_data=full&limit=26&sort=%2Bid&min_id=41&role=ISSUER_GRANTOR&participant_state=ACTIVE`,
+      `${PARTICIPANT}/list?schema_id=9&trust_data=full&limit=26&sort=%2Bid&min_id=41&role=ISSUER_GRANTOR`,
     ],
     [
       'a tree node that shows every participant state',
