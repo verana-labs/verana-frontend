@@ -63,6 +63,10 @@ export function filterParticipantTree(
   return result
 }
 
+export function countParticipants(nodes: TreeNode[]): number {
+  return nodes.reduce((count, node) => count + (node.group ? 0 : 1) + countParticipants(node.children ?? []), 0)
+}
+
 export function withAuthority(nodes: TreeNode[], corporationId?: number, parent?: TreeNode): TreeNode[] {
   return nodes.map((node) => {
     if (node.group) return { ...node, children: withAuthority(node.children ?? [], corporationId, parent) }

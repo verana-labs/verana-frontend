@@ -125,4 +125,10 @@ test('a schema priced in the native coin carries no notice and keeps its afforda
 
   await expect(page.getByRole('button', { name: /New Participant/ })).toBeEnabled({ timeout: 15_000 })
   await expect(page.getByRole('note')).toHaveCount(0)
+
+  const hidden = page.getByText('Participants hidden by the current filters: 1.')
+  await expect(hidden).toBeVisible()
+  await page.getByRole('button', { name: 'Show all' }).click()
+  await expect(hidden).toBeHidden()
+  await expect(page.getByRole('checkbox', { name: 'Unresolvable services' })).toBeChecked()
 })
