@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.18.1](https://github.com/verana-labs/verana-frontend/compare/v0.18.0...v0.18.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* [Account] keep /account to the connected account and drop the corporation facts ([#533](https://github.com/verana-labs/verana-frontend/issues/533)) ([5e3471e](https://github.com/verana-labs/verana-frontend/commit/5e3471e222e5e66ac0d4a040b2f20beaaffa4a90))
+* [Corporation] reset open forms when the acting corporation switches ([#534](https://github.com/verana-labs/verana-frontend/issues/534)) ([0d228d7](https://github.com/verana-labs/verana-frontend/commit/0d228d78714dbf438b22954d4271ea9893cfac59))
+* [Ecosystems] show the EGF document link as an icon ([#546](https://github.com/verana-labs/verana-frontend/issues/546)) ([cf39271](https://github.com/verana-labs/verana-frontend/commit/cf392719f123fff025f9cee41b8dfaa6b80465f7))
+* [Ecosystems] show the holder onboarding mode on the schema cards ([#547](https://github.com/verana-labs/verana-frontend/issues/547)) ([4a7aae4](https://github.com/verana-labs/verana-frontend/commit/4a7aae48a15c225a9e23588b6f70c660516946f5))
+* [Participants] keep a selected participant in the tree by fetching its detail with trust_data ([#539](https://github.com/verana-labs/verana-frontend/issues/539)) ([1476059](https://github.com/verana-labs/verana-frontend/commit/147605987cc5d03bd5a027e3538147d14cf8334c))
+
 ## [0.18.0](https://github.com/verana-labs/verana-frontend/compare/v0.17.0...v0.18.0) (2026-10-13)
 
 
