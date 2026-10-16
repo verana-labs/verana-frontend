@@ -94,6 +94,7 @@ test('switching the acting corporation closes a form opened for the previous one
   await page.getByRole('menuitem', { name: /Acme Trust AG/ }).click()
   await expect(page.getByRole('menuitem', { name: /Acme Trust AG/ })).toBeHidden()
   await expect(did).toHaveValue('did:web:typed-before-the-switch.example')
+  await expect(page.getByRole('button', { name: /Acme Trust AG/ }).first()).toBeVisible()
 
   await page
     .getByRole('button', { name: /Acme Trust AG/ })
