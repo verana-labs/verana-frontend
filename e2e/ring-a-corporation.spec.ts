@@ -169,6 +169,44 @@ test('a percentage policy shows on the members tab with its minimum execution pe
   await expect(page.getByText('2 of 6 yes · threshold 50%')).toBeVisible({ timeout: 15_000 })
 })
 
+test('an accepted proposal offers Execute on its own once the minimum execution period has passed', async ({
+  page,
+}) => {
+  await installCorporationStubs(page, {
+    decisionPolicy: { ...PERCENTAGE_POLICY, windows: { voting_period: '300s', min_execution_period: '20s' } },
+  })
+  let submitTime: string | undefined
+  await page.route('**/v4/group/proposals*', (route) => {
+    submitTime ??= new Date().toISOString()
+    return route.fulfill({
+      json: {
+        proposals: [
+          {
+            id: 50,
+            corporation_id: 13,
+            status: 'ACCEPTED',
+            submit_time: submitTime,
+            voting_period_end: submitTime,
+            executor_result: 'FAILURE',
+            proposers: [HARNESS_ADDRESS],
+            messages: [{ '@type': '/verana.co.v1.MsgUpdateCorporation', did: 'did:web:next.example' }],
+            tally: { yes_count: '6', no_count: '0', abstain_count: '0', no_with_veto_count: '0' },
+          },
+        ],
+      },
+    })
+  })
+  await seedActingCorporation(page, 13)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  await page.goto('/corporation?tab=proposals')
+  await page.getByRole('button', { name: /#50/ }).click()
+  await expect(page.getByText(/^Executable from /)).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Execute', exact: true })).toBeHidden()
+  await expect(page.getByRole('button', { name: 'Execute', exact: true })).toBeVisible({ timeout: 40_000 })
+  await expect(page.getByText(/^Executable from /)).toBeHidden()
+})
+
 test('a policy update keeps a percentage policy and confirms every change without broadcasting', async ({ page }) => {
   await installCorporationStubs(page, { decisionPolicy: PERCENTAGE_POLICY })
   await seedActingCorporation(page, 13)

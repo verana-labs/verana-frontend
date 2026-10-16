@@ -13,6 +13,7 @@ import { type ActivityRow, parseActivityHistory } from '@/lib/activity-history'
 import { type GfVersion, parseGfVersions } from '@/lib/gf-document'
 import { degrade, fetchJson, indexerValidators } from '@/lib/indexer-json'
 import { logger } from '@/lib/logger'
+import { indexerPeriodSeconds } from '@/lib/operator-grant'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 
 const { record, string, integer, optionalString, nullableString, stringArray, decimalAmount } =
@@ -133,6 +134,17 @@ export function proposalTallyScale(
     threshold,
     percentage: threshold !== null && policy.threshold === null ? policy.percentage : null,
   }
+}
+
+const EXECUTION_GRACE_MS = 2_000
+
+export function proposalExecutableFrom(
+  proposal: Pick<ProposalRow, 'submitTime'>,
+  policy: Pick<GroupPolicy, 'minExecutionPeriod'>
+): number | null {
+  const seconds = indexerPeriodSeconds(policy.minExecutionPeriod)
+  const submitted = proposal.submitTime === null ? Number.NaN : Date.parse(proposal.submitTime)
+  return seconds && Number.isFinite(submitted) ? submitted + seconds * 1000 + EXECUTION_GRACE_MS : null
 }
 
 export interface CorporationGovernance {

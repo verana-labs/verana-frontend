@@ -9,6 +9,7 @@ import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 
 export type ProposalExecution =
   | { status: 'executed' | 'pending' }
+  | { status: 'scheduled'; proposalId: string; executableFrom: Date }
   | { status: 'failed'; proposalId: string; logs: string }
 
 export interface TxNotice {
@@ -19,6 +20,8 @@ export interface TxNotice {
 
 const EVENT_EXEC = 'cosmos.group.v1.EventExec'
 const FAILED_LOGS_PREFIX = /^proposal execution failed on proposal \d+, because of error /
+const MUST_WAIT = /must wait until (.+?) to execute proposal/
+const CHAIN_TIME = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})(\.\d{1,3})?\d* ([+-]\d{2})(\d{2})/
 
 function t(key: string, values?: I18nValues): string {
   return resolveTranslatable({ key, values }, translate) ?? key
@@ -35,22 +38,30 @@ function typedEventValue(event: TxEvent, key: string): string {
   }
 }
 
+function chainTime(value: string): Date | null {
+  const match = CHAIN_TIME.exec(value)
+  if (!match) return null
+  const date = new Date(`${match[1]}T${match[2]}${match[3] ?? ''}${match[4]}:${match[5]}`)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
 function execution(event: TxEvent): ProposalExecution {
   const result = typedEventValue(event, 'result')
   if (result === 'PROPOSAL_EXECUTOR_RESULT_SUCCESS') return { status: 'executed' }
   if (result !== 'PROPOSAL_EXECUTOR_RESULT_FAILURE') return { status: 'pending' }
-  return {
-    status: 'failed',
-    proposalId: typedEventValue(event, 'proposal_id'),
-    logs: typedEventValue(event, 'logs').replace(FAILED_LOGS_PREFIX, ''),
-  }
+  const proposalId = typedEventValue(event, 'proposal_id')
+  const logs = typedEventValue(event, 'logs').replace(FAILED_LOGS_PREFIX, '')
+  const wait = MUST_WAIT.exec(logs)
+  const executableFrom = wait ? chainTime(wait[1]) : null
+  return executableFrom ? { status: 'scheduled', proposalId, executableFrom } : { status: 'failed', proposalId, logs }
 }
 
 export function proposalExecution(events: readonly TxEvent[]): ProposalExecution {
   const executions = events.filter((event) => event.type === EVENT_EXEC).map(execution)
   return (
     executions.find((candidate) => candidate.status === 'failed') ??
-    executions.find((candidate) => candidate.status === 'executed') ?? { status: 'pending' }
+    executions.find((candidate) => candidate.status === 'executed') ??
+    executions.find((candidate) => candidate.status === 'scheduled') ?? { status: 'pending' }
   )
 }
 
@@ -92,9 +103,14 @@ export function txFailureNotice(
 }
 
 export function proposalSubmittedMessage(events: readonly TxEvent[]): string {
+  const outcome = proposalExecution(events)
+  if (outcome.status === 'scheduled') {
+    return t('notification.MsgSubmitProposal.scheduled', {
+      id: outcome.proposalId,
+      date: outcome.executableFrom.toLocaleString(),
+    })
+  }
   return t(
-    proposalExecution(events).status === 'executed'
-      ? 'notification.MsgSubmitProposal.executed'
-      : 'notification.MsgSubmitProposal.pending'
+    outcome.status === 'executed' ? 'notification.MsgSubmitProposal.executed' : 'notification.MsgSubmitProposal.pending'
   )
 }

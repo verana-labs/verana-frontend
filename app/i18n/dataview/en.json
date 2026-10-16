@@ -719,6 +719,7 @@
   "corporation.proposals.voteno": "Vote no",
   "corporation.proposals.withdraw": "Withdraw",
   "corporation.proposals.execute": "Execute",
+  "corporation.proposals.executablefrom": "Executable from {date}",
   "corporation.signingmode.operator": "Executes directly as operator",
   "corporation.signingmode.proposal": "Opens a governance proposal",
   "notification.MsgUpdateCorporation.inprogress": "Updating corporation…",
@@ -1015,6 +1016,7 @@
   "notification.proposal.unauthorized": "Proposal {id} was accepted, but the chain refused to execute it for lack of authorization: {reason}.",
   "notification.MsgSubmitProposal.executed": "Proposal submitted and executed",
   "notification.MsgSubmitProposal.pending": "Proposal submitted. It executes once the group reaches its decision threshold.",
+  "notification.MsgSubmitProposal.scheduled": "Proposal {id} was accepted, it can be executed from {date}.",
   "txconfirm.simulation.unauthorized": "The chain refused this action for lack of authorization: {reason}.",
   "join.proposal.pending.title": "Proposal submitted",
   "join.proposal.pending.desc": "The participant is created once the group of the acting corporation reaches its decision threshold and the proposal executes. Follow it under Proposals on the Corporation page."

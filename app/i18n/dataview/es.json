@@ -719,6 +719,7 @@
   "corporation.proposals.voteno": "Votar no",
   "corporation.proposals.withdraw": "Retirar",
   "corporation.proposals.execute": "Ejecutar",
+  "corporation.proposals.executablefrom": "Ejecutable desde {date}",
   "corporation.signingmode.operator": "Se ejecuta directamente como operador",
   "corporation.signingmode.proposal": "Abre una propuesta de gobernanza",
   "notification.MsgUpdateCorporation.inprogress": "Actualizando corporación…",
@@ -1015,6 +1016,7 @@
   "notification.proposal.unauthorized": "La propuesta {id} fue aceptada, pero la cadena se negó a ejecutarla por falta de autorización: {reason}.",
   "notification.MsgSubmitProposal.executed": "Propuesta enviada y ejecutada",
   "notification.MsgSubmitProposal.pending": "Propuesta enviada. Se ejecuta cuando el grupo alcance su umbral de decisión.",
+  "notification.MsgSubmitProposal.scheduled": "La propuesta {id} fue aceptada, se puede ejecutar desde {date}.",
   "txconfirm.simulation.unauthorized": "La cadena rechazó esta acción por falta de autorización: {reason}.",
   "join.proposal.pending.title": "Propuesta enviada",
   "join.proposal.pending.desc": "El participante se crea cuando el grupo de la corporación activa alcance su umbral de decisión y la propuesta se ejecute. Sígala en Propuestas, en la página Corporación."

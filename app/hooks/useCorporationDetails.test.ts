@@ -19,6 +19,7 @@ import {
   parseProposals,
   parseTrustDeposit,
   parseVsOperatorAuthorizations,
+  proposalExecutableFrom,
   proposalTallyScale,
 } from './useCorporationDetails'
 
@@ -562,6 +563,25 @@ describe('proposalTallyScale', () => {
       threshold: null,
       percentage: null,
     })
+  })
+})
+
+describe('proposalExecutableFrom', () => {
+  const submitTime = '2026-10-16T10:00:00.000Z'
+
+  it('adds the minimum execution period and a short grace to the submit time', () => {
+    expect(proposalExecutableFrom({ submitTime }, { minExecutionPeriod: '3600s' })).toBe(
+      Date.parse('2026-10-16T11:00:02.000Z')
+    )
+    expect(proposalExecutableFrom({ submitTime }, { minExecutionPeriod: '60.5s' })).toBe(
+      Date.parse('2026-10-16T10:01:02.500Z')
+    )
+  })
+
+  it('has no wait without a minimum execution period or a submit time', () => {
+    expect(proposalExecutableFrom({ submitTime }, { minExecutionPeriod: '0s' })).toBeNull()
+    expect(proposalExecutableFrom({ submitTime }, { minExecutionPeriod: null })).toBeNull()
+    expect(proposalExecutableFrom({ submitTime: null }, { minExecutionPeriod: '3600s' })).toBeNull()
   })
 })
 
