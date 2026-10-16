@@ -13,7 +13,6 @@ import type { MouseEvent, ReactNode } from 'react'
 import { useActionSigning } from '@/hooks/useSigningMode'
 import { translate } from '@/i18n/dataview'
 import { formatSchemaAmount, type SchemaPricing } from '@/lib/pricing-asset'
-import { service } from '@/ui/common/participant-attribute'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import ServiceIdentity from '@/ui/common/service-identity'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
@@ -130,12 +129,11 @@ export default function TreeNodeHeader({
           {node.enabledJoin ? (
             <JoinButton
               action={node.onboardingAction ?? ''}
-              blockedReason={joinBlockedReason}
+              blockedReason={node.onboardingAction === 'LinkDID' ? undefined : joinBlockedReason}
               onClick={(event) => {
                 event.stopPropagation()
                 if (node.onboardingAction === 'LinkDID') {
-                  const url = service(participant?.did ?? '')
-                  if (url) window.open(url, '_blank')
+                  onJoin(node)
                 } else if (node.onboardingAction === 'Connect') {
                   onConnect?.()
                 } else {

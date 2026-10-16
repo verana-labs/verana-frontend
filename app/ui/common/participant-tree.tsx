@@ -11,6 +11,7 @@ import AddJoinPage from '@/participants/add/page'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { EntityActionButton } from '@/ui/common/capability-button'
 import EcosystemBreadcrumb from '@/ui/common/ecosystem-breadcrumb'
+import { HolderWebsite } from '@/ui/common/holder-website'
 import { ShowMoreButton } from '@/ui/common/keyset-pagination'
 import type { ParticipantRefreshState, TreeNode } from '@/ui/common/participant-tree-types'
 import { PricingNotice, unsupportedPricingReason } from '@/ui/common/pricing-notice'
@@ -482,12 +483,16 @@ export default function ParticipantTree({
           isActive={true}
           classModal="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-xl bg-white dark:bg-surface"
         >
-          <AddJoinPage
-            ecosystemId={ecosystemId ?? ''}
-            nodeJoin={joinNode}
-            onCancel={() => setJoinNode(undefined)}
-            onRefresh={(id, txHeight) => setRefreshState({ joinNode, id, txHeight })}
-          />
+          {joinNode.onboardingAction === 'LinkDID' ? (
+            <HolderWebsite issuerDid={joinNode.participant?.did ?? ''} onCancel={() => setJoinNode(undefined)} />
+          ) : (
+            <AddJoinPage
+              ecosystemId={ecosystemId ?? ''}
+              nodeJoin={joinNode}
+              onCancel={() => setJoinNode(undefined)}
+              onRefresh={(id, txHeight) => setRefreshState({ joinNode, id, txHeight })}
+            />
+          )}
         </ModalAction>
       ) : null}
 
