@@ -12,6 +12,7 @@ import {
   EGF_ACTIVE_13,
   EGF_DRAFT_13,
   GRANTEE,
+  HARNESS_GRANTS_13,
   OPERATOR_GRANT_MESSAGE_TYPES,
   REPLACEMENT_MEMBER,
   SECOND_OPERATOR,
@@ -797,7 +798,17 @@ test('a re-grant keeps the current fee grant unless turned off, and then warns t
   await expect(
     page.getByText('You cannot grant yourself while signing as operator, use a group proposal instead.')
   ).toBeVisible()
+  await expect(page.getByText('2 of 22 message types selected', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: '2 of 22 message types selected', exact: true })).toHaveAttribute(
+    'aria-expanded',
+    'true'
+  )
+  await expect(page.getByText('Kept from the current authorization')).toBeVisible()
 
+  await grantee.fill(SECOND_OPERATOR)
+  await expect(page.getByText('22 of 22 message types selected', { exact: true })).toBeVisible()
+  await grantee.fill(HARNESS_ADDRESS)
+  await expect(page.getByText('2 of 22 message types selected', { exact: true })).toBeVisible()
   await grantee.fill(SECOND_OPERATOR)
   await expect(page.getByLabel('Spend limit (VNA)', { exact: true })).toHaveValue('5')
   await expect(page.getByLabel('Period (days)', { exact: true })).toHaveValue('30')
@@ -823,5 +834,39 @@ test('a re-grant keeps the current fee grant unless turned off, and then warns t
   await expect(dialog).toBeHidden()
   expect(mock.seenMethods()).not.toContain('broadcast_tx_sync')
   await expect(grantee).toHaveValue(SECOND_OPERATOR)
+  await mock.teardown()
+})
+
+test('a re-grant proposal keeps the held types the picker does not list, even with no listed type selected', async ({
+  page,
+}) => {
+  await installCorporationStubs(page)
+  await seedActingCorporation(page, 13)
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubSri: false, stubCorporation: false })
+
+  await page.goto('/corporation?tab=proposals')
+  await page.getByRole('button', { name: 'New proposal' }).click()
+  await page.getByLabel('Grantee account').fill(HARNESS_ADDRESS)
+  await expect(page.getByText('Kept from the current authorization')).toBeVisible()
+  const submit = page.getByRole('button', { name: 'Submit proposal' })
+  const listedHeld = [
+    page.getByRole('checkbox', { name: 'UpdateCorporation', exact: true }),
+    page.getByRole('checkbox', { name: 'RepaySlashedTrustDeposit', exact: true }),
+  ]
+  for (const checkbox of listedHeld) await checkbox.uncheck()
+  await expect(submit).toBeEnabled()
+  for (const checkbox of listedHeld) await checkbox.check()
+  await submit.click()
+
+  const dialog = page.getByRole('dialog', { name: 'Confirm transaction' })
+  await expect(fact(dialog, 'Network fee')).toContainText(/VNA/, { timeout: 30_000 })
+  await dialog.getByRole('button', { name: 'Confirm' }).click()
+  await expect.poll(() => mock.broadcastTxs().length, { timeout: 30_000 }).toBe(1)
+
+  const body = TxBody.decode(TxRaw.decode(fromBase64(mock.broadcastTxs()[0])).bodyBytes)
+  const proposal = MsgSubmitProposal.decode(body.messages[0].value)
+  const regrant = MsgGrantOperatorAuthorization.decode(proposal.messages[0].value)
+  expect([...regrant.msgTypes].sort()).toEqual([...HARNESS_GRANTS_13].sort())
   await mock.teardown()
 })
