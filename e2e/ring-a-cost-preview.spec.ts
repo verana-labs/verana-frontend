@@ -45,8 +45,7 @@ async function installEcosystemStubs(page: Page) {
   await page.route('**/v4/credential-schema/list*', (route) => route.fulfill({ json: { schemas: [] } }))
 }
 
-test('a new schema confirms with its network fee and no trust deposit', async ({ page }) => {
-  test.setTimeout(120_000)
+async function openSchemaForm(page: Page) {
   await installCorporationStubs(page)
   await installEcosystemStubs(page)
   await seedActingCorporation(page, 13)
@@ -58,12 +57,12 @@ test('a new schema confirms with its network fee and no trust deposit', async ({
     .getByRole('button', { name: /new schema/i })
     .first()
     .click()
-  await expect(page.getByRole('heading', { name: /create new credential schema/i })).toBeVisible({ timeout: 20_000 })
+  const form = page.getByRole('heading', { name: /create new credential schema/i })
+  await expect(form).toBeVisible({ timeout: 20_000 })
+  return { mock, form }
+}
 
-  await expect(page.getByText(/everything except the validity periods is immutable after creation/i)).toBeVisible()
-  await expect(labelSelect(page, 'Holder Onboarding Mode')).toHaveValue('2')
-  await expect(labelSelect(page, 'Digest Algorithm')).toHaveValue('sha384')
-
+async function fillSchemaForm(page: Page) {
   await labelSelect(page, 'Issuer Onboarding Mode').selectOption('1')
   await labelSelect(page, 'Verifier Onboarding Mode').selectOption('1')
   await labelSelect(page, 'Holder Onboarding Mode').selectOption('1')
@@ -79,6 +78,17 @@ test('a new schema confirms with its network fee and no trust deposit', async ({
       required: ['fullName'],
     })
   )
+}
+
+test('a new schema confirms with its network fee and no trust deposit', async ({ page }) => {
+  test.setTimeout(120_000)
+  const { mock, form } = await openSchemaForm(page)
+
+  await expect(page.getByText(/everything except the validity periods is immutable after creation/i)).toBeVisible()
+  await expect(labelSelect(page, 'Holder Onboarding Mode')).toHaveValue('2')
+  await expect(labelSelect(page, 'Digest Algorithm')).toHaveValue('sha384')
+
+  await fillSchemaForm(page)
   await page.locator('.btn-action-confirm').click()
 
   const dialog = page.getByRole('dialog')
@@ -94,10 +104,26 @@ test('a new schema confirms with its network fee and no trust deposit', async ({
   await expect(dialog).toBeVisible({ timeout: 30_000 })
   await page.keyboard.press('Escape')
   await expect(dialog).toBeHidden()
-  const form = page.getByRole('heading', { name: /create new credential schema/i })
   await expect(form).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(form).toBeHidden()
   expect(mock.seenMethods()).not.toContain('broadcast_tx_sync')
+  await mock.teardown()
+})
+
+test('a confirmed schema closes its form once the chain includes it, before the success notice ends', async ({
+  page,
+}) => {
+  test.setTimeout(120_000)
+  const { mock, form } = await openSchemaForm(page)
+  await fillSchemaForm(page)
+  await page.locator('.btn-action-confirm').click()
+
+  const dialog = page.getByRole('dialog')
+  await expect(dialog.getByText('Network fee').locator('..')).toContainText(/VNA/, { timeout: 30_000 })
+  await dialog.getByRole('button', { name: 'Submit proposal' }).click()
+  await expect.poll(() => mock.broadcastTxs().length, { timeout: 30_000 }).toBe(1)
+  await expect(page.locator('.notify-success')).toBeVisible({ timeout: 45_000 })
+  await expect(form).toBeHidden({ timeout: 2_000 })
   await mock.teardown()
 })
