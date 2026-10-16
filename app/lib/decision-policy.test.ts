@@ -1,6 +1,7 @@
 import { PercentageDecisionPolicy, ThresholdDecisionPolicy } from 'cosmjs-types/cosmos/group/v1/types'
 import { describe, expect, it } from 'vitest'
 import {
+  currentDecisionPolicyDraft,
   DEFAULT_DECISION_POLICY_DRAFT,
   decimalToPercent,
   encodeDecisionPolicy,
@@ -162,5 +163,46 @@ describe('readDecisionPolicyDraft', () => {
     expect(readDecisionPolicyDraft(atLimit)).toBeNull()
     expect(exceedsExecutionWindow(belowLimit)).toBe(false)
     expect(readDecisionPolicyDraft(belowLimit)?.minExecutionPeriodSeconds).toBe(1_209_659)
+  })
+})
+
+describe('currentDecisionPolicyDraft', () => {
+  it('prefills a threshold policy from the indexer values', () => {
+    expect(
+      currentDecisionPolicyDraft({
+        threshold: '3',
+        percentage: null,
+        votingPeriod: '300s',
+        minExecutionPeriod: '0s',
+      })
+    ).toEqual({ kind: 'threshold', threshold: '3', percent: '50', votingPeriod: '300', minExecutionPeriod: '0' })
+  })
+
+  it('prefills a percentage policy and its minimum execution period', () => {
+    expect(
+      currentDecisionPolicyDraft({
+        threshold: null,
+        percentage: '0.75',
+        votingPeriod: '86400s',
+        minExecutionPeriod: '3600s',
+      })
+    ).toEqual({ kind: 'percentage', threshold: '1', percent: '75', votingPeriod: '86400', minExecutionPeriod: '3600' })
+  })
+
+  it('rounds fractional indexer durations up to whole seconds', () => {
+    expect(
+      currentDecisionPolicyDraft({
+        threshold: '2',
+        percentage: null,
+        votingPeriod: '300.5s',
+        minExecutionPeriod: '0.250s',
+      })
+    ).toMatchObject({ votingPeriod: '301', minExecutionPeriod: '1' })
+  })
+
+  it('falls back to the defaults for the fields the indexer left out', () => {
+    expect(
+      currentDecisionPolicyDraft({ threshold: null, percentage: null, votingPeriod: null, minExecutionPeriod: null })
+    ).toEqual(DEFAULT_DECISION_POLICY_DRAFT)
   })
 })

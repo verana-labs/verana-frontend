@@ -1,5 +1,6 @@
 import { PercentageDecisionPolicy, ThresholdDecisionPolicy } from 'cosmjs-types/cosmos/group/v1/types'
 import type { Any } from 'cosmjs-types/google/protobuf/any'
+import { indexerPeriodSeconds } from '@/lib/operator-grant'
 
 export type DecisionPolicyKind = 'threshold' | 'percentage'
 
@@ -99,6 +100,23 @@ export function currentDecisionRule(
   if (policy.percentage !== null) return { kind: 'percentage', percentage: policy.percentage }
   if (policy.threshold !== null) return { kind: 'threshold', threshold: policy.threshold }
   return null
+}
+
+function draftSeconds(period: string | null, fallback: string): string {
+  const seconds = indexerPeriodSeconds(period)
+  return seconds === null ? fallback : String(Math.ceil(seconds))
+}
+
+export function currentDecisionPolicyDraft(policy: CurrentDecisionPolicy): DecisionPolicyDraft {
+  return {
+    kind: policy.percentage === null ? 'threshold' : 'percentage',
+    threshold: policy.threshold ?? DEFAULT_DECISION_POLICY_DRAFT.threshold,
+    percent:
+      (policy.percentage === null ? null : decimalToPercent(policy.percentage)) ??
+      DEFAULT_DECISION_POLICY_DRAFT.percent,
+    votingPeriod: draftSeconds(policy.votingPeriod, DEFAULT_DECISION_POLICY_DRAFT.votingPeriod),
+    minExecutionPeriod: draftSeconds(policy.minExecutionPeriod, DEFAULT_DECISION_POLICY_DRAFT.minExecutionPeriod),
+  }
 }
 
 export function exceedsExecutionWindow(

@@ -169,6 +169,43 @@ test('a percentage policy shows on the members tab with its minimum execution pe
   await expect(page.getByText('2 of 6 yes · threshold 50%')).toBeVisible({ timeout: 15_000 })
 })
 
+test('a policy update keeps a percentage policy and confirms every change without broadcasting', async ({ page }) => {
+  await installCorporationStubs(page, { decisionPolicy: PERCENTAGE_POLICY })
+  await seedActingCorporation(page, 13)
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubSri: false, stubCorporation: false })
+
+  await page.goto('/corporation?tab=proposals')
+  await page.getByRole('button', { name: 'New proposal' }).click()
+  await page.getByLabel('Proposal type').selectOption('policy')
+  const kind = page.getByLabel('Decision policy', { exact: true })
+  const percent = page.getByLabel('Percentage (%)')
+  const minExecution = page.getByLabel('Minimum execution period (seconds)')
+  await expect(kind).toHaveValue('percentage')
+  await expect(percent).toHaveValue('50')
+  await expect(minExecution).toHaveValue('3600')
+
+  const submit = page.getByRole('button', { name: 'Submit proposal' })
+  const dialog = page.getByRole('dialog', { name: 'Confirm transaction' })
+  await percent.fill('60')
+  await minExecution.fill('0')
+  await submit.click()
+  await expect(fact(dialog, 'Percentage')).toContainText('50% → 60%')
+  await expect(fact(dialog, 'Voting period')).toContainText('5m')
+  await expect(fact(dialog, 'Minimum execution period')).toContainText('1h → 0s')
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(dialog).toBeHidden()
+
+  await kind.selectOption('threshold')
+  await page.getByLabel('Threshold').fill('4')
+  await submit.click()
+  await expect(fact(dialog, 'Decision policy')).toContainText('Percentage 50% → Threshold 4')
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(dialog).toBeHidden()
+  expect(mock.broadcastTxs()).toEqual([])
+  await mock.teardown()
+})
+
 test('a member without grants gets the proposal signing mode everywhere', async ({ page }) => {
   await installCorporationStubs(page, { memberOnly: true })
   await seedActingCorporation(page, 13)
@@ -488,6 +525,7 @@ test('the proposal composer gates each kind on valid input', async ({ page }) =>
   await expect(dialog).toContainText('that changes its decision policy.')
   await expect(fact(dialog, 'Threshold')).toContainText('3 → 2')
   await expect(fact(dialog, 'Voting period')).toContainText('5m')
+  await expect(fact(dialog, 'Minimum execution period')).toContainText('0s')
   await dialog.getByRole('button', { name: 'Cancel' }).click()
   await expect(dialog).toBeHidden()
 
