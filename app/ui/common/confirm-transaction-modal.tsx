@@ -177,10 +177,12 @@ export function ConfirmTransactionModal({
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') onCancel()
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      onCancel()
     }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
+    window.addEventListener('keydown', onKeyDown, true)
+    return () => window.removeEventListener('keydown', onKeyDown, true)
   }, [onCancel])
 
   const proposal = request.mode === 'proposal'
