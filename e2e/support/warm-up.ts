@@ -9,7 +9,6 @@ const ROUTES = [
   '/credential-schemas/26',
   '/participants/26',
   '/discover',
-  '/join/13',
   '/pendingtasks',
   '/settings',
 ]

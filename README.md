@@ -246,7 +246,6 @@ app/
 │  └─ [id]/
 ├─ pendingtasks/      # Onboarding processes you participate in
 ├─ discover/          # Ecosystem discovery
-├─ join/[id]/         # Ecosystem join flow
 ├─ account/           # Connected wallet, balance, low-balance warn
 ├─ api/sri/           # Internal API route
 ├─ msg/               # Cosmos msg builders and tx flows

@@ -1,10 +1,13 @@
 import { createHash } from 'node:crypto'
 import { expect, type Page, test } from '@playwright/test'
 import { connectWallet } from './support/connect'
-import { installCorporationStubs } from './support/corp-stubs'
+import { ACME_TRUST_DATA } from './support/corp-fixtures'
+import { ACME_DID, HARNESS_MNEMONIC, installCorporationStubs, seedActingCorporation } from './support/corp-stubs'
 import { DEFAULT_DOC_URL } from './support/flows'
 
 const ECOSYSTEM_ID = '9441'
+const SCHEMA_ID = 94410
+const ACTING_CORPORATION_ID = 13
 const EN_URL = 'https://gov.acme-trust.example/egf-en.md'
 const ES_URL = 'https://gov.acme-trust.example/egf-es.md'
 const EN_MARKDOWN = '# Acme governance framework\n\nParticipants follow these rules.\n'
@@ -17,6 +20,28 @@ const MOSIP_DIGEST = 'sha384-PP6AbuFetAmv4S6DTXzOVV69+nTZXzsooHyAmifQq/I4dir7cUa
 const MARKDOWN_HEADERS = { 'access-control-allow-origin': '*', 'content-type': 'text/markdown; charset=utf-8' }
 
 const sri = (text: string) => `sha384-${createHash('sha384').update(text).digest('base64')}`
+
+const SCHEMA = {
+  id: SCHEMA_ID,
+  ecosystem_id: Number(ECOSYSTEM_ID),
+  json_schema: JSON.stringify({ title: 'Acme Membership', description: 'Acme membership credential' }),
+  issuer_grantor_validation_validity_period: 0,
+  verifier_grantor_validation_validity_period: 0,
+  issuer_validation_validity_period: 0,
+  verifier_validation_validity_period: 0,
+  holder_validation_validity_period: 0,
+  issuer_onboarding_mode: 'OPEN',
+  verifier_onboarding_mode: 'OPEN',
+  holder_onboarding_mode: null,
+  pricing_asset_type: 'COIN',
+  pricing_asset: 'uvna',
+  digest_algorithm: 'sha384',
+  participants: 0,
+  issued: 0,
+  verified: 0,
+  weight: 0,
+  archived: null,
+}
 
 type Document = { id: number; url: string; language: string; digest_sri: string }
 
@@ -43,34 +68,7 @@ async function stubEcosystem(page: Page, documents: Document[]) {
       },
     })
   )
-  await page.route('**/v4/credential-schema/list*', (route) =>
-    route.fulfill({
-      json: {
-        schemas: [
-          {
-            id: 94410,
-            ecosystem_id: Number(ECOSYSTEM_ID),
-            json_schema: JSON.stringify({ title: 'Acme Membership', description: 'Acme membership credential' }),
-            issuer_grantor_validation_validity_period: 0,
-            verifier_grantor_validation_validity_period: 0,
-            issuer_validation_validity_period: 0,
-            verifier_validation_validity_period: 0,
-            holder_validation_validity_period: 0,
-            issuer_onboarding_mode: 'OPEN',
-            verifier_onboarding_mode: 'OPEN',
-            holder_onboarding_mode: null,
-            pricing_asset_type: 'COIN',
-            pricing_asset: 'uvna',
-            participants: 0,
-            issued: 0,
-            verified: 0,
-            weight: 0,
-            archived: null,
-          },
-        ],
-      },
-    })
-  )
+  await page.route('**/v4/credential-schema/list*', (route) => route.fulfill({ json: { schemas: [SCHEMA] } }))
   await page.route('**/v4/verifiable-trust/resolve', (route) =>
     route.fulfill({ status: 404, json: { error: 'DID not found', code: 404 } })
   )
@@ -143,26 +141,55 @@ test('a document neither the browser nor the server can fetch is reported as unv
   await expect(viewer.getByRole('button', { name: 'Download' })).toBeHidden()
 })
 
-async function reachGovernanceStep(page: Page) {
-  await installCorporationStubs(page, { fresh: true })
-  await connectWallet(page)
-  await page.goto(`/join/${ECOSYSTEM_ID}`)
-  const next = page.getByRole('button', { name: 'Continue', exact: true })
-  await next.click()
-  await page
-    .getByRole('button', { name: /Acme Membership/ })
-    .first()
-    .click()
-  await next.click()
-  await page
-    .getByRole('button', { name: /Issuer/ })
-    .first()
-    .click()
-  await next.click()
-  return next
+async function stubParticipantTree(page: Page) {
+  await page.route(`**/v4/credential-schema/get/${SCHEMA_ID}*`, (route) => route.fulfill({ json: { schema: SCHEMA } }))
+  await page.route('**/v4/participant/list*', (route) => {
+    const role = new URL(route.request().url()).searchParams.get('role')
+    const participants =
+      role === 'ECOSYSTEM'
+        ? [
+            {
+              id: 9442,
+              schema_id: SCHEMA_ID,
+              role: 'ECOSYSTEM',
+              did: ACME_DID,
+              trust_data: ACME_TRUST_DATA,
+              corporation_id: ACTING_CORPORATION_ID,
+              participant_state: 'ACTIVE',
+              op_state: 'VALIDATED',
+              validator_participant_id: null,
+              effective_from: '2026-09-01T10:30:00Z',
+              effective_until: null,
+              validation_fees: 0,
+              issuance_fees: 0,
+              verification_fees: 0,
+              deposit: 0,
+              corporation_available_actions: [],
+              validator_available_actions: [],
+            },
+          ]
+        : []
+    return route.fulfill({ json: { participants } })
+  })
 }
 
-test('the join wizard blocks accepting a document that does not match its digest', async ({ page }) => {
+async function reachGovernanceStep(page: Page) {
+  await installCorporationStubs(page)
+  await stubParticipantTree(page)
+  await seedActingCorporation(page, ACTING_CORPORATION_ID)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  await page.goto(`/participants/${SCHEMA_ID}`)
+  await page
+    .locator('div.rounded-lg.p-2')
+    .filter({ hasText: 'Issuers' })
+    .getByRole('button', { name: /join/ })
+    .click({ timeout: 15_000 })
+  return page.getByRole('button', { name: 'Continue', exact: true })
+}
+
+test('joining from the participant tree blocks accepting a document that does not match its digest', async ({
+  page,
+}) => {
   await stubEcosystem(page, bilingual)
   await serveMarkdown(page, EN_URL, '# Tampered\n')
   await serveMarkdown(page, ES_URL, ES_MARKDOWN)
@@ -184,7 +211,9 @@ test('the join wizard blocks accepting a document that does not match its digest
   await expect(next).toBeDisabled()
 })
 
-test('the join wizard takes the acceptance only once the shown document is checked', async ({ page }) => {
+test('joining from the participant tree takes the acceptance only once the shown document is checked', async ({
+  page,
+}) => {
   await stubEcosystem(page, bilingual)
   let release: (() => void) | undefined
   const held = new Promise<void>((resolve) => {
