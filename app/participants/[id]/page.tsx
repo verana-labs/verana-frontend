@@ -15,7 +15,13 @@ import { withAuthority } from '@/ui/common/participant-tree-filter'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import type { Role } from '@/ui/common/role-card'
 import type { Participant } from '@/ui/dataview/datasections/participant'
-import { nodeChildRoles, participantAuthority, roleColorClass, roleJoinColorClass } from '@/util/util'
+import {
+  childRoleOnboardingAction,
+  nodeChildRoles,
+  participantAuthority,
+  roleColorClass,
+  roleJoinColorClass,
+} from '@/util/util'
 
 type BuiltParticipant = Participant & { children: BuiltParticipant[] }
 type ChildRole = { role: Role; label: string; validation: boolean }
@@ -91,13 +97,7 @@ export default function ParticipantsPage() {
       roles.map((childRole) => ({
         nodeId: `group:${parent.id}:${childRole.role}`,
         name: childRole.label,
-        onboardingAction: isWalletConnected
-          ? childRole.validation
-            ? childRole.role === 'HOLDER' && Number(parent.validation_fees) === 0
-              ? 'LinkDID'
-              : 'MsgStartParticipantOP'
-            : 'MsgSelfCreateParticipant'
-          : 'Connect',
+        onboardingAction: childRoleOnboardingAction(childRole, isWalletConnected),
         onboardingLabel: childRole.validation ? 'onboarding process' : 'open',
         isCorporation: false,
         isValidator: false,
@@ -161,6 +161,7 @@ export default function ParticipantsPage() {
         ? nodeChildRoles(
             String(credentialSchema.issuerOnboardingMode),
             String(credentialSchema.verifierOnboardingMode),
+            credentialSchema.holderOnboardingMode,
             role ?? ''
           )
         : [],
