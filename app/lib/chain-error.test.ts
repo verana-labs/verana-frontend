@@ -43,6 +43,19 @@ describe('authorizationRejection', () => {
     ).toBe('signing corporation does not control this ecosystem')
   })
 
+  it('reads the VS operator conflicts of the delegation module', () => {
+    expect(
+      authorizationRejection(
+        'failed to execute message; message index: 0: OperatorAuthorization already exists for this corporation/vs_operator pair; mutual exclusivity violated'
+      )
+    ).toBe('OperatorAuthorization already exists for this corporation/vs_operator pair')
+    expect(
+      authorizationRejection(
+        'failed to execute message; message index: 0: vs_operator already has a VSOperatorAuthorization from a different corporation; single-corp constraint violated'
+      )
+    ).toBe('vs_operator already has a VSOperatorAuthorization from a different corporation')
+  })
+
   it('names an expired authorization', () => {
     expect(
       authorizationRejection(

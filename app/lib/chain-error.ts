@@ -6,6 +6,8 @@ const AUTHORIZATION_REJECTIONS = [
   /signing account is not the policy_address of a registered Corporation/,
   /signing corporation does not control this ecosystem/,
   /authorization check failed/,
+  /OperatorAuthorization already exists for this corporation\/vs_operator pair/,
+  /vs_operator already has a VSOperatorAuthorization from a different corporation/,
 ]
 
 export function authorizationRejection(text: string): string | null {
