@@ -16,6 +16,11 @@ const messages: EncodeObject[] = [
       did: 'did:web:corporation.example',
       language: 'en',
       docUrl: 'https://example.com/corporation.pdf',
+      decisionPolicy: {
+        rule: { kind: 'threshold', threshold: '1' },
+        votingPeriodSeconds: 60,
+        minExecutionPeriodSeconds: 0,
+      },
     },
     'verana1operator',
     'sha384-corporation'

@@ -3,14 +3,22 @@ import { MsgCreateCorporation } from '@verana-labs/verana-types/codec/verana/co/
 import { MsgGrantOperatorAuthorization } from '@verana-labs/verana-types/codec/verana/de/v1/tx'
 import { MsgSend } from 'cosmjs-types/cosmos/bank/v1beta1/tx'
 import { MsgSubmitProposal } from 'cosmjs-types/cosmos/group/v1/tx'
-import { ThresholdDecisionPolicy } from 'cosmjs-types/cosmos/group/v1/types'
+import { PercentageDecisionPolicy, ThresholdDecisionPolicy } from 'cosmjs-types/cosmos/group/v1/types'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { veranaAmino } from '@/config/veranaChain.sign.client'
+import type { DecisionPolicyInput } from '@/lib/decision-policy'
 import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
 import {
   buildCreateCorporationMessage,
   buildCreateCorporationMessages,
   buildGrantOperatorMessages,
 } from './actionCorporation'
+
+const THRESHOLD_POLICY: DecisionPolicyInput = {
+  rule: { kind: 'threshold', threshold: '1' },
+  votingPeriodSeconds: 60,
+  minExecutionPeriodSeconds: 0,
+}
 
 describe('buildCreateCorporationMessage', () => {
   it('round-trips the V4 corporation bootstrap and Cosmos group policy', () => {
@@ -19,6 +27,7 @@ describe('buildCreateCorporationMessage', () => {
         did: 'did:web:corporation.example',
         language: 'en',
         docUrl: 'https://example.com/corporation.pdf',
+        decisionPolicy: THRESHOLD_POLICY,
       },
       'verana1signer',
       'sha384-corporation'
@@ -44,10 +53,53 @@ describe('buildCreateCorporationMessage', () => {
     expect(decisionPolicy.windows?.votingPeriod?.seconds).toBe(BigInt(60))
     expect(decisionPolicy.windows?.minExecutionPeriod?.seconds).toBe(BigInt(0))
   })
+
+  it('carries a percentage policy and a minimum execution period, through Amino too', () => {
+    const message = buildCreateCorporationMessage(
+      {
+        did: 'did:web:corporation.example',
+        language: 'en',
+        docUrl: 'https://example.com/corporation.pdf',
+        decisionPolicy: {
+          rule: { kind: 'percentage', percentage: '0.5' },
+          votingPeriodSeconds: 300,
+          minExecutionPeriodSeconds: 3_600,
+        },
+      },
+      'verana1signer',
+      'sha384-corporation'
+    )
+    const value = MsgCreateCorporation.decode(
+      MsgCreateCorporation.encode(message.value as MsgCreateCorporation).finish()
+    )
+    expect(value.decisionPolicy?.typeUrl).toBe('/cosmos.group.v1.PercentageDecisionPolicy')
+    expect(PercentageDecisionPolicy.decode(value.decisionPolicy?.value ?? new Uint8Array())).toEqual({
+      percentage: '0.5',
+      windows: {
+        votingPeriod: { seconds: BigInt(300), nanos: 0 },
+        minExecutionPeriod: { seconds: BigInt(3_600), nanos: 0 },
+      },
+    })
+
+    const amino = veranaAmino.toAmino(message)
+    expect(amino.value.decision_policy).toEqual({
+      type: 'cosmos-sdk/PercentageDecisionPolicy',
+      value: {
+        percentage: '0.5',
+        windows: { voting_period: '300000000000', min_execution_period: '3600000000000' },
+      },
+    })
+    expect(veranaAmino.fromAmino(amino)).toEqual(message)
+  })
 })
 
 describe('buildCreateCorporationMessages', () => {
-  const params = { did: 'did:web:corporation.example', language: 'en', docUrl: 'https://example.com/corporation.pdf' }
+  const params = {
+    did: 'did:web:corporation.example',
+    language: 'en',
+    docUrl: 'https://example.com/corporation.pdf',
+    decisionPolicy: THRESHOLD_POLICY,
+  }
 
   afterEach(() => {
     vi.unstubAllGlobals()

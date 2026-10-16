@@ -303,8 +303,15 @@ test('the creation wizard gates each step and confirms the built message before 
   await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled()
   await page.getByRole('button', { name: 'Remove member' }).click()
   await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled()
+  await page.getByLabel('Decision policy').selectOption('percentage')
+  await page.getByLabel('Percentage (%)').fill('0')
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled()
+  await page.getByLabel('Percentage (%)').fill('66.67')
+  await page.getByLabel('Minimum execution period (seconds)').fill('3600')
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled()
   await page.getByRole('button', { name: 'Continue' }).click()
 
+  await expect(page.getByText('66.67% / 60s / 3600s')).toBeVisible()
   await expect(page.getByText(/you keep no personal privileges/)).toBeVisible()
   await page.getByRole('button', { name: 'Sign & create corporation' }).click()
 

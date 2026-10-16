@@ -7,12 +7,12 @@ import { MsgCreateCorporation } from '@verana-labs/verana-types/codec/verana/co/
 import { MsgGrantOperatorAuthorization } from '@verana-labs/verana-types/codec/verana/de/v1/tx'
 import { MsgSend } from 'cosmjs-types/cosmos/bank/v1beta1/tx'
 import { Exec, MsgSubmitProposal } from 'cosmjs-types/cosmos/group/v1/tx'
-import { ThresholdDecisionPolicy } from 'cosmjs-types/cosmos/group/v1/types'
 import { useRef } from 'react'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { findCorporationMembership, type UserCorporation } from '@/lib/corporation-discovery'
+import { type DecisionPolicyInput, encodeDecisionPolicy } from '@/lib/decision-policy'
 import { grantOperatorAuthorization, NO_GRANT_OPTIONS } from '@/lib/operator-grant'
 import type { CostLine, TxConfirmRequest, TxConfirmResult } from '@/lib/tx-preview'
 import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
@@ -32,8 +32,6 @@ import { useTxConfirm } from '@/providers/tx-confirm-provider'
 import { formatVNAFromUVNA, shortenMiddle } from '@/util/util'
 import { isValidHttpUrl } from '@/util/validations'
 
-const GROUP_VOTING_PERIOD_SECONDS = 60
-
 export interface CorporationMemberInput {
   address: string
   weight: string
@@ -44,8 +42,7 @@ export interface CreateCorporationParams {
   language: string
   docUrl: string
   members?: CorporationMemberInput[]
-  threshold?: string
-  votingPeriodSeconds?: number
+  decisionPolicy: DecisionPolicyInput
 }
 
 export function buildCreateCorporationMessage(
@@ -53,13 +50,6 @@ export function buildCreateCorporationMessage(
   signer: string,
   docDigestSri: string
 ): EncodeObject {
-  const policy = ThresholdDecisionPolicy.fromPartial({
-    threshold: params.threshold ?? '1',
-    windows: {
-      votingPeriod: { seconds: BigInt(params.votingPeriodSeconds ?? GROUP_VOTING_PERIOD_SECONDS), nanos: 0 },
-      minExecutionPeriod: { seconds: BigInt(0), nanos: 0 },
-    },
-  })
   const members = (params.members?.length ? params.members : [{ address: signer, weight: '1' }]).map((member) => ({
     address: member.address,
     weight: member.weight,
@@ -72,10 +62,7 @@ export function buildCreateCorporationMessage(
       members,
       groupMetadata: '',
       groupPolicyMetadata: '',
-      decisionPolicy: {
-        typeUrl: '/cosmos.group.v1.ThresholdDecisionPolicy',
-        value: ThresholdDecisionPolicy.encode(policy).finish(),
-      },
+      decisionPolicy: encodeDecisionPolicy(params.decisionPolicy),
       did: params.did,
       language: params.language,
       docUrl: params.docUrl,
