@@ -50,7 +50,7 @@ export const OPERATOR_GRANT_MESSAGE_TYPES = [
   '/verana.di.v1.MsgStoreDigest',
 ]
 
-const HARNESS_GRANTS_13 = [
+export const HARNESS_GRANTS_13 = [
   '/verana.co.v1.MsgUpdateCorporation',
   '/verana.de.v1.MsgGrantOperatorAuthorization',
   '/verana.de.v1.MsgRevokeOperatorAuthorization',

@@ -13,6 +13,7 @@ import {
   retargetAuthorizationOptions,
   retargetGrantOptions,
   retargetMessageTypes,
+  unlistedMsgTypes,
   updateGrantOptions,
 } from '@/lib/operator-grant'
 
@@ -43,6 +44,7 @@ export function useOperatorGrantDraft(
   const target = grantee.trim()
   const existingFeeGrant = feeGrantFor(feeGrants, target)
   const existingAuthorization = authorizationFor(authorizations, target)
+  const keptMsgTypes = unlistedMsgTypes(existingAuthorization)
 
   function setGrantee(next: string): boolean {
     const nextFeeGrant = feeGrantFor(feeGrants, next.trim())
@@ -65,7 +67,18 @@ export function useOperatorGrantDraft(
     setMsgTypes(grantMessageTypes(undefined))
   }
 
-  return { grantee, target, setGrantee, options, setOptions, msgTypes, setMsgTypes, existingFeeGrant, reset }
+  return {
+    grantee,
+    target,
+    setGrantee,
+    options,
+    setOptions,
+    msgTypes,
+    setMsgTypes,
+    keptMsgTypes,
+    existingFeeGrant,
+    reset,
+  }
 }
 
 export function OperatorGrantOptionsFields({

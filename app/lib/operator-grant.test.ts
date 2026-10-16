@@ -23,6 +23,7 @@ import {
   retargetGrantOptions,
   retargetMessageTypes,
   sameMsgTypes,
+  unlistedMsgTypes,
   updateGrantOptions,
   uvnaToVna,
   vnaToUvna,
@@ -454,6 +455,12 @@ describe('existing authorizations', () => {
     expect(prefilled).toEqual(['/verana.co.v1.MsgUpdateCorporation'])
     expect(retargetMessageTypes(prefilled, capped, undefined)).toEqual(all)
     const edited = [...prefilled, OPERATOR_GRANT_MESSAGE_TYPES[1]]
-    expect(retargetMessageTypes(edited, capped, undefined)).toEqual(edited)
+    expect(retargetMessageTypes(edited, capped, undefined)).toBe(edited)
+  })
+
+  it('keeps the held types the picker does not list and adds none to a new grant', () => {
+    expect(unlistedMsgTypes(capped)).toEqual(['/verana.de.v1.MsgGrantOperatorAuthorization'])
+    expect(unlistedMsgTypes(unlimited)).toEqual([])
+    expect(unlistedMsgTypes(undefined)).toEqual([])
   })
 })

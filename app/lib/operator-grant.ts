@@ -184,12 +184,18 @@ export function grantMessageTypes(authorization: ExistingAuthorization | undefin
   return OPERATOR_GRANT_MESSAGE_TYPES.filter((typeUrl) => authorization.msgTypes.includes(typeUrl))
 }
 
+export function unlistedMsgTypes(authorization: ExistingAuthorization | undefined): string[] {
+  if (!authorization) return []
+  const listed = new Set<string>(OPERATOR_GRANT_MESSAGE_TYPES)
+  return authorization.msgTypes.filter((typeUrl) => !listed.has(typeUrl))
+}
+
 export function retargetMessageTypes(
-  selected: readonly string[],
+  selected: string[],
   previous: ExistingAuthorization | undefined,
   next: ExistingAuthorization | undefined
 ): string[] {
-  return sameMsgTypes(selected, grantMessageTypes(previous)) ? grantMessageTypes(next) : [...selected]
+  return sameMsgTypes(selected, grantMessageTypes(previous)) ? grantMessageTypes(next) : selected
 }
 
 function validPeriod(seconds: number): boolean {

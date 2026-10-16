@@ -13,6 +13,7 @@ import type {
 } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
 import {
+  authorizationFor,
   feeGrantFor,
   formatIndexerPeriod,
   type OperatorGrantOptions,
@@ -258,7 +259,12 @@ export function GrantOperatorForm({
       onSubmit={(event) => {
         event.preventDefault()
         if (!canSubmit || !reading.options) return
-        void onGrant(target, draft.msgTypes, reading.options, draft.existingFeeGrant !== undefined).then((granted) => {
+        void onGrant(
+          target,
+          [...draft.msgTypes, ...draft.keptMsgTypes],
+          reading.options,
+          draft.existingFeeGrant !== undefined
+        ).then((granted) => {
           if (granted) draft.reset()
         })
       }}
@@ -269,7 +275,9 @@ export function GrantOperatorForm({
           <input
             value={draft.grantee}
             onChange={(event) => {
-              if (draft.setGrantee(event.target.value)) setShowOptions(true)
+              const value = event.target.value
+              if (draft.setGrantee(value)) setShowOptions(true)
+              if (authorizationFor(authorizations, value.trim())) setShowTypes(true)
             }}
             placeholder="verana1…"
             className="mt-2 w-full px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface"
@@ -317,6 +325,12 @@ export function GrantOperatorForm({
             </button>
           </div>
           <MsgTypeChips typeUrls={OPERATOR_GRANT_MESSAGE_TYPES} selected={selected} onToggle={toggle} />
+          {draft.keptMsgTypes.length > 0 ? (
+            <>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{translate('corporation.page.grant.kept')}</p>
+              <MsgTypeChips typeUrls={draft.keptMsgTypes} />
+            </>
+          ) : null}
         </div>
       ) : null}
       <button
