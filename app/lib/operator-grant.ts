@@ -3,7 +3,7 @@ import { veranaDenom } from '@/config/veranaChain.sign.client'
 import { translate } from '@/i18n/dataview'
 import type { CostLine } from '@/lib/tx-preview'
 import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
-import { formatVNAFromUVNA } from '@/util/util'
+import { formatDateTime, formatVNAFromUVNA, parseVNAExact } from '@/util/util'
 
 export interface GrantLimit {
   amountUvna: string
@@ -52,10 +52,8 @@ const MAX_GO_DURATION_DAYS = 106_751
 const UVNA_DECIMALS = 6
 
 export function vnaToUvna(text: string): string | null {
-  const match = /^(\d+)(?:\.(\d{1,6}))?$/.exec(text.trim())
-  if (!match) return null
-  const uvna = BigInt(match[1]) * BigInt(10 ** UVNA_DECIMALS) + BigInt((match[2] ?? '').padEnd(UVNA_DECIMALS, '0'))
-  return uvna > BigInt(0) ? uvna.toString() : null
+  const uvna = parseVNAExact(text)
+  return uvna !== null && uvna !== '0' ? uvna : null
 }
 
 export function uvnaToVna(uvna: string): string {
@@ -304,7 +302,7 @@ export function grantOptionLines(options: OperatorGrantOptions, replacesFeeGrant
     lines.push({ label: translate('delegation.spendLimit'), value: formatGrantLimit(options.spendLimit) })
   }
   if (options.expiration) {
-    lines.push({ label: translate('delegation.expiration'), value: options.expiration.toLocaleString() })
+    lines.push({ label: translate('delegation.expiration'), value: formatDateTime(options.expiration) })
   }
   const feeGrant = options.feeGrant
   lines.push({

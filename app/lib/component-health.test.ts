@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { indexerHealthFromResponse, parseIndexerStatus, parseRpcStatus } from './component-health'
+import { indexerHealthFromResponse, parseGraphHealth, parseIndexerStatus, parseRpcStatus } from './component-health'
 
 const NOW = Date.parse('2026-10-02T13:52:00Z')
 
@@ -58,5 +58,23 @@ describe('parseIndexerStatus', () => {
 
   it('rejects a payload without the status flags', () => {
     expect(() => parseIndexerStatus({ is_running: true })).toThrow('is_crawling')
+  })
+})
+
+describe('parseGraphHealth', () => {
+  it('reads a graph that keeps up with the indexer', () => {
+    expect(parseGraphHealth({ status: 'ok', lastAppliedBlock: 13459 }, 13479)).toBe('synced')
+  })
+
+  it('flags a graph more than twenty blocks behind the indexer', () => {
+    expect(parseGraphHealth({ status: 'ok', lastAppliedBlock: 13459 }, 13480)).toBe('stalled')
+  })
+
+  it('reads the graph as synced until the indexer height is known', () => {
+    expect(parseGraphHealth({ status: 'ok', lastAppliedBlock: 0 }, null)).toBe('synced')
+  })
+
+  it('rejects a payload without the applied block', () => {
+    expect(() => parseGraphHealth({ status: 'ok' }, 13459)).toThrow('lastAppliedBlock')
   })
 })

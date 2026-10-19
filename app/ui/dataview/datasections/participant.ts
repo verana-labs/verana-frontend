@@ -98,7 +98,7 @@ function feeFields(includeIssuance: boolean): Field<ParticipantData>[] {
       show: 'edit create',
       required: false,
       update: true,
-      validation: { type: 'Long', greaterThanOrEqual: 0 },
+      validation: { type: 'VNA' },
     },
   ]
   if (includeIssuance) {
@@ -110,7 +110,7 @@ function feeFields(includeIssuance: boolean): Field<ParticipantData>[] {
       show: 'edit create',
       required: false,
       update: true,
-      validation: { type: 'Long', greaterThanOrEqual: 0 },
+      validation: { type: 'VNA' },
     })
   }
   fields.push({
@@ -121,7 +121,7 @@ function feeFields(includeIssuance: boolean): Field<ParticipantData>[] {
     show: 'edit create',
     required: false,
     update: true,
-    validation: { type: 'Long', greaterThanOrEqual: 0 },
+    validation: { type: 'VNA' },
   })
   return fields
 }
@@ -225,7 +225,7 @@ export function getParticipantActionSections(
           show: 'edit',
           required: true,
           update: true,
-          validation: { type: 'Long', greaterThan: 0 },
+          validation: { type: 'VNA', greaterThan: 0 },
         },
         {
           name: 'reason',

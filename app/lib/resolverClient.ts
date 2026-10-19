@@ -136,7 +136,8 @@ function rememberCacheFailure(did: string, error: unknown): void {
 }
 
 function trustState(raw: ResolveResult, now: number): DidTrustState {
-  if (raw.trusted !== true) return 'UNTRUSTED'
+  if (typeof raw.trusted !== 'boolean') return 'UNRESOLVED'
+  if (!raw.trusted) return 'UNTRUSTED'
   if (raw.expiresAtTime && Date.parse(raw.expiresAtTime) <= now) return 'UNTRUSTED'
   return 'TRUSTED'
 }

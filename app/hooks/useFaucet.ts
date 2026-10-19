@@ -369,6 +369,22 @@ export function faucetErrorMessage(error: unknown): string {
   }
 }
 
+const SELF_EXPLAINED_ERRORS: ReadonlySet<string> = new Set([
+  'QUOTA_EXCEEDED',
+  'FAUCET_UNAVAILABLE',
+  'RATE_LIMITED',
+  'SIGN_ARBITRARY_UNSUPPORTED',
+  'AUTH_FAILED',
+  'UNAUTHORIZED',
+  'WALLET_NOT_CONNECTED',
+])
+
+export function faucetErrorDetails(error: unknown): string | null {
+  if (error instanceof FaucetError && SELF_EXPLAINED_ERRORS.has(error.code)) return null
+  const code = error instanceof FaucetError ? error.code : 'ERROR'
+  return `${code}: ${error instanceof Error ? error.message : String(error)}`
+}
+
 export function isAmountWithinLimit(amount: string, limit: string): boolean {
   try {
     const value = BigInt(amount)
