@@ -868,6 +868,7 @@
   "agents.card.endpoints.admin": "Open administration interface",
   "agents.degraded.ecosystems": "The controlled ecosystems could not be loaded, their pinned cards are missing.",
   "agents.degraded.delegations": "The delegation details could not be loaded, no accreditation row can be expanded.",
+  "agents.degraded.pending": "The pending onboarding processes could not be loaded, a pending accreditation may show its resolved state instead.",
   "agents.card.resolving": "Resolving\u2026",
   "agents.card.unavailable": "The resolver could not be reached, this agent's data is unavailable.",
   "agents.card.schema": "Schema",
