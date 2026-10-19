@@ -1,6 +1,12 @@
+import { fromBase64 } from '@cosmjs/encoding'
 import { expect, type Page, test } from '@playwright/test'
+import { MsgCreateRootParticipant } from '@verana-labs/verana-types/codec/verana/pp/v1/tx'
+import { MsgSubmitProposal } from 'cosmjs-types/cosmos/group/v1/tx'
+import { TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { connectWallet } from './support/connect'
 import { ACME_DID, HARNESS_MNEMONIC, installCorporationStubs, seedActingCorporation } from './support/corp-stubs'
+import { labelInput } from './support/forms'
+import { installMockChain } from './support/mock-chain'
 
 const TU_SCHEMA_ID = 77
 const COIN_SCHEMA_ID = 78
@@ -131,4 +137,37 @@ test('a schema priced in the native coin carries no notice and keeps its afforda
   await page.getByRole('button', { name: 'Show all' }).click()
   await expect(hidden).toBeHidden()
   await expect(page.getByRole('checkbox', { name: 'Unresolvable services' })).toBeChecked()
+})
+
+test('a participant created with VNA fees broadcasts them in uvna', async ({ page }) => {
+  test.setTimeout(120_000)
+  await installCorporationStubs(page)
+  await installSchemaStubs(page)
+  await seedActingCorporation(page, ECOSYSTEM_ID)
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubCorporation: false })
+  await page.goto(`/participants/${COIN_SCHEMA_ID}`)
+
+  await page.getByRole('button', { name: /New Participant/ }).click({ timeout: 15_000 })
+  await labelInput(page, 'DID').fill(ACME_DID)
+  await labelInput(page, 'Validation Fees (VNA)').fill('1.5')
+  await labelInput(page, 'Issuance Fees (VNA)').fill('0.25')
+  await labelInput(page, 'Verification Fees (VNA)').fill('2')
+  await page.locator('.btn-action-confirm').click()
+
+  const dialog = page.getByRole('dialog', { name: 'Confirm transaction' })
+  await expect(dialog.getByText('Network fee').locator('..')).toContainText(/VNA/, { timeout: 30_000 })
+  await dialog.getByRole('button', { name: 'Submit proposal' }).click()
+  await expect.poll(() => mock.broadcastTxs().length, { timeout: 30_000 }).toBe(1)
+
+  const body = TxBody.decode(TxRaw.decode(fromBase64(mock.broadcastTxs()[0])).bodyBytes)
+  expect(body.messages.map((message) => message.typeUrl)).toEqual(['/cosmos.group.v1.MsgSubmitProposal'])
+  const proposal = MsgSubmitProposal.decode(body.messages[0].value)
+  expect(proposal.messages.map((message) => message.typeUrl)).toEqual(['/verana.pp.v1.MsgCreateRootParticipant'])
+  const message = MsgCreateRootParticipant.decode(proposal.messages[0].value)
+  expect(message.schemaId).toBe(COIN_SCHEMA_ID)
+  expect(message.validationFees).toBe(1_500_000)
+  expect(message.issuanceFees).toBe(250_000)
+  expect(message.verificationFees).toBe(2_000_000)
+  await mock.teardown()
 })
