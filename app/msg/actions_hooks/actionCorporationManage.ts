@@ -21,7 +21,13 @@ import { veranaRegistry } from '@/config/veranaChain.sign.client'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
-import { grantOperatorAuthorization, grantOptionLines, type OperatorGrantOptions } from '@/lib/operator-grant'
+import {
+  formatIndexerPeriod,
+  formatPeriod,
+  grantOperatorAuthorization,
+  grantOptionLines,
+  type OperatorGrantOptions,
+} from '@/lib/operator-grant'
 import { trustCostLines } from '@/lib/trust-costs'
 import {
   type CostLine,
@@ -139,6 +145,45 @@ export function buildUpdateMembersMessage(
       memberUpdates: updates.map((update) => ({ address: update.address, weight: update.weight, metadata: '' })),
     }),
   }
+}
+
+export function memberChangeLines(
+  members: readonly GroupMemberUpdate[],
+  updates: readonly GroupMemberUpdate[]
+): CostLine[] {
+  const weights = new Map(members.map((member) => [member.address, member.weight]))
+  return updates.flatMap((update) => {
+    const before = weights.get(update.address)
+    if (before === update.weight || (before === undefined && update.weight === '0')) return []
+    const value =
+      before === undefined
+        ? translate('txconfirm.members.added', { weight: update.weight })
+        : update.weight === '0'
+          ? translate('txconfirm.members.removed')
+          : translate('txconfirm.members.weight', { from: before, to: update.weight })
+    return [{ label: shortenMiddle(update.address, 24), value }]
+  })
+}
+
+function change(before: string | null, after: string): string {
+  return before === null || before === after ? after : `${before} → ${after}`
+}
+
+export function decisionPolicyChangeLines(
+  policy: { threshold: string | null; votingPeriod: string | null },
+  threshold: string,
+  votingPeriodSeconds: number
+): CostLine[] {
+  return [
+    { label: translate('corporation.page.threshold'), value: change(policy.threshold, threshold) },
+    {
+      label: translate('corporation.page.votingperiod'),
+      value: change(
+        policy.votingPeriod === null ? null : formatIndexerPeriod(policy.votingPeriod),
+        formatPeriod(votingPeriodSeconds)
+      ),
+    },
+  ]
 }
 
 export function buildUpdateDecisionPolicyMessage(
@@ -400,7 +445,8 @@ export function useCorporationManage(onDone?: () => void) {
       membership: CorporationMembership,
       message: EncodeObject,
       title: string,
-      costLines?: CostLine[]
+      costLines?: CostLine[],
+      effectKey = 'txconfirm.effect.MsgSubmitProposal'
     ): Promise<boolean> => {
       if (!membership.member) {
         await notify(translate('error.msg.corporation.notauthorized'), 'error')
@@ -412,9 +458,7 @@ export function useCorporationManage(onDone?: () => void) {
       }
       return broadcast('MsgSubmitProposal', [wrapInProposal(membership, address, message, title, title)], {
         ...accountPreview(
-          translate('txconfirm.effect.MsgSubmitProposal', {
-            corporation: shortenMiddle(membership.corporation.did, 32),
-          }),
+          translate(effectKey, { corporation: shortenMiddle(membership.corporation.did, 32) }),
           address,
           message.typeUrl
         ),

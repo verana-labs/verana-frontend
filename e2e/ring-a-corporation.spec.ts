@@ -417,7 +417,8 @@ test('the corporation page and picker hold at mobile and tablet widths', async (
 test('the proposal composer gates each kind on valid input', async ({ page }) => {
   await installCorporationStubs(page)
   await seedActingCorporation(page, 13)
-  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubSri: false, stubCorporation: false })
 
   await page.goto('/corporation?tab=proposals')
   await page.getByRole('button', { name: 'New proposal' }).click()
@@ -443,17 +444,31 @@ test('the proposal composer gates each kind on valid input', async ({ page }) =>
   await expect(submit).toBeDisabled()
   await firstMember.fill(REPLACEMENT_MEMBER)
   await expect(submit).toBeEnabled()
+  const dialog = page.getByRole('dialog', { name: 'Confirm transaction' })
+  await submit.click()
+  await expect(dialog).toContainText('that updates its members.')
+  await expect(dialog).toContainText('Added with weight 3')
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(dialog).toBeHidden()
 
   await page.getByLabel('Proposal type').selectOption('policy')
   await page.getByLabel('Threshold').fill('0')
   await expect(submit).toBeDisabled()
   await page.getByLabel('Threshold').fill('2')
   await expect(submit).toBeEnabled()
+  await submit.click()
+  await expect(dialog).toContainText('that changes its decision policy.')
+  await expect(fact(dialog, 'Threshold')).toContainText('3 → 2')
+  await expect(fact(dialog, 'Voting period')).toContainText('5m')
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(dialog).toBeHidden()
 
   await page.getByLabel('Proposal type').selectOption('rotate')
   await expect(submit).toBeDisabled()
   await page.getByLabel('DID', { exact: true }).fill('did:web:next.example')
   await expect(submit).toBeEnabled()
+  expect(mock.broadcastTxs()).toEqual([])
+  await mock.teardown()
 })
 
 test('a vote opens the confirmation, cancel broadcasts nothing and confirm broadcasts once', async ({ page }) => {
@@ -788,9 +803,7 @@ test('a grant with an expiration, spend limits and a fee grant confirms and broa
   await expect(dialog).toBeVisible({ timeout: 30_000 })
   await expect(dialog).toContainText('for 22 message types')
   await expect(fact(dialog, 'Spend limit')).toContainText('5 VNA every 30d')
-  await expect(fact(dialog, 'Expiration')).toContainText(
-    await page.evaluate((value) => new Date(value).toLocaleString(), expiration)
-  )
+  await expect(fact(dialog, 'Expiration')).toContainText(`${expiration.replace('T', ' ')}:00`)
   await expect(fact(dialog, 'Grantee fee grant')).toContainText('2 VNA every 7d')
   await expect(fact(dialog, 'Network fee')).toContainText(/VNA/, { timeout: 30_000 })
   await dialog.getByRole('button', { name: 'Confirm' }).click()

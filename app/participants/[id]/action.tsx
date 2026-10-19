@@ -16,6 +16,7 @@ import {
   type ParticipantData,
 } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
+import { parseVNAExact } from '@/util/util'
 
 interface ParticipantActionProps {
   action: MsgTypeParticipant
@@ -23,6 +24,13 @@ interface ParticipantActionProps {
   onClose: () => void
   onRefresh?: (id?: string, txHeight?: number) => void
   setModalHidden?: () => void
+}
+
+function uvnaFromVNA(vna: string | number | undefined): string | undefined {
+  if (vna === undefined || vna === '') return undefined
+  const uvna = parseVNAExact(String(vna))
+  if (uvna === null) throw new Error(`Invalid VNA amount: ${vna}`)
+  return uvna
 }
 
 export default function ParticipantActionPage({
@@ -77,9 +85,9 @@ export default function ParticipantActionPage({
           msgType: action,
           id: participant.id,
           effectiveUntil: form.effectiveUntil,
-          validationFees: form.validationFees,
-          issuanceFees: form.issuanceFees,
-          verificationFees: form.verificationFees,
+          validationFees: uvnaFromVNA(form.validationFees),
+          issuanceFees: uvnaFromVNA(form.issuanceFees),
+          verificationFees: uvnaFromVNA(form.verificationFees),
           issuanceFeeDiscount: form.issuanceFeeDiscount,
           verificationFeeDiscount: form.verificationFeeDiscount,
           opSummaryDigest: form.opSummaryDigest,
@@ -92,7 +100,7 @@ export default function ParticipantActionPage({
         params = {
           msgType: action,
           id: participant.id,
-          amount: form.amount ?? 0,
+          amount: uvnaFromVNA(form.amount) ?? 0,
           reason: form.reason?.trim() ?? '',
         }
         break
@@ -103,9 +111,9 @@ export default function ParticipantActionPage({
           did: form.did ?? '',
           effectiveFrom: form.effectiveFrom,
           effectiveUntil: form.effectiveUntil,
-          validationFees: form.validationFees,
-          issuanceFees: form.issuanceFees,
-          verificationFees: form.verificationFees,
+          validationFees: uvnaFromVNA(form.validationFees),
+          issuanceFees: uvnaFromVNA(form.issuanceFees),
+          verificationFees: uvnaFromVNA(form.verificationFees),
         }
         break
       case 'MsgStartParticipantOP':
@@ -114,9 +122,9 @@ export default function ParticipantActionPage({
           role: participant.role,
           validatorParticipantId: participant.validator_participant_id ?? 0,
           did: form.did ?? '',
-          validationFees: form.validationFees,
-          issuanceFees: form.issuanceFees,
-          verificationFees: form.verificationFees,
+          validationFees: uvnaFromVNA(form.validationFees),
+          issuanceFees: uvnaFromVNA(form.issuanceFees),
+          verificationFees: uvnaFromVNA(form.verificationFees),
           validatorValidationFees,
         }
         break
@@ -128,9 +136,9 @@ export default function ParticipantActionPage({
           did: form.did ?? '',
           effectiveFrom: form.effectiveFrom,
           effectiveUntil: form.effectiveUntil,
-          validationFees: form.validationFees,
-          issuanceFees: form.issuanceFees,
-          verificationFees: form.verificationFees,
+          validationFees: uvnaFromVNA(form.validationFees),
+          issuanceFees: uvnaFromVNA(form.issuanceFees),
+          verificationFees: uvnaFromVNA(form.verificationFees),
         }
         break
     }

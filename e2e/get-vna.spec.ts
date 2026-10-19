@@ -165,7 +165,7 @@ test.describe('Get VNA panel', () => {
     await expect(alert).toBeVisible()
     await expect(alert).not.toContainText('QUOTA_EXCEEDED')
     await expect(alert).toContainText(/2099/)
-    // Per issue §3 the raw code stays in the notification details.
-    await expect(page.locator('.notify-error')).toContainText('QUOTA_EXCEEDED')
+    await expect(page.locator('.notify-error')).toContainText(en['getvna.window.hour'])
+    await expect(page.locator('.notify-error')).not.toContainText('QUOTA_EXCEEDED')
   })
 })
