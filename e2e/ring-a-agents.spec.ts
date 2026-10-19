@@ -162,6 +162,17 @@ test('a failed ecosystem or delegation load degrades instead of reading as empty
   await expect(delegated.getByRole('button')).toHaveCount(0)
 })
 
+test('a failed pending load says so instead of silently showing the resolved state', async ({ page }) => {
+  await openAgents(page, { pendingDown: true })
+
+  await expect(
+    page.getByText(
+      'The pending onboarding processes could not be loaded, a pending accreditation may show its resolved state instead.'
+    )
+  ).toBeVisible({ timeout: 15_000 })
+  await expect(page.locator(CARD).first()).toContainText(ACME_DID)
+})
+
 test('a resolver failure holds the unavailable state instead of reading as no data', async ({ page }) => {
   await openAgents(page, { resolverDown: true })
 

@@ -875,6 +875,7 @@
   "agents.card.endpoints.admin": "Abrir interfaz de administración",
   "agents.degraded.ecosystems": "No se pudieron cargar los ecosistemas controlados, faltan sus tarjetas fijadas.",
   "agents.degraded.delegations": "No se pudieron cargar los detalles de delegación, ninguna fila de acreditación se puede expandir.",
+  "agents.degraded.pending": "No se pudieron cargar los procesos de incorporación pendientes, una acreditación pendiente puede mostrar su estado resuelto.",
   "agents.card.resolving": "Resolviendo\u2026",
   "agents.card.unavailable": "No se pudo contactar al resolver, los datos de este agente no están disponibles.",
   "agents.card.schema": "Esquema",

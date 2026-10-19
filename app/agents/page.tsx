@@ -22,6 +22,7 @@ export default function AgentsPage() {
   const {
     agents,
     delegations,
+    pending,
     degraded,
     resolutions,
     unavailableDids,
@@ -73,10 +74,11 @@ export default function AgentsPage() {
 
       <AgentsFilterBar value={filters} onChange={setFilters} />
 
-      {degraded.ecosystems || degraded.delegations || partialError ? (
+      {degraded.ecosystems || degraded.delegations || degraded.pending || partialError ? (
         <div className="mb-4 space-y-1">
           {degraded.ecosystems ? <p className={DEGRADED}>{translate('agents.degraded.ecosystems')}</p> : null}
           {degraded.delegations ? <p className={DEGRADED}>{translate('agents.degraded.delegations')}</p> : null}
+          {degraded.pending ? <p className={DEGRADED}>{translate('agents.degraded.pending')}</p> : null}
           {partialError ? <p className={DEGRADED}>{translate('agents.error.more')}</p> : null}
         </div>
       ) : null}
@@ -106,6 +108,7 @@ export default function AgentsPage() {
                 resolution={resolutions.get(agent.did)}
                 unavailable={unavailableDids.has(agent.did)}
                 delegations={delegations}
+                pending={pending}
               />
             ))}
           </div>
