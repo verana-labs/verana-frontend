@@ -43,7 +43,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     logger.error('protocol params', protocolParamsResult.errorProtocolParams)
 
   return (
-    <html lang="en" className={`${inter.variable}`}>
+    <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
       <head>
         <PublicEnvScript />
       </head>
