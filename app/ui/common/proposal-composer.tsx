@@ -24,6 +24,7 @@ import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessa
 import { AddressIssueNote, addressIssue } from '@/ui/common/address-issue'
 import { OperatorGrantOptionsFields, useOperatorGrantDraft } from '@/ui/common/operator-grant-options'
 import { ThresholdHint } from '@/ui/common/threshold-hint'
+import { PartialNote } from '@/ui/corporation/shared'
 import { isValidDID } from '@/util/validations'
 
 const KINDS = ['grant', 'revoke', 'members', 'policy', 'rotate'] as const
@@ -38,6 +39,7 @@ export function ProposalComposer({
   members,
   authorizations,
   feeGrants,
+  partialGrants,
   onDone,
   onClose,
 }: {
@@ -46,6 +48,7 @@ export function ProposalComposer({
   members: GroupMemberRow[]
   authorizations: OperatorAuthorizationRow[]
   feeGrants: FeeGrantRow[]
+  partialGrants: boolean
   onDone: () => void
   onClose: () => void
 }) {
@@ -205,6 +208,7 @@ export function ProposalComposer({
 
       {kind === 'grant' ? (
         <div className="mt-3">
+          {partialGrants ? <PartialNote /> : null}
           <OperatorGrantOptionsFields
             value={draft.options}
             onChange={draft.setOptions}

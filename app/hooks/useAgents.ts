@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_ECOSYSTEM, VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
 import {
+  emptyWindow,
   parseVsOperatorAuthorizations,
   type VsOperatorAuthorizationRow,
   vsOperatorAuthorizationsUrl,
@@ -12,7 +13,14 @@ import { useLoadMore } from '@/hooks/useKeysetPages'
 import { parseParticipantsResponse } from '@/hooks/useParticipants'
 import { translate } from '@/i18n/dataview'
 import { type IndexerEvent, refreshesEntityLists, SESSION_EVENT } from '@/lib/indexer-event'
-import { applyKeysetParams, degrade, fetchJson, takeKeysetPage } from '@/lib/indexer-json'
+import {
+  applyKeysetParams,
+  degrade,
+  fetchJson,
+  fetchKeysetPages,
+  type KeysetWindow,
+  takeKeysetPage,
+} from '@/lib/indexer-json'
 import { logger } from '@/lib/logger'
 import {
   type AgentResolution,
@@ -138,6 +146,15 @@ async function nextPage<T>(url: string, context: string, parse: (payload: unknow
   return takeKeysetPage(parse(await fetchJson(url, context)), AGENTS_PAGE_SIZE)
 }
 
+export function fetchAgentDelegations(corporationId: number): Promise<KeysetWindow<VsOperatorAuthorizationRow[]>> {
+  return fetchKeysetPages(
+    vsOperatorAuthorizationsUrl(corporationId, false),
+    'authorizations',
+    'Unable to fetch VS operator authorizations',
+    parseVsOperatorAuthorizations
+  )
+}
+
 export async function allPages<T extends { id: string }>(
   url: (after?: string) => string,
   context: string,
@@ -193,6 +210,7 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
   const corporationDid = corporation?.did
   const [agents, setAgents] = useState<AgentEntry[]>([])
   const [delegations, setDelegations] = useState<Map<number, VsOperatorAuthorizationRow>>(new Map())
+  const [delegationsPartial, setDelegationsPartial] = useState(false)
   const [degraded, setDegraded] = useState<DegradedAgentSections>(NOTHING_DEGRADED)
   const [resolutions, setResolutions] = useState<Map<string, AgentResolution>>(new Map())
   const [unavailableDids, setUnavailableDids] = useState<ReadonlySet<string>>(new Set())
@@ -213,6 +231,7 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
         setAgentWindow(EMPTY_WINDOW)
         setAgents([])
         setDelegations(new Map())
+        setDelegationsPartial(false)
         setDegraded(NOTHING_DEGRADED)
         setError(null)
         setLoading(false)
@@ -255,11 +274,8 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
                   parseEcosystemsResponse
                 )
           ),
-          degrade('agents delegations', [] as VsOperatorAuthorizationRow[], () =>
-            fetchJson(
-              vsOperatorAuthorizationsUrl(corporationId, false),
-              'Unable to fetch VS operator authorizations'
-            ).then(parseVsOperatorAuthorizations)
+          degrade('agents delegations', emptyWindow<VsOperatorAuthorizationRow>(), () =>
+            fetchAgentDelegations(corporationId)
           ),
           degrade('agents pending', noMore<Participant>(), async () =>
             append
@@ -288,7 +304,8 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
             ),
           })
         )
-        setDelegations(new Map(authorizations.value.map((row) => [row.participantId, row])))
+        setDelegations(new Map(authorizations.value.value.map((row) => [row.participantId, row])))
+        setDelegationsPartial(authorizations.value.partial)
         setDegraded((previous) => ({
           ecosystems: append ? previous.ecosystems : ecosystems.failed,
           delegations: authorizations.failed,
@@ -363,6 +380,7 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
     agents,
     delegations,
     pending: agentWindow.pending,
+    delegationsPartial,
     degraded,
     resolutions,
     unavailableDids,

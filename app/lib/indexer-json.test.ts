@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AGENTS_PAGE_SIZE, agentEcosystemsUrl, agentParticipantsUrl } from '@/hooks/useAgents'
 import { ecosystemSchemasUrl } from '@/hooks/useCredentialSchemas'
 import { participantsListUrl } from '@/hooks/useParticipants'
 import { pendingParticipantsUrl } from '@/hooks/usePendingParticipants'
-import { applyKeysetParams, indexerValidators, takeKeysetPage } from './indexer-json'
+import { logger } from '@/lib/logger'
+import { applyKeysetParams, fetchKeysetPages, indexerValidators, takeKeysetPage } from './indexer-json'
 
 const {
   record,
@@ -134,6 +135,102 @@ describe('takeKeysetPage', () => {
 
   it('reports no next page for an empty window', () => {
     expect(takeKeysetPage([], 3)).toEqual({ items: [], hasNext: false })
+  })
+})
+
+describe('fetchKeysetPages', () => {
+  const rows = (from: number, count: number) => Array.from({ length: count }, (_, index) => ({ id: from - index }))
+  const count = (payload: Record<string, unknown[]>) => payload.items.length
+
+  function stubPages(pages: unknown[]) {
+    const fetchMock = vi.fn(async (_url: string) => ({ ok: true, json: async () => pages.shift() }))
+    vi.stubGlobal('fetch', fetchMock)
+    return fetchMock
+  }
+
+  beforeEach(() => {
+    vi.spyOn(logger, 'error').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('asks for the widest window the indexer accepts, newest first', async () => {
+    const fetchMock = stubPages([{ items: rows(3, 3) }])
+
+    await expect(fetchKeysetPages('https://idx.example/list?owner=7', 'items', 'list', count)).resolves.toEqual({
+      value: 3,
+      partial: false,
+    })
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(['https://idx.example/list?owner=7&limit=1024&sort=-id'])
+  })
+
+  it('follows the cursor past the first window until a short page', async () => {
+    const fetchMock = stubPages([{ items: rows(5000, 1024) }, { items: rows(3977, 10) }])
+
+    await expect(fetchKeysetPages('https://idx.example/list', 'items', 'list', count)).resolves.toEqual({
+      value: 1033,
+      partial: false,
+    })
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      'https://idx.example/list?limit=1024&sort=-id',
+      'https://idx.example/list?limit=1024&sort=-id&max_id=3978',
+    ])
+  })
+
+  it('stops at the page bound and reports the rows as partial', async () => {
+    const fetchMock = stubPages([{ items: rows(5000, 1024) }, { items: rows(3977, 1024) }])
+
+    await expect(
+      fetchKeysetPages('https://idx.example/list', 'items', 'list', count, { maxPages: 2 })
+    ).resolves.toEqual({
+      value: 2046,
+      partial: true,
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps the rows already read when a later page fails', async () => {
+    const pages: unknown[] = [{ items: rows(5000, 1024) }]
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        const page = pages.shift()
+        return page ? { ok: true, json: async () => page } : { ok: false, status: 502, json: async () => ({}) }
+      })
+    )
+
+    await expect(fetchKeysetPages('https://idx.example/list', 'items', 'list', count)).resolves.toEqual({
+      value: 1023,
+      partial: true,
+    })
+  })
+
+  it('still fails when the first page fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false, status: 502, json: async () => ({}) }))
+    )
+
+    await expect(fetchKeysetPages('https://idx.example/list', 'items', 'list', count)).rejects.toThrow('list: 502')
+  })
+
+  it('stops instead of counting a page that does not move past the cursor', async () => {
+    const fetchMock = stubPages([{ items: rows(5000, 1024) }, { items: rows(5000, 1024) }])
+
+    await expect(fetchKeysetPages('https://idx.example/list', 'items', 'list', count)).resolves.toEqual({
+      value: 1023,
+      partial: true,
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('rejects a page without its envelope', async () => {
+    stubPages([{}])
+
+    await expect(fetchKeysetPages('https://idx.example/list', 'items', 'list', count)).rejects.toThrow('items')
   })
 })
 

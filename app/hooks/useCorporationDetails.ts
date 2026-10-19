@@ -11,7 +11,7 @@ import {
 import { parseParticipantsResponse } from '@/hooks/useParticipants'
 import { type ActivityRow, parseActivityHistory } from '@/lib/activity-history'
 import { type GfVersion, parseGfVersions } from '@/lib/gf-document'
-import { degrade, fetchJson, indexerValidators } from '@/lib/indexer-json'
+import { degrade, fetchJson, fetchKeysetPages, indexerValidators, type KeysetWindow } from '@/lib/indexer-json'
 import { logger } from '@/lib/logger'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 
@@ -139,6 +139,14 @@ export interface DegradedSections {
   proposals: boolean
 }
 
+export interface PartialSections {
+  operatorAuthorizations: boolean
+  vsOperatorAuthorizations: boolean
+  feeGrants: boolean
+  participants: boolean
+  proposals: boolean
+}
+
 export interface CorporationDetails {
   profile: CorporationProfile
   governance: CorporationGovernance | null
@@ -152,6 +160,11 @@ export interface CorporationDetails {
   proposals: ProposalRow[]
   history: ActivityRow[]
   degraded: DegradedSections
+  partial: PartialSections
+}
+
+export function emptyWindow<T>(): KeysetWindow<T[]> {
+  return { value: [], partial: false }
 }
 
 function nullWhenMissing(cause: unknown): null {
@@ -287,7 +300,7 @@ export function parseCorporationFeeGrants(payload: unknown): FeeGrantRow[] {
 }
 
 export function corporationFeeGrantsUrl(corporationId: number): string {
-  return `${VERANA_REST_ENDPOINT_DELEGATION}/fee-grants?grantor_corporation_id=${corporationId}&only_active=true&limit=1024`
+  return `${VERANA_REST_ENDPOINT_DELEGATION}/fee-grants?grantor_corporation_id=${corporationId}&only_active=true`
 }
 
 export function parseVsOperatorAuthorizations(payload: unknown): VsOperatorAuthorizationRow[] {
@@ -318,7 +331,7 @@ export function parseVsOperatorAuthorizations(payload: unknown): VsOperatorAutho
 
 export function vsOperatorAuthorizationsUrl(corporationId: number, onlyActive: boolean): string {
   const active = onlyActive ? '&only_active=true' : ''
-  return `${VERANA_REST_ENDPOINT_DELEGATION}/vs-operator-authorizations?corporation_id=${corporationId}${active}&limit=1024`
+  return `${VERANA_REST_ENDPOINT_DELEGATION}/vs-operator-authorizations?corporation_id=${corporationId}${active}`
 }
 
 function parseTally(value: unknown, path: string): ProposalTally {
@@ -361,11 +374,7 @@ export interface VoteRow {
   submitTime: string | null
 }
 
-export async function fetchProposalVotes(proposalId: number): Promise<VoteRow[]> {
-  const payload = await fetchJson(
-    `${VERANA_REST_ENDPOINT_GROUP}/votes?proposal_id=${proposalId}&limit=1024`,
-    'Unable to fetch votes'
-  )
+export function parseVotes(payload: unknown): VoteRow[] {
   const envelope = record(payload, 'votes response')
   const rows = Array.isArray(envelope.votes) ? envelope.votes : []
   return rows.map((entry, index) => {
@@ -376,6 +385,15 @@ export async function fetchProposalVotes(proposalId: number): Promise<VoteRow[]>
       submitTime: nullableString(row.submit_time ?? null, `votes[${index}].submit_time`),
     }
   })
+}
+
+export function fetchProposalVotes(proposalId: number): Promise<KeysetWindow<VoteRow[]>> {
+  return fetchKeysetPages(
+    `${VERANA_REST_ENDPOINT_GROUP}/votes?proposal_id=${proposalId}`,
+    'votes',
+    'Unable to fetch votes',
+    parseVotes
+  )
 }
 
 export async function fetchCorporationHistory(corporationId: number): Promise<ActivityRow[]> {
@@ -391,14 +409,14 @@ export async function fetchCorporationHistory(corporationId: number): Promise<Ac
   }
 }
 
-export function useProposalVotes(proposalId: number): VoteRow[] | null | undefined {
-  const [votes, setVotes] = useState<VoteRow[] | null>()
+export function useProposalVotes(proposalId: number): KeysetWindow<VoteRow[]> | null | undefined {
+  const [votes, setVotes] = useState<KeysetWindow<VoteRow[]> | null>()
 
   useEffect(() => {
     let cancelled = false
     fetchProposalVotes(proposalId)
-      .then((rows) => {
-        if (!cancelled) setVotes(rows)
+      .then((loaded) => {
+        if (!cancelled) setVotes(loaded)
       })
       .catch((cause: unknown) => {
         logger.error(`proposal ${proposalId} votes`, cause)
@@ -430,39 +448,50 @@ export function useCorporationDetails(corporationId: number | undefined) {
     setError(null)
     try {
       const degrading = Promise.all([
-        degrade('operator authorizations', [] as OperatorAuthorizationRow[], () =>
-          fetchJson(
-            `${VERANA_REST_ENDPOINT_DELEGATION}/operator-authorizations?corporation_id=${corporationId}&only_active=true&limit=1024`,
-            'Unable to fetch operator authorizations'
-          ).then(parseOperatorAuthorizations)
+        degrade('operator authorizations', emptyWindow<OperatorAuthorizationRow>(), () =>
+          fetchKeysetPages(
+            `${VERANA_REST_ENDPOINT_DELEGATION}/operator-authorizations?corporation_id=${corporationId}&only_active=true`,
+            'authorizations',
+            'Unable to fetch operator authorizations',
+            parseOperatorAuthorizations
+          )
         ),
-        degrade('proposals', [] as ProposalRow[], () =>
-          fetchJson(
-            `${VERANA_REST_ENDPOINT_GROUP}/proposals?corporation_id=${corporationId}&limit=1024`,
-            'Unable to fetch proposals'
-          ).then(parseProposals)
+        degrade('proposals', emptyWindow<ProposalRow>(), () =>
+          fetchKeysetPages(
+            `${VERANA_REST_ENDPOINT_GROUP}/proposals?corporation_id=${corporationId}`,
+            'proposals',
+            'Unable to fetch proposals',
+            parseProposals
+          )
         ),
         degrade('trust deposit', null as CorporationTrustDeposit | null, () =>
           fetchJson(`${VERANA_REST_ENDPOINT_TRUST_DEPOSIT}/get/${corporationId}`, 'Unable to fetch the trust deposit')
             .then(parseTrustDeposit)
             .catch(nullWhenMissing)
         ),
-        degrade('vs operator authorizations', [] as VsOperatorAuthorizationRow[], () =>
-          fetchJson(
+        degrade('vs operator authorizations', emptyWindow<VsOperatorAuthorizationRow>(), () =>
+          fetchKeysetPages(
             vsOperatorAuthorizationsUrl(corporationId, true),
-            'Unable to fetch VS operator authorizations'
-          ).then(parseVsOperatorAuthorizations)
+            'authorizations',
+            'Unable to fetch VS operator authorizations',
+            parseVsOperatorAuthorizations
+          )
         ),
-        degrade('fee grants', [] as FeeGrantRow[], () =>
-          fetchJson(corporationFeeGrantsUrl(corporationId), 'Unable to fetch fee grants').then(
+        degrade('fee grants', emptyWindow<FeeGrantRow>(), () =>
+          fetchKeysetPages(
+            corporationFeeGrantsUrl(corporationId),
+            'fee_grants',
+            'Unable to fetch fee grants',
             parseCorporationFeeGrants
           )
         ),
-        degrade('corporation participants', new Map<number, Participant>(), () =>
-          fetchJson(
-            `${VERANA_REST_ENDPOINT_PARTICIPANT}/list?corporation_id=${corporationId}&limit=1024`,
-            'Unable to fetch the corporation participants'
-          ).then((payload) => new Map(parseParticipantsResponse(payload).map((row) => [Number(row.id), row])))
+        degrade('corporation participants', { value: new Map<number, Participant>(), partial: false }, () =>
+          fetchKeysetPages(
+            `${VERANA_REST_ENDPOINT_PARTICIPANT}/list?corporation_id=${corporationId}`,
+            'participants',
+            'Unable to fetch the corporation participants',
+            (payload) => new Map(parseParticipantsResponse(payload).map((row) => [Number(row.id), row]))
+          )
         ),
         fetchCorporationHistory(corporationId),
       ])
@@ -486,11 +515,11 @@ export function useCorporationDetails(corporationId: number | undefined) {
         members,
         policy,
         trustDeposit: trustDeposit.value,
-        operatorAuthorizations: authorizations.value,
-        vsOperatorAuthorizations: vsAuthorizations.value,
-        feeGrants: feeGrants.value,
-        participantsById: participants.value,
-        proposals: proposals.value,
+        operatorAuthorizations: authorizations.value.value,
+        vsOperatorAuthorizations: vsAuthorizations.value.value,
+        feeGrants: feeGrants.value.value,
+        participantsById: participants.value.value,
+        proposals: proposals.value.value,
         history,
         degraded: {
           trustDeposit: trustDeposit.failed,
@@ -498,6 +527,13 @@ export function useCorporationDetails(corporationId: number | undefined) {
           vsOperatorAuthorizations: vsAuthorizations.failed,
           feeGrants: feeGrants.failed,
           proposals: proposals.failed,
+        },
+        partial: {
+          operatorAuthorizations: authorizations.value.partial,
+          vsOperatorAuthorizations: vsAuthorizations.value.partial,
+          feeGrants: feeGrants.value.partial,
+          participants: participants.value.partial,
+          proposals: proposals.value.partial,
         },
       })
     } catch (cause) {

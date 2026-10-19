@@ -23,6 +23,7 @@ export default function AgentsPage() {
     agents,
     delegations,
     pending,
+    delegationsPartial,
     degraded,
     resolutions,
     unavailableDids,
@@ -84,7 +85,7 @@ export default function AgentsPage() {
       ) : null}
 
       <section id="agents-grid" className="mb-8">
-        {hasNext ? (
+        {hasNext || delegationsPartial ? (
           <p className="pb-2 text-xs text-neutral-70 dark:text-neutral-70">{translate('pagination.loadedOnly')}</p>
         ) : null}
         {error && !partialError ? (

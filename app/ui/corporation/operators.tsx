@@ -22,7 +22,7 @@ import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 import { formatVNAFromUVNA, participantCardHref, roleBadgeClass, shortenDID } from '@/util/util'
 import { groupMsgTypes, MODULE_LABELS } from './msg-type-groups'
-import { Card, Fact, formatDate, SectionTitle, SectionUnavailable, YouBadge } from './shared'
+import { Card, Fact, formatDate, PartialNote, SectionTitle, SectionUnavailable, YouBadge } from './shared'
 
 const CHIP = 'text-xs px-2 py-1 rounded-md border max-w-full break-all text-left'
 const CHIP_ON =
@@ -487,6 +487,8 @@ export function OperatorsSection({
   degradedOperators,
   degradedAgents,
   degradedFeeGrants,
+  partialOperators,
+  partialAgents,
   onRevoke,
   onGrant,
 }: {
@@ -500,6 +502,8 @@ export function OperatorsSection({
   degradedOperators: boolean
   degradedAgents: boolean
   degradedFeeGrants: boolean
+  partialOperators: boolean
+  partialAgents: boolean
   onRevoke: (operator: string) => void
   onGrant: (
     grantee: string,
@@ -515,6 +519,7 @@ export function OperatorsSection({
         <div className="mb-3">
           <SectionTitle>{translate('corporation.page.operators')}</SectionTitle>
         </div>
+        {partialOperators ? <PartialNote /> : null}
         <ul className="divide-y divide-neutral-20 dark:divide-neutral-70">
           {authorizations.map((authorization) => (
             <OperatorRow
@@ -554,6 +559,7 @@ export function OperatorsSection({
             {translate('corporation.page.agents.link')}
           </Link>
         </div>
+        {partialAgents ? <PartialNote /> : null}
         <ul className="divide-y divide-neutral-20 dark:divide-neutral-70">
           {agentAccounts.map(([vsOperator, records]) => (
             <AgentAccountRow

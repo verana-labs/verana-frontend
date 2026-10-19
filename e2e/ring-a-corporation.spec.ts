@@ -365,6 +365,30 @@ test('a cancelled creation leaves the wizard through the sidebar', async ({ page
   await mock.teardown()
 })
 
+test('operators past the first indexer window are counted and listed', async ({ page }) => {
+  await installCorporationStubs(page)
+  const filler = Array.from({ length: 1024 }, (_, index) => ({
+    id: 5000 - index,
+    corporation_id: 13,
+    operator: `verana1filler${index}`,
+    msg_types: ['/verana.ec.v1.MsgCreateEcosystem'],
+  }))
+  await page.route('**/v4/delegation/operator-authorizations*', (route) => {
+    const params = new URL(route.request().url()).searchParams
+    if (params.get('corporation_id') !== '13') return route.fallback()
+    expect(params.get('limit')).toBe('1024')
+    return params.has('max_id') ? route.fallback() : route.fulfill({ json: { authorizations: filler } })
+  })
+  await seedActingCorporation(page, 13)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  await page.goto('/corporation')
+  await expect(fact(page.locator('#overview'), 'Operators')).toContainText('1025', { timeout: 15_000 })
+  await page.goto('/corporation?tab=operators')
+  await expect(page.locator('#operators li').filter({ hasText: SECOND_OPERATOR })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByText('Only the first entries of this list are loaded.')).toBeHidden()
+})
+
 test('a missing trust deposit renders the empty state', async ({ page }) => {
   await installCorporationStubs(page, { trustDeposit404: true })
   await seedActingCorporation(page, 13)

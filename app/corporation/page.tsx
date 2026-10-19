@@ -163,6 +163,7 @@ export default function CorporationPage() {
         members={members}
         authorizations={details.operatorAuthorizations}
         feeGrants={details.feeGrants}
+        partialGrants={details.partial.operatorAuthorizations || details.partial.feeGrants}
         onDone={refreshAfterTx}
         onClose={() => setComposing(false)}
       />

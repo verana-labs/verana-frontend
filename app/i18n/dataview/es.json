@@ -484,6 +484,7 @@
   "pagination.next": "Página siguiente",
   "pagination.showMore": "Mostrar más",
   "pagination.loadedOnly": "El orden y los filtros se aplican solo a los resultados cargados.",
+  "pagination.truncated": "Solo se cargaron las primeras entradas de esta lista.",
   "datatable.ecosystem.pagination.ecosystems": "ecosistemas",
   "datatable.ecosystem.header.id": "Id",
   "datatable.ecosystem.header.did": "DID",

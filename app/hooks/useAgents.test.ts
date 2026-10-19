@@ -5,9 +5,11 @@ import {
   agentRefreshNeeded,
   allPages,
   buildAgentList,
+  fetchAgentDelegations,
   withPendingAccreditations,
 } from '@/hooks/useAgents'
 import type { IndexerEvent } from '@/lib/indexer-event'
+import { logger } from '@/lib/logger'
 import type { ResolvedParticipation } from '@/lib/resolverClient'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 
@@ -193,5 +195,48 @@ describe('allPages', () => {
     const page = await allPages(url, 'ctx', parse)
     expect(page.items).toHaveLength(AGENTS_PAGE_SIZE + 2)
     expect(urls).toEqual(['https://indexer/list', 'https://indexer/list?max_id=6'])
+  })
+})
+
+describe('fetchAgentDelegations', () => {
+  const authorization = (id: number) => ({
+    id,
+    vs_operator: `verana1vsop${id}`,
+    records: [{ participant_id: id, msg_types: [] }],
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('reads every VS operator authorization when the windows end', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => ({ authorizations: [authorization(2), authorization(1)] }) }))
+    )
+
+    const delegations = await fetchAgentDelegations(13)
+
+    expect(delegations.partial).toBe(false)
+    expect(delegations.value.map((row) => row.participantId)).toEqual([2, 1])
+  })
+
+  it('flags the delegations as partial when a later window cannot be read', async () => {
+    vi.spyOn(logger, 'error').mockImplementation(() => {})
+    const firstWindow = Array.from({ length: 1024 }, (_, index) => authorization(5000 - index))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) =>
+        url.includes('max_id=')
+          ? { ok: false, status: 502, json: async () => ({}) }
+          : { ok: true, json: async () => ({ authorizations: firstWindow }) }
+      )
+    )
+
+    const delegations = await fetchAgentDelegations(13)
+
+    expect(delegations.partial).toBe(true)
+    expect(delegations.value).toHaveLength(1023)
   })
 })

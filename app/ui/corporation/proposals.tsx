@@ -14,7 +14,7 @@ import {
 import { translate } from '@/i18n/dataview'
 import type { VoteChoice } from '@/msg/actions_hooks/actionCorporationManage'
 import { shortenMiddle } from '@/util/util'
-import { Card, formatDate, formatRelative, SectionTitle, SectionUnavailable, StatusBadge } from './shared'
+import { Card, formatDate, formatRelative, PartialNote, SectionTitle, SectionUnavailable, StatusBadge } from './shared'
 
 const FILTERS = ['all', 'SUBMITTED', 'ACCEPTED', 'REJECTED', 'ABORTED', 'WITHDRAWN'] as const
 type Filter = (typeof FILTERS)[number]
@@ -111,7 +111,7 @@ function ProposalDetail({ proposal, ctx }: { proposal: ProposalRow; ctx: Proposa
   const votes = useProposalVotes(proposal.id)
   const open = ctx.isMember && proposal.status === 'SUBMITTED'
   const votable = open && !hasEnded(proposal.votingPeriodEnd)
-  const voted = votes == null || votes.some((vote) => vote.voter === ctx.walletAddress)
+  const voted = votes == null || votes.value.some((vote) => vote.voter === ctx.walletAddress)
   const withdrawable = open && ctx.walletAddress !== undefined && proposal.proposers.includes(ctx.walletAddress)
   const executable = ctx.isMember && proposal.status === 'ACCEPTED' && proposal.executorResult !== 'SUCCESS'
 
@@ -129,15 +129,16 @@ function ProposalDetail({ proposal, ctx }: { proposal: ProposalRow; ctx: Proposa
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
           {translate('corporation.proposals.votes')}
         </p>
+        {votes?.partial ? <PartialNote /> : null}
         {votes === undefined ? (
           <p className="text-sm text-gray-500">…</p>
         ) : votes === null ? (
           <p className="text-sm text-red-600 dark:text-red-400">{translate('corporation.proposals.voteserror')}</p>
-        ) : votes.length === 0 ? (
+        ) : votes.value.length === 0 ? (
           <p className="text-sm text-gray-500">{translate('corporation.proposals.novotes')}</p>
         ) : (
           <ul className="text-sm text-gray-700 dark:text-gray-200 space-y-1">
-            {votes.map((vote) => (
+            {votes.value.map((vote) => (
               <li key={vote.voter} className="flex items-center gap-2">
                 <span className="font-mono">{shortenMiddle(vote.voter, 24)}</span>
                 <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-surface-muted dark:bg-neutral-70/40">
@@ -229,6 +230,7 @@ export function ProposalsSection({
   ctx,
   composing,
   degraded,
+  partial,
   onCompose,
   composer,
 }: {
@@ -236,6 +238,7 @@ export function ProposalsSection({
   ctx: ProposalContext
   composing: boolean
   degraded: boolean
+  partial: boolean
   onCompose: () => void
   composer: ReactNode
 }) {
@@ -257,6 +260,7 @@ export function ProposalsSection({
         ) : null}
       </div>
       {composing ? composer : null}
+      {partial ? <PartialNote filtered /> : null}
       <div className="flex flex-wrap gap-1.5 mb-4">
         {FILTERS.map((entry) => {
           const count = entry === 'all' ? proposals.length : proposals.filter((p) => p.status === entry).length

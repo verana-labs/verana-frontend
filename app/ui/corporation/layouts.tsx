@@ -15,7 +15,7 @@ import { MembersSection } from './members'
 import { OperatorsSection } from './operators'
 import { OverviewFacts } from './overview'
 import { type ProposalContext, ProposalsSection } from './proposals'
-import { Card, SectionTitle } from './shared'
+import { atLeast, Card, SectionTitle } from './shared'
 import { TrustDepositSection } from './trust-deposit'
 
 export const TABS = ['overview', 'members', 'governance', 'deposit', 'operators', 'proposals'] as const
@@ -90,6 +90,8 @@ function section(view: CorporationView, tab: CorporationTab) {
           degradedOperators={details.degraded.operatorAuthorizations}
           degradedAgents={details.degraded.vsOperatorAuthorizations}
           degradedFeeGrants={details.degraded.feeGrants}
+          partialOperators={details.partial.operatorAuthorizations || details.partial.feeGrants}
+          partialAgents={details.partial.vsOperatorAuthorizations || details.partial.participants}
           onRevoke={view.onRevoke}
           onGrant={view.onGrant}
         />
@@ -101,6 +103,7 @@ function section(view: CorporationView, tab: CorporationTab) {
           ctx={view.proposalCtx}
           composing={view.composing}
           degraded={details.degraded.proposals}
+          partial={details.partial.proposals}
           onCompose={view.onCompose}
           composer={view.composer}
         />
@@ -139,7 +142,7 @@ export function TabsLayout({
           {translate(`corporation.tab.${entry}`)}
           {entry === 'proposals' && view.openProposals > 0 ? (
             <span className="ml-2 min-w-4 h-4 px-1 bg-red-500 text-white text-xs font-bold rounded-full inline-flex items-center justify-center leading-none">
-              {view.openProposals}
+              {atLeast(view.openProposals, view.details.partial.proposals)}
             </span>
           ) : null}
         </button>
