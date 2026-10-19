@@ -104,8 +104,7 @@ export default function GetVNAPanel({ onClose, onRefresh }: GetVNAPanelProps) {
       const link = explorerTxLink(result.txHash)
       if (result.status === 'confirmed') {
         void notify(translate('notification.getvna.success'), 'success', title, link)
-        // Per [VFE-TX-UX-2] the refresh waits for the indexer block, the same as the other account actions.
-        onRefresh?.(undefined, result.height)
+        onRefresh?.()
       } else {
         void notify(translate('notification.getvna.pending'), 'info', title, link)
       }

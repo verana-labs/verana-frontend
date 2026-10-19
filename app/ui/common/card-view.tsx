@@ -1,6 +1,6 @@
 'use client'
 
-import { faCheckCircle, faLock } from '@fortawesome/free-solid-svg-icons'
+import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import clsx from 'clsx'
 import { ResolvedDataField } from '../dataview/types'
@@ -41,12 +41,6 @@ export default function CardView<T>({ field, data, largeTexts }: CardViewProps<T
                 <span className="text-success-600 dark:text-success-400 flex items-center">
                   <FontAwesomeIcon icon={faCheckCircle} />
                   Available
-                </span>
-              )}
-              {field.name === 'totalTrustDeposit' && (
-                <span className="text-blue-600 dark:text-blue-400 flex items-center">
-                  <FontAwesomeIcon icon={faLock} />
-                  Locked
                 </span>
               )}
               {/* <span className="text-neutral-70 dark:text-neutral-70">Last updated: 2 min ago</span> */}

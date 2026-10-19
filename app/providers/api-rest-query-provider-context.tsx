@@ -1,11 +1,11 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { type AccountBalanceData, useAccountBalance } from '@/hooks/useAccountBalance'
 import { type EcosystemSchemaPage, useCredentialSchemasByEcosystem } from '@/hooks/useCredentialSchemas'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { useEcosystems } from '@/hooks/useEcosystems'
 import { usePendingParticipants } from '@/hooks/usePendingParticipants'
-import { TrustDepositAccountData, useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { coalesceIndexerEvents, refreshTargets } from '@/lib/indexer-event'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
@@ -54,7 +54,7 @@ type EcosystemsCtxValue = KeysetPageControls & {
 }
 
 type AccountCtxValue = {
-  accountData: TrustDepositAccountData
+  accountData: AccountBalanceData
   refetch: () => Promise<void>
 }
 
@@ -73,7 +73,7 @@ const DashboardContext = createContext<DashboardCtxValue | undefined>(undefined)
 
 export function RestQueryProvider({ children }: { children: React.ReactNode }) {
   const { dashboardData, refetch: refetchDashboard } = useDashboardData()
-  const { accountData, refetch: refetchAccountData } = useTrustDepositAccountData()
+  const { accountData, refetch: refetchAccountData } = useAccountBalance()
   const {
     pendingParticipants,
     loading: pendingParticipantsLoading,

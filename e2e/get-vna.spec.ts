@@ -1,4 +1,4 @@
-import { expect, type Page, test } from '@playwright/test'
+import { expect, type Page, type Request, test } from '@playwright/test'
 import en from '../app/i18n/dataview/en.json'
 import { connectWallet } from './support/connect'
 
@@ -99,13 +99,20 @@ test.describe('Get VNA panel', () => {
   }) => {
     const account = await stubFaucetAuth(page)
     let authorization = ''
+    let answered = false
     await page.route('**/v1/faucet', async (route) => {
       authorization = route.request().headers().authorization ?? ''
+      answered = true
       await route.fulfill({ status: 200, json: dispenseBody('confirmed', account()) })
     })
+    const balanceQuery = (request: Request) => (request.postData() ?? '').includes('cosmos.bank.v1beta1.Query/Balance')
+    const initialBalance = page.waitForResponse((response) => balanceQuery(response.request()))
     await openGetVNA(page, infoBody())
+    await initialBalance
+    const balanceRefresh = page.waitForRequest((request) => answered && balanceQuery(request))
 
     await requestVNA(page)
+    await balanceRefresh
 
     await expect(
       page.getByRole('status').getByText(en['getvna.result.received'].replace('{amount}', '1 VNA'))

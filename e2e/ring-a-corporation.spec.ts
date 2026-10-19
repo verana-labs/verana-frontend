@@ -6,6 +6,7 @@ import { MsgSubmitProposal } from 'cosmjs-types/cosmos/group/v1/tx'
 import { TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { connectWallet } from './support/connect'
 import {
+  ACME_ECOSYSTEM_DID,
   ACME_POLICY_ADDRESS,
   CGF_ACTIVE_13,
   cgfVersion,
@@ -73,6 +74,43 @@ test('first-connect chooser, persistence and picker re-scoping', async ({ page }
   await page.reload()
   await expect(page.getByRole('heading', { name: /did:web:keplr/ })).toBeVisible({ timeout: 15_000 })
   await expect(page.getByText('Choose your acting corporation')).toBeHidden()
+})
+
+test('switching the acting corporation closes a form opened for the previous one', async ({ page }) => {
+  await installCorporationStubs(page)
+  await installEcosystemStubs(page, [EGF_ACTIVE_13, EGF_DRAFT_13])
+  await seedActingCorporation(page, 13)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  await page.goto('/ecosystems/13')
+  await page.getByRole('button', { name: /^Edit Configuration/ }).click()
+  const did = page.getByPlaceholder('did:method:identifier')
+  await did.fill('did:web:typed-before-the-switch.example')
+
+  await page
+    .getByRole('button', { name: /Acme Trust AG/ })
+    .first()
+    .click()
+  await page.getByRole('menuitem', { name: /Acme Trust AG/ }).click()
+  await expect(page.getByRole('menuitem', { name: /Acme Trust AG/ })).toBeHidden()
+  await expect(did).toHaveValue('did:web:typed-before-the-switch.example')
+  await expect(page.getByRole('button', { name: /Acme Trust AG/ }).first()).toBeVisible()
+
+  await page
+    .getByRole('button', { name: /Acme Trust AG/ })
+    .first()
+    .click()
+  await page.getByRole('menuitem', { name: /did:web:kepl/ }).click()
+  await expect(page.getByRole('button', { name: /did:web:kepl/ }).first()).toBeVisible({ timeout: 15_000 })
+  await expect(did).toBeHidden()
+
+  await page
+    .getByRole('button', { name: /did:web:kepl/ })
+    .first()
+    .click()
+  await page.getByRole('menuitem', { name: /Acme Trust AG/ }).click()
+  await page.getByRole('button', { name: /^Edit Configuration/ }).click()
+  await expect(did).toHaveValue(ACME_ECOSYSTEM_DID)
 })
 
 test('tabs, deep links and proposal actions', async ({ page }) => {

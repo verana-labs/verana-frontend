@@ -103,6 +103,24 @@ export default function CsCard({ credentialSchema, onSelect, selected }: CsCardP
                   </span>
                 </p>
               </div>
+
+              {credentialSchema.holderOnboardingMode ? (
+                <div>
+                  <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
+                    {resolveTranslatable({ key: 'dataview.cs.fields.holderOnboardingMode' }, translate)}
+                  </label>
+                  <p>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getModePillClass(
+                        credentialSchema.holderOnboardingMode,
+                        '_HOLDER'
+                      )}`}
+                    >
+                      {credentialSchema.holderOnboardingMode}
+                    </span>
+                  </p>
+                </div>
+              ) : null}
             </div>
 
             <button
