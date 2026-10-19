@@ -37,9 +37,10 @@ export interface AgentEntry {
 export interface DegradedAgentSections {
   ecosystems: boolean
   delegations: boolean
+  pending: boolean
 }
 
-const NOTHING_DEGRADED: DegradedAgentSections = { ecosystems: false, delegations: false }
+const NOTHING_DEGRADED: DegradedAgentSections = { ecosystems: false, delegations: false, pending: false }
 
 interface AgentSources {
   corporationDid: string
@@ -288,7 +289,11 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
           })
         )
         setDelegations(new Map(authorizations.value.map((row) => [row.participantId, row])))
-        setDegraded({ ecosystems: ecosystems.failed, delegations: authorizations.failed })
+        setDegraded((previous) => ({
+          ecosystems: append ? previous.ecosystems : ecosystems.failed,
+          delegations: authorizations.failed,
+          pending: append ? previous.pending : pending.failed,
+        }))
       } catch (cause) {
         if (requestRef.current !== requestId) return
         if (!append) {

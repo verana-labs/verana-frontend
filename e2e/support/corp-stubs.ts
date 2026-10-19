@@ -285,17 +285,19 @@ export async function stubEcosystemList(page: Page) {
 export type AgentStubOptions = {
   ecosystemsDown?: boolean
   delegationsDown?: boolean
+  pendingDown?: boolean
   resolverDown?: boolean
 }
 
 export async function installAgentStubs(page: Page, opts: AgentStubOptions = {}) {
-  const { ecosystemsDown = false, delegationsDown = false, resolverDown = false } = opts
+  const { ecosystemsDown = false, delegationsDown = false, pendingDown = false, resolverDown = false } = opts
 
   await page.route('**/v4/participant/list*', (route) => {
     const params = new URL(route.request().url()).searchParams
     if (params.get('corporation_id') !== '13') return route.fulfill({ json: { participants: [] } })
     const wanted = params.get('participant_state')
     const opState = params.get('op_state')
+    if (pendingDown && opState === 'PENDING') return route.fulfill(unavailable)
     const participants = AGENT_PARTICIPANTS.filter(
       (participant) =>
         (!wanted || participant.participant_state === wanted) && (!opState || participant.op_state === opState)
