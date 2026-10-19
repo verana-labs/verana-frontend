@@ -171,3 +171,24 @@ test('a participant created with VNA fees broadcasts them in uvna', async ({ pag
   expect(message.verificationFees).toBe(2_000_000)
   await mock.teardown()
 })
+
+test('escape closes only the top action modal', async ({ page }) => {
+  await open(page, COIN_SCHEMA_ID)
+
+  const joinModal = page.getByRole('heading', { name: /^Join Ecosystem - / })
+  const newParticipantModal = page.getByRole('heading', { name: 'New Participant', level: 3 })
+  await page.getByRole('button', { name: 'Show all' }).click({ timeout: 15_000 })
+  await page.getByRole('button', { name: /^join/i }).first().click()
+  await expect(joinModal).toBeVisible()
+
+  await page.getByRole('button', { name: /New Participant/ }).focus()
+  await page.keyboard.press('Enter')
+  await expect(newParticipantModal).toBeVisible()
+
+  await page.keyboard.press('Escape')
+  await expect(joinModal).toBeHidden()
+  await expect(newParticipantModal).toBeVisible()
+
+  await page.keyboard.press('Escape')
+  await expect(newParticipantModal).toBeHidden()
+})
