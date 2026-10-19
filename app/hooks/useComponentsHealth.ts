@@ -18,6 +18,17 @@ async function readStatus(url: string, signal: AbortSignal): Promise<{ status: n
   return { status: response.status, body: await response.json().catch(() => null) }
 }
 
+function poll(check: () => void, controller: AbortController): () => void {
+  check()
+  const timer = window.setInterval(() => {
+    if (!document.hidden) check()
+  }, POLL_MS)
+  return () => {
+    controller.abort()
+    window.clearInterval(timer)
+  }
+}
+
 export function useComponentsHealth() {
   const veranaChain = useVeranaChain()
   const rpcEndpoint = veranaChain?.apis?.rpc?.[0]?.address
@@ -59,12 +70,24 @@ export function useComponentsHealth() {
       }
     }
 
+    const check = () => {
+      void checkChain()
+      void checkIndexer()
+    }
+
+    return poll(check, controller)
+  }, [rpcEndpoint, setState])
+
+  useEffect(() => {
+    if (!VERANA_GRAPH_URL) return
+    const graphUrl = `${VERANA_GRAPH_URL}/health`
+    const controller = new AbortController()
+
     const checkGraph = async () => {
-      if (!VERANA_GRAPH_URL || !indexerKnown) return
       try {
-        const { status, body } = await readStatus(`${VERANA_GRAPH_URL}/health`, controller.signal)
+        const { status, body } = await readStatus(graphUrl, controller.signal)
         if (status < 200 || status >= 300) throw new Error(`Graph health responded ${status}`)
-        const health = parseGraphHealth(body, indexerBlock.current)
+        const health = parseGraphHealth(body, indexerKnown ? indexerBlock.current : null)
         setState((prev) => ({ ...prev, graph: { ...prev.graph, health } }))
       } catch (error) {
         if (controller.signal.aborted) return
@@ -73,19 +96,6 @@ export function useComponentsHealth() {
       }
     }
 
-    const check = () => {
-      void checkChain()
-      void checkIndexer()
-      void checkGraph()
-    }
-
-    check()
-    const timer = window.setInterval(() => {
-      if (!document.hidden) check()
-    }, POLL_MS)
-    return () => {
-      controller.abort()
-      window.clearInterval(timer)
-    }
-  }, [rpcEndpoint, setState, indexerKnown])
+    return poll(() => void checkGraph(), controller)
+  }, [setState, indexerKnown])
 }
