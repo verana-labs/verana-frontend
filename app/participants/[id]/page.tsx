@@ -9,6 +9,7 @@ import { useEcosystemData } from '@/hooks/useEcosystemData'
 import { participantsPageKey, useParticipants } from '@/hooks/useParticipants'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
+import { isHolderOnboardingMode } from '@/lib/participant-onboarding'
 import { isNativePricing } from '@/lib/pricing-asset'
 import ParticipantTree, { mergeTrees, ROOT_NODE_ID } from '@/ui/common/participant-tree'
 import { withAuthority } from '@/ui/common/participant-tree-filter'
@@ -161,7 +162,9 @@ export default function ParticipantsPage() {
         ? nodeChildRoles(
             String(credentialSchema.issuerOnboardingMode),
             String(credentialSchema.verifierOnboardingMode),
-            credentialSchema.holderOnboardingMode,
+            isHolderOnboardingMode(credentialSchema.holderOnboardingMode)
+              ? credentialSchema.holderOnboardingMode
+              : null,
             role ?? ''
           )
         : [],

@@ -4,6 +4,7 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faCrown, faEye } from '@fortawesome/free-solid-svg-icons'
 import { SHOW_PARTICIPANT_EXPIRE_BEFORE_DAYS } from '@/config/env'
 import { translate } from '@/i18n/dataview'
+import type { HolderOnboardingMode } from '@/lib/participant-onboarding'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import { Role } from '@/ui/common/role-card'
 import type { OnboardingProcessState, ParticipantRole, ParticipantState } from '@/ui/dataview/datasections/participant'
@@ -411,7 +412,7 @@ export function rolesSchema(issuerOnboardingMode: string, verifierOnboardingMode
 export function nodeChildRoles(
   issuerOnboardingMode: string,
   verifierOnboardingMode: string,
-  holderOnboardingMode: string | number | null,
+  holderOnboardingMode: HolderOnboardingMode | null,
   role: string
 ): { role: Role; label: string; validation: boolean }[] {
   const roles = new Set<{ role: Role; label: string; validation: boolean }>()

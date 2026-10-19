@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { HolderOnboardingMode } from '@/lib/participant-onboarding'
 import {
   childRoleOnboardingAction,
   countryCodeToFlag,
@@ -472,7 +473,7 @@ describe('role class helpers', () => {
 })
 
 describe('nodeChildRoles', () => {
-  const holderValidation = (holderMode: string | null) =>
+  const holderValidation = (holderMode: HolderOnboardingMode | null) =>
     nodeChildRoles('OPEN', 'OPEN', holderMode, 'ISSUER').map((child) => [child.role, child.validation])
 
   it('onboards holders through the issuer only under the issuer onboarding process', () => {
