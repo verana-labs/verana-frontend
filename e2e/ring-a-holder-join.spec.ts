@@ -5,6 +5,7 @@ import { ACME_DID, HARNESS_MNEMONIC, installCorporationStubs } from './support/c
 
 const PERMISSIONLESS_SCHEMA_ID = 81
 const ISSUER_OP_SCHEMA_ID = 82
+const UNSET_MODE_SCHEMA_ID = 83
 const ECOSYSTEM_ID = 13
 const ISSUER_DID = 'did:web:northwind.example'
 const ISSUER_NAME = 'Northwind Credentials'
@@ -18,7 +19,7 @@ const ISSUER_TRUST_DATA = {
   ecsCredentials: [{ ecsSchema: 'ServiceCredential', credentialSubject: { name: ISSUER_NAME } }],
 }
 
-function schema(id: number, holderOnboardingMode: string) {
+function schema(id: number, holderOnboardingMode: string | null) {
   return {
     id,
     ecosystem_id: ECOSYSTEM_ID,
@@ -66,6 +67,7 @@ async function installTreeStubs(page: Page, services: unknown[]) {
   for (const [id, mode] of [
     [PERMISSIONLESS_SCHEMA_ID, 'PERMISSIONLESS'],
     [ISSUER_OP_SCHEMA_ID, 'ISSUER_ONBOARDING_PROCESS'],
+    [UNSET_MODE_SCHEMA_ID, null],
   ] as const) {
     await page.route(`**/v4/credential-schema/get/${id}*`, (route) =>
       route.fulfill({ json: { schema: schema(id, mode) } })
@@ -131,6 +133,7 @@ test('a permissionless holder join links to the website the issuer publishes', a
 
   await (await openHolders(page, PERMISSIONLESS_SCHEMA_ID)).click()
 
+  await expect(treeRow(page, 'Holders').getByText('Permissionless', { exact: true })).toBeVisible()
   await expect(page.getByText("Get this credential from the issuer's website: northwind.example")).toBeVisible({
     timeout: 15_000,
   })
@@ -168,6 +171,19 @@ test('a permissionless holder join asks to contact an issuer that publishes no w
 
   await expect(page.getByText(CONTACT_MESSAGE)).toBeVisible({ timeout: 15_000 })
   await expect(page.getByRole('link', { name: "Visit the issuer's website" })).toHaveCount(0)
+})
+
+test('a schema without a holder onboarding mode sends the holder to the issuer like a permissionless one', async ({
+  page,
+}) => {
+  await installTreeStubs(page, [{ id: `${ISSUER_DID}#website`, type: 'LinkedDomains', serviceEndpoint: WEBSITE }])
+
+  await (await openHolders(page, UNSET_MODE_SCHEMA_ID)).click()
+
+  await expect(treeRow(page, 'Holders').getByText('Permissionless', { exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: "Visit the issuer's website" })).toHaveAttribute('href', WEBSITE, {
+    timeout: 15_000,
+  })
 })
 
 test('a permissionless holder join says when the issuer services could not be loaded', async ({ page }) => {

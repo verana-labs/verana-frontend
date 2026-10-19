@@ -18,6 +18,7 @@ import type { Role } from '@/ui/common/role-card'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 import {
   childRoleOnboardingAction,
+  childRoleOnboardingLabel,
   nodeChildRoles,
   participantAuthority,
   roleColorClass,
@@ -99,7 +100,7 @@ export default function ParticipantsPage() {
         nodeId: `group:${parent.id}:${childRole.role}`,
         name: childRole.label,
         onboardingAction: childRoleOnboardingAction(childRole, isWalletConnected),
-        onboardingLabel: childRole.validation ? 'onboarding process' : 'open',
+        onboardingLabel: childRoleOnboardingLabel(childRole),
         isCorporation: false,
         isValidator: false,
         group: true,

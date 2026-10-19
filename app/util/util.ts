@@ -480,6 +480,12 @@ export function childRoleOnboardingAction(
   return childRole.validation ? 'MsgStartParticipantOP' : 'MsgSelfCreateParticipant'
 }
 
+export function childRoleOnboardingLabel(childRole: { role: Role; validation: boolean }): string {
+  if (childRole.validation) return 'onboarding process'
+  if (childRole.role !== 'HOLDER') return 'open'
+  return resolveTranslatable({ key: 'dataview.cs.managementMode.PERMISSIONLESS' }, translate) ?? 'Permissionless'
+}
+
 // Takes "YYYY-MM-DD" and returns an ISO string with today's time (+1 min) applied to that date.
 // Example: "2026-02-06" -> "2026-02-06T15:21:00.000Z" (depending on timezone)
 export function withCurrentLocalTimePlusOneMinute(dateStr: string): string {

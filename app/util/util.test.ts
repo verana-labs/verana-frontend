@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { HolderOnboardingMode } from '@/lib/participant-onboarding'
 import {
   childRoleOnboardingAction,
+  childRoleOnboardingLabel,
   countryCodeToFlag,
   countryNameFromCode,
   expireBeforeDays,
@@ -501,5 +502,13 @@ describe('childRoleOnboardingAction', () => {
   it('self-creates open roles once a wallet is connected', () => {
     expect(childRoleOnboardingAction({ role: 'VERIFIER', validation: false }, true)).toBe('MsgSelfCreateParticipant')
     expect(childRoleOnboardingAction({ role: 'VERIFIER', validation: false }, false)).toBe('Connect')
+  })
+})
+
+describe('childRoleOnboardingLabel', () => {
+  it('names the permissionless holder mode instead of open', () => {
+    expect(childRoleOnboardingLabel({ role: 'HOLDER', validation: false })).toBe('Permissionless')
+    expect(childRoleOnboardingLabel({ role: 'VERIFIER', validation: false })).toBe('open')
+    expect(childRoleOnboardingLabel({ role: 'HOLDER', validation: true })).toBe('onboarding process')
   })
 })
