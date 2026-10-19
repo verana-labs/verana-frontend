@@ -54,6 +54,15 @@ export function parseVNA(formatted: string, decimals: number = 6): string {
   return micro.toString()
 }
 
+const VNA_AMOUNT = /^(\d+)(?:\.(\d{1,6}))?$/
+const UVNA_PER_VNA = BigInt(1_000_000)
+
+export function parseVNAExact(text: string): string | null {
+  const match = VNA_AMOUNT.exec(text.trim())
+  if (!match) return null
+  return (BigInt(match[1]) * UVNA_PER_VNA + BigInt((match[2] ?? '').padEnd(6, '0'))).toString()
+}
+
 export function shortenMiddle(str: string, maxLength: number): string {
   if (str === null || str.length <= maxLength) return str
   const keep = Math.floor((maxLength - 3) / 2)

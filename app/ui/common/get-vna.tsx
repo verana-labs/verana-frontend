@@ -4,9 +4,9 @@ import { faCircleCheck, faClock, faTriangleExclamation } from '@fortawesome/free
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  FaucetError,
   type FaucetInfo,
   type FaucetResult,
+  faucetErrorDetails,
   faucetErrorMessage,
   faucetUnavailableMessage,
   isAmountWithinLimit,
@@ -104,18 +104,15 @@ export default function GetVNAPanel({ onClose, onRefresh }: GetVNAPanelProps) {
       const link = explorerTxLink(result.txHash)
       if (result.status === 'confirmed') {
         void notify(translate('notification.getvna.success'), 'success', title, link)
-        // Per [VFE-TX-UX-2] the refresh waits for the indexer block, the same as the other account actions.
-        onRefresh?.(undefined, result.height)
+        onRefresh?.()
       } else {
         void notify(translate('notification.getvna.pending'), 'info', title, link)
       }
     } catch (error) {
       const message = faucetErrorMessage(error)
       setState({ kind: 'error', info, message })
-      // Per [VFE-TX-UX-1] the raw error stays in the notification details.
-      const code = error instanceof FaucetError ? error.code : 'ERROR'
-      const raw = error instanceof Error ? error.message : String(error)
-      void notify(`${code}: ${raw}`, 'error', message)
+      const details = faucetErrorDetails(error)
+      void notify(details ?? message, 'error', details === null ? title : message)
     }
   }
 

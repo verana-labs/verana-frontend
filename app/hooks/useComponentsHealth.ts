@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
-import { VERANA_REST_ENDPOINT_INDEXER } from '@/config/env'
+import { useEffect, useRef } from 'react'
+import { VERANA_GRAPH_URL, VERANA_REST_ENDPOINT_INDEXER } from '@/config/env'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
-import { indexerHealthFromResponse, parseRpcStatus } from '@/lib/component-health'
+import { indexerHealthFromResponse, parseGraphHealth, parseRpcStatus } from '@/lib/component-health'
 import { logger } from '@/lib/logger'
 import { useComponentsVersion } from '@/providers/components-version-provider'
 
@@ -18,10 +18,27 @@ async function readStatus(url: string, signal: AbortSignal): Promise<{ status: n
   return { status: response.status, body: await response.json().catch(() => null) }
 }
 
+function poll(check: () => void, controller: AbortController): () => void {
+  check()
+  const timer = window.setInterval(() => {
+    if (!document.hidden) check()
+  }, POLL_MS)
+  return () => {
+    controller.abort()
+    window.clearInterval(timer)
+  }
+}
+
 export function useComponentsHealth() {
   const veranaChain = useVeranaChain()
   const rpcEndpoint = veranaChain?.apis?.rpc?.[0]?.address
-  const { setState } = useComponentsVersion()
+  const { state, setState } = useComponentsVersion()
+  const indexerBlock = useRef<number | null>(null)
+  const indexerKnown = state.indexer.lastProcessedBlock !== null
+
+  useEffect(() => {
+    indexerBlock.current = state.indexer.lastProcessedBlock
+  }, [state.indexer.lastProcessedBlock])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -58,13 +75,27 @@ export function useComponentsHealth() {
       void checkIndexer()
     }
 
-    check()
-    const timer = window.setInterval(() => {
-      if (!document.hidden) check()
-    }, POLL_MS)
-    return () => {
-      controller.abort()
-      window.clearInterval(timer)
-    }
+    return poll(check, controller)
   }, [rpcEndpoint, setState])
+
+  useEffect(() => {
+    if (!VERANA_GRAPH_URL) return
+    const graphUrl = `${VERANA_GRAPH_URL}/health`
+    const controller = new AbortController()
+
+    const checkGraph = async () => {
+      try {
+        const { status, body } = await readStatus(graphUrl, controller.signal)
+        if (status < 200 || status >= 300) throw new Error(`Graph health responded ${status}`)
+        const health = parseGraphHealth(body, indexerKnown ? indexerBlock.current : null)
+        setState((prev) => ({ ...prev, graph: { ...prev.graph, health } }))
+      } catch (error) {
+        if (controller.signal.aborted) return
+        logger.error('Failed to load graph health', error)
+        setState((prev) => ({ ...prev, graph: { ...prev.graph, health: 'unreachable' } }))
+      }
+    }
+
+    return poll(() => void checkGraph(), controller)
+  }, [setState, indexerKnown])
 }

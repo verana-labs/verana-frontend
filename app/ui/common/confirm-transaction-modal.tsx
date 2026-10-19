@@ -6,12 +6,12 @@ import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { LOW_BALANCE_WARN_UVNA, VERANA_FAUCET_URL } from '@/config/env'
+import { useAccountBalance } from '@/hooks/useAccountBalance'
 import { type FeeGrantLookup, useFeeGrant } from '@/hooks/useFeeGrant'
-import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
 import { simulationFor, type TxSimulation, useTxSimulation } from '@/hooks/useTxSimulation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
-import { authorizationRejection } from '@/lib/chain-error'
+import { authorizationRejection, chainRejection } from '@/lib/chain-error'
 import { feeGrantCovering, nativeFeeAmount } from '@/lib/fee-grant'
 import { balanceWarning, totalDebitUvna } from '@/lib/trust-costs'
 import {
@@ -41,7 +41,7 @@ function simulationRejection(message: string): string {
   const reason = authorizationRejection(message)
   return reason
     ? t('txconfirm.simulation.unauthorized', { reason })
-    : t('txconfirm.simulation.rejected', { msg: message })
+    : t('txconfirm.simulation.rejected', { msg: chainRejection(message) ?? message })
 }
 
 function proposalPolicy(msgs: EncodeObject[]): string {
@@ -143,7 +143,7 @@ export function ConfirmTransactionModal({
   const { msgs, buildProposalMsgs } = request
   const fallbackTitle = request.proposalTitle ?? ''
   const composing = request.mode === 'proposal' && buildProposalMsgs !== undefined
-  const { accountData, errorAccountData } = useTrustDepositAccountData()
+  const { accountData, errorAccountData } = useAccountBalance()
   const [balanceWaitOver, setBalanceWaitOver] = useState(false)
   const balanceUnknown = accountData.balance === null && (errorAccountData !== null || balanceWaitOver)
   const [title, setTitle] = useState(fallbackTitle)
@@ -177,10 +177,12 @@ export function ConfirmTransactionModal({
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') onCancel()
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      onCancel()
     }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
+    window.addEventListener('keydown', onKeyDown, true)
+    return () => window.removeEventListener('keydown', onKeyDown, true)
   }, [onCancel])
 
   const proposal = request.mode === 'proposal'

@@ -3,6 +3,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Image from 'next/image'
 import Link from 'next/link'
+import { VERANA_GRAPH_URL } from '@/config/env'
 import { translate } from '@/i18n/dataview'
 import type { ChainHealth, IndexerHealth } from '@/lib/component-health'
 import { communityLinks, configFooter } from '@/lib/dashlinks'
@@ -62,6 +63,15 @@ export function Footer() {
             <HealthBadge state={state.indexer.health.state} reason={state.indexer.health.reason} />
           ) : null}
         </span>
+        {VERANA_GRAPH_URL ? (
+          <>
+            <span>{resolveTranslatable({ key: 'footer.graph' }, translate)}</span>
+            <span className="inline-flex items-center gap-1.5">
+              {state.graph.version ?? resolveTranslatable({ key: 'footer.version' }, translate)}
+              {state.graph.health ? <HealthBadge state={state.graph.health} /> : null}
+            </span>
+          </>
+        ) : null}
         <span>{resolveTranslatable({ key: 'footer.frontend' }, translate)}</span>
         <span>{state.frontend.version ?? resolveTranslatable({ key: 'footer.version' }, translate)}</span>
       </div>

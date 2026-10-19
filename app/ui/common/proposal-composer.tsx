@@ -15,7 +15,9 @@ import {
   buildUpdateCorporationMessage,
   buildUpdateDecisionPolicyMessage,
   buildUpdateMembersMessage,
+  decisionPolicyChangeLines,
   type GroupMemberUpdate,
+  memberChangeLines,
   useCorporationManage,
 } from '@/msg/actions_hooks/actionCorporationManage'
 import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
@@ -90,7 +92,7 @@ export function ProposalComposer({
             ? policyValid
             : isValidDID(did.trim())
 
-  function compose(): { message: EncodeObject; title: string; costLines?: CostLine[] } {
+  function compose(): { message: EncodeObject; title: string; costLines?: CostLine[]; effectKey?: string } {
     switch (kind) {
       case 'grant': {
         if (!grantReading.options) throw new Error(translate(grantReading.issue))
@@ -109,11 +111,15 @@ export function ProposalComposer({
         return {
           message: buildUpdateMembersMessage(membership, policy.groupId, trimmedUpdates),
           title: 'Update the group members',
+          costLines: memberChangeLines(members, trimmedUpdates),
+          effectKey: 'txconfirm.effect.proposal.members',
         }
       case 'policy':
         return {
           message: buildUpdateDecisionPolicyMessage(membership, threshold, Number(votingPeriod)),
           title: `Set the decision policy to ${threshold} of ${policy.totalWeight} over ${votingPeriod}s`,
+          costLines: decisionPolicyChangeLines(policy, threshold, Number(votingPeriod)),
+          effectKey: 'txconfirm.effect.proposal.policy',
         }
       default:
         return {
@@ -126,8 +132,8 @@ export function ProposalComposer({
   async function submit() {
     setSubmitting(true)
     try {
-      const { message, title, costLines } = compose()
-      if (await manage.propose(membership, message, title, costLines)) {
+      const { message, title, costLines, effectKey } = compose()
+      if (await manage.propose(membership, message, title, costLines, effectKey)) {
         draft.reset()
         onClose()
       }

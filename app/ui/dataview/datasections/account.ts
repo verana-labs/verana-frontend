@@ -1,21 +1,15 @@
-import { faCoins, faPlus, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
+import { faCoins, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { createElement, Fragment } from 'react'
 import { Section } from '@/ui/dataview/types'
-import { formatNumber, formatVNAFromUVNA } from '@/util/util'
+import { formatVNAFromUVNA } from '@/util/util'
 
 const t = (key: string) => ({ key })
 
 //Account data
 export interface AccountData {
   balance: string | null
-  totalTrustDeposit: string | null
-  message: string | null
   getVNA?: string | null // action type
   network: string | null
-  corporationId: number | null
-  policyAddress: string | null
-  operatorAuthorized: boolean
-  slashCount: number | null
 }
 
 // Sections configuration for AccountData
@@ -33,17 +27,6 @@ export const accountSections: Section<AccountData>[] = [
         description: t('dataview.account.fields.balance.desc'),
         icon: faCoins,
         iconClass: 'bg-gradient-to-br from-primary-500 to-primary-700',
-        iconColorClass: 'text-white text-xl',
-        hasStats: true,
-        format: (value) => formatVNAFromUVNA(String(value)),
-      },
-      {
-        name: 'totalTrustDeposit',
-        type: 'data',
-        label: t('dataview.account.fields.totalTrustDeposit.label'),
-        description: t('dataview.account.fields.totalTrustDeposit.desc'),
-        icon: faShieldHalved,
-        iconClass: 'bg-gradient-to-br from-blue-500 to-blue-700',
         iconColorClass: 'text-white text-xl',
         hasStats: true,
         format: (value) => formatVNAFromUVNA(String(value)),
@@ -85,20 +68,6 @@ export const accountSections: Section<AccountData>[] = [
               String(value)
             )
           ),
-      },
-      {
-        name: 'corporationId',
-        label: t('dataview.account.fields.corporationId'),
-        type: 'data',
-        format: (value) => (value == null ? '' : formatNumber(value, false, true)),
-      },
-      { name: 'policyAddress', label: t('dataview.account.fields.policyAddress'), type: 'data' },
-      { name: 'operatorAuthorized', label: t('dataview.account.fields.operatorAuthorized'), type: 'data' },
-      {
-        name: 'slashCount',
-        label: t('dataview.account.fields.slashCount'),
-        type: 'data',
-        format: (value) => (value == null ? '' : formatNumber(value, false, true)),
       },
     ],
   },

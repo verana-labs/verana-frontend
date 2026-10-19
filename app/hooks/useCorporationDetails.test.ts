@@ -19,6 +19,7 @@ import {
   parseProposals,
   parseTrustDeposit,
   parseVsOperatorAuthorizations,
+  proposalTallyScale,
 } from './useCorporationDetails'
 
 describe('parseProfile', () => {
@@ -168,7 +169,14 @@ describe('parseGroup', () => {
       { address: 'verana1aaa', weight: '3', addedAt: '2026-08-25T20:34:20.109Z' },
       { address: 'verana1bbb', weight: '2', addedAt: null },
     ])
-    expect(policy).toEqual({ threshold: '3', votingPeriod: '300s', totalWeight: '5', groupId: 12 })
+    expect(policy).toEqual({
+      threshold: '3',
+      votingPeriod: '300s',
+      totalWeight: '5',
+      groupId: 12,
+      groupVersion: 2,
+      policyVersion: 2,
+    })
   })
 
   it('tolerates an empty member list', () => {
@@ -438,6 +446,8 @@ describe('parseProposals', () => {
       executorResult: 'SUCCESS',
       proposers: ['verana1aaa'],
       tally: { yes: 3, no: 0, abstain: 0, veto: 0 },
+      groupVersion: 2,
+      policyVersion: 2,
     })
     expect(rows[0].messages[0]['@type']).toBe('/verana.de.v1.MsgGrantOperatorAuthorization')
   })
@@ -454,11 +464,51 @@ describe('parseProposals', () => {
       proposers: [],
       messages: [],
       tally: { yes: 0, no: 2, abstain: 1, veto: 0 },
+      groupVersion: null,
+      policyVersion: null,
     })
   })
 
   it('rejects a proposal without its running tally', () => {
     expect(() => parseProposals({ proposals: [{ id: 9 }] })).toThrow('tally')
+  })
+})
+
+describe('proposalTallyScale', () => {
+  const policy = {
+    threshold: '2',
+    votingPeriod: '300s',
+    totalWeight: '3',
+    groupId: 12,
+    groupVersion: 4,
+    policyVersion: 3,
+  }
+
+  it('scales a proposal decided on the current group and policy against them', () => {
+    expect(proposalTallyScale({ status: 'ACCEPTED', groupVersion: 4, policyVersion: 3 }, policy)).toEqual({
+      total: 3,
+      threshold: 2,
+    })
+  })
+
+  it('drops the total once the members changed and the threshold once the policy changed', () => {
+    expect(proposalTallyScale({ status: 'ACCEPTED', groupVersion: 3, policyVersion: 3 }, policy)).toEqual({
+      total: null,
+      threshold: 2,
+    })
+    expect(proposalTallyScale({ status: 'REJECTED', groupVersion: 4, policyVersion: 2 }, policy)).toEqual({
+      total: 3,
+      threshold: null,
+    })
+  })
+
+  it('without version snapshots, only an open proposal uses the current group', () => {
+    const unversioned = { groupVersion: null, policyVersion: null }
+    expect(proposalTallyScale({ status: 'SUBMITTED', ...unversioned }, policy)).toEqual({ total: 3, threshold: 2 })
+    expect(proposalTallyScale({ status: 'ACCEPTED', ...unversioned }, policy)).toEqual({
+      total: null,
+      threshold: null,
+    })
   })
 })
 

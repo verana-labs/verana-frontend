@@ -6,6 +6,7 @@ import { MsgSubmitProposal } from 'cosmjs-types/cosmos/group/v1/tx'
 import { TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { connectWallet } from './support/connect'
 import {
+  ACME_ECOSYSTEM_DID,
   ACME_POLICY_ADDRESS,
   CGF_ACTIVE_13,
   cgfVersion,
@@ -73,6 +74,43 @@ test('first-connect chooser, persistence and picker re-scoping', async ({ page }
   await page.reload()
   await expect(page.getByRole('heading', { name: /did:web:keplr/ })).toBeVisible({ timeout: 15_000 })
   await expect(page.getByText('Choose your acting corporation')).toBeHidden()
+})
+
+test('switching the acting corporation closes a form opened for the previous one', async ({ page }) => {
+  await installCorporationStubs(page)
+  await installEcosystemStubs(page, [EGF_ACTIVE_13, EGF_DRAFT_13])
+  await seedActingCorporation(page, 13)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  await page.goto('/ecosystems/13')
+  await page.getByRole('button', { name: /^Edit Configuration/ }).click()
+  const did = page.getByPlaceholder('did:method:identifier')
+  await did.fill('did:web:typed-before-the-switch.example')
+
+  await page
+    .getByRole('button', { name: /Acme Trust AG/ })
+    .first()
+    .click()
+  await page.getByRole('menuitem', { name: /Acme Trust AG/ }).click()
+  await expect(page.getByRole('menuitem', { name: /Acme Trust AG/ })).toBeHidden()
+  await expect(did).toHaveValue('did:web:typed-before-the-switch.example')
+  await expect(page.getByRole('button', { name: /Acme Trust AG/ }).first()).toBeVisible()
+
+  await page
+    .getByRole('button', { name: /Acme Trust AG/ })
+    .first()
+    .click()
+  await page.getByRole('menuitem', { name: /did:web:kepl/ }).click()
+  await expect(page.getByRole('button', { name: /did:web:kepl/ }).first()).toBeVisible({ timeout: 15_000 })
+  await expect(did).toBeHidden()
+
+  await page
+    .getByRole('button', { name: /did:web:kepl/ })
+    .first()
+    .click()
+  await page.getByRole('menuitem', { name: /Acme Trust AG/ }).click()
+  await page.getByRole('button', { name: /^Edit Configuration/ }).click()
+  await expect(did).toHaveValue(ACME_ECOSYSTEM_DID)
 })
 
 test('tabs, deep links and proposal actions', async ({ page }) => {
@@ -379,7 +417,8 @@ test('the corporation page and picker hold at mobile and tablet widths', async (
 test('the proposal composer gates each kind on valid input', async ({ page }) => {
   await installCorporationStubs(page)
   await seedActingCorporation(page, 13)
-  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubSri: false, stubCorporation: false })
 
   await page.goto('/corporation?tab=proposals')
   await page.getByRole('button', { name: 'New proposal' }).click()
@@ -405,17 +444,31 @@ test('the proposal composer gates each kind on valid input', async ({ page }) =>
   await expect(submit).toBeDisabled()
   await firstMember.fill(REPLACEMENT_MEMBER)
   await expect(submit).toBeEnabled()
+  const dialog = page.getByRole('dialog', { name: 'Confirm transaction' })
+  await submit.click()
+  await expect(dialog).toContainText('that updates its members.')
+  await expect(dialog).toContainText('Added with weight 3')
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(dialog).toBeHidden()
 
   await page.getByLabel('Proposal type').selectOption('policy')
   await page.getByLabel('Threshold').fill('0')
   await expect(submit).toBeDisabled()
   await page.getByLabel('Threshold').fill('2')
   await expect(submit).toBeEnabled()
+  await submit.click()
+  await expect(dialog).toContainText('that changes its decision policy.')
+  await expect(fact(dialog, 'Threshold')).toContainText('3 → 2')
+  await expect(fact(dialog, 'Voting period')).toContainText('5m')
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(dialog).toBeHidden()
 
   await page.getByLabel('Proposal type').selectOption('rotate')
   await expect(submit).toBeDisabled()
   await page.getByLabel('DID', { exact: true }).fill('did:web:next.example')
   await expect(submit).toBeEnabled()
+  expect(mock.broadcastTxs()).toEqual([])
+  await mock.teardown()
 })
 
 test('a vote opens the confirmation, cancel broadcasts nothing and confirm broadcasts once', async ({ page }) => {
@@ -750,9 +803,7 @@ test('a grant with an expiration, spend limits and a fee grant confirms and broa
   await expect(dialog).toBeVisible({ timeout: 30_000 })
   await expect(dialog).toContainText('for 22 message types')
   await expect(fact(dialog, 'Spend limit')).toContainText('5 VNA every 30d')
-  await expect(fact(dialog, 'Expiration')).toContainText(
-    await page.evaluate((value) => new Date(value).toLocaleString(), expiration)
-  )
+  await expect(fact(dialog, 'Expiration')).toContainText(`${expiration.replace('T', ' ')}:00`)
   await expect(fact(dialog, 'Grantee fee grant')).toContainText('2 VNA every 7d')
   await expect(fact(dialog, 'Network fee')).toContainText(/VNA/, { timeout: 30_000 })
   await dialog.getByRole('button', { name: 'Confirm' }).click()

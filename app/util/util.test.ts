@@ -14,6 +14,7 @@ import {
   nodeChildRoles,
   onboardingStateColor,
   parseVNA,
+  parseVNAExact,
   participantStateBadgeClass,
   roleBadgeClass,
   roleColorClass,
@@ -94,6 +95,23 @@ describe('formatVNAFromUVNA', () => {
     expect(formatVNAFromUVNA('')).toBe('')
     expect(formatVNAFromUVNA('   ')).toBe('')
     expect(formatVNAFromUVNA('not-a-number')).toBe('')
+  })
+})
+
+describe('parseVNAExact', () => {
+  it.each([
+    ['0', '0'],
+    ['1', '1000000'],
+    ['1.5', '1500000'],
+    ['0.000001', '1'],
+    [' 2 ', '2000000'],
+    ['12345678901234567890.123456', '12345678901234567890123456'],
+  ])('reads %j VNA as %s uvna', (vna, uvna) => {
+    expect(parseVNAExact(vna)).toBe(uvna)
+  })
+
+  it.each(['', '0.0000001', '-1', '1,5', '1e3', 'abc', '.5'])('rejects %j', (vna) => {
+    expect(parseVNAExact(vna)).toBeNull()
   })
 })
 
