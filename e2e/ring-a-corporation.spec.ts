@@ -207,6 +207,67 @@ test('an accepted proposal offers Execute on its own once the minimum execution 
   await expect(page.getByText(/^Executable from /)).toBeHidden()
 })
 
+test('an execute that has to wait reads as scheduled, never as executed', async ({ page }) => {
+  await installCorporationStubs(page, {
+    decisionPolicy: { ...PERCENTAGE_POLICY, windows: { voting_period: '300s', min_execution_period: '20s' } },
+  })
+  const past = new Date(Date.now() - DAY_MS).toISOString()
+  await page.route('**/v4/group/proposals*', (route) =>
+    route.fulfill({
+      json: {
+        proposals: [
+          {
+            id: 18,
+            corporation_id: 13,
+            status: 'ACCEPTED',
+            submit_time: past,
+            voting_period_end: past,
+            executor_result: 'NOT_RUN',
+            proposers: [HARNESS_ADDRESS],
+            messages: [{ '@type': '/verana.co.v1.MsgUpdateCorporation', did: 'did:web:next.example' }],
+            tally: { yes_count: '6', no_count: '0', abstain_count: '0', no_with_veto_count: '0' },
+          },
+        ],
+      },
+    })
+  )
+  await seedActingCorporation(page, 13)
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, {
+    address: wallet.bech32Address,
+    stubSri: false,
+    stubCorporation: false,
+    txEvents: [
+      {
+        type: 'cosmos.group.v1.EventExec',
+        attributes: [
+          {
+            key: 'logs',
+            value: JSON.stringify(
+              'must wait until 2026-10-16 14:59:16.914501555 +0000 UTC to execute proposal 18: invalid value'
+            ),
+            index: true,
+          },
+          { key: 'proposal_id', value: JSON.stringify('18'), index: true },
+          { key: 'result', value: JSON.stringify('PROPOSAL_EXECUTOR_RESULT_FAILURE'), index: true },
+        ],
+      },
+    ],
+  })
+
+  await page.goto('/corporation?tab=proposals')
+  await page.getByRole('button', { name: /#18/ }).click()
+  await page.getByRole('button', { name: 'Execute', exact: true }).click()
+  const dialog = page.getByRole('dialog')
+  await expect(dialog.getByText(/VNA/)).toBeVisible({ timeout: 30_000 })
+  await dialog.getByRole('button', { name: 'Confirm' }).click()
+
+  await expect(page.getByText('Proposal not executed', { exact: true })).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByText(/^Proposal 18 was accepted, it can be executed from /)).toBeVisible()
+  await expect(page.getByText('Proposal executed', { exact: true })).toBeHidden()
+  await mock.teardown()
+})
+
 test('a policy update keeps a percentage policy and confirms every change without broadcasting', async ({ page }) => {
   await installCorporationStubs(page, { decisionPolicy: PERCENTAGE_POLICY })
   await seedActingCorporation(page, 13)
