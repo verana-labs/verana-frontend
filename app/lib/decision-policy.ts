@@ -127,7 +127,7 @@ export function exceedsExecutionWindow(
   return (
     votingPeriodSeconds !== null &&
     minExecutionPeriodSeconds !== null &&
-    minExecutionPeriodSeconds >= votingPeriodSeconds + MAX_EXECUTION_PERIOD_SECONDS
+    minExecutionPeriodSeconds > votingPeriodSeconds + MAX_EXECUTION_PERIOD_SECONDS
   )
 }
 

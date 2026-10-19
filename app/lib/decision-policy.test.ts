@@ -158,11 +158,11 @@ describe('readDecisionPolicyDraft', () => {
 
   it('keeps the minimum execution period below the voting period plus the 14 day execution window', () => {
     const atLimit = { ...DEFAULT_DECISION_POLICY_DRAFT, votingPeriod: '60', minExecutionPeriod: '1209660' }
-    const belowLimit = { ...atLimit, minExecutionPeriod: '1209659' }
-    expect(exceedsExecutionWindow(atLimit)).toBe(true)
-    expect(readDecisionPolicyDraft(atLimit)).toBeNull()
-    expect(exceedsExecutionWindow(belowLimit)).toBe(false)
-    expect(readDecisionPolicyDraft(belowLimit)?.minExecutionPeriodSeconds).toBe(1_209_659)
+    const aboveLimit = { ...atLimit, minExecutionPeriod: '1209661' }
+    expect(exceedsExecutionWindow(aboveLimit)).toBe(true)
+    expect(readDecisionPolicyDraft(aboveLimit)).toBeNull()
+    expect(exceedsExecutionWindow(atLimit)).toBe(false)
+    expect(readDecisionPolicyDraft(atLimit)?.minExecutionPeriodSeconds).toBe(1_209_660)
   })
 })
 

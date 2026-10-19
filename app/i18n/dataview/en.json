@@ -764,7 +764,7 @@
   "corporation.policy.kind": "Decision policy",
   "corporation.policy.percent": "Percentage (%)",
   "corporation.policy.minexecutionperiod": "Minimum execution period (seconds)",
-  "corporation.policy.minexecutionperiod.max": "Must be shorter than the voting period plus 14 days, the chain's maximum execution period.",
+  "corporation.policy.minexecutionperiod.max": "Can be at most the voting period plus 14 days, the chain's maximum execution period.",
   "corporation.composer.new": "New proposal",
   "corporation.composer.title": "New proposal",
   "corporation.composer.close": "Close",

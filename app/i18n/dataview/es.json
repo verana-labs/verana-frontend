@@ -764,7 +764,7 @@
   "corporation.policy.kind": "Política de decisión",
   "corporation.policy.percent": "Porcentaje (%)",
   "corporation.policy.minexecutionperiod": "Periodo mínimo de ejecución (segundos)",
-  "corporation.policy.minexecutionperiod.max": "Debe ser menor que el periodo de votación más 14 días, el periodo máximo de ejecución de la cadena.",
+  "corporation.policy.minexecutionperiod.max": "Puede ser como máximo el periodo de votación más 14 días, el periodo máximo de ejecución de la cadena.",
   "corporation.composer.new": "Nueva propuesta",
   "corporation.composer.title": "Nueva propuesta",
   "corporation.composer.close": "Cerrar",

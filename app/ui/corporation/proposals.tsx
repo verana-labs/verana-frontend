@@ -127,10 +127,10 @@ function ProposalDetail({ proposal, ctx }: { proposal: ProposalRow; ctx: Proposa
   const [, rerender] = useReducer((count: number) => count + 1, 0)
 
   useEffect(() => {
-    if (executableFrom === null || executableFrom <= Date.now()) return
+    if (executableFrom === null) return
     let timer: ReturnType<typeof setTimeout>
     const arm = () => {
-      const remaining = executableFrom - Date.now()
+      const remaining = Math.max(0, executableFrom - Date.now())
       timer = setTimeout(remaining > MAX_TIMEOUT_MS ? arm : rerender, Math.min(remaining, MAX_TIMEOUT_MS))
     }
     arm()

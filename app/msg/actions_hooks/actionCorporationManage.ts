@@ -18,7 +18,7 @@ import {
 import { VoteOption } from 'cosmjs-types/cosmos/group/v1/types'
 import { useRef } from 'react'
 import { veranaRegistry } from '@/config/veranaChain.sign.client'
-import { useVeranaChain } from '@/hooks/useVeranaChain'
+import { explorerTxLink, useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import {
@@ -54,7 +54,7 @@ import {
 } from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import { extractTxHeight } from '@/msg/util/signerUtil'
-import { proposalSubmittedMessage, rejectionNotice, txFailureNotice } from '@/msg/util/tx-outcome'
+import { proposalExecution, proposalSubmittedMessage, rejectionNotice, txFailureNotice } from '@/msg/util/tx-outcome'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
 import { useProtocolParams } from '@/providers/protocol-params-context'
@@ -352,6 +352,15 @@ export function useCorporationManage(onDone?: () => void) {
       if (failure) {
         await notify(failure.message, 'error', failure.title, failure.link)
         if (result.code === 0) runAfterIndexerCatchesUp(waitForBlock, txHeight(result), () => onDone?.())
+        return false
+      }
+      if (notificationKey === 'MsgExec' && proposalExecution(result.events).status === 'scheduled') {
+        await notify(
+          proposalSubmittedMessage(result.events),
+          'info',
+          translate('notification.proposal.failed.title'),
+          explorerTxLink(result.transactionHash)
+        )
         return false
       }
       const height = txHeight(result)
