@@ -4,7 +4,7 @@ import {
   VERANA_REST_ENDPOINT_DELEGATION,
   VERANA_REST_ENDPOINT_GROUP,
 } from '@/config/env'
-import { indexerValidators } from '@/lib/indexer-json'
+import { fetchKeysetPages, indexerValidators, type KeysetWindow } from '@/lib/indexer-json'
 import { logger } from '@/lib/logger'
 import { type DidEnrichment, enrichmentFromTrustData } from '@/lib/resolverClient'
 
@@ -26,6 +26,7 @@ export interface CorporationMembership {
 export interface CorporationDiscovery {
   memberships: CorporationMembership[]
   error: string | null
+  partial: boolean
 }
 
 const { record, string, number, stringArray, optionalString } = indexerValidators('corporation')
@@ -52,12 +53,7 @@ async function fetchCorporation(corporationId: number): Promise<UserCorporation>
   }
 }
 
-async function fetchGrantedMessageTypes(address: string): Promise<Map<number, Set<string>>> {
-  if (!VERANA_REST_ENDPOINT_DELEGATION) throw new Error('Missing V4 delegation endpoint')
-  const payload = await fetchJson(
-    `${VERANA_REST_ENDPOINT_DELEGATION}/operator-authorizations?operator=${encodeURIComponent(address)}&only_active=true&limit=1024`,
-    'Unable to resolve operator authorizations'
-  )
+function grantedMessageTypes(payload: unknown): Map<number, Set<string>> {
   const envelope = record(payload, 'authorizations response')
   if (!Array.isArray(envelope.authorizations)) {
     throw new Error('Invalid corporation response: missing authorizations envelope')
@@ -74,12 +70,17 @@ async function fetchGrantedMessageTypes(address: string): Promise<Map<number, Se
   return byCorporation
 }
 
-async function fetchMembershipWeights(address: string): Promise<Map<number, string | null>> {
-  if (!VERANA_REST_ENDPOINT_GROUP) throw new Error('Missing V4 group endpoint')
-  const payload = await fetchJson(
-    `${VERANA_REST_ENDPOINT_GROUP}/corporations-by-member?account=${encodeURIComponent(address)}`,
-    'Unable to resolve corporation memberships'
+async function fetchGrantedMessageTypes(address: string): Promise<KeysetWindow<Map<number, Set<string>>>> {
+  if (!VERANA_REST_ENDPOINT_DELEGATION) throw new Error('Missing V4 delegation endpoint')
+  return fetchKeysetPages(
+    `${VERANA_REST_ENDPOINT_DELEGATION}/operator-authorizations?operator=${encodeURIComponent(address)}&only_active=true`,
+    'authorizations',
+    'Unable to resolve operator authorizations',
+    grantedMessageTypes
   )
+}
+
+function membershipWeights(payload: unknown): Map<number, string | null> {
   const envelope = record(payload, 'memberships response')
   if (!Array.isArray(envelope.memberships)) {
     throw new Error('Invalid corporation response: missing memberships envelope')
@@ -91,6 +92,17 @@ async function fetchMembershipWeights(address: string): Promise<Map<number, stri
     byCorporation.set(corporationId, optionalString(membership.weight, `memberships[${index}].weight`) ?? null)
   })
   return byCorporation
+}
+
+async function fetchMembershipWeights(address: string): Promise<KeysetWindow<Map<number, string | null>>> {
+  if (!VERANA_REST_ENDPOINT_GROUP) throw new Error('Missing V4 group endpoint')
+  return fetchKeysetPages(
+    `${VERANA_REST_ENDPOINT_GROUP}/corporations-by-member?account=${encodeURIComponent(address)}`,
+    'memberships',
+    'Unable to resolve corporation memberships',
+    membershipWeights,
+    { cursor: 'corporation_id' }
+  )
 }
 
 function isRejected(result: PromiseSettledResult<unknown>): result is PromiseRejectedResult {
@@ -110,8 +122,9 @@ export async function discoverCorporations(address: string): Promise<Corporation
     fetchGrantedMessageTypes(address),
     fetchMembershipWeights(address),
   ])
-  const grants = grantsResult.status === 'fulfilled' ? grantsResult.value : new Map<number, Set<string>>()
-  const weights = weightsResult.status === 'fulfilled' ? weightsResult.value : new Map<number, string | null>()
+  const grants = grantsResult.status === 'fulfilled' ? grantsResult.value.value : new Map<number, Set<string>>()
+  const weights = weightsResult.status === 'fulfilled' ? weightsResult.value.value : new Map<number, string | null>()
+  const partial = [grantsResult, weightsResult].some((result) => result.status === 'fulfilled' && result.value.partial)
   const ids = [...new Set([...grants.keys(), ...weights.keys()])].sort((a, b) => a - b)
   const details = await Promise.allSettled(ids.map(fetchCorporation))
   const memberships = details.flatMap((result) =>
@@ -127,7 +140,11 @@ export async function discoverCorporations(address: string): Promise<Corporation
         ]
       : []
   )
-  return { memberships, error: failureReason([grantsResult, weightsResult, ...details]) }
+  return { memberships, error: failureReason([grantsResult, weightsResult, ...details]), partial }
+}
+
+export function discoveryIncomplete(discovery: CorporationDiscovery): boolean {
+  return discovery.error !== null || discovery.partial
 }
 
 export async function findCorporationMembership(

@@ -12,6 +12,7 @@ import {
   chooseActingMembership,
   claimIntendedMembership,
   discoverCorporations,
+  discoveryIncomplete,
   findCorporationMembership,
   forgetActingCorporationId,
   invalidatesActingSession,
@@ -109,7 +110,82 @@ describe('discoverCorporations', () => {
         },
       ],
       error: null,
+      partial: false,
     })
+  })
+
+  it('discovers a corporation granted past the first window of operator authorizations', async () => {
+    const grant = (id: number, corporationId: number) => ({
+      id,
+      corporation_id: corporationId,
+      msg_types: ['/verana.ec.v1.MsgCreateEcosystem'],
+    })
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.startsWith(AUTHORIZATIONS)) {
+        const authorizations = url.includes('max_id=')
+          ? [grant(1, 9)]
+          : Array.from({ length: 1024 }, (_, index) => grant(2000 - index, 7))
+        return { ok: true, json: async () => ({ authorizations }) }
+      }
+      if (url.startsWith(MEMBERSHIPS)) return { ok: true, json: async () => ({ memberships: [] }) }
+      return { ok: true, json: async () => corporationPayload(Number(url.slice(CORPORATION.length).split('?')[0])) }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const discovered = await discoverCorporations('verana1operator')
+
+    expect(discovered.memberships.map((entry) => [entry.corporation.id, entry.operator])).toEqual([
+      [7, true],
+      [9, true],
+    ])
+    expect(discovered.error).toBeNull()
+  })
+
+  it('reads the memberships past the first window, keyed by corporation id', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.startsWith(AUTHORIZATIONS)) return { ok: true, json: async () => ({ authorizations: [] }) }
+      if (url.startsWith(MEMBERSHIPS)) {
+        const memberships = url.includes('max_id=')
+          ? [{ corporation_id: 3, weight: '1' }]
+          : Array.from({ length: 1024 }, (_, index) => ({ corporation_id: 2000 - index, weight: '1' }))
+        return { ok: true, json: async () => ({ memberships }) }
+      }
+      return { ok: true, json: async () => corporationPayload(Number(url.slice(CORPORATION.length).split('?')[0])) }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const discovered = await discoverCorporations('verana1operator')
+
+    expect(discovered.memberships).toHaveLength(1024)
+    expect(discovered.memberships[0].corporation.id).toBe(3)
+    expect(fetchMock).toHaveBeenCalledWith(`${MEMBERSHIPS}?account=verana1operator&limit=1024&sort=-id&max_id=978`)
+  })
+
+  it('reports a discovery cut short as partial, not as a failure, and keeps the persisted corporation', async () => {
+    const authorizations = (from: number) =>
+      Array.from({ length: 1024 }, (_, index) => ({ id: from - index, corporation_id: 7, msg_types: [] }))
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.startsWith(AUTHORIZATIONS)) {
+        const maxId = new URL(url).searchParams.get('max_id')
+        return { ok: true, json: async () => ({ authorizations: authorizations(maxId ? Number(maxId) - 1 : 90_000) }) }
+      }
+      if (url.startsWith(MEMBERSHIPS)) return { ok: true, json: async () => ({ memberships: [] }) }
+      return { ok: true, json: async () => corporationPayload(7) }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const store = stubStorage()
+    saveActingCorporationId('verana1operator', 9)
+
+    const discovered = await discoverCorporations('verana1operator')
+
+    expect(discovered.memberships.map((entry) => entry.corporation.id)).toEqual([7])
+    expect(discovered.error).toBeNull()
+    expect(discovered.partial).toBe(true)
+    expect(discoveryIncomplete(discovered)).toBe(true)
+    expect(restoreActingMembership('verana1operator', discovered.memberships, discoveryIncomplete(discovered))).toEqual(
+      { membership: null, lost: false }
+    )
+    expect(store.has(STORAGE_KEY)).toBe(true)
   })
 
   it('keeps the operator grants when the group source fails', async () => {

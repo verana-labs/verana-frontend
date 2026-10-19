@@ -9,6 +9,7 @@ import {
   type CorporationMembership,
   claimIntendedMembership,
   discoverCorporations,
+  discoveryIncomplete,
   forgetActingCorporationId,
   invalidatesActingSession,
   mergeKnownMemberships,
@@ -61,7 +62,8 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
     setError(null)
     const discovered = await discoverCorporations(account)
     if (run !== runId.current) return
-    const known = discovered.error
+    const incomplete = discoveryIncomplete(discovered)
+    const known = incomplete
       ? mergeKnownMemberships(knownMemberships.current, discovered.memberships)
       : discovered.memberships
     knownMemberships.current = known
@@ -69,7 +71,7 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
     if (intended) intendedActingId.current = null
     const restored = intended
       ? { membership: intended, lost: false }
-      : restoreActingMembership(account, known, discovered.error !== null)
+      : restoreActingMembership(account, known, incomplete)
     setMemberships(known)
     setActingCorporationId(restored.membership?.corporation.id ?? null)
     setActingCorporationLost(restored.lost)

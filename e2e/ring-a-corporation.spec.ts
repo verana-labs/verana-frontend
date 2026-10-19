@@ -389,6 +389,30 @@ test('operators past the first indexer window are counted and listed', async ({ 
   await expect(page.getByText('Only the first entries of this list are loaded.')).toBeHidden()
 })
 
+test('the selector marks an attention count cut by a full window as a lower bound', async ({ page }) => {
+  await installCorporationStubs(page)
+  const ecosystems = Array.from({ length: 1024 }, (_, index) => ({
+    id: index + 1,
+    did: null,
+    pending_tasks: 1,
+    participants: 1,
+    schemas: [],
+  }))
+  await page.route('**/v4/participant/pending/flat*', (route) =>
+    route.fulfill({ json: { ecosystems: route.request().url().includes('corporation_id=13') ? ecosystems : [] } })
+  )
+  await seedActingCorporation(page, 12)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  await page.goto('/corporation')
+  await expect(page.getByRole('heading', { name: /did:web:keplr/ })).toBeVisible({ timeout: 15_000 })
+  await page
+    .getByRole('button', { name: /did:web:keplr/ })
+    .first()
+    .click()
+  await expect(page.getByLabel('1024+ Pending validator tasks')).toBeVisible()
+})
+
 test('a missing trust deposit renders the empty state', async ({ page }) => {
   await installCorporationStubs(page, { trustDeposit404: true })
   await seedActingCorporation(page, 13)
