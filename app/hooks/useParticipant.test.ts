@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
-import { mergeParticipantDetailActions, parseParticipantResponse, refreshParticipantSources } from './useParticipant'
+import {
+  mergeParticipantDetailActions,
+  parseParticipantResponse,
+  participantDetailUrl,
+  refreshParticipantSources,
+} from './useParticipant'
 
 const participant = {
   id: 4,
@@ -29,6 +34,14 @@ describe('parseParticipantResponse', () => {
         participant: { ...participant, corporation_available_actions: undefined },
       })
     ).toThrow('participant.corporation_available_actions')
+  })
+})
+
+describe('participantDetailUrl', () => {
+  it('asks for the same trust_data the tree rows carry', () => {
+    expect(participantDetailUrl('https://idx.example/v4/participant', '8')).toBe(
+      'https://idx.example/v4/participant/get/8?trust_data=full'
+    )
   })
 })
 

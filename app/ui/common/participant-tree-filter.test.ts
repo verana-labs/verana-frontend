@@ -1,7 +1,12 @@
 import { faFolder } from '@fortawesome/free-solid-svg-icons'
 import { describe, expect, it } from 'vitest'
 import type { DidTrustState } from '@/lib/resolverClient'
-import { collectParticipantTrust, filterParticipantTree, withAuthority } from '@/ui/common/participant-tree-filter'
+import {
+  collectParticipantTrust,
+  countParticipants,
+  filterParticipantTree,
+  withAuthority,
+} from '@/ui/common/participant-tree-filter'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import type { OnboardingProcessState, Participant } from '@/ui/dataview/datasections/participant'
 
@@ -140,6 +145,32 @@ describe('filterParticipantTree', () => {
     const group = filtered[0].children?.[0]
     expect(group?.group).toBe(true)
     expect(group?.children?.map((c) => c.nodeId)).toEqual(['ok'])
+  })
+})
+
+describe('countParticipants', () => {
+  it('counts the participants the default filters hide, folders excluded', () => {
+    const tree = [
+      node({
+        id: 'eco',
+        did: 'did:ex:trusted',
+        trust: 'TRUSTED',
+        children: [
+          {
+            id: 'g',
+            group: true,
+            children: [
+              { id: 'new', did: 'did:ex:untrusted', trust: 'UNTRUSTED' },
+              { id: 'revoked', did: 'did:ex:trusted', trust: 'TRUSTED', participantState: 'REVOKED' },
+              { id: 'ok', did: 'did:ex:trusted', trust: 'TRUSTED' },
+            ],
+          },
+        ],
+      }),
+    ]
+    const visible = filterParticipantTree(tree, SHOW_DEFAULT, TRUST)
+    expect(countParticipants(tree)).toBe(4)
+    expect(countParticipants(tree) - countParticipants(visible)).toBe(2)
   })
 })
 

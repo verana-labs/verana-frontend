@@ -125,6 +125,10 @@ export function parseParticipantResponse(payload: unknown): Participant {
   return parseParticipantRecord(envelope.participant)
 }
 
+export function participantDetailUrl(base: string, id: string): string {
+  return `${base}/get/${id}?trust_data=full`
+}
+
 export function mergeParticipantDetailActions(current: Participant, refreshed: Participant): Participant {
   const sameActionState =
     current.id === refreshed.id &&
@@ -180,7 +184,7 @@ export function useParticipant(id?: string) {
       setError(null)
       setLoading(true)
       try {
-        const response = await fetch(`${VERANA_REST_ENDPOINT_PARTICIPANT}/get/${participantId}`)
+        const response = await fetch(participantDetailUrl(VERANA_REST_ENDPOINT_PARTICIPANT, participantId))
         const json: unknown = await response.json()
         if (!response.ok) {
           const { error, code } = json as ApiErrorResponse

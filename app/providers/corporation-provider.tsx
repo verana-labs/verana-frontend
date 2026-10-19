@@ -29,6 +29,7 @@ export interface CorporationContextValue {
   acknowledgeLost: () => void
   attention: Record<number, CorporationAttention>
   setActingCorporation: (corporationId: number) => void
+  switchCount: number
   actAsOnceDiscovered: (corporationId: number) => void
   refetch: () => Promise<void>
 }
@@ -43,6 +44,7 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
   const [actingCorporationId, setActingCorporationId] = useState<number | null>(null)
   const [attention, setAttention] = useState<Record<number, CorporationAttention>>({})
   const [actingCorporationLost, setActingCorporationLost] = useState(false)
+  const [switchCount, setSwitchCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [discoveredFor, setDiscoveredFor] = useState<string | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
@@ -89,6 +91,7 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
       forgetLocale()
       applyLocale(resolveLocale(null, navigator.languages))
     }
+    if (previousAccount && address && address !== previousAccount) setSwitchCount((count) => count + 1)
     if (address) lastAccount.current = address
     runId.current += 1
     knownMemberships.current = []
@@ -154,10 +157,11 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
       if (!address || !memberships.some((membership) => membership.corporation.id === corporationId)) return
       intendedActingId.current = null
       saveActingCorporationId(address, corporationId)
+      if (corporationId !== actingCorporationId) setSwitchCount((count) => count + 1)
       setActingCorporationId(corporationId)
       setActingCorporationLost(false)
     },
-    [address, memberships]
+    [address, memberships, actingCorporationId]
   )
 
   const actAsOnceDiscovered = useCallback(
@@ -188,6 +192,7 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
       acknowledgeLost,
       attention,
       setActingCorporation,
+      switchCount,
       actAsOnceDiscovered,
       refetch,
     }
@@ -202,6 +207,7 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
     acknowledgeLost,
     attention,
     setActingCorporation,
+    switchCount,
     actAsOnceDiscovered,
     refetch,
   ])

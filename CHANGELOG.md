@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.18.1](https://github.com/verana-labs/verana-frontend/compare/v0.18.0...v0.18.1) (2026-10-19)
+
+
+### Bug Fixes
+
+* [Account] keep /account to the connected account and drop the corporation facts ([#533](https://github.com/verana-labs/verana-frontend/issues/533)) ([5e3471e](https://github.com/verana-labs/verana-frontend/commit/5e3471e222e5e66ac0d4a040b2f20beaaffa4a90))
+* [Agents] show a pending onboarding process on its accreditation row ([#540](https://github.com/verana-labs/verana-frontend/issues/540)) ([d832644](https://github.com/verana-labs/verana-frontend/commit/d832644eaac0c0e8b16f370bb413147bd8342535))
+* [Corporation] reset open forms when the acting corporation switches ([#534](https://github.com/verana-labs/verana-frontend/issues/534)) ([0d228d7](https://github.com/verana-labs/verana-frontend/commit/0d228d78714dbf438b22954d4271ea9893cfac59))
+* [Corporation] start a re-grant from the operator's current message types ([#535](https://github.com/verana-labs/verana-frontend/issues/535)) ([b7f5967](https://github.com/verana-labs/verana-frontend/commit/b7f5967b309f5309573539fa192a45c8d4635946))
+* [Ecosystems] show the EGF document link as an icon ([#546](https://github.com/verana-labs/verana-frontend/issues/546)) ([cf39271](https://github.com/verana-labs/verana-frontend/commit/cf392719f123fff025f9cee41b8dfaa6b80465f7))
+* [Ecosystems] show the holder onboarding mode on the schema cards ([#547](https://github.com/verana-labs/verana-frontend/issues/547)) ([4a7aae4](https://github.com/verana-labs/verana-frontend/commit/4a7aae48a15c225a9e23588b6f70c660516946f5))
+* [Participants] keep a selected participant in the tree by fetching its detail with trust_data ([#539](https://github.com/verana-labs/verana-frontend/issues/539)) ([1476059](https://github.com/verana-labs/verana-frontend/commit/147605987cc5d03bd5a027e3538147d14cf8334c))
+* [Settings] offer the system theme and show the verana graph ([#548](https://github.com/verana-labs/verana-frontend/issues/548)) ([ca11994](https://github.com/verana-labs/verana-frontend/commit/ca1199410013db98a5a90f9d636626a34db0663e))
+* [Trust] show a DID with no evaluation as unresolved, not untrusted ([#532](https://github.com/verana-labs/verana-frontend/issues/532)) ([00950a5](https://github.com/verana-labs/verana-frontend/commit/00950a531b9e2aeee7934eea2a255fd106e36bad))
+* [UX] small fixes from the 0.18.0 Keplr pass ([#552](https://github.com/verana-labs/verana-frontend/issues/552)) ([f0faa0a](https://github.com/verana-labs/verana-frontend/commit/f0faa0a895842dbf1b253be6efca2c8f620d7853))
+
 ## [0.18.0](https://github.com/verana-labs/verana-frontend/compare/v0.17.0...v0.18.0) (2026-10-13)
 
 

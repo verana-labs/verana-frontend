@@ -7,7 +7,7 @@ const dict = getDictionary()
 export const metadata: Metadata = {
   title: dict['meta.account.title'] ?? 'Account Overview',
   description:
-    dict['meta.account.description'] ?? 'Review balances, deposits, and DID activity for your Verana account.',
+    dict['meta.account.description'] ?? 'Review the balance and corporation memberships of your Verana account.',
 }
 
 export default function AccountLayout({ children }: { children: ReactNode }) {

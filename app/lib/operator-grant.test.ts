@@ -242,10 +242,10 @@ describe('grantOptionLines', () => {
     ])
   })
 
-  it('describes the limits, the expiration and an unlimited fee grant', () => {
+  it('describes the limits, the expiration year first and an unlimited fee grant', () => {
     const lines = grantOptionLines(
       {
-        expiration: LATER,
+        expiration: new Date(2026, 11, 1, 9, 30),
         spendLimit: { amountUvna: '5000000', periodSeconds: 30 * DAY },
         feeGrant: { spendLimit: null },
       },
@@ -253,7 +253,7 @@ describe('grantOptionLines', () => {
     )
     expect(lines).toEqual([
       { label: 'Spend limit', value: '5 VNA every 30d' },
-      { label: 'Expiration', value: LATER.toLocaleString() },
+      { label: 'Expiration', value: '2026-12-01 09:30:00' },
       { label: 'Grantee fee grant', value: 'Unlimited' },
     ])
   })

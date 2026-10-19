@@ -209,10 +209,16 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
       }
       const txHeight = extractTxHeight(result)
       if (txHeight === undefined) throw new Error('Successful transaction did not include a block height')
+      onCancel?.()
       const processing = processingTxNotification(result.transactionHash, txHeight)
       void notify(processing.message, processing.type, processing.title, processing.link)
       const indexed = await waitForIndexerAfterTx(waitForBlock, txHeight)
       if (id) sessionStorage.setItem('id_updated', id)
+      if (indexed) {
+        onRefresh?.(id, txHeight)
+      } else {
+        runAfterIndexerCatchesUp(waitForBlock, txHeight, () => onRefresh?.(id, txHeight))
+      }
       const notification = successfulTxNotification(
         mode === 'proposal' ? proposalSubmittedMessage(result.events) : MSG_SUCCESS_ACTION_CS[params.msgType](),
         txHeight,
@@ -220,12 +226,6 @@ export function useActionCredentialSchema(onCancel?: () => void, onRefresh?: (id
         result.transactionHash
       )
       await notify(notification.message, notification.type, notification.title, notification.link)
-      if (indexed) {
-        onRefresh?.(id, txHeight)
-      } else {
-        runAfterIndexerCatchesUp(waitForBlock, txHeight, () => onRefresh?.(id, txHeight))
-      }
-      onCancel?.()
       return result
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error)

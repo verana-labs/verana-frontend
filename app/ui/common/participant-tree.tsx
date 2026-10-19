@@ -21,7 +21,7 @@ import { participantAuthority, roleColorClass } from '@/util/util'
 import { renderActionComponent } from './data-view-typed'
 import { ModalAction } from './modal-action'
 import ParticipantCard from './participant-card'
-import { collectParticipantTrust, filterParticipantTree } from './participant-tree-filter'
+import { collectParticipantTrust, countParticipants, filterParticipantTree } from './participant-tree-filter'
 import TreeNodeHeader from './tree-node-header'
 
 export const ROOT_NODE_ID = 'root'
@@ -229,6 +229,10 @@ export default function ParticipantTree({
       collectParticipantTrust(treeState)
     )
   }, [type, treeState, showUnresolvable, showDisabled])
+  const hiddenCount = useMemo(
+    () => countParticipants(treeState) - countParticipants(visibleTree),
+    [treeState, visibleTree]
+  )
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => (tree[0] ? { [tree[0].nodeId]: true } : {}))
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -419,10 +423,19 @@ export default function ParticipantTree({
               'Sorting and filters apply to the loaded results only.'}
           </p>
         ) : null}
-        {type === 'participants' && treeState.length > 0 && visibleTree.length === 0 ? (
+        {hiddenCount > 0 ? (
           <p className="p-2 text-sm text-neutral-70 dark:text-neutral-70">
-            {resolveTranslatable({ key: 'participants.filters.allhidden' }, translate) ??
-              'All participants are hidden by the current filters.'}
+            {translate('participants.filters.hidden', { count: hiddenCount })}{' '}
+            <button
+              type="button"
+              onClick={() => {
+                setShowUnresolvable(true)
+                setShowDisabled(true)
+              }}
+              className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+            >
+              {translate('participants.filters.showall')}
+            </button>
           </p>
         ) : null}
         {placeholder}

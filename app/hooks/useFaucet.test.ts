@@ -14,6 +14,7 @@ vi.mock('@/hooks/useVeranaChain', () => ({ useVeranaChain: () => ({ chain_name: 
 import {
   FaucetError,
   type FaucetErrorCode,
+  faucetErrorDetails,
   faucetErrorMessage,
   faucetUnavailableMessage,
   fetchFaucetInfo,
@@ -666,6 +667,28 @@ describe('faucetErrorMessage', () => {
       expect(message).not.toBe(code)
       expect(message).not.toMatch(/^(getvna|notification)\./)
     }
+  })
+})
+
+describe('faucetErrorDetails', () => {
+  it.each([
+    'QUOTA_EXCEEDED',
+    'FAUCET_UNAVAILABLE',
+    'RATE_LIMITED',
+    'SIGN_ARBITRARY_UNSUPPORTED',
+    'AUTH_FAILED',
+    'UNAUTHORIZED',
+    'WALLET_NOT_CONNECTED',
+  ] as const)('adds nothing to the dictionary text of %s', (code) => {
+    expect(faucetErrorDetails(new FaucetError(code, 'Hourly quota exceeded'))).toBeNull()
+  })
+
+  it('keeps the raw code and text of an error the dictionary text cannot explain', () => {
+    expect(faucetErrorDetails(new FaucetError('TX_FAILED', 'out of gas'))).toBe('TX_FAILED: out of gas')
+    expect(faucetErrorDetails(new FaucetError('INVALID_REQUEST', 'bad amount', 400))).toBe(
+      'INVALID_REQUEST: bad amount'
+    )
+    expect(faucetErrorDetails(new Error('boom'))).toBe('ERROR: boom')
   })
 })
 

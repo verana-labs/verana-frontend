@@ -5,7 +5,10 @@ export type IndexerHealth = {
   reason: string | null
 }
 
+export type GraphHealth = 'synced' | 'stalled' | 'unreachable'
+
 const CHAIN_STALL_MS = 120_000
+const GRAPH_LAG_BLOCKS = 20
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -42,4 +45,13 @@ export function indexerHealthFromResponse(status: number, payload: unknown): Ind
   }
   if (status < 200 || status >= 300) throw new Error(`Indexer status responded ${status}`)
   return parseIndexerStatus(payload)
+}
+
+export function parseGraphHealth(payload: unknown, indexerBlock: number | null): GraphHealth {
+  const lastAppliedBlock = asRecord(payload)?.lastAppliedBlock
+  if (typeof lastAppliedBlock !== 'number' || !Number.isFinite(lastAppliedBlock)) {
+    throw new Error('Invalid graph health response: lastAppliedBlock')
+  }
+  if (indexerBlock === null) return 'synced'
+  return indexerBlock - lastAppliedBlock > GRAPH_LAG_BLOCKS ? 'stalled' : 'synced'
 }
