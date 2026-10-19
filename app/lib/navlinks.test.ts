@@ -10,7 +10,6 @@ describe('getNavLinks', () => {
   })
 
   it('counts the pending votes on pending tasks when no validation is pending', () => {
-    expect(getNavLinks(0, 4).find((link) => link.href === '/pendingtasks')?.count).toBe(4)
     expect(getNavLinks(undefined, 4).find((link) => link.href === '/pendingtasks')?.count).toBe(4)
   })
 

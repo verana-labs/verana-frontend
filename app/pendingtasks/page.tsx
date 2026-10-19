@@ -3,7 +3,7 @@
 import { faFolder } from '@fortawesome/free-solid-svg-icons'
 import Link from 'next/link'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
-import { useUserCorporation } from '@/hooks/useUserCorporation'
+import { useActingPendingVotes, useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { usePendingTasksCtx } from '@/providers/api-rest-query-provider-context'
 import ParticipantTree from '@/ui/common/participant-tree'
@@ -70,7 +70,8 @@ function treePlaceholder(count: number, settled: boolean, error: string | null):
 }
 
 export default function PendingTasksPage() {
-  const { actingCorporation, attention, loading: corporationLoading, error: discoveryError } = useUserCorporation()
+  const { actingCorporation, loading: corporationLoading, error: discoveryError } = useUserCorporation()
+  const pendingVotes = useActingPendingVotes()
   const { pendingParticipants, settled, error, refetch } = usePendingTasksCtx()
   const [refreshRoot, setRefreshRoot] = useState(true)
   const participantTree = useMemo(
@@ -88,8 +89,6 @@ export default function PendingTasksPage() {
     if (discoveryError) return <div className="p-6 error-pane">{translate('corporation.page.error')}</div>
     return <p className="p-6 text-sm text-gray-600 dark:text-gray-300">{translate('corporation.page.nocorp')}</p>
   }
-
-  const pendingVotes = actingCorporation ? (attention[actingCorporation.corporation.id]?.pendingVotes ?? 0) : 0
 
   return (
     <>
