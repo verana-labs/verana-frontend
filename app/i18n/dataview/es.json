@@ -803,6 +803,7 @@
   "corporation.page.msgtypes.all": "Seleccionar todo",
   "corporation.page.msgtypes.none": "Limpiar",
   "corporation.page.grant.count": "{selected} de {total} tipos de mensaje seleccionados",
+  "corporation.page.grant.kept": "Se conservan de la autorización actual",
   "corporation.grant.options": "Vencimiento, límites de gasto y concesión de comisiones",
   "corporation.grant.expiration": "Vencimiento",
   "corporation.grant.expiration.hint": "Opcional. Con un periodo, esta fecha cierra el primer periodo y la autorización se renueva en lugar de vencer.",

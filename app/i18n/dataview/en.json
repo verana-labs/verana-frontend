@@ -803,6 +803,7 @@
   "corporation.page.msgtypes.all": "Select all",
   "corporation.page.msgtypes.none": "Clear",
   "corporation.page.grant.count": "{selected} of {total} message types selected",
+  "corporation.page.grant.kept": "Kept from the current authorization",
   "corporation.grant.options": "Expiration, spend limits and fee grant",
   "corporation.grant.expiration": "Expiration",
   "corporation.grant.expiration.hint": "Optional. With a period, this date ends the first period and the grant renews instead of expiring.",
