@@ -198,6 +198,46 @@ test('discover lists every ecosystem of the window, finds one by name and orders
   await expect(acme.getByRole('heading', { name: 'Acme join framework' })).toBeVisible()
 })
 
+test('discover search finds an ecosystem beyond the first page from one full window request, then pages by keyset again', async ({
+  page,
+}) => {
+  await stubDiscover(page)
+  const listLimits: string[] = []
+  const schemaRequests: string[] = []
+  await page.route('**/v4/ecosystem/list*', (route) => {
+    listLimits.push(new URL(route.request().url()).searchParams.get('limit') ?? '')
+    return route.fallback()
+  })
+  await page.route('**/v4/credential-schema/list*', (route) => {
+    schemaRequests.push(new URL(route.request().url()).searchParams.get('ecosystem_id') ?? '')
+    return route.fallback()
+  })
+  await page.goto('/discover')
+
+  const firstPage = ['Acme Join Registry', 'Zeta Registry', 'Shady Registry', 'Beta Registry', 'Gamma Registry']
+  await expect.poll(() => cardNames(page)).toEqual(firstPage)
+  await expect(page.getByRole('article', { name: 'Beyond The Window Registry' })).toHaveCount(0)
+
+  await page.locator('#ecosystem-search').fill('beyond')
+  await expect.poll(() => cardNames(page)).toEqual(['Beyond The Window Registry'])
+  expect(listLimits.filter((limit) => limit === '1024')).toHaveLength(1)
+  await expect(page.getByText('Sorting and filters apply to the loaded results only.')).toHaveCount(0)
+
+  await page.locator('#ecosystem-search').fill('registry')
+  await expect.poll(() => cardNames(page)).toHaveLength(5)
+  await page.getByRole('button', { name: 'Next page' }).click()
+  await expect.poll(() => cardNames(page)).toEqual(['Beyond The Window Registry'])
+  await expect(page.getByRole('button', { name: 'Next page' })).toBeDisabled()
+
+  const schemaRequestsBeforeClear = schemaRequests.length
+  await page.locator('#ecosystem-search').fill('')
+  await expect.poll(() => cardNames(page)).toEqual(firstPage)
+  await expect(page.getByRole('button', { name: 'Next page' })).toBeEnabled()
+  await expect(page.getByText('Sorting and filters apply to the loaded results only.')).toHaveCount(1)
+  await page.waitForTimeout(500)
+  expect(schemaRequests.length - schemaRequestsBeforeClear).toBeLessThanOrEqual(firstPage.length)
+})
+
 test('an acting corporation sees its roles from one corporation query and joins a schema through its participant tree', async ({
   page,
 }) => {
