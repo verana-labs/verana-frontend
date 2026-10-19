@@ -77,6 +77,8 @@
   "task.tree.error": "No se pudieron cargar las tareas pendientes.",
   "task.tree.loading": "Cargando tareas pendientes…",
   "task.tree.title": "Tareas Pendientes",
+  "task.votes.pending": "Propuestas pendientes de tu voto: {count}.",
+  "task.votes.open": "Abrir las propuestas",
   "participantcard.action.copy": "copiar",
   "participantcard.action.copied": "¡copiado!",
   "participantcard.action.visualizer": "visualizador",

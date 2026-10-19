@@ -1,8 +1,9 @@
 'use client'
 
 import { faFolder } from '@fortawesome/free-solid-svg-icons'
+import Link from 'next/link'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
-import { useUserCorporation } from '@/hooks/useUserCorporation'
+import { useActingPendingVotes, useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { usePendingTasksCtx } from '@/providers/api-rest-query-provider-context'
 import ParticipantTree from '@/ui/common/participant-tree'
@@ -70,6 +71,7 @@ function treePlaceholder(count: number, settled: boolean, error: string | null):
 
 export default function PendingTasksPage() {
   const { actingCorporation, loading: corporationLoading, error: discoveryError } = useUserCorporation()
+  const pendingVotes = useActingPendingVotes()
   const { pendingParticipants, settled, error, refetch } = usePendingTasksCtx()
   const [refreshRoot, setRefreshRoot] = useState(true)
   const participantTree = useMemo(
@@ -89,12 +91,25 @@ export default function PendingTasksPage() {
   }
 
   return (
-    <ParticipantTree
-      tree={participantTree}
-      type="tasks"
-      viewerCorporationId={actingCorporation?.corporation.id}
-      refreshRoot={() => setRefreshRoot(true)}
-      placeholder={treePlaceholder(pendingParticipants.length, settled && !corporationLoading, error)}
-    />
+    <>
+      {pendingVotes > 0 ? (
+        <p className="mb-4 ps-2 text-sm text-gray-700 dark:text-gray-300">
+          {translate('task.votes.pending', { count: pendingVotes })}{' '}
+          <Link
+            href="/corporation?tab=proposals"
+            className="font-medium text-primary-600 dark:text-primary-400 hover:underline"
+          >
+            {translate('task.votes.open')}
+          </Link>
+        </p>
+      ) : null}
+      <ParticipantTree
+        tree={participantTree}
+        type="tasks"
+        viewerCorporationId={actingCorporation?.corporation.id}
+        refreshRoot={() => setRefreshRoot(true)}
+        placeholder={treePlaceholder(pendingParticipants.length, settled && !corporationLoading, error)}
+      />
+    </>
   )
 }

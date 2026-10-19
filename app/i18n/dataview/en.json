@@ -77,6 +77,8 @@
   "task.tree.error": "Pending tasks could not be loaded.",
   "task.tree.loading": "Loading pending tasks…",
   "task.tree.title": "Pending Tasks",
+  "task.votes.pending": "Proposals awaiting your vote: {count}.",
+  "task.votes.open": "Open the proposals",
   "participantcard.action.copy": "copy",
   "participantcard.action.copied": "copied!",
   "participantcard.action.visualizer": "visualizer",
