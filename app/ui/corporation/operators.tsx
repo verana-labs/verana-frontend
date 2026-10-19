@@ -13,7 +13,6 @@ import type {
 } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
 import {
-  authorizationFor,
   feeGrantFor,
   formatIndexerPeriod,
   type OperatorGrantOptions,
@@ -279,9 +278,9 @@ export function GrantOperatorForm({
           <input
             value={draft.grantee}
             onChange={(event) => {
-              const value = event.target.value
-              if (draft.setGrantee(value)) setShowOptions(true)
-              if (authorizationFor(authorizations, value.trim())) setShowTypes(true)
+              const existing = draft.setGrantee(event.target.value)
+              if (existing.feeGrant || existing.authorization) setShowOptions(true)
+              if (existing.authorization) setShowTypes(true)
             }}
             placeholder="verana1…"
             className="mt-2 w-full px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface"
