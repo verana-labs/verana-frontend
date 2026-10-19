@@ -4,6 +4,7 @@ import { HARNESS_MNEMONIC, installCorporationStubs, seedActingCorporation } from
 
 const EMPTY = 'No pending validation tasks.'
 const FAILED = 'Pending tasks could not be loaded.'
+const LOADED_ONLY = 'This list may be incomplete, only the first 1024 ecosystems with pending tasks were loaded.'
 
 test('pending tasks explain an empty list', async ({ page }) => {
   await installCorporationStubs(page)
@@ -13,6 +14,27 @@ test('pending tasks explain an empty list', async ({ page }) => {
   await page.goto('/pendingtasks')
   await expect(page.getByText(EMPTY)).toBeVisible({ timeout: 15_000 })
   await expect(page.getByText(FAILED)).toBeHidden()
+  await expect(page.getByText(LOADED_ONLY)).toBeHidden()
+})
+
+test('a full pending tasks window says the tree holds the loaded results only', async ({ page }) => {
+  await installCorporationStubs(page)
+  const ecosystems = Array.from({ length: 1024 }, (_, index) => ({
+    id: index + 1,
+    did: null,
+    pending_tasks: 1,
+    participants: 1,
+    schemas: [],
+  }))
+  await page.route('**/v4/participant/pending/flat*', (route) =>
+    route.fulfill({ json: { ecosystems: route.request().url().includes('corporation_id=13') ? ecosystems : [] } })
+  )
+  await seedActingCorporation(page, 13)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  await page.goto('/pendingtasks')
+  await expect(page.getByText('Ecosystem 1', { exact: true })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByText(LOADED_ONLY)).toBeVisible()
 })
 
 test('pending tasks never read a failed load as an empty list', async ({ page }) => {

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
 import { parseParticipantRecord } from '@/hooks/useParticipant'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
-import { indexerValidators } from '@/lib/indexer-json'
+import { INDEXER_MAX_LIMIT, indexerValidators } from '@/lib/indexer-json'
 import { enrichmentFromTrustData } from '@/lib/resolverClient'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type { PendingEcosystem } from '@/ui/dataview/datasections/participant'
@@ -51,7 +51,7 @@ export function parsePendingParticipantsResponse(payload: unknown): PendingEcosy
 }
 
 export function pendingParticipantsUrl(endpoint: string, corporationId: number): string {
-  return `${endpoint}/pending/flat?corporation_id=${corporationId}&trust_data=summary&limit=1024`
+  return `${endpoint}/pending/flat?corporation_id=${corporationId}&trust_data=summary&limit=${INDEXER_MAX_LIMIT}`
 }
 
 export function usePendingParticipants() {
@@ -102,5 +102,12 @@ export function usePendingParticipants() {
     void fetchPendingParticipants()
   }, [fetchPendingParticipants])
 
-  return { pendingParticipants, loading, settled, errorPendingParticipants, refetch: fetchPendingParticipants }
+  return {
+    pendingParticipants,
+    partial: pendingParticipants.length >= INDEXER_MAX_LIMIT,
+    loading,
+    settled,
+    errorPendingParticipants,
+    refetch: fetchPendingParticipants,
+  }
 }

@@ -74,6 +74,7 @@
   "task.title": "Pending Tasks",
   "task.description": "See your pending actions and pending actions of your grantees.",
   "task.tree.empty": "No pending validation tasks.",
+  "task.tree.partial": "This list may be incomplete, only the first {count} ecosystems with pending tasks were loaded.",
   "task.tree.error": "Pending tasks could not be loaded.",
   "task.tree.loading": "Loading pending tasks…",
   "task.tree.title": "Pending Tasks",

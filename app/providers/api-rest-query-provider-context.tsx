@@ -16,6 +16,7 @@ import { shortenDID } from '@/util/util'
 
 type PendingTasksCtxValue = {
   pendingParticipants: PendingEcosystem[]
+  partial: boolean
   loading: boolean
   settled: boolean
   error: string | null
@@ -76,6 +77,7 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
   const { accountData, refetch: refetchAccountData } = useAccountBalance()
   const {
     pendingParticipants,
+    partial: pendingParticipantsPartial,
     loading: pendingParticipantsLoading,
     settled: pendingParticipantsSettled,
     errorPendingParticipants,
@@ -152,6 +154,7 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
   const pendingTasksValue = useMemo(
     () => ({
       pendingParticipants,
+      partial: pendingParticipantsPartial,
       loading: pendingParticipantsLoading,
       settled: pendingParticipantsSettled,
       error: errorPendingParticipants,
@@ -159,6 +162,7 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
     }),
     [
       pendingParticipants,
+      pendingParticipantsPartial,
       pendingParticipantsLoading,
       pendingParticipantsSettled,
       errorPendingParticipants,

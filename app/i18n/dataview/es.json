@@ -74,6 +74,7 @@
   "task.title": "Tareas Pendientes",
   "task.description": "Consulta tus tareas pendientes y las de tus otorgantes.",
   "task.tree.empty": "No hay tareas de validación pendientes.",
+  "task.tree.partial": "Esta lista puede estar incompleta, solo se cargaron los primeros {count} ecosistemas con tareas pendientes.",
   "task.tree.error": "No se pudieron cargar las tareas pendientes.",
   "task.tree.loading": "Cargando tareas pendientes…",
   "task.tree.title": "Tareas Pendientes",

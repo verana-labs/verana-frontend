@@ -10,6 +10,7 @@ import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { getNavLinks } from '@/lib/navlinks'
 import { usePendingTasksCtx } from '@/providers/api-rest-query-provider-context'
+import { atLeast } from '@/ui/corporation/shared'
 
 export default function NavLinks() {
   const veranaChain = useVeranaChain()
@@ -25,8 +26,12 @@ export default function NavLinks() {
   const pendingTasksCtx = usePendingTasksCtx()
   const totalPendingTasks = pendingTasksCtx.pendingParticipants.reduce((total, item) => total + item.pending_tasks, 0)
   const { actingCorporation, attention } = useUserCorporation()
-  const pendingVotes = actingCorporation ? (attention[actingCorporation.corporation.id]?.pendingVotes ?? 0) : 0
-  const links = getNavLinks(totalPendingTasks, pendingVotes)
+  const actingAttention = actingCorporation ? attention[actingCorporation.corporation.id] : undefined
+  const links = getNavLinks(totalPendingTasks, actingAttention?.pendingVotes ?? 0)
+  const partialCounts: Record<string, boolean> = {
+    '/pendingtasks': pendingTasksCtx.partial,
+    '/corporation': actingAttention?.pendingVotesPartial ?? false,
+  }
 
   return (
     <nav className="mt-5 flex-1 px-2 space-y-1">
@@ -43,7 +48,7 @@ export default function NavLinks() {
               />
               {link.count ? (
                 <span className="absolute top-0 start-4 min-w-4 h-4 px-1 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center leading-none">
-                  {link.count}
+                  {atLeast(link.count, partialCounts[link.href] ?? false)}
                 </span>
               ) : null}
               {link.name && <span className="nav-links-label">{link.name}</span>}
