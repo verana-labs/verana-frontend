@@ -59,6 +59,7 @@
   "join.role.verifiergrantor.description": "Actúa como operador del Ecosistema y selecciona verificadores para este esquema en nombre del Ecosistema",
   "join.role.verifier.description": "Solicita y verifica presentaciones de credenciales de este esquema",
   "join.role.holder.description": "Obtén y conserva credenciales de emisores autorizados",
+  "join.holder.permissionless": "Esta credencial no necesita ningún registro en la cadena, el emisor la emite directamente desde su Servicio Verificable.",
   "join.holder.loading": "Cargando los servicios del emisor…",
   "join.holder.failed": "No se pudieron cargar los servicios del emisor. Inténtalo más tarde.",
   "join.holder.website.message": "Obtén esta credencial en el sitio web del emisor: {host}",

@@ -58,6 +58,7 @@ export function HolderWebsite({ issuerDid, onCancel }: HolderWebsiteProps) {
 
   return (
     <section>
+      <p className="text-sm text-neutral-70 dark:text-neutral-70 mb-2">{translate('join.holder.permissionless')}</p>
       <p className="text-sm text-neutral-70 dark:text-neutral-70 mb-4">{message}</p>
       <div className="flex justify-between">
         <button

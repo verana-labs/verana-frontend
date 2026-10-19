@@ -134,6 +134,11 @@ test('a permissionless holder join links to the website the issuer publishes', a
   await expect(page.getByText("Get this credential from the issuer's website: northwind.example")).toBeVisible({
     timeout: 15_000,
   })
+  await expect(
+    page.getByText(
+      'No on-chain onboarding is needed for this credential, the issuer issues it directly from its Verifiable Service.'
+    )
+  ).toBeVisible()
   const link = page.getByRole('link', { name: "Visit the issuer's website" })
   await expect(link).toHaveAttribute('href', WEBSITE)
   await expect(link).toHaveAttribute('target', '_blank')
