@@ -111,7 +111,6 @@ export default function GetVNAPanel({ onClose, onRefresh }: GetVNAPanelProps) {
     } catch (error) {
       const message = faucetErrorMessage(error)
       setState({ kind: 'error', info, message })
-      // Per [VFE-TX-UX-1] the raw error stays in the notification details.
       const details = faucetErrorDetails(error)
       void notify(details ?? message, 'error', details === null ? title : message)
     }
