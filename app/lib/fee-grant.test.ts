@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { type FeeGrant, feeGrantCovering, feeGrantPayer, nativeFeeAmount, parseFeeGrants } from './fee-grant'
+import {
+  type FeeGrant,
+  feeGrantCovering,
+  feeGrantPayer,
+  grantCoversMsgType,
+  nativeFeeAmount,
+  parseFeeGrants,
+} from './fee-grant'
 
 const CREATE = '/verana.ec.v1.MsgCreateEcosystem'
 
@@ -143,15 +150,27 @@ describe('feeGrantPayer', () => {
     expect(feeGrantPayer([grant()], CREATE, '5000', '4999')).toBe('granter-short')
   })
 
-  it('falls back to the account when the granter balance is unknown', () => {
-    expect(feeGrantPayer([grant()], CREATE, '5000', null)).toBe('granter-short')
+  it('keeps the granter paying when its balance is unknown', () => {
+    expect(feeGrantPayer([grant()], CREATE, '5000', null)).toBe('granter')
   })
 
-  it('falls back to the account when the granter balance is not a plain amount', () => {
-    expect(feeGrantPayer([grant()], CREATE, '5000', '')).toBe('granter-short')
+  it('keeps the granter paying when its balance is not a plain amount', () => {
+    expect(feeGrantPayer([grant()], CREATE, '5000', '')).toBe('granter')
   })
 
   it('leaves the account paying without a covering grant, whatever the granter holds', () => {
     expect(feeGrantPayer([grant({ msgTypes: ['/other'] })], CREATE, '5000', '1000000')).toBe('account')
+  })
+})
+
+describe('grantCoversMsgType', () => {
+  it('finds a grant listing the message type or no type at all', () => {
+    expect(grantCoversMsgType([grant({ msgTypes: [CREATE] })], CREATE)).toBe(true)
+    expect(grantCoversMsgType([grant({ msgTypes: [] })], CREATE)).toBe(true)
+  })
+
+  it('finds nothing when no grant lists the message type', () => {
+    expect(grantCoversMsgType([grant({ msgTypes: ['/other'] })], CREATE)).toBe(false)
+    expect(grantCoversMsgType([], CREATE)).toBe(false)
   })
 })

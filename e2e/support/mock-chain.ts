@@ -31,7 +31,7 @@ export type MockChainOptions = {
   stubSri?: boolean
   stubCorporation?: boolean
   balanceUvna?: string
-  balancesUvna?: Record<string, string>
+  balancesUvna?: Record<string, string | null>
 }
 
 const NOW = '2026-01-01T00:00:00.000000000Z'
@@ -212,6 +212,7 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
 
   const seen: string[] = []
   const broadcasts: string[] = []
+  const balanceOwners: string[] = []
   let simulations = 0
 
   const rpcPattern = new RegExp(`^${escapeRegExp(rpcEndpoint.replace(/\/+$/, ''))}/?(\\?.*)?$`)
@@ -242,7 +243,9 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
         if (path.includes('Query/Balance')) {
           const owner =
             typeof req.params?.data === 'string' ? QueryBalanceRequest.decode(fromHex(req.params.data)).address : ''
-          return fulfill(balanceQueryResult(balancesUvna[owner] ?? balanceUvna))
+          balanceOwners.push(owner)
+          const amount = owner in balancesUvna ? balancesUvna[owner] : balanceUvna
+          return amount === null ? route.abort('failed') : fulfill(balanceQueryResult(amount))
         }
         return fulfill(accountQueryResult(address, accountNumber, sequence))
       }
@@ -274,6 +277,7 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
   return {
     seenMethods: () => [...seen],
     broadcastTxs: () => [...broadcasts],
+    balanceOwners: () => [...balanceOwners],
     teardown: async () => {
       await page.unroute(rpcPattern)
       if (stubSri) await page.unroute('**/api/sri**')

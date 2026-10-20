@@ -13,7 +13,7 @@ import { simulationFor, type TxSimulation, useTxSimulation } from '@/hooks/useTx
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { authorizationRejection, chainRejection } from '@/lib/chain-error'
-import { type FeeGrantPayer, feeGrantPayer, nativeFeeAmount } from '@/lib/fee-grant'
+import { type FeeGrantPayer, feeGrantPayer, grantCoversMsgType, nativeFeeAmount } from '@/lib/fee-grant'
 import { balanceWarning, totalDebitUvna } from '@/lib/trust-costs'
 import {
   type CostLine,
@@ -76,7 +76,6 @@ function grantPayer(
   simulation: TxSimulation
 ): FeeGrantPayer | undefined {
   if (!feeGrant || lookup.status !== 'ready' || simulation.status !== 'ready') return undefined
-  if (granterBalance.status !== 'ready' && granterBalance.status !== 'failed') return undefined
   return feeGrantPayer(
     lookup.grants,
     feeGrant.msgType,
@@ -181,7 +180,11 @@ export function ConfirmTransactionModal({
   const { simulation, simulate } = useTxSimulation(simulatedMsgs)
   const currentSimulation = simulationFor(simulation, simulatedMsgs)
   const feeGrantLookup = useFeeGrant(request.feeGrant ?? null)
-  const granterBalance = useGranterBalance(request.feeGrant?.granterAddress)
+  const grantFound =
+    request.feeGrant !== undefined &&
+    feeGrantLookup.status === 'ready' &&
+    grantCoversMsgType(feeGrantLookup.grants, request.feeGrant.msgType)
+  const granterBalance = useGranterBalance(grantFound ? request.feeGrant?.granterAddress : undefined)
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -195,14 +198,16 @@ export function ConfirmTransactionModal({
 
   const proposal = request.mode === 'proposal'
   const editing = title !== settledTitle || summary !== settledSummary
-  const payerByGrant = grantPayer(request.feeGrant, feeGrantLookup, granterBalance, currentSimulation)
+  const granterBalancePending = grantFound && (granterBalance.status === 'idle' || granterBalance.status === 'loading')
+  const payerByGrant = granterBalancePending
+    ? undefined
+    : grantPayer(request.feeGrant, feeGrantLookup, granterBalance, currentSimulation)
   const granter = payerByGrant === 'granter' ? request.feeGrant?.granterAddress : undefined
-  const granterBalanceLoading = request.feeGrant !== undefined && granterBalance.status === 'loading'
   const payer = granter ?? request.payer
   const simulatedFeeUvna = currentSimulation.status === 'ready' ? Number(nativeFeeAmount(currentSimulation.fee)) : null
   const payerPending =
     feeGrantLookup.status === 'loading' ||
-    granterBalanceLoading ||
+    granterBalancePending ||
     (request.feeGrant !== undefined && currentSimulation.status === 'simulating')
   const accountOwesNothing = granter !== undefined && totalDebitUvna(request.costLines ?? []) === 0
   const holdForBalance =
@@ -251,11 +256,13 @@ export function ConfirmTransactionModal({
           ))}
         </dl>
         {granter ? <p className="text-sm text-gray-600 dark:text-gray-300">{t('txconfirm.feegrant.covered')}</p> : null}
-        {payerByGrant === 'granter-short' && granterBalance.status === 'ready' ? (
+        {granter && granterBalance.status === 'failed' ? (
+          <p className="text-sm text-gray-600 dark:text-gray-300">{t('txconfirm.feegrant.balanceUnknown')}</p>
+        ) : null}
+        {payerByGrant === 'granter-short' ? (
           <p className="text-sm text-gray-600 dark:text-gray-300">{t('txconfirm.feegrant.short')}</p>
         ) : null}
-        {feeGrantLookup.status === 'failed' ||
-        (payerByGrant === 'granter-short' && granterBalance.status === 'failed') ? (
+        {feeGrantLookup.status === 'failed' ? (
           <p className="text-sm text-gray-600 dark:text-gray-300">{t('txconfirm.feegrant.unavailable')}</p>
         ) : null}
         {proposal ? (
@@ -311,7 +318,7 @@ export function ConfirmTransactionModal({
               currentSimulation.status !== 'ready' ||
               editing ||
               feeGrantLookup.status === 'loading' ||
-              granterBalanceLoading ||
+              granterBalancePending ||
               holdForBalance
             }
             onClick={() => {
