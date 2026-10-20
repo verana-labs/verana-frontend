@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.18.2](https://github.com/verana-labs/verana-frontend/compare/v0.18.1...v0.18.2) (2026-10-20)
+
+
+### Bug Fixes
+
+* [Participants] join holders by the schema's holder onboarding mode ([#549](https://github.com/verana-labs/verana-frontend/issues/549)) ([d17902e](https://github.com/verana-labs/verana-frontend/commit/d17902e92bac9f3ccdda779f5806687fda866b7c))
+* [Pending Tasks] combine the validation and proposal counts in the nav badge ([#551](https://github.com/verana-labs/verana-frontend/issues/551)) ([04b4b6f](https://github.com/verana-labs/verana-frontend/commit/04b4b6feb0fdc00f11aaec68ac9854ea327e2a11))
+* [Transactions] pay the fee yourself when the corporation cannot cover it ([#558](https://github.com/verana-labs/verana-frontend/issues/558)) ([455e642](https://github.com/verana-labs/verana-frontend/commit/455e642ae7870e8de1ed71592d3985d9ff48e836))
+
 ## [0.18.1](https://github.com/verana-labs/verana-frontend/compare/v0.18.0...v0.18.1) (2026-10-19)
 
 
