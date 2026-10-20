@@ -28,6 +28,10 @@ describe('parseBalanceQuery', () => {
     expect(() => parseBalanceQuery(balancePayload('0', 5))).toThrow()
     expect(() => parseBalanceQuery({ result: {} })).toThrow()
   })
+
+  it('rejects a response without a balance instead of reading it as zero', () => {
+    expect(() => parseBalanceQuery({ result: { response: { code: 0, value: '' } } })).toThrow()
+  })
 })
 
 describe('startGranterBalanceLookup', () => {

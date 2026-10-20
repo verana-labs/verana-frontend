@@ -182,6 +182,7 @@ export function ConfirmTransactionModal({
   const feeGrantLookup = useFeeGrant(request.feeGrant ?? null)
   const grantFound =
     request.feeGrant !== undefined &&
+    Boolean(request.feeGrant.granterAddress) &&
     feeGrantLookup.status === 'ready' &&
     grantCoversMsgType(feeGrantLookup.grants, request.feeGrant.msgType)
   const granterBalance = useGranterBalance(grantFound ? request.feeGrant?.granterAddress : undefined)

@@ -33,7 +33,9 @@ export function parseBalanceQuery(payload: unknown): string {
   const response = asRecord(asRecord(asRecord(payload)?.result)?.response)
   if (!response || response.code !== 0 || typeof response.value !== 'string')
     throw new Error('granter balance: unexpected abci_query response')
-  return QueryBalanceResponse.decode(fromBase64(response.value)).balance?.amount ?? '0'
+  const amount = QueryBalanceResponse.decode(fromBase64(response.value)).balance?.amount
+  if (amount === undefined) throw new Error('granter balance: missing balance in abci_query response')
+  return amount
 }
 
 export function startGranterBalanceLookup(
