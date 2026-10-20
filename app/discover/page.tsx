@@ -14,6 +14,7 @@ import TitleAndButton from '@/ui/common/title-and-button'
 import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 
 const NO_SCHEMAS: EcosystemSchemaPage = { items: [], hasNext: false }
+const NO_ECOSYSTEM_IDS: string[] = []
 
 function scrollToTop(): void {
   document.getElementById('app-scroll')?.scrollTo({ top: 0, behavior: 'smooth' })
@@ -40,7 +41,6 @@ export default function DiscoverJoinPage() {
   const appliedFilters = useMemo(() => ({ ...filters, search: discoverSearch }), [filters, discoverSearch])
   const pagingKey = JSON.stringify([appliedFilters, actingCorporationId])
   const [paging, setPaging] = useState({ key: pagingKey, index: 0 })
-  if (paging.key !== pagingKey) setPaging({ key: pagingKey, index: 0 })
   const pageIndex = paging.key === pagingKey ? paging.index : 0
 
   const matching = useMemo(
@@ -61,8 +61,8 @@ export default function DiscoverJoinPage() {
   const shown = page.items
 
   useEffect(() => {
-    setShownEcosystemIds(shown.map((ecosystem) => ecosystem.id))
-  }, [setShownEcosystemIds, shown])
+    setShownEcosystemIds(fullWindow ? shown.map((ecosystem) => ecosystem.id) : NO_ECOSYSTEM_IDS)
+  }, [fullWindow, setShownEcosystemIds, shown])
 
   const partial = discoverCtx.hasNext || discoverCtx.hasPrevious
   const loading = (discoverCtx.loading && discoverList.length === 0) || roleFiltersPending(filters, rolesLoading)
