@@ -46,7 +46,7 @@ export function useOperatorGrantDraft(
   const existingAuthorization = authorizationFor(authorizations, target)
   const keptMsgTypes = unlistedMsgTypes(existingAuthorization)
 
-  function setGrantee(next: string): boolean {
+  function setGrantee(next: string): { feeGrant: boolean; authorization: boolean } {
     const nextFeeGrant = feeGrantFor(feeGrants, next.trim())
     const nextAuthorization = authorizationFor(authorizations, next.trim())
     setOptions((current) =>
@@ -58,7 +58,7 @@ export function useOperatorGrantDraft(
     )
     setMsgTypes((current) => retargetMessageTypes(current, existingAuthorization, nextAuthorization))
     setGranteeText(next)
-    return nextFeeGrant !== undefined || nextAuthorization !== undefined
+    return { feeGrant: nextFeeGrant !== undefined, authorization: nextAuthorization !== undefined }
   }
 
   function reset() {
