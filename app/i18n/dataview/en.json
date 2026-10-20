@@ -946,6 +946,8 @@
   "txconfirm.payer.checking": "Checking the fee grant…",
   "txconfirm.feegrant.covered": "The corporation covers this network fee with a fee grant.",
   "txconfirm.feegrant.unavailable": "The fee grant could not be checked, your account pays this network fee.",
+  "txconfirm.feegrant.short": "The corporation cannot cover this fee right now, your account pays this network fee.",
+  "txconfirm.feegrant.balanceUnknown": "The corporation balance could not be checked, the fee grant still applies to this network fee.",
   "txconfirm.balance.low": "Your balance of {value} VNA covers the {fee} VNA this transaction takes from your account, but it is running low. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> to keep your activity uninterrupted.",
   "txconfirm.balance.low.noFaucet": "Your balance of {value} VNA covers the {fee} VNA this transaction takes from your account, but it is running low. Add more VNA to keep your activity uninterrupted.",
   "txconfirm.balance.shortfall": "Your balance of {value} VNA does not cover the {fee} VNA this transaction takes from your account. <a href='/account?getVNA=true' class='lowBalanceLink'>Add more VNA</a> before you confirm.",
