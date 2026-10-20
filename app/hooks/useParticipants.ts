@@ -4,9 +4,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
 import { useLoadMore } from '@/hooks/useKeysetPages'
 import { parseParticipantRecord } from '@/hooks/useParticipant'
-import { applyKeysetParams, indexerValidators, takeKeysetPage } from '@/lib/indexer-json'
+import { groupRolesByEcosystem } from '@/lib/discover-list'
+import { applyKeysetParams, fetchJson, indexerValidators, takeKeysetPage } from '@/lib/indexer-json'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
-import type { Participant } from '@/ui/dataview/datasections/participant'
+import type { Participant, ParticipantRole } from '@/ui/dataview/datasections/participant'
 
 const { record } = indexerValidators('participants')
 
@@ -139,4 +140,68 @@ export function useParticipants(
   })
 
   return { participants, pageKey, loading, errorParticipants, refetch: fetchParticipants, hasNext, loadMore }
+}
+
+const ROLE_LOOKUP_PAGE_SIZE = 64
+
+function corporationParticipantsUrl(base: string, corporationId: number, after?: string): string {
+  const params = new URLSearchParams({ corporation_id: String(corporationId), participant_state: 'ACTIVE' })
+  applyKeysetParams(params, { pageSize: ROLE_LOOKUP_PAGE_SIZE, after })
+  return `${base}/list?${params.toString()}`
+}
+
+export async function fetchCorporationParticipants(
+  base: string,
+  corporationId: number
+): Promise<{ participants: Participant[]; failureReason: string | null }> {
+  const participants: Participant[] = []
+  let after: string | undefined
+  try {
+    for (;;) {
+      const payload = await fetchJson(
+        corporationParticipantsUrl(base, corporationId, after),
+        'Unable to fetch participants'
+      )
+      const page = takeKeysetPage(parseParticipantsResponse(payload), ROLE_LOOKUP_PAGE_SIZE)
+      participants.push(...page.items)
+      const last = page.items[page.items.length - 1]?.id
+      if (!page.hasNext || last === undefined || last === after) return { participants, failureReason: null }
+      after = last
+    }
+  } catch (error) {
+    return { participants, failureReason: error instanceof Error ? error.message : String(error) }
+  }
+}
+
+const NO_ROLES: Record<string, ParticipantRole[]> = {}
+
+type RoleLookup = {
+  corporationId: number
+  rolesByEcosystem: Record<string, ParticipantRole[]>
+  failureReason: string | null
+}
+
+export function useCorporationRolesByEcosystem(corporationId: number | undefined) {
+  const enabled = corporationId !== undefined && Boolean(VERANA_REST_ENDPOINT_PARTICIPANT)
+  const [lookup, setLookup] = useState<RoleLookup | null>(null)
+
+  useEffect(() => {
+    const endpoint = VERANA_REST_ENDPOINT_PARTICIPANT
+    if (corporationId === undefined || !endpoint) return
+    let cancelled = false
+    void fetchCorporationParticipants(endpoint, corporationId).then(({ participants, failureReason }) => {
+      if (cancelled) return
+      setLookup({ corporationId, rolesByEcosystem: groupRolesByEcosystem(participants), failureReason })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [corporationId])
+
+  const current = enabled && lookup?.corporationId === corporationId ? lookup : null
+  return {
+    rolesByEcosystem: current?.rolesByEcosystem ?? NO_ROLES,
+    rolesLoading: enabled && current === null,
+    failureReason: current?.failureReason ?? null,
+  }
 }
