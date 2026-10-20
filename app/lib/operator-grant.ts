@@ -2,7 +2,8 @@ import { MsgGrantOperatorAuthorization } from '@verana-labs/verana-types/codec/v
 import { veranaDenom } from '@/config/veranaChain.sign.client'
 import { translate } from '@/i18n/dataview'
 import type { CostLine } from '@/lib/tx-preview'
-import { formatVNAFromUVNA } from '@/util/util'
+import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
+import { formatDateTime, formatVNAFromUVNA, parseVNAExact } from '@/util/util'
 
 export interface GrantLimit {
   amountUvna: string
@@ -51,10 +52,8 @@ const MAX_GO_DURATION_DAYS = 106_751
 const UVNA_DECIMALS = 6
 
 export function vnaToUvna(text: string): string | null {
-  const match = /^(\d+)(?:\.(\d{1,6}))?$/.exec(text.trim())
-  if (!match) return null
-  const uvna = BigInt(match[1]) * BigInt(10 ** UVNA_DECIMALS) + BigInt((match[2] ?? '').padEnd(UVNA_DECIMALS, '0'))
-  return uvna > BigInt(0) ? uvna.toString() : null
+  const uvna = parseVNAExact(text)
+  return uvna !== null && uvna !== '0' ? uvna : null
 }
 
 export function uvnaToVna(uvna: string): string {
@@ -81,6 +80,7 @@ export interface ExistingFeeGrant {
 
 export interface ExistingAuthorization {
   operator: string
+  msgTypes: readonly string[]
   spendLimit: ExistingCoins
   period: string | null
   expiration: string | null
@@ -170,6 +170,30 @@ export function retargetAuthorizationOptions(
     previous ? existingAuthorizationFields(previous) : NO_AUTHORIZATION_FIELDS,
     next ? existingAuthorizationFields(next) : NO_AUTHORIZATION_FIELDS
   )
+}
+
+export function sameMsgTypes(left: readonly string[], right: readonly string[]): boolean {
+  const set = new Set(right)
+  return new Set(left).size === set.size && left.every((msgType) => set.has(msgType))
+}
+
+export function grantMessageTypes(authorization: ExistingAuthorization | undefined): string[] {
+  if (!authorization) return [...OPERATOR_GRANT_MESSAGE_TYPES]
+  return OPERATOR_GRANT_MESSAGE_TYPES.filter((typeUrl) => authorization.msgTypes.includes(typeUrl))
+}
+
+export function unlistedMsgTypes(authorization: ExistingAuthorization | undefined): string[] {
+  if (!authorization) return []
+  const listed = new Set<string>(OPERATOR_GRANT_MESSAGE_TYPES)
+  return authorization.msgTypes.filter((typeUrl) => !listed.has(typeUrl))
+}
+
+export function retargetMessageTypes(
+  selected: string[],
+  previous: ExistingAuthorization | undefined,
+  next: ExistingAuthorization | undefined
+): string[] {
+  return sameMsgTypes(selected, grantMessageTypes(previous)) ? grantMessageTypes(next) : selected
 }
 
 function validPeriod(seconds: number): boolean {
@@ -278,7 +302,7 @@ export function grantOptionLines(options: OperatorGrantOptions, replacesFeeGrant
     lines.push({ label: translate('delegation.spendLimit'), value: formatGrantLimit(options.spendLimit) })
   }
   if (options.expiration) {
-    lines.push({ label: translate('delegation.expiration'), value: options.expiration.toLocaleString() })
+    lines.push({ label: translate('delegation.expiration'), value: formatDateTime(options.expiration) })
   }
   const feeGrant = options.feeGrant
   lines.push({

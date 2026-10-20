@@ -38,6 +38,8 @@ export interface GroupPolicy {
   votingPeriod: string | null
   totalWeight: string
   groupId: number
+  groupVersion: number | null
+  policyVersion: number | null
 }
 
 export interface CorporationTrustDeposit {
@@ -100,6 +102,28 @@ export interface ProposalRow {
   proposers: string[]
   messages: Record<string, unknown>[]
   tally: ProposalTally
+  groupVersion: number | null
+  policyVersion: number | null
+}
+
+export interface TallyScale {
+  total: number | null
+  threshold: number | null
+}
+
+export function proposalTallyScale(
+  proposal: Pick<ProposalRow, 'status' | 'groupVersion' | 'policyVersion'>,
+  policy: GroupPolicy
+): TallyScale {
+  const unchangedSince = (submitted: number | null, current: number | null) =>
+    submitted !== null && current !== null ? submitted === current : proposal.status === 'SUBMITTED'
+  return {
+    total: unchangedSince(proposal.groupVersion, policy.groupVersion) ? Number(policy.totalWeight) || 0 : null,
+    threshold:
+      policy.threshold !== null && unchangedSince(proposal.policyVersion, policy.policyVersion)
+        ? Number(policy.threshold) || 0
+        : null,
+  }
 }
 
 export interface CorporationGovernance {
@@ -182,6 +206,8 @@ export function parseGroup(payload: unknown): { members: GroupMemberRow[]; polic
       votingPeriod: nullableString(windows.voting_period ?? null, 'group.policy.decision_policy.windows.voting_period'),
       totalWeight: string(group.total_weight, 'group.total_weight'),
       groupId: integer(group.group_id, 'group.group_id'),
+      groupVersion: group.version == null ? null : integer(group.version, 'group.version'),
+      policyVersion: policy.version == null ? null : integer(policy.version, 'group.policy.version'),
     },
   }
 }
@@ -320,6 +346,11 @@ export function parseProposals(payload: unknown): ProposalRow[] {
       proposers: Array.isArray(row.proposers) ? stringArray(row.proposers, `proposals[${index}].proposers`) : [],
       messages: Array.isArray(row.messages) ? row.messages.map((message) => record(message, 'proposal message')) : [],
       tally: parseTally(row.tally, `proposals[${index}].tally`),
+      groupVersion: row.group_version == null ? null : integer(row.group_version, `proposals[${index}].group_version`),
+      policyVersion:
+        row.group_policy_version == null
+          ? null
+          : integer(row.group_policy_version, `proposals[${index}].group_policy_version`),
     }
   })
 }

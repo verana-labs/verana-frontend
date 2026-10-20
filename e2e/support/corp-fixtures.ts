@@ -50,7 +50,7 @@ export const OPERATOR_GRANT_MESSAGE_TYPES = [
   '/verana.di.v1.MsgStoreDigest',
 ]
 
-const HARNESS_GRANTS_13 = [
+export const HARNESS_GRANTS_13 = [
   '/verana.co.v1.MsgUpdateCorporation',
   '/verana.de.v1.MsgGrantOperatorAuthorization',
   '/verana.de.v1.MsgRevokeOperatorAuthorization',
@@ -291,6 +291,7 @@ function agentParticipant(id: number, did: string, role: ParticipantRole, partic
     did,
     corporation_id: 13,
     participant_state: participantState,
+    op_state: 'VALIDATED',
     corporation_available_actions: [],
     validator_available_actions: [],
     vs_operator: id === 102 ? VS_OPERATOR : null,

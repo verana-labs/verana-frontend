@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { authorizationRejection } from './chain-error'
+import { authorizationRejection, chainRejection } from './chain-error'
 
 const NOT_FOUND = 'operator authorization not found for this corporation/operator pair'
 
@@ -86,6 +86,38 @@ describe('authorizationRejection', () => {
     ).toBeNull()
     expect(
       authorizationRejection('failed to execute message; message index: 0: credential schema is already archived')
+    ).toBeNull()
+  })
+})
+
+describe('chainRejection', () => {
+  it('reads a slash above the trust deposit from the simulation error, in VNA', () => {
+    expect(
+      chainRejection(
+        "Direct signing failed: Query failed with (6): rpc error: code = Unknown desc = failed to execute message; message index: 0: amount exceeds available deposit: 1 > 0 [cosmos/cosmos-sdk@v0.54.0/baseapp/baseapp.go:1051] with gas used: '51234': unknown request"
+      )
+    ).toBe('the amount of 0.000001 VNA is more than the available trust deposit of 0 VNA')
+  })
+
+  it('reads a repay the corporation cannot afford', () => {
+    expect(
+      chainRejection(
+        'failed to execute message; message index: 0: insufficient funds to repay slashed deposit: required 2000000'
+      )
+    ).toBe('the corporation holds less than the 2 VNA needed to repay the slashed deposit')
+  })
+
+  it('reads a balance below what the message spends', () => {
+    expect(
+      chainRejection(
+        'failed to execute message; message index: 0: spendable balance 500000uvna is smaller than 5000000uvna: insufficient funds'
+      )
+    ).toBe('the paying account holds 0.5 VNA, less than the 5 VNA needed')
+  })
+
+  it('leaves the other rejections to the raw text', () => {
+    expect(
+      chainRejection('failed to execute message; message index: 0: credential schema is already archived')
     ).toBeNull()
   })
 })

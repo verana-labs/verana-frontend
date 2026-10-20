@@ -160,7 +160,7 @@ type BaseField = {
 
 /* Field validation params by all field types */
 export type FieldValidation = {
-  type: 'DID' | 'URL' | 'JSON_SCHEMA' | 'String' | 'Number' | 'Long'
+  type: 'DID' | 'URL' | 'JSON_SCHEMA' | 'String' | 'Number' | 'Long' | 'VNA'
   lessThan?: number
   lessThanOrEqual?: number
   greaterThan?: number

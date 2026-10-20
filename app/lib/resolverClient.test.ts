@@ -290,6 +290,15 @@ describe('mapResolveResult', () => {
     expect(mapResolveResult(DID, raw).trustStatus).toBe('TRUSTED')
   })
 
+  it('treats an answer that carries no evaluation as unresolved, not untrusted', () => {
+    expect(mapResolveResult(DID, { did: DID }).trustStatus).toBe('UNRESOLVED')
+    expect(enrichmentFromTrustData(DID, { did: DID, ecsCredentials: [] })?.trustStatus).toBe('UNRESOLVED')
+  })
+
+  it('keeps an evaluated DID that is not trusted as untrusted', () => {
+    expect(mapResolveResult(DID, { did: DID, trusted: false }).trustStatus).toBe('UNTRUSTED')
+  })
+
   it('carries the descriptionFormat claim of the service credential', () => {
     const withFormat = mapResolveResult(DID, resolveResponse({ descriptionFormat: 'text/markdown' }))
     expect(withFormat.serviceDescriptionFormat).toBe('text/markdown')

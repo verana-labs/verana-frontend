@@ -12,7 +12,7 @@ import { type GranterBalance, useGranterBalance } from '@/hooks/useGranterBalanc
 import { simulationFor, type TxSimulation, useTxSimulation } from '@/hooks/useTxSimulation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
-import { authorizationRejection } from '@/lib/chain-error'
+import { authorizationRejection, chainRejection } from '@/lib/chain-error'
 import { type FeeGrantPayer, feeGrantPayer, nativeFeeAmount } from '@/lib/fee-grant'
 import { balanceWarning, totalDebitUvna } from '@/lib/trust-costs'
 import {
@@ -42,7 +42,7 @@ function simulationRejection(message: string): string {
   const reason = authorizationRejection(message)
   return reason
     ? t('txconfirm.simulation.unauthorized', { reason })
-    : t('txconfirm.simulation.rejected', { msg: message })
+    : t('txconfirm.simulation.rejected', { msg: chainRejection(message) ?? message })
 }
 
 function proposalPolicy(msgs: EncodeObject[]): string {
@@ -185,10 +185,12 @@ export function ConfirmTransactionModal({
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') onCancel()
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      onCancel()
     }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
+    window.addEventListener('keydown', onKeyDown, true)
+    return () => window.removeEventListener('keydown', onKeyDown, true)
   }, [onCancel])
 
   const proposal = request.mode === 'proposal'
