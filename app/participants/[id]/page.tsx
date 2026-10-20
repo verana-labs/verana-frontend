@@ -9,13 +9,21 @@ import { useEcosystemData } from '@/hooks/useEcosystemData'
 import { participantsPageKey, useParticipants } from '@/hooks/useParticipants'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
+import { isHolderOnboardingMode } from '@/lib/participant-onboarding'
 import { isNativePricing } from '@/lib/pricing-asset'
 import ParticipantTree, { mergeTrees, ROOT_NODE_ID } from '@/ui/common/participant-tree'
 import { withAuthority } from '@/ui/common/participant-tree-filter'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import type { Role } from '@/ui/common/role-card'
 import type { Participant } from '@/ui/dataview/datasections/participant'
-import { nodeChildRoles, participantAuthority, roleColorClass, roleJoinColorClass } from '@/util/util'
+import {
+  childRoleOnboardingAction,
+  childRoleOnboardingLabel,
+  nodeChildRoles,
+  participantAuthority,
+  roleColorClass,
+  roleJoinColorClass,
+} from '@/util/util'
 
 type BuiltParticipant = Participant & { children: BuiltParticipant[] }
 type ChildRole = { role: Role; label: string; validation: boolean }
@@ -91,14 +99,8 @@ export default function ParticipantsPage() {
       roles.map((childRole) => ({
         nodeId: `group:${parent.id}:${childRole.role}`,
         name: childRole.label,
-        onboardingAction: isWalletConnected
-          ? childRole.validation
-            ? childRole.role === 'HOLDER' && Number(parent.validation_fees) === 0
-              ? 'LinkDID'
-              : 'MsgStartParticipantOP'
-            : 'MsgSelfCreateParticipant'
-          : 'Connect',
-        onboardingLabel: childRole.validation ? 'onboarding process' : 'open',
+        onboardingAction: childRoleOnboardingAction(childRole, isWalletConnected),
+        onboardingLabel: childRoleOnboardingLabel(childRole),
         isCorporation: false,
         isValidator: false,
         group: true,
@@ -161,6 +163,9 @@ export default function ParticipantsPage() {
         ? nodeChildRoles(
             String(credentialSchema.issuerOnboardingMode),
             String(credentialSchema.verifierOnboardingMode),
+            isHolderOnboardingMode(credentialSchema.holderOnboardingMode)
+              ? credentialSchema.holderOnboardingMode
+              : null,
             role ?? ''
           )
         : [],

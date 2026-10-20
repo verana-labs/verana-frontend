@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { getParticipantJoinMessage, getParticipantOnboardingDecision } from './participant-onboarding'
+import {
+  getParticipantJoinMessage,
+  getParticipantOnboardingDecision,
+  isHolderOnboardingMode,
+} from './participant-onboarding'
 
 describe('getParticipantJoinMessage', () => {
   it.each([
@@ -48,9 +52,18 @@ describe('getParticipantOnboardingDecision', () => {
     ).toThrow('Permissionless holders do not create on-chain participants')
   })
 
-  it('rejects a holder role when the schema has no holder onboarding mode', () => {
+  it('treats a schema without a holder onboarding mode as permissionless, as the chain does', () => {
     expect(() => getParticipantOnboardingDecision('HOLDER', { ...schemaModes, holderOnboardingMode: null })).toThrow(
-      'Holder onboarding mode is not configured'
+      'Permissionless holders do not create on-chain participants'
     )
+  })
+})
+
+describe('isHolderOnboardingMode', () => {
+  it('accepts only the indexer holder onboarding modes', () => {
+    expect(isHolderOnboardingMode('PERMISSIONLESS')).toBe(true)
+    expect(isHolderOnboardingMode('ISSUER_ONBOARDING_PROCESS')).toBe(true)
+    expect(isHolderOnboardingMode(2)).toBe(false)
+    expect(isHolderOnboardingMode(null)).toBe(false)
   })
 })

@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { HolderOnboardingMode } from '@/lib/participant-onboarding'
 import {
+  childRoleOnboardingAction,
+  childRoleOnboardingLabel,
   countryCodeToFlag,
   countryNameFromCode,
   expireBeforeDays,
@@ -10,6 +13,7 @@ import {
   getStatus,
   isExpireSoon,
   isJson,
+  nodeChildRoles,
   onboardingStateColor,
   parseVNA,
   parseVNAExact,
@@ -466,5 +470,45 @@ describe('role class helpers', () => {
     expect(roleJoinColorClass('ISSUER')).toBe('bg-green-100 text-green-500 dark:bg-green-900/20 dark:text-green-400')
     expect(roleJoinColorClass('ECOSYSTEM')).toBe(roleJoinColorClass('whatever'))
     expect(roleJoinColorClass('whatever')).toBe('bg-gray-100 text-gray-500 dark:bg-gray-900/20 dark:text-gray-400')
+  })
+})
+
+describe('nodeChildRoles', () => {
+  const holderValidation = (holderMode: HolderOnboardingMode | null) =>
+    nodeChildRoles('OPEN', 'OPEN', holderMode, 'ISSUER').map((child) => [child.role, child.validation])
+
+  it('onboards holders through the issuer only under the issuer onboarding process', () => {
+    expect(holderValidation('ISSUER_ONBOARDING_PROCESS')).toEqual([['HOLDER', true]])
+    expect(holderValidation('PERMISSIONLESS')).toEqual([['HOLDER', false]])
+  })
+
+  it('treats a schema without a holder onboarding mode as permissionless, as the chain does', () => {
+    expect(holderValidation(null)).toEqual([['HOLDER', false]])
+  })
+})
+
+describe('childRoleOnboardingAction', () => {
+  it('sends permissionless holders to the issuer, with or without a wallet', () => {
+    expect(childRoleOnboardingAction({ role: 'HOLDER', validation: false }, true)).toBe('LinkDID')
+    expect(childRoleOnboardingAction({ role: 'HOLDER', validation: false }, false)).toBe('LinkDID')
+  })
+
+  it('starts an onboarding process for validated holders like any validated role', () => {
+    expect(childRoleOnboardingAction({ role: 'HOLDER', validation: true }, true)).toBe('MsgStartParticipantOP')
+    expect(childRoleOnboardingAction({ role: 'ISSUER', validation: true }, true)).toBe('MsgStartParticipantOP')
+    expect(childRoleOnboardingAction({ role: 'HOLDER', validation: true }, false)).toBe('Connect')
+  })
+
+  it('self-creates open roles once a wallet is connected', () => {
+    expect(childRoleOnboardingAction({ role: 'VERIFIER', validation: false }, true)).toBe('MsgSelfCreateParticipant')
+    expect(childRoleOnboardingAction({ role: 'VERIFIER', validation: false }, false)).toBe('Connect')
+  })
+})
+
+describe('childRoleOnboardingLabel', () => {
+  it('names the permissionless holder mode instead of open', () => {
+    expect(childRoleOnboardingLabel({ role: 'HOLDER', validation: false })).toBe('Permissionless')
+    expect(childRoleOnboardingLabel({ role: 'VERIFIER', validation: false })).toBe('open')
+    expect(childRoleOnboardingLabel({ role: 'HOLDER', validation: true })).toBe('onboarding process')
   })
 })

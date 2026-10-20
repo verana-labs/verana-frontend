@@ -12,6 +12,7 @@ import {
   fetchDidEnrichment,
   invalidateDid,
   isMarkdownDescriptionFormat,
+  linkedDomainsLink,
   mapAgentResolution,
   mapResolveResult,
 } from '@/lib/resolverClient'
@@ -372,5 +373,87 @@ describe('enrichmentFromTrustData', () => {
     expect(enrichment?.trustStatus).toBe('TRUSTED')
     expect(enrichment?.serviceName).toBeUndefined()
     expect(enrichment?.organizationName).toBeUndefined()
+  })
+})
+
+describe('linkedDomainsLink', () => {
+  it('takes the endpoint of the first LinkedDomains service', () => {
+    expect(
+      linkedDomainsLink([
+        { id: '#files', type: 'relativeRef', serviceEndpoint: 'https://service.example/files' },
+        { id: '#website', type: 'LinkedDomains', serviceEndpoint: 'https://service.example' },
+        { id: '#other', type: 'LinkedDomains', serviceEndpoint: 'https://other.example' },
+      ])
+    ).toBe('https://service.example')
+  })
+
+  it('reads an array endpoint, an origins endpoint and an array type', () => {
+    expect(
+      linkedDomainsLink([{ type: 'LinkedDomains', serviceEndpoint: ['wss://service.example', 'https://a.example'] }])
+    ).toBe('https://a.example')
+    expect(linkedDomainsLink([{ type: ['LinkedDomains'], serviceEndpoint: { origins: ['https://b.example'] } }])).toBe(
+      'https://b.example'
+    )
+  })
+
+  it('accepts a mailto link to an email address', () => {
+    expect(linkedDomainsLink([{ type: 'LinkedDomains', serviceEndpoint: 'mailto:issuer@example.com' }])).toBe(
+      'mailto:issuer@example.com'
+    )
+  })
+
+  it('keeps a mailto link that carries a subject', () => {
+    expect(
+      linkedDomainsLink([{ type: 'LinkedDomains', serviceEndpoint: 'mailto:issuer@example.com?subject=Join' }])
+    ).toBe('mailto:issuer@example.com?subject=Join')
+  })
+
+  it('rejects a mailto link that does not hold a plausible email address', () => {
+    for (const endpoint of [
+      'mailto:issuer',
+      'mailto:issuer@example',
+      'mailto:@example.com',
+      'mailto:is suer@example.com',
+      'mailto:issuer@team@example.com',
+    ]) {
+      expect(linkedDomainsLink([{ type: 'LinkedDomains', serviceEndpoint: endpoint }])).toBeUndefined()
+    }
+  })
+
+  it('keeps the published order between a website and an email', () => {
+    const website = 'https://service.example'
+    const email = 'mailto:issuer@example.com'
+    expect(linkedDomainsLink([{ type: 'LinkedDomains', serviceEndpoint: [email, website] }])).toBe(email)
+    expect(
+      linkedDomainsLink([
+        { type: 'LinkedDomains', serviceEndpoint: website },
+        { type: 'LinkedDomains', serviceEndpoint: email },
+      ])
+    ).toBe(website)
+  })
+
+  it('ignores endpoints that are neither http, https nor mailto', () => {
+    expect(linkedDomainsLink([{ type: 'LinkedDomains', serviceEndpoint: 'javascript:alert(1)' }])).toBeUndefined()
+    expect(
+      linkedDomainsLink([{ type: 'LinkedDomains', serviceEndpoint: { uri: 'https://c.example' } }])
+    ).toBeUndefined()
+  })
+
+  it('finds no link when no LinkedDomains service is published', () => {
+    expect(
+      linkedDomainsLink([
+        { type: 'DIDCommMessaging', serviceEndpoint: { uri: 'wss://service.example' } },
+        { type: 'relativeRef', serviceEndpoint: 'https://service.example' },
+      ])
+    ).toBeUndefined()
+    expect(linkedDomainsLink(undefined)).toBeUndefined()
+  })
+
+  it('is carried on the agent resolution', () => {
+    const resolution = mapAgentResolution(DID, {
+      did: DID,
+      services: [{ id: '#website', type: 'LinkedDomains', serviceEndpoint: 'https://service.example' }],
+    })
+    expect(resolution.linkedDomain).toBe('https://service.example')
   })
 })

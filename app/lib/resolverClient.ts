@@ -1,4 +1,5 @@
 import { VERANA_REST_ENDPOINT_PARTICIPANT, VERANA_REST_ENDPOINT_VERIFIABLE_TRUST } from '@/config/env'
+import { isValidHttpUrl } from '@/util/validations'
 
 export type DidTrustState = 'TRUSTED' | 'UNTRUSTED' | 'UNRESOLVED'
 
@@ -83,6 +84,7 @@ export interface AgentResolution {
   participations: ResolvedParticipation[]
   services: ResolvedService[]
   credentials: PresentedCredential[]
+  linkedDomain?: string
 }
 
 const SUCCESS_TTL_MS = 60_000
@@ -257,6 +259,29 @@ function asRecord(value: unknown): Record<string, unknown> | null {
     : null
 }
 
+const MAILTO_PATTERN = /^mailto:[^\s@?#]+@[^\s@?#]+\.[^\s@?#]+(\?[^\s#]*)?$/
+
+function isLinkedDomainLink(value: string): boolean {
+  return isValidHttpUrl(value) || MAILTO_PATTERN.test(value)
+}
+
+export function linkedDomainsLink(services: unknown[] | undefined): string | undefined {
+  for (const entry of services ?? []) {
+    const row = asRecord(entry)
+    if (!row) continue
+    const types: unknown[] = Array.isArray(row.type) ? row.type : [row.type]
+    if (!types.includes('LinkedDomains')) continue
+    const endpoint = row.serviceEndpoint
+    const origins = asRecord(endpoint)?.origins
+    const candidates: unknown[] = Array.isArray(endpoint) ? endpoint : Array.isArray(origins) ? origins : [endpoint]
+    const link = candidates.find(
+      (candidate): candidate is string => typeof candidate === 'string' && isLinkedDomainLink(candidate)
+    )
+    if (link) return link
+  }
+  return undefined
+}
+
 export function mapAgentResolution(did: string, raw: ResolveResult): AgentResolution {
   const participations: ResolvedParticipation[] = []
   for (const entry of raw.participations ?? []) {
@@ -310,7 +335,13 @@ export function mapAgentResolution(did: string, raw: ResolveResult): AgentResolu
     }
   }
 
-  return { enrichment: mapResolveResult(did, raw), participations, services, credentials }
+  return {
+    enrichment: mapResolveResult(did, raw),
+    participations,
+    services,
+    credentials,
+    linkedDomain: linkedDomainsLink(raw.services),
+  }
 }
 
 function unresolvedAgent(did: string): AgentResolution {
