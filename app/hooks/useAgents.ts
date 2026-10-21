@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_ECOSYSTEM, VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
 import {
-  emptyWindow,
   parseVsOperatorAuthorizations,
   type VsOperatorAuthorizationRow,
   vsOperatorAuthorizationsUrl,
@@ -16,6 +15,7 @@ import { type IndexerEvent, refreshesEntityLists, SESSION_EVENT } from '@/lib/in
 import {
   applyKeysetParams,
   degrade,
+  emptyWindow,
   fetchJson,
   fetchKeysetPages,
   type KeysetWindow,

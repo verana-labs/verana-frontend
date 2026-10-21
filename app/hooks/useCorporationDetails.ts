@@ -11,7 +11,14 @@ import {
 import { parseParticipantsResponse } from '@/hooks/useParticipants'
 import { type ActivityRow, parseActivityHistory } from '@/lib/activity-history'
 import { type GfVersion, parseGfVersions } from '@/lib/gf-document'
-import { degrade, fetchJson, fetchKeysetPages, indexerValidators, type KeysetWindow } from '@/lib/indexer-json'
+import {
+  degrade,
+  emptyWindow,
+  fetchJson,
+  fetchKeysetPages,
+  indexerValidators,
+  type KeysetWindow,
+} from '@/lib/indexer-json'
 import { logger } from '@/lib/logger'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 
@@ -161,10 +168,6 @@ export interface CorporationDetails {
   history: ActivityRow[]
   degraded: DegradedSections
   partial: PartialSections
-}
-
-export function emptyWindow<T>(): KeysetWindow<T[]> {
-  return { value: [], partial: false }
 }
 
 function nullWhenMissing(cause: unknown): null {

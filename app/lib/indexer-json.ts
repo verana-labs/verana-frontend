@@ -100,6 +100,10 @@ export interface KeysetWindow<T> {
   partial: boolean
 }
 
+export function emptyWindow<T>(): KeysetWindow<T[]> {
+  return { value: [], partial: false }
+}
+
 export interface KeysetPagesOptions {
   cursor?: string
   maxPages?: number
@@ -143,7 +147,7 @@ export async function fetchKeysetPages<T>(
     }
     rows.push(...items)
     if (!hasNext) return settle(false)
-    after = cursorOf(items[items.length - 1], `${field}[${rows.length - 1}]`)
+    after = cursorOf(items[items.length - 1], `${field}[${items.length - 1}]`)
   }
   return settle(true)
 }
