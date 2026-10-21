@@ -75,3 +75,21 @@ export function feeGrantCovering(grants: FeeGrant[], msgType: string, feeAmountU
   const fee = asAmount(feeAmountUvna)
   return grants.find((grant) => coversMsgType(grant, msgType) && coversFee(grant, fee)) ?? null
 }
+
+export function grantCoversMsgType(grants: FeeGrant[], msgType: string): boolean {
+  return grants.some((grant) => coversMsgType(grant, msgType))
+}
+
+export type FeeGrantPayer = 'granter' | 'granter-short' | 'account'
+
+export function feeGrantPayer(
+  grants: FeeGrant[],
+  msgType: string,
+  feeAmountUvna: string,
+  granterBalanceUvna: string | null
+): FeeGrantPayer {
+  if (!feeGrantCovering(grants, msgType, feeAmountUvna)) return 'account'
+  const fee = asAmount(feeAmountUvna)
+  const balance = granterBalanceUvna === null ? null : asAmount(granterBalanceUvna)
+  return fee !== null && balance !== null && balance < fee ? 'granter-short' : 'granter'
+}

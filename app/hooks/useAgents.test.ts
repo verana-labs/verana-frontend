@@ -1,6 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { AGENTS_PAGE_SIZE, agentRefreshNeeded, allPages, buildAgentList } from '@/hooks/useAgents'
+import {
+  AGENTS_PAGE_SIZE,
+  agentPendingUrl,
+  agentRefreshNeeded,
+  allPages,
+  buildAgentList,
+  withPendingAccreditations,
+} from '@/hooks/useAgents'
 import type { IndexerEvent } from '@/lib/indexer-event'
+import type { ResolvedParticipation } from '@/lib/resolverClient'
+import type { Participant } from '@/ui/dataview/datasections/participant'
 
 const CORPORATION_DID = 'did:web:corp.example'
 const ECOSYSTEM_DID = 'did:web:ecosystem.example'
@@ -53,6 +62,81 @@ describe('buildAgentList', () => {
     expect(buildAgentList({ corporationDid: '', ecosystemDids: [], participantDids: [AGENT_DID] })).toEqual([
       { did: AGENT_DID, label: null, pinned: false },
     ])
+  })
+})
+
+function participation(overrides: Partial<ResolvedParticipation>): ResolvedParticipation {
+  return {
+    id: 161,
+    vsOperator: null,
+    role: 'VERIFIER',
+    state: 'ACTIVE',
+    credentialSchemaId: 22,
+    ecosystemId: 13,
+    validatorParticipantId: 158,
+    ...overrides,
+  }
+}
+
+function pendingParticipant(overrides: Partial<Participant>): Participant {
+  return {
+    id: '164',
+    schema_id: '22',
+    ecosystem_id: 13,
+    role: 'ISSUER',
+    did: AGENT_DID,
+    corporation_id: 32,
+    participant_state: 'INACTIVE',
+    op_state: 'PENDING',
+    validator_participant_id: '158',
+    vs_operator: null,
+    corporation_available_actions: [],
+    validator_available_actions: [],
+    ...overrides,
+  }
+}
+
+describe('agentPendingUrl', () => {
+  it('lists the pending onboarding processes of the acting Corporation', () => {
+    expect(agentPendingUrl('https://indexer/v4/participant', 32, AGENTS_PAGE_SIZE)).toBe(
+      `https://indexer/v4/participant/list?corporation_id=32&limit=${AGENTS_PAGE_SIZE + 1}&sort=-id&op_state=PENDING`
+    )
+  })
+})
+
+describe('withPendingAccreditations', () => {
+  it('shows the indexer state and the pending onboarding of a row the resolver reports as ACTIVE', () => {
+    const rows = withPendingAccreditations(
+      AGENT_DID,
+      [participation({}), participation({ id: 164, role: 'ISSUER' })],
+      [pendingParticipant({})]
+    )
+    expect(rows).toEqual([
+      participation({}),
+      { ...participation({ id: 164, role: 'ISSUER', state: 'INACTIVE' }), opState: 'PENDING' },
+    ])
+  })
+
+  it('adds a pending row the resolver left out of the ACTIVE scope', () => {
+    expect(withPendingAccreditations(AGENT_DID, [participation({})], [pendingParticipant({})])).toEqual([
+      participation({}),
+      { ...participation({ id: 164, role: 'ISSUER', state: 'INACTIVE' }), opState: 'PENDING' },
+    ])
+  })
+
+  it('keeps ACTIVE on a renewal pending on an active row', () => {
+    const rows = withPendingAccreditations(
+      AGENT_DID,
+      [participation({})],
+      [pendingParticipant({ id: '161', role: 'VERIFIER', participant_state: 'ACTIVE' })]
+    )
+    expect(rows).toEqual([{ ...participation({}), opState: 'PENDING' }])
+  })
+
+  it('ignores the pending rows of another DID', () => {
+    expect(
+      withPendingAccreditations(AGENT_DID, [participation({})], [pendingParticipant({ did: 'did:web:other.example' })])
+    ).toEqual([participation({})])
   })
 })
 

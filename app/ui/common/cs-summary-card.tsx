@@ -14,12 +14,17 @@ export type CsSummaryCardProps = {
   onParticipants: () => void
 }
 
-function RolePill({ value, suffix }: { value?: string | number; suffix: string }) {
-  const raw = value !== undefined && value !== null ? String(value) : ''
-  if (!raw.trim()) return null
-  const klass = getModePillClass(raw, suffix)
+function ModeRow({ label, value, suffix }: { label: string; value: string | null; suffix: string }) {
+  if (!value?.trim()) return null
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${klass}`}>{raw}</span>
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <span className="text-neutral-70 dark:text-neutral-70">{label}:</span>
+      <span
+        className={`ml-auto inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getModePillClass(value, suffix)}`}
+      >
+        {value}
+      </span>
+    </div>
   )
 }
 
@@ -44,6 +49,9 @@ export default function CsSummaryCard({ credentialSchema, onView, onParticipants
   const verified =
     resolveTranslatable({ key: 'datatable.cs.card.verifiedCredentials' }, translate) ?? 'Verified Credentials'
   const trustValue = resolveTranslatable({ key: 'datatable.cs.card.trustValue' }, translate) ?? 'Trust Value'
+  const issuerLabel = resolveTranslatable({ key: 'participantcard.role.singular.issuer' }, translate) ?? 'Issuer'
+  const verifierLabel = resolveTranslatable({ key: 'participantcard.role.singular.verifier' }, translate) ?? 'Verifier'
+  const holderLabel = resolveTranslatable({ key: 'participantcard.role.singular.holder' }, translate) ?? 'Holder'
 
   return (
     <div
@@ -84,9 +92,10 @@ export default function CsSummaryCard({ credentialSchema, onView, onParticipants
           </p>
         ) : null}
 
-        <div className="flex flex-wrap gap-2 mb-4">
-          <RolePill value={credentialSchema.issuerOnboardingMode} suffix="_ISSUER" />
-          <RolePill value={credentialSchema.verifierOnboardingMode} suffix="_VERIFIER" />
+        <div className="space-y-2 mb-4 text-xs sm:text-sm">
+          <ModeRow label={issuerLabel} value={credentialSchema.issuerOnboardingMode} suffix="_ISSUER" />
+          <ModeRow label={verifierLabel} value={credentialSchema.verifierOnboardingMode} suffix="_VERIFIER" />
+          <ModeRow label={holderLabel} value={credentialSchema.holderOnboardingMode} suffix="_HOLDER" />
         </div>
 
         <div className="space-y-2 text-xs sm:text-sm">

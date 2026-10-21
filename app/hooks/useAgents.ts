@@ -20,9 +20,10 @@ import {
   fetchAgentResolution,
   invalidateDid,
   type ParticipationState,
+  type ResolvedParticipation,
 } from '@/lib/resolverClient'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
-import type { Participant } from '@/ui/dataview/datasections/participant'
+import type { OnboardingProcessState, Participant } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
 type AgentLabel = 'corporation' | 'ecosystem' | null
@@ -36,9 +37,10 @@ export interface AgentEntry {
 export interface DegradedAgentSections {
   ecosystems: boolean
   delegations: boolean
+  pending: boolean
 }
 
-const NOTHING_DEGRADED: DegradedAgentSections = { ecosystems: false, delegations: false }
+const NOTHING_DEGRADED: DegradedAgentSections = { ecosystems: false, delegations: false, pending: false }
 
 interface AgentSources {
   corporationDid: string
@@ -63,6 +65,45 @@ export function agentParticipantsUrl(
   return `${base}/list?${params.toString()}`
 }
 
+export function agentPendingUrl(base: string, corporationId: number, pageSize: number, after?: string): string {
+  const params = new URLSearchParams({ corporation_id: String(corporationId) })
+  applyKeysetParams(params, { pageSize, after })
+  params.set('op_state', 'PENDING')
+  return `${base}/list?${params.toString()}`
+}
+
+export type AccreditationRowData = ResolvedParticipation & { opState?: OnboardingProcessState | null }
+
+function pendingAccreditation(participant: Participant): AccreditationRowData {
+  return {
+    id: Number(participant.id),
+    vsOperator: participant.vs_operator ?? null,
+    role: participant.role,
+    state: participant.participant_state,
+    credentialSchemaId: Number(participant.schema_id),
+    ecosystemId: participant.ecosystem_id ?? null,
+    validatorParticipantId: participant.validator_participant_id ? Number(participant.validator_participant_id) : null,
+    opState: participant.op_state,
+  }
+}
+
+export function withPendingAccreditations(
+  did: string,
+  participations: ResolvedParticipation[],
+  pending: Participant[]
+): AccreditationRowData[] {
+  const pendingById = new Map(
+    pending.filter((participant) => participant.did === did).map((participant) => [Number(participant.id), participant])
+  )
+  const rows: AccreditationRowData[] = participations.map((participation) => {
+    const participant = pendingById.get(participation.id)
+    if (!participant) return participation
+    pendingById.delete(participation.id)
+    return { ...participation, state: participant.participant_state, opState: participant.op_state }
+  })
+  return [...rows, ...[...pendingById.values()].map(pendingAccreditation)]
+}
+
 export function agentEcosystemsUrl(base: string, corporationId: number, pageSize: number, after?: string): string {
   const params = new URLSearchParams({ corporation_id: String(corporationId) })
   applyKeysetParams(params, { pageSize, after })
@@ -77,12 +118,14 @@ function noMore<T>(): AgentPage<T> {
 
 type AgentWindow = {
   participants: Participant[]
+  pending: Participant[]
   ecosystems: EcosystemListItem[]
   participantsHasNext: boolean
 }
 
 const EMPTY_WINDOW: AgentWindow = {
   participants: [],
+  pending: [],
   ecosystems: [],
   participantsHasNext: false,
 }
@@ -189,7 +232,7 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
       setError(null)
       const base = append ? windowRef.current : EMPTY_WINDOW
       try {
-        const [participants, ecosystems, authorizations] = await Promise.all([
+        const [participants, ecosystems, authorizations, pending] = await Promise.all([
           append && !base.participantsHasNext
             ? noMore<Participant>()
             : nextPage(
@@ -218,10 +261,20 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
               'Unable to fetch VS operator authorizations'
             ).then(parseVsOperatorAuthorizations)
           ),
+          degrade('agents pending', noMore<Participant>(), async () =>
+            append
+              ? noMore<Participant>()
+              : allPages(
+                  (after) => agentPendingUrl(participantBase, corporationId, AGENTS_PAGE_SIZE, after),
+                  'Unable to fetch pending participants',
+                  parseParticipantsResponse
+                )
+          ),
         ])
         if (requestRef.current !== requestId) return
         const next: AgentWindow = {
           participants: [...base.participants, ...participants.items],
+          pending: [...base.pending, ...pending.value.items],
           ecosystems: [...base.ecosystems, ...ecosystems.value.items],
           participantsHasNext: participants.hasNext,
         }
@@ -230,11 +283,17 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
           buildAgentList({
             corporationDid,
             ecosystemDids: next.ecosystems.map((ecosystem) => ecosystem.did),
-            participantDids: next.participants.flatMap((participant) => (participant.did ? [participant.did] : [])),
+            participantDids: [...next.participants, ...next.pending].flatMap((participant) =>
+              participant.did ? [participant.did] : []
+            ),
           })
         )
         setDelegations(new Map(authorizations.value.map((row) => [row.participantId, row])))
-        setDegraded({ ecosystems: ecosystems.failed, delegations: authorizations.failed })
+        setDegraded((previous) => ({
+          ecosystems: append ? previous.ecosystems : ecosystems.failed,
+          delegations: authorizations.failed,
+          pending: append ? previous.pending : pending.failed,
+        }))
       } catch (cause) {
         if (requestRef.current !== requestId) return
         if (!append) {
@@ -303,6 +362,7 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
   return {
     agents,
     delegations,
+    pending: agentWindow.pending,
     degraded,
     resolutions,
     unavailableDids,

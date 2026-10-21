@@ -3,10 +3,14 @@ import { translate } from '@/i18n/dataview'
 import { allowedOffline, getNavLinks } from '@/lib/navlinks'
 
 describe('getNavLinks', () => {
-  it('puts the pending votes on the corporation entry and the pending tasks on pending tasks', () => {
+  it('combines the pending tasks and votes on pending tasks and keeps the votes on the corporation entry', () => {
     const byHref = new Map(getNavLinks(3, 2).map((link) => [link.href, link.count]))
     expect(byHref.get('/corporation')).toBe(2)
-    expect(byHref.get('/pendingtasks')).toBe(3)
+    expect(byHref.get('/pendingtasks')).toBe(5)
+  })
+
+  it('counts the pending votes on pending tasks when no validation is pending', () => {
+    expect(getNavLinks(undefined, 4).find((link) => link.href === '/pendingtasks')?.count).toBe(4)
   })
 
   it('returns the top-level destinations in the order of VFE-PAGE-NAV-1, settings last', () => {

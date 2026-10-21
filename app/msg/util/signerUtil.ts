@@ -101,8 +101,3 @@ export function handleSuccess(
     onCancel?.()
   }, 500)
 }
-
-export type RefreshState = {
-  id?: string
-  txHeight?: number
-}
