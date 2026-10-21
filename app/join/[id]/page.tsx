@@ -163,7 +163,10 @@ export default function JoinEcosystemWizard() {
             }
       )
       setAwaitingVotes(
-        proposal && result !== undefined && 'events' in result && proposalExecution(result.events).status !== 'executed'
+        proposal &&
+          result !== undefined &&
+          'events' in result &&
+          ['pending', 'scheduled'].includes(proposalExecution(result.events).status)
       )
     } finally {
       setSubmitting(false)
