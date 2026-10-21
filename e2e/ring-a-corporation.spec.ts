@@ -196,6 +196,7 @@ test('an accepted proposal offers Execute on its own once the minimum execution 
       },
     })
   })
+  await page.clock.install()
   await seedActingCorporation(page, 13)
   await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
 
@@ -203,7 +204,8 @@ test('an accepted proposal offers Execute on its own once the minimum execution 
   await page.getByRole('button', { name: /#50/ }).click()
   await expect(page.getByText(/^Executable from /)).toBeVisible()
   await expect(page.getByRole('button', { name: 'Execute', exact: true })).toBeHidden()
-  await expect(page.getByRole('button', { name: 'Execute', exact: true })).toBeVisible({ timeout: 40_000 })
+  await page.clock.fastForward(21_000)
+  await expect(page.getByRole('button', { name: 'Execute', exact: true })).toBeVisible()
   await expect(page.getByText(/^Executable from /)).toBeHidden()
 })
 
