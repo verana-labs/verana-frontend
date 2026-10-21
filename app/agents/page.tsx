@@ -12,6 +12,7 @@ import AgentCard from '@/ui/agents/agent-card'
 import AgentsFilterBar, { type AgentsFilterState, INITIAL_AGENTS_FILTER } from '@/ui/agents/agents-filter-bar'
 import EcosystemCardSkeleton from '@/ui/common/ecosystem-card-skeleton'
 import { ShowMoreButton } from '@/ui/common/keyset-pagination'
+import { PartialNote } from '@/ui/corporation/shared'
 
 const SKELETONS = 3
 const DEGRADED = 'text-sm text-amber-700 dark:text-amber-300'
@@ -85,9 +86,8 @@ export default function AgentsPage() {
       ) : null}
 
       <section id="agents-grid" className="mb-8">
-        {hasNext || delegationsPartial ? (
-          <p className="pb-2 text-xs text-neutral-70 dark:text-neutral-70">{translate('pagination.loadedOnly')}</p>
-        ) : null}
+        {hasNext ? <PartialNote filtered /> : null}
+        {delegationsPartial ? <PartialNote /> : null}
         {error && !partialError ? (
           <div className="p-6 error-pane">{translate('agents.error')}</div>
         ) : loading ? (
