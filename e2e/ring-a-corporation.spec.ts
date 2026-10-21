@@ -212,8 +212,13 @@ test('an execute that has to wait reads as scheduled, never as executed', async 
     decisionPolicy: { ...PERCENTAGE_POLICY, windows: { voting_period: '300s', min_execution_period: '20s' } },
   })
   const past = new Date(Date.now() - DAY_MS).toISOString()
-  await page.route('**/v4/group/proposals*', (route) =>
-    route.fulfill({
+  await page.route('**/v4/indexer/block-height', (route) =>
+    route.fulfill({ json: { height: 1001, timestamp: '2026-07-18T07:00:00Z' } })
+  )
+  let proposalFetches = 0
+  await page.route('**/v4/group/proposals*', (route) => {
+    proposalFetches += 1
+    return route.fulfill({
       json: {
         proposals: [
           {
@@ -230,7 +235,7 @@ test('an execute that has to wait reads as scheduled, never as executed', async 
         ],
       },
     })
-  )
+  })
   await seedActingCorporation(page, 13)
   const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
   const mock = await installMockChain(page, {
@@ -260,11 +265,13 @@ test('an execute that has to wait reads as scheduled, never as executed', async 
   await page.getByRole('button', { name: 'Execute', exact: true }).click()
   const dialog = page.getByRole('dialog')
   await expect(dialog.getByText(/VNA/)).toBeVisible({ timeout: 30_000 })
+  const fetchesBeforeConfirm = proposalFetches
   await dialog.getByRole('button', { name: 'Confirm' }).click()
 
-  await expect(page.getByText('Proposal not executed', { exact: true })).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByText('Proposal scheduled', { exact: true })).toBeVisible({ timeout: 30_000 })
   await expect(page.getByText(/^Proposal 18 was accepted, it can be executed from /)).toBeVisible()
   await expect(page.getByText('Proposal executed', { exact: true })).toBeHidden()
+  await expect.poll(() => proposalFetches).toBeGreaterThan(fetchesBeforeConfirm)
   await mock.teardown()
 })
 

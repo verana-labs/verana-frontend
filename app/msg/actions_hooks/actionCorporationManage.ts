@@ -355,10 +355,11 @@ export function useCorporationManage(onDone?: () => void) {
         return false
       }
       if (notificationKey === 'MsgExec' && proposalExecution(result.events).status === 'scheduled') {
+        runAfterIndexerCatchesUp(waitForBlock, txHeight(result), () => onDone?.())
         await notify(
           proposalSubmittedMessage(result.events),
           'info',
-          translate('notification.proposal.failed.title'),
+          translate('notification.proposal.scheduled.title'),
           explorerTxLink(result.transactionHash)
         )
         return false

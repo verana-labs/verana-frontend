@@ -1015,9 +1015,10 @@
   "notification.proposal.failed.title": "Propuesta no ejecutada",
   "notification.proposal.failed": "La propuesta {id} fue aceptada, pero su ejecución falló y ninguno de sus mensajes tuvo efecto: {reason}",
   "notification.proposal.unauthorized": "La propuesta {id} fue aceptada, pero la cadena se negó a ejecutarla por falta de autorización: {reason}.",
+  "notification.proposal.scheduled.title": "Propuesta programada",
+  "notification.proposal.scheduled": "La propuesta {id} fue aceptada, se puede ejecutar desde {date}.",
   "notification.MsgSubmitProposal.executed": "Propuesta enviada y ejecutada",
   "notification.MsgSubmitProposal.pending": "Propuesta enviada. Se ejecuta cuando el grupo alcance su umbral de decisión.",
-  "notification.MsgSubmitProposal.scheduled": "La propuesta {id} fue aceptada, se puede ejecutar desde {date}.",
   "txconfirm.simulation.unauthorized": "La cadena rechazó esta acción por falta de autorización: {reason}.",
   "join.proposal.pending.title": "Propuesta enviada",
   "join.proposal.pending.desc": "El participante se crea cuando el grupo de la corporación activa alcance su umbral de decisión y la propuesta se ejecute. Sígala en Propuestas, en la página Corporación."

@@ -105,7 +105,7 @@ export function txFailureNotice(
 export function proposalSubmittedMessage(events: readonly TxEvent[]): string {
   const outcome = proposalExecution(events)
   if (outcome.status === 'scheduled') {
-    return t('notification.MsgSubmitProposal.scheduled', {
+    return t('notification.proposal.scheduled', {
       id: outcome.proposalId,
       date: outcome.executableFrom.toLocaleString(),
     })

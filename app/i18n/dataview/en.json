@@ -1015,9 +1015,10 @@
   "notification.proposal.failed.title": "Proposal not executed",
   "notification.proposal.failed": "Proposal {id} was accepted, but its execution failed and none of its messages took effect: {reason}",
   "notification.proposal.unauthorized": "Proposal {id} was accepted, but the chain refused to execute it for lack of authorization: {reason}.",
+  "notification.proposal.scheduled.title": "Proposal scheduled",
+  "notification.proposal.scheduled": "Proposal {id} was accepted, it can be executed from {date}.",
   "notification.MsgSubmitProposal.executed": "Proposal submitted and executed",
   "notification.MsgSubmitProposal.pending": "Proposal submitted. It executes once the group reaches its decision threshold.",
-  "notification.MsgSubmitProposal.scheduled": "Proposal {id} was accepted, it can be executed from {date}.",
   "txconfirm.simulation.unauthorized": "The chain refused this action for lack of authorization: {reason}.",
   "join.proposal.pending.title": "Proposal submitted",
   "join.proposal.pending.desc": "The participant is created once the group of the acting corporation reaches its decision threshold and the proposal executes. Follow it under Proposals on the Corporation page."
