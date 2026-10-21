@@ -30,11 +30,13 @@ test.describe('guest mode, browser in English', () => {
     await expect(networkValue(page, 'Chain id')).toHaveText(chainId as string)
     await expect(networkValue(page, 'RPC endpoint')).toHaveText(/^https?:\/\//)
     await expect(networkValue(page, 'Indexer')).toHaveText(/^https?:\/\//)
+    await expect(networkValue(page, 'Graph')).toHaveText(/^https?:\/\//)
   })
 
   test('the theme choice survives a reload, from the page and from the header toggle', async ({ page }) => {
     await page.goto('/settings', { timeout: 60_000 })
     const html = page.locator('html')
+    await expect(page.getByRole('radio', { name: 'System' })).toBeChecked()
     await expect(html).not.toHaveClass(/dark/)
 
     await page.getByRole('radio', { name: 'Dark' }).check()
@@ -48,6 +50,19 @@ test.describe('guest mode, browser in English', () => {
     await expect(html).not.toHaveClass(/dark/)
     await page.reload()
     await expect(html).not.toHaveClass(/dark/)
+    await expect(page.getByRole('radio', { name: 'Light' })).toBeChecked()
+  })
+
+  test('the system theme follows the operating system preference', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' })
+    await page.goto('/settings', { timeout: 60_000 })
+    const html = page.locator('html')
+    await expect(page.getByRole('radio', { name: 'System' })).toBeChecked()
+    await expect(html).toHaveClass(/dark/)
+
+    await page.emulateMedia({ colorScheme: 'light' })
+    await expect(html).not.toHaveClass(/dark/)
+    await expect(page.locator('header button[aria-label="Switch to dark theme"]')).toBeVisible()
   })
 
   test('the layout keeps the side navigation at the inline start in a right-to-left direction', async ({ page }) => {

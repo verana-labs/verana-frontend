@@ -13,6 +13,7 @@ export const VERANA_SIGN_DIRECT_MODE = read('NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE
 
 export const VERANA_INDEXER_BASE_URL = read('NEXT_PUBLIC_VERANA_INDEXER_BASE_URL')?.replace(/\/$/, '')
 export const VERANA_FAUCET_URL = read('NEXT_PUBLIC_VERANA_FAUCET_URL')?.replace(/\/$/, '')
+export const VERANA_GRAPH_URL = read('NEXT_PUBLIC_VERANA_GRAPH_URL')?.replace(/\/$/, '')
 
 const indexerEndpoint = (path: string): string | undefined =>
   VERANA_INDEXER_BASE_URL ? `${VERANA_INDEXER_BASE_URL}/v4/${path}` : undefined

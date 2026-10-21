@@ -4,6 +4,8 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faCrown, faEye } from '@fortawesome/free-solid-svg-icons'
 import { SHOW_PARTICIPANT_EXPIRE_BEFORE_DAYS } from '@/config/env'
 import { translate } from '@/i18n/dataview'
+import type { HolderOnboardingMode } from '@/lib/participant-onboarding'
+import type { TreeNode } from '@/ui/common/participant-tree-types'
 import type { OnboardingProcessState, ParticipantRole, ParticipantState } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
@@ -50,6 +52,15 @@ export function parseVNA(formatted: string, decimals: number = 6): string {
   // Convert to microVNA (as integer string)
   const micro = Math.round(floatValue * 10 ** decimals)
   return micro.toString()
+}
+
+const VNA_AMOUNT = /^(\d+)(?:\.(\d{1,6}))?$/
+const UVNA_PER_VNA = BigInt(1_000_000)
+
+export function parseVNAExact(text: string): string | null {
+  const match = VNA_AMOUNT.exec(text.trim())
+  if (!match) return null
+  return (BigInt(match[1]) * UVNA_PER_VNA + BigInt((match[2] ?? '').padEnd(6, '0'))).toString()
 }
 
 export function shortenMiddle(str: string, maxLength: number): string {
@@ -375,6 +386,7 @@ export function participantAuthority(
 export function nodeChildRoles(
   issuerOnboardingMode: string,
   verifierOnboardingMode: string,
+  holderOnboardingMode: HolderOnboardingMode | null,
   role: string
 ): { role: ParticipantRole; label: string; validation: boolean }[] {
   const roles = new Set<{ role: ParticipantRole; label: string; validation: boolean }>()
@@ -422,11 +434,26 @@ export function nodeChildRoles(
     roles.add({
       role: 'HOLDER',
       label: resolveTranslatable({ key: 'participant.labelRole.holder' }, translate) ?? 'Holders',
-      validation: true,
+      validation: holderOnboardingMode === 'ISSUER_ONBOARDING_PROCESS',
     })
   }
 
   return Array.from(roles)
+}
+
+export function childRoleOnboardingAction(
+  childRole: { role: ParticipantRole; validation: boolean },
+  isWalletConnected: boolean
+): NonNullable<TreeNode['onboardingAction']> {
+  if (childRole.role === 'HOLDER' && !childRole.validation) return 'LinkDID'
+  if (!isWalletConnected) return 'Connect'
+  return childRole.validation ? 'MsgStartParticipantOP' : 'MsgSelfCreateParticipant'
+}
+
+export function childRoleOnboardingLabel(childRole: { role: ParticipantRole; validation: boolean }): string {
+  if (childRole.validation) return 'onboarding process'
+  if (childRole.role !== 'HOLDER') return 'open'
+  return translate('dataview.cs.managementMode.PERMISSIONLESS')
 }
 
 // Takes "YYYY-MM-DD" and returns an ISO string with today's time (+1 min) applied to that date.

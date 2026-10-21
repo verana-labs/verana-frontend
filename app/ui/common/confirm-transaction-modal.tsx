@@ -6,13 +6,14 @@ import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { LOW_BALANCE_WARN_UVNA, VERANA_FAUCET_URL } from '@/config/env'
+import { useAccountBalance } from '@/hooks/useAccountBalance'
 import { type FeeGrantLookup, useFeeGrant } from '@/hooks/useFeeGrant'
-import { useTrustDepositAccountData } from '@/hooks/useTrustDepositAccountData'
+import { type GranterBalance, useGranterBalance } from '@/hooks/useGranterBalance'
 import { simulationFor, type TxSimulation, useTxSimulation } from '@/hooks/useTxSimulation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
-import { authorizationRejection } from '@/lib/chain-error'
-import { feeGrantCovering, nativeFeeAmount } from '@/lib/fee-grant'
+import { authorizationRejection, chainRejection } from '@/lib/chain-error'
+import { type FeeGrantPayer, feeGrantPayer, grantCoversMsgType, nativeFeeAmount } from '@/lib/fee-grant'
 import { balanceWarning, totalDebitUvna } from '@/lib/trust-costs'
 import {
   type CostLine,
@@ -41,7 +42,7 @@ function simulationRejection(message: string): string {
   const reason = authorizationRejection(message)
   return reason
     ? t('txconfirm.simulation.unauthorized', { reason })
-    : t('txconfirm.simulation.rejected', { msg: message })
+    : t('txconfirm.simulation.rejected', { msg: chainRejection(message) ?? message })
 }
 
 function proposalPolicy(msgs: EncodeObject[]): string {
@@ -68,14 +69,19 @@ function FeeValue({ simulation }: { simulation: TxSimulation }) {
   return <span>{formatStdFee(simulation.fee)}</span>
 }
 
-function feeGranter(
+function grantPayer(
   feeGrant: TxFeeGrant | undefined,
   lookup: FeeGrantLookup,
+  granterBalance: GranterBalance,
   simulation: TxSimulation
-): string | undefined {
+): FeeGrantPayer | undefined {
   if (!feeGrant || lookup.status !== 'ready' || simulation.status !== 'ready') return undefined
-  const covering = feeGrantCovering(lookup.grants, feeGrant.msgType, nativeFeeAmount(simulation.fee))
-  return covering ? feeGrant.granterAddress : undefined
+  return feeGrantPayer(
+    lookup.grants,
+    feeGrant.msgType,
+    nativeFeeAmount(simulation.fee),
+    granterBalance.status === 'ready' ? granterBalance.amount : null
+  )
 }
 
 function BalanceWarning({
@@ -143,7 +149,7 @@ export function ConfirmTransactionModal({
   const { msgs, buildProposalMsgs } = request
   const fallbackTitle = request.proposalTitle ?? ''
   const composing = request.mode === 'proposal' && buildProposalMsgs !== undefined
-  const { accountData, errorAccountData } = useTrustDepositAccountData()
+  const { accountData, errorAccountData } = useAccountBalance()
   const [balanceWaitOver, setBalanceWaitOver] = useState(false)
   const balanceUnknown = accountData.balance === null && (errorAccountData !== null || balanceWaitOver)
   const [title, setTitle] = useState(fallbackTitle)
@@ -174,22 +180,36 @@ export function ConfirmTransactionModal({
   const { simulation, simulate } = useTxSimulation(simulatedMsgs)
   const currentSimulation = simulationFor(simulation, simulatedMsgs)
   const feeGrantLookup = useFeeGrant(request.feeGrant ?? null)
+  const grantFound =
+    request.feeGrant !== undefined &&
+    Boolean(request.feeGrant.granterAddress) &&
+    feeGrantLookup.status === 'ready' &&
+    grantCoversMsgType(feeGrantLookup.grants, request.feeGrant.msgType)
+  const granterBalance = useGranterBalance(grantFound ? request.feeGrant?.granterAddress : undefined)
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') onCancel()
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      onCancel()
     }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
+    window.addEventListener('keydown', onKeyDown, true)
+    return () => window.removeEventListener('keydown', onKeyDown, true)
   }, [onCancel])
 
   const proposal = request.mode === 'proposal'
   const editing = title !== settledTitle || summary !== settledSummary
-  const granter = feeGranter(request.feeGrant, feeGrantLookup, currentSimulation)
+  const granterBalancePending = grantFound && (granterBalance.status === 'idle' || granterBalance.status === 'loading')
+  const payerByGrant = granterBalancePending
+    ? undefined
+    : grantPayer(request.feeGrant, feeGrantLookup, granterBalance, currentSimulation)
+  const granter = payerByGrant === 'granter' ? request.feeGrant?.granterAddress : undefined
   const payer = granter ?? request.payer
   const simulatedFeeUvna = currentSimulation.status === 'ready' ? Number(nativeFeeAmount(currentSimulation.fee)) : null
   const payerPending =
-    feeGrantLookup.status === 'loading' || (request.feeGrant !== undefined && currentSimulation.status === 'simulating')
+    feeGrantLookup.status === 'loading' ||
+    granterBalancePending ||
+    (request.feeGrant !== undefined && currentSimulation.status === 'simulating')
   const accountOwesNothing = granter !== undefined && totalDebitUvna(request.costLines ?? []) === 0
   const holdForBalance =
     request.payer === address && !accountOwesNothing && accountData.balance === null && !balanceUnknown
@@ -237,6 +257,12 @@ export function ConfirmTransactionModal({
           ))}
         </dl>
         {granter ? <p className="text-sm text-gray-600 dark:text-gray-300">{t('txconfirm.feegrant.covered')}</p> : null}
+        {granter && granterBalance.status === 'failed' ? (
+          <p className="text-sm text-gray-600 dark:text-gray-300">{t('txconfirm.feegrant.balanceUnknown')}</p>
+        ) : null}
+        {payerByGrant === 'granter-short' ? (
+          <p className="text-sm text-gray-600 dark:text-gray-300">{t('txconfirm.feegrant.short')}</p>
+        ) : null}
         {feeGrantLookup.status === 'failed' ? (
           <p className="text-sm text-gray-600 dark:text-gray-300">{t('txconfirm.feegrant.unavailable')}</p>
         ) : null}
@@ -290,7 +316,11 @@ export function ConfirmTransactionModal({
             type="button"
             className="btn-action-confirm flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={
-              currentSimulation.status !== 'ready' || editing || feeGrantLookup.status === 'loading' || holdForBalance
+              currentSimulation.status !== 'ready' ||
+              editing ||
+              feeGrantLookup.status === 'loading' ||
+              granterBalancePending ||
+              holdForBalance
             }
             onClick={() => {
               if (currentSimulation.status === 'ready')

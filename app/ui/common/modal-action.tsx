@@ -1,6 +1,6 @@
 import { faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { translate } from '@/i18n/dataview'
 import { resolveTranslatable } from '../dataview/types'
 
@@ -21,9 +21,31 @@ export const ModalAction: React.FC<ModalActionProps> = ({
   classModal,
   modalHidden,
 }) => {
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
+  const overlayRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!isActive || modalHidden) return
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Escape' || event.defaultPrevented) return
+      const shown = document.querySelectorAll('[data-modal-action]:not(.hidden)')
+      if (shown[shown.length - 1] !== overlayRef.current) return
+      event.preventDefault()
+      onCloseRef.current()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [isActive, modalHidden])
+
   if (!isActive) return null
   return (
     <div
+      ref={overlayRef}
+      data-modal-action
       className={`${modalHidden ? 'hidden' : ''} fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50`}
     >
       <div

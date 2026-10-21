@@ -8,3 +8,8 @@ export function useUserCorporation(): CorporationContextValue {
   if (!context) throw new Error('useUserCorporation requires a CorporationProvider')
   return context
 }
+
+export function useActingPendingVotes(): number {
+  const { actingCorporation, attention } = useUserCorporation()
+  return actingCorporation ? (attention[actingCorporation.corporation.id]?.pendingVotes ?? 0) : 0
+}

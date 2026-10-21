@@ -148,10 +148,10 @@ export default function EgfDocumentsTable({ versions, activeVersion }: EgfDocume
                     target="_blank"
                     rel="noopener noreferrer"
                     title={row.url}
-                    className="text-xs sm:text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 inline-flex items-center gap-1 max-w-[12rem] sm:max-w-sm lg:max-w-xl"
+                    aria-label={row.url}
+                    className="inline-flex p-1.5 text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
                   >
-                    <span className="truncate min-w-0">{row.url}</span>
-                    <FontAwesomeIcon icon={faUpRightFromSquare} className="text-xs flex-shrink-0" />
+                    <FontAwesomeIcon icon={faUpRightFromSquare} />
                   </a>
                 </td>
                 <td className={`${BODY_CELL_CLASS} whitespace-nowrap`}>

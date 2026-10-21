@@ -75,7 +75,10 @@ export function getNavLinks(pendingCount?: number, pendingVotes?: number): NavLi
       href: '/pendingtasks',
       icon: faTasks,
       className: 'bg-red-500',
-      count: pendingCount,
+      count:
+        pendingCount === undefined && pendingVotes === undefined
+          ? undefined
+          : (pendingCount ?? 0) + (pendingVotes ?? 0),
       requiresCorporation: true,
     },
     {

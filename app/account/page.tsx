@@ -3,12 +3,8 @@
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { VERANA_FAUCET_URL } from '@/config/env'
-import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
-import { logger } from '@/lib/logger'
-import { RefreshState } from '@/msg/util/signerUtil'
 import { useAccountCtx } from '@/providers/api-rest-query-provider-context'
-import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { AccountAddress } from '@/ui/account/account-address'
 import { AccountCorporations } from '@/ui/account/account-corporations'
 import ColumnsDataView from '@/ui/common/data-view-columns'
@@ -22,51 +18,27 @@ export default function AccountPage() {
   // Only pre-open the "getVNA" action if the URL includes ?getVNA=true
   const openGetVNA = searchParams.get('getVNA') === 'true'
 
-  // Custom hook to fetch account/trust deposit data
   const { accountData, refetch: refetchAccount } = useAccountCtx()
-  const { actingCorporation, refetch: refetchCorporation } = useUserCorporation()
-  // Refresh account/trust deposit data
   const [refresh, setRefresh] = useState<boolean>(true)
-  const [refreshState, setRefreshState] = useState<RefreshState>({})
-  const { latestProcessedHeight } = useIndexerEvents()
 
   useEffect(() => {
     if (!refresh) return
     ;(async () => {
-      await Promise.all([refetchAccount(), refetchCorporation()])
+      await refetchAccount()
       setRefresh(false)
     })()
-  }, [refresh, refetchAccount, refetchCorporation])
-
-  useEffect(() => {
-    if (refreshState.txHeight == null) return
-    logger.info('AccountPage', {
-      txHeight: refreshState.txHeight,
-      latestProcessedHeight,
-      'ss.mmm': new Date().toISOString().slice(17, 23),
-    })
-    if (latestProcessedHeight < refreshState.txHeight) return
-    setRefresh(true)
-  }, [refreshState.txHeight, latestProcessedHeight])
+  }, [refresh, refetchAccount])
 
   // State for processed account data to display in DataView
   const [data, setData] = useState<AccountData>()
 
   useEffect(() => {
     if (accountData) {
-      // Prepare constants and process fields for the UI
-      const typedAccountData = accountData as AccountData
       // Per [VFE-PAGE-ACCT-3]: no faucet URL, no Get VNA action.
       const getVNA = VERANA_FAUCET_URL ? GET_VNA_ACTION : null
-      setData({
-        ...typedAccountData,
-        getVNA,
-        corporationId: actingCorporation?.corporation.id ?? null,
-        policyAddress: actingCorporation?.corporation.policyAddress ?? null,
-        operatorAuthorized: actingCorporation?.operator ?? false,
-      })
+      setData({ ...accountData, getVNA })
     }
-  }, [accountData, actingCorporation])
+  }, [accountData])
 
   return (
     <>
@@ -79,9 +51,7 @@ export default function AccountPage() {
         <ColumnsDataView<AccountData>
           sectionsI18n={accountSections}
           data={data}
-          onRefresh={(id?: string, txHeight?: number) => {
-            setRefreshState({ id, txHeight })
-          }}
+          onRefresh={() => setRefresh(true)}
           activeActionField={openGetVNA ? 'getVNA' : undefined}
           loading={false}
         />

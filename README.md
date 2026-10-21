@@ -149,6 +149,7 @@ Public runtime variables. Source of truth is `.env` at the repo root.
 | --- | --- | --- |
 | `NEXT_PUBLIC_VERANA_RPC_ENDPOINT` | CometBFT RPC | `https://rpc.devnet.verana.network` |
 | `NEXT_PUBLIC_VERANA_INDEXER_BASE_URL` | V4 indexer base URL, every `/v4/*` route and the `wss://.../v4/indexer/subscribe` socket derive from it | `https://idx.devnet.verana.network` |
+| `NEXT_PUBLIC_VERANA_GRAPH_URL` | Verana Graph origin (optional; unset hides it from the footer) | `https://graph.devnet.verana.network` |
 
 **Wallet provider (WalletConnect and Cosmos-Kit)**
 

@@ -93,3 +93,17 @@ test('Ring A, a stopped indexer answering 503 reads as down with its reason', as
   await expect(down).toBeVisible({ timeout: 30_000 })
   await expect(down).toContainText('down')
 })
+
+test('Ring A, the graph shows its version next to the indexer and is flagged when unreachable', async ({ page }) => {
+  await page.route('**/v4/stats/snapshot*', (route) => route.fulfill({ json: SNAPSHOT }))
+  await page.route('**/docs/openapi.json', (route) =>
+    route.fulfill({ json: { openapi: '3.0.3', info: { title: 'Verana Graph API', version: '1.0.0' } } })
+  )
+  await page.route(/\/\/graph\.[^/]+\/health$/, (route) => route.fulfill({ status: 502, body: 'Bad Gateway' }))
+
+  await page.goto('/dashboard', { timeout: 60_000 })
+
+  const graph = page.locator('aside span', { hasText: /^graph$/ }).locator('xpath=following-sibling::span[1]')
+  await expect(graph).toContainText('v1.0.0')
+  await expect(graph).toContainText('unreachable', { timeout: 30_000 })
+})

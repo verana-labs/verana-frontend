@@ -8,6 +8,7 @@ import { installMockChain, stubCorporationRoutes } from './support/mock-chain'
 
 const CORPORATION_ID = 7
 const SHORT_BALANCE_UVNA = '500000'
+const FUNDED_BALANCE_UVNA = '1000000000'
 const SHORTFALL_TEXT = /Your balance of 0\.5 VNA does not cover/
 
 function broadcastFee(tx: string) {
@@ -18,7 +19,7 @@ function broadcastGranter(tx: string): string {
   return broadcastFee(tx)?.granter ?? ''
 }
 
-async function openConfirmation(page: Page, balanceUvna?: string) {
+async function openConfirmation(page: Page, balanceUvna?: string, balancesUvna?: Record<string, string | null>) {
   await stubCorporationRoutes(page, CORPORATION_ID, ACME_POLICY_ADDRESS)
   const wallet = await connectWallet(page)
   const mock = await installMockChain(page, {
@@ -26,6 +27,7 @@ async function openConfirmation(page: Page, balanceUvna?: string) {
     corporationId: CORPORATION_ID,
     corporationPolicyAddress: ACME_POLICY_ADDRESS,
     balanceUvna,
+    balancesUvna,
     gasDriftPerSimulation: 1_000,
   })
   const stamp = Date.now().toString(36)
@@ -48,7 +50,9 @@ test('a covering fee grant makes the corporation the fee granter of the fee show
       json: { fee_grants: [{ msg_types: [], spend_limit: null, remaining_spend: null, expiration: null }] },
     })
   })
-  const { wallet, mock, dialog } = await openConfirmation(page, SHORT_BALANCE_UVNA)
+  const { wallet, mock, dialog } = await openConfirmation(page, SHORT_BALANCE_UVNA, {
+    [ACME_POLICY_ADDRESS]: FUNDED_BALANCE_UVNA,
+  })
 
   await expect(dialog.getByText('The corporation covers this network fee with a fee grant.')).toBeVisible({
     timeout: 30_000,
@@ -115,6 +119,70 @@ test('a limited grant whose remaining spend is below the fee leaves the account 
   await mock.teardown()
 })
 
+test('a covering grant from an empty corporation account leaves the account as fee payer', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.route('**/v4/delegation/fee-grants*', (route) =>
+    route.fulfill({
+      json: { fee_grants: [{ msg_types: [], spend_limit: null, remaining_spend: null, expiration: null }] },
+    })
+  )
+  const { mock, dialog } = await openConfirmation(page, undefined, { [ACME_POLICY_ADDRESS]: '0' })
+
+  await expect(
+    dialog.getByText('The corporation cannot cover this fee right now, your account pays this network fee.')
+  ).toBeVisible({ timeout: 30_000 })
+  await expect(dialog.getByText('Paid by').locator('..')).toContainText('(you)')
+  await expect(dialog.getByText('The corporation covers this network fee with a fee grant.')).toHaveCount(0)
+
+  await dialog.getByRole('button', { name: 'Confirm' }).click()
+  await expect.poll(() => mock.broadcastTxs().length, { timeout: 30_000 }).toBeGreaterThan(0)
+  expect(broadcastGranter(mock.broadcastTxs()[0])).toBe('')
+  await mock.teardown()
+})
+
+test('an unreadable corporation balance keeps the corporation as fee granter', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.route('**/v4/delegation/fee-grants*', (route) =>
+    route.fulfill({
+      json: { fee_grants: [{ msg_types: [], spend_limit: null, remaining_spend: null, expiration: null }] },
+    })
+  )
+  const { mock, dialog } = await openConfirmation(page, SHORT_BALANCE_UVNA, { [ACME_POLICY_ADDRESS]: null })
+
+  await expect(
+    dialog.getByText('The corporation balance could not be checked, the fee grant still applies to this network fee.')
+  ).toBeVisible({ timeout: 30_000 })
+  await expect(dialog.getByText('The corporation covers this network fee with a fee grant.')).toBeVisible()
+  await expect(dialog.getByText('Paid by').locator('..')).not.toContainText('(you)')
+  await expect(dialog.getByText('The fee grant could not be checked, your account pays this network fee.')).toHaveCount(
+    0
+  )
+
+  await dialog.getByRole('button', { name: 'Confirm' }).click()
+  await expect.poll(() => mock.broadcastTxs().length, { timeout: 30_000 }).toBeGreaterThan(0)
+  expect(broadcastGranter(mock.broadcastTxs()[0])).toBe(ACME_POLICY_ADDRESS)
+  await mock.teardown()
+})
+
+test('a grant for other message types never queries the corporation balance', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.route('**/v4/delegation/fee-grants*', (route) =>
+    route.fulfill({
+      json: { fee_grants: [{ msg_types: ['/verana.cs.v1.MsgCreateCredentialSchema'], spend_limit: null }] },
+    })
+  )
+  const { mock, dialog } = await openConfirmation(page)
+
+  await expect(dialog.getByText('Network fee').locator('..')).toContainText(/VNA/, { timeout: 30_000 })
+  await expect(dialog.getByText('Paid by').locator('..')).toContainText('(you)')
+
+  await dialog.getByRole('button', { name: 'Confirm' }).click()
+  await expect.poll(() => mock.broadcastTxs().length, { timeout: 30_000 }).toBeGreaterThan(0)
+  expect(broadcastGranter(mock.broadcastTxs()[0])).toBe('')
+  expect(mock.balanceOwners()).not.toContain(ACME_POLICY_ADDRESS)
+  await mock.teardown()
+})
+
 test('a lookup still in flight holds Confirm and names no payer', async ({ page }) => {
   test.setTimeout(120_000)
   let release: () => void = () => {}
@@ -141,18 +209,5 @@ test('a lookup still in flight holds Confirm and names no payer', async ({ page 
   await confirm.click()
   await expect.poll(() => mock.broadcastTxs().length, { timeout: 30_000 }).toBeGreaterThan(0)
   expect(broadcastGranter(mock.broadcastTxs()[0])).toBe(ACME_POLICY_ADDRESS)
-  await mock.teardown()
-})
-
-test('a failed trust deposit lookup still warns on the balance it read', async ({ page }) => {
-  test.setTimeout(120_000)
-  await page.route('**/v4/delegation/fee-grants*', (route) => route.fulfill({ json: { fee_grants: [] } }))
-  await page.route('**/v4/trust-deposit/get/*', (route) =>
-    route.fulfill({ status: 500, json: { error: 'indexer unavailable', code: 500 } })
-  )
-  const { mock, dialog } = await openConfirmation(page, SHORT_BALANCE_UVNA)
-
-  await expect(dialog.getByText(SHORTFALL_TEXT)).toBeVisible({ timeout: 30_000 })
-  await expect(dialog.getByRole('button', { name: 'Confirm' })).toBeEnabled()
   await mock.teardown()
 })

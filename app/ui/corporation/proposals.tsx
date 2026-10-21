@@ -3,7 +3,14 @@
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { type ReactNode, useState } from 'react'
-import { type GroupPolicy, type ProposalRow, type ProposalTally, useProposalVotes } from '@/hooks/useCorporationDetails'
+import {
+  type GroupPolicy,
+  type ProposalRow,
+  type ProposalTally,
+  proposalTallyScale,
+  type TallyScale,
+  useProposalVotes,
+} from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
 import type { VoteChoice } from '@/msg/actions_hooks/actionCorporationManage'
 import { shortenMiddle } from '@/util/util'
@@ -50,9 +57,22 @@ export interface ProposalContext {
   actions: ProposalActions
 }
 
-export function TallyBar({ tally, policy }: { tally: ProposalTally; policy: GroupPolicy }) {
-  const total = Number(policy.totalWeight) || 0
-  const threshold = Number(policy.threshold) || 0
+const TALLY_TEXT = 'mt-1 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap'
+
+export function TallyBar({ tally, scale }: { tally: ProposalTally; scale: TallyScale }) {
+  const { total, threshold } = scale
+  if (total === null) {
+    return (
+      <p className={TALLY_TEXT}>
+        {translate('corporation.proposals.tally.votes', {
+          yes: tally.yes,
+          no: tally.no,
+          abstain: tally.abstain,
+          veto: tally.veto,
+        })}
+      </p>
+    )
+  }
   const percent = (value: number) => (total > 0 ? `${(value / total) * 100}%` : '0%')
   return (
     <div className="min-w-[8rem]">
@@ -61,15 +81,17 @@ export function TallyBar({ tally, policy }: { tally: ProposalTally; policy: Grou
         <div className="h-full bg-red-500" style={{ width: percent(tally.no) }} />
         <div className="h-full bg-red-800" style={{ width: percent(tally.veto) }} />
         <div className="h-full bg-gray-400" style={{ width: percent(tally.abstain) }} />
-        {threshold > 0 && total > 0 ? (
+        {threshold !== null && threshold > 0 && total > 0 ? (
           <span
             className="absolute top-0 h-full w-0.5 bg-gray-900 dark:bg-white"
             style={{ left: percent(threshold) }}
           />
         ) : null}
       </div>
-      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-        {translate('corporation.proposals.tally', { yes: tally.yes, total, threshold })}
+      <p className={TALLY_TEXT}>
+        {threshold === null
+          ? translate('corporation.proposals.tally.total', { yes: tally.yes, total })
+          : translate('corporation.proposals.tally', { yes: tally.yes, total, threshold })}
       </p>
     </div>
   )
@@ -191,7 +213,7 @@ function ProposalCard({ proposal, ctx }: { proposal: ProposalRow; ctx: ProposalC
         <FontAwesomeIcon icon={faChevronDown} className={`text-xs transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       <div className="px-4 pb-3">
-        <TallyBar tally={proposal.tally} policy={ctx.policy} />
+        <TallyBar tally={proposal.tally} scale={proposalTallyScale(proposal, ctx.policy)} />
       </div>
       {open ? (
         <div className="px-4 pb-4">

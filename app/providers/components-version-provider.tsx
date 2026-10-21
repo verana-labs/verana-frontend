@@ -4,8 +4,9 @@ import { createContext, useContext, useState } from 'react'
 import { APP_VERSION } from '@/config/env'
 import { useChainVersion } from '@/hooks/useChainVersion'
 import { useComponentsHealth } from '@/hooks/useComponentsHealth'
+import { useGraphVersion } from '@/hooks/useGraphVersion'
 import { useIndexerVersion } from '@/hooks/useIndexerVersion'
-import type { ChainHealth, IndexerHealth } from '@/lib/component-health'
+import type { ChainHealth, GraphHealth, IndexerHealth } from '@/lib/component-health'
 
 const ComponentsVersionContext = createContext<ComponentsVersionContextType | null>(null)
 
@@ -18,6 +19,10 @@ export function ComponentsVersionProvider({ children }: React.PropsWithChildren)
     indexer: {
       version: null,
       lastProcessedBlock: null,
+      health: null,
+    },
+    graph: {
+      version: null,
       health: null,
     },
     frontend: {
@@ -40,6 +45,7 @@ export function ComponentsVersionProvider({ children }: React.PropsWithChildren)
 function VersionBootstrap() {
   useChainVersion()
   useIndexerVersion()
+  useGraphVersion()
   useComponentsHealth()
   return null
 }
@@ -61,6 +67,10 @@ type ComponentsVersionState = {
     version: string | null
     lastProcessedBlock: number | null
     health: IndexerHealth | null
+  }
+  graph: {
+    version: string | null
+    health: GraphHealth | null
   }
   frontend: {
     version: string | null

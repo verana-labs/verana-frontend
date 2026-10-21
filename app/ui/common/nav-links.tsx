@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
-import { useUserCorporation } from '@/hooks/useUserCorporation'
+import { useActingPendingVotes, useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { getNavLinks } from '@/lib/navlinks'
 import { usePendingTasksCtx } from '@/providers/api-rest-query-provider-context'
@@ -24,8 +24,8 @@ export default function NavLinks() {
 
   const pendingTasksCtx = usePendingTasksCtx()
   const totalPendingTasks = pendingTasksCtx.pendingParticipants.reduce((total, item) => total + item.pending_tasks, 0)
-  const { actingCorporation, attention } = useUserCorporation()
-  const pendingVotes = actingCorporation ? (attention[actingCorporation.corporation.id]?.pendingVotes ?? 0) : 0
+  const { actingCorporation } = useUserCorporation()
+  const pendingVotes = useActingPendingVotes()
   const links = getNavLinks(totalPendingTasks, pendingVotes)
 
   return (

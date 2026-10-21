@@ -1,9 +1,9 @@
 import { Buffer } from 'node:buffer'
-import { toBase64, toHex } from '@cosmjs/encoding'
+import { fromHex, toBase64, toHex } from '@cosmjs/encoding'
 import type { Page, Route } from '@playwright/test'
 import { BaseAccount } from 'cosmjs-types/cosmos/auth/v1beta1/auth'
 import { QueryAccountResponse } from 'cosmjs-types/cosmos/auth/v1beta1/query'
-import { QueryBalanceResponse } from 'cosmjs-types/cosmos/bank/v1beta1/query'
+import { QueryBalanceRequest, QueryBalanceResponse } from 'cosmjs-types/cosmos/bank/v1beta1/query'
 import { GasInfo } from 'cosmjs-types/cosmos/base/abci/v1beta1/abci'
 import { Coin } from 'cosmjs-types/cosmos/base/v1beta1/coin'
 import { SimulateResponse } from 'cosmjs-types/cosmos/tx/v1beta1/service'
@@ -31,6 +31,7 @@ export type MockChainOptions = {
   stubSri?: boolean
   stubCorporation?: boolean
   balanceUvna?: string
+  balancesUvna?: Record<string, string | null>
 }
 
 const NOW = '2026-01-01T00:00:00.000000000Z'
@@ -206,10 +207,12 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
     stubSri = true,
     stubCorporation = true,
     balanceUvna = '1000000000',
+    balancesUvna = {},
   } = opts
 
   const seen: string[] = []
   const broadcasts: string[] = []
+  const balanceOwners: string[] = []
   let simulations = 0
 
   const rpcPattern = new RegExp(`^${escapeRegExp(rpcEndpoint.replace(/\/+$/, ''))}/?(\\?.*)?$`)
@@ -237,7 +240,13 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
         if (path.includes('Service/Simulate'))
           return fulfill(simulateQueryResult(gasUsed + gasDriftPerSimulation * simulations++))
         if (path.includes('Query/Account')) return fulfill(accountQueryResult(address, accountNumber, sequence))
-        if (path.includes('Query/Balance')) return fulfill(balanceQueryResult(balanceUvna))
+        if (path.includes('Query/Balance')) {
+          const owner =
+            typeof req.params?.data === 'string' ? QueryBalanceRequest.decode(fromHex(req.params.data)).address : ''
+          balanceOwners.push(owner)
+          const amount = owner in balancesUvna ? balancesUvna[owner] : balanceUvna
+          return amount === null ? route.abort('failed') : fulfill(balanceQueryResult(amount))
+        }
         return fulfill(accountQueryResult(address, accountNumber, sequence))
       }
       case 'broadcast_tx_sync':
@@ -268,6 +277,7 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
   return {
     seenMethods: () => [...seen],
     broadcastTxs: () => [...broadcasts],
+    balanceOwners: () => [...balanceOwners],
     teardown: async () => {
       await page.unroute(rpcPattern)
       if (stubSri) await page.unroute('**/api/sri**')
