@@ -316,6 +316,7 @@ export function useAgents(corporation: { id: number; did: string } | undefined, 
         if (!append) {
           setAgentWindow(base)
           setAgents([])
+          setDelegationsPartial(false)
           setDegraded(NOTHING_DEGRADED)
         }
         setError(cause instanceof Error ? cause.message : String(cause))
