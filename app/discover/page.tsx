@@ -1,12 +1,12 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { EcosystemSchemaPage } from '@/hooks/useCredentialSchemas'
 import { useCorporationRolesByEcosystem } from '@/hooks/useParticipants'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
-import { filterEcosystems, orderEcosystems, roleFiltersPending } from '@/lib/discover-list'
-import { useDiscoverCtx } from '@/providers/api-rest-query-provider-context'
+import { clientPage, filterEcosystems, orderEcosystems, roleFiltersPending } from '@/lib/discover-list'
+import { DISCOVER_PAGE_SIZE, useDiscoverCtx } from '@/providers/api-rest-query-provider-context'
 import { DiscoverEcosystemCard } from '@/ui/common/discover-ecosystem-card'
 import EcosystemsFilterBar from '@/ui/common/ecosystems-filter-bar'
 import KeysetPagination from '@/ui/common/keyset-pagination'
@@ -14,6 +14,7 @@ import TitleAndButton from '@/ui/common/title-and-button'
 import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 
 const NO_SCHEMAS: EcosystemSchemaPage = { items: [], hasNext: false }
+const NO_ECOSYSTEM_IDS: string[] = []
 
 function scrollToTop(): void {
   document.getElementById('app-scroll')?.scrollTo({ top: 0, behavior: 'smooth' })
@@ -25,19 +26,43 @@ function t(key: string, values?: I18nValues): string {
 
 export default function DiscoverJoinPage() {
   const discoverCtx = useDiscoverCtx()
-  const { discoverList, discoverFilters: filters, setDiscoverFilters } = discoverCtx
+  const {
+    discoverList,
+    discoverFilters: filters,
+    setDiscoverFilters,
+    discoverSearch,
+    fullWindow,
+    setShownEcosystemIds,
+  } = discoverCtx
   const { actingCorporation } = useUserCorporation()
   const actingCorporationId = actingCorporation?.corporation.id
   const { rolesByEcosystem, rolesLoading, failureReason } = useCorporationRolesByEcosystem(actingCorporationId)
 
-  const shown = useMemo(
+  const appliedFilters = useMemo(() => ({ ...filters, search: discoverSearch }), [filters, discoverSearch])
+  const pagingKey = JSON.stringify([appliedFilters, actingCorporationId])
+  const [paging, setPaging] = useState({ key: pagingKey, index: 0 })
+  const pageIndex = paging.key === pagingKey ? paging.index : 0
+
+  const matching = useMemo(
     () =>
       orderEcosystems(
-        filterEcosystems(discoverList, filters, { actingCorporationId, rolesByEcosystem }),
-        filters.order
+        filterEcosystems(discoverList, appliedFilters, { actingCorporationId, rolesByEcosystem }),
+        appliedFilters.order
       ),
-    [actingCorporationId, discoverList, filters, rolesByEcosystem]
+    [actingCorporationId, appliedFilters, discoverList, rolesByEcosystem]
   )
+  const page = useMemo(
+    () =>
+      fullWindow
+        ? clientPage(matching, pageIndex, DISCOVER_PAGE_SIZE)
+        : { items: matching, page: 0, hasPrevious: discoverCtx.hasPrevious, hasNext: discoverCtx.hasNext },
+    [discoverCtx.hasNext, discoverCtx.hasPrevious, fullWindow, matching, pageIndex]
+  )
+  const shown = page.items
+
+  useEffect(() => {
+    setShownEcosystemIds(fullWindow ? shown.map((ecosystem) => ecosystem.id) : NO_ECOSYSTEM_IDS)
+  }, [fullWindow, setShownEcosystemIds, shown])
 
   const partial = discoverCtx.hasNext || discoverCtx.hasPrevious
   const loading = (discoverCtx.loading && discoverList.length === 0) || roleFiltersPending(filters, rolesLoading)
@@ -115,15 +140,17 @@ export default function DiscoverJoinPage() {
       <KeysetPagination
         showing={shown.length}
         itemsLabel={t('datatable.ecosystem.pagination.ecosystems')}
-        hasPrevious={discoverCtx.hasPrevious}
-        hasNext={discoverCtx.hasNext}
+        hasPrevious={page.hasPrevious}
+        hasNext={page.hasNext}
         loadedOnlyNote={false}
         onPrevious={() => {
-          discoverCtx.previousPage()
+          if (fullWindow) setPaging({ key: pagingKey, index: page.page - 1 })
+          else discoverCtx.previousPage()
           scrollToTop()
         }}
         onNext={() => {
-          discoverCtx.nextPage()
+          if (fullWindow) setPaging({ key: pagingKey, index: page.page + 1 })
+          else discoverCtx.nextPage()
           scrollToTop()
         }}
       />

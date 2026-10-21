@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest'
 import type { DidEnrichment } from '@/lib/resolverClient'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import {
+  clientPage,
   type DiscoverFilters,
   distinctRoles,
   filterEcosystems,
   groupRolesByEcosystem,
   INITIAL_DISCOVER_FILTERS,
+  needsFullWindow,
   orderEcosystems,
   roleFiltersPending,
 } from './discover-list'
@@ -163,5 +165,44 @@ describe('roleFiltersPending', () => {
     expect(roleFiltersPending(filters({ hideParticipant: true }), true)).toBe(true)
     expect(roleFiltersPending(filters({ hideOwned: true }), true)).toBe(true)
     expect(roleFiltersPending(filters({ hideOwned: true, hideParticipant: true }), false)).toBe(false)
+  })
+})
+
+describe('needsFullWindow', () => {
+  it('keeps keyset paging while nothing narrows or reorders the list', () => {
+    expect(needsFullWindow(INITIAL_DISCOVER_FILTERS)).toBe(false)
+    expect(needsFullWindow(filters({ search: '   ' }))).toBe(false)
+    expect(needsFullWindow(filters({ showArchived: true }))).toBe(false)
+  })
+
+  it('loads the full window for a search, a client side filter or the trust value order', () => {
+    expect(needsFullWindow(filters({ search: 'acme' }))).toBe(true)
+    expect(needsFullWindow(filters({ showUntrusted: false }))).toBe(true)
+    expect(needsFullWindow(filters({ hideOwned: true }))).toBe(true)
+    expect(needsFullWindow(filters({ hideParticipant: true }))).toBe(true)
+    expect(needsFullWindow(filters({ order: 'trustValue' }))).toBe(true)
+  })
+})
+
+describe('clientPage', () => {
+  const items = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+
+  it('slices one page and says which way more pages lie', () => {
+    expect(clientPage(items, 0, 5)).toEqual({
+      items: ['a', 'b', 'c', 'd', 'e'],
+      page: 0,
+      hasPrevious: false,
+      hasNext: true,
+    })
+    expect(clientPage(items, 1, 5)).toEqual({ items: ['f', 'g'], page: 1, hasPrevious: true, hasNext: false })
+  })
+
+  it('clamps an index past the last page, as when a search shrinks the matches', () => {
+    expect(clientPage(items, 4, 5).page).toBe(1)
+    expect(clientPage(['a'], 3, 5)).toEqual({ items: ['a'], page: 0, hasPrevious: false, hasNext: false })
+  })
+
+  it('returns one empty page for no matches', () => {
+    expect(clientPage([], 0, 5)).toEqual({ items: [], page: 0, hasPrevious: false, hasNext: false })
   })
 })

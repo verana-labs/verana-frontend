@@ -93,3 +93,24 @@ export function orderEcosystems<T extends EcosystemListItem>(ecosystems: T[], or
     return left < right ? 1 : -1
   })
 }
+
+export function needsFullWindow(filters: DiscoverFilters): boolean {
+  return (
+    filters.search.trim() !== '' ||
+    !filters.showUntrusted ||
+    filters.hideOwned ||
+    filters.hideParticipant ||
+    filters.order !== 'newest'
+  )
+}
+
+export function clientPage<T>(items: T[], index: number, size: number) {
+  const last = Math.max(0, Math.ceil(items.length / size) - 1)
+  const page = Math.min(Math.max(0, index), last)
+  return {
+    items: items.slice(page * size, (page + 1) * size),
+    page,
+    hasPrevious: page > 0,
+    hasNext: page < last,
+  }
+}
