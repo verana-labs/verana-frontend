@@ -35,6 +35,7 @@ export const DEFAULT_DECISION_POLICY_DRAFT: DecisionPolicyDraft = {
   minExecutionPeriod: '0',
 }
 
+// Mirrors verana-node app/app_config.go group MaxExecutionPeriod, which no query exposes.
 const MAX_EXECUTION_PERIOD_SECONDS = 1_209_600
 
 const POSITIVE_INTEGER = /^[1-9]\d*$/
