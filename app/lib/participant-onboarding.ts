@@ -13,6 +13,10 @@ export type ParticipantOnboardingDecision = {
   validatorRole: 'ECOSYSTEM' | 'ISSUER_GRANTOR' | 'VERIFIER_GRANTOR' | 'ISSUER' | null
 }
 
+export function isHolderOnboardingMode(value: unknown): value is HolderOnboardingMode {
+  return value === 'ISSUER_ONBOARDING_PROCESS' || value === 'PERMISSIONLESS'
+}
+
 export function getParticipantJoinMessage(
   onboardingMode: ParticipantOnboardingMode
 ): 'MsgSelfCreateParticipant' | 'MsgStartParticipantOP' {
@@ -27,8 +31,7 @@ export function getParticipantOnboardingDecision(
     return { messageType: 'MsgStartParticipantOP', validatorRole: 'ECOSYSTEM' }
   }
   if (role === 'HOLDER') {
-    if (modes.holderOnboardingMode === null) throw new Error('Holder onboarding mode is not configured')
-    if (modes.holderOnboardingMode === 'PERMISSIONLESS') {
+    if (modes.holderOnboardingMode !== 'ISSUER_ONBOARDING_PROCESS') {
       throw new Error('Permissionless holders do not create on-chain participants')
     }
     return { messageType: 'MsgStartParticipantOP', validatorRole: 'ISSUER' }

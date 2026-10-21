@@ -28,9 +28,10 @@ export default function NavLinks() {
   const { actingCorporation, attention } = useUserCorporation()
   const actingAttention = actingCorporation ? attention[actingCorporation.corporation.id] : undefined
   const links = getNavLinks(totalPendingTasks, actingAttention?.pendingVotes ?? 0)
+  const votesPartial = actingAttention?.pendingVotesPartial ?? false
   const partialCounts: Record<string, boolean> = {
-    '/pendingtasks': pendingTasksCtx.partial,
-    '/corporation': actingAttention?.pendingVotesPartial ?? false,
+    '/pendingtasks': pendingTasksCtx.partial || votesPartial,
+    '/corporation': votesPartial,
   }
 
   return (

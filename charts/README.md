@@ -52,6 +52,8 @@ Defined under `env`. The network values have no default and rendering fails when
 
 `NEXT_PUBLIC_VERANA_FAUCET_URL` is optional: leave it empty on a network without a faucet and the frontend hides the Get VNA action.
 
+`NEXT_PUBLIC_VERANA_GRAPH_URL` is optional: leave it empty on a network without a Verana Graph and the frontend hides it from the footer.
+
 ### Quick examples
 
 Render:

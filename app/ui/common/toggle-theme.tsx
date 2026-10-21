@@ -8,7 +8,7 @@ import { translate } from '@/i18n/dataview'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
 export default function ToggleTheme() {
-  const { theme, setTheme } = useTheme()
+  const { resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -17,7 +17,7 @@ export default function ToggleTheme() {
 
   if (!mounted) return null
 
-  const isDark = theme === 'dark'
+  const isDark = resolvedTheme === 'dark'
   const label = resolveTranslatable({ key: isDark ? 'navbar.theme.toLight' : 'navbar.theme.toDark' }, translate)
 
   return (
