@@ -17,7 +17,7 @@ type ParticipantAttributeProps = {
 
 // Service action: only for did:web or did:webvh.
 // Extracts the domain (last part after the last ":") and redirects to https://{domain}
-export function service(did: string): string | undefined {
+function service(did: string): string | undefined {
   if (!did) return undefined
   const isWeb = did.startsWith('did:web:')
   const isWebvh = did.startsWith('did:webvh:')

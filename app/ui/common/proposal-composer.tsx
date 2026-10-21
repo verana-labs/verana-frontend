@@ -25,6 +25,7 @@ import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessa
 import { AddressIssueNote, addressIssue } from '@/ui/common/address-issue'
 import { DecisionPolicyFields } from '@/ui/common/decision-policy-fields'
 import { OperatorGrantOptionsFields, useOperatorGrantDraft } from '@/ui/common/operator-grant-options'
+import { MsgTypeChips } from '@/ui/corporation/operators'
 import { isValidDID } from '@/util/validations'
 
 const KINDS = ['grant', 'revoke', 'members', 'policy', 'rotate'] as const
@@ -53,7 +54,7 @@ export function ProposalComposer({
   const manage = useCorporationManage(onDone)
   const [kind, setKind] = useState<ComposerKind>('grant')
   const draft = useOperatorGrantDraft(feeGrants, authorizations)
-  const [msgTypes, setMsgTypes] = useState<string[]>([...OPERATOR_GRANT_MESSAGE_TYPES])
+  const { msgTypes, setMsgTypes } = draft
   const [memberUpdates, setMemberUpdates] = useState<GroupMemberUpdate[]>(
     members.map((member) => ({ address: member.address, weight: member.weight }))
   )
@@ -83,7 +84,7 @@ export function ProposalComposer({
 
   const ready =
     kind === 'grant'
-      ? granteeValid && msgTypes.length > 0 && grantReading.issue === null
+      ? granteeValid && msgTypes.length + draft.keptMsgTypes.length > 0 && grantReading.issue === null
       : kind === 'revoke'
         ? granteeValid
         : kind === 'members'
@@ -97,7 +98,13 @@ export function ProposalComposer({
       case 'grant': {
         if (!grantReading.options) throw new Error(translate(grantReading.issue))
         return {
-          message: buildGrantOperatorMessage(membership, target, msgTypes, policyAddress, grantReading.options),
+          message: buildGrantOperatorMessage(
+            membership,
+            target,
+            [...msgTypes, ...draft.keptMsgTypes],
+            policyAddress,
+            grantReading.options
+          ),
           title: `Grant operator authorization to ${target}`,
           costLines: grantOptionLines(grantReading.options, draft.existingFeeGrant !== undefined),
         }
@@ -205,6 +212,12 @@ export function ProposalComposer({
               </label>
             ))}
           </div>
+          {draft.keptMsgTypes.length > 0 ? (
+            <div className="mt-2 space-y-2">
+              <p className="text-xs text-gray-500 dark:text-gray-400">{translate('corporation.page.grant.kept')}</p>
+              <MsgTypeChips typeUrls={draft.keptMsgTypes} />
+            </div>
+          ) : null}
         </fieldset>
       ) : null}
 

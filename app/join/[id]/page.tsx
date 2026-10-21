@@ -87,7 +87,7 @@ export default function JoinEcosystemWizard() {
   const unsupportedPricing = selectedSchema !== null && !isNativePricing(selectedSchema)
   const decision = useMemo(() => {
     if (!selectedSchema || !selectedRole) return null
-    if (selectedRole === 'HOLDER' && !selectedSchema.holderOnboardingMode) return null
+    if (selectedRole === 'HOLDER' && selectedSchema.holderOnboardingMode !== 'ISSUER_ONBOARDING_PROCESS') return null
     return getParticipantOnboardingDecision(selectedRole, {
       issuerOnboardingMode: selectedSchema.issuerOnboardingMode,
       verifierOnboardingMode: selectedSchema.verifierOnboardingMode,
