@@ -97,6 +97,7 @@ const offlineRoutesAllowed: (string | RegExp)[] = [
   /^\/ecosystems\/[^/]+$/,
   /^\/credential-schemas\/[^/]+$/,
   /^\/participants\/[^/]+$/,
+  /^\/lab\//,
 ]
 
 export function allowedOffline(pathname: string): boolean {
