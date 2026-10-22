@@ -44,10 +44,10 @@ export default function AccountZone() {
   const { copied, copy } = useCopyFeedback(address)
 
   return (
-    <div className="flex items-center space-x-3 rtl:space-x-reverse px-4 py-2 bg-surface-muted dark:bg-surface-muted rounded-xl">
+    <div className="flex items-center gap-3 px-4 py-2 bg-surface-muted dark:bg-surface-muted rounded-xl">
       {address ? (
         <>
-          <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 bg-linear-to-br/srgb from-green-500 to-green-600 rounded-full flex items-center justify-center">
             <FontAwesomeIcon icon={faCheck} className="text-white text-sm" />
           </div>
           <div
@@ -61,7 +61,7 @@ export default function AccountZone() {
             </p>
           </div>
 
-          <div className="flex items-center space-x-1 rtl:space-x-reverse ms-2">
+          <div className="flex items-center space-x-1 rtl:space-x-reverse">
             <IconLabelButton
               icon={faQrcode}
               title={resolveTranslatable({ key: 'navbar.qr.title' }, translate)}
@@ -78,7 +78,7 @@ export default function AccountZone() {
               onClick={openView}
               icon={faRightFromBracket}
               title={resolveTranslatable({ key: 'navbar.disconnect.title' }, translate)}
-              className="relative group p-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="relative group p-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors focus:outline-hidden focus:ring-2 focus:ring-red-500"
             />
           </div>
 
@@ -86,7 +86,7 @@ export default function AccountZone() {
         </>
       ) : (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-accent-500 rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 bg-linear-to-br/srgb from-primary-500 to-accent-500 rounded-full flex items-center justify-center">
             <FontAwesomeIcon icon={faWallet} className="text-white text-sm" />
           </div>
           <div className="hidden xl:block">
@@ -97,7 +97,7 @@ export default function AccountZone() {
               {resolveTranslatable({ key: 'notconnected.nav.click' }, translate)}
             </p>
           </div>
-          <div className="px-3 py-1 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500">
+          <div className="px-3 py-1 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 transition-colors focus:outline-hidden focus:ring-2 focus:ring-primary-500">
             {ConnectButton}
           </div>
         </div>
