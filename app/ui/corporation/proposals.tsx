@@ -14,7 +14,16 @@ import {
 import { translate } from '@/i18n/dataview'
 import type { VoteChoice } from '@/msg/actions_hooks/actionCorporationManage'
 import { shortenMiddle } from '@/util/util'
-import { Card, formatDate, formatRelative, PartialNote, SectionTitle, SectionUnavailable, StatusBadge } from './shared'
+import {
+  atLeast,
+  Card,
+  formatDate,
+  formatRelative,
+  PartialNote,
+  SectionTitle,
+  SectionUnavailable,
+  StatusBadge,
+} from './shared'
 
 const FILTERS = ['all', 'SUBMITTED', 'ACCEPTED', 'REJECTED', 'ABORTED', 'WITHDRAWN'] as const
 type Filter = (typeof FILTERS)[number]
@@ -277,7 +286,7 @@ export function ProposalsSection({
                   : 'border-neutral-20 dark:border-neutral-70 text-gray-600 dark:text-gray-300'
               }`}
             >
-              {translate(FILTER_KEYS[entry])} · {count}
+              {translate(FILTER_KEYS[entry])} · {atLeast(count, partial)}
             </button>
           )
         })}

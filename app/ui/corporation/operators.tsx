@@ -28,7 +28,7 @@ import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 import { formatVNAFromUVNA, participantCardHref, roleBadgeClass, shortenDID } from '@/util/util'
 import { groupMsgTypes, MODULE_LABELS } from './msg-type-groups'
-import { Card, Fact, formatDate, PartialNote, SectionTitle, SectionUnavailable, YouBadge } from './shared'
+import { atLeast, Card, Fact, formatDate, PartialNote, SectionTitle, SectionUnavailable, YouBadge } from './shared'
 
 const CHIP = 'text-xs px-2 py-1 rounded-md border max-w-full break-all text-left'
 const CHIP_ON =
@@ -441,10 +441,12 @@ function AgentAccountRow({
   vsOperator,
   records,
   participantsById,
+  partial,
 }: {
   vsOperator: string
   records: VsOperatorAuthorizationRow[]
   participantsById: Map<number, Participant>
+  partial: boolean
 }) {
   const [open, setOpen] = useState(false)
   return (
@@ -462,7 +464,7 @@ function AgentAccountRow({
         <span className="min-w-0">
           <span className="font-mono break-all block">{vsOperator}</span>
           <span className="block text-xs text-gray-500 dark:text-gray-400">
-            {records.length} {translate('corporation.page.agents.records')}
+            {atLeast(records.length, partial)} {translate('corporation.page.agents.records')}
           </span>
         </span>
       </button>
@@ -582,6 +584,7 @@ export function OperatorsSection({
               vsOperator={vsOperator}
               records={records}
               participantsById={participantsById}
+              partial={partialAgents}
             />
           ))}
           {agentAccounts.length === 0 ? (
