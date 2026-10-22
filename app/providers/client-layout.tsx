@@ -1,5 +1,6 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import { Fragment, type ReactNode, useEffect, useState } from 'react'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { applyLocale, loadStoredLocale, resolveLocale } from '@/i18n/dataview'
@@ -21,12 +22,21 @@ export default function ClientLayout({
   protocolParams: ProtocolParams
   children: React.ReactNode
 }) {
+  const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
     applyLocale(resolveLocale(loadStoredLocale(), navigator.languages))
     setMounted(true)
   }, [])
   if (!mounted) return null
+
+  if (pathname?.startsWith('/lab/')) {
+    return (
+      <Providers>
+        <ProtocolParamsProvider value={protocolParams}>{children}</ProtocolParamsProvider>
+      </Providers>
+    )
+  }
 
   return (
     <Providers>
