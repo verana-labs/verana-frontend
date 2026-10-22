@@ -1,7 +1,10 @@
 'use client'
 
 import { fromBase64, toHex } from '@cosmjs/encoding'
-import { QueryBalanceRequest, QueryBalanceResponse } from 'cosmjs-types/cosmos/bank/v1beta1/query'
+import {
+  QuerySpendableBalanceByDenomRequest,
+  QuerySpendableBalanceByDenomResponse,
+} from 'cosmjs-types/cosmos/bank/v1beta1/query'
 import { useEffect, useState } from 'react'
 import { VERANA_RPC_ENDPOINT } from '@/config/env'
 import { veranaDenom } from '@/config/veranaChain.sign.client'
@@ -20,12 +23,12 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 }
 
 function balanceQueryBody(granter: string): string {
-  const data = toHex(QueryBalanceRequest.encode({ address: granter, denom: veranaDenom }).finish())
+  const data = toHex(QuerySpendableBalanceByDenomRequest.encode({ address: granter, denom: veranaDenom }).finish())
   return JSON.stringify({
     jsonrpc: '2.0',
     id: Date.now(),
     method: 'abci_query',
-    params: { path: '/cosmos.bank.v1beta1.Query/Balance', data, prove: false },
+    params: { path: '/cosmos.bank.v1beta1.Query/SpendableBalanceByDenom', data, prove: false },
   })
 }
 
@@ -33,7 +36,7 @@ export function parseBalanceQuery(payload: unknown): string {
   const response = asRecord(asRecord(asRecord(payload)?.result)?.response)
   if (!response || response.code !== 0 || typeof response.value !== 'string')
     throw new Error('granter balance: unexpected abci_query response')
-  const amount = QueryBalanceResponse.decode(fromBase64(response.value)).balance?.amount
+  const amount = QuerySpendableBalanceByDenomResponse.decode(fromBase64(response.value)).balance?.amount
   if (amount === undefined) throw new Error('granter balance: missing balance in abci_query response')
   return amount
 }

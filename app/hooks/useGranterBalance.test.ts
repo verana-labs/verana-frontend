@@ -1,5 +1,5 @@
 import { toBase64 } from '@cosmjs/encoding'
-import { QueryBalanceResponse } from 'cosmjs-types/cosmos/bank/v1beta1/query'
+import { QuerySpendableBalanceByDenomResponse } from 'cosmjs-types/cosmos/bank/v1beta1/query'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { FEE_GRANT_LOOKUP_TIMEOUT_MS } from '@/hooks/useFeeGrant'
 import { logger } from '@/lib/logger'
@@ -9,7 +9,7 @@ const RPC = 'https://rpc.example'
 const GRANTER = 'verana1granter'
 
 function balancePayload(amount: string, code = 0) {
-  const value = QueryBalanceResponse.encode({ balance: { denom: 'uvna', amount } }).finish()
+  const value = QuerySpendableBalanceByDenomResponse.encode({ balance: { denom: 'uvna', amount } }).finish()
   return { jsonrpc: '2.0', id: 1, result: { response: { code, value: toBase64(value) } } }
 }
 

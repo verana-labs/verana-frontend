@@ -240,7 +240,7 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
         if (path.includes('Service/Simulate'))
           return fulfill(simulateQueryResult(gasUsed + gasDriftPerSimulation * simulations++))
         if (path.includes('Query/Account')) return fulfill(accountQueryResult(address, accountNumber, sequence))
-        if (path.includes('Query/Balance')) {
+        if (path.includes('Query/Balance') || path.includes('Query/SpendableBalanceByDenom')) {
           const owner =
             typeof req.params?.data === 'string' ? QueryBalanceRequest.decode(fromHex(req.params.data)).address : ''
           balanceOwners.push(owner)
