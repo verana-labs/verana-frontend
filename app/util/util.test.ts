@@ -21,7 +21,6 @@ import {
   roleBadgeClass,
   roleColorClass,
   roleJoinColorClass,
-  rolesSchema,
   shortenDID,
   shortenMiddle,
   withCurrentLocalTimePlusOneMinute,
@@ -412,40 +411,6 @@ describe('withCurrentLocalTimePlusOneMinute', () => {
     expect(withCurrentLocalTimePlusOneMinute('')).toBe('')
     expect(withCurrentLocalTimePlusOneMinute('2026-02')).toBe('')
     expect(withCurrentLocalTimePlusOneMinute('not-a-date')).toBe('')
-  })
-})
-
-describe('rolesSchema', () => {
-  it('adds grantor roles only under the V4 grantor onboarding mode', () => {
-    expect(rolesSchema('GRANTOR_ONBOARDING_PROCESS', 'GRANTOR_ONBOARDING_PROCESS')).toEqual([
-      'ISSUER_GRANTOR',
-      'ISSUER',
-      'VERIFIER_GRANTOR',
-      'VERIFIER',
-      'HOLDER',
-    ])
-  })
-
-  it('omits grantor roles for OPEN and ecosystem onboarding modes', () => {
-    expect(rolesSchema('OPEN', 'OPEN')).toEqual(['ISSUER', 'VERIFIER', 'HOLDER'])
-    expect(rolesSchema('ECOSYSTEM_ONBOARDING_PROCESS', 'ECOSYSTEM_ONBOARDING_PROCESS')).toEqual([
-      'ISSUER',
-      'VERIFIER',
-      'HOLDER',
-    ])
-  })
-
-  it('handles mixed issuer and verifier modes', () => {
-    expect(rolesSchema('GRANTOR_ONBOARDING_PROCESS', 'OPEN')).toEqual([
-      'ISSUER_GRANTOR',
-      'ISSUER',
-      'VERIFIER',
-      'HOLDER',
-    ])
-  })
-
-  it('always includes HOLDER', () => {
-    expect(rolesSchema('OPEN', 'OPEN')).toContain('HOLDER')
   })
 })
 

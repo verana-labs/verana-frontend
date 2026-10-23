@@ -7,11 +7,11 @@ import { useParticipant } from '@/hooks/useParticipant'
 import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
 import type { SchemaPricing } from '@/lib/pricing-asset'
-import AddJoinPage from '@/participants/add/page'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { EntityActionButton } from '@/ui/common/capability-button'
 import EcosystemBreadcrumb from '@/ui/common/ecosystem-breadcrumb'
 import { HolderWebsite } from '@/ui/common/holder-website'
+import JoinFlow from '@/ui/common/join-flow'
 import { ShowMoreButton } from '@/ui/common/keyset-pagination'
 import type { ParticipantRefreshState, TreeNode } from '@/ui/common/participant-tree-types'
 import { PricingNotice, unsupportedPricingReason } from '@/ui/common/pricing-notice'
@@ -499,7 +499,7 @@ export default function ParticipantTree({
           {joinNode.onboardingAction === 'LinkDID' ? (
             <HolderWebsite issuerDid={joinNode.participant?.did ?? ''} onCancel={() => setJoinNode(undefined)} />
           ) : (
-            <AddJoinPage
+            <JoinFlow
               ecosystemId={ecosystemId ?? ''}
               nodeJoin={joinNode}
               onCancel={() => setJoinNode(undefined)}

@@ -6,7 +6,6 @@ import { SHOW_PARTICIPANT_EXPIRE_BEFORE_DAYS } from '@/config/env'
 import { translate } from '@/i18n/dataview'
 import type { HolderOnboardingMode } from '@/lib/participant-onboarding'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
-import { Role } from '@/ui/common/role-card'
 import type { OnboardingProcessState, ParticipantRole, ParticipantState } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
@@ -384,41 +383,15 @@ export function participantAuthority(
   }
 }
 
-export function rolesSchema(issuerOnboardingMode: string, verifierOnboardingMode: string): Role[] {
-  const roles = new Set<Role>()
-
-  // Issuance roles
-  if (issuerOnboardingMode === 'GRANTOR_ONBOARDING_PROCESS') {
-    roles.add('ISSUER_GRANTOR')
-    roles.add('ISSUER')
-  } else {
-    // OPEN o ECOSYSTEM
-    roles.add('ISSUER')
-  }
-
-  // Verification roles
-  if (verifierOnboardingMode === 'GRANTOR_ONBOARDING_PROCESS') {
-    roles.add('VERIFIER_GRANTOR')
-    roles.add('VERIFIER')
-  } else {
-    // OPEN o ECOSYSTEM
-    roles.add('VERIFIER')
-  }
-
-  roles.add('HOLDER')
-  return Array.from(roles)
-}
-
 export function nodeChildRoles(
   issuerOnboardingMode: string,
   verifierOnboardingMode: string,
   holderOnboardingMode: HolderOnboardingMode | null,
   role: string
-): { role: Role; label: string; validation: boolean }[] {
-  const roles = new Set<{ role: Role; label: string; validation: boolean }>()
+): { role: ParticipantRole; label: string; validation: boolean }[] {
+  const roles = new Set<{ role: ParticipantRole; label: string; validation: boolean }>()
 
   if (role === 'ECOSYSTEM') {
-    // Issuance roles
     if (issuerOnboardingMode === 'GRANTOR_ONBOARDING_PROCESS') {
       roles.add({
         role: 'ISSUER_GRANTOR',
@@ -426,14 +399,12 @@ export function nodeChildRoles(
         validation: true,
       })
     } else {
-      // OPEN o ECOSYSTEM
       roles.add({
         role: 'ISSUER',
         label: resolveTranslatable({ key: 'participant.labelRole.issuer' }, translate) ?? 'Issuers',
         validation: issuerOnboardingMode === 'ECOSYSTEM_ONBOARDING_PROCESS',
       })
     }
-    // Verification roles
     if (verifierOnboardingMode === 'GRANTOR_ONBOARDING_PROCESS') {
       roles.add({
         role: 'VERIFIER_GRANTOR',
@@ -441,7 +412,6 @@ export function nodeChildRoles(
         validation: true,
       })
     } else {
-      // OPEN o ECOSYSTEM
       roles.add({
         role: 'VERIFIER',
         label: resolveTranslatable({ key: 'participant.labelRole.verifier' }, translate) ?? 'Verifiers',
@@ -472,7 +442,7 @@ export function nodeChildRoles(
 }
 
 export function childRoleOnboardingAction(
-  childRole: { role: Role; validation: boolean },
+  childRole: { role: ParticipantRole; validation: boolean },
   isWalletConnected: boolean
 ): NonNullable<TreeNode['onboardingAction']> {
   if (childRole.role === 'HOLDER' && !childRole.validation) return 'LinkDID'
@@ -480,7 +450,7 @@ export function childRoleOnboardingAction(
   return childRole.validation ? 'MsgStartParticipantOP' : 'MsgSelfCreateParticipant'
 }
 
-export function childRoleOnboardingLabel(childRole: { role: Role; validation: boolean }): string {
+export function childRoleOnboardingLabel(childRole: { role: ParticipantRole; validation: boolean }): string {
   if (childRole.validation) return 'onboarding process'
   if (childRole.role !== 'HOLDER') return 'open'
   return translate('dataview.cs.managementMode.PERMISSIONLESS')

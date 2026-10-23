@@ -19,14 +19,14 @@ function classes(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(' ')
 }
 
-type AddJoinPageProps = {
+type JoinFlowProps = {
   ecosystemId: string
   nodeJoin: TreeNode
   onCancel: () => void
   onRefresh: (id?: string, txHeight?: number) => void
 }
 
-export default function AddJoinPage({ ecosystemId, nodeJoin, onCancel, onRefresh }: AddJoinPageProps) {
+export default function JoinFlow({ ecosystemId, nodeJoin, onCancel, onRefresh }: JoinFlowProps) {
   const steps: Step[] = [
     {
       id: 1,

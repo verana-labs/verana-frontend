@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 
 import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { translate } from '@/i18n/dataview'
+import { displayedVersion } from '@/lib/gf-document'
 import { type DidEnrichment, serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import { trustStateBadge } from '@/lib/trust-state'
 import ClaimText from '@/ui/common/claim-text'
@@ -49,9 +50,7 @@ type EcosystemCardData = Pick<
 > & { role?: string }
 
 function governanceFrameworkHref(ecosystem: EcosystemCardData): string | undefined {
-  const versions = ecosystem.versions ?? []
-  const target = versions.find((version) => version.version === ecosystem.activeVersion) ?? versions[0]
-  return target?.documents?.[0]?.url
+  return displayedVersion(ecosystem.versions ?? [], ecosystem.activeVersion)?.documents[0]?.url
 }
 
 type Props = {

@@ -104,5 +104,8 @@ export function documentFileName(url: string, kind?: GfDocumentKind): string {
 }
 
 export function displayedVersion(versions: GfVersion[], activeVersion: number): GfVersion | undefined {
-  return versions.find((version) => version.version === activeVersion) ?? versions.at(-1)
+  return (
+    versions.find((version) => version.version === activeVersion) ??
+    versions.filter((version) => version.activeSince !== null).at(-1)
+  )
 }

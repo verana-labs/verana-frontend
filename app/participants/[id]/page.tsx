@@ -14,7 +14,6 @@ import { isNativePricing } from '@/lib/pricing-asset'
 import ParticipantTree, { mergeTrees, ROOT_NODE_ID } from '@/ui/common/participant-tree'
 import { withAuthority } from '@/ui/common/participant-tree-filter'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
-import type { Role } from '@/ui/common/role-card'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 import {
   childRoleOnboardingAction,
@@ -26,7 +25,7 @@ import {
 } from '@/util/util'
 
 type BuiltParticipant = Participant & { children: BuiltParticipant[] }
-type ChildRole = { role: Role; label: string; validation: boolean }
+type ChildRole = ReturnType<typeof nodeChildRoles>[number]
 
 function buildTreeByValidator(participants: Participant[]): BuiltParticipant[] {
   const byId = new Map<string, BuiltParticipant>()

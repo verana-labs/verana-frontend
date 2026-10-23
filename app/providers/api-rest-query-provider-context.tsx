@@ -4,9 +4,11 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 import { type AccountBalanceData, useAccountBalance } from '@/hooks/useAccountBalance'
 import { type EcosystemSchemaPage, useCredentialSchemasByEcosystem } from '@/hooks/useCredentialSchemas'
 import { useDashboardData } from '@/hooks/useDashboardData'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useEcosystems } from '@/hooks/useEcosystems'
 import { usePendingParticipants } from '@/hooks/usePendingParticipants'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
+import { type DiscoverFilters, INITIAL_DISCOVER_FILTERS, needsFullWindow } from '@/lib/discover-list'
 import { coalesceIndexerEvents, refreshTargets } from '@/lib/indexer-event'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
@@ -36,11 +38,13 @@ type DiscoverCtxValue = KeysetPageControls & {
   moreSchemaErrors: Record<string, string>
   loadMoreCredentialSchemas: (ecosystemId: string) => void
   loading: boolean
+  error: string | null
   refetch: () => Promise<void>
+  discoverFilters: DiscoverFilters
+  setDiscoverFilters: React.Dispatch<React.SetStateAction<DiscoverFilters>>
   discoverSearch: string
-  setDiscoverSearch: React.Dispatch<React.SetStateAction<string>>
-  hideUntrustedOnDiscover: boolean
-  setHideUntrustedOnDiscover: React.Dispatch<React.SetStateAction<boolean>>
+  fullWindow: boolean
+  setShownEcosystemIds: (ids: string[]) => void
 }
 
 type EcosystemsCtxValue = KeysetPageControls & {
@@ -64,6 +68,9 @@ type DashboardCtxValue = {
 }
 
 export const DISCOVER_PAGE_SIZE = 5
+// The indexer caps limit at 1024 and the keyset request asks for one extra row.
+export const DISCOVER_FULL_WINDOW = 1024 - 1
+const DISCOVER_SEARCH_DEBOUNCE_MS = 300
 
 const PendingTasksContext = createContext<PendingTasksCtxValue | undefined>(undefined)
 const DiscoverContext = createContext<DiscoverCtxValue | undefined>(undefined)
@@ -94,18 +101,24 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
     previousPage: ecosystemsPreviousPage,
   } = useEcosystems(false, onlyActiveEcosystem)
 
-  const [discoverSearch, setDiscoverSearch] = useState<string>('')
-  const [hideUntrustedOnDiscover, setHideUntrustedOnDiscover] = useState(false)
+  const [discoverFilters, setDiscoverFilters] = useState<DiscoverFilters>(INITIAL_DISCOVER_FILTERS)
+  const discoverSearch = useDebouncedValue(discoverFilters.search, DISCOVER_SEARCH_DEBOUNCE_MS)
+  const fullWindow = needsFullWindow({ ...discoverFilters, search: discoverSearch })
+  const [shownEcosystemIds, setShownEcosystemIds] = useState<string[]>([])
   const {
     ecosystems: discoverList,
     loading: discoverLoading,
+    errorEcosystems: discoverError,
     refetch: refetchDiscoverList,
     hasNext: discoverHasNext,
     hasPrevious: discoverHasPrevious,
     nextPage: discoverNextPage,
     previousPage: discoverPreviousPage,
-  } = useEcosystems(true, true, DISCOVER_PAGE_SIZE)
-  const discoverEcosystemIds = useMemo(() => discoverList.map((ecosystem) => ecosystem.id), [discoverList])
+  } = useEcosystems(true, !discoverFilters.showArchived, fullWindow ? DISCOVER_FULL_WINDOW : DISCOVER_PAGE_SIZE)
+  const discoverEcosystemIds = useMemo(
+    () => (fullWindow ? shownEcosystemIds : discoverList.map((ecosystem) => ecosystem.id)),
+    [discoverList, fullWindow, shownEcosystemIds]
+  )
   const {
     schemasByEcosystem: credentialSchemasByEcosystem,
     loading: credentialSchemasLoading,
@@ -170,15 +183,17 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
     () => ({
       discoverList,
       loading: discoverLoading || credentialSchemasLoading,
+      error: discoverError,
       refetch: refetchDiscover,
       credentialSchemasByEcosystem,
       errorCredentialSchemas,
       moreSchemaErrors,
       loadMoreCredentialSchemas,
+      discoverFilters,
+      setDiscoverFilters,
       discoverSearch,
-      setDiscoverSearch,
-      hideUntrustedOnDiscover,
-      setHideUntrustedOnDiscover,
+      fullWindow,
+      setShownEcosystemIds,
       hasNext: discoverHasNext,
       hasPrevious: discoverHasPrevious,
       nextPage: discoverNextPage,
@@ -189,12 +204,14 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
       discoverLoading,
       credentialSchemasByEcosystem,
       credentialSchemasLoading,
+      discoverError,
       errorCredentialSchemas,
       moreSchemaErrors,
       loadMoreCredentialSchemas,
       refetchDiscover,
+      discoverFilters,
       discoverSearch,
-      hideUntrustedOnDiscover,
+      fullWindow,
       discoverHasNext,
       discoverHasPrevious,
       discoverNextPage,

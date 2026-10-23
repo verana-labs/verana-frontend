@@ -11,7 +11,7 @@ import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
-const { record, string, number, decimalAmount, nullableString } = indexerValidators('ecosystem')
+const { record, string, number, decimalAmount, nullableString, optionalString } = indexerValidators('ecosystem')
 
 function parseVersions(value: unknown, path: string): EcosystemListItem['versions'] {
   if (value === undefined) return undefined
@@ -29,6 +29,7 @@ function parseVersions(value: unknown, path: string): EcosystemListItem['version
           id: String(number(doc.id, `${path}[${index}].documents[${documentIndex}].id`)),
           url: string(doc.url, `${path}[${index}].documents[${documentIndex}].url`),
           language: string(doc.language, `${path}[${index}].documents[${documentIndex}].language`),
+          digestSri: optionalString(doc.digest_sri, `${path}[${index}].documents[${documentIndex}].digest_sri`),
         }
       }),
     }
@@ -68,16 +69,23 @@ export function parseEcosystemsResponse(payload: unknown): EcosystemListItem[] {
 
 export const ECOSYSTEMS_PAGE_SIZE = 9
 
+const NO_ECOSYSTEMS: EcosystemListItem[] = []
+
 export function useEcosystems(all = false, onlyActive = true, pageSize = ECOSYSTEMS_PAGE_SIZE) {
   const { actingCorporation, loading: corporationLoading } = useUserCorporation()
   const corporationId = actingCorporation?.corporation.id
-  const [ecosystems, setEcosystems] = useState<EcosystemListItem[]>([])
-  const [hasNext, setHasNext] = useState(false)
+  const [loaded, setLoaded] = useState<{ key: string; items: EcosystemListItem[]; hasNext: boolean }>({
+    key: '',
+    items: [],
+    hasNext: false,
+  })
   const [loading, setLoading] = useState(true)
   const [errorEcosystems, setError] = useState<string | null>(null)
   const requestRef = useRef(0)
 
   const pageKey = `${all}|${corporationId ?? ''}|${onlyActive}|${pageSize}`
+  const ecosystems = loaded.key === pageKey ? loaded.items : NO_ECOSYSTEMS
+  const hasNext = loaded.key === pageKey && loaded.hasNext
   const { after, hasPrevious, nextPage, previousPage } = useKeysetPages(pageKey, ecosystems)
 
   const fetchEcosystems = useCallback(async () => {
@@ -88,8 +96,7 @@ export function useEcosystems(all = false, onlyActive = true, pageSize = ECOSYST
       return
     }
     if (!all && !corporationId) {
-      setEcosystems([])
-      setHasNext(false)
+      setLoaded({ key: pageKey, items: [], hasNext: false })
       setLoading(corporationLoading)
       return
     }
@@ -108,16 +115,13 @@ export function useEcosystems(all = false, onlyActive = true, pageSize = ECOSYST
         throw new Error(`Error ${code}: ${error}`)
       }
       const page = takeKeysetPage(parseEcosystemsResponse(json), pageSize)
-      if (request === requestRef.current) {
-        setEcosystems(page.items)
-        setHasNext(page.hasNext)
-      }
+      if (request === requestRef.current) setLoaded({ key: pageKey, items: page.items, hasNext: page.hasNext })
     } catch (error) {
       if (request === requestRef.current) setError(error instanceof Error ? error.message : String(error))
     } finally {
       if (request === requestRef.current) setLoading(false)
     }
-  }, [after, all, corporationId, corporationLoading, onlyActive, pageSize])
+  }, [after, all, corporationId, corporationLoading, onlyActive, pageKey, pageSize])
 
   useEffect(() => {
     void fetchEcosystems()
@@ -125,7 +129,7 @@ export function useEcosystems(all = false, onlyActive = true, pageSize = ECOSYST
 
   return {
     ecosystems,
-    loading,
+    loading: loading || (loaded.key !== pageKey && errorEcosystems === null),
     errorEcosystems,
     refetch: fetchEcosystems,
     hasNext,

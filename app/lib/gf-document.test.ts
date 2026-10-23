@@ -76,9 +76,20 @@ describe('displayedVersion', () => {
     { id: '2', version: 2, activeSince: null, documents: [] },
   ]
 
-  it('prefers the active version and falls back to the last one', () => {
+  it('prefers the active version and falls back to the last activated one, never a draft', () => {
     expect(displayedVersion(versions, 1)?.id).toBe('1')
-    expect(displayedVersion(versions, 3)?.id).toBe('2')
+    expect(displayedVersion(versions, 3)?.id).toBe('1')
+    expect(
+      displayedVersion(
+        [
+          versions[0],
+          { id: '2', version: 2, activeSince: '2026-02-01T00:00:00Z', documents: [] },
+          { ...versions[1], id: '3', version: 3 },
+        ],
+        4
+      )?.id
+    ).toBe('2')
+    expect(displayedVersion([versions[1]], 3)).toBeUndefined()
     expect(displayedVersion([], 1)).toBeUndefined()
   })
 })
