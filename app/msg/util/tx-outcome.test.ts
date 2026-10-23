@@ -9,6 +9,10 @@ vi.mock('@/hooks/useVeranaChain', () => explorer)
 const INSUFFICIENT_FUNDS =
   'message /cosmos.bank.v1beta1.MsgSend at position 0: spendable balance 0uvna is smaller than 100000000uvna: insufficient funds'
 const NOT_FOUND = 'operator authorization not found for this corporation/operator pair'
+const MUST_WAIT_LOGS =
+  'proposal execution failed on proposal 18, because of error must wait until 2026-10-16 14:59:16.914501555 +0000 UTC to execute proposal 18: invalid value'
+const MUST_WAIT_EVENTS = [execEvent('18', 'PROPOSAL_EXECUTOR_RESULT_FAILURE', MUST_WAIT_LOGS)]
+const EXECUTABLE_FROM = new Date('2026-10-16T14:59:16.914Z')
 
 function execEvent(proposalId: string, result: string, logs: string): TxEvent {
   return {
@@ -94,6 +98,38 @@ describe('proposalExecution', () => {
   it('treats a transaction without an execution event as pending', () => {
     expect(proposalExecution([])).toEqual({ status: 'pending' })
   })
+
+  it('reads an accepted proposal still inside its minimum execution period as scheduled', () => {
+    expect(proposalExecution(MUST_WAIT_EVENTS)).toEqual({
+      status: 'scheduled',
+      proposalId: '18',
+      executableFrom: EXECUTABLE_FROM,
+    })
+  })
+
+  it('reads the chain time with or without a fraction and with any offset', () => {
+    const at = (time: string) =>
+      proposalExecution([
+        execEvent(
+          '18',
+          'PROPOSAL_EXECUTOR_RESULT_FAILURE',
+          `must wait until ${time} to execute proposal 18: invalid value`
+        ),
+      ])
+    expect(at('2026-10-16 14:59:16 +0000 UTC')).toMatchObject({ executableFrom: new Date('2026-10-16T14:59:16Z') })
+    expect(at('2026-10-16 16:59:16.5 +0200 CEST')).toMatchObject({
+      executableFrom: new Date('2026-10-16T14:59:16.500Z'),
+    })
+  })
+
+  it('keeps a wait it cannot date as a failed execution', () => {
+    const logs = 'must wait until later to execute proposal 18: invalid value'
+    expect(proposalExecution([execEvent('18', 'PROPOSAL_EXECUTOR_RESULT_FAILURE', logs)])).toEqual({
+      status: 'failed',
+      proposalId: '18',
+      logs,
+    })
+  })
 })
 
 describe('txFailureNotice', () => {
@@ -124,6 +160,10 @@ describe('txFailureNotice', () => {
       title: 'Proposal not executed',
       message: `Proposal 38 was accepted, but the chain refused to execute it for lack of authorization: ${NOT_FOUND}.`,
     })
+  })
+
+  it('stays silent for a proposal waiting out its minimum execution period', () => {
+    expect(txFailureNotice(deliverTx({ events: MUST_WAIT_EVENTS }), fallback)).toBeNull()
   })
 
   it('stays silent for a submitted or executed proposal', () => {
@@ -199,6 +239,12 @@ describe('proposalSubmittedMessage', () => {
     )
     expect(proposalSubmittedMessage([execEvent('35', 'PROPOSAL_EXECUTOR_RESULT_NOT_RUN', '')])).toBe(
       'Proposal submitted. It executes once the group reaches its decision threshold.'
+    )
+  })
+
+  it('says when an accepted proposal can be executed', () => {
+    expect(proposalSubmittedMessage(MUST_WAIT_EVENTS)).toBe(
+      `Proposal 18 was accepted, it can be executed from ${EXECUTABLE_FROM.toLocaleString()}.`
     )
   })
 })

@@ -15,12 +15,20 @@ import {
   MsgVote,
   MsgWithdrawProposal,
 } from 'cosmjs-types/cosmos/group/v1/tx'
-import { ThresholdDecisionPolicy, VoteOption } from 'cosmjs-types/cosmos/group/v1/types'
+import { VoteOption } from 'cosmjs-types/cosmos/group/v1/types'
 import { useRef } from 'react'
 import { veranaRegistry } from '@/config/veranaChain.sign.client'
-import { useVeranaChain } from '@/hooks/useVeranaChain'
+import { explorerTxLink, useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
+import {
+  type CurrentDecisionPolicy,
+  currentDecisionRule,
+  type DecisionPolicyInput,
+  type DecisionRule,
+  encodeDecisionPolicy,
+  formatDecisionRule,
+} from '@/lib/decision-policy'
 import {
   formatIndexerPeriod,
   formatPeriod,
@@ -46,7 +54,7 @@ import {
 } from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import { extractTxHeight } from '@/msg/util/signerUtil'
-import { proposalSubmittedMessage, rejectionNotice, txFailureNotice } from '@/msg/util/tx-outcome'
+import { proposalExecution, proposalSubmittedMessage, rejectionNotice, txFailureNotice } from '@/msg/util/tx-outcome'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
 import { useProtocolParams } from '@/providers/protocol-params-context'
@@ -169,44 +177,46 @@ function change(before: string | null, after: string): string {
   return before === null || before === after ? after : `${before} → ${after}`
 }
 
-export function decisionPolicyChangeLines(
-  policy: { threshold: string | null; votingPeriod: string | null },
-  threshold: string,
-  votingPeriodSeconds: number
-): CostLine[] {
+function periodChange(before: string | null, afterSeconds: number): string {
+  return change(before === null ? null : formatIndexerPeriod(before), formatPeriod(afterSeconds))
+}
+
+function ruleLabel(rule: DecisionRule): string {
+  return `${translate(`corporation.page.${rule.kind}`)} ${formatDecisionRule(rule)}`
+}
+
+export function decisionPolicyChangeLines(policy: CurrentDecisionPolicy, next: DecisionPolicyInput): CostLine[] {
+  const before = currentDecisionRule(policy)
+  const ruleLine =
+    before === null || before.kind === next.rule.kind
+      ? {
+          label: translate(`corporation.page.${next.rule.kind}`),
+          value: change(before && formatDecisionRule(before), formatDecisionRule(next.rule)),
+        }
+      : { label: translate('corporation.policy.kind'), value: `${ruleLabel(before)} → ${ruleLabel(next.rule)}` }
   return [
-    { label: translate('corporation.page.threshold'), value: change(policy.threshold, threshold) },
+    ruleLine,
     {
       label: translate('corporation.page.votingperiod'),
-      value: change(
-        policy.votingPeriod === null ? null : formatIndexerPeriod(policy.votingPeriod),
-        formatPeriod(votingPeriodSeconds)
-      ),
+      value: periodChange(policy.votingPeriod, next.votingPeriodSeconds),
+    },
+    {
+      label: translate('corporation.page.minexecutionperiod'),
+      value: periodChange(policy.minExecutionPeriod, next.minExecutionPeriodSeconds),
     },
   ]
 }
 
 export function buildUpdateDecisionPolicyMessage(
   membership: CorporationMembership,
-  threshold: string,
-  votingPeriodSeconds: number
+  policy: DecisionPolicyInput
 ): EncodeObject {
-  const policy = ThresholdDecisionPolicy.fromPartial({
-    threshold,
-    windows: {
-      votingPeriod: { seconds: BigInt(votingPeriodSeconds), nanos: 0 },
-      minExecutionPeriod: { seconds: BigInt(0), nanos: 0 },
-    },
-  })
   return {
     typeUrl: '/cosmos.group.v1.MsgUpdateGroupPolicyDecisionPolicy',
     value: MsgUpdateGroupPolicyDecisionPolicy.fromPartial({
       admin: membership.corporation.policyAddress,
       groupPolicyAddress: membership.corporation.policyAddress,
-      decisionPolicy: {
-        typeUrl: '/cosmos.group.v1.ThresholdDecisionPolicy',
-        value: ThresholdDecisionPolicy.encode(policy).finish(),
-      },
+      decisionPolicy: encodeDecisionPolicy(policy),
     }),
   }
 }
@@ -342,6 +352,16 @@ export function useCorporationManage(onDone?: () => void) {
       if (failure) {
         await notify(failure.message, 'error', failure.title, failure.link)
         if (result.code === 0) runAfterIndexerCatchesUp(waitForBlock, txHeight(result), () => onDone?.())
+        return false
+      }
+      if (notificationKey === 'MsgExec' && proposalExecution(result.events).status === 'scheduled') {
+        runAfterIndexerCatchesUp(waitForBlock, txHeight(result), () => onDone?.())
+        await notify(
+          proposalSubmittedMessage(result.events),
+          'info',
+          translate('notification.proposal.scheduled.title'),
+          explorerTxLink(result.transactionHash)
+        )
         return false
       }
       const height = txHeight(result)
