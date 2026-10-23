@@ -3,8 +3,8 @@
 import type * as React from 'react'
 import { useEffect } from 'react'
 import { translate } from '@/i18n/dataview'
+import { ActivityChart } from '@/lab/dashboard/components/activity-chart'
 import { AppSidebar } from '@/lab/dashboard/components/app-sidebar'
-import { EcosystemsChart } from '@/lab/dashboard/components/ecosystems-chart'
 import { EcosystemsTable } from '@/lab/dashboard/components/ecosystems-table'
 import { SectionCards } from '@/lab/dashboard/components/section-cards'
 import { SiteHeader } from '@/lab/dashboard/components/site-header'
@@ -43,7 +43,7 @@ export default function LabDashboardPage() {
               <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
                 <SectionCards data={data} />
                 <div className="px-4 lg:px-6">
-                  <EcosystemsChart ecosystems={discoverCtx.discoverList} loading={ecosystemsLoading} />
+                  <ActivityChart />
                 </div>
                 <EcosystemsTable
                   ecosystems={discoverCtx.discoverList}
