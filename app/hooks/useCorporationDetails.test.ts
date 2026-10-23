@@ -11,6 +11,7 @@ import { logger } from '@/lib/logger'
 import {
   corporationFeeGrantsUrl,
   fetchCorporationHistory,
+  fetchProposalVotes,
   parseCorporationFeeGrants,
   parseGovernance,
   parseGroup,
@@ -377,7 +378,7 @@ describe('parseCorporationFeeGrants', () => {
 
   it('asks for the active grants of the corporation', () => {
     expect(corporationFeeGrantsUrl(13)).toBe(
-      'https://indexer.example/v4/delegation/fee-grants?grantor_corporation_id=13&only_active=true&limit=1024'
+      'https://indexer.example/v4/delegation/fee-grants?grantor_corporation_id=13&only_active=true'
     )
   })
 })
@@ -563,6 +564,32 @@ describe('proposalTallyScale', () => {
       threshold: null,
       percentage: null,
     })
+  })
+})
+
+describe('fetchProposalVotes', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('reads the votes past the first window of the proposal', async () => {
+    const vote = (id: number) => ({ id, voter: `verana1voter${id}`, option: 'VOTE_OPTION_YES', submit_time: null })
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => ({
+        votes: url.includes('max_id=') ? [vote(1)] : Array.from({ length: 1024 }, (_, index) => vote(1100 - index)),
+      }),
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const votes = await fetchProposalVotes(4)
+
+    expect(votes.partial).toBe(false)
+    expect(votes.value).toHaveLength(1024)
+    expect(votes.value.at(-1)?.voter).toBe('verana1voter1')
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://indexer.example/v4/group/votes?proposal_id=4&limit=1024&sort=-id&max_id=78'
+    )
   })
 })
 

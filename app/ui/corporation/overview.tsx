@@ -4,10 +4,10 @@ import type { CorporationDetails } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
 import { currentDecisionRule, formatDecisionRule } from '@/lib/decision-policy'
 import { formatVNAFromUVNA } from '@/util/util'
-import { Fact, formatDate, SectionUnavailable } from './shared'
+import { atLeast, Fact, formatDate, SectionUnavailable } from './shared'
 
 export function OverviewFacts({ details, openProposals }: { details: CorporationDetails; openProposals: number }) {
-  const { profile, members, policy, trustDeposit, operatorAuthorizations, proposals, degraded } = details
+  const { profile, members, policy, trustDeposit, operatorAuthorizations, proposals, degraded, partial } = details
   const incomplete = degraded.trustDeposit || degraded.operatorAuthorizations || degraded.proposals
   const unknown = translate('common.unknown')
   const rule = currentDecisionRule(policy)
@@ -27,12 +27,16 @@ export function OverviewFacts({ details, openProposals }: { details: Corporation
           value={
             degraded.proposals
               ? unknown
-              : `${proposals.length} (${openProposals} ${translate('corporation.page.open')})`
+              : `${atLeast(proposals.length, partial.proposals)} (${atLeast(openProposals, partial.proposals)} ${translate('corporation.page.open')})`
           }
         />
         <Fact
           label={translate('corporation.tab.operators')}
-          value={degraded.operatorAuthorizations ? unknown : operatorAuthorizations.length}
+          value={
+            degraded.operatorAuthorizations
+              ? unknown
+              : atLeast(operatorAuthorizations.length, partial.operatorAuthorizations)
+          }
         />
         <Fact label={translate('corporation.page.language')} value={profile.language || translate('common.none')} />
         <Fact label={translate('corporation.page.created')} value={formatDate(profile.created)} />

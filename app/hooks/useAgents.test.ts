@@ -5,6 +5,7 @@ import {
   agentRefreshNeeded,
   allPages,
   buildAgentList,
+  fetchAgentDelegations,
   withPendingAccreditations,
 } from '@/hooks/useAgents'
 import type { IndexerEvent } from '@/lib/indexer-event'
@@ -193,5 +194,28 @@ describe('allPages', () => {
     const page = await allPages(url, 'ctx', parse)
     expect(page.items).toHaveLength(AGENTS_PAGE_SIZE + 2)
     expect(urls).toEqual(['https://indexer/list', 'https://indexer/list?max_id=6'])
+  })
+})
+
+describe('fetchAgentDelegations', () => {
+  const authorization = (id: number) => ({
+    id,
+    vs_operator: `verana1vsop${id}`,
+    records: [{ participant_id: id, msg_types: [] }],
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('maps the authorizations envelope to delegations keyed by participant', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => ({ authorizations: [authorization(2), authorization(1)] }) }))
+    )
+
+    const delegations = await fetchAgentDelegations(13)
+
+    expect(delegations.value.map((row) => row.participantId)).toEqual([2, 1])
   })
 })

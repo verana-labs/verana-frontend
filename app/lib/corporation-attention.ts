@@ -1,29 +1,34 @@
 import { VERANA_REST_ENDPOINT_GROUP, VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
-import { indexerValidators } from '@/lib/indexer-json'
+import { fetchKeysetPages, INDEXER_MAX_LIMIT, indexerValidators, type KeysetWindow } from '@/lib/indexer-json'
 import { logger } from '@/lib/logger'
 
 export interface CorporationAttention {
   pendingTasks: number
   pendingVotes: number
+  pendingTasksPartial: boolean
+  pendingVotesPartial: boolean
 }
 
 const { record, number } = indexerValidators('attention')
 
 export function attentionUrls(corporationId: number, account: string): { pendingTasks: string; pendingVotes: string } {
   return {
-    pendingTasks: `${VERANA_REST_ENDPOINT_PARTICIPANT}/pending/flat?corporation_id=${corporationId}&limit=1024`,
-    pendingVotes: `${VERANA_REST_ENDPOINT_GROUP}/proposals?corporation_id=${corporationId}&pending_voter=${encodeURIComponent(account)}&limit=1024`,
+    pendingTasks: `${VERANA_REST_ENDPOINT_PARTICIPANT}/pending/flat?corporation_id=${corporationId}&limit=${INDEXER_MAX_LIMIT}`,
+    pendingVotes: `${VERANA_REST_ENDPOINT_GROUP}/proposals?corporation_id=${corporationId}&pending_voter=${encodeURIComponent(account)}`,
   }
 }
 
-export function countPendingTasks(payload: unknown): number {
+export function countPendingTasks(payload: unknown): KeysetWindow<number> {
   const envelope = record(payload, 'response')
   if (!Array.isArray(envelope.ecosystems)) throw new Error('Invalid attention response: missing ecosystems envelope')
-  return envelope.ecosystems.reduce<number>(
-    (total, value, index) =>
-      total + number(record(value, `ecosystems[${index}]`).pending_tasks, `ecosystems[${index}].pending_tasks`),
-    0
-  )
+  return {
+    value: envelope.ecosystems.reduce<number>(
+      (total, value, index) =>
+        total + number(record(value, `ecosystems[${index}]`).pending_tasks, `ecosystems[${index}].pending_tasks`),
+      0
+    ),
+    partial: envelope.ecosystems.length >= INDEXER_MAX_LIMIT,
+  }
 }
 
 export function countPendingVotes(payload: unknown): number {
@@ -43,8 +48,16 @@ export async function fetchCorporationAttention(corporationId: number, account: 
     throw new Error('Missing V4 participant or group endpoint')
   }
   const urls = attentionUrls(corporationId, account)
-  const [tasks, votes] = await Promise.all([fetchJson(urls.pendingTasks), fetchJson(urls.pendingVotes)])
-  return { pendingTasks: countPendingTasks(tasks), pendingVotes: countPendingVotes(votes) }
+  const [tasks, votes] = await Promise.all([
+    fetchJson(urls.pendingTasks).then(countPendingTasks),
+    fetchKeysetPages(urls.pendingVotes, 'proposals', 'Unable to fetch the pending votes', countPendingVotes),
+  ])
+  return {
+    pendingTasks: tasks.value,
+    pendingVotes: votes.value,
+    pendingTasksPartial: tasks.partial,
+    pendingVotesPartial: votes.partial,
+  }
 }
 
 export async function fetchAttention(

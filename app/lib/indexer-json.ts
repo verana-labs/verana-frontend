@@ -90,6 +90,68 @@ export function takeKeysetPage<T>(window: T[], pageSize: number): { items: T[]; 
   return { items: window.slice(0, pageSize), hasNext: window.length > pageSize }
 }
 
+export const INDEXER_MAX_LIMIT = 1024
+const KEYSET_MAX_PAGES = 8
+
+const keyset = indexerValidators('keyset page')
+
+export interface KeysetWindow<T> {
+  value: T
+  partial: boolean
+}
+
+export function emptyWindow<T>(): KeysetWindow<T[]> {
+  return { value: [], partial: false }
+}
+
+export interface KeysetPagesOptions {
+  cursor?: string
+  maxPages?: number
+}
+
+async function fetchKeysetBatch(url: string, field: string, context: string, params: URLSearchParams) {
+  const payload = await fetchJson(`${url}${url.includes('?') ? '&' : '?'}${params.toString()}`, context)
+  const batch = keyset.record(payload, 'response')[field]
+  if (!Array.isArray(batch)) throw new Error(`Invalid keyset page response: missing ${field} envelope`)
+  return batch
+}
+
+export async function fetchKeysetPages<T>(
+  url: string,
+  field: string,
+  context: string,
+  parse: (payload: Record<string, unknown[]>) => T,
+  { cursor = 'id', maxPages = KEYSET_MAX_PAGES }: KeysetPagesOptions = {}
+): Promise<KeysetWindow<T>> {
+  const pageSize = INDEXER_MAX_LIMIT - 1
+  const rows: unknown[] = []
+  const settle = (partial: boolean) => ({ value: parse({ [field]: rows }), partial })
+  const cursorOf = (row: unknown, path: string) =>
+    keyset.decimalAmount(keyset.record(row, path)[cursor], `${path}.${cursor}`)
+  let after: string | undefined
+  for (let page = 0; page < maxPages; page++) {
+    const params = new URLSearchParams()
+    applyKeysetParams(params, { pageSize, after })
+    let batch: unknown[]
+    try {
+      batch = await fetchKeysetBatch(url, field, context, params)
+    } catch (cause) {
+      if (after === undefined) throw cause
+      logger.error(context, cause)
+      return settle(true)
+    }
+    const { items, hasNext } = takeKeysetPage(batch, pageSize)
+    if (after !== undefined && items.length > 0 && BigInt(cursorOf(items[0], `${field}[0]`)) >= BigInt(after)) {
+      logger.error(context, new Error(`${field} page did not move past ${cursor} ${after}`))
+      return settle(true)
+    }
+    rows.push(...items)
+    if (!hasNext) return settle(false)
+    after = cursorOf(items[items.length - 1], `${field}[${items.length - 1}]`)
+  }
+  return settle(true)
+}
+
 export interface Degradable<T> {
   value: T
   failed: boolean

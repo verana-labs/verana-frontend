@@ -6,21 +6,33 @@ import { translate } from '@/i18n/dataview'
 import type { CorporationAttention } from '@/lib/corporation-attention'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import type { DidEnrichment } from '@/lib/resolverClient'
+import { atLeast } from '@/ui/corporation/shared'
 import { countryCodeToFlag } from '@/util/util'
 
 export function corporationDisplayName(enrichment: DidEnrichment | null | undefined): string | null {
   return enrichment?.organizationName ?? enrichment?.serviceName ?? null
 }
 
-function AttentionBadge({ count, label, className }: { count: number; label: string; className: string }) {
+function AttentionBadge({
+  count,
+  partial,
+  label,
+  className,
+}: {
+  count: number
+  partial: boolean
+  label: string
+  className: string
+}) {
   if (count === 0) return null
+  const shown = atLeast(count, partial)
   return (
     <span
       title={label}
-      aria-label={`${count} ${label}`}
+      aria-label={`${shown} ${label}`}
       className={`min-w-5 h-5 px-1 text-white text-xs font-bold rounded-full flex items-center justify-center leading-none ${className}`}
     >
-      {count}
+      {shown}
     </span>
   )
 }
@@ -68,11 +80,13 @@ export function CorporationMembershipRow({
         <span className="flex items-center gap-1">
           <AttentionBadge
             count={attention.pendingTasks}
+            partial={attention.pendingTasksPartial}
             label={translate('corporation.selector.pendingtasks')}
             className="bg-amber-500"
           />
           <AttentionBadge
             count={attention.pendingVotes}
+            partial={attention.pendingVotesPartial}
             label={translate('corporation.selector.pendingvotes')}
             className="bg-red-500"
           />

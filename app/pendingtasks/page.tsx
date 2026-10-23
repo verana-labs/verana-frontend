@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { useActingPendingVotes, useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
+import { INDEXER_MAX_LIMIT } from '@/lib/indexer-json'
 import { usePendingTasksCtx } from '@/providers/api-rest-query-provider-context'
 import ParticipantTree from '@/ui/common/participant-tree'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
@@ -59,8 +60,14 @@ function buildTree(ecosystems: PendingEcosystem[], corporationId?: number): Tree
   }))
 }
 
-function treePlaceholder(count: number, settled: boolean, error: string | null): ReactNode {
+function treePlaceholder(count: number, partial: boolean, settled: boolean, error: string | null): ReactNode {
   if (error) return <p className="p-2 text-sm text-amber-700 dark:text-amber-300">{translate('task.tree.error')}</p>
+  if (partial)
+    return (
+      <p className="p-2 text-xs text-neutral-70 dark:text-neutral-70">
+        {translate('task.tree.partial', { count: INDEXER_MAX_LIMIT })}
+      </p>
+    )
   if (count > 0) return null
   return (
     <p className="p-2 text-sm text-neutral-70 dark:text-neutral-70">
@@ -72,7 +79,7 @@ function treePlaceholder(count: number, settled: boolean, error: string | null):
 export default function PendingTasksPage() {
   const { actingCorporation, loading: corporationLoading, error: discoveryError } = useUserCorporation()
   const pendingVotes = useActingPendingVotes()
-  const { pendingParticipants, settled, error, refetch } = usePendingTasksCtx()
+  const { pendingParticipants, partial, settled, error, refetch } = usePendingTasksCtx()
   const [refreshRoot, setRefreshRoot] = useState(true)
   const participantTree = useMemo(
     () => buildTree(pendingParticipants, actingCorporation?.corporation.id),
@@ -108,7 +115,7 @@ export default function PendingTasksPage() {
         type="tasks"
         viewerCorporationId={actingCorporation?.corporation.id}
         refreshRoot={() => setRefreshRoot(true)}
-        placeholder={treePlaceholder(pendingParticipants.length, settled && !corporationLoading, error)}
+        placeholder={treePlaceholder(pendingParticipants.length, partial, settled && !corporationLoading, error)}
       />
     </>
   )
