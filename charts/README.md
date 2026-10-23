@@ -24,7 +24,7 @@ This chart deploys the Verana frontend (Next.js) as a Deployment with a Service,
 | `service.type` | Service type | `ClusterIP` |
 | `service.port` | Service port | `3000` |
 | `service.targetPort` | Container port | `3000` |
-| `nodeSelector` | Node selector map | `kubernetes.io/hostname: cluster-utc-node-07efe5` |
+| `nodeSelector` | Node selector map | `{}` |
 | `env` | Env vars (see below); the network ones have no default | required |
 | `extraEnv` | Additional env entries (`[{name, value}]`) | `[]` |
 | `resources` | Pod resources | `{}` |

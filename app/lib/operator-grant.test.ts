@@ -277,7 +277,10 @@ describe('formatIndexerPeriod', () => {
     ['7200s', '2h'],
     ['300s', '5m'],
     ['90s', '90s'],
+    ['0s', '0s'],
     ['1.5s', '1.5s'],
+    ['1.500s', '1.5s'],
+    ['86400.000s', '1d'],
   ])('shows %s as %s', (value, shown) => {
     expect(formatIndexerPeriod(value)).toBe(shown)
   })

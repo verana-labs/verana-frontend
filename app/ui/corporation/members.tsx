@@ -2,6 +2,7 @@
 
 import type { GroupMemberRow, GroupPolicy } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
+import { currentDecisionRule, formatDecisionRule } from '@/lib/decision-policy'
 import { Card, Fact, YouBadge } from './shared'
 
 export function MembersSection({
@@ -13,13 +14,21 @@ export function MembersSection({
   policy: GroupPolicy
   walletAddress: string | undefined
 }) {
+  const rule = currentDecisionRule(policy)
   return (
     <Card id="members">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <Fact label={translate('corporation.page.threshold')} value={policy.threshold ?? translate('common.none')} />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        <Fact
+          label={translate(`corporation.page.${rule?.kind ?? 'threshold'}`)}
+          value={rule ? formatDecisionRule(rule) : translate('common.none')}
+        />
         <Fact
           label={translate('corporation.page.votingperiod')}
           value={policy.votingPeriod ?? translate('common.none')}
+        />
+        <Fact
+          label={translate('corporation.page.minexecutionperiod')}
+          value={policy.minExecutionPeriod ?? translate('common.none')}
         />
         <Fact label={translate('corporation.page.totalweight')} value={policy.totalWeight} />
       </div>

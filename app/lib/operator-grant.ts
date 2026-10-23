@@ -103,8 +103,8 @@ export function authorizationFor<T extends { operator: string }>(
   return operator ? authorizations.find((authorization) => authorization.operator === operator) : undefined
 }
 
-function indexerPeriodSeconds(value: string | null): number | null {
-  const match = value ? /^(\d+)s$/.exec(value) : null
+export function indexerPeriodSeconds(value: string | null): number | null {
+  const match = value ? /^(\d+(?:\.\d+)?)s$/.exec(value) : null
   return match ? Number(match[1]) : null
 }
 
@@ -279,6 +279,7 @@ export function grantOperatorAuthorization(
 }
 
 export function formatPeriod(seconds: number): string {
+  if (seconds === 0) return '0s'
   if (seconds % SECONDS_PER_DAY === 0) return `${seconds / SECONDS_PER_DAY}d`
   if (seconds % 3_600 === 0) return `${seconds / 3_600}h`
   if (seconds % 60 === 0) return `${seconds / 60}m`

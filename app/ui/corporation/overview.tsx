@@ -2,6 +2,7 @@
 
 import type { CorporationDetails } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
+import { currentDecisionRule, formatDecisionRule } from '@/lib/decision-policy'
 import { formatVNAFromUVNA } from '@/util/util'
 import { Fact, formatDate, SectionUnavailable } from './shared'
 
@@ -9,8 +10,9 @@ export function OverviewFacts({ details, openProposals }: { details: Corporation
   const { profile, members, policy, trustDeposit, operatorAuthorizations, proposals, degraded } = details
   const incomplete = degraded.trustDeposit || degraded.operatorAuthorizations || degraded.proposals
   const unknown = translate('common.unknown')
-  const thresholdNote = policy.threshold
-    ? ` · ${translate('corporation.page.threshold').toLowerCase()} ${policy.threshold}`
+  const rule = currentDecisionRule(policy)
+  const thresholdNote = rule
+    ? ` · ${translate(rule.kind === 'threshold' ? 'corporation.page.threshold' : 'corporation.page.percentage').toLowerCase()} ${formatDecisionRule(rule)}`
     : ''
   return (
     <div className="space-y-4">

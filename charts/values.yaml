@@ -20,8 +20,7 @@ service:
   targetPort: 3000
 
 # Node scheduling preferences
-nodeSelector:
-  kubernetes.io/hostname: cluster-utc-node-07efe5
+nodeSelector: {}
 
 # Environment variables consumed by the application. Network values have no default:
 # pass values-devnet.yaml or values-testnet.yaml (or your own) at deploy time.
