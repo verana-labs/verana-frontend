@@ -3,7 +3,12 @@ import { fromHex, toBase64, toHex } from '@cosmjs/encoding'
 import type { Page, Route } from '@playwright/test'
 import { BaseAccount } from 'cosmjs-types/cosmos/auth/v1beta1/auth'
 import { QueryAccountResponse } from 'cosmjs-types/cosmos/auth/v1beta1/query'
-import { QueryBalanceRequest, QueryBalanceResponse } from 'cosmjs-types/cosmos/bank/v1beta1/query'
+import {
+  QueryBalanceRequest,
+  QueryBalanceResponse,
+  QuerySpendableBalanceByDenomRequest,
+  QuerySpendableBalanceByDenomResponse,
+} from 'cosmjs-types/cosmos/bank/v1beta1/query'
 import { GasInfo } from 'cosmjs-types/cosmos/base/abci/v1beta1/abci'
 import { Coin } from 'cosmjs-types/cosmos/base/v1beta1/coin'
 import { SimulateResponse } from 'cosmjs-types/cosmos/tx/v1beta1/service'
@@ -119,10 +124,11 @@ const simulateQueryResult = (gasUsed: number) => {
   }
 }
 
-const balanceQueryResult = (amount: string) => {
-  const value = QueryBalanceResponse.encode(
-    QueryBalanceResponse.fromPartial({ balance: Coin.fromPartial({ denom: 'uvna', amount }) })
-  ).finish()
+const balanceQueryResult = (amount: string, spendable: boolean) => {
+  const balance = Coin.fromPartial({ denom: 'uvna', amount })
+  const value = spendable
+    ? QuerySpendableBalanceByDenomResponse.encode({ balance }).finish()
+    : QueryBalanceResponse.encode({ balance }).finish()
   return {
     response: {
       code: 0,
@@ -240,12 +246,13 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
         if (path.includes('Service/Simulate'))
           return fulfill(simulateQueryResult(gasUsed + gasDriftPerSimulation * simulations++))
         if (path.includes('Query/Account')) return fulfill(accountQueryResult(address, accountNumber, sequence))
-        if (path.includes('Query/Balance') || path.includes('Query/SpendableBalanceByDenom')) {
-          const owner =
-            typeof req.params?.data === 'string' ? QueryBalanceRequest.decode(fromHex(req.params.data)).address : ''
+        const spendable = path.includes('Query/SpendableBalanceByDenom')
+        if (spendable || path.includes('Query/Balance')) {
+          const request = spendable ? QuerySpendableBalanceByDenomRequest : QueryBalanceRequest
+          const owner = typeof req.params?.data === 'string' ? request.decode(fromHex(req.params.data)).address : ''
           balanceOwners.push(owner)
           const amount = owner in balancesUvna ? balancesUvna[owner] : balanceUvna
-          return amount === null ? route.abort('failed') : fulfill(balanceQueryResult(amount))
+          return amount === null ? route.abort('failed') : fulfill(balanceQueryResult(amount, spendable))
         }
         return fulfill(accountQueryResult(address, accountNumber, sequence))
       }
