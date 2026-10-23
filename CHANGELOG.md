@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.19.0](https://github.com/verana-labs/verana-frontend/compare/v0.18.2...v0.19.0) (2026-10-23)
+
+
+### Features
+
+* [Corporation] percentage decision policies and the minimum execution period ([#557](https://github.com/verana-labs/verana-frontend/issues/557)) ([0e922fa](https://github.com/verana-labs/verana-frontend/commit/0e922fa20533fb0f7e79d939b40415709a8df521))
+
+
+### Bug Fixes
+
+* [Account] keep the pending badge next to the chevron in the corporations list ([#567](https://github.com/verana-labs/verana-frontend/issues/567)) ([8d761c3](https://github.com/verana-labs/verana-frontend/commit/8d761c317a9700e48c01bee620f8ea25bf3b00ad))
+* [Data] follow keyset pages past the 1024-row windows ([#560](https://github.com/verana-labs/verana-frontend/issues/560)) ([20d309e](https://github.com/verana-labs/verana-frontend/commit/20d309e290f637fdb5ea864649e7c416756528d1))
+* [Transactions] read the corporation's spendable balance before it pays the fee ([#564](https://github.com/verana-labs/verana-frontend/issues/564)) ([da77eee](https://github.com/verana-labs/verana-frontend/commit/da77eee8ad1cb69e094c484c3d17c33484b64fe7))
+* **chart:** remove hardcoded node selector ([#562](https://github.com/verana-labs/verana-frontend/issues/562)) ([82103bb](https://github.com/verana-labs/verana-frontend/commit/82103bbe8961683d55338c853cda13618fe728bd))
+
 ## [0.18.2](https://github.com/verana-labs/verana-frontend/compare/v0.18.1...v0.18.2) (2026-10-20)
 
 
