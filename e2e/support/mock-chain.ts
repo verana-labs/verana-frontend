@@ -31,6 +31,7 @@ export type MockChainOptions = {
   stubSri?: boolean
   stubCorporation?: boolean
   balanceUvna?: string
+  txEvents?: { type: string; attributes: { key: string; value: string; index: boolean }[] }[]
   balancesUvna?: Record<string, string | null>
 }
 
@@ -145,7 +146,12 @@ const broadcastSyncResult = () => ({
   hash: FAKE_TX_HASH_HEX,
 })
 
-const txSearchResult = (ecosystemId: string, corporationId: number, policyAddress: string) => ({
+const txSearchResult = (
+  ecosystemId: string,
+  corporationId: number,
+  policyAddress: string,
+  extraEvents: NonNullable<MockChainOptions['txEvents']>
+) => ({
   txs: [
     {
       hash: FAKE_TX_HASH_HEX,
@@ -173,6 +179,7 @@ const txSearchResult = (ecosystemId: string, corporationId: number, policyAddres
               { key: 'policy_address', value: policyAddress, index: true },
             ],
           },
+          ...extraEvents,
         ],
       },
       tx: FAKE_TX_HASH_B64,
@@ -207,6 +214,7 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
     stubSri = true,
     stubCorporation = true,
     balanceUvna = '1000000000',
+    txEvents = [],
     balancesUvna = {},
   } = opts
 
@@ -254,7 +262,7 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
         if (typeof req.params?.tx === 'string') broadcasts.push(req.params.tx)
         return fulfill(broadcastSyncResult())
       case 'tx_search':
-        return fulfill(txSearchResult(ecosystemId, corporationId, corporationPolicyAddress))
+        return fulfill(txSearchResult(ecosystemId, corporationId, corporationPolicyAddress, txEvents))
       case 'health':
         return fulfill({})
       default:

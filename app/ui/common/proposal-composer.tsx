@@ -7,6 +7,7 @@ import { useState } from 'react'
 import type { FeeGrantRow, GroupMemberRow, GroupPolicy, OperatorAuthorizationRow } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
+import { currentDecisionPolicyDraft, formatDecisionRule, readDecisionPolicyDraft } from '@/lib/decision-policy'
 import { grantOptionLines, readGrantOptions } from '@/lib/operator-grant'
 import type { CostLine } from '@/lib/tx-preview'
 import {
@@ -22,8 +23,8 @@ import {
 } from '@/msg/actions_hooks/actionCorporationManage'
 import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
 import { AddressIssueNote, addressIssue } from '@/ui/common/address-issue'
+import { DecisionPolicyFields } from '@/ui/common/decision-policy-fields'
 import { OperatorGrantOptionsFields, useOperatorGrantDraft } from '@/ui/common/operator-grant-options'
-import { ThresholdHint } from '@/ui/common/threshold-hint'
 import { MsgTypeChips } from '@/ui/corporation/operators'
 import { PartialNote } from '@/ui/corporation/shared'
 import { isValidDID } from '@/util/validations'
@@ -60,8 +61,7 @@ export function ProposalComposer({
   const [memberUpdates, setMemberUpdates] = useState<GroupMemberUpdate[]>(
     members.map((member) => ({ address: member.address, weight: member.weight }))
   )
-  const [threshold, setThreshold] = useState(policy.threshold ?? '1')
-  const [votingPeriod, setVotingPeriod] = useState(policy.votingPeriod?.replace(/s$/, '') ?? '60')
+  const [policyDraft, setPolicyDraft] = useState(() => currentDecisionPolicyDraft(policy))
   const [did, setDid] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -83,7 +83,7 @@ export function ProposalComposer({
       (update, index) => update.address.length > 0 && updateIssues[index] === null && /^\d+$/.test(update.weight)
     ) &&
     trimmedUpdates.some((update) => update.weight !== '0')
-  const policyValid = /^[1-9]\d*$/.test(threshold) && /^[1-9]\d*$/.test(votingPeriod)
+  const decisionPolicy = readDecisionPolicyDraft(policyDraft)
 
   const ready =
     kind === 'grant'
@@ -93,7 +93,7 @@ export function ProposalComposer({
         : kind === 'members'
           ? membersValid
           : kind === 'policy'
-            ? policyValid
+            ? decisionPolicy !== null
             : isValidDID(did.trim())
 
   function compose(): { message: EncodeObject; title: string; costLines?: CostLine[]; effectKey?: string } {
@@ -124,13 +124,18 @@ export function ProposalComposer({
           costLines: memberChangeLines(members, trimmedUpdates),
           effectKey: 'txconfirm.effect.proposal.members',
         }
-      case 'policy':
+      case 'policy': {
+        if (!decisionPolicy) throw new Error('Invalid decision policy')
+        const { rule, votingPeriodSeconds, minExecutionPeriodSeconds } = decisionPolicy
+        const share = `${formatDecisionRule(rule)} of ${rule.kind === 'threshold' ? policy.totalWeight : 'the total weight'}`
+        const delay = minExecutionPeriodSeconds > 0 ? `, executable ${minExecutionPeriodSeconds}s after submission` : ''
         return {
-          message: buildUpdateDecisionPolicyMessage(membership, threshold, Number(votingPeriod)),
-          title: `Set the decision policy to ${threshold} of ${policy.totalWeight} over ${votingPeriod}s`,
-          costLines: decisionPolicyChangeLines(policy, threshold, Number(votingPeriod)),
+          message: buildUpdateDecisionPolicyMessage(membership, decisionPolicy),
+          title: `Set the decision policy to ${share} over ${votingPeriodSeconds}s${delay}`,
+          costLines: decisionPolicyChangeLines(policy, decisionPolicy),
           effectKey: 'txconfirm.effect.proposal.policy',
         }
+      }
       default:
         return {
           message: buildUpdateCorporationMessage(membership, did.trim(), policyAddress),
@@ -286,21 +291,11 @@ export function ProposalComposer({
 
       {kind === 'policy' ? (
         <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-xl">
-          <div>
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {translate('corporation.page.threshold')}
-              <input value={threshold} onChange={(event) => setThreshold(event.target.value)} className={inputClass} />
-            </label>
-            <ThresholdHint threshold={Number(threshold)} totalWeight={Number(policy.totalWeight)} />
-          </div>
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {translate('corporation.wizard.votingperiod')}
-            <input
-              value={votingPeriod}
-              onChange={(event) => setVotingPeriod(event.target.value)}
-              className={inputClass}
-            />
-          </label>
+          <DecisionPolicyFields
+            value={policyDraft}
+            onChange={setPolicyDraft}
+            totalWeight={Number(policy.totalWeight)}
+          />
         </div>
       ) : null}
 

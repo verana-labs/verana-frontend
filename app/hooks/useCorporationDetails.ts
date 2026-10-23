@@ -20,6 +20,7 @@ import {
   type KeysetWindow,
 } from '@/lib/indexer-json'
 import { logger } from '@/lib/logger'
+import { indexerPeriodSeconds } from '@/lib/operator-grant'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 
 const { record, string, integer, optionalString, nullableString, stringArray, decimalAmount } =
@@ -42,7 +43,9 @@ export interface GroupMemberRow {
 
 export interface GroupPolicy {
   threshold: string | null
+  percentage: string | null
   votingPeriod: string | null
+  minExecutionPeriod: string | null
   totalWeight: string
   groupId: number
   groupVersion: number | null
@@ -116,6 +119,13 @@ export interface ProposalRow {
 export interface TallyScale {
   total: number | null
   threshold: number | null
+  percentage: string | null
+}
+
+function tallyThreshold(policy: GroupPolicy, total: number | null): number | null {
+  if (policy.threshold !== null) return Number(policy.threshold) || 0
+  if (policy.percentage === null || total === null) return null
+  return Number((Number(policy.percentage) * total).toPrecision(12)) || 0
 }
 
 export function proposalTallyScale(
@@ -124,13 +134,24 @@ export function proposalTallyScale(
 ): TallyScale {
   const unchangedSince = (submitted: number | null, current: number | null) =>
     submitted !== null && current !== null ? submitted === current : proposal.status === 'SUBMITTED'
+  const total = unchangedSince(proposal.groupVersion, policy.groupVersion) ? Number(policy.totalWeight) || 0 : null
+  const threshold = unchangedSince(proposal.policyVersion, policy.policyVersion) ? tallyThreshold(policy, total) : null
   return {
-    total: unchangedSince(proposal.groupVersion, policy.groupVersion) ? Number(policy.totalWeight) || 0 : null,
-    threshold:
-      policy.threshold !== null && unchangedSince(proposal.policyVersion, policy.policyVersion)
-        ? Number(policy.threshold) || 0
-        : null,
+    total,
+    threshold,
+    percentage: threshold !== null && policy.threshold === null ? policy.percentage : null,
   }
+}
+
+const EXECUTION_GRACE_MS = 2_000
+
+export function proposalExecutableFrom(
+  proposal: Pick<ProposalRow, 'submitTime'>,
+  policy: Pick<GroupPolicy, 'minExecutionPeriod'>
+): number | null {
+  const seconds = indexerPeriodSeconds(policy.minExecutionPeriod)
+  const submitted = proposal.submitTime === null ? Number.NaN : Date.parse(proposal.submitTime)
+  return seconds && Number.isFinite(submitted) ? submitted + seconds * 1000 + EXECUTION_GRACE_MS : null
 }
 
 export interface CorporationGovernance {
@@ -219,7 +240,12 @@ export function parseGroup(payload: unknown): { members: GroupMemberRow[]; polic
     }),
     policy: {
       threshold: nullableString(decision.threshold ?? null, 'group.policy.decision_policy.threshold'),
+      percentage: nullableString(decision.percentage ?? null, 'group.policy.decision_policy.percentage'),
       votingPeriod: nullableString(windows.voting_period ?? null, 'group.policy.decision_policy.windows.voting_period'),
+      minExecutionPeriod: nullableString(
+        windows.min_execution_period ?? null,
+        'group.policy.decision_policy.windows.min_execution_period'
+      ),
       totalWeight: string(group.total_weight, 'group.total_weight'),
       groupId: integer(group.group_id, 'group.group_id'),
       groupVersion: group.version == null ? null : integer(group.version, 'group.version'),

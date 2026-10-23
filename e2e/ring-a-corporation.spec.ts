@@ -36,6 +36,12 @@ import { installMockChain } from './support/mock-chain'
 
 const DAY_MS = 86_400_000
 
+const PERCENTAGE_POLICY = {
+  '@type': '/cosmos.group.v1.PercentageDecisionPolicy',
+  percentage: '0.5',
+  windows: { voting_period: '300s', min_execution_period: '3600s' },
+}
+
 function localDateTimeInput(date: Date): string {
   const pad = (value: number) => String(value).padStart(2, '0')
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
@@ -147,6 +153,166 @@ test('tabs, deep links and proposal actions', async ({ page }) => {
   const repay = page.getByRole('button', { name: /Repay Slashed Deposit/ })
   await expect(repay).toBeVisible()
   await expect(repay.getByLabel('Executes directly as operator')).toBeVisible()
+})
+
+test('a percentage policy shows on the members tab with its minimum execution period', async ({ page }) => {
+  await installCorporationStubs(page, { decisionPolicy: PERCENTAGE_POLICY })
+  await seedActingCorporation(page, 13)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  await page.goto('/corporation?tab=members')
+  const members = page.locator('#members')
+  await expect(fact(members, 'Percentage')).toContainText('50%', { timeout: 15_000 })
+  await expect(fact(members, 'Minimum execution period')).toContainText('3600s')
+  await expect(members.getByText('Threshold', { exact: true })).toBeHidden()
+
+  await page.goto('/corporation?tab=proposals')
+  await expect(page.getByText('2 of 6 yes · threshold 50%')).toBeVisible({ timeout: 15_000 })
+})
+
+test('an accepted proposal offers Execute on its own once the minimum execution period has passed', async ({
+  page,
+}) => {
+  await installCorporationStubs(page, {
+    decisionPolicy: { ...PERCENTAGE_POLICY, windows: { voting_period: '300s', min_execution_period: '20s' } },
+  })
+  let submitTime: string | undefined
+  await page.route('**/v4/group/proposals*', (route) => {
+    submitTime ??= new Date().toISOString()
+    return route.fulfill({
+      json: {
+        proposals: [
+          {
+            id: 50,
+            corporation_id: 13,
+            status: 'ACCEPTED',
+            submit_time: submitTime,
+            voting_period_end: submitTime,
+            executor_result: 'FAILURE',
+            proposers: [HARNESS_ADDRESS],
+            messages: [{ '@type': '/verana.co.v1.MsgUpdateCorporation', did: 'did:web:next.example' }],
+            tally: { yes_count: '6', no_count: '0', abstain_count: '0', no_with_veto_count: '0' },
+          },
+        ],
+      },
+    })
+  })
+  await page.clock.install()
+  await seedActingCorporation(page, 13)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  await page.goto('/corporation?tab=proposals')
+  await page.getByRole('button', { name: /#50/ }).click()
+  await expect(page.getByText(/^Executable from /)).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Execute', exact: true })).toBeHidden()
+  await page.clock.fastForward(21_000)
+  await expect(page.getByRole('button', { name: 'Execute', exact: true })).toBeVisible()
+  await expect(page.getByText(/^Executable from /)).toBeHidden()
+})
+
+test('an execute that has to wait reads as scheduled, never as executed', async ({ page }) => {
+  await installCorporationStubs(page, {
+    decisionPolicy: { ...PERCENTAGE_POLICY, windows: { voting_period: '300s', min_execution_period: '20s' } },
+  })
+  const past = new Date(Date.now() - DAY_MS).toISOString()
+  await page.route('**/v4/indexer/block-height', (route) =>
+    route.fulfill({ json: { height: 1001, timestamp: '2026-07-18T07:00:00Z' } })
+  )
+  let proposalFetches = 0
+  await page.route('**/v4/group/proposals*', (route) => {
+    proposalFetches += 1
+    return route.fulfill({
+      json: {
+        proposals: [
+          {
+            id: 18,
+            corporation_id: 13,
+            status: 'ACCEPTED',
+            submit_time: past,
+            voting_period_end: past,
+            executor_result: 'NOT_RUN',
+            proposers: [HARNESS_ADDRESS],
+            messages: [{ '@type': '/verana.co.v1.MsgUpdateCorporation', did: 'did:web:next.example' }],
+            tally: { yes_count: '6', no_count: '0', abstain_count: '0', no_with_veto_count: '0' },
+          },
+        ],
+      },
+    })
+  })
+  await seedActingCorporation(page, 13)
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, {
+    address: wallet.bech32Address,
+    stubSri: false,
+    stubCorporation: false,
+    txEvents: [
+      {
+        type: 'cosmos.group.v1.EventExec',
+        attributes: [
+          {
+            key: 'logs',
+            value: JSON.stringify(
+              'must wait until 2026-10-16 14:59:16.914501555 +0000 UTC to execute proposal 18: invalid value'
+            ),
+            index: true,
+          },
+          { key: 'proposal_id', value: JSON.stringify('18'), index: true },
+          { key: 'result', value: JSON.stringify('PROPOSAL_EXECUTOR_RESULT_FAILURE'), index: true },
+        ],
+      },
+    ],
+  })
+
+  await page.goto('/corporation?tab=proposals')
+  await page.getByRole('button', { name: /#18/ }).click()
+  await page.getByRole('button', { name: 'Execute', exact: true }).click()
+  const dialog = page.getByRole('dialog')
+  await expect(dialog.getByText(/VNA/)).toBeVisible({ timeout: 30_000 })
+  const fetchesBeforeConfirm = proposalFetches
+  await dialog.getByRole('button', { name: 'Confirm' }).click()
+
+  await expect(page.getByText('Proposal scheduled', { exact: true })).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByText(/^Proposal 18 was accepted, it can be executed from /)).toBeVisible()
+  await expect(page.getByText('Proposal executed', { exact: true })).toBeHidden()
+  await expect.poll(() => proposalFetches).toBeGreaterThan(fetchesBeforeConfirm)
+  await mock.teardown()
+})
+
+test('a policy update keeps a percentage policy and confirms every change without broadcasting', async ({ page }) => {
+  await installCorporationStubs(page, { decisionPolicy: PERCENTAGE_POLICY })
+  await seedActingCorporation(page, 13)
+  const wallet = await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+  const mock = await installMockChain(page, { address: wallet.bech32Address, stubSri: false, stubCorporation: false })
+
+  await page.goto('/corporation?tab=proposals')
+  await page.getByRole('button', { name: 'New proposal' }).click()
+  await page.getByLabel('Proposal type').selectOption('policy')
+  const kind = page.getByLabel('Decision policy', { exact: true })
+  const percent = page.getByLabel('Percentage (%)')
+  const minExecution = page.getByLabel('Minimum execution period (seconds)')
+  await expect(kind).toHaveValue('percentage')
+  await expect(percent).toHaveValue('50')
+  await expect(minExecution).toHaveValue('3600')
+
+  const submit = page.getByRole('button', { name: 'Submit proposal' })
+  const dialog = page.getByRole('dialog', { name: 'Confirm transaction' })
+  await percent.fill('60')
+  await minExecution.fill('0')
+  await submit.click()
+  await expect(fact(dialog, 'Percentage')).toContainText('50% → 60%')
+  await expect(fact(dialog, 'Voting period')).toContainText('5m')
+  await expect(fact(dialog, 'Minimum execution period')).toContainText('1h → 0s')
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(dialog).toBeHidden()
+
+  await kind.selectOption('threshold')
+  await page.getByLabel('Threshold').fill('4')
+  await submit.click()
+  await expect(fact(dialog, 'Decision policy')).toContainText('Percentage 50% → Threshold 4')
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(dialog).toBeHidden()
+  expect(mock.broadcastTxs()).toEqual([])
+  await mock.teardown()
 })
 
 test('a member without grants gets the proposal signing mode everywhere', async ({ page }) => {
@@ -304,8 +470,15 @@ test('the creation wizard gates each step and confirms the built message before 
   await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled()
   await page.getByRole('button', { name: 'Remove member' }).click()
   await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled()
+  await page.getByLabel('Decision policy').selectOption('percentage')
+  await page.getByLabel('Percentage (%)').fill('0')
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled()
+  await page.getByLabel('Percentage (%)').fill('66.67')
+  await page.getByLabel('Minimum execution period (seconds)').fill('3600')
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled()
   await page.getByRole('button', { name: 'Continue' }).click()
 
+  await expect(page.getByText('66.67% / 60s / 3600s')).toBeVisible()
   await expect(page.getByText(/you keep no personal privileges/)).toBeVisible()
   await page.getByRole('button', { name: 'Sign & create corporation' }).click()
 
@@ -509,6 +682,7 @@ test('the proposal composer gates each kind on valid input', async ({ page }) =>
   await expect(dialog).toContainText('that changes its decision policy.')
   await expect(fact(dialog, 'Threshold')).toContainText('3 → 2')
   await expect(fact(dialog, 'Voting period')).toContainText('5m')
+  await expect(fact(dialog, 'Minimum execution period')).toContainText('0s')
   await dialog.getByRole('button', { name: 'Cancel' }).click()
   await expect(dialog).toBeHidden()
 

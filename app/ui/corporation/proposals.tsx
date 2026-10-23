@@ -2,16 +2,18 @@
 
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useEffect, useReducer, useState } from 'react'
 import {
   type GroupPolicy,
   type ProposalRow,
   type ProposalTally,
+  proposalExecutableFrom,
   proposalTallyScale,
   type TallyScale,
   useProposalVotes,
 } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
+import { formatDecisionRule } from '@/lib/decision-policy'
 import type { VoteChoice } from '@/msg/actions_hooks/actionCorporationManage'
 import { shortenMiddle } from '@/util/util'
 import {
@@ -66,10 +68,12 @@ export interface ProposalContext {
   actions: ProposalActions
 }
 
+const MAX_TIMEOUT_MS = 2_147_483_647
+
 const TALLY_TEXT = 'mt-1 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap'
 
 export function TallyBar({ tally, scale }: { tally: ProposalTally; scale: TallyScale }) {
-  const { total, threshold } = scale
+  const { total, threshold, percentage } = scale
   if (total === null) {
     return (
       <p className={TALLY_TEXT}>
@@ -100,7 +104,11 @@ export function TallyBar({ tally, scale }: { tally: ProposalTally; scale: TallyS
       <p className={TALLY_TEXT}>
         {threshold === null
           ? translate('corporation.proposals.tally.total', { yes: tally.yes, total })
-          : translate('corporation.proposals.tally', { yes: tally.yes, total, threshold })}
+          : translate('corporation.proposals.tally', {
+              yes: tally.yes,
+              total,
+              threshold: percentage === null ? threshold : formatDecisionRule({ kind: 'percentage', percentage }),
+            })}
       </p>
     </div>
   )
@@ -123,6 +131,20 @@ function ProposalDetail({ proposal, ctx }: { proposal: ProposalRow; ctx: Proposa
   const voted = votes == null || votes.value.some((vote) => vote.voter === ctx.walletAddress)
   const withdrawable = open && ctx.walletAddress !== undefined && proposal.proposers.includes(ctx.walletAddress)
   const executable = ctx.isMember && proposal.status === 'ACCEPTED' && proposal.executorResult !== 'SUCCESS'
+  const executableFrom = proposalExecutableFrom(proposal, ctx.policy)
+  const waiting = executableFrom !== null && executableFrom > Date.now()
+  const [, rerender] = useReducer((count: number) => count + 1, 0)
+
+  useEffect(() => {
+    if (executableFrom === null) return
+    let timer: ReturnType<typeof setTimeout>
+    const arm = () => {
+      const remaining = Math.max(0, executableFrom - Date.now())
+      timer = setTimeout(remaining > MAX_TIMEOUT_MS ? arm : rerender, Math.min(remaining, MAX_TIMEOUT_MS))
+    }
+    arm()
+    return () => clearTimeout(timer)
+  }, [executableFrom])
 
   return (
     <div className="space-y-3">
@@ -182,7 +204,11 @@ function ProposalDetail({ proposal, ctx }: { proposal: ProposalRow; ctx: Proposa
               {translate('corporation.proposals.withdraw')}
             </button>
           ) : null}
-          {executable ? (
+          {executable && waiting ? (
+            <p className="self-center text-sm text-gray-500 dark:text-gray-400">
+              {translate('corporation.proposals.executablefrom', { date: new Date(executableFrom).toLocaleString() })}
+            </p>
+          ) : executable ? (
             <button
               type="button"
               onClick={() => ctx.actions.onExecute(proposal.id)}

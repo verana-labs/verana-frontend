@@ -38,6 +38,7 @@ jobs:
 
   e2e:
     name: E2E Ring A (fund-free)
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     # Ring A only: drives the real UI and real client-side direct signing, but the
     # Tendermint RPC is fully intercepted (e2e/support/mock-chain.ts), so nothing is
