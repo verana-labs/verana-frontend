@@ -3,7 +3,6 @@
 import { ChevronLeftIcon, ChevronRightIcon, CircleCheckIcon, CircleDashedIcon, SearchIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
-import { ecosystemName } from '@/lab/dashboard/components/ecosystems-chart'
 import type { DidTrustState } from '@/lib/resolverClient'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { Badge } from '@/ui/shadcn/badge'
@@ -20,6 +19,10 @@ const TRUST_BADGE: Record<DidTrustState, string> = {
   TRUSTED: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
   UNTRUSTED: 'border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400',
   UNRESOLVED: 'text-muted-foreground',
+}
+
+function ecosystemName(ecosystem: EcosystemListItem): string {
+  return ecosystem.trustData?.serviceName ?? ecosystem.trustData?.organizationName ?? shortenMiddle(ecosystem.did, 18)
 }
 
 function inView(ecosystem: EcosystemListItem, view: View): boolean {
