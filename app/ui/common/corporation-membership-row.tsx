@@ -77,7 +77,7 @@ export function CorporationMembershipRow({
         </span>
       </span>
       {isActing || !attention ? null : (
-        <span className="flex items-center gap-1">
+        <span className="ml-auto flex items-center gap-1">
           <AttentionBadge
             count={attention.pendingTasks}
             partial={attention.pendingTasksPartial}
