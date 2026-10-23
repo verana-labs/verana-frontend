@@ -31,7 +31,7 @@ export default function GettingStarted() {
               })}
             </div>
             <div className="space-y-4">
-              <div className="bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/10 dark:to-primary-900/20 rounded-lg p-4">
+              <div className="bg-linear-to-br/srgb from-primary-50 to-primary-100 dark:from-primary-900/10 dark:to-primary-900/20 rounded-lg p-4">
                 <h4 className="font-medium text-gray-900 dark:text-white mb-2">{quickLinks.title}</h4>
                 <div className="flex flex-col gap-2">
                   {quickLinks.links.map((link, idx) => {
