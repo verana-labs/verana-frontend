@@ -1,5 +1,8 @@
-import { toBase64 } from '@cosmjs/encoding'
-import { QueryBalanceResponse } from 'cosmjs-types/cosmos/bank/v1beta1/query'
+import { fromHex, toBase64 } from '@cosmjs/encoding'
+import {
+  QuerySpendableBalanceByDenomRequest,
+  QuerySpendableBalanceByDenomResponse,
+} from 'cosmjs-types/cosmos/bank/v1beta1/query'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { FEE_GRANT_LOOKUP_TIMEOUT_MS } from '@/hooks/useFeeGrant'
 import { logger } from '@/lib/logger'
@@ -9,7 +12,7 @@ const RPC = 'https://rpc.example'
 const GRANTER = 'verana1granter'
 
 function balancePayload(amount: string, code = 0) {
-  const value = QueryBalanceResponse.encode({ balance: { denom: 'uvna', amount } }).finish()
+  const value = QuerySpendableBalanceByDenomResponse.encode({ balance: { denom: 'uvna', amount } }).finish()
   return { jsonrpc: '2.0', id: 1, result: { response: { code, value: toBase64(value) } } }
 }
 
@@ -35,16 +38,23 @@ describe('parseBalanceQuery', () => {
 })
 
 describe('startGranterBalanceLookup', () => {
-  it('reports the granter balance', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({ ok: true, json: async () => balancePayload('4200') }) as unknown as Response)
+  it('reports the granter spendable balance', async () => {
+    const fetchMock = vi.fn(
+      async (_url: string, _init?: RequestInit) =>
+        ({ ok: true, json: async () => balancePayload('4200') }) as unknown as Response
     )
+    vi.stubGlobal('fetch', fetchMock)
     const settled = vi.fn()
 
     startGranterBalanceLookup(RPC, GRANTER, settled)
 
     await vi.waitFor(() => expect(settled).toHaveBeenCalledWith({ status: 'ready', amount: '4200' }))
+    const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body))
+    expect(body.params.path).toBe('/cosmos.bank.v1beta1.Query/SpendableBalanceByDenom')
+    expect(QuerySpendableBalanceByDenomRequest.decode(fromHex(body.params.data))).toEqual({
+      address: GRANTER,
+      denom: 'uvna',
+    })
   })
 
   it('aborts the query and reports an unknown balance when the node does not answer within the deadline', async () => {
