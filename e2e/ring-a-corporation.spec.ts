@@ -20,6 +20,7 @@ import {
   SECOND_OPERATOR_CYCLE_END,
 } from './support/corp-fixtures'
 import {
+  ACME_ECOSYSTEM_ROW,
   HARNESS_ADDRESS,
   HARNESS_MNEMONIC,
   indexerParticipantEvent,
@@ -855,6 +856,93 @@ test('a service description claim renders as text or Markdown, never as HTML', a
       await expect(grid.locator('strong')).toHaveCount(0)
     })
   }
+})
+
+const ECOSYSTEM_ROWS = Array.from({ length: 13 }, (_, i) => ({
+  ...ACME_ECOSYSTEM_ROW,
+  id: 9450 - i,
+  did: `did:web:eco-${9450 - i}.example`,
+  corporation_id: i === 0 ? 13 : 999,
+  trust_data: {
+    did: `did:web:eco-${9450 - i}.example`,
+    trusted: true,
+    evaluatedAtTime: '2026-09-01T10:00:00Z',
+    evaluatedAtBlock: 1,
+    expiresAtTime: null,
+    ecsCredentials: [
+      { ecsSchema: 'ServiceCredential', credentialSubject: { name: `Registry ${String(i + 1).padStart(2, '0')}` } },
+    ],
+  },
+}))
+
+const JOINED_ECOSYSTEM_ID = ECOSYSTEM_ROWS[1].id
+
+const cardNames = (page: Page) =>
+  page.locator('#ecosystems-grid h3').evaluateAll((cards) => cards.map((card) => card.textContent?.trim() ?? ''))
+
+test('the ecosystems filter reaches every row of the result set, not only the loaded page', async ({ page }) => {
+  await installCorporationStubs(page)
+  await stubEcosystemList(page, ECOSYSTEM_ROWS)
+  // The Discover list shares this endpoint, so record only the query of this page.
+  const listLimits: string[] = []
+  await page.route('**/v4/ecosystem/list*', (route) => {
+    const params = new URL(route.request().url()).searchParams
+    if (params.has('participant_corporation_id')) listLimits.push(params.get('limit') ?? '')
+    return route.fallback()
+  })
+  await page.route('**/v4/participant/list*', (route) =>
+    route.fulfill({
+      json: {
+        participants:
+          new URL(route.request().url()).searchParams.get('corporation_id') === '13'
+            ? [
+                {
+                  id: 31,
+                  schema_id: 1,
+                  ecosystem_id: JOINED_ECOSYSTEM_ID,
+                  role: 'ISSUER',
+                  did: ACME_ECOSYSTEM_DID,
+                  corporation_id: 13,
+                  participant_state: 'ACTIVE',
+                  op_state: 'VALIDATED',
+                  validator_participant_id: null,
+                  effective_from: '2026-09-01T10:00:00Z',
+                  effective_until: null,
+                  validation_fees: 0,
+                  issuance_fees: 0,
+                  verification_fees: 0,
+                  deposit: 0,
+                  corporation_available_actions: [],
+                  validator_available_actions: [],
+                },
+              ]
+            : [],
+      },
+    })
+  )
+  await seedActingCorporation(page, 13)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  const loadedOnly = page.getByText('Sorting and filters apply to the loaded results only.')
+
+  await page.goto('/ecosystems')
+  await expect.poll(() => cardNames(page), { timeout: 15_000 }).toHaveLength(9)
+  await expect.poll(() => cardNames(page)).not.toContain('Registry 11')
+  expect(listLimits.every((limit) => limit === '10')).toBe(true)
+  await expect(loadedOnly).toHaveCount(1)
+
+  await page.locator('#ecosystem-search').fill('Registry 11')
+  await expect.poll(() => cardNames(page)).toEqual(['Registry 11'])
+  expect(listLimits.filter((limit) => limit === '1024')).toHaveLength(1)
+
+  await page.locator('#ecosystem-search').fill('')
+  await expect.poll(() => cardNames(page)).toHaveLength(9)
+  await page.locator('#hide-participant').check()
+  await expect.poll(() => cardNames(page)).not.toContain('Registry 02')
+  await expect(loadedOnly).toHaveCount(0)
+  await page.getByRole('button', { name: 'Next page' }).click()
+  await expect.poll(() => cardNames(page)).toEqual(['Registry 11', 'Registry 12', 'Registry 13'])
+  await expect(loadedOnly).toHaveCount(0)
 })
 
 test('the governance tab lists the CGF versions and gates the increase on the primary language', async ({ page }) => {

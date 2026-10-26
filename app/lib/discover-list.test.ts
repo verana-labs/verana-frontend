@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { DidEnrichment } from '@/lib/resolverClient'
+import { INITIAL_ECOSYSTEMS_FILTER } from '@/ui/common/ecosystems-filter-bar'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import {
   clientPage,
@@ -181,6 +182,11 @@ describe('needsFullWindow', () => {
     expect(needsFullWindow(filters({ hideOwned: true }))).toBe(true)
     expect(needsFullWindow(filters({ hideParticipant: true }))).toBe(true)
     expect(needsFullWindow(filters({ order: 'trustValue' }))).toBe(true)
+  })
+
+  it('keeps the Ecosystems page on keyset paging, where no order control exists', () => {
+    expect(needsFullWindow(INITIAL_ECOSYSTEMS_FILTER)).toBe(false)
+    expect(needsFullWindow({ ...INITIAL_ECOSYSTEMS_FILTER, showArchived: true })).toBe(false)
   })
 })
 
