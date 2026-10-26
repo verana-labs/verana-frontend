@@ -19,7 +19,7 @@ export const INITIAL_ECOSYSTEMS_FILTER: EcosystemsFilterState = {
   showArchived: false,
   hideOwned: false,
   hideParticipant: false,
-  showUntrusted: false,
+  showUntrusted: true,
 }
 
 type Props = {

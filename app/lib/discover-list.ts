@@ -1,16 +1,12 @@
+import type { EcosystemsFilterState } from '@/ui/common/ecosystems-filter-bar'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import type { Participant, ParticipantRole } from '@/ui/dataview/datasections/participant'
 
 export type EcosystemOrder = 'newest' | 'trustValue'
 
-export type DiscoverFilters = {
-  search: string
-  showArchived: boolean
-  hideOwned: boolean
-  hideParticipant: boolean
-  showUntrusted: boolean
-  order: EcosystemOrder
-}
+export type ListFilters = EcosystemsFilterState & { order?: EcosystemOrder }
+
+export type DiscoverFilters = EcosystemsFilterState & { order: EcosystemOrder }
 
 export const INITIAL_DISCOVER_FILTERS: DiscoverFilters = {
   search: '',
@@ -52,7 +48,7 @@ export function groupRolesByEcosystem(
   return Object.fromEntries([...grouped].map(([id, roles]) => [id, distinctRoles(roles)]))
 }
 
-export function roleFiltersPending(filters: DiscoverFilters, rolesLoading: boolean): boolean {
+export function roleFiltersPending(filters: ListFilters, rolesLoading: boolean): boolean {
   return rolesLoading && (filters.hideOwned || filters.hideParticipant)
 }
 
@@ -69,7 +65,7 @@ function matchesSearch(ecosystem: EcosystemListItem, term: string): boolean {
 
 export function filterEcosystems<T extends EcosystemListItem>(
   ecosystems: T[],
-  filters: DiscoverFilters,
+  filters: ListFilters,
   scope: DiscoverScope
 ): T[] {
   const term = filters.search.trim().toLowerCase()
@@ -94,13 +90,13 @@ export function orderEcosystems<T extends EcosystemListItem>(ecosystems: T[], or
   })
 }
 
-export function needsFullWindow(filters: DiscoverFilters): boolean {
+export function needsFullWindow(filters: ListFilters): boolean {
   return (
     filters.search.trim() !== '' ||
     !filters.showUntrusted ||
     filters.hideOwned ||
     filters.hideParticipant ||
-    filters.order !== 'newest'
+    (filters.order ?? 'newest') !== 'newest'
   )
 }
 
