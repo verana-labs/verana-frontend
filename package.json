@@ -79,6 +79,9 @@
     ],
     "overrides": {
       "long": "5.3.2"
+    },
+    "patchedDependencies": {
+      "@verana-labs/verana-types@0.10.6": "patches/@verana-labs__verana-types@0.10.6.patch"
     }
   },
   "packageManager": "pnpm@9.15.9"
