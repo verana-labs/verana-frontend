@@ -64,7 +64,7 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
           checked={accepted}
           disabled={locked}
           onChange={(e) => onAcceptedChange(e.target.checked)}
-          className="mt-1 w-4 h-4 text-primary-600 bg-white dark:bg-surface border-neutral-20 dark:border-neutral-70 rounded focus:ring-primary-500 disabled:opacity-50"
+          className="mt-1 w-4 h-4 text-primary-600 bg-white dark:bg-surface border-neutral-20 dark:border-neutral-70 rounded checked:bg-current checked:border-transparent focus:ring-primary-500 disabled:opacity-50"
         />
         <label
           htmlFor="egf-accept"

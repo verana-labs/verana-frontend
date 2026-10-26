@@ -281,7 +281,7 @@ export default function EcosystemViewPage() {
                 type="checkbox"
                 checked={showArchived}
                 onChange={(event) => setShowArchived(event.target.checked)}
-                className="w-4 h-4 text-primary-600 border-neutral-20 rounded focus:ring-2 focus:ring-primary-500"
+                className="w-4 h-4 text-primary-600 border-neutral-20 rounded checked:border-transparent focus:ring-2 focus:ring-primary-500"
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">
                 {t('datatable.cs.filter.showArchived', 'Show Archived')}
