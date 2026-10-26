@@ -14,7 +14,6 @@ export interface EcosystemListItem {
   created: string
   modified: string
   language: string
-  role: string
   versions?: GfVersion[]
   activeVersion: number
   activeSchemas: number

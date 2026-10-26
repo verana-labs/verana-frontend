@@ -52,6 +52,27 @@ export function groupRolesByEcosystem(
   return Object.fromEntries([...grouped].map(([id, roles]) => [id, distinctRoles(roles)]))
 }
 
+export function groupRolesBySchema(
+  participants: Pick<Participant, 'schema_id' | 'role'>[]
+): Record<string, ParticipantRole[]> {
+  const grouped = new Map<string, ParticipantRole[]>()
+  for (const { schema_id: schemaId, role } of participants) {
+    if (!schemaId) continue
+    grouped.set(schemaId, [...(grouped.get(schemaId) ?? []), role])
+  }
+  return Object.fromEntries([...grouped].map(([id, roles]) => [id, distinctRoles(roles)]))
+}
+
+export function cardRoles(
+  ecosystem: Pick<EcosystemListItem, 'corporationId'>,
+  roles: ParticipantRole[] | undefined,
+  actingCorporationId: number | undefined
+): ParticipantRole[] {
+  const held = roles ?? []
+  if (ecosystem.corporationId !== actingCorporationId || held.includes('ECOSYSTEM')) return held
+  return ['ECOSYSTEM', ...held]
+}
+
 export function roleFiltersPending(filters: DiscoverFilters, rolesLoading: boolean): boolean {
   return rolesLoading && (filters.hideOwned || filters.hideParticipant)
 }

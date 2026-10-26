@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest'
 import type { DidEnrichment } from '@/lib/resolverClient'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import {
+  cardRoles,
   clientPage,
   type DiscoverFilters,
   distinctRoles,
   filterEcosystems,
   groupRolesByEcosystem,
+  groupRolesBySchema,
   INITIAL_DISCOVER_FILTERS,
   needsFullWindow,
   orderEcosystems,
@@ -21,7 +23,6 @@ function ecosystem(id: string, overrides: Partial<EcosystemListItem> = {}): Ecos
     created: '2026-09-01T00:00:00Z',
     modified: '2026-09-01T00:00:00Z',
     language: 'en',
-    role: '',
     activeVersion: 1,
     activeSchemas: 1,
     participants: 0,
@@ -204,5 +205,30 @@ describe('clientPage', () => {
 
   it('returns one empty page for no matches', () => {
     expect(clientPage([], 0, 5)).toEqual({ items: [], page: 0, hasPrevious: false, hasNext: false })
+  })
+})
+
+describe('groupRolesBySchema', () => {
+  it('groups the corporation participants by schema, each role once in the badge order', () => {
+    expect(
+      groupRolesBySchema([
+        { schema_id: '7', role: 'VERIFIER' },
+        { schema_id: '8', role: 'HOLDER' },
+        { schema_id: '7', role: 'ISSUER' },
+        { schema_id: '7', role: 'VERIFIER' },
+      ])
+    ).toEqual({ '7': ['ISSUER', 'VERIFIER'], '8': ['HOLDER'] })
+  })
+})
+
+describe('cardRoles', () => {
+  it('marks an ecosystem the acting corporation controls even before it has a root participant', () => {
+    expect(cardRoles(ecosystem('1'), undefined, 1)).toEqual(['ECOSYSTEM'])
+    expect(cardRoles(ecosystem('1'), ['ISSUER'], 1)).toEqual(['ECOSYSTEM', 'ISSUER'])
+  })
+
+  it('keeps the participant roles as they are for a joined ecosystem or a controller that already has one', () => {
+    expect(cardRoles(ecosystem('1'), ['ISSUER', 'VERIFIER'], 9)).toEqual(['ISSUER', 'VERIFIER'])
+    expect(cardRoles(ecosystem('1'), ['ECOSYSTEM'], 1)).toEqual(['ECOSYSTEM'])
   })
 })

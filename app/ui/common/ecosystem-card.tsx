@@ -12,28 +12,15 @@ import { trustStateBadge } from '@/lib/trust-state'
 import ClaimText from '@/ui/common/claim-text'
 import LogoImage from '@/ui/common/logo-image'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
+import type { ParticipantRole } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { countryCodeToFlag, formatNumber, formatVNAFromUVNA, roleBadgeClass, shortenDID } from '@/util/util'
-
-const ECOSYSTEM_ROLES = ['ECOSYSTEM', 'ISSUER_GRANTOR', 'VERIFIER_GRANTOR', 'ISSUER', 'VERIFIER', 'HOLDER'] as const
-type EcosystemRole = (typeof ECOSYSTEM_ROLES)[number]
 
 export const CARD_BODY_CLASS = 'grid h-full min-h-[20.25rem] grid-rows-[5rem_3.25rem_1.5rem_1fr] gap-3 p-4 sm:p-6'
 const CARD_HEADER_REGION_CLASS = 'flex min-h-0 min-w-0 items-start space-x-3 overflow-hidden'
 const CARD_ORG_REGION_CLASS = 'flex min-h-0 min-w-0 items-start space-x-2 overflow-hidden'
 const CARD_ROLES_REGION_CLASS = 'flex min-h-0 min-w-0 items-start gap-2 overflow-hidden'
 const ROLE_PILL_CLASS = 'inline-flex min-w-0 max-w-[8.5rem] items-center rounded-full px-2.5 py-0.5 text-xs font-medium'
-
-function parseRoles(role: string | undefined | null): EcosystemRole[] {
-  if (!role) return []
-  const valid = new Set<EcosystemRole>(ECOSYSTEM_ROLES)
-  const seen = new Set<EcosystemRole>()
-  for (const r of role.split(/[,\s]+/)) {
-    const up = r.trim().toUpperCase() as EcosystemRole
-    if (valid.has(up)) seen.add(up)
-  }
-  return [...seen]
-}
 
 type EcosystemCardData = Pick<
   EcosystemListItem,
@@ -47,7 +34,7 @@ type EcosystemCardData = Pick<
   | 'issued'
   | 'verified'
   | 'versions'
-> & { role?: string }
+>
 
 function governanceFrameworkHref(ecosystem: EcosystemCardData): string | undefined {
   return displayedVersion(ecosystem.versions ?? [], ecosystem.activeVersion)?.documents[0]?.url
@@ -56,9 +43,12 @@ function governanceFrameworkHref(ecosystem: EcosystemCardData): string | undefin
 type Props = {
   ecosystem: EcosystemCardData
   enrichment?: DidEnrichment
+  roles?: ParticipantRole[]
 }
 
-export default function EcosystemCard({ ecosystem, enrichment }: Props) {
+const NO_ROLES: ParticipantRole[] = []
+
+export default function EcosystemCard({ ecosystem, enrichment, roles = NO_ROLES }: Props) {
   const router = useRouter()
   const { data: resolved } = useDidTrustEnrichment(enrichment ? undefined : ecosystem.did)
   const identity = enrichment ?? resolved
@@ -69,7 +59,6 @@ export default function EcosystemCard({ ecosystem, enrichment }: Props) {
   const orgName = identity?.organizationName ?? shortenDID(ecosystem.did) ?? ecosystem.did
   const flag = countryCodeToFlag(identity?.countryCode)
   const egfHref = governanceFrameworkHref(ecosystem)
-  const roles = parseRoles(ecosystem.role)
   const visibleRoles = roles.slice(0, 2)
   const extraRoleCount = Math.max(0, roles.length - visibleRoles.length)
   const isArchived = Boolean(ecosystem.archived)

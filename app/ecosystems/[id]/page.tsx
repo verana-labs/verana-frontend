@@ -9,6 +9,7 @@ import AddCredentialSchemaPage from '@/credential-schemas/add/add'
 import { useActivityHistory } from '@/hooks/useActivityHistory'
 import { useCredentialSchemas } from '@/hooks/useCredentialSchemas'
 import { useEcosystemData } from '@/hooks/useEcosystemData'
+import { useCorporationRoles } from '@/hooks/useParticipants'
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
@@ -32,6 +33,7 @@ export default function EcosystemViewPage() {
   const id = params?.id ?? ''
   const router = useRouter()
   const { actingCorporation } = useUserCorporation()
+  const { rolesBySchema } = useCorporationRoles(actingCorporation?.corporation.id)
   const { ecosystem, errorEcosystem, refetch: refetchEcosystem } = useEcosystemData(id)
   const history = useActivityHistory(
     VERANA_REST_ENDPOINT_ECOSYSTEM && id ? `${VERANA_REST_ENDPOINT_ECOSYSTEM}/history/${id}` : undefined
@@ -311,6 +313,7 @@ export default function EcosystemViewPage() {
                 credentialSchema={credentialSchema}
                 onView={() => router.push(`/credential-schemas/${credentialSchema.id}`)}
                 onParticipants={() => router.push(`/participants/${credentialSchema.id}`)}
+                roles={rolesBySchema[credentialSchema.id]}
               />
             ))}
           </div>

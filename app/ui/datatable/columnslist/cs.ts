@@ -10,7 +10,6 @@ export interface CredentialSchemaListItem {
   ecosystemId: string
   title: string
   description: string
-  role: string
   issuerOnboardingMode: ParticipantOnboardingMode
   verifierOnboardingMode: ParticipantOnboardingMode
   holderOnboardingMode: HolderOnboardingMode | null
