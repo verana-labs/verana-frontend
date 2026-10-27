@@ -57,8 +57,8 @@ importers:
         specifier: ^0.5.10
         version: 0.5.11(tailwindcss@3.4.17)
       '@verana-labs/verana-types':
-        specifier: 0.10.6
-        version: 0.10.6(@cosmjs/proto-signing@0.39.0)(@cosmjs/stargate@0.39.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))
+        specifier: 0.10.7-dev.3
+        version: 0.10.7-dev.3(@cosmjs/proto-signing@0.39.0)(@cosmjs/stargate@0.39.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))
       autoprefixer:
         specifier: 10.4.20
         version: 10.4.20(postcss@8.5.23)
@@ -1517,8 +1517,8 @@ packages:
     peerDependencies:
       '@vanilla-extract/css': ^1.0.0
 
-  '@verana-labs/verana-types@0.10.6':
-    resolution: {integrity: sha512-Q9lru7i7styJ8vGBnHOvs6RTnuTk4OV3KxTzrVbKDLWMUHgK238A98eklBIJlZJMu7WfzOrZnEc6v+joSsgf4g==}
+  '@verana-labs/verana-types@0.10.7-dev.3':
+    resolution: {integrity: sha512-f7o9WNa1sXNI0dbXn4Xx2KH/1XkV07PUowin9T6n2p3dnyLv16tb1hlXTkPlDe+eR2nN1Ng56FN95HAAjhn8yw==}
     peerDependencies:
       '@cosmjs/proto-signing': ^0.32.3 || ^0.39.0
       '@cosmjs/stargate': ^0.32.3 || ^0.39.0
@@ -7049,7 +7049,7 @@ snapshots:
     dependencies:
       '@vanilla-extract/css': 1.20.1
 
-  '@verana-labs/verana-types@0.10.6(@cosmjs/proto-signing@0.39.0)(@cosmjs/stargate@0.39.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))':
+  '@verana-labs/verana-types@0.10.7-dev.3(@cosmjs/proto-signing@0.39.0)(@cosmjs/stargate@0.39.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))':
     dependencies:
       '@cosmjs/proto-signing': 0.39.0
       '@cosmjs/stargate': 0.39.0(bufferutil@4.1.0)(utf-8-validate@5.0.10)
