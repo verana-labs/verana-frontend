@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.1](https://github.com/verana-labs/verana-frontend/compare/v0.19.0...v0.19.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* match the chain's amino encoding of durations so periods can be signed ([#573](https://github.com/verana-labs/verana-frontend/issues/573)) ([890c11b](https://github.com/verana-labs/verana-frontend/commit/890c11bea91950adfa4147a494b1af944bb0a379))
+
 ## [0.19.0](https://github.com/verana-labs/verana-frontend/compare/v0.18.2...v0.19.0) (2026-10-23)
 
 
