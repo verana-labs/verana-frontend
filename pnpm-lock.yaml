@@ -57,8 +57,8 @@ importers:
         specifier: ^0.5.10
         version: 0.5.11(tailwindcss@3.4.17)
       '@verana-labs/verana-types':
-        specifier: 0.10.6
-        version: 0.10.6(@cosmjs/proto-signing@0.39.0)(@cosmjs/stargate@0.39.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))
+        specifier: 0.10.7-dev.3
+        version: 0.10.7-dev.3(@cosmjs/proto-signing@0.39.0)(@cosmjs/stargate@0.39.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))
       autoprefixer:
         specifier: 10.4.20
         version: 10.4.20(postcss@8.5.23)
@@ -85,7 +85,7 @@ importers:
         version: 0.11.0
       cosmos-kit:
         specifier: 2.22.0
-        version: 2.22.0(@chain-registry/types@0.46.15)(@cosmjs/amino@0.39.0)(@cosmjs/crypto@0.39.0)(@cosmjs/encoding@0.39.0)(@cosmjs/proto-signing@0.39.0)(@terra-money/terra.js@3.1.10)(@walletconnect/sign-client@2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76))(@walletconnect/types@2.23.9)(axios@1.16.1)(bufferutil@4.1.0)(cosmjs-types@0.11.0)(react@19.3.1)(starknet@8.9.2)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+        version: 2.22.0(@chain-registry/types@0.46.15)(@cosmjs/amino@0.39.0)(@cosmjs/crypto@0.39.0)(@cosmjs/encoding@0.39.0)(@cosmjs/proto-signing@0.39.0)(@terra-money/terra.js@3.1.10)(@walletconnect/sign-client@2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6))(@walletconnect/types@2.23.9)(axios@1.16.1)(bufferutil@4.1.0)(cosmjs-types@0.11.0)(react@19.3.1)(starknet@8.9.2)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
       fast-deep-equal:
         specifier: ^3.1.3
         version: 3.1.3
@@ -123,8 +123,8 @@ importers:
         specifier: ^2.3.1
         version: 2.4.1(react@19.3.1)
       protobufjs:
-        specifier: ^8.7.1
-        version: 8.7.1
+        specifier: ^8.7.2
+        version: 8.7.2
       react:
         specifier: latest
         version: 19.3.1
@@ -150,8 +150,8 @@ importers:
         specifier: ^10.0.4
         version: 10.1.1(react@19.3.1)
       zod:
-        specifier: ^3.24.1
-        version: 3.25.76
+        specifier: ^4.6.6
+        version: 4.6.6
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.3.14
@@ -1076,12 +1076,12 @@ packages:
     resolution: {integrity: sha512-47XIizs9XZXvuJgoaJUIE2lFoID8ugvc0jzSHP+Ptfk8nTbnR8g788wv48N03Kx0UkAv559HWRQ3yzOgzlRNUA==}
     engines: {node: '>= 18'}
 
-  '@napi-rs/wasm-runtime@1.2.5':
-    resolution: {integrity: sha512-HshSvXzmBxNzqejd3k/KemgQ3hdREUYFRRrgxOZ+gPljDIsO2SDZrVZMd4Z/HsxudQbE62OVyVFE8z9BCurfjA==}
+  '@napi-rs/wasm-runtime@1.2.6':
+    resolution: {integrity: sha512-mRyDmEw9/fCDXCGfL1sbgIw/GUK0PVxRW4YwgPN61F3LQ+fSyoBFarJVzgGyhF6kRzEQZ0FejDqm4WLXSeqQmw==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=23.5.0}
     peerDependencies:
-      '@emnapi/core': ^1.7.1 || ^2.0.0-alpha.4
-      '@emnapi/runtime': ^1.7.1 || ^2.0.0-alpha.4
+      '@emnapi/core': ^1.7.1 || 2.0.0-beta.2
+      '@emnapi/runtime': ^1.7.1 || 2.0.0-beta.2
 
   '@next/env@16.4.1':
     resolution: {integrity: sha512-5sUUrrSvs/2/2LnLoesybMGx12EtPB46fdZ6RhAw0XDGSPxU2LFyQBB7yuEiOFFJPKmBY6+q2jTr1/AMbnp0/g==}
@@ -1517,8 +1517,8 @@ packages:
     peerDependencies:
       '@vanilla-extract/css': ^1.0.0
 
-  '@verana-labs/verana-types@0.10.6':
-    resolution: {integrity: sha512-Q9lru7i7styJ8vGBnHOvs6RTnuTk4OV3KxTzrVbKDLWMUHgK238A98eklBIJlZJMu7WfzOrZnEc6v+joSsgf4g==}
+  '@verana-labs/verana-types@0.10.7-dev.3':
+    resolution: {integrity: sha512-f7o9WNa1sXNI0dbXn4Xx2KH/1XkV07PUowin9T6n2p3dnyLv16tb1hlXTkPlDe+eR2nN1Ng56FN95HAAjhn8yw==}
     peerDependencies:
       '@cosmjs/proto-signing': ^0.32.3 || ^0.39.0
       '@cosmjs/stargate': ^0.32.3 || ^0.39.0
@@ -2229,8 +2229,8 @@ packages:
       debug:
         optional: true
 
-  follow-redirects@1.16.1:
-    resolution: {integrity: sha512-FNvFGzoMLWmE6Yj9spb/zjd7yiNCHiAW9/Tg9CXrQ8wuu32HtlJOwWO11OJafl5FfY3DxTdQ0vj42zU1kvv5jg==}
+  follow-redirects@1.16.2:
+    resolution: {integrity: sha512-/kVP2U8z596Ia0gwFrwyIeo74ta5aVmSeU1FfAUMAmcEP5EP7zydmag3SLiN64NaRKef3lxsq7i/g7ltJQDGow==}
     engines: {node: '>=4.0'}
     peerDependencies:
       debug: '*'
@@ -3202,8 +3202,8 @@ packages:
     resolution: {integrity: sha512-dgJaEDDL6x8ASUZ1YqWciTRrdOuYNzoOf27oHNfdyvKqHr5i0FV7FSLU+aIeFjyFgVxrpTOtQUi0BLLBymZaBw==}
     engines: {node: '>=12.0.0'}
 
-  protobufjs@8.7.1:
-    resolution: {integrity: sha512-agdGHrXNTv0IrYscJPDou/PlEJk1c/hBZ9o/B5NH2i/nSPtPqacNxzgwf1CebXxFMjMrZH5sqv9uQuw96aGt/A==}
+  protobufjs@8.7.2:
+    resolution: {integrity: sha512-oTVHV+oelUBtiu5iTuTNNZ0eLYsXSMxry4cgr30mayNkgIZL6qZ0IOQVPuSWGcyAaXKl/XgqwWHIC3a0khYVBA==}
     engines: {node: '>=12.0.0'}
 
   proxy-from-env@2.1.0:
@@ -3931,8 +3931,8 @@ packages:
     resolution: {integrity: sha512-GZtjxm/J/4TSxuL3FNYjCmLktBTnIw/rVmKSIyKeYAZpmJB2ig9VauCC5xsa82GNKVKDAqpOn3KVzNt0zmrU0g==}
     engines: {node: '>=12'}
 
-  zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+  zod@4.6.6:
+    resolution: {integrity: sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA==}
 
   zustand@4.5.7:
     resolution: {integrity: sha512-CHOUy7mu3lbD6o6LJLfllpjkzhHXSBlX8B9+qPddUsIfeF5S/UZ5q0kmCsnRqT1UHFQZchNFDDzMbQsuesHWlw==}
@@ -4546,11 +4546,11 @@ snapshots:
       - uploadthing
       - utf-8-validate
 
-  '@cosmos-kit/cosmostation-mobile@2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@cosmos-kit/cosmostation-mobile@2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)':
     dependencies:
       '@chain-registry/cosmostation': 1.67.13
       '@cosmos-kit/core': 2.18.1(bufferutil@4.1.0)(utf-8-validate@5.0.10)
-      '@cosmos-kit/walletconnect': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@cosmos-kit/walletconnect': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -4581,10 +4581,10 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@cosmos-kit/cosmostation@2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(cosmjs-types@0.11.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@cosmos-kit/cosmostation@2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(cosmjs-types@0.11.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)':
     dependencies:
       '@cosmos-kit/cosmostation-extension': 2.18.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(bufferutil@4.1.0)(cosmjs-types@0.11.0)(utf-8-validate@5.0.10)
-      '@cosmos-kit/cosmostation-mobile': 2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@cosmos-kit/cosmostation-mobile': 2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -4895,11 +4895,11 @@ snapshots:
       - uploadthing
       - utf-8-validate
 
-  '@cosmos-kit/galaxy-station-mobile@2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@cosmos-kit/galaxy-station-mobile@2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)':
     dependencies:
       '@chain-registry/keplr': 1.74.579
       '@cosmos-kit/core': 2.18.1(bufferutil@4.1.0)(utf-8-validate@5.0.10)
-      '@cosmos-kit/walletconnect': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@cosmos-kit/walletconnect': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -4930,10 +4930,10 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@cosmos-kit/galaxy-station@2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(axios@1.16.1)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@cosmos-kit/galaxy-station@2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(axios@1.16.1)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)':
     dependencies:
       '@cosmos-kit/galaxy-station-extension': 2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(axios@1.16.1)(bufferutil@4.1.0)(utf-8-validate@5.0.10)
-      '@cosmos-kit/galaxy-station-mobile': 2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@cosmos-kit/galaxy-station-mobile': 2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -5000,16 +5000,16 @@ snapshots:
       - uploadthing
       - utf-8-validate
 
-  '@cosmos-kit/keplr-mobile@2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/sign-client@2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76))(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(starknet@8.9.2)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@cosmos-kit/keplr-mobile@2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/sign-client@2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6))(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(starknet@8.9.2)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)':
     dependencies:
       '@chain-registry/keplr': 1.74.579
       '@cosmjs/amino': 0.39.0
       '@cosmjs/proto-signing': 0.39.0
       '@cosmos-kit/core': 2.18.1(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       '@cosmos-kit/keplr-extension': 2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(bufferutil@4.1.0)(starknet@8.9.2)(utf-8-validate@5.0.10)
-      '@cosmos-kit/walletconnect': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@cosmos-kit/walletconnect': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
       '@keplr-wallet/provider-extension': 0.12.313(starknet@8.9.2)
-      '@keplr-wallet/wc-client': 0.12.313(@walletconnect/sign-client@2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76))(@walletconnect/types@2.23.9)(starknet@8.9.2)
+      '@keplr-wallet/wc-client': 0.12.313(@walletconnect/sign-client@2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6))(@walletconnect/types@2.23.9)(starknet@8.9.2)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -5040,10 +5040,10 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@cosmos-kit/keplr@2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/sign-client@2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76))(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(starknet@8.9.2)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@cosmos-kit/keplr@2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/sign-client@2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6))(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(starknet@8.9.2)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)':
     dependencies:
       '@cosmos-kit/keplr-extension': 2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(bufferutil@4.1.0)(starknet@8.9.2)(utf-8-validate@5.0.10)
-      '@cosmos-kit/keplr-mobile': 2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/sign-client@2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76))(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(starknet@8.9.2)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@cosmos-kit/keplr-mobile': 2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/sign-client@2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6))(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(starknet@8.9.2)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -5141,11 +5141,11 @@ snapshots:
       - uploadthing
       - utf-8-validate
 
-  '@cosmos-kit/leap-mobile@2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@cosmos-kit/leap-mobile@2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)':
     dependencies:
       '@chain-registry/keplr': 1.74.579
       '@cosmos-kit/core': 2.18.1(bufferutil@4.1.0)(utf-8-validate@5.0.10)
-      '@cosmos-kit/walletconnect': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@cosmos-kit/walletconnect': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -5176,11 +5176,11 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@cosmos-kit/leap@2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(cosmjs-types@0.11.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@cosmos-kit/leap@2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(cosmjs-types@0.11.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)':
     dependencies:
       '@cosmos-kit/leap-extension': 2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       '@cosmos-kit/leap-metamask-cosmos-snap': 0.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(bufferutil@4.1.0)(cosmjs-types@0.11.0)(utf-8-validate@5.0.10)
-      '@cosmos-kit/leap-mobile': 2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@cosmos-kit/leap-mobile': 2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -5277,12 +5277,12 @@ snapshots:
       - uploadthing
       - utf-8-validate
 
-  '@cosmos-kit/omni-mobile@2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@cosmos-kit/omni-mobile@2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)':
     dependencies:
       '@cosmjs/amino': 0.39.0
       '@cosmjs/proto-signing': 0.39.0
       '@cosmos-kit/core': 2.18.1(bufferutil@4.1.0)(utf-8-validate@5.0.10)
-      '@cosmos-kit/walletconnect': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@cosmos-kit/walletconnect': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -5311,9 +5311,9 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@cosmos-kit/omni@2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@cosmos-kit/omni@2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)':
     dependencies:
-      '@cosmos-kit/omni-mobile': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@cosmos-kit/omni-mobile': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -5377,11 +5377,11 @@ snapshots:
       - uploadthing
       - utf-8-validate
 
-  '@cosmos-kit/owallet-mobile@2.18.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@cosmos-kit/owallet-mobile@2.18.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)':
     dependencies:
       '@chain-registry/keplr': 1.68.2
       '@cosmos-kit/core': 2.18.1(bufferutil@4.1.0)(utf-8-validate@5.0.10)
-      '@cosmos-kit/walletconnect': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@cosmos-kit/walletconnect': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -5412,10 +5412,10 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@cosmos-kit/owallet@2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(starknet@8.9.2)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@cosmos-kit/owallet@2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(starknet@8.9.2)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)':
     dependencies:
       '@cosmos-kit/owallet-extension': 2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(bufferutil@4.1.0)(starknet@8.9.2)(utf-8-validate@5.0.10)
-      '@cosmos-kit/owallet-mobile': 2.18.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@cosmos-kit/owallet-mobile': 2.18.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -5739,12 +5739,12 @@ snapshots:
       - uploadthing
       - utf-8-validate
 
-  '@cosmos-kit/trust-mobile@2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@cosmos-kit/trust-mobile@2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)':
     dependencies:
       '@cosmjs/amino': 0.39.0
       '@cosmjs/proto-signing': 0.39.0
       '@cosmos-kit/core': 2.18.1(bufferutil@4.1.0)(utf-8-validate@5.0.10)
-      '@cosmos-kit/walletconnect': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@cosmos-kit/walletconnect': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -5773,10 +5773,10 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@cosmos-kit/trust@2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@cosmos-kit/trust@2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)':
     dependencies:
       '@cosmos-kit/trust-extension': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(bufferutil@4.1.0)(utf-8-validate@5.0.10)
-      '@cosmos-kit/trust-mobile': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@cosmos-kit/trust-mobile': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -5868,14 +5868,14 @@ snapshots:
       - uploadthing
       - utf-8-validate
 
-  '@cosmos-kit/walletconnect@2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@cosmos-kit/walletconnect@2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)':
     dependencies:
       '@cosmjs/amino': 0.39.0
       '@cosmjs/proto-signing': 0.39.0
       '@cosmos-kit/core': 2.18.1(bufferutil@4.1.0)(utf-8-validate@5.0.10)
-      '@walletconnect/sign-client': 2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/sign-client': 2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
       '@walletconnect/types': 2.23.9
-      '@walletconnect/utils': 2.23.9(typescript@5.7.3)(zod@3.25.76)
+      '@walletconnect/utils': 2.23.9(typescript@5.7.3)(zod@4.6.6)
       events: 3.3.0
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -6532,11 +6532,11 @@ snapshots:
       big-integer: 1.6.52
       utility-types: 3.11.0
 
-  '@keplr-wallet/wc-client@0.12.313(@walletconnect/sign-client@2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76))(@walletconnect/types@2.23.9)(starknet@8.9.2)':
+  '@keplr-wallet/wc-client@0.12.313(@walletconnect/sign-client@2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6))(@walletconnect/types@2.23.9)(starknet@8.9.2)':
     dependencies:
       '@keplr-wallet/provider': 0.12.313(starknet@8.9.2)
       '@keplr-wallet/types': 0.12.313(starknet@8.9.2)
-      '@walletconnect/sign-client': 2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/sign-client': 2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
       '@walletconnect/types': 2.23.9
       buffer: 6.0.3
       deepmerge: 4.3.1
@@ -6629,7 +6629,7 @@ snapshots:
 
   '@msgpack/msgpack@3.1.3': {}
 
-  '@napi-rs/wasm-runtime@1.2.5(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)':
+  '@napi-rs/wasm-runtime@1.2.6(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)':
     dependencies:
       '@emnapi/core': 1.11.1
       '@emnapi/runtime': 1.11.1
@@ -6823,7 +6823,7 @@ snapshots:
     dependencies:
       '@emnapi/core': 1.11.1
       '@emnapi/runtime': 1.11.1
-      '@napi-rs/wasm-runtime': 1.2.5(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)
+      '@napi-rs/wasm-runtime': 1.2.6(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)
     optional: true
 
   '@rolldown/binding-win32-arm64-msvc@1.1.5':
@@ -7049,7 +7049,7 @@ snapshots:
     dependencies:
       '@vanilla-extract/css': 1.20.1
 
-  '@verana-labs/verana-types@0.10.6(@cosmjs/proto-signing@0.39.0)(@cosmjs/stargate@0.39.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))':
+  '@verana-labs/verana-types@0.10.7-dev.3(@cosmjs/proto-signing@0.39.0)(@cosmjs/stargate@0.39.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))':
     dependencies:
       '@cosmjs/proto-signing': 0.39.0
       '@cosmjs/stargate': 0.39.0(bufferutil@4.1.0)(utf-8-validate@5.0.10)
@@ -7067,7 +7067,7 @@ snapshots:
 
   '@vitest/spy@5.0.1': {}
 
-  '@walletconnect/core@2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@walletconnect/core@2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)':
     dependencies:
       '@walletconnect/heartbeat': 1.2.2
       '@walletconnect/jsonrpc-provider': 1.0.14
@@ -7081,7 +7081,7 @@ snapshots:
       '@walletconnect/safe-json': 1.0.2
       '@walletconnect/time': 1.0.2
       '@walletconnect/types': 2.23.9
-      '@walletconnect/utils': 2.23.9(typescript@5.7.3)(zod@3.25.76)
+      '@walletconnect/utils': 2.23.9(typescript@5.7.3)(zod@4.6.6)
       '@walletconnect/window-getters': 1.0.1
       es-toolkit: 1.44.0
       events: 3.3.0
@@ -7215,16 +7215,16 @@ snapshots:
     dependencies:
       tslib: 1.14.1
 
-  '@walletconnect/sign-client@2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@walletconnect/sign-client@2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)':
     dependencies:
-      '@walletconnect/core': 2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/core': 2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
       '@walletconnect/events': 1.0.1
       '@walletconnect/heartbeat': 1.2.2
       '@walletconnect/jsonrpc-utils': 1.0.8
       '@walletconnect/logger': 3.0.2
       '@walletconnect/time': 1.0.2
       '@walletconnect/types': 2.23.9
-      '@walletconnect/utils': 2.23.9(typescript@5.7.3)(zod@3.25.76)
+      '@walletconnect/utils': 2.23.9(typescript@5.7.3)(zod@4.6.6)
       events: 3.3.0
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -7313,7 +7313,7 @@ snapshots:
       - ioredis
       - uploadthing
 
-  '@walletconnect/utils@2.23.9(typescript@5.7.3)(zod@3.25.76)':
+  '@walletconnect/utils@2.23.9(typescript@5.7.3)(zod@4.6.6)':
     dependencies:
       '@msgpack/msgpack': 3.1.3
       '@noble/ciphers': 1.3.0
@@ -7332,7 +7332,7 @@ snapshots:
       '@walletconnect/window-metadata': 1.0.1
       blakejs: 1.2.1
       detect-browser: 5.3.0
-      ox: 0.9.3(typescript@5.7.3)(zod@3.25.76)
+      ox: 0.9.3(typescript@5.7.3)(zod@4.6.6)
       uint8arrays: 3.1.1
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -7375,10 +7375,10 @@ snapshots:
       fs-extra: 10.1.0
       yargs: 17.7.3
 
-  abitype@1.2.4(typescript@5.7.3)(zod@3.25.76):
+  abitype@1.2.4(typescript@5.7.3)(zod@4.6.6):
     optionalDependencies:
       typescript: 5.7.3
-      zod: 3.25.76
+      zod: 4.6.6
 
   aes-js@3.0.0: {}
 
@@ -7461,7 +7461,7 @@ snapshots:
 
   axios@1.16.1:
     dependencies:
-      follow-redirects: 1.16.1
+      follow-redirects: 1.16.2
       form-data: 4.0.6
       https-proxy-agent: 5.0.1
       proxy-from-env: 2.1.0
@@ -7739,27 +7739,27 @@ snapshots:
 
   cosmjs-types@0.9.0: {}
 
-  cosmos-kit@2.22.0(@chain-registry/types@0.46.15)(@cosmjs/amino@0.39.0)(@cosmjs/crypto@0.39.0)(@cosmjs/encoding@0.39.0)(@cosmjs/proto-signing@0.39.0)(@terra-money/terra.js@3.1.10)(@walletconnect/sign-client@2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76))(@walletconnect/types@2.23.9)(axios@1.16.1)(bufferutil@4.1.0)(cosmjs-types@0.11.0)(react@19.3.1)(starknet@8.9.2)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76):
+  cosmos-kit@2.22.0(@chain-registry/types@0.46.15)(@cosmjs/amino@0.39.0)(@cosmjs/crypto@0.39.0)(@cosmjs/encoding@0.39.0)(@cosmjs/proto-signing@0.39.0)(@terra-money/terra.js@3.1.10)(@walletconnect/sign-client@2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6))(@walletconnect/types@2.23.9)(axios@1.16.1)(bufferutil@4.1.0)(cosmjs-types@0.11.0)(react@19.3.1)(starknet@8.9.2)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6):
     dependencies:
       '@cosmos-kit/cdcwallet': 2.18.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       '@cosmos-kit/coin98': 2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       '@cosmos-kit/compass': 2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(bufferutil@4.1.0)(utf-8-validate@5.0.10)
-      '@cosmos-kit/cosmostation': 2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(cosmjs-types@0.11.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@cosmos-kit/cosmostation': 2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(cosmjs-types@0.11.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
       '@cosmos-kit/ctrl': 2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       '@cosmos-kit/exodus': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(bufferutil@4.1.0)(react@19.3.1)(utf-8-validate@5.0.10)
       '@cosmos-kit/fin': 2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       '@cosmos-kit/frontier': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(bufferutil@4.1.0)(utf-8-validate@5.0.10)
-      '@cosmos-kit/galaxy-station': 2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(axios@1.16.1)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@cosmos-kit/keplr': 2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/sign-client@2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76))(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(starknet@8.9.2)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@cosmos-kit/leap': 2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(cosmjs-types@0.11.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@cosmos-kit/galaxy-station': 2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(axios@1.16.1)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
+      '@cosmos-kit/keplr': 2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/sign-client@2.23.9(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6))(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(starknet@8.9.2)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
+      '@cosmos-kit/leap': 2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(cosmjs-types@0.11.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
       '@cosmos-kit/ledger': 2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/crypto@0.39.0)(@cosmjs/encoding@0.39.0)(@cosmjs/proto-signing@0.39.0)(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       '@cosmos-kit/okxwallet-extension': 2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(bufferutil@4.1.0)(utf-8-validate@5.0.10)
-      '@cosmos-kit/omni': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@cosmos-kit/owallet': 2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(starknet@8.9.2)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@cosmos-kit/omni': 2.15.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
+      '@cosmos-kit/owallet': 2.17.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(starknet@8.9.2)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
       '@cosmos-kit/shell': 2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       '@cosmos-kit/station': 2.15.1(@chain-registry/types@0.46.15)(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@terra-money/terra.js@3.1.10)(axios@1.16.1)(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       '@cosmos-kit/tailwind': 1.10.1(bufferutil@4.1.0)(utf-8-validate@5.0.10)
-      '@cosmos-kit/trust': 2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@cosmos-kit/trust': 2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(@walletconnect/types@2.23.9)(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@4.6.6)
       '@cosmos-kit/vectis': 2.16.1(@cosmjs/amino@0.39.0)(@cosmjs/proto-signing@0.39.0)(bufferutil@4.1.0)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -8079,7 +8079,7 @@ snapshots:
 
   follow-redirects@1.16.0: {}
 
-  follow-redirects@1.16.1: {}
+  follow-redirects@1.16.2: {}
 
   for-each@0.3.5:
     dependencies:
@@ -9061,7 +9061,7 @@ snapshots:
     dependencies:
       wrappy: 1.0.2
 
-  ox@0.9.3(typescript@5.7.3)(zod@3.25.76):
+  ox@0.9.3(typescript@5.7.3)(zod@4.6.6):
     dependencies:
       '@adraffy/ens-normalize': 1.11.1
       '@noble/ciphers': 1.3.0
@@ -9069,7 +9069,7 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.2.4(typescript@5.7.3)(zod@3.25.76)
+      abitype: 1.2.4(typescript@5.7.3)(zod@4.6.6)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.7.3
@@ -9284,7 +9284,7 @@ snapshots:
       '@types/node': 22.10.7
       long: 5.3.2
 
-  protobufjs@8.7.1:
+  protobufjs@8.7.2:
     dependencies:
       long: 5.3.2
 
@@ -10009,7 +10009,7 @@ snapshots:
       y18n: 5.0.8
       yargs-parser: 21.1.1
 
-  zod@3.25.76: {}
+  zod@4.6.6: {}
 
   zustand@4.5.7(@types/react@19.0.7)(immer@10.2.0)(react@19.3.1):
     dependencies:
