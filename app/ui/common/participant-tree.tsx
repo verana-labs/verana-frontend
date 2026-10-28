@@ -405,7 +405,7 @@ export default function ParticipantTree({
                 <label key={String(name)} className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    className="w-4 h-4 text-primary-600 border-neutral-20 rounded focus:ring-primary-500"
+                    className="w-4 h-4 text-primary-600 border-neutral-20 rounded checked:border-transparent focus:ring-primary-500"
                     checked={Boolean(checked)}
                     onChange={(event) => (setChecked as (value: boolean) => void)(event.target.checked)}
                   />

@@ -22,7 +22,7 @@ export function AccountAddress() {
   return (
     <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6">
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-        <div className="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center bg-gradient-to-br from-primary-500 to-accent-500">
+        <div className="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center bg-linear-to-br/srgb from-primary-500 to-accent-500">
           <FontAwesomeIcon icon={faWallet} className="text-white text-xl" />
         </div>
         <div className="min-w-0 flex-1">

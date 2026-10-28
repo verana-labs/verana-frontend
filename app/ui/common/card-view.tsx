@@ -48,7 +48,7 @@ export default function CardView<T>({ field, data, largeTexts }: CardViewProps<T
           </>
         ) : (
           <div className="flex items-center">
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               {field.icon && (
                 <div className={clsx('w-12 h-12 rounded-xl flex items-center justify-center', iconWrapperClass)}>
                   <FontAwesomeIcon icon={field.icon} className={iconColorClass} />

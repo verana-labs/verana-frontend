@@ -22,14 +22,14 @@ import Wallet from '@/wallet/wallet'
 function CallToAction({ title, message, action }: { title?: string; message?: string; action: ReactNode }) {
   return (
     <section className="mb-8">
-      <div className="bg-gradient-to-r from-primary-600 to-primary-500 rounded-2xl shadow-xl overflow-hidden">
+      <div className="bg-linear-to-r/srgb from-primary-600 to-primary-500 rounded-2xl shadow-xl overflow-hidden">
         <div className="px-6 py-8 sm:px-8 sm:py-12">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="flex-1 min-w-0">
               <h2 className="text-2xl font-bold text-white mb-2">{title}</h2>
               <p className="text-primary-100 text-lg mb-4">{message}</p>
             </div>
-            <div className="flex-shrink-0">{action}</div>
+            <div className="shrink-0">{action}</div>
           </div>
         </div>
       </div>
@@ -38,7 +38,7 @@ function CallToAction({ title, message, action }: { title?: string; message?: st
 }
 
 const CALL_TO_ACTION_BUTTON =
-  'inline-flex items-center px-8 py-4 bg-white text-primary-700 text-lg font-semibold rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-600'
+  'inline-flex items-center px-8 py-4 bg-white text-primary-700 text-lg font-semibold rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 focus:outline-hidden focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-600'
 
 export default function Page() {
   const veranaChain = useVeranaChain()

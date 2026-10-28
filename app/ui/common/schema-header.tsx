@@ -115,7 +115,7 @@ export default function SchemaHeader({
               />
             </div>
           </div>
-          {action ? <div className="flex-shrink-0">{action}</div> : null}
+          {action ? <div className="shrink-0">{action}</div> : null}
         </div>
       </div>
     </section>

@@ -31,7 +31,7 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
   return (
     <div className="border border-neutral-20 dark:border-neutral-70 rounded-xl p-6 mb-6">
       <div className="flex items-start space-x-4 mb-6">
-        <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center flex-shrink-0">
+        <div className="w-12 h-12 bg-linear-to-br/srgb from-primary-500 to-primary-700 rounded-lg flex items-center justify-center shrink-0">
           <FontAwesomeIcon icon={faShieldHalved} className="text-white text-2xl" />
         </div>
         <div className="flex-1 min-w-0 break-all">
@@ -64,7 +64,7 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
           checked={accepted}
           disabled={locked}
           onChange={(e) => onAcceptedChange(e.target.checked)}
-          className="mt-1 w-4 h-4 text-primary-600 bg-white dark:bg-surface border-neutral-20 dark:border-neutral-70 rounded focus:ring-primary-500 disabled:opacity-50"
+          className="mt-1 w-4 h-4 text-primary-600 bg-white dark:bg-surface border-neutral-20 dark:border-neutral-70 rounded checked:bg-current checked:border-transparent focus:ring-primary-500 disabled:opacity-50"
         />
         <label
           htmlFor="egf-accept"

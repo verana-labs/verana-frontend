@@ -22,7 +22,7 @@ export default function TrustBadge({ state, size = 'md', className = '' }: Trust
   return (
     <FontAwesomeIcon
       icon={icon}
-      className={`${iconColorClass} ${SIZE_CLASS[size]} flex-shrink-0 ${className}`}
+      className={`${iconColorClass} ${SIZE_CLASS[size]} shrink-0 ${className}`}
       title={label}
       aria-label={label}
     />

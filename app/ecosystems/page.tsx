@@ -98,7 +98,7 @@ export default function EcosystemsPage() {
               {t('datatable.ecosystem.description', 'Ecosystems owned by your corporation.')}
             </p>
           </div>
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <EntityActionButton
               msgType="MsgCreateEcosystem"
               icon={faPlus}
