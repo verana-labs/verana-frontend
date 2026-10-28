@@ -161,7 +161,7 @@ test.describe('Get VNA panel', () => {
     await requestVNA(page)
 
     // The panel notice, not the toast (both have role="alert").
-    const alert = page.locator('[role="alert"]:not(.notify-notification)').filter({ hasText: en['getvna.window.hour'] })
+    const alert = page.locator('[role="alert"]:not([data-toast-alert])').filter({ hasText: en['getvna.window.hour'] })
     await expect(alert).toBeVisible()
     await expect(alert).not.toContainText('QUOTA_EXCEEDED')
     await expect(alert).toContainText(/2099/)

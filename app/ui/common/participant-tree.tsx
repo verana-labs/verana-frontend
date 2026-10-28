@@ -1,31 +1,51 @@
 'use client'
 
 import { faPlus } from '@fortawesome/free-solid-svg-icons'
+import { Columns3Icon, EyeIcon, EyeOffIcon, ListCollapseIcon, ListTreeIcon, NetworkIcon } from 'lucide-react'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useParticipant } from '@/hooks/useParticipant'
 import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
 import type { SchemaPricing } from '@/lib/pricing-asset'
+import { cn } from '@/lib/utils'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { EntityActionButton } from '@/ui/common/capability-button'
-import EcosystemBreadcrumb from '@/ui/common/ecosystem-breadcrumb'
+import { EmptyState } from '@/ui/common/empty-state'
 import { HolderWebsite } from '@/ui/common/holder-website'
 import JoinFlow from '@/ui/common/join-flow'
 import { ShowMoreButton } from '@/ui/common/keyset-pagination'
 import type { ParticipantRefreshState, TreeNode } from '@/ui/common/participant-tree-types'
 import { PricingNotice, unsupportedPricingReason } from '@/ui/common/pricing-notice'
-import SchemaHeader, { type SchemaStatus } from '@/ui/common/schema-header'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
+import { BlurFade } from '@/ui/motion/blur-fade'
+import { DetailSheet } from '@/ui/participants/detail-sheet'
+import { ParticipantTreeView } from '@/ui/participants/participant-tree-view'
+import { SchemaHero, SchemaHeroSkeleton, type SchemaStatus } from '@/ui/participants/schema-hero'
+import { useMobileQuery } from '@/ui/participants/use-mobile-query'
+import { useScrollFade } from '@/ui/participants/use-scroll-fade'
+import { Badge } from '@/ui/shadcn/badge'
+import { Button, buttonVariants } from '@/ui/shadcn/button'
+import { Card, CardAction, CardHeader, CardTitle } from '@/ui/shadcn/card'
+import { Checkbox } from '@/ui/shadcn/checkbox'
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/ui/shadcn/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/shadcn/tooltip'
 import { participantAuthority, roleColorClass } from '@/util/util'
 import { renderActionComponent } from './data-view-typed'
 import { ModalAction } from './modal-action'
-import ParticipantCard from './participant-card'
+import ParticipantCard, { ParticipantCardPlaceholder, participantCardTitle } from './participant-card'
 import { collectParticipantTrust, countParticipants, filterParticipantTree } from './participant-tree-filter'
-import TreeNodeHeader from './tree-node-header'
 
 export const ROOT_NODE_ID = 'root'
+
+const SIDE_BY_SIDE_MIN_WIDTH = 1040
 
 type ParticipantTreeProps = {
   tree: TreeNode[]
@@ -72,6 +92,10 @@ function findNode(nodes: TreeNode[], id: string): TreeNode | undefined {
   }
 }
 
+function expandableIds(nodes: TreeNode[]): string[] {
+  return nodes.flatMap((node) => (node.children?.length ? [node.nodeId, ...expandableIds(node.children)] : []))
+}
+
 export function mergeTrees(previous: TreeNode[], next: TreeNode[]): TreeNode[] {
   const previousById = new Map(previous.map((node) => [node.nodeId, node]))
   return next.map((node) => {
@@ -96,93 +120,52 @@ function updateParticipant(nodes: TreeNode[], participant: Participant): TreeNod
   }))
 }
 
-function Tree({
-  type,
-  nodes,
-  selectedId,
-  expanded,
-  showWeight,
-  showBusiness,
-  showStats,
-  onSelect,
-  onToggle,
-  onJoin,
-  joinBlockedReason,
-  feePricing,
-  onConnect,
-  moreNodeIds,
-  onLoadMore,
-  depth = 0,
+function useElementWidth<T extends HTMLElement>() {
+  const ref = useRef<T>(null)
+  const [width, setWidth] = useState(0)
+  useLayoutEffect(() => {
+    const element = ref.current
+    if (!element) return
+    setWidth(element.getBoundingClientRect().width)
+    const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width))
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+  return [ref, width] as const
+}
+
+function FilterChip({
+  label,
+  checked,
+  onCheckedChange,
 }: {
-  type: 'participants' | 'tasks'
-  nodes: TreeNode[]
-  selectedId?: string
-  expanded: Record<string, boolean>
-  showWeight: boolean
-  showBusiness: boolean
-  showStats: boolean
-  onSelect: (id: string) => void
-  onToggle: (id: string, role?: string, validatorId?: string) => void
-  onJoin: (node: TreeNode) => void
-  joinBlockedReason?: string
-  feePricing?: SchemaPricing
-  onConnect?: () => void
-  moreNodeIds?: ReadonlySet<string>
-  onLoadMore?: (nodeId: string) => void
-  depth?: number
+  label: string
+  checked: boolean
+  onCheckedChange: (value: boolean) => void
 }) {
   return (
-    <div className="space-y-1">
-      {nodes.map((node) => {
-        const isExpanded = expanded[node.nodeId] ?? false
-        return (
-          <div key={node.nodeId}>
-            <div
-              className={`rounded-lg p-2 transition-all hover:bg-primary-600/5 ${selectedId === node.nodeId ? 'bg-primary-600/10' : ''}`}
-              style={{ marginLeft: depth * 24 }}
-            >
-              <TreeNodeHeader
-                node={node}
-                type={type}
-                isExpanded={isExpanded}
-                showWeight={showWeight}
-                showBusiness={showBusiness}
-                showStats={showStats}
-                onToggle={onToggle}
-                onSelect={onSelect}
-                onJoin={onJoin}
-                joinBlockedReason={joinBlockedReason}
-                feePricing={feePricing}
-                onConnect={onConnect}
-              />
-            </div>
-            {node.children?.length && isExpanded ? (
-              <Tree
-                type={type}
-                nodes={node.children}
-                selectedId={selectedId}
-                expanded={expanded}
-                showWeight={showWeight}
-                showBusiness={showBusiness}
-                showStats={showStats}
-                onSelect={onSelect}
-                onToggle={onToggle}
-                onJoin={onJoin}
-                joinBlockedReason={joinBlockedReason}
-                feePricing={feePricing}
-                onConnect={onConnect}
-                moreNodeIds={moreNodeIds}
-                onLoadMore={onLoadMore}
-                depth={depth + 1}
-              />
-            ) : null}
-            {isExpanded && moreNodeIds?.has(node.nodeId) && onLoadMore ? (
-              <ShowMoreButton onClick={() => onLoadMore(node.nodeId)} indent={(depth + 1) * 24} />
-            ) : null}
-          </div>
-        )
-      })}
-    </div>
+    <label
+      className={cn(
+        'inline-flex h-8 cursor-pointer items-center gap-2 rounded-md border bg-background px-2.5 text-sm whitespace-nowrap text-muted-foreground transition-colors duration-(--duration-base) ease-standard hover:text-foreground',
+        checked && 'border-primary/40 bg-primary/5 text-foreground dark:bg-primary/10'
+      )}
+    >
+      <Checkbox checked={checked} onCheckedChange={(value) => onCheckedChange(value === true)} />
+      {label}
+    </label>
+  )
+}
+
+function IconTooltipButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button variant="ghost" size="icon-sm" onClick={onClick} aria-label={label} className="text-muted-foreground">
+          {children}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
   )
 }
 
@@ -219,8 +202,13 @@ export default function ParticipantTree({
   const [treeState, setTreeState] = useState(tree)
   const [refreshState, setRefreshState] = useState<ParticipantRefreshState>({})
   const detailRef = useRef<HTMLDivElement | null>(null)
+  const [layoutRef, layoutWidth] = useElementWidth<HTMLDivElement>()
+  const mobileQuery = useMobileQuery()
+  const isMobile = mobileQuery === true
+  const measured = layoutWidth > 0 && mobileQuery !== undefined
   const { latestProcessedHeight } = useIndexerEvents()
   const joinBlockedReason = unsupportedPricing ? unsupportedPricingReason() : undefined
+  const tr = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
 
   const visibleTree = useMemo(() => {
     if (type !== 'participants') return treeState
@@ -230,11 +218,10 @@ export default function ParticipantTree({
       collectParticipantTrust(treeState)
     )
   }, [type, treeState, showUnresolvable, showDisabled])
-  const hiddenCount = useMemo(
-    () => countParticipants(treeState) - countParticipants(visibleTree),
-    [treeState, visibleTree]
-  )
+  const visibleCount = useMemo(() => countParticipants(visibleTree), [visibleTree])
+  const hiddenCount = useMemo(() => countParticipants(treeState) - visibleCount, [treeState, visibleCount])
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => (tree[0] ? { [tree[0].nodeId]: true } : {}))
+  const expandedIds = useMemo(() => Object.keys(expanded).filter((id) => expanded[id]), [expanded])
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const selectedId = searchParams.get('participant') ?? undefined
@@ -248,6 +235,13 @@ export default function ParticipantTree({
     [pathname, searchParams]
   )
 
+  const clearSelection = useCallback(() => {
+    const next = new URLSearchParams(searchParams.toString())
+    next.delete('participant')
+    const query = next.toString()
+    window.history.pushState(null, '', query ? `${pathname}?${query}` : pathname)
+  }, [pathname, searchParams])
+
   function toggle(id: string, role?: string, validatorId?: string) {
     const opening = !(expanded[id] ?? false)
     setExpanded((current) => ({ ...current, [id]: opening }))
@@ -256,12 +250,18 @@ export default function ParticipantTree({
     }
   }
 
+  function applyExpanded(ids: string[]) {
+    const opened = ids.filter((id) => !expanded[id])
+    setExpanded(Object.fromEntries(ids.map((id) => [id, true])))
+    const lazy = opened.map((id) => findNode(treeState, id)).find((node) => node && !node.children?.length)
+    if (lazy) setNodeRequestParams?.(lazy.nodeId, lazy.type, lazy.parentId)
+  }
+
   const selection = useMemo(
     () => (selectedId ? findNodeAndPath(treeState, selectedId) : { path: [] }),
     [selectedId, treeState]
   )
 
-  // A deep link can name a Participant the lazy tree has not loaded. Fetch it so the card still opens.
   const missingSelectedId = selectedId && !selection.node ? selectedId : undefined
   const { participant: linkedParticipant } = useParticipant(missingSelectedId)
   const linkedNode = useMemo<TreeNode | undefined>(() => {
@@ -282,6 +282,10 @@ export default function ParticipantTree({
     }
   }, [linkedParticipant, missingSelectedId, viewerCorporationId])
   const detailNode = selection.node ?? linkedNode
+  const allHidden = visibleTree.length === 0 && hiddenCount > 0
+  const sideBySide =
+    measured && !isMobile && layoutWidth >= SIDE_BY_SIDE_MIN_WIDTH && (Boolean(detailNode) || visibleTree.length > 0)
+  const detailFade = useScrollFade<HTMLDivElement>(sideBySide)
   const requestedLinkedId = useRef<string>(undefined)
 
   useEffect(() => {
@@ -324,10 +328,19 @@ export default function ParticipantTree({
     })
   }, [treeState, selectedId])
 
+  const sideBySideRef = useRef(sideBySide)
+  sideBySideRef.current = sideBySide
+  const isMobileRef = useRef(isMobile)
+  isMobileRef.current = isMobile
+
   useEffect(() => {
-    if (!selectedId) return
+    if (!measured || !selectedId || isMobileRef.current) return
+    if (sideBySideRef.current) {
+      detailRef.current?.scrollTo({ top: 0 })
+      return
+    }
     detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [selectedId])
+  }, [selectedId, measured])
 
   useEffect(() => {
     if (!refreshState.joinNode || refreshState.txHeight == null) return
@@ -361,118 +374,267 @@ export default function ParticipantTree({
     setRefreshState({})
   }, [onRetryFetch, refreshState, select, treeState])
 
+  const treeTitle = tr(type === 'participants' ? 'participants.tree.title' : 'task.tree.title', 'Tree')
+  const detailCard = detailNode ? (
+    <ParticipantCard
+      key={detailNode.nodeId}
+      selectedNode={detailNode}
+      path={selection.node ? selection.path : [detailNode]}
+      schemaTitle={schemaTitle ?? ''}
+      pricingNoticeShown={Boolean(unsupportedPricing)}
+      viewerCorporationId={viewerCorporationId}
+      embedded={isMobile}
+      onClose={isMobile ? undefined : clearSelection}
+      onRefresh={(participant) => setTreeState((current) => updateParticipant(current, participant))}
+      onRefreshList={onRetryFetch}
+    />
+  ) : null
+
+  const toggles: Array<[string, boolean, (value: boolean) => void]> = [
+    ['unresolvable', showUnresolvable, setShowUnresolvable],
+    ['disabled', showDisabled, setShowDisabled],
+  ]
+  const showAll = () => {
+    setShowUnresolvable(true)
+    setShowDisabled(true)
+  }
+  const columns: Array<[string, boolean, (value: boolean) => void]> = [
+    ['weight', showWeight, setShowWeight],
+    ['businessrules', showBusiness, setShowBusiness],
+    ['stats', showStats, setShowStats],
+  ]
+  const activeColumns = columns.filter(([, checked]) => checked).length
+
   return (
     <>
-      {type === 'participants' && ecosystemTitle && ecosystemId ? (
-        <EcosystemBreadcrumb ecosystemId={ecosystemId} ecosystemDid={ecosystemTitle} />
-      ) : null}
-      {type === 'participants' && schemaTitle && schemaId ? (
-        <SchemaHeader
-          title={schemaTitle}
-          description={schemaDescription}
-          id={schemaId}
-          status={schemaStatus}
-          issuerOnboardingMode={issuerOnboardingMode}
-          verifierOnboardingMode={verifierOnboardingMode}
-          holderOnboardingMode={holderOnboardingMode}
-        />
+      {type === 'participants' ? (
+        schemaTitle && schemaId ? (
+          <SchemaHero
+            compact
+            title={schemaTitle}
+            description={schemaDescription}
+            id={schemaId}
+            status={schemaStatus}
+            issuerOnboardingMode={issuerOnboardingMode}
+            verifierOnboardingMode={verifierOnboardingMode}
+            holderOnboardingMode={holderOnboardingMode}
+            ecosystem={ecosystemTitle && ecosystemId ? { id: ecosystemId, did: ecosystemTitle } : null}
+            ecosystemPending={!ecosystemTitle}
+          />
+        ) : schemaId === undefined ? (
+          <SchemaHeroSkeleton />
+        ) : null
       ) : null}
       {unsupportedPricing ? <PricingNotice schema={unsupportedPricing} className="mb-6" /> : null}
       {type === 'tasks' ? (
-        <section className="mb-8">
-          <h1 className="page-title">{resolveTranslatable({ key: 'task.title' }, translate) ?? ''}</h1>
-          <p className="page-description">{resolveTranslatable({ key: 'task.description' }, translate) ?? ''}</p>
-        </section>
+        <BlurFade className="mb-6">
+          <section>
+            <h1 className="page-title tracking-tight">{resolveTranslatable({ key: 'task.title' }, translate) ?? ''}</h1>
+            <p className="page-description">{resolveTranslatable({ key: 'task.description' }, translate) ?? ''}</p>
+          </section>
+        </BlurFade>
       ) : null}
 
-      <section className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6 mb-6">
-        <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {resolveTranslatable(
-              { key: type === 'participants' ? 'participants.tree.title' : 'task.tree.title' },
-              translate
-            ) ?? 'Tree'}
-          </h2>
-          {type === 'participants' ? (
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              {[
-                ['unresolvable', showUnresolvable, setShowUnresolvable],
-                ['disabled', showDisabled, setShowDisabled],
-                ['weight', showWeight, setShowWeight],
-                ['businessrules', showBusiness, setShowBusiness],
-                ['stats', showStats, setShowStats],
-              ].map(([name, checked, setChecked]) => (
-                <label key={String(name)} className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 text-primary-600 border-neutral-20 rounded checked:border-transparent focus:ring-primary-500"
-                    checked={Boolean(checked)}
-                    onChange={(event) => (setChecked as (value: boolean) => void)(event.target.checked)}
+      <div
+        ref={layoutRef}
+        className={cn('mb-6 grid items-start gap-6', sideBySide && 'grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]')}
+      >
+        <BlurFade delay={0.05} className="min-w-0">
+          <Card className="gap-0 py-0">
+            <CardHeader className="py-4">
+              <CardTitle>
+                <h2 className="flex items-center gap-2 text-base font-semibold">
+                  <NetworkIcon aria-hidden="true" className="size-4 text-muted-foreground" />
+                  {treeTitle}
+                  {visibleCount > 0 ? (
+                    <Badge variant="secondary" className="tabular-nums">
+                      {visibleCount}
+                      {moreNodeIds?.size ? '+' : ''}
+                    </Badge>
+                  ) : null}
+                </h2>
+              </CardTitle>
+              <CardAction className="flex items-center gap-1">
+                {visibleTree.length > 0 ? (
+                  <>
+                    <IconTooltipButton
+                      label={tr('participants.tree.expandAll', 'Expand all')}
+                      onClick={() => applyExpanded(expandableIds(visibleTree))}
+                    >
+                      <ListTreeIcon aria-hidden="true" />
+                    </IconTooltipButton>
+                    <IconTooltipButton
+                      label={tr('participants.tree.collapseAll', 'Collapse all')}
+                      onClick={() => setExpanded({})}
+                    >
+                      <ListCollapseIcon aria-hidden="true" />
+                    </IconTooltipButton>
+                  </>
+                ) : null}
+                {type === 'participants' ? (
+                  <DropdownMenu>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label={tr('participants.tree.columns', 'Display')}
+                            className="relative text-muted-foreground"
+                          >
+                            <Columns3Icon aria-hidden="true" />
+                            {activeColumns > 0 ? (
+                              <span
+                                aria-hidden="true"
+                                className="absolute end-1 top-1 size-1.5 rounded-full bg-primary ring-2 ring-card"
+                              />
+                            ) : null}
+                          </Button>
+                        </DropdownMenuTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent>{tr('participants.tree.columns', 'Display')}</TooltipContent>
+                    </Tooltip>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuLabel>{tr('participants.tree.columns', 'Display')}</DropdownMenuLabel>
+                      {columns.map(([name, checked, setChecked]) => (
+                        <DropdownMenuCheckboxItem
+                          key={name}
+                          checked={checked}
+                          onCheckedChange={(value) => setChecked(value === true)}
+                          onSelect={(event) => event.preventDefault()}
+                        >
+                          {resolveTranslatable({ key: `participants.show.${name}` }, translate) ?? name}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : null}
+                {type === 'participants' && isEcosystemController ? (
+                  <EntityActionButton
+                    msgType="MsgCreateRootParticipant"
+                    icon={faPlus}
+                    label={translate('participants.action.newparticipant')}
+                    blockedReason={joinBlockedReason}
+                    onClick={() => setAddingRoot(true)}
+                    className={buttonVariants({ size: 'sm', className: 'ms-1 gap-1.5' })}
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                    {resolveTranslatable({ key: `participants.show.${name}` }, translate)}
+                ) : null}
+              </CardAction>
+            </CardHeader>
+
+            {type === 'participants' ? (
+              <div className="border-y bg-muted/30 px-4 py-3">
+                <fieldset className="flex min-w-0 flex-wrap items-center gap-2">
+                  <legend className="sr-only">{tr('participants.tree.filters', 'Show')}</legend>
+                  <span aria-hidden="true" className="me-1 text-xs font-medium text-muted-foreground">
+                    {tr('participants.tree.filters', 'Show')}
                   </span>
-                </label>
-              ))}
+                  {toggles.map(([name, checked, setChecked]) => (
+                    <FilterChip
+                      key={name}
+                      label={resolveTranslatable({ key: `participants.show.${name}` }, translate) ?? name}
+                      checked={checked}
+                      onCheckedChange={setChecked}
+                    />
+                  ))}
+                </fieldset>
+              </div>
+            ) : (
+              <div className="border-t" />
+            )}
+
+            <div className="px-2 py-3 sm:px-3">
+              {type === 'participants' && moreNodeIds?.size ? (
+                <p className="px-2 pb-2 text-xs text-muted-foreground">
+                  {resolveTranslatable({ key: 'pagination.loadedOnly' }, translate) ??
+                    'Sorting and filters apply to the loaded results only.'}
+                </p>
+              ) : null}
+              {allHidden ? (
+                <EmptyState
+                  outline={false}
+                  className="py-10"
+                  icon={<EyeOffIcon />}
+                  title={translate('participants.filters.hidden', { count: hiddenCount })}
+                  action={
+                    <Button size="sm" onClick={showAll} className="gap-1.5">
+                      <EyeIcon aria-hidden="true" />
+                      {translate('participants.filters.showall')}
+                    </Button>
+                  }
+                />
+              ) : hiddenCount > 0 ? (
+                <p className="mx-1 mb-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-lg bg-muted/60 px-3 py-2 text-sm text-muted-foreground">
+                  <EyeOffIcon aria-hidden="true" className="size-4 shrink-0" />
+                  {translate('participants.filters.hidden', { count: hiddenCount })}{' '}
+                  <button
+                    type="button"
+                    onClick={showAll}
+                    className="rounded-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  >
+                    {translate('participants.filters.showall')}
+                  </button>
+                </p>
+              ) : null}
+              {placeholder}
+              <ParticipantTreeView
+                type={type}
+                label={treeTitle}
+                nodes={visibleTree}
+                selectedId={selectedId}
+                expandedIds={expandedIds}
+                onExpandedChange={applyExpanded}
+                showWeight={showWeight}
+                showBusiness={showBusiness}
+                showStats={showStats}
+                onSelect={select}
+                onToggle={toggle}
+                onJoin={(node) => {
+                  setNodeRequestParams?.()
+                  setJoinNode(node)
+                }}
+                joinBlockedReason={joinBlockedReason}
+                feePricing={unsupportedPricing}
+                onConnect={onConnect}
+                moreNodeIds={moreNodeIds}
+                onLoadMore={loadMore}
+              />
+              {moreNodeIds?.has(ROOT_NODE_ID) && loadMore ? (
+                <div className="px-1 pt-1">
+                  <ShowMoreButton onClick={() => loadMore(ROOT_NODE_ID)} />
+                </div>
+              ) : null}
             </div>
-          ) : null}
-        </div>
+          </Card>
+        </BlurFade>
 
-        {type === 'participants' && moreNodeIds?.size ? (
-          <p className="p-2 text-xs text-neutral-70 dark:text-neutral-70">
-            {resolveTranslatable({ key: 'pagination.loadedOnly' }, translate) ??
-              'Sorting and filters apply to the loaded results only.'}
-          </p>
+        {!measured || isMobile ? null : sideBySide ? (
+          <div
+            ref={(element) => {
+              detailRef.current = element
+              detailFade.ref.current = element
+            }}
+            data-faded={detailFade.faded || undefined}
+            className="sticky top-[calc(var(--header-height)+1rem)] z-30 max-h-[calc(100svh-var(--header-height)-2rem)] min-w-0 overflow-y-auto overscroll-contain rounded-xl data-faded:[mask-image:linear-gradient(to_bottom,black_calc(100%-3rem),transparent)]"
+          >
+            {detailCard ?? (visibleTree.length > 0 ? <ParticipantCardPlaceholder /> : null)}
+          </div>
+        ) : detailCard ? (
+          <div ref={detailRef} className="min-w-0 scroll-mt-20">
+            {detailCard}
+          </div>
         ) : null}
-        {hiddenCount > 0 ? (
-          <p className="p-2 text-sm text-neutral-70 dark:text-neutral-70">
-            {translate('participants.filters.hidden', { count: hiddenCount })}{' '}
-            <button
-              type="button"
-              onClick={() => {
-                setShowUnresolvable(true)
-                setShowDisabled(true)
-              }}
-              className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
-            >
-              {translate('participants.filters.showall')}
-            </button>
-          </p>
-        ) : null}
-        {placeholder}
-        <Tree
-          type={type}
-          nodes={visibleTree}
-          selectedId={selectedId}
-          expanded={expanded}
-          showWeight={showWeight}
-          showBusiness={showBusiness}
-          showStats={showStats}
-          onSelect={select}
-          onToggle={toggle}
-          onJoin={(node) => {
-            setNodeRequestParams?.()
-            setJoinNode(node)
-          }}
-          joinBlockedReason={joinBlockedReason}
-          feePricing={unsupportedPricing}
-          onConnect={onConnect}
-          moreNodeIds={moreNodeIds}
-          onLoadMore={loadMore}
-        />
-        {moreNodeIds?.has(ROOT_NODE_ID) && loadMore ? <ShowMoreButton onClick={() => loadMore(ROOT_NODE_ID)} /> : null}
+      </div>
 
-        {type === 'participants' && isEcosystemController ? (
-          <EntityActionButton
-            msgType="MsgCreateRootParticipant"
-            icon={faPlus}
-            label={translate('participants.action.newparticipant')}
-            blockedReason={joinBlockedReason}
-            onClick={() => setAddingRoot(true)}
-            className="flex items-center gap-2 p-2 text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
-          />
-        ) : null}
-      </section>
+      {measured && isMobile ? (
+        <DetailSheet
+          open={Boolean(detailNode)}
+          title={detailNode?.participant ? participantCardTitle(detailNode.participant, schemaTitle ?? '') : treeTitle}
+          onClose={clearSelection}
+        >
+          {detailCard}
+        </DetailSheet>
+      ) : null}
 
       {addingRoot ? (
         <ModalAction
@@ -494,7 +656,7 @@ export default function ParticipantTree({
           onClose={() => setJoinNode(undefined)}
           titleKey={`${resolveTranslatable({ key: 'join.title' }, translate)} - ${schemaTitle} - ${joinNode.name ?? ''}`}
           isActive={true}
-          classModal="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-xl bg-white dark:bg-surface"
+          classModal="max-w-4xl"
         >
           {joinNode.onboardingAction === 'LinkDID' ? (
             <HolderWebsite issuerDid={joinNode.participant?.did ?? ''} onCancel={() => setJoinNode(undefined)} />
@@ -507,21 +669,6 @@ export default function ParticipantTree({
             />
           )}
         </ModalAction>
-      ) : null}
-
-      {detailNode ? (
-        <div ref={detailRef}>
-          <ParticipantCard
-            key={detailNode.nodeId}
-            selectedNode={detailNode}
-            path={selection.node ? selection.path : [detailNode]}
-            schemaTitle={schemaTitle ?? ''}
-            pricingNoticeShown={Boolean(unsupportedPricing)}
-            viewerCorporationId={viewerCorporationId}
-            onRefresh={(participant) => setTreeState((current) => updateParticipant(current, participant))}
-            onRefreshList={onRetryFetch}
-          />
-        </div>
       ) : null}
     </>
   )
