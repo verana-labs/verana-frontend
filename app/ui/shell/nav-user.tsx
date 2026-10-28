@@ -1,10 +1,12 @@
 'use client'
 
 import { useChain } from '@cosmos-kit/react'
-import { CopyIcon, EllipsisVerticalIcon, ExternalLinkIcon, LogOutIcon, WalletIcon } from 'lucide-react'
+import { CopyIcon, EllipsisVerticalIcon, ExternalLinkIcon, LogOutIcon, QrCodeIcon, WalletIcon } from 'lucide-react'
+import { useState } from 'react'
 import { useCopyFeedback } from '@/hooks/useCopyFeedback'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
+import { AddressQrModal } from '@/ui/common/address-qr-modal'
 import { Avatar, AvatarFallback } from '@/ui/shadcn/avatar'
 import {
   DropdownMenu,
@@ -24,6 +26,7 @@ export function NavUser() {
   const explorerUrl = veranaChain.explorers?.[0]?.url
   const { status, address, connect, openView } = useChain(veranaChain.chain_name)
   const { copied, copy } = useCopyFeedback(address)
+  const [qrOpen, setQrOpen] = useState(false)
 
   if (!address) {
     return (
@@ -31,7 +34,7 @@ export function NavUser() {
         <SidebarMenuItem>
           <SidebarMenuButton
             size="lg"
-            onClick={() => void connect()}
+            onClick={() => (status === 'NotExist' ? openView() : void connect())}
             disabled={status === 'Connecting'}
             className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
           >
@@ -87,6 +90,10 @@ export function NavUser() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
+              <DropdownMenuItem onSelect={() => setQrOpen(true)}>
+                <QrCodeIcon />
+                {translate('navbar.qr.title')}
+              </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => void copy()}>
                 <CopyIcon />
                 {translate('navbar.addresscopy.title')}
@@ -105,6 +112,7 @@ export function NavUser() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        {qrOpen ? <AddressQrModal address={address} onClose={() => setQrOpen(false)} /> : null}
       </SidebarMenuItem>
     </SidebarMenu>
   )
