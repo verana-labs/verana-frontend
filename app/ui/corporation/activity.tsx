@@ -1,9 +1,20 @@
 'use client'
 
+import { HistoryIcon } from 'lucide-react'
 import { translate } from '@/i18n/dataview'
 import type { ActivityRow } from '@/lib/activity-history'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/shadcn/empty'
 import { shortenMiddle } from '@/util/util'
 import { formatDate } from './shared'
+import {
+  Timeline,
+  TimelineContent,
+  TimelineDate,
+  TimelineIndicator,
+  TimelineItem,
+  TimelineSeparator,
+  TimelineTitle,
+} from './timeline'
 
 const SUMMARY_KEYS = [
   'title',
@@ -39,25 +50,41 @@ export function summarizeChanges(changes: Record<string, unknown>): string[] {
 
 export function ActivityTimeline({ rows, limit }: { rows: ActivityRow[]; limit?: number }) {
   const visible = limit ? rows.slice(0, limit) : rows
-  if (visible.length === 0) return <p className="text-sm text-gray-500">{translate('activity.empty')}</p>
+  if (visible.length === 0) {
+    return (
+      <Empty className="border border-dashed border-border py-8">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <HistoryIcon />
+          </EmptyMedia>
+          <EmptyTitle className="font-normal text-muted-foreground">{translate('activity.empty')}</EmptyTitle>
+        </EmptyHeader>
+      </Empty>
+    )
+  }
   return (
-    <ol className="relative border-l border-neutral-20 dark:border-neutral-70 ml-2 space-y-4">
+    <Timeline>
       {visible.map((row) => {
         const summary = summarizeChanges(row.changes)
         return (
-          <li key={row.id} className="ml-4">
-            <span className="absolute -left-[5px] mt-1.5 w-2.5 h-2.5 rounded-full bg-primary-600" />
-            <p className="text-sm font-medium text-gray-900 dark:text-white">{humanizeMsg(row.msg)}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {formatDate(row.timestamp)} · {translate('activity.block')} {row.blockHeight}
-              {row.account ? ` · ${shortenMiddle(row.account, 20)}` : ''}
-            </p>
+          <TimelineItem key={row.id}>
+            <TimelineIndicator />
+            <TimelineSeparator />
+            <div className="flex flex-col gap-x-3 gap-y-0.5 sm:flex-row sm:items-baseline sm:justify-between">
+              <TimelineTitle>{humanizeMsg(row.msg)}</TimelineTitle>
+              <TimelineDate className="shrink-0">
+                {formatDate(row.timestamp)} · {translate('activity.block')} {row.blockHeight}
+                {row.account ? ` · ${shortenMiddle(row.account, 20)}` : ''}
+              </TimelineDate>
+            </div>
             {summary.length > 0 ? (
-              <p className="text-xs font-mono text-gray-600 dark:text-gray-300 break-all">{summary.join(' · ')}</p>
+              <TimelineContent className="mt-1 w-fit max-w-full rounded-md bg-muted px-2 py-1 font-mono break-all">
+                {summary.join(' · ')}
+              </TimelineContent>
             ) : null}
-          </li>
+          </TimelineItem>
         )
       })}
-    </ol>
+    </Timeline>
   )
 }

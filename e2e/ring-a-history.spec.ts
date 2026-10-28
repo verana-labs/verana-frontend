@@ -145,7 +145,7 @@ test('an ecosystem shows its activity timeline', async ({ page }) => {
     })
   )
   await page.route('**/v4/credential-schema/list*', (route) => route.fulfill({ json: { schemas: [] } }))
-  await page.goto(`/ecosystems/${ECOSYSTEM_ID}`)
+  await page.goto(`/ecosystems/${ECOSYSTEM_ID}?tab=activity`)
 
   const activity = page.locator('#activity')
   await expect(activity.getByText('Create Ecosystem')).toBeVisible({ timeout: 15_000 })

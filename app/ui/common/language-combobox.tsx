@@ -1,9 +1,10 @@
 'use client'
 
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from '@headlessui/react'
-import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid'
+import { CheckIcon, ChevronsUpDownIcon, LoaderCircleIcon, SearchIcon } from 'lucide-react'
 import { Fragment, type ReactNode, useState } from 'react'
 import { canonicalizeLanguageTag, type LanguageOption, useLanguageData } from '@/lib/language'
+import { cn } from '@/lib/utils'
 
 type LanguageComboboxProps = {
   value: string
@@ -29,38 +30,48 @@ export function LanguageCombobox({ value, onChange, disabled = false, className 
   let content: ReactNode
   if (loadFailed) {
     content = (
-      <div className="px-4 py-2 text-sm text-red-500">
+      <div className="px-2.5 py-2 text-sm text-destructive">
         Could not load languages.{' '}
-        <button type="button" onClick={retry} className="underline">
+        <button
+          type="button"
+          onClick={retry}
+          className="rounded-sm font-medium underline underline-offset-4 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
           Retry
         </button>
       </div>
     )
   } else if (options.length === 0) {
-    content = <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">Loading languages…</div>
+    content = (
+      <div className="flex items-center gap-2 px-2.5 py-2 text-sm text-muted-foreground">
+        <LoaderCircleIcon aria-hidden="true" className="size-3.5 animate-spin" />
+        Loading languages…
+      </div>
+    )
   } else if (visible.length === 0) {
-    content = <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">No languages found.</div>
+    content = <div className="px-2.5 py-6 text-center text-sm text-muted-foreground">No languages found.</div>
   } else {
     content = (
       <>
         {visible.map((opt, i) => (
           <Fragment key={opt.value}>
             {!query && i > 0 && visible[i - 1]?.pinned && !opt.pinned && (
-              <div className="border-t border-neutral-20 dark:border-neutral-70 my-1" />
+              <div aria-hidden="true" className="-mx-1 my-1 h-px bg-border" />
             )}
             <ComboboxOption
               value={opt}
-              className="group relative cursor-pointer select-none py-2 pl-10 pr-4 text-sm text-gray-900 dark:text-white data-[focus]:bg-primary-500 data-[focus]:text-white"
+              className="group relative flex cursor-pointer items-center gap-2 rounded-sm py-1.5 ps-2.5 pe-8 text-sm text-foreground outline-none select-none data-focus:bg-accent data-focus:text-accent-foreground"
             >
-              <span className="block truncate group-data-[selected]:font-semibold">{opt.label}</span>
-              <span className="absolute inset-y-0 left-0 hidden items-center pl-3 text-primary-600 group-data-[focus]:text-white group-data-[selected]:flex">
-                <CheckIcon className="h-5 w-5" aria-hidden="true" />
-              </span>
+              <span className="block truncate group-data-[selected]:font-medium">{opt.label}</span>
+              <CheckIcon
+                className="absolute end-2.5 hidden size-4 text-primary group-data-[selected]:block"
+                aria-hidden="true"
+              />
             </ComboboxOption>
           </Fragment>
         ))}
         {hiddenCount > 0 && (
-          <div className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400 border-t border-neutral-20 dark:border-neutral-70">
+          <div className="-mx-1 mt-1 border-t border-border px-3.5 pt-2 pb-1 text-xs text-muted-foreground">
             {hiddenCount} more, type to narrow your search
           </div>
         )}
@@ -76,19 +87,24 @@ export function LanguageCombobox({ value, onChange, disabled = false, className 
       immediate
     >
       <div className="relative">
+        <SearchIcon
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 start-3 my-auto size-4 text-muted-foreground"
+        />
         <ComboboxInput
-          className={`input pr-10 ${className}`}
+          className={cn('input ps-9 pe-10', className)}
           displayValue={(opt: LanguageOption | null) => opt?.label ?? value}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search languages…"
         />
-        <ComboboxButton className="absolute inset-y-0 right-0 flex items-center pr-3">
-          <ChevronUpDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+        <ComboboxButton className="absolute inset-y-0 end-0 flex items-center rounded-e-lg pe-3 ps-2 text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:text-foreground">
+          <ChevronsUpDownIcon className="size-4" aria-hidden="true" />
         </ComboboxButton>
 
         <ComboboxOptions
           anchor="bottom"
-          className="z-50 max-h-60 w-[var(--input-width)] overflow-auto rounded-lg border border-neutral-20 dark:border-neutral-70 bg-white dark:bg-surface py-1 shadow-lg focus:outline-hidden"
+          transition
+          className="z-50 max-h-60! w-[var(--input-width)] origin-top overflow-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-overlay [--anchor-gap:--spacing(1)] transition duration-(--duration-fast) ease-standard focus:outline-hidden data-closed:scale-95 data-closed:opacity-0"
         >
           {content}
         </ComboboxOptions>

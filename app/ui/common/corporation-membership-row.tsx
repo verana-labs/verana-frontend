@@ -1,12 +1,12 @@
 'use client'
 
-import { faCheck } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { CheckIcon } from 'lucide-react'
 import { translate } from '@/i18n/dataview'
 import type { CorporationAttention } from '@/lib/corporation-attention'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import type { DidEnrichment } from '@/lib/resolverClient'
-import { atLeast } from '@/ui/corporation/shared'
+import { cn } from '@/lib/utils'
+import { atLeast, nameInitials } from '@/ui/corporation/shared'
 import { countryCodeToFlag } from '@/util/util'
 
 export function corporationDisplayName(enrichment: DidEnrichment | null | undefined): string | null {
@@ -30,7 +30,10 @@ function AttentionBadge({
     <span
       title={label}
       aria-label={`${shown} ${label}`}
-      className={`min-w-5 h-5 px-1 text-white text-xs font-bold rounded-full flex items-center justify-center leading-none ${className}`}
+      className={cn(
+        'flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] leading-none font-semibold tabular-nums',
+        className
+      )}
     >
       {shown}
     </span>
@@ -53,42 +56,51 @@ export function CorporationMembershipRow({
 
   return (
     <>
-      <span className="min-w-0">
-        <span className="flex items-center gap-2">
-          {flag ? <span aria-hidden="true">{flag}</span> : null}
-          <span className="break-all font-medium text-gray-900 dark:text-white">{name ?? corporation.did}</span>
-          {isActing ? <FontAwesomeIcon icon={faCheck} className="text-primary-600 shrink-0" /> : null}
+      <span className="flex min-w-0 items-start gap-2.5">
+        <span
+          aria-hidden="true"
+          className={cn(
+            'mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-semibold ring-1',
+            isActing ? 'bg-primary text-primary-foreground ring-primary' : 'bg-primary/10 text-primary ring-primary/15'
+          )}
+        >
+          {nameInitials(name ?? corporation.did)}
         </span>
-        {name ? (
-          <span className="block break-all text-xs text-gray-500 dark:text-gray-400">{corporation.did}</span>
-        ) : null}
-        <span className="flex items-center gap-1">
-          {operator ? (
-            <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
-              {translate('corporation.selector.operator')}
-            </span>
-          ) : null}
-          {member ? (
-            <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-neutral-20 text-gray-700 dark:bg-neutral-70 dark:text-gray-200">
-              {translate('corporation.selector.member')}
-              {weight ? ` ×${weight}` : ''}
-            </span>
-          ) : null}
+        <span className="min-w-0">
+          <span className="flex items-center gap-1.5">
+            {flag ? <span aria-hidden="true">{flag}</span> : null}
+            <span className="font-medium break-all text-foreground">{name ?? corporation.did}</span>
+            {isActing ? <CheckIcon aria-hidden="true" className="size-4 shrink-0 text-primary" /> : null}
+          </span>
+          {name ? <span className="block text-xs break-all text-muted-foreground">{corporation.did}</span> : null}
+          <span className="mt-1 flex flex-wrap items-center gap-1">
+            {operator ? (
+              <span className="rounded-md border border-primary/25 bg-primary/10 px-1.5 py-px text-[10px] font-semibold tracking-wide text-primary uppercase">
+                {translate('corporation.selector.operator')}
+              </span>
+            ) : null}
+            {member ? (
+              <span className="rounded-md border border-border bg-muted px-1.5 py-px text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+                {translate('corporation.selector.member')}
+                {weight ? ` ×${weight}` : ''}
+              </span>
+            ) : null}
+          </span>
         </span>
       </span>
       {isActing || !attention ? null : (
-        <span className="ml-auto flex items-center gap-1">
+        <span className="ms-auto flex shrink-0 items-center gap-1">
           <AttentionBadge
             count={attention.pendingTasks}
             partial={attention.pendingTasksPartial}
             label={translate('corporation.selector.pendingtasks')}
-            className="bg-amber-500"
+            className="bg-warning/15 text-warning ring-1 ring-warning/30"
           />
           <AttentionBadge
             count={attention.pendingVotes}
             partial={attention.pendingVotesPartial}
             label={translate('corporation.selector.pendingvotes')}
-            className="bg-red-500"
+            className="bg-destructive text-white dark:text-neutral-950"
           />
         </span>
       )}

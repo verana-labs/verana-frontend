@@ -1,32 +1,48 @@
 'use client'
 
+import { GlobeIcon, LanguagesIcon, type LucideIcon, PaletteIcon } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { type ReactNode, useEffect, useState } from 'react'
 import { VERANA_GRAPH_URL, VERANA_INDEXER_BASE_URL } from '@/config/env'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { getLocale, isLocale, SUPPORTED_LOCALES, saveLocale, setLocale, translate } from '@/i18n/dataview'
+import { CopyValueButton } from '@/ui/agents-tasks-settings/copy-value-button'
+import { THEMES, type ThemeOption, ThemeRadioCards } from '@/ui/agents-tasks-settings/theme-radio-cards'
 import TitleAndButton from '@/ui/common/title-and-button'
 import { resolveTranslatable } from '@/ui/dataview/types'
+import { Stagger, StaggerItem } from '@/ui/motion/stagger'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/shadcn/card'
 
 const t = (key: string) => resolveTranslatable({ key }, translate) ?? key
 
-const THEMES = ['system', 'light', 'dark'] as const
+const isThemeOption = (value: string | undefined): value is ThemeOption => THEMES.some((option) => option === value)
 
 function SettingsSection({
+  icon: Icon,
   title,
   description,
   children,
 }: {
+  icon: LucideIcon
   title: string
   description: string
   children: ReactNode
 }) {
   return (
-    <section className="mb-6 bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h2>
-      <p className="text-sm text-neutral-70 dark:text-neutral-70 mb-4">{description}</p>
-      {children}
-    </section>
+    <StaggerItem as="section">
+      <Card className="gap-5 py-5 shadow-card ring-0 sm:py-6 [--card-spacing:--spacing(5)] sm:[--card-spacing:--spacing(6)]">
+        <CardHeader className="grid-cols-[auto_1fr] gap-x-3">
+          <span className="row-span-2 flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Icon aria-hidden="true" className="size-4" />
+          </span>
+          <CardTitle>
+            <h2 className="text-base font-semibold">{title}</h2>
+          </CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </CardHeader>
+        <CardContent>{children}</CardContent>
+      </Card>
+    </StaggerItem>
   )
 }
 
@@ -61,53 +77,63 @@ export default function SettingsPage() {
     <>
       <TitleAndButton title={t('settings.title')} description={[t('settings.desc')]} />
 
-      <SettingsSection title={t('settings.locale.title')} description={t('settings.locale.desc')}>
-        <label htmlFor="settings-locale" className="text-sm text-neutral-70 dark:text-neutral-70 block mb-1">
-          {t('settings.locale.label')}
-        </label>
-        <select
-          id="settings-locale"
-          className="select w-full sm:w-64"
-          value={locale}
-          onChange={(event) => changeLocale(event.target.value)}
+      <Stagger className="flex max-w-3xl flex-col gap-4">
+        <SettingsSection
+          icon={LanguagesIcon}
+          title={t('settings.locale.title')}
+          description={t('settings.locale.desc')}
         >
-          {SUPPORTED_LOCALES.map((option) => (
-            <option key={option} value={option}>
-              {t(`settings.locale.${option}`)}
-            </option>
-          ))}
-        </select>
-      </SettingsSection>
-
-      <SettingsSection title={t('settings.theme.title')} description={t('settings.theme.desc')}>
-        <div role="radiogroup" className="flex gap-6">
-          {THEMES.map((option) => (
-            <label key={option} className="flex items-center gap-2 text-sm text-gray-900 dark:text-white">
-              <input
-                type="radio"
-                name="settings-theme"
-                value={option}
-                checked={mounted && theme === option}
-                onChange={() => setTheme(option)}
-              />
-              {t(`settings.theme.${option}`)}
+          <div className="flex flex-col gap-2">
+            <label htmlFor="settings-locale" className="sr-only">
+              {t('settings.locale.label')}
             </label>
-          ))}
-        </div>
-      </SettingsSection>
+            <select
+              id="settings-locale"
+              className="select w-full sm:w-72"
+              value={locale}
+              onChange={(event) => changeLocale(event.target.value)}
+            >
+              {SUPPORTED_LOCALES.map((option) => (
+                <option key={option} value={option}>
+                  {t(`settings.locale.${option}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+        </SettingsSection>
 
-      <SettingsSection title={t('settings.network.title')} description={t('settings.network.desc')}>
-        <dl className="grid grid-cols-1 sm:grid-cols-[max-content_1fr] gap-x-6 gap-y-3">
-          {network.map(([key, value]) => (
-            <div key={key} className="contents">
-              <dt className="text-sm text-neutral-70 dark:text-neutral-70">{t(`settings.network.${key}`)}</dt>
-              <dd className="text-sm font-mono break-all text-gray-900 dark:text-white">
-                {value || t('settings.network.missing')}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </SettingsSection>
+        <SettingsSection icon={PaletteIcon} title={t('settings.theme.title')} description={t('settings.theme.desc')}>
+          <ThemeRadioCards
+            value={mounted && isThemeOption(theme) ? theme : undefined}
+            onChange={setTheme}
+            label={t('settings.theme.title')}
+            optionLabel={(option) => t(`settings.theme.${option}`)}
+          />
+        </SettingsSection>
+
+        <SettingsSection icon={GlobeIcon} title={t('settings.network.title')} description={t('settings.network.desc')}>
+          <dl className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+            {network.map(([key, value]) => (
+              <div
+                key={key}
+                className="grid grid-cols-1 gap-x-6 gap-y-0.5 px-3.5 py-2.5 transition-colors duration-(--duration-base) hover:bg-muted/40 sm:grid-cols-[10rem_1fr] sm:items-center"
+              >
+                <dt className="text-sm text-muted-foreground">{t(`settings.network.${key}`)}</dt>
+                <dd className="flex min-w-0 items-center justify-between gap-2">
+                  {value ? (
+                    <>
+                      <span className="min-w-0 font-mono text-xs break-all text-foreground sm:text-sm">{value}</span>
+                      <CopyValueButton value={value} label={t(`settings.network.${key}`)} className="-me-1.5" />
+                    </>
+                  ) : (
+                    <span className="text-sm text-muted-foreground italic">{t('settings.network.missing')}</span>
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </SettingsSection>
+      </Stagger>
     </>
   )
 }

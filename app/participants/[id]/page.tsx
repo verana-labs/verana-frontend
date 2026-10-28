@@ -15,6 +15,7 @@ import ParticipantTree, { mergeTrees, ROOT_NODE_ID } from '@/ui/common/participa
 import { withAuthority } from '@/ui/common/participant-tree-filter'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import type { Participant } from '@/ui/dataview/datasections/participant'
+import { TreeEmpty, TreeError, TreeSkeleton } from '@/ui/participants/tree-states'
 import {
   childRoleOnboardingAction,
   childRoleOnboardingLabel,
@@ -87,6 +88,7 @@ export default function ParticipantsPage() {
     pageKey,
     refetch: refetchParticipants,
     hasNext,
+    errorParticipants,
   } = useParticipants(schemaId, role, validatorId, { after: request.after })
   const { credentialSchema } = useCredentialSchemaData(schemaId)
   const ecosystemId = credentialSchema ? String(credentialSchema.ecosystemId) : ''
@@ -217,6 +219,17 @@ export default function ParticipantsPage() {
     [pages]
   )
 
+  const rootLoaded = pages[ROOT_NODE_ID] !== undefined
+  const placeholder = rootLoaded ? (
+    participantTree.length === 0 ? (
+      <TreeEmpty />
+    ) : null
+  ) : errorParticipants && role === 'ECOSYSTEM' ? (
+    <TreeError onRetry={() => void refetchParticipants()} />
+  ) : (
+    <TreeSkeleton />
+  )
+
   return (
     <ParticipantTree
       tree={participantTree}
@@ -239,6 +252,7 @@ export default function ParticipantsPage() {
       refreshRoot={() => setRefreshRoot(true)}
       onConnect={!isWalletConnected ? connect : undefined}
       onRetryFetch={retryFetch}
+      placeholder={placeholder}
     />
   )
 }

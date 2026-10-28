@@ -428,7 +428,7 @@ describe('role class helpers', () => {
   it('roleColorClass maps roles to text colour classes', () => {
     expect(roleColorClass('ECOSYSTEM')).toBe('text-purple-500')
     expect(roleColorClass('ISSUER_GRANTOR')).toBe('text-blue-500')
-    expect(roleColorClass('whatever')).toBe('text-gray-500')
+    expect(roleColorClass('whatever')).toBe('text-muted-foreground')
   })
 
   it('roleJoinColorClass omits ECOSYSTEM and defaults to gray, and carries both themes', () => {

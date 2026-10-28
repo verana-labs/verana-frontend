@@ -1,7 +1,6 @@
 'use client'
 
-import { faShieldHalved } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { ShieldCheckIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { translate } from '@/i18n/dataview'
 import { displayedVersion } from '@/lib/gf-document'
@@ -29,22 +28,22 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
   )
   const version = displayedVersion(ecosystem.versions, ecosystem.activeVersion)
   return (
-    <div className="border border-neutral-20 dark:border-neutral-70 rounded-xl p-6 mb-6">
-      <div className="flex items-start space-x-4 mb-6">
-        <div className="w-12 h-12 bg-linear-to-br/srgb from-primary-500 to-primary-700 rounded-lg flex items-center justify-center shrink-0">
-          <FontAwesomeIcon icon={faShieldHalved} className="text-white text-2xl" />
+    <div className="mb-6 rounded-xl bg-card p-5 shadow-card sm:p-6">
+      <div className="mb-5 flex items-start gap-4">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <ShieldCheckIcon className="size-5" aria-hidden="true" />
         </div>
-        <div className="flex-1 min-w-0 break-all">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{ecosystem.did}</h3>
-          <p className="text-xs font-mono text-neutral-70 dark:text-neutral-70 mt-2">{ecosystem.did}</p>
+        <div className="min-w-0 flex-1 break-all">
+          <h3 className="text-base font-semibold tracking-tight">{ecosystem.did}</h3>
+          <p className="mt-1 font-mono text-xs text-muted-foreground">{ecosystem.did}</p>
         </div>
       </div>
 
-      <div className="border border-neutral-20 dark:border-neutral-70 rounded-lg p-4 sm:p-6 mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 text-center">
+      <div className="mb-4 rounded-xl border border-border bg-background p-4 sm:p-5">
+        <h3 className="mb-1 text-center text-base font-semibold tracking-tight">
           {resolveTranslatable({ key: 'join.egf.title' }, translate)}
         </h3>
-        <p className="text-sm text-neutral-70 dark:text-neutral-70 mb-4 text-center">
+        <p className="mb-4 text-center text-sm text-muted-foreground">
           {[
             `${resolveTranslatable({ key: 'join.egf.version.label' }, translate)} ${version?.version ?? ecosystem.activeVersion}`,
             version?.activeSince
@@ -57,25 +56,25 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
         <GfDocumentViewer documents={version?.documents ?? []} onStateChange={onViewerState} />
       </div>
 
-      <div className="flex items-start space-x-3">
+      <div className="flex items-start gap-3">
         <input
           id="egf-accept"
           type="checkbox"
           checked={accepted}
           disabled={locked}
           onChange={(e) => onAcceptedChange(e.target.checked)}
-          className="mt-1 w-4 h-4 text-primary-600 bg-white dark:bg-surface border-neutral-20 dark:border-neutral-70 rounded checked:bg-current checked:border-transparent focus:ring-primary-500 disabled:opacity-50"
+          className="mt-0.5 size-4 shrink-0 rounded border-input accent-primary focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
         />
         <label
           htmlFor="egf-accept"
-          className={`text-sm text-gray-700 dark:text-gray-300 ${locked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+          className={`text-sm leading-snug ${locked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
         >
           {resolveTranslatable({ key: 'join.egf.acceptancemessage' }, translate)}
         </label>
         {state === 'unverified' ? <VerificationBadge state="unverified" /> : null}
       </div>
       {blocked ? (
-        <p className="mt-2 text-sm text-red-700 dark:text-red-300">
+        <p role="alert" className="mt-2 text-sm text-destructive">
           {resolveTranslatable({ key: 'join.egf.accept.blocked' }, translate)}
         </p>
       ) : null}

@@ -1,20 +1,24 @@
 'use client'
 
-import { faShieldHalved } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ArrowUpRightIcon, LandmarkIcon, ScaleIcon } from 'lucide-react'
 import Link from 'next/link'
+import { useState } from 'react'
 import type { EcosystemSchemaPage } from '@/hooks/useCredentialSchemas'
-import { translate } from '@/i18n/dataview'
+import { displayedVersion } from '@/lib/gf-document'
 import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
+import { cn } from '@/lib/utils'
 import ClaimText from '@/ui/common/claim-text'
-import CsCard from '@/ui/common/cs-card'
-import { EgfViewerToggle } from '@/ui/common/egf-viewer-toggle'
+import GfDocumentViewer from '@/ui/common/gf-document-viewer'
 import { ShowMoreButton } from '@/ui/common/keyset-pagination'
 import LogoImage from '@/ui/common/logo-image'
 import TrustBadge from '@/ui/common/trust-badge'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import type { ParticipantRole } from '@/ui/dataview/datasections/participant'
-import { resolveTranslatable } from '@/ui/dataview/types'
+import { SchemaCard } from '@/ui/discover/schema-card'
+import { discoverText as t } from '@/ui/discover/text'
+import { DURATION, EASE } from '@/ui/motion/tokens'
+import { Button } from '@/ui/shadcn/button'
 import { countryCodeToFlag, formatNumber, formatVNAFromUVNA, roleBadgeClass, shortenDID } from '@/util/util'
 
 type DiscoverEcosystemCardProps = {
@@ -27,9 +31,7 @@ type DiscoverEcosystemCardProps = {
   canJoin: boolean
 }
 
-function t(key: string): string {
-  return resolveTranslatable({ key }, translate) ?? key
-}
+type Counter = { key: string; value: string; empty: boolean }
 
 export function DiscoverEcosystemCard({
   ecosystem,
@@ -40,73 +42,138 @@ export function DiscoverEcosystemCard({
   roles,
   canJoin,
 }: DiscoverEcosystemCardProps) {
+  const [egfOpen, setEgfOpen] = useState(false)
   const identity = ecosystem.trustData
   const serviceName = identity?.serviceName ?? shortenDID(ecosystem.did) ?? ecosystem.did
-  const orgName = identity?.organizationName ?? shortenDID(ecosystem.did) ?? ecosystem.did
+  const orgName = identity?.organizationName
+  const flag = identity?.countryCode ? countryCodeToFlag(identity.countryCode) : null
   const archived = Boolean(ecosystem.archived)
-  const counters = [
-    ['datatable.ecosystem.card.activeSchemas', formatNumber(ecosystem.activeSchemas, true)],
-    ['datatable.ecosystem.card.participants', formatNumber(ecosystem.participants, true)],
-    ['datatable.ecosystem.card.trustValue', formatVNAFromUVNA(ecosystem.weight)],
-    ['datatable.ecosystem.card.issuedCredentials', formatNumber(ecosystem.issued, true)],
-    ['datatable.ecosystem.card.verifiedCredentials', formatNumber(ecosystem.verified, true)],
-  ] as const
+  const egfDocuments = displayedVersion(ecosystem.versions ?? [], ecosystem.activeVersion)?.documents ?? []
+  const egfPanelId = `egf-panel-${ecosystem.id}`
+  const counters: Counter[] = [
+    {
+      key: 'datatable.ecosystem.card.activeSchemas',
+      value: formatNumber(ecosystem.activeSchemas, true),
+      empty: !ecosystem.activeSchemas,
+    },
+    {
+      key: 'datatable.ecosystem.card.participants',
+      value: formatNumber(ecosystem.participants, true),
+      empty: !ecosystem.participants,
+    },
+    {
+      key: 'datatable.ecosystem.card.trustValue',
+      value: formatVNAFromUVNA(ecosystem.weight),
+      empty: !ecosystem.weight || /^0*$/.test(ecosystem.weight),
+    },
+    {
+      key: 'datatable.ecosystem.card.issuedCredentials',
+      value: formatNumber(ecosystem.issued, true),
+      empty: !ecosystem.issued,
+    },
+    {
+      key: 'datatable.ecosystem.card.verifiedCredentials',
+      value: formatNumber(ecosystem.verified, true),
+      empty: !ecosystem.verified,
+    },
+  ]
+  const hasSchemaSection = Boolean(schemasError) || credentialSchemas.items.length > 0 || moreSchemasFailed
 
   return (
     <article
       aria-label={serviceName}
-      className={`bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl overflow-hidden ${
-        archived ? 'archived-watermark' : ''
-      }`}
+      className={cn(
+        '@container/eco relative overflow-hidden rounded-xl bg-card text-card-foreground shadow-card',
+        archived && 'archived-watermark'
+      )}
     >
-      <div className={`p-6 ${archived ? 'archived-bg' : ''}`}>
-        <div className="flex items-start space-x-3 mb-3">
-          <LogoImage
-            src={identity?.serviceLogoUrl}
-            fallbackSrc={serviceIdenticonUrl(ecosystem.did)}
-            className="w-12 h-12 rounded-lg shrink-0 object-contain"
-          />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white break-words" title={serviceName}>
-                {serviceName}
-              </h2>
-              <TrustBadge state={identity?.trustStatus} size="xl" />
+      <div className={cn('flex flex-col gap-5 p-4 sm:p-6', archived && 'archived-bg')}>
+        <header className="flex flex-col gap-4 @2xl/eco:flex-row @2xl/eco:items-start @2xl/eco:justify-between">
+          <div className="flex min-w-0 items-start gap-4">
+            <LogoImage
+              src={identity?.serviceLogoUrl}
+              fallbackSrc={serviceIdenticonUrl(ecosystem.did)}
+              className="size-12 shrink-0 rounded-xl bg-background object-contain p-1 ring-1 ring-foreground/10 sm:size-14"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h2
+                  className="min-w-0 text-lg leading-snug font-semibold tracking-tight break-words text-foreground"
+                  title={serviceName}
+                >
+                  {serviceName}
+                </h2>
+                <TrustBadge state={identity?.trustStatus} size="xl" />
+              </div>
+              {identity?.serviceDescription ? (
+                <ClaimText
+                  text={identity.serviceDescription}
+                  format={identity.serviceDescriptionFormat}
+                  className="mt-1 line-clamp-2 text-sm break-words text-muted-foreground"
+                  title={identity.serviceDescription}
+                />
+              ) : null}
+              {orgName ? (
+                <div className="mt-2.5 flex min-w-0 items-center gap-2">
+                  <LogoImage
+                    src={identity?.organizationLogoUrl}
+                    fallbackSrc={serviceAvatarUrl(orgName)}
+                    className="size-5 shrink-0 rounded-md object-contain ring-1 ring-foreground/10"
+                  />
+                  <h3 className="truncate text-sm font-medium text-muted-foreground" title={orgName}>
+                    {orgName}
+                  </h3>
+                  {flag ? (
+                    <span className="text-base leading-none" aria-hidden="true">
+                      {flag}
+                    </span>
+                  ) : null}
+                </div>
+              ) : (
+                <h3 className="mt-1.5 truncate font-mono text-xs text-muted-foreground" title={ecosystem.did}>
+                  {ecosystem.did}
+                </h3>
+              )}
             </div>
-            {identity?.serviceDescription ? (
-              <ClaimText
-                text={identity.serviceDescription}
-                format={identity.serviceDescriptionFormat}
-                className="text-xs text-neutral-70 dark:text-neutral-70 mt-1 line-clamp-2 break-words"
-                title={identity.serviceDescription}
-              />
-            ) : null}
           </div>
-        </div>
 
-        <div className="flex items-start space-x-2 mb-4">
-          <LogoImage
-            src={identity?.organizationLogoUrl}
-            fallbackSrc={serviceAvatarUrl(identity?.organizationName ?? ecosystem.did)}
-            className="w-8 h-8 rounded shrink-0 object-contain"
-          />
-          <div className="flex-1 min-w-0">
-            <h3 className="truncate text-sm font-medium text-gray-900 dark:text-white" title={orgName}>
-              {orgName}
-            </h3>
-            <span className="text-lg leading-none" aria-hidden="true">
-              {countryCodeToFlag(identity?.countryCode)}
-            </span>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            {egfDocuments.length > 0 ? (
+              <Button
+                type="button"
+                variant="outline"
+                aria-expanded={egfOpen}
+                aria-controls={egfPanelId}
+                onClick={() => setEgfOpen((open) => !open)}
+                className={cn('h-9 px-3', egfOpen && 'border-primary/40 bg-primary/10 text-primary dark:bg-primary/15')}
+              >
+                <ScaleIcon aria-hidden="true" />
+                {t('discover.btn.egf')}
+              </Button>
+            ) : null}
+            <Button asChild variant="outline" className="group/view h-9 px-3">
+              <Link href={`/ecosystems/${ecosystem.id}`}>
+                <LandmarkIcon aria-hidden="true" />
+                {t('discover.btn.view')}
+                <ArrowUpRightIcon
+                  aria-hidden="true"
+                  className="text-muted-foreground transition-transform duration-(--duration-base) ease-emphasized group-hover/view:translate-x-0.5 group-hover/view:-translate-y-0.5"
+                />
+              </Link>
+            </Button>
           </div>
-        </div>
+        </header>
 
         {roles.length > 0 ? (
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            <span className="text-xs text-neutral-70 dark:text-neutral-70">{t('discover.roles.label')}</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">{t('discover.roles.label')}</span>
             {roles.map((role) => (
               <span
                 key={role}
-                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${roleBadgeClass(role)}`}
+                className={cn(
+                  'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+                  roleBadgeClass(role)
+                )}
               >
                 {role}
               </span>
@@ -114,46 +181,69 @@ export function DiscoverEcosystemCard({
           </div>
         ) : null}
 
-        <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-sm mb-4">
-          {counters.map(([key, value]) => (
-            <div key={key} className="min-w-0">
-              <dt className="text-neutral-70 dark:text-neutral-70 break-words">{t(key)}</dt>
-              <dd className="font-medium text-gray-900 dark:text-white break-words">{value}</dd>
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 border-t pt-4 @md/eco:grid-cols-3 @2xl/eco:grid-cols-5 @2xl/eco:gap-0 @2xl/eco:divide-x">
+          {counters.map(({ key, value, empty }) => (
+            <div
+              key={key}
+              className="flex min-w-0 flex-col gap-0.5 @2xl/eco:px-5 @2xl/eco:first:pl-0 @2xl/eco:last:pr-0"
+            >
+              <dt className="text-xs text-pretty text-muted-foreground">{t(key)}</dt>
+              <dd
+                className={cn(
+                  'text-sm font-semibold tracking-tight break-words tabular-nums',
+                  empty ? 'text-muted-foreground' : 'text-foreground'
+                )}
+              >
+                {value}
+              </dd>
             </div>
           ))}
         </dl>
 
-        <div className="mb-6">
-          <EgfViewerToggle versions={ecosystem.versions ?? []} activeVersion={ecosystem.activeVersion}>
-            <Link
-              href={`/ecosystems/${ecosystem.id}`}
-              className="inline-flex items-center px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-sm font-medium"
+        <AnimatePresence initial={false}>
+          {egfOpen && egfDocuments.length > 0 ? (
+            <motion.div
+              id={egfPanelId}
+              key="egf"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: DURATION.slow, ease: EASE.emphasized }}
+              className="-my-1 overflow-hidden"
             >
-              <FontAwesomeIcon className="mr-2" aria-hidden="true" icon={faShieldHalved} />
-              {t('discover.btn.view')}
-            </Link>
-          </EgfViewerToggle>
-        </div>
+              <div className="py-1">
+                <GfDocumentViewer documents={egfDocuments} />
+              </div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
 
-        <div className="space-y-4">
-          {schemasError && !credentialSchemas.items.length ? (
-            <div className="error-pane">{schemasError}</div>
-          ) : (
-            <>
-              {credentialSchemas.items.map((schema) => (
-                <CsCard
-                  key={schema.id}
-                  credentialSchema={schema}
-                  joinHref={canJoin && !archived && !schema.archived ? `/participants/${schema.id}` : undefined}
-                />
-              ))}
-              {moreSchemasFailed ? (
-                <p className="text-sm text-amber-700 dark:text-amber-300">{t('discover.cs.more.error')}</p>
-              ) : null}
-              {credentialSchemas.hasNext ? <ShowMoreButton onClick={onLoadMoreSchemas} /> : null}
-            </>
-          )}
-        </div>
+        {hasSchemaSection ? (
+          <div className="flex flex-col gap-3">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              {t('datatable.cs.title')}
+            </p>
+            {schemasError && !credentialSchemas.items.length ? (
+              <div className="error-pane">{schemasError}</div>
+            ) : (
+              <>
+                {credentialSchemas.items.map((schema) => (
+                  <SchemaCard
+                    key={schema.id}
+                    credentialSchema={schema}
+                    joinHref={canJoin && !archived && !schema.archived ? `/participants/${schema.id}` : undefined}
+                  />
+                ))}
+                {moreSchemasFailed ? <p className="text-sm text-warning">{t('discover.cs.more.error')}</p> : null}
+                {credentialSchemas.hasNext ? (
+                  <div>
+                    <ShowMoreButton onClick={onLoadMoreSchemas} />
+                  </div>
+                ) : null}
+              </>
+            )}
+          </div>
+        ) : null}
       </div>
     </article>
   )

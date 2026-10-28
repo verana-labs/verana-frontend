@@ -1,6 +1,6 @@
 'use client'
 
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import {
   faBan,
   faCheck,
@@ -14,12 +14,21 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { translate } from '@/i18n/dataview'
 import { formatSchemaAmount, type SchemaPricing } from '@/lib/pricing-asset'
+import { cn } from '@/lib/utils'
 import { resolveTranslatable } from '@/ui/dataview/types'
+import {
+  TimelineContent,
+  TimelineDate,
+  TimelineIndicator,
+  TimelineItem,
+  TimelineSeparator,
+  TimelineTitle,
+} from '@/ui/participants/timeline'
 import { formatDateTime, formatVNAFromUVNA, shortenMiddle } from '@/util/util'
-import { ParticipantHistory } from '../dataview/datasections/participant'
+import type { ParticipantHistory } from '../dataview/datasections/participant'
 
 const tr = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
 
@@ -35,24 +44,32 @@ export default function ParticipantTimeline({
   const summary = describeChanges(participantHistory.msg, participantHistory.changes, feePricing)
 
   return (
-    <div className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${iconBgClass}`}>
-        <FontAwesomeIcon icon={icon} className={`text-xs ${iconColorClass}`} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 dark:text-white">{label}</p>
-        <p className="text-xs text-neutral-70 dark:text-neutral-70 mt-1 break-all">
+    <TimelineItem>
+      <TimelineIndicator className={cn(iconBgClass, iconColorClass)}>
+        <FontAwesomeIcon icon={icon} className="size-3" />
+      </TimelineIndicator>
+      <TimelineSeparator />
+      <TimelineTitle>{label}</TimelineTitle>
+      <TimelineContent className="text-xs break-all">
+        <TimelineDate dateTime={participantHistory.timestamp} className="inline">
           {formatDateTime(participantHistory.timestamp)}
-          {account ? (
-            <>
-              {' '}
-              {tr('participantcard.timeline.by', 'by')} <span className="font-mono">{account}</span>
-            </>
-          ) : null}
+        </TimelineDate>
+        {account ? (
+          <>
+            {' '}
+            {tr('participantcard.timeline.by', 'by')}{' '}
+            <span className="font-mono" title={participantHistory.account}>
+              {account}
+            </span>
+          </>
+        ) : null}
+      </TimelineContent>
+      {summary ? (
+        <p className="mt-1 w-fit max-w-full rounded-md bg-muted px-1.5 py-0.5 text-xs text-foreground/80 break-words">
+          {summary}
         </p>
-        {summary ? <p className="text-xs text-gray-700 dark:text-gray-300 mt-1 break-words">{summary}</p> : null}
-      </div>
-    </div>
+      ) : null}
+    </TimelineItem>
   )
 }
 
@@ -70,71 +87,71 @@ export function getTimelineStyle(msg: string): TimelineStyle {
       return {
         label: tr('participantcard.timeline.event.created', 'Participant Created'),
         icon: faPlus,
-        iconBgClass: 'bg-purple-100 dark:bg-purple-900/20',
-        iconColorClass: 'text-purple-600 dark:text-purple-400',
+        iconBgClass: 'bg-primary/10',
+        iconColorClass: 'text-primary',
       }
     case 'StartParticipantOP':
       return {
         label: tr('participantcard.timeline.event.startop', 'Start Onboarding Process'),
         icon: faPlay,
-        iconBgClass: 'bg-blue-100 dark:bg-blue-900/20',
-        iconColorClass: 'text-blue-600 dark:text-blue-400',
+        iconBgClass: 'bg-info/10',
+        iconColorClass: 'text-info',
       }
     case 'SetParticipantOPToValidated':
       return {
         label: tr('participantcard.timeline.event.setvalidated', 'Accept and Set Validated'),
         icon: faCheck,
-        iconBgClass: 'bg-green-100 dark:bg-green-900/20',
-        iconColorClass: 'text-green-600 dark:text-green-400',
+        iconBgClass: 'bg-success/10',
+        iconColorClass: 'text-success',
       }
     case 'RenewParticipantOP':
       return {
         label: tr('participantcard.timeline.event.renewop', 'Renew Onboarding Process'),
         icon: faRotate,
-        iconBgClass: 'bg-blue-100 dark:bg-blue-900/20',
-        iconColorClass: 'text-blue-600 dark:text-blue-400',
+        iconBgClass: 'bg-info/10',
+        iconColorClass: 'text-info',
       }
     case 'CancelParticipantOPLastRequest':
       return {
         label: tr('participantcard.timeline.event.cancelop', 'Cancel Request'),
         icon: faXmark,
-        iconBgClass: 'bg-gray-100 dark:bg-gray-900/20',
-        iconColorClass: 'text-gray-600 dark:text-gray-400',
+        iconBgClass: 'bg-muted',
+        iconColorClass: 'text-muted-foreground',
       }
     case 'SetParticipantEffectiveUntil':
       return {
         label: tr('participantcard.timeline.event.extended', 'Participant Adjusted'),
         icon: faClockRotateLeft,
-        iconBgClass: 'bg-primary-100 dark:bg-primary-900/20',
-        iconColorClass: 'text-primary-600 dark:text-primary-400',
+        iconBgClass: 'bg-primary/10',
+        iconColorClass: 'text-primary',
       }
     case 'RevokeParticipant':
       return {
         label: tr('participantcard.timeline.event.revoked', 'Participant Revoked'),
         icon: faBan,
-        iconBgClass: 'bg-red-100 dark:bg-red-900/20',
-        iconColorClass: 'text-red-600 dark:text-red-400',
+        iconBgClass: 'bg-destructive/10',
+        iconColorClass: 'text-destructive',
       }
     case 'SlashParticipantTrustDeposit':
       return {
         label: tr('participantcard.timeline.event.slashed', 'Deposit Slashed'),
         icon: faTriangleExclamation,
-        iconBgClass: 'bg-red-100 dark:bg-red-900/20',
-        iconColorClass: 'text-red-600 dark:text-red-400',
+        iconBgClass: 'bg-destructive/10',
+        iconColorClass: 'text-destructive',
       }
     case 'RepayParticipantSlashedTrustDeposit':
       return {
         label: tr('participantcard.timeline.event.repaid', 'Slashed Deposit Repaid'),
         icon: faHandHoldingDollar,
-        iconBgClass: 'bg-green-100 dark:bg-green-900/20',
-        iconColorClass: 'text-green-600 dark:text-green-400',
+        iconBgClass: 'bg-success/10',
+        iconColorClass: 'text-success',
       }
     default:
       return {
         label: msg || tr('participantcard.timeline.event.unknown', 'Unknown Event'),
         icon: faQuestion,
-        iconBgClass: 'bg-gray-100 dark:bg-gray-900/20',
-        iconColorClass: 'text-gray-600 dark:text-gray-400',
+        iconBgClass: 'bg-muted',
+        iconColorClass: 'text-muted-foreground',
       }
   }
 }
@@ -199,13 +216,12 @@ function describeChanges(
   }
 }
 
-// Fallback renderer kept exported for callers that pass arbitrary change shapes.
 export function renderChanges(changes: unknown): ReactNode {
   if (changes == null) return null
   if (typeof changes === 'string') {
     const text = changes.trim()
     if (!text) return null
-    return <p className="text-xs text-gray-700 dark:text-gray-300 mt-1 break-all">{text}</p>
+    return <p className="mt-1 text-xs text-foreground/80 break-all">{text}</p>
   }
   if (typeof changes !== 'object') return null
   return null
