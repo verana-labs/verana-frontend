@@ -1,10 +1,12 @@
 'use client'
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { BlocksIcon, DatabaseIcon, MonitorIcon, NetworkIcon } from 'lucide-react'
 import type * as React from 'react'
 import { VERANA_GRAPH_URL } from '@/config/env'
 import { translate } from '@/i18n/dataview'
 import type { ChainHealth, GraphHealth, IndexerHealth } from '@/lib/component-health'
+import { communityLinks } from '@/lib/dashlinks'
 import { useComponentsVersion } from '@/providers/components-version-provider'
 import {
   SidebarGroup,
@@ -32,15 +34,18 @@ function StatusRow({
   label,
   version,
   health,
+  reason,
 }: {
   icon: React.ReactNode
   label: string
   version: string | null
   health?: Health | null
+  reason?: string | null
 }) {
+  const healthLabel = health ? [translate(`footer.health.${health}`), reason].filter(Boolean).join(': ') : undefined
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton size="sm" tooltip={health ? translate(`footer.health.${health}`) : undefined}>
+      <SidebarMenuButton size="sm" tooltip={healthLabel}>
         {icon}
         <span className="capitalize">{label}</span>
       </SidebarMenuButton>
@@ -71,6 +76,7 @@ export function NavStatus(props: React.ComponentPropsWithoutRef<typeof SidebarGr
             label={translate('footer.indexer')}
             version={state.indexer.version}
             health={state.indexer.health?.state}
+            reason={state.indexer.health?.reason}
           />
           {VERANA_GRAPH_URL ? (
             <StatusRow
@@ -81,6 +87,24 @@ export function NavStatus(props: React.ComponentPropsWithoutRef<typeof SidebarGr
             />
           ) : null}
           <StatusRow icon={<MonitorIcon />} label={translate('footer.frontend')} version={state.frontend.version} />
+        </SidebarMenu>
+        <SidebarMenu className="flex-row gap-0.5">
+          {communityLinks.map((link) =>
+            link.icon ? (
+              <SidebarMenuItem key={link.href}>
+                <SidebarMenuButton asChild size="sm" tooltip={new URL(link.href).hostname}>
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={new URL(link.href).hostname}
+                  >
+                    <FontAwesomeIcon icon={link.icon} />
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ) : null
+          )}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

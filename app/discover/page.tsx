@@ -17,7 +17,7 @@ const NO_SCHEMAS: EcosystemSchemaPage = { items: [], hasNext: false }
 const NO_ECOSYSTEM_IDS: string[] = []
 
 function scrollToTop(): void {
-  document.getElementById('app-scroll')?.scrollTo({ top: 0, behavior: 'smooth' })
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 function t(key: string, values?: I18nValues): string {
