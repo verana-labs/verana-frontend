@@ -1,9 +1,10 @@
 'use client'
 
-import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import { translate } from '@/i18n/dataview'
 import { resolveTranslatable } from '@/ui/dataview/types'
+import { Button } from '@/ui/shadcn/button'
+import { Pagination, PaginationContent, PaginationItem } from '@/ui/shadcn/pagination'
 
 type Props = {
   showing: number
@@ -25,51 +26,64 @@ export default function KeysetPagination({
   loadedOnlyNote = true,
 }: Props) {
   const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
+  const previous = t('pagination.previous', 'Previous page')
+  const next = t('pagination.next', 'Next page')
 
   return (
-    <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <div className="text-sm text-neutral-70 dark:text-neutral-70">
-        {t('pagination.showing', 'Showing')}{' '}
-        <span className="font-medium text-gray-900 dark:text-white">{showing}</span> {itemsLabel}
+    <div className="mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
+      <div className="text-center text-sm text-muted-foreground sm:text-start">
+        {t('pagination.showing', 'Showing')} <span className="font-medium text-foreground tabular-nums">{showing}</span>{' '}
+        {itemsLabel}
         {loadedOnlyNote && (hasPrevious || hasNext) ? (
-          <span className="block text-xs">
+          <span className="mt-0.5 block text-xs">
             {t('pagination.loadedOnly', 'Sorting and filters apply to the loaded results only.')}
           </span>
         ) : null}
       </div>
-      <div className="flex items-center space-x-2">
-        <button
-          type="button"
-          disabled={!hasPrevious}
-          onClick={onPrevious}
-          aria-label={t('pagination.previous', 'Previous page')}
-          className="px-3 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          <FontAwesomeIcon icon={faChevronLeft} className="text-xs" />
-        </button>
-        <button
-          type="button"
-          disabled={!hasNext}
-          onClick={onNext}
-          aria-label={t('pagination.next', 'Next page')}
-          className="px-3 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          <FontAwesomeIcon icon={faChevronRight} className="text-xs" />
-        </button>
-      </div>
+      <Pagination aria-label={t('pagination.label', 'Pagination')} className="mx-0 w-auto">
+        <PaginationContent className="gap-2">
+          <PaginationItem>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!hasPrevious}
+              onClick={onPrevious}
+              aria-label={previous}
+              className="h-8 px-2.5 disabled:cursor-not-allowed"
+            >
+              <ChevronLeftIcon aria-hidden="true" className="rtl:rotate-180" />
+              <span className="hidden sm:inline">{previous}</span>
+            </Button>
+          </PaginationItem>
+          <PaginationItem>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!hasNext}
+              onClick={onNext}
+              aria-label={next}
+              className="h-8 px-2.5 disabled:cursor-not-allowed"
+            >
+              <span className="hidden sm:inline">{next}</span>
+              <ChevronRightIcon aria-hidden="true" className="rtl:rotate-180" />
+            </Button>
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
     </div>
   )
 }
 
 export function ShowMoreButton({ onClick, indent = 0 }: { onClick: () => void; indent?: number }) {
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
+      size="sm"
       onClick={onClick}
-      style={indent ? { marginLeft: indent } : undefined}
-      className="p-2 text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"
+      style={indent ? { marginInlineStart: indent } : undefined}
+      className="text-primary hover:text-primary"
     >
       {resolveTranslatable({ key: 'pagination.showMore' }, translate) ?? 'Show more'}
-    </button>
+    </Button>
   )
 }
