@@ -219,7 +219,7 @@ export function roleColorClass(type: string): string {
     case 'HOLDER':
       return 'text-pink-500'
     default:
-      return 'text-gray-500'
+      return 'text-muted-foreground'
   }
 }
 
@@ -377,9 +377,9 @@ export function participantAuthority(
     return { icon: faCrown, iconColorClass: 'text-green-500' }
   } else if (isPredecessor) {
     // predecessor
-    return { icon: faCrown, iconColorClass: 'text-gray-500' }
+    return { icon: faCrown, iconColorClass: 'text-muted-foreground' }
   } else {
-    return { icon: faEye, iconColorClass: 'text-gray-500' }
+    return { icon: faEye, iconColorClass: 'text-muted-foreground' }
   }
 }
 

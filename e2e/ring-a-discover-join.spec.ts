@@ -269,7 +269,7 @@ test('an acting corporation sees its roles from one corporation query and joins 
   await join.click()
   await expect(page).toHaveURL(new RegExp(`/participants/${SCHEMA.id}$`))
   await expect(
-    page.locator('div.rounded-lg.p-2').filter({ hasText: 'Issuers' }).getByRole('button', { name: /join/ })
+    page.locator('[data-slot="tree-row"]').filter({ hasText: 'Issuers' }).getByRole('button', { name: /join/ })
   ).toBeVisible({ timeout: 15_000 })
 })
 
@@ -285,7 +285,7 @@ test('joining a folder of the participant tree broadcasts the VS operator named 
 
   await page.goto(`/participants/${SCHEMA.id}`)
   await page
-    .locator('div.rounded-lg.p-2')
+    .locator('[data-slot="tree-row"]')
     .filter({ hasText: 'Issuers' })
     .getByRole('button', { name: /join/ })
     .click({ timeout: 15_000 })

@@ -1,75 +1,110 @@
 'use client'
 
-import { faChildReaching } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { BabyIcon } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { serviceAvatarUrl } from '@/lib/resolverClient'
 import ClaimText from '@/ui/common/claim-text'
 import LogoImage from '@/ui/common/logo-image'
 import TrustBadge from '@/ui/common/trust-badge'
+import { CopyButton } from '@/ui/ecosystem-detail/copy-button'
+import { Badge } from '@/ui/shadcn/badge'
+import { shortenDID, shortenMiddle } from '@/util/util'
 
 export type EcosystemStatus = 'ARCHIVED'
 
 export type EcosystemHeaderProps = {
   did: string
   status?: EcosystemStatus
+  meta?: ReactNode
+  actions?: ReactNode
 }
 
-const ARCHIVED_PILL_CLASS = 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-
-export default function EcosystemHeader({ did, status }: EcosystemHeaderProps) {
+export default function EcosystemHeader({ did, status, meta, actions }: EcosystemHeaderProps) {
   const { data: enrichment } = useDidTrustEnrichment(did)
   const description = enrichment?.serviceDescription
   const minAgeRaw = enrichment?.serviceMinAge
   const minAgeNum = minAgeRaw != null ? Number(minAgeRaw) : NaN
   const showMinAge = Number.isFinite(minAgeNum) && minAgeNum >= 0
   const displayName = enrichment?.serviceName ?? enrichment?.organizationName ?? did
+  const nameIsDid = displayName === did
 
   return (
-    <section className="mb-8">
-      <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6 sm:p-8">
-        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-          <div className="shrink-0">
+    <section className="mb-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-5">
+        <div className="flex min-w-0 flex-1 items-start gap-4 sm:gap-5">
+          <div className="size-14 shrink-0 overflow-hidden rounded-2xl bg-card p-1 shadow-card sm:size-20">
             <LogoImage
               src={enrichment?.serviceLogoUrl}
               fallbackSrc={serviceAvatarUrl(did)}
-              className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg object-contain"
+              className="size-full rounded-xl object-contain"
             />
           </div>
 
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-3 mb-2">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white break-words">
-                {displayName}
-                <TrustBadge state={enrichment?.trustStatus} size="lg" className="ml-3 align-middle" />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <h1
+                className={
+                  nameIsDid
+                    ? 'min-w-0 font-mono text-lg font-semibold tracking-tight sm:text-xl'
+                    : 'min-w-0 text-2xl font-semibold tracking-tight break-words sm:text-3xl'
+                }
+              >
+                {nameIsDid ? (
+                  <span title={did}>
+                    <span aria-hidden="true" className="sm:hidden">
+                      {shortenMiddle(did, 26)}
+                    </span>
+                    <span aria-hidden="true" className="hidden sm:inline">
+                      {shortenDID(did)}
+                    </span>
+                    <span className="sr-only">{did}</span>
+                  </span>
+                ) : (
+                  displayName
+                )}
+                <TrustBadge state={enrichment?.trustStatus} size="lg" className="ml-2.5 align-middle" />
+                {nameIsDid ? <CopyButton value={did} className="ml-1 align-middle" /> : null}
               </h1>
               {status === 'ARCHIVED' ? (
-                <span
-                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${ARCHIVED_PILL_CLASS}`}
-                >
+                <Badge variant="destructive" className="h-6 px-2.5 tracking-wide">
                   ARCHIVED
-                </span>
+                </Badge>
               ) : null}
             </div>
+
+            {nameIsDid ? null : (
+              <div className="mt-1.5 flex min-w-0 items-center gap-1 text-muted-foreground">
+                <span className="truncate font-mono text-xs sm:text-sm" title={did}>
+                  {did}
+                </span>
+                <CopyButton value={did} />
+              </div>
+            )}
 
             {description ? (
               <ClaimText
                 text={description}
                 format={enrichment?.serviceDescriptionFormat}
-                className="text-xs sm:text-sm text-neutral-70 dark:text-neutral-70 mb-4 line-clamp-3"
+                className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground line-clamp-3"
               />
             ) : null}
 
-            {showMinAge ? (
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                  <FontAwesomeIcon icon={faChildReaching} className="text-neutral-70 text-sm" />
-                  <span className="text-gray-900 dark:text-white font-medium text-sm">{minAgeNum}+</span>
-                </div>
+            {showMinAge || meta ? (
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {showMinAge ? (
+                  <Badge variant="outline" className="h-6 gap-1.5 px-2.5 text-foreground">
+                    <BabyIcon aria-hidden="true" className="text-muted-foreground" />
+                    {minAgeNum}+
+                  </Badge>
+                ) : null}
+                {meta}
               </div>
             ) : null}
           </div>
         </div>
+
+        {actions ? <div className="flex shrink-0 flex-wrap items-start gap-2 md:justify-end">{actions}</div> : null}
       </div>
     </section>
   )
