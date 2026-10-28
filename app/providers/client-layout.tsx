@@ -1,5 +1,6 @@
 'use client'
 
+import { MotionConfig } from 'framer-motion'
 import { usePathname } from 'next/navigation'
 import { Fragment, type ReactNode, useEffect, useState } from 'react'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
@@ -32,22 +33,26 @@ export default function ClientLayout({
 
   if (pathname?.startsWith('/lab/')) {
     return (
-      <Providers>
-        <ProtocolParamsProvider value={protocolParams}>{children}</ProtocolParamsProvider>
-      </Providers>
+      <MotionConfig reducedMotion="user">
+        <Providers>
+          <ProtocolParamsProvider value={protocolParams}>{children}</ProtocolParamsProvider>
+        </Providers>
+      </MotionConfig>
     )
   }
 
   return (
-    <Providers>
-      <ProtocolParamsProvider value={protocolParams}>
-        <AppShell>
-          <SiteHeader />
-          <main className="app-content-inner w-full">
-            <CorporationScopedContent>{children}</CorporationScopedContent>
-          </main>
-        </AppShell>
-      </ProtocolParamsProvider>
-    </Providers>
+    <MotionConfig reducedMotion="user">
+      <Providers>
+        <ProtocolParamsProvider value={protocolParams}>
+          <AppShell>
+            <SiteHeader />
+            <div className="app-content-inner w-full">
+              <CorporationScopedContent>{children}</CorporationScopedContent>
+            </div>
+          </AppShell>
+        </ProtocolParamsProvider>
+      </Providers>
+    </MotionConfig>
   )
 }

@@ -39,7 +39,7 @@ export default function ClaimText({ text, format, className, title }: ClaimTextP
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="underline"
+                className="text-primary underline underline-offset-4"
               >
                 {children}
               </a>

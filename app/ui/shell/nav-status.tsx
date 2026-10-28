@@ -21,21 +21,34 @@ import {
 type Health = ChainHealth | GraphHealth | IndexerHealth['state']
 
 const HEALTH_DOT: Record<Health, string> = {
-  synced: 'bg-emerald-500',
-  crawling: 'bg-emerald-500',
-  syncing: 'bg-amber-500',
-  stalled: 'bg-amber-500',
-  down: 'bg-red-500',
-  unreachable: 'bg-red-500',
+  synced: 'bg-success',
+  crawling: 'bg-success',
+  syncing: 'bg-warning',
+  stalled: 'bg-warning',
+  down: 'bg-destructive',
+  unreachable: 'bg-destructive',
 }
 
+const HEALTH_TEXT: Record<Health, string> = {
+  synced: 'text-success',
+  crawling: 'text-success',
+  syncing: 'text-warning',
+  stalled: 'text-warning',
+  down: 'text-destructive',
+  unreachable: 'text-destructive',
+}
+
+const HEALTHY: ReadonlySet<Health> = new Set(['synced', 'crawling'])
+
 function StatusRow({
+  id,
   icon,
   label,
   version,
   health,
   reason,
 }: {
+  id: string
   icon: React.ReactNode
   label: string
   version: string | null
@@ -43,15 +56,31 @@ function StatusRow({
   reason?: string | null
 }) {
   const healthLabel = health ? [translate(`footer.health.${health}`), reason].filter(Boolean).join(': ') : undefined
+  const shownVersion = version ?? translate('footer.version')
+  const tooltip = [label, shownVersion, healthLabel].filter(Boolean).join(' · ')
   return (
-    <SidebarMenuItem>
-      <SidebarMenuButton size="sm" tooltip={healthLabel}>
-        {icon}
+    <SidebarMenuItem data-status-row={id}>
+      <SidebarMenuButton size="sm" tooltip={tooltip} className="cursor-default">
+        <span className="relative flex">
+          {icon}
+          {health ? (
+            <span
+              aria-hidden="true"
+              className={`absolute -right-0.5 -bottom-0.5 hidden size-1.5 rounded-full ring-2 ring-sidebar group-data-[collapsible=icon]:block ${HEALTH_DOT[health]}`}
+            />
+          ) : null}
+        </span>
         <span className="capitalize">{label}</span>
       </SidebarMenuButton>
       <SidebarMenuBadge className="gap-1.5 font-mono text-[11px] text-muted-foreground">
-        {version ?? translate('footer.version')}
+        {shownVersion}
+        {health && !HEALTHY.has(health) ? (
+          <span title={reason ?? undefined} className={`pointer-events-auto font-sans ${HEALTH_TEXT[health]}`}>
+            {translate(`footer.health.${health}`)}
+          </span>
+        ) : null}
         {health ? <span aria-hidden="true" className={`size-1.5 rounded-full ${HEALTH_DOT[health]}`} /> : null}
+        {health && HEALTHY.has(health) ? <span className="sr-only">{healthLabel}</span> : null}
       </SidebarMenuBadge>
     </SidebarMenuItem>
   )
@@ -62,16 +91,18 @@ export function NavStatus(props: React.ComponentPropsWithoutRef<typeof SidebarGr
 
   return (
     <SidebarGroup {...props}>
-      <SidebarGroupLabel>Status</SidebarGroupLabel>
+      <SidebarGroupLabel>{translate('shell.status.title')}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           <StatusRow
+            id="network"
             icon={<NetworkIcon />}
             label={translate('footer.network')}
             version={state.ledger.version}
             health={state.ledger.health}
           />
           <StatusRow
+            id="indexer"
             icon={<DatabaseIcon />}
             label={translate('footer.indexer')}
             version={state.indexer.version}
@@ -80,15 +111,21 @@ export function NavStatus(props: React.ComponentPropsWithoutRef<typeof SidebarGr
           />
           {VERANA_GRAPH_URL ? (
             <StatusRow
+              id="graph"
               icon={<BlocksIcon />}
               label={translate('footer.graph')}
               version={state.graph.version}
               health={state.graph.health}
             />
           ) : null}
-          <StatusRow icon={<MonitorIcon />} label={translate('footer.frontend')} version={state.frontend.version} />
+          <StatusRow
+            id="frontend"
+            icon={<MonitorIcon />}
+            label={translate('footer.frontend')}
+            version={state.frontend.version}
+          />
         </SidebarMenu>
-        <SidebarMenu className="flex-row gap-0.5">
+        <SidebarMenu className="flex-row gap-0.5 group-data-[collapsible=icon]:flex-col">
           {communityLinks.map((link) =>
             link.icon ? (
               <SidebarMenuItem key={link.href}>
