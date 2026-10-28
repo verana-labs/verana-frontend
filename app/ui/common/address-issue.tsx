@@ -11,5 +11,5 @@ export function addressIssue(address: string, alreadyListed: readonly string[]):
 
 export function AddressIssueNote({ issue }: { issue: string | null }) {
   if (!issue) return null
-  return <p className="mt-1 text-xs text-red-600 dark:text-red-400">{translate(issue)}</p>
+  return <p className="mt-1.5 text-sm text-destructive">{translate(issue)}</p>
 }

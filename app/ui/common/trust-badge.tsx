@@ -3,6 +3,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { DidTrustState } from '@/lib/resolverClient'
 import { trustStateBadge } from '@/lib/trust-state'
+import { cn } from '@/lib/utils'
 
 export type TrustBadgeProps = {
   state: DidTrustState | undefined
@@ -17,12 +18,17 @@ const SIZE_CLASS: Record<NonNullable<TrustBadgeProps['size']>, string> = {
   xl: 'text-lg',
 }
 
+const STATE_CLASS: Record<string, string> = {
+  TRUSTED: 'text-success',
+  UNTRUSTED: 'text-destructive',
+}
+
 export default function TrustBadge({ state, size = 'md', className = '' }: TrustBadgeProps) {
-  const { label, icon, iconColorClass } = trustStateBadge(state)
+  const { label, icon } = trustStateBadge(state)
   return (
     <FontAwesomeIcon
       icon={icon}
-      className={`${iconColorClass} ${SIZE_CLASS[size]} shrink-0 ${className}`}
+      className={cn('shrink-0 text-muted-foreground', state && STATE_CLASS[state], SIZE_CLASS[size], className)}
       title={label}
       aria-label={label}
     />

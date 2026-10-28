@@ -16,6 +16,8 @@ import { explorerTxLink, explorerTxUrl } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { useNotification } from '@/providers/notification-provider'
 import FieldRow from '@/ui/common/field-row'
+import { Input } from '@/ui/shadcn/input'
+import { Spinner } from '@/ui/shadcn/spinner'
 import { formatVNAFromUVNA, parseVNA } from '@/util/util'
 
 // Action id of the Get VNA card. It is not a chain message, so it does not belong to the MsgType unions.
@@ -69,7 +71,12 @@ export default function GetVNAPanel({ onClose, onRefresh }: GetVNAPanelProps) {
   )
 
   if (state.kind === 'loading') {
-    return <p className="py-6 text-sm text-neutral-70 dark:text-neutral-70">{translate('getvna.loading')}</p>
+    return (
+      <p className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+        <Spinner aria-hidden="true" />
+        {translate('getvna.loading')}
+      </p>
+    )
   }
 
   if (!info || !limits) {
@@ -128,14 +135,14 @@ export default function GetVNAPanel({ onClose, onRefresh }: GetVNAPanelProps) {
             amount: formatVNAFromUVNA(result.amount),
           })}
         />
-        <p className="text-sm text-gray-900 dark:text-white break-all">
+        <p className="text-sm text-foreground break-all">
           <span className="font-medium">{translate('getvna.result.txHash')}: </span>
           {txUrl ? (
             <a
               href={txUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-mono text-primary-700 dark:text-primary-300 underline underline-offset-2"
+              className="font-mono text-primary underline underline-offset-4"
             >
               {result.txHash}
             </a>
@@ -157,7 +164,7 @@ export default function GetVNAPanel({ onClose, onRefresh }: GetVNAPanelProps) {
 
   return (
     <div className="py-6 space-y-4">
-      <div className="grid grid-cols-2 gap-4 text-sm text-gray-900 dark:text-white">
+      <div className="grid grid-cols-2 gap-4 rounded-lg border border-border bg-muted/50 p-4 text-sm text-foreground">
         <FieldRow label={translate('getvna.network')}>
           <span className="font-mono">{info.chainId}</span>
         </FieldRow>
@@ -174,9 +181,11 @@ export default function GetVNAPanel({ onClose, onRefresh }: GetVNAPanelProps) {
         <label htmlFor="getvna-amount" className="label">
           {translate('getvna.amount.label')}
         </label>
-        <input
+        <Input
           id="getvna-amount"
-          className="input"
+          className="h-9 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          aria-invalid={(amountVNA !== '' && !amountValid) || undefined}
+          aria-describedby={amountVNA !== '' && !amountValid ? 'getvna-amount-error' : undefined}
           type="number"
           min="0"
           step="any"
@@ -185,7 +194,7 @@ export default function GetVNAPanel({ onClose, onRefresh }: GetVNAPanelProps) {
           onChange={(e) => setAmountVNA(e.target.value)}
         />
         {amountVNA !== '' && !amountValid && (
-          <p className="text-sm text-red-600 dark:text-red-400">
+          <p id="getvna-amount-error" className="text-sm text-destructive">
             {translate('getvna.amount.invalid', { max: limits.perHour })}
           </p>
         )}
@@ -206,9 +215,9 @@ export default function GetVNAPanel({ onClose, onRefresh }: GetVNAPanelProps) {
 type NoticeTone = 'success' | 'info' | 'error'
 
 const NOTICE_CLASS: Record<NoticeTone, string> = {
-  success: 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300',
-  info: 'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300',
-  error: 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300',
+  success: 'border-success/30 bg-success/10 [&>svg]:text-success dark:border-success/40',
+  info: 'border-info/30 bg-info/10 [&>svg]:text-info dark:border-info/40',
+  error: 'border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/40',
 }
 
 const NOTICE_ICON = { success: faCircleCheck, info: faClock, error: faTriangleExclamation } as const
@@ -217,9 +226,9 @@ function Notice({ tone, text }: { tone: NoticeTone; text: string }) {
   return (
     <div
       role={tone === 'error' ? 'alert' : 'status'}
-      className={`flex items-start gap-3 rounded-lg p-4 text-sm ${NOTICE_CLASS[tone]}`}
+      className={`flex items-start gap-2.5 rounded-lg border px-4 py-3 text-sm text-foreground ${NOTICE_CLASS[tone]}`}
     >
-      <FontAwesomeIcon icon={NOTICE_ICON[tone]} className="mt-0.5" />
+      <FontAwesomeIcon icon={NOTICE_ICON[tone]} className="mt-0.5" aria-hidden="true" />
       <span>{text}</span>
     </div>
   )

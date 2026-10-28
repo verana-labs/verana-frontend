@@ -1,10 +1,9 @@
 'use client'
 
-import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import clsx from 'clsx'
+import { TriangleAlertIcon } from 'lucide-react'
 import { translate } from '@/i18n/dataview'
 import { feeGateState, pricingAssetLabel, type SchemaPricing } from '@/lib/pricing-asset'
+import { cn } from '@/lib/utils'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
 export function unsupportedPricingReason(): string {
@@ -31,13 +30,13 @@ export function PricingNotice({ schema, className }: { schema: SchemaPricing | n
   return (
     <div
       role="note"
-      className={clsx(
-        'border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-900/20 rounded-r-lg p-4 flex gap-3',
+      className={cn(
+        'flex gap-2.5 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground dark:border-warning/40',
         className
       )}
     >
-      <FontAwesomeIcon icon={faTriangleExclamation} className="text-amber-500 mt-0.5" />
-      <p className="text-sm text-amber-900 dark:text-amber-100">{text}</p>
+      <TriangleAlertIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
+      <p>{text}</p>
     </div>
   )
 }

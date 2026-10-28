@@ -7,6 +7,7 @@ import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { allowedOffline } from '@/lib/navlinks'
 import { resolveTranslatable } from '@/ui/dataview/types'
+import { Spinner } from '@/ui/shadcn/spinner'
 
 export default function RequireConnectedWallet({ children }: { children: React.ReactNode }) {
   const { chain_name } = useVeranaChain()
@@ -70,7 +71,11 @@ export default function RequireConnectedWallet({ children }: { children: React.R
   // If not on dashboard and still initializing or disconnected, show loading UI
   if (!enabledOffline && (initializing || status !== 'Connected')) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div
+        role="status"
+        className="flex h-screen items-center justify-center gap-2 bg-page text-sm text-muted-foreground"
+      >
+        <Spinner aria-hidden="true" />
         {resolveTranslatable({ key: 'wallet.connecting' }, translate)}
       </div>
     )

@@ -1,8 +1,7 @@
 'use client'
 
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { ChevronDownIcon } from 'lucide-react'
 import React, { ReactNode, useId, useState } from 'react'
 import CredentialSchemaActionPage from '@/credential-schemas/[id]/action'
 import EcosystemActionPage from '@/ecosystems/[id]/action'
@@ -59,9 +58,18 @@ export default function DataViewTyped<I extends object>(props: {
   return (
     <div>
       {title ? ( // Title rendered as a link-like button that toggles the content
-        <button onClick={() => setExpanded((v) => !v)} className="btn-link mb-2 gap-2">
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          aria-controls={contentId}
+          className="btn-link mb-2"
+        >
           <span>{title}</span>
-          {expanded ? <FontAwesomeIcon icon={faChevronUp} /> : <FontAwesomeIcon icon={faChevronDown} />}
+          <ChevronDownIcon
+            aria-hidden="true"
+            className={`size-4 transition-transform duration-(--duration-base) ease-standard ${expanded ? 'rotate-180' : ''}`}
+          />
         </button>
       ) : null}
 
