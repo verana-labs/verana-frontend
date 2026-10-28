@@ -93,7 +93,7 @@ export default function JoinFlow({ ecosystemId, nodeJoin, onCancel, onRefresh }:
               onClick={() => {
                 if (!accepted) return
                 setCurrentStep(2)
-                document.getElementById('app-scroll')?.scrollTo({ top: 0, behavior: 'smooth' })
+                window.scrollTo({ top: 0, behavior: 'smooth' })
               }}
               disabled={!accepted}
               className={classes(
