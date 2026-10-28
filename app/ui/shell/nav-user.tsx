@@ -34,9 +34,10 @@ export function NavUser() {
         <SidebarMenuItem>
           <SidebarMenuButton
             size="lg"
+            tooltip={translate('notconnected.nav.click')}
             onClick={() => (status === 'NotExist' ? openView() : void connect())}
             disabled={status === 'Connecting'}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
+            className="bg-primary text-primary-foreground group-data-[collapsible=icon]:justify-center hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
           >
             <WalletIcon />
             <div className="grid flex-1 text-left text-sm leading-tight">
@@ -73,6 +74,7 @@ export function NavUser() {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
+              tooltip={address}
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               {identity}

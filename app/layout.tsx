@@ -1,7 +1,7 @@
 import '@/styles/global.css'
 import { inter } from '@/ui/common/fonts'
 import '@interchain-ui/react/styles'
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { PublicEnvScript } from 'next-runtime-env'
 import type { ReactNode } from 'react'
 import ClientLayout from '@/providers/client-layout'
@@ -35,6 +35,16 @@ export const metadata: Metadata = {
     shortcut: ['/favicon.ico'],
   },
   manifest: '/site.webmanifest',
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f5f4f8' },
+    { media: '(prefers-color-scheme: dark)', color: '#0b0a10' },
+  ],
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
