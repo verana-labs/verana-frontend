@@ -5,12 +5,9 @@ import { translate } from '@/i18n/dataview'
 import { type DecisionPolicyDraft, type DecisionPolicyKind, exceedsExecutionWindow } from '@/lib/decision-policy'
 import { AddressIssueNote } from '@/ui/common/address-issue'
 import { ThresholdHint } from '@/ui/common/threshold-hint'
+import { FIELD_INPUT, FIELD_LABEL, FIELD_SELECT } from '@/ui/corporation/form-styles'
 
 const KINDS: readonly DecisionPolicyKind[] = ['threshold', 'percentage']
-
-const LABEL = 'text-sm font-medium text-gray-700 dark:text-gray-300'
-const INPUT =
-  'mt-2 w-full px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface'
 
 export function DecisionPolicyFields({
   value,
@@ -25,15 +22,13 @@ export function DecisionPolicyFields({
   const set = (patch: Partial<DecisionPolicyDraft>) => onChange({ ...value, ...patch })
   return (
     <>
-      <div>
-        <label htmlFor={kindId} className={LABEL}>
-          {translate('corporation.policy.kind')}
-        </label>
+      <div className={FIELD_LABEL}>
+        <label htmlFor={kindId}>{translate('corporation.policy.kind')}</label>
         <select
           id={kindId}
           value={value.kind}
           onChange={(event) => set({ kind: event.target.value as DecisionPolicyKind })}
-          className={INPUT}
+          className={FIELD_SELECT}
         >
           {KINDS.map((kind) => (
             <option key={kind} value={kind}>
@@ -44,42 +39,45 @@ export function DecisionPolicyFields({
       </div>
       {value.kind === 'threshold' ? (
         <div>
-          <label className={LABEL}>
+          <label className={FIELD_LABEL}>
             {translate('corporation.page.threshold')}
             <input
+              inputMode="numeric"
               value={value.threshold}
               onChange={(event) => set({ threshold: event.target.value })}
-              className={INPUT}
+              className={FIELD_INPUT}
             />
           </label>
           <ThresholdHint threshold={Number(value.threshold)} totalWeight={totalWeight} />
         </div>
       ) : (
-        <label className={LABEL}>
+        <label className={FIELD_LABEL}>
           {translate('corporation.policy.percent')}
           <input
             value={value.percent}
             inputMode="decimal"
             onChange={(event) => set({ percent: event.target.value })}
-            className={INPUT}
+            className={FIELD_INPUT}
           />
         </label>
       )}
-      <label className={LABEL}>
+      <label className={FIELD_LABEL}>
         {translate('corporation.wizard.votingperiod')}
         <input
+          inputMode="numeric"
           value={value.votingPeriod}
           onChange={(event) => set({ votingPeriod: event.target.value })}
-          className={INPUT}
+          className={FIELD_INPUT}
         />
       </label>
       <div>
-        <label className={LABEL}>
+        <label className={FIELD_LABEL}>
           {translate('corporation.policy.minexecutionperiod')}
           <input
+            inputMode="numeric"
             value={value.minExecutionPeriod}
             onChange={(event) => set({ minExecutionPeriod: event.target.value })}
-            className={INPUT}
+            className={FIELD_INPUT}
           />
         </label>
         <AddressIssueNote issue={exceedsExecutionWindow(value) ? 'corporation.policy.minexecutionperiod.max' : null} />

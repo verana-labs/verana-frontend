@@ -1,16 +1,26 @@
 'use client'
 
-import {
-  faChildReaching,
-  faCopy,
-  faCrown,
-  faEye,
-  faFileContract,
-  faShieldHalved,
-  faUpRightFromSquare,
-} from '@fortawesome/free-solid-svg-icons'
+import { faCopy, faCrown, faEye, faUpRightFromSquare } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
+import {
+  BabyIcon,
+  BadgeCheckIcon,
+  CoinsIcon,
+  FileTextIcon,
+  HistoryIcon,
+  InfoIcon,
+  type LucideIcon,
+  RouteIcon,
+  ScanSearchIcon,
+  ShieldAlertIcon,
+  ShieldCheckIcon,
+  TriangleAlertIcon,
+  UsersIcon,
+  WorkflowIcon,
+  XIcon,
+} from 'lucide-react'
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useCredentialSchemaData } from '@/hooks/useCredentialSchemaData'
 import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { mergeParticipantDetailActions, refreshParticipantSources, useParticipant } from '@/hooks/useParticipant'
@@ -18,6 +28,7 @@ import { useParticipantHistory } from '@/hooks/useParticipantHistory'
 import { translate } from '@/i18n/dataview'
 import { FEE_BEARING_PARTICIPANT_ACTIONS, formatSchemaAmount, isNativePricing } from '@/lib/pricing-asset'
 import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
+import { cn } from '@/lib/utils'
 import ActionFieldButtonModal from '@/ui/common/action-field-button-modal'
 import ClaimText from '@/ui/common/claim-text'
 import type { ActionFieldProps } from '@/ui/common/data-view-typed'
@@ -40,6 +51,11 @@ import {
   participantSlashingActions,
 } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
+import { Shimmer } from '@/ui/motion/shimmer'
+import { DURATION, EASE } from '@/ui/motion/tokens'
+import { Timeline } from '@/ui/participants/timeline'
+import { Badge } from '@/ui/shadcn/badge'
+import { Button } from '@/ui/shadcn/button'
 import {
   countryCodeToFlag,
   formatDateTime,
@@ -60,12 +76,20 @@ const ROLE_SINGULAR_KEY: Record<string, string> = {
   HOLDER: 'participantcard.role.singular.holder',
 }
 
+const PILL = 'h-auto rounded-full px-2.5 py-0.5 font-medium'
+
 function tr(key: string, fallback: string): string {
   return resolveTranslatable({ key }, translate) ?? fallback
 }
 
 function roleLabel(role: string): string {
   return tr(ROLE_SINGULAR_KEY[role] ?? '', role)
+}
+
+export function participantCardTitle(participant: Participant, schemaTitle: string): string {
+  return tr('participantcard.header.title', `${roleLabel(participant.role)} role for schema ${schemaTitle}`)
+    .replace('{role}', roleLabel(participant.role))
+    .replace('{schema}', schemaTitle)
 }
 
 const accountActions: ParticipantAction[] = [
@@ -112,12 +136,6 @@ const metadataItems: ParticipantItem[] = [
     extraActions: accountActions,
   },
   {
-    label: tr('participantcard.meta.deposit', 'Deposit'),
-    attr: 'deposit',
-    mono: true,
-    format: (value) => formatVNAFromUVNA(String(value)),
-  },
-  {
     label: tr('participantcard.meta.effectivefrom', 'Effective From'),
     attr: 'effective_from',
     format: (value) => formatDateTime(String(value)),
@@ -127,10 +145,6 @@ const metadataItems: ParticipantItem[] = [
     attr: 'effective_until',
     format: (value) => formatDateTime(String(value)),
   },
-  { label: tr('participantcard.meta.participants', 'Participants'), attr: 'participants' },
-  { label: tr('participantcard.meta.weight', 'Weight'), attr: 'weight' },
-  { label: tr('participantcard.meta.issued', 'Issued Credentials'), attr: 'issued' },
-  { label: tr('participantcard.meta.verified', 'Verified Credentials'), attr: 'verified' },
 ]
 
 const lifecycleItems: ParticipantItem[] = [
@@ -220,7 +234,12 @@ function AttributeGrid({
   columns?: 2 | 3
 }) {
   return (
-    <div className={`grid grid-cols-1 ${columns === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
+    <dl
+      className={cn(
+        'grid grid-cols-1 gap-x-6 gap-y-4',
+        columns === 3 ? '@lg/card:grid-cols-3' : '@md/card:grid-cols-2'
+      )}
+    >
       {items.map((item) => {
         const value = itemValue(participant, item)
         if (value === null || (item.hiddenZero && Number(value) === 0)) return null
@@ -234,8 +253,54 @@ function AttributeGrid({
           />
         )
       })}
+    </dl>
+  )
+}
+
+function Section({
+  icon: Icon,
+  title,
+  aside,
+  children,
+}: {
+  icon: LucideIcon
+  title: string
+  aside?: ReactNode
+  children: ReactNode
+}) {
+  return (
+    <section className="border-t px-5 py-5 sm:px-6">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <Icon aria-hidden="true" className="size-4 text-muted-foreground" />
+          {title}
+        </h3>
+        {aside}
+      </div>
+      {children}
+    </section>
+  )
+}
+
+function Actions({ children }: { children: ReactNode[] }) {
+  if (children.length === 0) return null
+  return <div className="mt-5 flex flex-wrap items-start gap-2">{children}</div>
+}
+
+function StatTile({ label, className, children }: { label: string; className?: string; children: ReactNode }) {
+  return (
+    <div className={cn('min-w-0 rounded-lg border bg-card px-3 py-2.5', className)}>
+      <dt className="truncate text-xs text-muted-foreground">{label}</dt>
+      <dd className="mt-0.5 truncate text-lg font-semibold tracking-tight text-foreground tabular-nums">{children}</dd>
     </div>
   )
+}
+
+const LEAF_ROLES = new Set(['VERIFIER', 'HOLDER'])
+
+function countOf(value: string | number | undefined): string {
+  const parsed = Number(value ?? 0)
+  return (Number.isFinite(parsed) ? parsed : 0).toLocaleString()
 }
 
 type ParticipantCardProps = {
@@ -244,6 +309,8 @@ type ParticipantCardProps = {
   schemaTitle: string
   pricingNoticeShown?: boolean
   viewerCorporationId?: number
+  embedded?: boolean
+  onClose?: () => void
   onRefresh?: (participant: Participant) => void
   onRefreshList?: () => void | Promise<void>
 }
@@ -254,6 +321,8 @@ export default function ParticipantCard({
   schemaTitle,
   pricingNoticeShown = false,
   viewerCorporationId,
+  embedded = false,
+  onClose,
   onRefresh,
   onRefreshList,
 }: ParticipantCardProps) {
@@ -264,6 +333,8 @@ export default function ParticipantCard({
   const { participant: refreshedParticipant, refetch } = useParticipant(participantId)
   const {
     participantHistory,
+    loading: historyLoading,
+    errorParticipantHistory,
     refetch: refetchHistory,
     hasNext: historyHasNext,
     loadMore: loadMoreHistory,
@@ -354,157 +425,229 @@ export default function ParticipantCard({
       })
   }
 
+  const title = participantCardTitle(participant, schemaTitle)
+  const leaf = LEAF_ROLES.has(participant.role)
+  const countSpan = leaf ? '@md/card:col-span-3' : '@md/card:col-span-2'
+  const historyEmpty = participantHistory.length === 0
+
   return (
-    <section className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-6">
-      <div className="pb-6">
-        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-          <div className="flex items-center space-x-2 mb-4">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white break-words">
-              {tr('participantcard.header.title', `${roleLabel(participant.role)} role for schema ${schemaTitle}`)
-                .replace('{role}', roleLabel(participant.role))
-                .replace('{schema}', schemaTitle)}
-            </h2>
-            <FontAwesomeIcon icon={faCrown} className="text-yellow-500" aria-hidden="true" />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${roleBadgeClass(participant.role)}`}
-            >
-              {participant.role}
-            </span>
-            <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${state.classParticipantState}`}
-            >
-              {state.labelParticipantState}
-            </span>
-            {state.expireSoon ? (
-              <span
-                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${state.expireSoon.classExpireSoon}`}
-              >
-                {state.expireSoon.labelExpireSoon}
-              </span>
+    <motion.section
+      aria-label={title}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: DURATION.base, ease: EASE.standard }}
+      className={cn(
+        '@container/card text-sm text-card-foreground',
+        !embedded && 'overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10'
+      )}
+    >
+      <header className="px-5 pt-5 pb-5 sm:px-6">
+        <div className="flex items-start gap-3">
+          <div className="min-w-0 flex-1">
+            <div className={cn('flex flex-wrap gap-1.5', !embedded && 'mb-3')}>
+              <Badge variant="secondary" className={cn(PILL, roleBadgeClass(participant.role))}>
+                {participant.role}
+              </Badge>
+              <Badge variant="secondary" className={cn(PILL, state.classParticipantState)}>
+                {state.labelParticipantState}
+              </Badge>
+              {state.expireSoon ? (
+                <Badge variant="secondary" className={cn(PILL, state.expireSoon.classExpireSoon)}>
+                  {state.expireSoon.labelExpireSoon}
+                </Badge>
+              ) : null}
+            </div>
+            <div className={cn('flex items-center gap-2', embedded && 'sr-only')}>
+              <h2 className="text-lg font-semibold tracking-tight text-foreground break-words">{title}</h2>
+              <FontAwesomeIcon icon={faCrown} className="size-4 shrink-0 text-yellow-500" aria-hidden="true" />
+            </div>
+            {detailBreadcrumb ? (
+              <p className="mt-1.5 flex items-start gap-1.5 text-xs text-muted-foreground break-all">
+                <RouteIcon aria-hidden="true" className="mt-px size-3.5 shrink-0" />
+                {detailBreadcrumb}
+              </p>
             ) : null}
           </div>
+          {onClose ? (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onClose}
+              aria-label={translate('common.close')}
+              className="-me-1.5 -mt-1 text-muted-foreground"
+            >
+              <XIcon />
+            </Button>
+          ) : null}
         </div>
-        {detailBreadcrumb ? <p className="text-sm text-neutral-70 mt-2">{detailBreadcrumb}</p> : null}
 
-        <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-            {tr('participantcard.grantedservice.title', 'Granted Service')}
-          </h3>
-          <div className="flex items-start space-x-4">
+        <div className="mt-5 rounded-xl border bg-muted/40">
+          <div className="flex items-start gap-4 p-4">
             <LogoImage
               src={enrichment?.serviceLogoUrl}
               fallbackSrc={serviceIdenticonUrl(did)}
-              className="w-16 h-16 rounded-lg shrink-0 object-contain"
+              className="size-14 shrink-0 rounded-xl bg-background object-contain ring-1 ring-foreground/10"
             />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center space-x-2 mb-2">
-                <h4 className="text-base font-semibold text-gray-900 dark:text-white break-words">{serviceLabel}</h4>
-                <TrustBadge state={enrichment?.trustStatus} size="xl" />
+            <div className="min-w-0 flex-1">
+              <h3 className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                {tr('participantcard.grantedservice.title', 'Granted Service')}
+              </h3>
+              <div className="mt-1 flex items-center gap-2">
+                <h4 className="text-base font-semibold text-foreground break-words">{serviceLabel}</h4>
+                <TrustBadge state={enrichment?.trustStatus} size="lg" />
               </div>
               {enrichment?.serviceDescription ? (
                 <ClaimText
                   text={enrichment.serviceDescription}
                   format={enrichment.serviceDescriptionFormat}
-                  className="text-sm text-neutral-70 mb-3"
+                  className="mt-1 text-sm text-muted-foreground"
                 />
               ) : null}
-              <div className="flex flex-wrap items-center gap-3 text-sm">
-                {enrichment?.serviceMinAge ? (
-                  <span className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                    <FontAwesomeIcon icon={faChildReaching} className="text-neutral-70" />
-                    {enrichment.serviceMinAge}
-                  </span>
-                ) : null}
-                {enrichment?.serviceTermsUrl ? (
-                  <a href={enrichment.serviceTermsUrl} target="_blank" rel="noreferrer" className="text-primary-600">
-                    <FontAwesomeIcon icon={faFileContract} className="mr-1" />
-                    {tr('participantcard.grantedservice.terms', 'Terms & Conditions')}
-                  </a>
-                ) : null}
-                {enrichment?.servicePrivacyUrl ? (
-                  <a href={enrichment.servicePrivacyUrl} target="_blank" rel="noreferrer" className="text-primary-600">
-                    <FontAwesomeIcon icon={faShieldHalved} className="mr-1" />
-                    {tr('participantcard.grantedservice.privacy', 'Privacy Policy')}
-                  </a>
-                ) : null}
-              </div>
+              {enrichment?.serviceMinAge || enrichment?.serviceTermsUrl || enrichment?.servicePrivacyUrl ? (
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                  {enrichment?.serviceMinAge ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-md bg-background px-2 py-1 ring-1 ring-foreground/10">
+                      <BabyIcon aria-hidden="true" className="size-3.5 text-muted-foreground" />
+                      {enrichment.serviceMinAge}
+                    </span>
+                  ) : null}
+                  {enrichment?.serviceTermsUrl ? (
+                    <a
+                      href={enrichment.serviceTermsUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-md px-1 py-1 font-medium text-primary hover:underline"
+                    >
+                      <FileTextIcon aria-hidden="true" className="size-3.5" />
+                      {tr('participantcard.grantedservice.terms', 'Terms & Conditions')}
+                    </a>
+                  ) : null}
+                  {enrichment?.servicePrivacyUrl ? (
+                    <a
+                      href={enrichment.servicePrivacyUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-md px-1 py-1 font-medium text-primary hover:underline"
+                    >
+                      <ShieldCheckIcon aria-hidden="true" className="size-3.5" />
+                      {tr('participantcard.grantedservice.privacy', 'Privacy Policy')}
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t px-4 py-3">
+            <h3 className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+              {tr('participantcard.serviceprovider.title', 'Service Provider')}
+            </h3>
+            <div className="flex min-w-0 items-center gap-2">
+              <LogoImage
+                src={enrichment?.organizationLogoUrl}
+                fallbackSrc={serviceAvatarUrl(did)}
+                className="size-5 shrink-0 rounded object-contain"
+              />
+              <h4 className="text-sm font-medium text-foreground break-words">{organizationLabel || '—'}</h4>
+              {!enrichment?.organizationName && did ? <span className="sr-only">Unverified organization</span> : null}
+              {enrichment?.countryCode ? (
+                <span className="shrink-0 text-base leading-none" aria-hidden="true">
+                  {countryCodeToFlag(enrichment.countryCode)}
+                </span>
+              ) : null}
+              <TrustBadge state={enrichment?.trustStatus} size="md" />
             </div>
           </div>
         </div>
 
-        <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-            {tr('participantcard.serviceprovider.title', 'Service Provider')}
-          </h3>
-          <div className="flex items-center space-x-3">
-            <LogoImage
-              src={enrichment?.organizationLogoUrl}
-              fallbackSrc={serviceAvatarUrl(did)}
-              className="w-6 h-6 rounded shrink-0 object-contain"
-            />
-            <h4 className="text-base font-medium text-gray-900 dark:text-white break-words">
-              {organizationLabel || '—'}
-            </h4>
-            {!enrichment?.organizationName && did ? <span className="sr-only">Unverified organization</span> : null}
-            {enrichment?.countryCode ? (
-              <span className="text-lg shrink-0" aria-hidden="true">
-                {countryCodeToFlag(enrichment.countryCode)}
-              </span>
-            ) : null}
-            <TrustBadge state={enrichment?.trustStatus} size="lg" />
-          </div>
-        </div>
-      </div>
+        <dl className="mt-4 grid grid-cols-2 gap-2 @md/card:grid-cols-6">
+          <StatTile label={tr('participantcard.meta.issued', 'Issued Credentials')} className={countSpan}>
+            {countOf(participant.issued)}
+          </StatTile>
+          <StatTile label={tr('participantcard.meta.verified', 'Verified Credentials')} className={countSpan}>
+            {countOf(participant.verified)}
+          </StatTile>
+          {leaf ? null : (
+            <StatTile label={tr('participantcard.meta.participants', 'Participants')} className={countSpan}>
+              {countOf(participant.participants)}
+            </StatTile>
+          )}
+          <StatTile label={tr('participantcard.meta.deposit', 'Deposit')} className="@md/card:col-span-3">
+            <span className="font-mono text-base">{formatVNAFromUVNA(String(participant.deposit ?? 0))}</span>
+          </StatTile>
+          <StatTile
+            label={tr('participantcard.meta.weight', 'Weight')}
+            className={cn('@md/card:col-span-3', !leaf && 'col-span-2')}
+          >
+            <span className="font-mono text-base">{formatVNAFromUVNA(String(participant.weight ?? 0))}</span>
+          </StatTile>
+        </dl>
+      </header>
 
-      <div className="space-y-8">
-        <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
-          <h3 className="text-lg font-semibold mb-4">{tr('participantcard.meta.title', 'Key Metadata')}</h3>
-          <AttributeGrid participant={participant} items={metadataItems} />
-        </div>
-        <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
-          <h3 className="text-lg font-semibold mb-4">
-            {tr('participantcard.lifecycle.title', 'Participant Lifecycle')}
-          </h3>
-          <AttributeGrid participant={participant} items={lifecycleItems} />
-          <div className="flex flex-wrap gap-3 mt-4">{renderActions(lifecycleActions)}</div>
-        </div>
-        {participant.op_state ? (
-          <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">{tr('participantcard.onboarding.title', 'Onboarding Process')}</h3>
-              <span
-                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${onboardingState.classOnboardingState}`}
-              >
-                {onboardingState.labelOnboardingState}
-              </span>
-            </div>
-            <AttributeGrid participant={participant} items={onboardingItems} />
-            {feeActionBlocked && !pricingNoticeShown ? (
-              <PricingNotice schema={credentialSchema ?? null} className="mt-4" />
-            ) : null}
-            <div className="flex flex-wrap gap-3 mt-4">{renderActions(participantOnboardingActions)}</div>
-          </div>
-        ) : null}
-        <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
-          <h3 className="text-lg font-semibold mb-4">
-            {tr('participantcard.businessmodels.title', 'Business Models')}
-          </h3>
-          <AttributeGrid participant={participant} items={businessModels} columns={3} />
-          {credentialSchema && isNativePricing(credentialSchema) ? (
-            <FeeDistributionPreview participant={participant} />
+      <Section icon={InfoIcon} title={tr('participantcard.meta.title', 'Key Metadata')}>
+        <AttributeGrid participant={participant} items={metadataItems} />
+      </Section>
+
+      <Section icon={WorkflowIcon} title={tr('participantcard.lifecycle.title', 'Participant Lifecycle')}>
+        <AttributeGrid participant={participant} items={lifecycleItems} />
+        <Actions>{renderActions(lifecycleActions)}</Actions>
+      </Section>
+
+      {participant.op_state ? (
+        <Section
+          icon={ScanSearchIcon}
+          title={tr('participantcard.onboarding.title', 'Onboarding Process')}
+          aside={
+            <Badge variant="secondary" className={cn(PILL, onboardingState.classOnboardingState)}>
+              {onboardingState.labelOnboardingState}
+            </Badge>
+          }
+        >
+          <AttributeGrid participant={participant} items={onboardingItems} />
+          {feeActionBlocked && !pricingNoticeShown ? (
+            <PricingNotice schema={credentialSchema ?? null} className="mt-4" />
           ) : null}
-        </div>
-        <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
-          <h3 className="text-lg font-semibold mb-4">{tr('participantcard.slashing.title', 'Slashing')}</h3>
-          <AttributeGrid participant={participant} items={participantSlashing} />
-          <div className="flex flex-wrap gap-3 mt-4">{renderActions(participantSlashingActions)}</div>
-        </div>
-        <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
-          <h3 className="text-lg font-semibold mb-4">{tr('participantcard.timeline.title', 'Activity Timeline')}</h3>
-          {participantHistory.length ? (
-            <div className="space-y-4">
+          <Actions>{renderActions(participantOnboardingActions)}</Actions>
+        </Section>
+      ) : null}
+
+      <Section icon={CoinsIcon} title={tr('participantcard.businessmodels.title', 'Business Models')}>
+        <AttributeGrid participant={participant} items={businessModels} columns={3} />
+        {credentialSchema && isNativePricing(credentialSchema) ? (
+          <FeeDistributionPreview participant={participant} />
+        ) : null}
+      </Section>
+
+      <Section icon={ShieldAlertIcon} title={tr('participantcard.slashing.title', 'Slashing')}>
+        <AttributeGrid participant={participant} items={participantSlashing} />
+        <Actions>{renderActions(participantSlashingActions)}</Actions>
+      </Section>
+
+      <Section icon={HistoryIcon} title={tr('participantcard.timeline.title', 'Activity Timeline')}>
+        {historyEmpty && historyLoading ? (
+          <div className="space-y-4" aria-busy="true">
+            {[0, 1].map((row) => (
+              <div key={row} className="flex gap-3">
+                <Shimmer className="size-7 shrink-0 rounded-full" />
+                <div className="flex-1 space-y-2 pt-1">
+                  <Shimmer className="h-3.5 w-40" />
+                  <Shimmer className="h-3 w-56 max-w-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : historyEmpty && errorParticipantHistory ? (
+          <p className="flex items-start gap-2 text-sm text-foreground">
+            <TriangleAlertIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
+            {translate('activity.unavailable')}
+          </p>
+        ) : historyEmpty ? (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <BadgeCheckIcon aria-hidden="true" className="size-4" />
+            {tr('participantcard.timeline.empty', 'No activity yet.')}
+          </p>
+        ) : (
+          <>
+            <Timeline>
               {participantHistory.map((history, index) => (
                 <ParticipantTimeline
                   participantHistory={history}
@@ -512,13 +655,28 @@ export default function ParticipantCard({
                   key={`${history.block_height}-${index}`}
                 />
               ))}
-              {historyHasNext ? <ShowMoreButton onClick={loadMoreHistory} /> : null}
-            </div>
-          ) : (
-            <p className="text-sm text-neutral-70">{tr('participantcard.timeline.empty', 'No activity yet.')}</p>
-          )}
-        </div>
+            </Timeline>
+            {historyHasNext ? (
+              <div className="mt-3 ms-8">
+                <ShowMoreButton onClick={loadMoreHistory} />
+              </div>
+            ) : null}
+          </>
+        )}
+      </Section>
+    </motion.section>
+  )
+}
+
+export function ParticipantCardPlaceholder() {
+  return (
+    <div className="flex h-full min-h-64 flex-col items-center justify-center gap-3 rounded-xl border border-dashed bg-card/50 p-8 text-center">
+      <div className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+        <UsersIcon aria-hidden="true" className="size-5" />
       </div>
-    </section>
+      <p className="max-w-56 text-sm text-muted-foreground">
+        {tr('participants.tree.selectHint', 'Select a participant to see its details.')}
+      </p>
+    </div>
   )
 }

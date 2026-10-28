@@ -1,9 +1,13 @@
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+'use client'
+
+import { CheckIcon, CopyIcon, ExternalLinkIcon, EyeIcon, type LucideIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { VERANA_VISUALIZER_URL } from '@/config/env'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
+import { cn } from '@/lib/utils'
+import { Button } from '@/ui/shadcn/button'
 import { copyToClipboard } from '@/util/util'
 import type { ParticipantAction } from '../dataview/datasections/participant'
 import { resolveTranslatable } from '../dataview/types'
@@ -15,8 +19,13 @@ type ParticipantAttributeProps = {
   actions?: ParticipantAction[]
 }
 
-// Service action: only for did:web or did:webvh.
-// Extracts the domain (last part after the last ":") and redirects to https://{domain}
+const ACTION_ICON: Record<string, LucideIcon> = {
+  copy: CopyIcon,
+  visualizer: EyeIcon,
+  explorer: ExternalLinkIcon,
+  service: ExternalLinkIcon,
+}
+
 function service(did: string): string | undefined {
   if (!did) return undefined
   const isWeb = did.startsWith('did:web:')
@@ -40,7 +49,6 @@ function visualizerUrl(value: string, action: ParticipantAction): string | undef
       params.set('did', value)
       return `${base}/did-directory?${params.toString()}`
     case 'participant':
-      // The separate visualizer still exposes its established permission query contract.
       params.set('permission', value)
       return `${base}/permissions?${params.toString()}`
     default:
@@ -57,7 +65,6 @@ export default function ParticipantAttribute({ label, value, mono, actions }: Pa
     return () => window.clearTimeout(timeout)
   }, [changeLabel])
 
-  // Returns the handler function to use in <button onClick={...}>
   const makeOnClick = (action: ParticipantAction) => () => {
     switch (action.value) {
       case 'copy':
@@ -83,28 +90,34 @@ export default function ParticipantAttribute({ label, value, mono, actions }: Pa
   }
 
   return (
-    <div>
-      <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">{label}</label>
-      <p className={`text-sm ${mono ? 'font-mono' : ''} text-gray-900 dark:text-white break-all`}>{value}</p>
-
+    <div className="min-w-0">
+      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+      <dd className={cn('mt-1 text-sm text-foreground break-all', mono && 'font-mono text-[13px]')}>{value}</dd>
       {actions?.length ? (
-        <div className="flex items-center space-x-2 mt-1">
+        <dd className="mt-1.5 flex flex-wrap items-center gap-1">
           {actions
             .filter((a) => a.value !== 'service' || service(value))
-            .map((a) => (
-              <button
-                key={`${label}-${a.label}`}
-                onClick={makeOnClick(a)}
-                className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
-                type="button"
-              >
-                <FontAwesomeIcon icon={a.icon} className="mr-1" />
-                {changeLabel && a.value === 'copy'
-                  ? resolveTranslatable({ key: 'participantcard.action.copied' }, translate)
-                  : a.label}
-              </button>
-            ))}
-        </div>
+            .map((a) => {
+              const copied = changeLabel && a.value === 'copy'
+              const Icon = copied ? CheckIcon : (ACTION_ICON[a.value ?? ''] ?? ExternalLinkIcon)
+              return (
+                <Button
+                  key={`${label}-${a.label}`}
+                  onClick={makeOnClick(a)}
+                  variant="ghost"
+                  size="xs"
+                  className={cn(
+                    'first:-ms-2 text-primary hover:text-primary',
+                    copied && 'text-success hover:text-success'
+                  )}
+                  type="button"
+                >
+                  <Icon aria-hidden="true" />
+                  {copied ? resolveTranslatable({ key: 'participantcard.action.copied' }, translate) : a.label}
+                </Button>
+              )
+            })}
+        </dd>
       ) : null}
     </div>
   )

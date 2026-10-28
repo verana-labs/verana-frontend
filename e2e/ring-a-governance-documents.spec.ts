@@ -79,7 +79,7 @@ async function serveMarkdown(page: Page, url: string, body: string) {
 }
 
 async function openViewer(page: Page) {
-  await page.goto(`/ecosystems/${ECOSYSTEM_ID}`)
+  await page.goto(`/ecosystems/${ECOSYSTEM_ID}?tab=governance`)
   await page.getByRole('button', { name: 'View', exact: true }).first().click()
   return page.locator('div.text-left', { has: page.getByLabel('Document language') }).last()
 }
@@ -180,7 +180,7 @@ async function reachGovernanceStep(page: Page) {
   await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
   await page.goto(`/participants/${SCHEMA_ID}`)
   await page
-    .locator('div.rounded-lg.p-2')
+    .locator('[data-slot="tree-row"]')
     .filter({ hasText: 'Issuers' })
     .getByRole('button', { name: /join/ })
     .click({ timeout: 15_000 })

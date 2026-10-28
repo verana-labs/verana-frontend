@@ -16,6 +16,7 @@ import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { CorporationCreateWizard } from '@/ui/common/corporation-create-wizard'
 import { ProposalComposer } from '@/ui/common/proposal-composer'
 import { type CorporationTab, type CorporationView, TABS, TabsLayout } from '@/ui/corporation/layouts'
+import { CorporationPageSkeleton } from '@/ui/corporation/page-skeleton'
 
 const PAGE_TARGETS: IndexerRefreshTarget[] = ['corporationDetails', 'participants']
 
@@ -89,6 +90,12 @@ export default function CorporationPage() {
     }
   }, [did])
 
+  function cancelCreate() {
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('create')
+    router.replace(`${pathname}${params.size ? `?${params.toString()}` : ''}`)
+  }
+
   function selectTab(next: CorporationTab) {
     const params = new URLSearchParams(searchParams.toString())
     if (next === 'overview') params.delete('tab')
@@ -97,17 +104,17 @@ export default function CorporationPage() {
   }
 
   if (!wizardPinned && (actingLoading || (actingCorporation && loading && !details))) {
-    return <p className="p-6 text-sm text-gray-500">{translate('corporation.page.loading')}</p>
+    return <CorporationPageSkeleton />
   }
 
   if (!actingCorporation || creating || wizardPinned) {
     return (
       <>
         {!actingCorporation && discoveryError ? (
-          <div className="mb-4 error-pane">{translate('corporation.page.error')}</div>
+          <div className="mx-auto mb-4 max-w-3xl error-pane">{translate('corporation.page.error')}</div>
         ) : null}
         {!actingCorporation && !discoveryError ? (
-          <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">{translate('corporation.page.nocorp')}</p>
+          <p className="mx-auto mb-4 max-w-3xl text-sm text-muted-foreground">{translate('corporation.page.nocorp')}</p>
         ) : null}
         <CorporationCreateWizard
           onCreating={setWizardPinned}
@@ -116,13 +123,14 @@ export default function CorporationPage() {
             void refetchCorporations()
             router.replace(pathname)
           }}
+          onCancel={actingCorporation && !wizardPinned ? cancelCreate : undefined}
         />
       </>
     )
   }
 
   if (error || !details) {
-    return <div className="p-6 error-pane">{error ?? translate('corporation.page.error')}</div>
+    return <div className="error-pane">{error ?? translate('corporation.page.error')}</div>
   }
 
   const { members, policy, trustDeposit, proposals } = details

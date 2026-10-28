@@ -1,87 +1,44 @@
 'use client'
 
-import { faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { ArchiveIcon, ArrowUpRightIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-
-import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
-import { translate } from '@/i18n/dataview'
-import { displayedVersion } from '@/lib/gf-document'
 import { type DidEnrichment, serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import { trustStateBadge } from '@/lib/trust-state'
+import { cn } from '@/lib/utils'
 import ClaimText from '@/ui/common/claim-text'
 import LogoImage from '@/ui/common/logo-image'
-import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
-import { resolveTranslatable } from '@/ui/dataview/types'
-import { countryCodeToFlag, formatNumber, formatVNAFromUVNA, roleBadgeClass, shortenDID } from '@/util/util'
-
-const ECOSYSTEM_ROLES = ['ECOSYSTEM', 'ISSUER_GRANTOR', 'VERIFIER_GRANTOR', 'ISSUER', 'VERIFIER', 'HOLDER'] as const
-type EcosystemRole = (typeof ECOSYSTEM_ROLES)[number]
+import TrustBadge from '@/ui/common/trust-badge'
+import { type EcosystemCardData, ecosystemHref, useEcosystemIdentity } from '@/ui/ecosystems/ecosystem-identity'
+import { statLabel, tr } from '@/ui/ecosystems/i18n'
+import { interactiveCard } from '@/ui/motion/interaction'
+import { Badge } from '@/ui/shadcn/badge'
+import { formatNumber, formatVNAFromUVNA, roleBadgeClass, shortenMiddle } from '@/util/util'
 
 export const CARD_BODY_CLASS = 'grid h-full min-h-[20.25rem] grid-rows-[5rem_3.25rem_1.5rem_1fr] gap-3 p-4 sm:p-6'
-const CARD_HEADER_REGION_CLASS = 'flex min-h-0 min-w-0 items-start space-x-3 overflow-hidden'
-const CARD_ORG_REGION_CLASS = 'flex min-h-0 min-w-0 items-start space-x-2 overflow-hidden'
-const CARD_ROLES_REGION_CLASS = 'flex min-h-0 min-w-0 items-start gap-2 overflow-hidden'
-const ROLE_PILL_CLASS = 'inline-flex min-w-0 max-w-[8.5rem] items-center rounded-full px-2.5 py-0.5 text-xs font-medium'
 
-function parseRoles(role: string | undefined | null): EcosystemRole[] {
-  if (!role) return []
-  const valid = new Set<EcosystemRole>(ECOSYSTEM_ROLES)
-  const seen = new Set<EcosystemRole>()
-  for (const r of role.split(/[,\s]+/)) {
-    const up = r.trim().toUpperCase() as EcosystemRole
-    if (valid.has(up)) seen.add(up)
-  }
-  return [...seen]
-}
-
-type EcosystemCardData = Pick<
-  EcosystemListItem,
-  | 'id'
-  | 'did'
-  | 'archived'
-  | 'activeVersion'
-  | 'activeSchemas'
-  | 'participants'
-  | 'weight'
-  | 'issued'
-  | 'verified'
-  | 'versions'
-> & { role?: string }
-
-function governanceFrameworkHref(ecosystem: EcosystemCardData): string | undefined {
-  return displayedVersion(ecosystem.versions ?? [], ecosystem.activeVersion)?.documents[0]?.url
-}
+const ROLE_PILL_CLASS =
+  'inline-flex h-5 min-w-0 max-w-[8.5rem] items-center rounded-full px-2 text-[11px] font-medium tracking-wide'
 
 type Props = {
   ecosystem: EcosystemCardData
   enrichment?: DidEnrichment
 }
 
+type EcosystemIdentity = ReturnType<typeof useEcosystemIdentity>
+
 export default function EcosystemCard({ ecosystem, enrichment }: Props) {
   const router = useRouter()
-  const { data: resolved } = useDidTrustEnrichment(enrichment ? undefined : ecosystem.did)
-  const identity = enrichment ?? resolved
+  const eco = useEcosystemIdentity(ecosystem, enrichment)
+  const visibleRoles = eco.roles.slice(0, 2)
+  const extraRoles = eco.roles.slice(visibleRoles.length)
 
-  const trustBadge = trustStateBadge(identity?.trustStatus)
-  const ecosystemName = identity?.serviceName ?? shortenDID(ecosystem.did) ?? ecosystem.did
-  const ecosystemDescription = identity?.serviceDescription
-  const orgName = identity?.organizationName ?? shortenDID(ecosystem.did) ?? ecosystem.did
-  const flag = countryCodeToFlag(identity?.countryCode)
-  const egfHref = governanceFrameworkHref(ecosystem)
-  const roles = parseRoles(ecosystem.role)
-  const visibleRoles = roles.slice(0, 2)
-  const extraRoleCount = Math.max(0, roles.length - visibleRoles.length)
-  const isArchived = Boolean(ecosystem.archived)
-
-  const handleClick = () => router.push(`/ecosystems/${encodeURIComponent(ecosystem.id)}`)
-
-  const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
+  const handleClick = () => router.push(ecosystemHref(ecosystem.id))
 
   return (
     <div
       role="button"
       tabIndex={0}
+      aria-label={eco.name}
       onClick={handleClick}
       onKeyDown={(e) => {
         if (e.target !== e.currentTarget) return
@@ -90,133 +47,164 @@ export default function EcosystemCard({ ecosystem, enrichment }: Props) {
           handleClick()
         }
       }}
-      className={`h-full bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer ${
-        isArchived ? 'archived-watermark' : ''
-      }`}
+      data-archived={eco.archived || undefined}
+      className={cn(
+        'flex h-full cursor-pointer flex-col overflow-hidden rounded-xl bg-card text-card-foreground shadow-card',
+        interactiveCard,
+        eco.archived && 'bg-muted/40 dark:bg-muted/30'
+      )}
     >
-      <div className={`${CARD_BODY_CLASS} ${isArchived ? 'archived-bg' : ''}`}>
-        <div className={CARD_HEADER_REGION_CLASS}>
+      <div className="flex flex-col gap-3.5 p-5">
+        <div className="flex min-w-0 items-start gap-3.5">
           <LogoImage
-            src={identity?.serviceLogoUrl}
+            src={eco.identity?.serviceLogoUrl}
             fallbackSrc={serviceIdenticonUrl(ecosystem.did)}
-            className="w-12 h-12 rounded-lg shrink-0 object-contain"
+            className={cn(
+              'size-12 shrink-0 rounded-lg bg-background object-contain ring-1 ring-border',
+              eco.archived && 'grayscale'
+            )}
           />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <h3
-                className="line-clamp-2 text-base font-semibold text-gray-900 dark:text-white break-words"
-                title={ecosystemName}
+          <div className="min-w-0 flex-1 pt-0.5">
+            <div className="flex items-start gap-2">
+              <h2
+                className={cn(
+                  'min-w-0 flex-1 leading-snug font-semibold tracking-tight',
+                  eco.nameIsDid ? 'truncate font-mono text-[13px]' : 'line-clamp-2 text-[15px] break-words'
+                )}
+                title={eco.nameIsDid ? ecosystem.did : eco.name}
               >
-                {ecosystemName}
-              </h3>
-              <FontAwesomeIcon
-                icon={trustBadge.icon}
-                className={`text-xl ${trustBadge.iconColorClass} shrink-0`}
-                title={trustBadge.label}
-                aria-label={trustBadge.label}
-              />
+                {eco.nameIsDid ? shortenMiddle(ecosystem.did, 26) : eco.name}
+              </h2>
+              <TrustBadge state={eco.trustStatus} size="md" className="mt-0.5" />
             </div>
-            {ecosystemDescription ? (
-              <ClaimText
-                text={ecosystemDescription}
-                format={identity?.serviceDescriptionFormat}
-                className="text-xs text-neutral-70 dark:text-neutral-70 mt-1 line-clamp-2 break-words"
-                title={ecosystemDescription}
-              />
+            <OrganizationLine eco={eco} />
+          </div>
+        </div>
+
+        {eco.description ? (
+          <ClaimText
+            text={eco.description}
+            format={eco.descriptionFormat}
+            className="line-clamp-2 text-sm leading-5 break-words text-muted-foreground"
+            title={eco.description}
+          />
+        ) : eco.nameIsDid ? null : (
+          <p className="truncate font-mono text-xs leading-5 text-muted-foreground" title={ecosystem.did}>
+            {ecosystem.did}
+          </p>
+        )}
+
+        {eco.roles.length > 0 || eco.archived ? (
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            {eco.archived ? (
+              <Badge variant="outline" className="text-muted-foreground">
+                <ArchiveIcon data-icon="inline-start" aria-hidden="true" />
+                {tr('ecosystems.card.archived', 'Archived')}
+              </Badge>
+            ) : null}
+            {visibleRoles.map((role) => (
+              <span key={role} className={cn(ROLE_PILL_CLASS, roleBadgeClass(role))} title={role}>
+                <span className="truncate">{role}</span>
+              </span>
+            ))}
+            {extraRoles.length > 0 ? (
+              <span className={cn(ROLE_PILL_CLASS, 'bg-muted text-muted-foreground')} title={extraRoles.join(', ')}>
+                +{extraRoles.length}
+              </span>
             ) : null}
           </div>
-        </div>
+        ) : null}
+        {visibleRoles.length === 0 ? (
+          <span className="sr-only">{tr('datatable.ecosystem.card.noRoles', 'No roles')}</span>
+        ) : null}
+      </div>
 
-        <div className={CARD_ORG_REGION_CLASS}>
-          <LogoImage
-            src={identity?.organizationLogoUrl}
-            fallbackSrc={serviceAvatarUrl(identity?.organizationName ?? ecosystem.did)}
-            className="w-8 h-8 rounded shrink-0 object-contain"
-          />
-          <div className="flex-1 min-w-0">
-            <h4 className="truncate text-sm font-medium text-gray-900 dark:text-white" title={orgName}>
-              {orgName}
-            </h4>
-            <div className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden">
-              <span className="shrink-0 text-lg" aria-hidden="true">
-                {flag}
-              </span>
-              {egfHref ? (
-                <a
-                  href={egfHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="flex min-w-0 items-center space-x-1 text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
-                >
-                  <span className="truncate">{t('datatable.ecosystem.card.egf', 'EGF')}</span>
-                  <FontAwesomeIcon icon={faExternalLinkAlt} className="shrink-0 text-xs" />
-                </a>
-              ) : null}
-            </div>
-          </div>
-        </div>
+      <dl className="mt-auto grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border px-5 py-4">
+        <Stat
+          label={statLabel('datatable.ecosystem.card.activeSchemas', 'Active Schemas')}
+          value={ecosystem.activeSchemas}
+        />
+        <Stat
+          label={statLabel('datatable.ecosystem.card.participants', 'Participants')}
+          value={ecosystem.participants}
+        />
+        <Stat
+          label={statLabel('datatable.ecosystem.card.issuedCredentials', 'Issued Credentials')}
+          value={ecosystem.issued}
+        />
+        <Stat
+          label={statLabel('datatable.ecosystem.card.verifiedCredentials', 'Verified Credentials')}
+          value={ecosystem.verified}
+        />
+      </dl>
 
-        <div className={CARD_ROLES_REGION_CLASS}>
-          {visibleRoles.length > 0 ? (
-            visibleRoles.map((r) => (
-              <span key={r} className={`${ROLE_PILL_CLASS} ${roleBadgeClass(r)}`} title={r}>
-                <span className="truncate">{r}</span>
-              </span>
-            ))
-          ) : (
-            <span className="sr-only">{t('datatable.ecosystem.card.noRoles', 'No roles')}</span>
-          )}
-          {extraRoleCount > 0 ? (
-            <span
-              className="inline-flex shrink-0 items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
-              title={roles.slice(visibleRoles.length).join(', ')}
-            >
-              +{extraRoleCount}
-            </span>
-          ) : null}
-        </div>
-
-        <div className="space-y-2 text-sm">
-          <Stat
-            label={t('datatable.ecosystem.card.activeSchemas', 'Active Schemas:')}
-            value={formatNumber(ecosystem.activeSchemas, true)}
-          />
-          <Stat
-            label={t('datatable.ecosystem.card.participants', 'Participants:')}
-            value={formatNumber(ecosystem.participants, true)}
-          />
-          <Stat
-            label={t('datatable.ecosystem.card.trustValue', 'Trust Value:')}
-            value={formatVNAFromUVNA(ecosystem.weight == null ? null : String(ecosystem.weight))}
-            mono
-          />
-          <Stat
-            label={t('datatable.ecosystem.card.issuedCredentials', 'Issued Credentials:')}
-            value={formatNumber(ecosystem.issued, true)}
-          />
-          <Stat
-            label={t('datatable.ecosystem.card.verifiedCredentials', 'Verified Credentials:')}
-            value={formatNumber(ecosystem.verified, true)}
-          />
-        </div>
+      <div className="flex min-h-11 items-center justify-between gap-3 border-t border-border bg-muted/50 px-5 py-2.5 text-xs dark:bg-muted/30">
+        <TrustValue weight={ecosystem.weight} />
+        {eco.egfHref ? (
+          <a
+            href={eco.egfHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="-mx-1.5 inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 font-medium text-primary transition-colors duration-(--duration-base) hover:bg-primary/10 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+          >
+            {tr('datatable.ecosystem.card.egf', 'EGF')}
+            <ArrowUpRightIcon className="size-3.5" aria-hidden="true" />
+          </a>
+        ) : null}
       </div>
     </div>
   )
 }
 
-function Stat({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function OrganizationLine({ eco }: { eco: EcosystemIdentity }) {
+  if (eco.orgName) {
+    return (
+      <div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+        <LogoImage
+          src={eco.identity?.organizationLogoUrl}
+          fallbackSrc={serviceAvatarUrl(eco.orgName)}
+          className="size-5 shrink-0 rounded-sm object-contain"
+        />
+        <span className="truncate font-medium" title={eco.orgName}>
+          {eco.orgName}
+        </span>
+        {eco.flag ? (
+          <span className="shrink-0 text-sm leading-none" title={eco.countryCode} aria-hidden="true">
+            {eco.flag}
+          </span>
+        ) : null}
+      </div>
+    )
+  }
+  if (!eco.identity || eco.trustStatus === 'TRUSTED') return null
+  return <p className="mt-1 text-xs text-muted-foreground">{trustStateBadge(eco.trustStatus).label}</p>
+}
+
+export function TrustValue({ weight }: { weight: string | null | undefined }) {
+  const value = formatVNAFromUVNA(weight == null ? null : String(weight))
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_minmax(5.5rem,auto)] items-start gap-3">
-      <span className="min-w-0 break-words text-neutral-70 dark:text-neutral-70">{label}</span>
-      <span
-        className={`min-w-0 break-words text-right font-medium text-gray-900 dark:text-white ${
-          mono ? 'font-mono' : ''
-        }`}
-        title={value}
-      >
+    <div className="flex min-w-0 items-baseline gap-2">
+      <span className="shrink-0 text-muted-foreground">
+        {statLabel('datatable.ecosystem.card.trustValue', 'Trust Value')}
+      </span>
+      <span className="truncate font-mono font-medium text-foreground tabular-nums" title={value}>
         {value}
       </span>
+    </div>
+  )
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+  const formatted = formatNumber(value, true, true)
+  return (
+    <div className="min-w-0">
+      <dt className="truncate text-xs text-muted-foreground" title={label}>
+        {label}
+      </dt>
+      <dd className="mt-0.5 text-lg leading-6 font-semibold tracking-tight tabular-nums" title={formatted}>
+        {formatted}
+      </dd>
     </div>
   )
 }

@@ -30,7 +30,7 @@ const SNAPSHOT = {
 }
 
 describe('parseDashboardMetricsResponse', () => {
-  it('maps the global snapshot and ignores the fields the dashboard does not show', () => {
+  it('maps the global snapshot, its participant roles, and ignores the fields the dashboard does not show', () => {
     expect(parseDashboardMetricsResponse(SNAPSHOT)).toEqual({
       ecosystems: 13,
       schemas: 25,
@@ -38,6 +38,7 @@ describe('parseDashboardMetricsResponse', () => {
       totalLockedTrustDeposit: '100000',
       issuedCredentials: 184,
       verifiedCredentials: 2671,
+      roles: { ecosystem: 4, issuer: 11, verifier: 6, holder: 7, issuerGrantor: 2, verifierGrantor: 1 },
     })
   })
 
@@ -48,6 +49,11 @@ describe('parseDashboardMetricsResponse', () => {
     expect(totalLockedTrustDeposit).toBe(weight)
     expect(formatVNAFromUVNA(String(totalLockedTrustDeposit))).toBe('9,007,199,254,740.993123 VNA')
     expect(String(Number(weight))).not.toBe(weight)
+  })
+
+  it('reads missing participant roles as zero', () => {
+    const partial = { ...SNAPSHOT, participants_holder: undefined, participants_issuer: undefined }
+    expect(parseDashboardMetricsResponse(partial).roles).toMatchObject({ holder: 0, issuer: 0, verifier: 6 })
   })
 
   it('accepts counts sent as digit strings', () => {

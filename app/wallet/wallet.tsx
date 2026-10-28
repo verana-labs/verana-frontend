@@ -1,48 +1,26 @@
 'use client'
 
 import { useChain } from '@cosmos-kit/react'
-import { JSX, useEffect, useRef } from 'react'
+import { DownloadIcon, RotateCwIcon, WalletIcon } from 'lucide-react'
+import { type ComponentProps, type ReactNode, useEffect, useRef } from 'react'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
-import { resolveTranslatable } from '@/ui/dataview/types'
-import {
-  ButtonConnect,
-  ButtonConnected,
-  ButtonConnecting,
-  ButtonDisconnected,
-  // ButtonError,
-  ButtonNotExist,
-  ButtonRejected,
-} from '@/wallet/connect'
+import { cn } from '@/lib/utils'
+import { Button } from '@/ui/shadcn/button'
+import { Spinner } from '@/ui/shadcn/spinner'
 
 type WalletProps = {
   autoConnect?: boolean
+  className?: string
+  size?: ComponentProps<typeof Button>['size']
+  variant?: ComponentProps<typeof Button>['variant']
 }
 
-export default function Wallet({ autoConnect = false }: WalletProps) {
+type WalletStatus = 'Disconnected' | 'Error' | 'Connecting' | 'Connected' | 'NotExist' | 'Rejected'
+
+export default function Wallet({ autoConnect = false, className, size = 'default', variant = 'default' }: WalletProps) {
   const veranaChain = useVeranaChain()
-
   const { status, connect, openView } = useChain(veranaChain.chain_name)
-
-  type WalletStatus = 'Disconnected' | 'Error' | 'Connecting' | 'Connected' | 'NotExist' | 'Rejected'
-
-  const buttonByStatus: Record<WalletStatus, JSX.Element> = {
-    Connected: <ButtonConnected onClick={openView} />,
-    Connecting: <ButtonConnecting />,
-    Disconnected: (
-      <ButtonDisconnected
-        onClick={connect}
-        text={resolveTranslatable({ key: 'wallet.dashboard.connect' }, translate)}
-      />
-    ),
-    Error: <ButtonRejected onClick={connect} />,
-    Rejected: <ButtonRejected onClick={connect} />,
-    NotExist: <ButtonNotExist onClick={openView} />,
-  }
-
-  const ConnectButton = buttonByStatus[status as WalletStatus] ?? (
-    <ButtonConnect onClick={connect} text={resolveTranslatable({ key: 'wallet.dashboard.connect' }, translate)} />
-  )
 
   const attemptAutoConnect = useRef(false)
   useEffect(() => {
@@ -57,9 +35,32 @@ export default function Wallet({ autoConnect = false }: WalletProps) {
 
   if (autoConnect) return null
 
+  const byStatus: Record<WalletStatus, { label: string; onClick?: () => void; icon: ReactNode }> = {
+    Connected: { label: translate('wallet.wallet'), onClick: () => openView(), icon: <WalletIcon /> },
+    Connecting: { label: translate('wallet.connecting'), icon: <Spinner /> },
+    Disconnected: { label: translate('wallet.dashboard.connect'), onClick: () => void connect(), icon: <WalletIcon /> },
+    Error: { label: translate('wallet.reconnect'), onClick: () => void connect(), icon: <RotateCwIcon /> },
+    Rejected: { label: translate('wallet.reconnect'), onClick: () => void connect(), icon: <RotateCwIcon /> },
+    NotExist: { label: translate('wallet.install'), onClick: () => openView(), icon: <DownloadIcon /> },
+  }
+  const current = byStatus[status as WalletStatus] ?? {
+    label: translate('wallet.dashboard.connect'),
+    onClick: () => void connect(),
+    icon: <WalletIcon />,
+  }
+
   return (
-    <div className="flex items-center space-x-4 rtl:space-x-reverse">
-      <div className="border-0 items-center justify-center flex rounded-md transition-all">{ConnectButton}</div>
-    </div>
+    <Button
+      type="button"
+      size={size}
+      variant={variant}
+      onClick={current.onClick}
+      disabled={!current.onClick}
+      aria-busy={status === 'Connecting' || undefined}
+      className={cn('gap-2', className)}
+    >
+      {current.icon}
+      {current.label}
+    </Button>
   )
 }

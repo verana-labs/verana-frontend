@@ -1,12 +1,12 @@
 'use client'
 
 import { faFolder } from '@fortawesome/free-solid-svg-icons'
-import Link from 'next/link'
-import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useActingPendingVotes, useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
-import { INDEXER_MAX_LIMIT } from '@/lib/indexer-json'
 import { usePendingTasksCtx } from '@/providers/api-rest-query-provider-context'
+import { CorporationRequired } from '@/ui/agents-tasks-settings/corporation-required'
+import { PendingTasksInbox } from '@/ui/agents-tasks-settings/pending-tasks-inbox'
 import ParticipantTree from '@/ui/common/participant-tree'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import type { Participant, PendingEcosystem } from '@/ui/dataview/datasections/participant'
@@ -37,9 +37,9 @@ function buildTree(ecosystems: PendingEcosystem[], corporationId?: number): Tree
     parentId: 'root',
     isCorporation: false,
     isValidator: false,
-    roleColorClass: 'text-purple-300',
+    roleColorClass: 'text-primary',
     icon: faFolder,
-    iconColorClass: 'text-purple-300',
+    iconColorClass: 'text-primary',
     serviceDid: ecosystem.did ?? undefined,
     serviceTrustData: ecosystem.trustData,
     badgeCount: ecosystem.pending_tasks,
@@ -50,30 +50,14 @@ function buildTree(ecosystems: PendingEcosystem[], corporationId?: number): Tree
       parentId: `ecosystem:${ecosystem.id}`,
       isCorporation: false,
       isValidator: false,
-      roleColorClass: 'text-purple-200',
+      roleColorClass: 'text-muted-foreground',
       icon: faFolder,
-      iconColorClass: 'text-purple-200',
+      iconColorClass: 'text-muted-foreground',
       serviceTitle: schema.title,
       badgeCount: schema.pending_tasks,
       children: schema.pending_participants.map((participant) => participantNode(participant, corporationId)),
     })),
   }))
-}
-
-function treePlaceholder(count: number, partial: boolean, settled: boolean, error: string | null): ReactNode {
-  if (error) return <p className="p-2 text-sm text-amber-700 dark:text-amber-300">{translate('task.tree.error')}</p>
-  if (partial)
-    return (
-      <p className="p-2 text-xs text-neutral-70 dark:text-neutral-70">
-        {translate('task.tree.partial', { count: INDEXER_MAX_LIMIT })}
-      </p>
-    )
-  if (count > 0) return null
-  return (
-    <p className="p-2 text-sm text-neutral-70 dark:text-neutral-70">
-      {translate(settled ? 'task.tree.empty' : 'task.tree.loading')}
-    </p>
-  )
 }
 
 export default function PendingTasksPage() {
@@ -92,31 +76,31 @@ export default function PendingTasksPage() {
     setRefreshRoot(false)
   }, [refetch, refreshRoot])
 
-  if (!actingCorporation && !corporationLoading) {
-    if (discoveryError) return <div className="p-6 error-pane">{translate('corporation.page.error')}</div>
-    return <p className="p-6 text-sm text-gray-600 dark:text-gray-300">{translate('corporation.page.nocorp')}</p>
-  }
+  if (!actingCorporation && !corporationLoading)
+    return (
+      <CorporationRequired
+        failed={Boolean(discoveryError)}
+        title={translate('task.title')}
+        description={translate('task.description')}
+      />
+    )
 
   return (
-    <>
-      {pendingVotes > 0 ? (
-        <p className="mb-4 ps-2 text-sm text-gray-700 dark:text-gray-300">
-          {translate('task.votes.pending', { count: pendingVotes })}{' '}
-          <Link
-            href="/corporation?tab=proposals"
-            className="font-medium text-primary-600 dark:text-primary-400 hover:underline"
-          >
-            {translate('task.votes.open')}
-          </Link>
-        </p>
-      ) : null}
-      <ParticipantTree
-        tree={participantTree}
-        type="tasks"
-        viewerCorporationId={actingCorporation?.corporation.id}
-        refreshRoot={() => setRefreshRoot(true)}
-        placeholder={treePlaceholder(pendingParticipants.length, partial, settled && !corporationLoading, error)}
-      />
-    </>
+    <ParticipantTree
+      tree={participantTree}
+      type="tasks"
+      viewerCorporationId={actingCorporation?.corporation.id}
+      refreshRoot={() => setRefreshRoot(true)}
+      placeholder={
+        <PendingTasksInbox
+          ecosystems={pendingParticipants}
+          pendingVotes={pendingVotes}
+          partial={partial}
+          settled={settled && !corporationLoading}
+          error={error}
+          onRetry={() => setRefreshRoot(true)}
+        />
+      }
+    />
   )
 }
