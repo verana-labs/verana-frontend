@@ -158,7 +158,7 @@ export default function TreeNodeHeader({
               event.stopPropagation()
               onToggle(node.nodeId, node.type, node.parentId)
             }}
-            className="text-gray-400 text-xs w-4 flex-shrink-0"
+            className="text-gray-400 text-xs w-4 shrink-0"
             aria-label="Toggle"
           >
             <FontAwesomeIcon
@@ -167,7 +167,7 @@ export default function TreeNodeHeader({
             />
           </button>
         ) : (
-          <div className="w-4 flex-shrink-0" />
+          <div className="w-4 shrink-0" />
         )}
 
         {node.group ? (

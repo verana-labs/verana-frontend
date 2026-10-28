@@ -80,7 +80,7 @@ export default function CsSummaryCard({ credentialSchema, onView, onParticipants
           >
             {credentialSchema.title}
           </button>
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
             <IconActionButton icon={faEye} label={previewLabel} onClick={onView} />
             <IconActionButton icon={faSitemap} label={participantsLabel} onClick={onParticipants} />
           </div>

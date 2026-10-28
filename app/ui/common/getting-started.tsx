@@ -19,7 +19,7 @@ export default function GettingStarted() {
               {stepsGettingStarted.map((step, idx) => {
                 return (
                   <div key={`step-${idx}`} className="flex items-start space-x-4">
-                    <div className="flex-shrink-0 w-8 h-8 bg-primary-100 dark:bg-primary-900/20 rounded-full flex items-center justify-center">
+                    <div className="shrink-0 w-8 h-8 bg-primary-100 dark:bg-primary-900/20 rounded-full flex items-center justify-center">
                       <span className="text-sm font-semibold text-primary-600 dark:text-primary-400">{idx + 1}</span>
                     </div>
                     <div>

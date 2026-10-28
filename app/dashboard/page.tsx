@@ -29,7 +29,7 @@ function CallToAction({ title, message, action }: { title?: string; message?: st
               <h2 className="text-2xl font-bold text-white mb-2">{title}</h2>
               <p className="text-primary-100 text-lg mb-4">{message}</p>
             </div>
-            <div className="flex-shrink-0">{action}</div>
+            <div className="shrink-0">{action}</div>
           </div>
         </div>
       </div>

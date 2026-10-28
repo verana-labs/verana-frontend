@@ -31,7 +31,7 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
   return (
     <div className="border border-neutral-20 dark:border-neutral-70 rounded-xl p-6 mb-6">
       <div className="flex items-start space-x-4 mb-6">
-        <div className="w-12 h-12 bg-linear-to-br/srgb from-primary-500 to-primary-700 rounded-lg flex items-center justify-center flex-shrink-0">
+        <div className="w-12 h-12 bg-linear-to-br/srgb from-primary-500 to-primary-700 rounded-lg flex items-center justify-center shrink-0">
           <FontAwesomeIcon icon={faShieldHalved} className="text-white text-2xl" />
         </div>
         <div className="flex-1 min-w-0 break-all">

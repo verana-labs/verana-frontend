@@ -64,7 +64,7 @@ export function DiscoverEcosystemCard({
           <LogoImage
             src={identity?.serviceLogoUrl}
             fallbackSrc={serviceIdenticonUrl(ecosystem.did)}
-            className="w-12 h-12 rounded-lg flex-shrink-0 object-contain"
+            className="w-12 h-12 rounded-lg shrink-0 object-contain"
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
@@ -88,7 +88,7 @@ export function DiscoverEcosystemCard({
           <LogoImage
             src={identity?.organizationLogoUrl}
             fallbackSrc={serviceAvatarUrl(identity?.organizationName ?? ecosystem.did)}
-            className="w-8 h-8 rounded flex-shrink-0 object-contain"
+            className="w-8 h-8 rounded shrink-0 object-contain"
           />
           <div className="flex-1 min-w-0">
             <h3 className="truncate text-sm font-medium text-gray-900 dark:text-white" title={orgName}>

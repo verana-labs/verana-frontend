@@ -36,7 +36,7 @@ export default function ParticipantTimeline({
 
   return (
     <div className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${iconBgClass}`}>
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${iconBgClass}`}>
         <FontAwesomeIcon icon={icon} className={`text-xs ${iconColorClass}`} />
       </div>
       <div className="flex-1 min-w-0">

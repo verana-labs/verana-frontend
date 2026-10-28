@@ -229,27 +229,6 @@
 
   --shadow-focus: 0 0 0 3px rgba(118, 62, 240, 0.35);
 
-  --animate-skeleton: skeleton 1s linear infinite alternate;
-  --animate-pulseRing: pulseRing 2s ease-out infinite;
-
-  @keyframes skeleton {
-    0% {
-      opacity: 1;
-    }
-    100% {
-      opacity: 0.4;
-    }
-  }
-  @keyframes pulseRing {
-    0% {
-      transform: scale(1);
-      opacity: 1;
-    }
-    100% {
-      transform: scale(2);
-      opacity: 0;
-    }
-  }
 }
 
 @theme inline {
@@ -749,7 +728,7 @@
   }
 
   .data-view-section-icon {
-    @apply h-4 w-4 flex-shrink-0;
+    @apply h-4 w-4 shrink-0;
   }
 
   .data-view-section-icon-info {
@@ -1077,23 +1056,23 @@
   }
 
   .notify-icon {
-   @apply  w-7 h-7 flex-shrink-0;
+   @apply  w-7 h-7 shrink-0;
   }
 
   .notify-icon-success {
-    @apply w-7 h-7 flex-shrink-0 text-green-600;
+    @apply w-7 h-7 shrink-0 text-green-600;
   }
 
   .notify-icon-error {
-    @apply w-7 h-7 flex-shrink-0 text-red-600;
+    @apply w-7 h-7 shrink-0 text-red-600;
   }
 
   .notify-icon-in-progress {
-    @apply w-7 h-7 flex-shrink-0 text-blue-500 animate-spin;
+    @apply w-7 h-7 shrink-0 text-blue-500 animate-spin;
   }
 
   .notify-icon-info {
-    @apply w-7 h-7 flex-shrink-0 text-blue-600;
+    @apply w-7 h-7 shrink-0 text-blue-600;
   }
 
   .lowBalanceLink {
