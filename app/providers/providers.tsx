@@ -1,7 +1,6 @@
 // 'use client'
 
 import dynamic from 'next/dynamic'
-import { ThemeProvider } from 'next-themes'
 import { RestQueryProvider } from '@/providers/api-rest-query-provider-context'
 import { ComponentsVersionProvider } from '@/providers/components-version-provider'
 import { CorporationProvider } from '@/providers/corporation-provider'
@@ -15,23 +14,21 @@ const VeranaChainProvider = dynamic(() => import('@/providers/verana-chain-provi
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider attribute="class" enableSystem defaultTheme="system">
-      <VeranaChainProvider>
-        <ComponentsVersionProvider>
-          <IndexerEventsProvider>
-            <CorporationProvider>
-              <CorporationChooser />
-              <RequireConnectedWallet>
-                <NotificationProvider>
-                  <TxConfirmProvider>
-                    <RestQueryProvider>{children}</RestQueryProvider>
-                  </TxConfirmProvider>
-                </NotificationProvider>
-              </RequireConnectedWallet>
-            </CorporationProvider>
-          </IndexerEventsProvider>
-        </ComponentsVersionProvider>
-      </VeranaChainProvider>
-    </ThemeProvider>
+    <VeranaChainProvider>
+      <ComponentsVersionProvider>
+        <IndexerEventsProvider>
+          <CorporationProvider>
+            <CorporationChooser />
+            <RequireConnectedWallet>
+              <NotificationProvider>
+                <TxConfirmProvider>
+                  <RestQueryProvider>{children}</RestQueryProvider>
+                </TxConfirmProvider>
+              </NotificationProvider>
+            </RequireConnectedWallet>
+          </CorporationProvider>
+        </IndexerEventsProvider>
+      </ComponentsVersionProvider>
+    </VeranaChainProvider>
   )
 }

@@ -16,7 +16,10 @@ export interface TxNotice {
   message: string
   title: string
   link?: NotificationLink
+  cancelled?: true
 }
+
+type Notify = (message: string, type: 'error' | 'info', title?: string, link?: NotificationLink) => Promise<void>
 
 const EVENT_EXEC = 'cosmos.group.v1.EventExec'
 const FAILED_LOGS_PREFIX = /^proposal execution failed on proposal \d+, because of error /
@@ -66,8 +69,13 @@ export function proposalExecution(events: readonly TxEvent[]): ProposalExecution
 }
 
 const SUBMITTED_TX = /Transaction with ID ([0-9A-F]{64}) was submitted/
+const SIGNATURE_CANCELLED = /request rejected|user rejected|rejected by (the )?user|user denied/i
 
-export function rejectionNotice(fallback: string, text: string): TxNotice {
+export function isSignatureCancelled(text: string): boolean {
+  return SIGNATURE_CANCELLED.test(text)
+}
+
+function failureNotice(fallback: string, text: string): TxNotice {
   const reason = authorizationRejection(text)
   const submitted = SUBMITTED_TX.exec(text)?.[1]
   if (!reason) {
@@ -81,13 +89,28 @@ export function rejectionNotice(fallback: string, text: string): TxNotice {
   return { message: t('notification.msg.unauthorized', { reason }), title: t('notification.msg.unauthorized.title') }
 }
 
+export function rejectionNotice(fallback: string, text: string): TxNotice {
+  if (!isSignatureCancelled(text)) return failureNotice(fallback, text)
+  const message = t('notification.msg.signatureCancelled')
+  return { message, title: message, cancelled: true }
+}
+
+export async function notifyRejection(notify: Notify, fallback: string, text: string): Promise<void> {
+  const notice = rejectionNotice(fallback, text)
+  if (notice.cancelled) {
+    void notify(notice.message, 'info')
+    return
+  }
+  await notify(notice.message, 'error', notice.title, notice.link)
+}
+
 export function txFailureNotice(
   result: DeliverTxResponse,
   fallback: (code: number, rawLog: string) => string
 ): TxNotice | null {
   const rawLog = result.rawLog ?? ''
   const link = explorerTxLink(result.transactionHash)
-  if (result.code !== 0) return { ...rejectionNotice(fallback(result.code, rawLog), rawLog), link }
+  if (result.code !== 0) return { ...failureNotice(fallback(result.code, rawLog), rawLog), link }
   const outcome = proposalExecution(result.events)
   if (outcome.status !== 'failed') return null
   const reason = authorizationRejection(outcome.logs)

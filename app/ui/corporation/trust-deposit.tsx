@@ -5,11 +5,11 @@ import type { CorporationTrustDeposit } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
+import { NumberTicker } from '@/ui/motion/number-ticker'
 import { Button } from '@/ui/shadcn/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from '@/ui/shadcn/empty'
 import { formatVNAFromUVNA } from '@/util/util'
 import { CategoryBar } from './category-bar'
-import { CountUp } from './count-up'
 import { Card, Fact, formatDate, SectionHeader, SectionUnavailable } from './shared'
 
 function formatUvna(value: number): string {
@@ -77,7 +77,7 @@ export function TrustDepositSection({
           <div>
             <p className="text-sm font-medium text-muted-foreground">{translate('corporation.page.deposit')}</p>
             <p className="mt-1 text-4xl font-semibold tracking-tight text-foreground tabular-nums">
-              <CountUp value={trustDeposit.deposit} format={formatUvna} />
+              <NumberTicker value={trustDeposit.deposit} format={formatUvna} />
             </p>
           </div>
           {trustDeposit.slashedDeposit > 0 ? <SlashBalance trustDeposit={trustDeposit} /> : null}

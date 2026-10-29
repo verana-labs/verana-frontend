@@ -47,6 +47,8 @@ type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & 
 const NOTICE_CLASS =
   'group/alert grid w-full grid-cols-[auto_1fr] gap-x-2.5 gap-y-0.5 rounded-lg border px-4 py-3 text-left text-sm *:[svg]:row-span-2 *:[svg]:size-4 *:[svg]:translate-y-0.5'
 
+const IRREVERSIBLE_MSG = /^Msg(Revoke|Slash)/
+
 type FieldValidationError = {
   key: string
   errorMessage?: string
@@ -74,6 +76,7 @@ export default function EditableDataView<T extends object>({
   const [submitting, setSubmitting] = useState(false)
   const { loading: corporationLoading } = useUserCorporation()
   const uiMsgType = resolveMsgCopy(messageType)
+  const irreversible = IRREVERSIBLE_MSG.test(messageType)
   const action = id ? 'edit' : 'create'
   const [hasTriedSubmit, setHasTriedSubmit] = useState(false)
   const formId = useId()
@@ -353,11 +356,13 @@ export default function EditableDataView<T extends object>({
         <div
           className={clsx(
             NOTICE_CLASS,
-            'border-destructive/30 bg-destructive/10 dark:border-destructive/40 *:[svg]:text-destructive'
+            irreversible
+              ? 'border-destructive/30 bg-destructive/10 dark:border-destructive/40 *:[svg]:text-destructive'
+              : 'border-warning/30 bg-warning/10 dark:bg-warning/20 *:[svg]:text-warning'
           )}
         >
           <TriangleAlertIcon aria-hidden="true" />
-          <AlertTitle className="text-destructive">
+          <AlertTitle className={irreversible ? 'text-destructive' : 'text-warning'}>
             {resolveTranslatable({ key: 'messages.warning' }, translate)}
           </AlertTitle>
           <AlertDescription className="text-foreground">{uiMsgType.warning}</AlertDescription>

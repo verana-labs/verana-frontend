@@ -24,7 +24,7 @@ import {
 } from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import { extractTxHeight } from '@/msg/util/signerUtil'
-import { rejectionNotice, txFailureNotice } from '@/msg/util/tx-outcome'
+import { notifyRejection, txFailureNotice } from '@/msg/util/tx-outcome'
 import { findEventAttribute } from '@/msg/util/txEvents'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
@@ -279,8 +279,7 @@ export function useActionCorporation() {
       return await createCorporation(confirmed, params.did)
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error)
-      const notice = rejectionNotice(text, text)
-      await notify(notice.message, 'error', notice.title, notice.link)
+      await notifyRejection(notify, text, text)
       return null
     } finally {
       inFlight.current = false
@@ -314,8 +313,7 @@ export function useActionCorporation() {
       return await grantOperator(corporation, address, confirmed)
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error)
-      const notice = rejectionNotice(text, text)
-      await notify(notice.message, 'error', notice.title, notice.link)
+      await notifyRejection(notify, text, text)
       return 'failed'
     } finally {
       inFlight.current = false

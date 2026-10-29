@@ -73,7 +73,7 @@ function useCrumbs(pathname: string | null): Crumb[] | null {
 
 function HeaderBreadcrumb({ crumbs }: { crumbs: Crumb[] }) {
   return (
-    <Breadcrumb aria-label={translate('shell.breadcrumb.label')} className="min-w-0">
+    <Breadcrumb aria-label={translate('shell.breadcrumb.label')} className="hidden min-w-0 sm:block">
       <BreadcrumbList className="flex-nowrap">
         {crumbs.map((crumb, index) => {
           const last = index === crumbs.length - 1
@@ -171,7 +171,9 @@ export function SiteHeader({ title }: { title?: string }) {
         <div className="ml-auto flex shrink-0 items-center gap-1.5 lg:gap-2">
           <SearchButton />
           <NetworkChip />
-          <CorporationSelector />
+          <div className="contents max-sm:[&_[data-slot=dropdown-menu-trigger]>span:nth-of-type(2)]:sr-only max-sm:[&_[data-slot=dropdown-menu-trigger]>svg]:hidden">
+            <CorporationSelector />
+          </div>
           <ThemeToggle />
           <Button asChild variant="ghost" size="icon" className="hidden md:inline-flex">
             <Link href="/settings" aria-label={settingsLabel} title={settingsLabel}>
