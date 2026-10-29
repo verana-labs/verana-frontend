@@ -1,6 +1,13 @@
 import type { DeliverTxResponse } from '@cosmjs/stargate'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { proposalExecution, proposalSubmittedMessage, rejectionNotice, txFailureNotice } from './tx-outcome'
+import {
+  isSignatureCancelled,
+  notifyRejection,
+  proposalExecution,
+  proposalSubmittedMessage,
+  rejectionNotice,
+  txFailureNotice,
+} from './tx-outcome'
 import type { TxEvent } from './txEvents'
 
 const explorer = vi.hoisted(() => ({ explorerTxLink: vi.fn() }))
@@ -229,6 +236,36 @@ describe('rejectionNotice', () => {
         `Direct signing failed: Query failed with (6): rpc error: code = Unknown desc = failed to execute message; message index: 0: authorization check failed: operator authorization has expired [cosmos/cosmos-sdk@v0.53.4/baseapp/baseapp.go:1051] with gas used: '38739': unknown request`
       ).title
     ).toBe('Authorization rejected')
+  })
+})
+
+describe('signature cancellation', () => {
+  it('recognises a wallet rejection and nothing else', () => {
+    expect(isSignatureCancelled('Request rejected')).toBe(true)
+    expect(isSignatureCancelled('Direct signing failed: Request rejected')).toBe(true)
+    expect(isSignatureCancelled('User rejected the request.')).toBe(true)
+    expect(isSignatureCancelled(INSUFFICIENT_FUNDS)).toBe(false)
+    expect(isSignatureCancelled(NOT_FOUND)).toBe(false)
+  })
+
+  it('turns a wallet rejection into a neutral cancelled notice', () => {
+    expect(rejectionNotice('Unable to archive the ecosystem.', 'Request rejected')).toEqual({
+      message: 'Signature cancelled',
+      title: 'Signature cancelled',
+      cancelled: true,
+    })
+  })
+
+  it('shows an info toast without waiting for it on cancellation', async () => {
+    const notify = vi.fn(() => new Promise<void>(() => {}))
+    await notifyRejection(notify, 'Unable to archive the ecosystem.', 'Request rejected')
+    expect(notify).toHaveBeenCalledWith('Signature cancelled', 'info')
+  })
+
+  it('keeps the error toast for every other failure', async () => {
+    const notify = vi.fn(async () => {})
+    await notifyRejection(notify, 'Unable to archive the ecosystem.', INSUFFICIENT_FUNDS)
+    expect(notify).toHaveBeenCalledWith('Unable to archive the ecosystem.', 'error', 'Transaction failed', undefined)
   })
 })
 

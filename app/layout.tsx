@@ -3,6 +3,7 @@ import { inter } from '@/ui/common/fonts'
 import '@interchain-ui/react/styles'
 import type { Metadata, Viewport } from 'next'
 import { PublicEnvScript } from 'next-runtime-env'
+import { ThemeProvider } from 'next-themes'
 import type { ReactNode } from 'react'
 import ClientLayout from '@/providers/client-layout'
 import '@/init-long'
@@ -58,7 +59,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <PublicEnvScript />
       </head>
       <body className="app-body">
-        <ClientLayout protocolParams={protocolParamsResult.params}>{children}</ClientLayout>
+        <ThemeProvider attribute="class" enableSystem defaultTheme="system" disableTransitionOnChange>
+          <ClientLayout protocolParams={protocolParamsResult.params}>{children}</ClientLayout>
+        </ThemeProvider>
       </body>
     </html>
   )

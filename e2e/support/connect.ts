@@ -7,10 +7,21 @@ type ConnectOptions = {
   connectedTimeout?: number
 }
 
+export async function hideNextDevIndicator(page: Page) {
+  await page.addInitScript(() => {
+    const style = document.createElement('style')
+    style.textContent = 'nextjs-portal { display: none !important; }'
+    const attach = () => document.head.append(style)
+    if (document.head) attach()
+    else document.addEventListener('DOMContentLoaded', attach, { once: true })
+  })
+}
+
 export async function connectWallet(page: Page, opts: ConnectOptions = {}) {
   const { connectedTimeout = 20_000 } = opts
   const mnemonic = opts.mnemonic ?? (await resolveMnemonic())
 
+  await hideNextDevIndicator(page)
   const wallet = await installKeplrMock(page, { mnemonic })
 
   await page.goto('/dashboard')

@@ -315,7 +315,37 @@
   }
 
   html {
-    scroll-padding-top: calc(var(--header-height, 3rem) + 1rem);
+    scroll-padding-top: var(--header-height);
+  }
+
+  @media (width < 48rem) {
+    html {
+      scroll-padding-bottom: var(--tab-bar-height);
+    }
+  }
+
+  :root
+    :is(
+      [type='text'],
+      input:where(:not([type])),
+      [type='email'],
+      [type='url'],
+      [type='password'],
+      [type='number'],
+      [type='date'],
+      [type='datetime-local'],
+      [type='month'],
+      [type='search'],
+      [type='tel'],
+      [type='time'],
+      [type='week'],
+      [multiple],
+      textarea,
+      select
+    ):focus {
+    --tw-ring-color: color-mix(in oklab, var(--ring) 50%, transparent);
+    border-color: var(--ring);
+    box-shadow: none;
   }
 
   button,
@@ -590,7 +620,7 @@
     @apply w-full min-w-0 rounded-lg border border-input bg-transparent px-3 text-base text-foreground transition-[color,box-shadow,border-color] outline-none
       placeholder:text-muted-foreground
       focus:border-ring focus:ring-3 focus:ring-ring/50
-      disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50
+      disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-50
       aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20
       md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:ring-destructive/40;
   }
@@ -1005,80 +1035,6 @@
     @apply text-xl font-bold text-gray-900 dark:text-white hidden sm:block;
   }
 
-  .notify-container {
-    @apply absolute inset-5 z-50 flex items-start justify-end pointer-events-none;
-  }
-
-  .notify-notification {
-    @apply rounded-2xl shadow-2xl flex items-center gap-4
-           transition-all duration-300 bg-white dark:bg-surface border
-           px-8 py-6 max-w-[90vw] w-auto;
-  }
-
-  .notify-visible {
-    @apply opacity-100 translate-y-0 pointer-events-auto;
-  }
-
-  .notify-invisible {
-    @apply opacity-0 -translate-y-4 pointer-events-none;
-  }
-
-  .notify-success {
-    @apply border-green-600 text-green-700 dark:text-green-300;
-  }
-
-  .notify-error {
-    @apply border-red-600 text-red-700 dark:text-red-300;
-  }
-
-  .notify-in-progress {
-    @apply border-blue-500 text-blue-600 dark:text-blue-300;
-  }
-
-  .notify-info {
-    @apply border-blue-600 text-blue-700 dark:text-blue-300;
-  }
-
-  .notify-msg-container {
-    @apply flex-1;
-  }
-
-  .notify-msg-title {
-    @apply font-bold mb-1 break-all;
-  }
-
-  .notify-msg-message {
-    @apply text-sm md:text-lg break-all;
-  }
-
-  .notify-msg-link {
-    @apply block mt-1 text-sm font-mono underline underline-offset-2 break-all;
-  }
-
-  .notify-btn-close {
-    @apply absolute top-2 right-2 text-2xl font-bold px-2 focus:outline-hidden hover:text-black/60;
-  }
-
-  .notify-icon {
-   @apply  w-7 h-7 shrink-0;
-  }
-
-  .notify-icon-success {
-    @apply w-7 h-7 shrink-0 text-green-600;
-  }
-
-  .notify-icon-error {
-    @apply w-7 h-7 shrink-0 text-red-600;
-  }
-
-  .notify-icon-in-progress {
-    @apply w-7 h-7 shrink-0 text-blue-500 animate-spin;
-  }
-
-  .notify-icon-info {
-    @apply w-7 h-7 shrink-0 text-blue-600;
-  }
-
   .lowBalanceLink {
     @apply text-sm font-medium text-primary underline underline-offset-4 cursor-pointer break-all hover:decoration-2;
   }
@@ -1131,7 +1087,7 @@
   --warning: #a34b08;
   --info: #1d4ed8;
   --border: var(--neutral-200);
-  --input: var(--neutral-200);
+  --input: #8b8698;
   --ring: var(--brand-400);
   --chart-1: var(--brand-600);
   --chart-2: var(--brand-400);
@@ -1156,6 +1112,9 @@
   --duration-fast: 100ms;
   --duration-base: 200ms;
   --duration-slow: 300ms;
+
+  --header-height: 3rem;
+  --tab-bar-height: calc(4.5rem + env(safe-area-inset-bottom));
 }
 
 .dark {
@@ -1197,12 +1156,23 @@
   --sidebar-border: rgb(255 255 255 / 0.08);
   --sidebar-ring: var(--brand-400);
 
-  --elevation-card: 0 0 0 1px rgb(255 255 255 / 0.1), inset 0 -20px 80px -20px rgb(255 255 255 / 0.12);
+  --elevation-card: 0 0 0 1px rgb(255 255 255 / 0.1);
   --elevation-raised: 0 0 0 1px rgb(255 255 255 / 0.1), 0 8px 24px rgb(0 0 0 / 0.5);
   --elevation-overlay: 0 0 0 1px rgb(255 255 255 / 0.12), 0 24px 48px rgb(0 0 0 / 0.6);
 }
 
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--duration-base);
+  animation-timing-function: var(--ease-standard);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+
   :root {
     --duration-fast: 0ms;
     --duration-base: 0ms;

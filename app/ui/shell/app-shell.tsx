@@ -41,9 +41,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           }
         >
           <AppSidebar variant="inset" />
-          <SidebarInset className="min-w-0 bg-page pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
-            {children}
-          </SidebarInset>
+          <SidebarInset className="min-w-0 bg-page pb-(--tab-bar-height) md:pb-0">{children}</SidebarInset>
           <MobileTabBar />
           <CommandMenu />
         </SidebarProvider>

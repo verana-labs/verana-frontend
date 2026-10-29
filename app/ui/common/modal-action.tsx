@@ -20,6 +20,14 @@ const PANEL_CLASS =
 const FOCUSABLE =
   'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
 
+const FOREIGN_LAYER =
+  '[data-radix-popper-content-wrapper], [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [data-sonner-toaster]'
+
+function isTopmostModal(overlay: HTMLElement | null) {
+  const shown = document.querySelectorAll('[data-modal-action]:not(.hidden)')
+  return overlay !== null && shown[shown.length - 1] === overlay
+}
+
 export function trapTabKey(event: React.KeyboardEvent<HTMLElement>) {
   const panel = event.currentTarget
   if (event.key !== 'Tab' || !panel.contains(event.target as Node)) return
@@ -69,9 +77,7 @@ export const ModalAction: React.FC<ModalActionProps> = ({
   useEffect(() => {
     if (!isActive || modalHidden) return
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Escape' || event.defaultPrevented) return
-      const shown = document.querySelectorAll('[data-modal-action]:not(.hidden)')
-      if (shown[shown.length - 1] !== overlayRef.current) return
+      if (event.key !== 'Escape' || event.defaultPrevented || !isTopmostModal(overlayRef.current)) return
       event.preventDefault()
       onCloseRef.current()
     }
@@ -83,7 +89,18 @@ export const ModalAction: React.FC<ModalActionProps> = ({
     if (!isActive || modalHidden) return
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
     if (!panelRef.current?.contains(opener)) panelRef.current?.focus({ preventScroll: true })
-    return () => restoreModalFocus(opener)
+    function onFocusIn(event: FocusEvent) {
+      const overlay = overlayRef.current
+      const target = event.target
+      if (!(target instanceof Element) || overlay?.contains(target) || !isTopmostModal(overlay)) return
+      if (target.closest(FOREIGN_LAYER)) return
+      panelRef.current?.focus({ preventScroll: true })
+    }
+    document.addEventListener('focusin', onFocusIn)
+    return () => {
+      document.removeEventListener('focusin', onFocusIn)
+      restoreModalFocus(opener)
+    }
   }, [isActive, modalHidden])
 
   if (!isActive) return null

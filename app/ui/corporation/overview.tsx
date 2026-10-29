@@ -4,9 +4,9 @@ import { KeyRoundIcon, LandmarkIcon, UsersIcon, VoteIcon } from 'lucide-react'
 import type { CorporationDetails } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
 import { currentDecisionRule, formatDecisionRule } from '@/lib/decision-policy'
+import { NumberTicker } from '@/ui/motion/number-ticker'
 import { Stagger, StaggerItem } from '@/ui/motion/stagger'
 import { formatVNAFromUVNA } from '@/util/util'
-import { CountUp } from './count-up'
 import { atLeast, Fact, formatDate, SectionTitle, SectionUnavailable } from './shared'
 import { StatTile, UnknownStat } from './stat-tile'
 
@@ -30,7 +30,7 @@ function formatPartialCount(n: number): string {
 }
 
 function Count({ value, partial }: { value: number; partial: boolean }) {
-  return <CountUp value={value} format={partial ? formatPartialCount : formatCount} />
+  return <NumberTicker value={value} format={partial ? formatPartialCount : formatCount} />
 }
 
 function formatDepositVna(uvna: number): string {
@@ -50,7 +50,11 @@ export function OverviewTiles({ details, openProposals }: { details: Corporation
       key: 'deposit',
       icon: <LandmarkIcon />,
       label: translate('corporation.page.deposit'),
-      value: degraded.trustDeposit ? unknown : <CountUp value={trustDeposit?.deposit ?? 0} format={formatDepositVna} />,
+      value: degraded.trustDeposit ? (
+        unknown
+      ) : (
+        <NumberTicker value={trustDeposit?.deposit ?? 0} format={formatDepositVna} />
+      ),
       hint: degraded.trustDeposit ? null : depositHint(trustDeposit?.deposit ?? 0),
     },
     {
