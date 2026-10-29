@@ -30,14 +30,14 @@ const Toaster = ({ toastOptions, ...props }: ToasterProps) => {
       toastOptions={{
         ...toastOptions,
         classNames: {
-          toast: 'cn-toast items-start! gap-3! shadow-overlay!',
+          toast: 'cn-toast items-start! gap-3! pe-10! shadow-overlay!',
           success: 'border-success/30!',
           error: 'border-destructive/40!',
           icon: 'mt-0.5!',
           title: 'text-sm! font-medium! leading-5!',
           description: 'text-sm! leading-5! text-muted-foreground!',
           closeButton:
-            'border-border! bg-popover! text-muted-foreground! hover:text-foreground! focus-visible:ring-3! focus-visible:ring-ring/50!',
+            'start-auto! end-2! top-2! size-6! transform-none! rounded-md! border-transparent! bg-transparent! text-muted-foreground! hover:bg-muted! hover:text-foreground! focus-visible:ring-3! focus-visible:ring-ring/50!',
           ...toastOptions?.classNames,
         },
       }}

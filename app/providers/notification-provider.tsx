@@ -2,6 +2,7 @@
 
 import { createContext, type ReactNode, useCallback, useContext, useMemo, useRef } from 'react'
 import { type ExternalToast, toast } from 'sonner'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { translate } from '@/i18n/dataview'
 import { Toaster } from '@/ui/shadcn/sonner'
 import { Spinner } from '@/ui/shadcn/spinner'
@@ -38,6 +39,8 @@ const TYPE_CLASS: Record<NotificationType, string> = {
   info: 'notify-info',
   inProgress: 'notify-in-progress',
 }
+
+const PHONE_OFFSET = { bottom: 'calc(var(--tab-bar-height) + 0.5rem)', right: 16, left: 16 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined)
 
@@ -132,15 +135,16 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     []
   )
   const contextValue = useMemo(() => ({ notify }), [notify])
+  const isPhone = useIsMobile()
 
   return (
     <NotificationContext.Provider value={contextValue}>
       {children}
       <Toaster
-        position="top-right"
+        position={isPhone ? 'bottom-center' : 'top-right'}
         closeButton
-        offset={{ top: 60, right: 24 }}
-        mobileOffset={{ top: 60, right: 16, left: 16 }}
+        offset={isPhone ? PHONE_OFFSET : { top: 60, right: 24 }}
+        mobileOffset={PHONE_OFFSET}
         containerAriaLabel={translate('notification.region')}
         toastOptions={{ closeButtonAriaLabel: translate('common.close') }}
       />
