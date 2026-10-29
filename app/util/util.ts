@@ -185,59 +185,55 @@ export function countryCodeToFlag(code?: string | null): string {
   return String.fromCodePoint(base + (normalized.charCodeAt(0) - 65), base + (normalized.charCodeAt(1) - 65))
 }
 
+export type BadgeTone = 'primary' | 'info' | 'success' | 'warning' | 'destructive' | 'muted'
+
+export const BADGE_TONE: Record<BadgeTone, string> = {
+  primary: 'bg-primary/10 text-primary',
+  info: 'bg-info/10 text-info dark:bg-info/20',
+  success: 'bg-success/10 text-success dark:bg-success/20',
+  warning: 'bg-warning/10 text-warning dark:bg-warning/20',
+  destructive: 'bg-destructive/10 text-destructive dark:bg-destructive/20',
+  muted: 'bg-muted text-muted-foreground',
+}
+
+const OUTLINE_BADGE = 'bg-transparent text-muted-foreground ring-1 ring-inset ring-border'
+
 export function roleBadgeClass(role: ParticipantRole) {
   switch (role) {
     case 'ECOSYSTEM':
-      return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
+      return BADGE_TONE.primary
     case 'ISSUER_GRANTOR':
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-    case 'VERIFIER_GRANTOR':
-      return 'bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-400'
+      return BADGE_TONE.info
     case 'ISSUER':
-      return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+      return BADGE_TONE.success
     case 'VERIFIER':
-      return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
+      return BADGE_TONE.warning
     case 'HOLDER':
-      return 'bg-pink-100 text-pink-800 dark:bg-pink-900/20 dark:text-pink-400'
+      return `${BADGE_TONE.muted} ring-1 ring-inset ring-border`
     default:
-      return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+      return BADGE_TONE.muted
   }
 }
 
 export function roleColorClass(type: string): string {
   switch (type) {
     case 'ECOSYSTEM':
-      return 'text-purple-500'
+      return 'text-primary'
     case 'ISSUER_GRANTOR':
-      return 'text-blue-500'
-    case 'VERIFIER_GRANTOR':
-      return 'text-slate-500'
+      return 'text-info'
     case 'ISSUER':
-      return 'text-green-500'
+      return 'text-success'
     case 'VERIFIER':
-      return 'text-orange-500'
+      return 'text-warning'
     case 'HOLDER':
-      return 'text-pink-500'
+      return 'text-foreground'
     default:
       return 'text-muted-foreground'
   }
 }
 
 export function roleJoinColorClass(type: string): string {
-  switch (type) {
-    case 'ISSUER_GRANTOR':
-      return 'bg-blue-100 text-blue-500 dark:bg-blue-900/20 dark:text-blue-400'
-    case 'VERIFIER_GRANTOR':
-      return 'bg-slate-100 text-slate-500 dark:bg-slate-900/20 dark:text-slate-400'
-    case 'ISSUER':
-      return 'bg-green-100 text-green-500 dark:bg-green-900/20 dark:text-green-400'
-    case 'VERIFIER':
-      return 'bg-orange-100 text-orange-500 dark:bg-orange-900/20 dark:text-orange-400'
-    case 'HOLDER':
-      return 'bg-pink-100 text-pink-500 dark:bg-pink-900/20 dark:text-pink-400'
-    default:
-      return 'bg-gray-100 text-gray-500 dark:bg-gray-900/20 dark:text-gray-400'
-  }
+  return type === 'ECOSYSTEM' ? BADGE_TONE.muted : roleBadgeClass(type as ParticipantRole)
 }
 
 export function roleLabel(type: string): string {
@@ -265,36 +261,29 @@ export interface ParticipantStateBadge {
   expireSoon: { labelExpireSoon: string; classExpireSoon: string } | null
 }
 
-const NEUTRAL_BADGE =
-  'bg-white text-gray-600 ring-1 ring-inset ring-gray-300 dark:bg-transparent dark:text-gray-300 dark:ring-gray-600'
-const GRAY_BADGE = 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300'
-const GREEN_BADGE = 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
-const YELLOW_BADGE = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300'
-
 export function participantStateBadgeClass(
   participantState: ParticipantState | undefined,
   expireSoon: boolean,
   variant: 'tree' | 'header' = 'tree'
 ): ParticipantStateBadge {
   if (!participantState) return { labelParticipantState: '', classParticipantState: '', expireSoon: null }
-  const activeClass =
-    variant === 'header' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' : GREEN_BADGE
+  const activeClass = variant === 'header' ? BADGE_TONE.info : BADGE_TONE.success
   const badge = ((): { labelParticipantState: string; classParticipantState: string } => {
     switch (participantState) {
       case 'REPAID':
         return {
           labelParticipantState: resolveTranslatable({ key: 'participant.labelstate.repaid' }, translate) ?? 'REPAID',
-          classParticipantState: 'bg-gray-100 text-red-800 dark:bg-gray-900/20 dark:text-red-300',
+          classParticipantState: 'bg-muted text-destructive',
         }
       case 'SLASHED':
         return {
           labelParticipantState: resolveTranslatable({ key: 'participant.labelstate.slashed' }, translate) ?? 'SLASHED',
-          classParticipantState: 'bg-red-900 text-red-100 dark:bg-red-800 dark:text-red-100',
+          classParticipantState: 'bg-destructive text-white dark:text-background',
         }
       case 'FUTURE':
         return {
           labelParticipantState: resolveTranslatable({ key: 'participant.labelstate.future' }, translate) ?? 'FUTURE',
-          classParticipantState: NEUTRAL_BADGE,
+          classParticipantState: OUTLINE_BADGE,
         }
       case 'ACTIVE':
         return {
@@ -305,17 +294,17 @@ export function participantStateBadgeClass(
         return {
           labelParticipantState:
             resolveTranslatable({ key: 'participant.labelstate.inactive' }, translate) ?? 'INACTIVE',
-          classParticipantState: NEUTRAL_BADGE,
+          classParticipantState: OUTLINE_BADGE,
         }
       case 'EXPIRED':
         return {
           labelParticipantState: resolveTranslatable({ key: 'participant.labelstate.expired' }, translate) ?? 'EXPIRED',
-          classParticipantState: GRAY_BADGE,
+          classParticipantState: BADGE_TONE.muted,
         }
       case 'REVOKED':
         return {
           labelParticipantState: resolveTranslatable({ key: 'participant.labelstate.revoked' }, translate) ?? 'REVOKED',
-          classParticipantState: GRAY_BADGE,
+          classParticipantState: BADGE_TONE.muted,
         }
     }
   })()
@@ -324,7 +313,7 @@ export function participantStateBadgeClass(
       ? {
           labelExpireSoon:
             resolveTranslatable({ key: 'participant.labelstate.expiresoon' }, translate) ?? 'EXPIRES SOON',
-          classExpireSoon: YELLOW_BADGE,
+          classExpireSoon: BADGE_TONE.warning,
         }
       : null
   if (variant !== 'tree') return { ...badge, expireSoon: expireSoonBadge }
@@ -346,19 +335,19 @@ export function onboardingStateColor(onboardingState: OnboardingProcessState | n
       return {
         labelOnboardingState:
           resolveTranslatable({ key: 'participant.labelopstate.pending' }, translate) ?? 'pending approval',
-        classOnboardingState: YELLOW_BADGE,
+        classOnboardingState: BADGE_TONE.warning,
       }
     case 'TERMINATED':
       return {
         labelOnboardingState:
           resolveTranslatable({ key: 'participant.labelopstate.terminated' }, translate) ?? 'terminated',
-        classOnboardingState: GRAY_BADGE,
+        classOnboardingState: BADGE_TONE.muted,
       }
     case 'VALIDATED':
       return {
         labelOnboardingState:
           resolveTranslatable({ key: 'participant.labelopstate.validated' }, translate) ?? 'validated',
-        classOnboardingState: GREEN_BADGE,
+        classOnboardingState: BADGE_TONE.success,
       }
     default:
       return { labelOnboardingState: '', classOnboardingState: '' }
@@ -371,12 +360,10 @@ export function participantAuthority(
   isPredecessor: boolean
 ): { icon: IconDefinition; iconColorClass: string } {
   if (isValidator) {
-    // validator
-    return { icon: faCrown, iconColorClass: 'text-yellow-500' }
+    return { icon: faCrown, iconColorClass: 'text-warning' }
   } else if (isCorporation) {
-    return { icon: faCrown, iconColorClass: 'text-green-500' }
+    return { icon: faCrown, iconColorClass: 'text-success' }
   } else if (isPredecessor) {
-    // predecessor
     return { icon: faCrown, iconColorClass: 'text-muted-foreground' }
   } else {
     return { icon: faEye, iconColorClass: 'text-muted-foreground' }

@@ -11,6 +11,7 @@ import { type NavItem, useNavItems } from '@/ui/shell/nav-items'
 
 const PRIMARY_TABS = ['/dashboard', '/ecosystems', '/discover', '/account']
 const FALLBACK_TABS = ['/settings']
+const SHORT_LABEL_KEYS: Record<string, string> = { '/discover': 'shell.tabs.discover' }
 
 const TAB_CLASS =
   'group/tab flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50'
@@ -87,7 +88,12 @@ export function MobileTabBar() {
           return (
             <li key={tab.url} className="flex min-w-0 flex-1">
               <Link href={tab.url} aria-current={active ? 'page' : undefined} className={TAB_CLASS}>
-                <TabContent active={active} icon={tab.icon} label={tab.title} dot={Boolean(tab.badge)} />
+                <TabContent
+                  active={active}
+                  icon={tab.icon}
+                  label={SHORT_LABEL_KEYS[tab.url] ? translate(SHORT_LABEL_KEYS[tab.url]) : tab.title}
+                  dot={Boolean(tab.badge)}
+                />
               </Link>
             </li>
           )
