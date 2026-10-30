@@ -9,7 +9,17 @@ import { allowedOffline } from '@/lib/navlinks'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { Spinner } from '@/ui/shadcn/spinner'
 
-const CONNECTED_ROUTES = ['/', '/account', '/agents', '/corporation', '/ecosystems', '/pendingtasks']
+const CONNECTED_ROUTES = [
+  '/',
+  '/account',
+  '/agents',
+  '/corporation',
+  '/corporation/new',
+  '/credential-schemas/add',
+  '/ecosystems',
+  '/ecosystems/add',
+  '/pendingtasks',
+]
 
 function isStoredSession([key, value]: [string, string]) {
   if (!key.startsWith('cosmos-kit@') || !value) return false
