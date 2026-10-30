@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react'
 import type { CorporationDetails } from '@/hooks/useCorporationDetails'
+import type { GranterBalance } from '@/hooks/useGranterBalance'
 import type { ActionSigning } from '@/hooks/useSigningMode'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
@@ -25,6 +26,7 @@ export interface CorporationView {
   actingCorporation: CorporationMembership
   details: CorporationDetails
   enrichment: DidEnrichment | null
+  balance: GranterBalance
   walletAddress: string | undefined
   openProposals: number
   unrepaidSlash: number
@@ -154,6 +156,7 @@ export function TabsLayout({
       <CorporationHeader
         profile={view.details.profile}
         enrichment={view.enrichment}
+        balance={view.balance}
         rotate={view.rotate}
         rotating={view.rotating}
         onToggleRotate={view.onToggleRotate}

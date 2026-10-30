@@ -4,13 +4,14 @@ import { faBuilding, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { type ReactNode, useState } from 'react'
 import type { CorporationProfile } from '@/hooks/useCorporationDetails'
+import type { GranterBalance } from '@/hooks/useGranterBalance'
 import type { ActionSigning } from '@/hooks/useSigningMode'
 import { translate } from '@/i18n/dataview'
 import type { DidEnrichment } from '@/lib/resolverClient'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import { CapabilityButton } from '@/ui/common/capability-button'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
-import { countryCodeToFlag, shortenMiddle } from '@/util/util'
+import { countryCodeToFlag, formatVNAFromUVNA, shortenMiddle } from '@/util/util'
 import { isValidDID } from '@/util/validations'
 
 const TRUST_DOT: Record<string, string> = {
@@ -54,9 +55,16 @@ export function RotateDidForm({ mode, onSubmit }: { mode: CorporationSigningMode
   )
 }
 
+function balanceLabel(balance: GranterBalance): string {
+  if (balance.status === 'ready') return formatVNAFromUVNA(balance.amount)
+  if (balance.status === 'failed') return translate('corporation.page.balance.failed')
+  return '…'
+}
+
 export function CorporationHeader({
   profile,
   enrichment,
+  balance,
   rotate,
   rotating,
   onToggleRotate,
@@ -66,6 +74,7 @@ export function CorporationHeader({
 }: {
   profile: CorporationProfile
   enrichment: DidEnrichment | null
+  balance: GranterBalance
   rotate: ActionSigning
   rotating: boolean
   onToggleRotate: () => void
@@ -93,6 +102,10 @@ export function CorporationHeader({
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 break-all">
               {displayName ? `${profile.did} · ` : ''}#{profile.id} · {shortenMiddle(profile.policyAddress, 26)}
+            </p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {translate('corporation.page.balance')}{' '}
+              <span className="font-medium text-gray-900 dark:text-white">{balanceLabel(balance)}</span>
             </p>
           </div>
         </div>
