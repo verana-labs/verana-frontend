@@ -153,7 +153,7 @@ export default function AgentCard({
         <LogoImage
           src={enrichment?.serviceLogoUrl}
           fallbackSrc={serviceIdenticonUrl(agent.did)}
-          className="w-12 h-12 rounded-lg flex-shrink-0 object-contain"
+          className="w-12 h-12 rounded-lg shrink-0 object-contain"
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
@@ -181,10 +181,10 @@ export default function AgentCard({
           <LogoImage
             src={enrichment?.organizationLogoUrl}
             fallbackSrc={serviceAvatarUrl(controllerName)}
-            className="w-6 h-6 rounded flex-shrink-0 object-contain"
+            className="w-6 h-6 rounded shrink-0 object-contain"
           />
           <span className="truncate text-sm font-medium text-gray-900 dark:text-white">{controllerName}</span>
-          <span className="flex-shrink-0" aria-hidden="true">
+          <span className="shrink-0" aria-hidden="true">
             {countryCodeToFlag(enrichment?.countryCode)}
           </span>
         </div>

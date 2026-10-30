@@ -41,11 +41,11 @@ export default function ServiceIdentity({
       <LogoImage
         src={identity?.serviceLogoUrl}
         fallbackSrc={serviceAvatarUrl(avatarSeed)}
-        className={`${avatarSizeClass} rounded flex-shrink-0 object-contain`}
+        className={`${avatarSizeClass} rounded shrink-0 object-contain`}
       />
       <span className="text-sm font-medium text-gray-900 dark:text-white break-all">{serviceLabel}</span>
       {showFlag ? (
-        <span className="inline-flex items-center leading-none text-sm flex-shrink-0" aria-hidden="true">
+        <span className="inline-flex items-center leading-none text-sm shrink-0" aria-hidden="true">
           {countryCodeToFlag(countryCode)}
         </span>
       ) : null}

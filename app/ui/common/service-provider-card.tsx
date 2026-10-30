@@ -52,7 +52,7 @@ export default function ServiceProviderCard({ did }: ServiceProviderCardProps) {
 
       <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <LogoImage
               src={enrichment?.organizationLogoUrl}
               fallbackSrc={serviceAvatarUrl(did)}

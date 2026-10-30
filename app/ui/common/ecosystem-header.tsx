@@ -29,7 +29,7 @@ export default function EcosystemHeader({ did, status }: EcosystemHeaderProps) {
     <section className="mb-8">
       <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <LogoImage
               src={enrichment?.serviceLogoUrl}
               fallbackSrc={serviceAvatarUrl(did)}

@@ -119,7 +119,7 @@ export function Checkbox({
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="w-4 h-4 text-primary-600 border-neutral-20 dark:border-neutral-70 rounded focus:ring-2 focus:ring-primary-500"
+        className="w-4 h-4 text-primary-600 border-neutral-20 dark:border-neutral-70 rounded checked:border-transparent focus:ring-2 focus:ring-primary-500"
       />
       <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
     </label>

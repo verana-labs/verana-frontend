@@ -9,7 +9,7 @@ import { translate } from '@/i18n/dataview'
 export function AddressQrModal({ address, onClose }: { address: string; onClose: () => void }) {
   return (
     <Dialog open onClose={onClose} className="relative z-50">
-      <div className="fixed inset-0 bg-gray-600 bg-opacity-75" aria-hidden="true" />
+      <div className="fixed inset-0 bg-gray-600/75" aria-hidden="true" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <DialogPanel className="bg-white dark:bg-surface rounded-xl max-w-md w-full shadow-2xl">
           <div className="px-6 py-4 border-b border-neutral-20 dark:border-neutral-70 flex items-center justify-between">
