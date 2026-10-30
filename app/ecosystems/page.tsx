@@ -4,8 +4,10 @@ import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import { useMemo, useState } from 'react'
 import AddEcosystemPage from '@/ecosystems/add/add'
 import { ECOSYSTEMS_PAGE_SIZE } from '@/hooks/useEcosystems'
+import { useCorporationRoles } from '@/hooks/useParticipants'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
+import { roleFiltersPending } from '@/lib/discover-list'
 import { useEcosystemsCtx } from '@/providers/api-rest-query-provider-context'
 import { EntityActionButton } from '@/ui/common/capability-button'
 import EcosystemCard from '@/ui/common/ecosystem-card'
@@ -25,27 +27,10 @@ function matchesSearch(ecosystem: EcosystemListItem, search: string): boolean {
   return [
     ecosystem.did,
     ecosystem.corporationId,
-    ecosystem.role,
     ecosystem.id,
     ecosystem.trustData?.serviceName,
     ecosystem.trustData?.organizationName,
   ].some((value) => value != null && String(value).toLowerCase().includes(q))
-}
-
-function roleTokens(role: string | undefined | null): string[] {
-  if (!role) return []
-  return role
-    .split(/[,\s]+/)
-    .map((r) => r.trim().toUpperCase())
-    .filter(Boolean)
-}
-
-function isOwnedRole(role: string | undefined | null): boolean {
-  return roleTokens(role).some((r) => r === 'ECOSYSTEM')
-}
-
-function hasParticipantRole(role: string | undefined | null): boolean {
-  return roleTokens(role).some((r) => r !== 'ECOSYSTEM')
 }
 
 export default function EcosystemsPage() {
@@ -61,6 +46,8 @@ export default function EcosystemsPage() {
     previousPage,
   } = useEcosystemsCtx()
   const { actingCorporation, loading: corporationLoading, error: discoveryError } = useUserCorporation()
+  const actingCorporationId = actingCorporation?.corporation.id
+  const { rolesByEcosystem, rolesLoading, failureReason } = useCorporationRoles(actingCorporationId)
 
   const [filters, setFilters] = useState<EcosystemsFilterState>({
     ...INITIAL_ECOSYSTEMS_FILTER,
@@ -71,17 +58,18 @@ export default function EcosystemsPage() {
   const filtered = useMemo(() => {
     return ecosystemsList.filter((ecosystem) => {
       if (!filters.showArchived && ecosystem.archived) return false
-      const isOwned = ecosystem.corporationId === actingCorporation?.corporation.id || isOwnedRole(ecosystem.role)
+      const roles = rolesByEcosystem[ecosystem.id] ?? []
+      const isOwned = ecosystem.corporationId === actingCorporationId || roles.includes('ECOSYSTEM')
       if (filters.hideOwned && isOwned) return false
-      if (filters.hideParticipant && hasParticipantRole(ecosystem.role)) return false
+      if (filters.hideParticipant && roles.some((role) => role !== 'ECOSYSTEM')) return false
       if (!matchesSearch(ecosystem, filters.search)) return false
       if (!filters.showUntrusted && ecosystem.trustData?.trustStatus === 'UNTRUSTED') return false
       return true
     })
-  }, [actingCorporation?.corporation.id, ecosystemsList, filters])
+  }, [actingCorporationId, ecosystemsList, filters, rolesByEcosystem])
 
   const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
-  const gridLoading = ecosystemsLoading && ecosystemsList.length === 0
+  const gridLoading = (ecosystemsLoading && ecosystemsList.length === 0) || roleFiltersPending(filters, rolesLoading)
 
   if (!actingCorporation && !corporationLoading) {
     if (discoveryError) return <div className="p-6 error-pane">{translate('corporation.page.error')}</div>
@@ -119,6 +107,9 @@ export default function EcosystemsPage() {
       />
 
       <section id="ecosystems-grid" className="mb-8">
+        {failureReason ? (
+          <div className="error-pane mb-4">{translate('ecosystems.roles.failed', { reason: failureReason })}</div>
+        ) : null}
         {gridLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
             {[...Array(ECOSYSTEMS_PAGE_SIZE)].map((_, i) => (
@@ -134,7 +125,13 @@ export default function EcosystemsPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                 {filtered.map((ecosystem) => (
-                  <EcosystemCard key={ecosystem.id} ecosystem={ecosystem} enrichment={ecosystem.trustData} />
+                  <EcosystemCard
+                    key={ecosystem.id}
+                    ecosystem={ecosystem}
+                    enrichment={ecosystem.trustData}
+                    roles={rolesByEcosystem[ecosystem.id]}
+                    controlled={ecosystem.corporationId === actingCorporationId}
+                  />
                 ))}
               </div>
             )}

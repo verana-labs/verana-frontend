@@ -82,7 +82,6 @@ function parseCredentialSchema(value: unknown, path: string): CredentialSchemaLi
     verifiedCredentials: number(source.verified, `${path}.verified`),
     weight: decimalAmount(source.weight, `${path}.weight`),
     archived: nullableString(source.archived, `${path}.archived`),
-    role: '',
   }
 }
 

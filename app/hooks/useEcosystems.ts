@@ -54,7 +54,6 @@ function parseEcosystem(value: unknown, path: string): EcosystemListItem {
     issued: number(source.issued, `${path}.issued`),
     verified: number(source.verified, `${path}.verified`),
     archived: nullableString(source.archived, `${path}.archived`),
-    role: '',
     trustData: enrichmentFromTrustData(did, source.trust_data),
   }
 }

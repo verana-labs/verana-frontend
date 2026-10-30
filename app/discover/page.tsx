@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import type { EcosystemSchemaPage } from '@/hooks/useCredentialSchemas'
-import { useCorporationRolesByEcosystem } from '@/hooks/useParticipants'
+import { useCorporationRoles } from '@/hooks/useParticipants'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { clientPage, filterEcosystems, orderEcosystems, roleFiltersPending } from '@/lib/discover-list'
@@ -36,7 +36,7 @@ export default function DiscoverJoinPage() {
   } = discoverCtx
   const { actingCorporation } = useUserCorporation()
   const actingCorporationId = actingCorporation?.corporation.id
-  const { rolesByEcosystem, rolesLoading, failureReason } = useCorporationRolesByEcosystem(actingCorporationId)
+  const { rolesByEcosystem, rolesLoading, failureReason } = useCorporationRoles(actingCorporationId)
 
   const appliedFilters = useMemo(() => ({ ...filters, search: discoverSearch }), [filters, discoverSearch])
   const pagingKey = JSON.stringify([appliedFilters, actingCorporationId])

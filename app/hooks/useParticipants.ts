@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
 import { useLoadMore } from '@/hooks/useKeysetPages'
 import { parseParticipantRecord } from '@/hooks/useParticipant'
-import { groupRolesByEcosystem } from '@/lib/discover-list'
+import { groupRolesByEcosystem, groupRolesBySchema } from '@/lib/discover-list'
 import { applyKeysetParams, fetchJson, indexerValidators, takeKeysetPage } from '@/lib/indexer-json'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type { Participant, ParticipantRole } from '@/ui/dataview/datasections/participant'
@@ -178,10 +178,11 @@ const NO_ROLES: Record<string, ParticipantRole[]> = {}
 type RoleLookup = {
   corporationId: number
   rolesByEcosystem: Record<string, ParticipantRole[]>
+  rolesBySchema: Record<string, ParticipantRole[]>
   failureReason: string | null
 }
 
-export function useCorporationRolesByEcosystem(corporationId: number | undefined) {
+export function useCorporationRoles(corporationId: number | undefined) {
   const enabled = corporationId !== undefined && Boolean(VERANA_REST_ENDPOINT_PARTICIPANT)
   const [lookup, setLookup] = useState<RoleLookup | null>(null)
 
@@ -191,7 +192,12 @@ export function useCorporationRolesByEcosystem(corporationId: number | undefined
     let cancelled = false
     void fetchCorporationParticipants(endpoint, corporationId).then(({ participants, failureReason }) => {
       if (cancelled) return
-      setLookup({ corporationId, rolesByEcosystem: groupRolesByEcosystem(participants), failureReason })
+      setLookup({
+        corporationId,
+        rolesByEcosystem: groupRolesByEcosystem(participants),
+        rolesBySchema: groupRolesBySchema(participants),
+        failureReason,
+      })
     })
     return () => {
       cancelled = true
@@ -201,6 +207,7 @@ export function useCorporationRolesByEcosystem(corporationId: number | undefined
   const current = enabled && lookup?.corporationId === corporationId ? lookup : null
   return {
     rolesByEcosystem: current?.rolesByEcosystem ?? NO_ROLES,
+    rolesBySchema: current?.rolesBySchema ?? NO_ROLES,
     rolesLoading: enabled && current === null,
     failureReason: current?.failureReason ?? null,
   }
