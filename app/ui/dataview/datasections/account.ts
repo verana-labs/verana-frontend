@@ -1,4 +1,4 @@
-import { faCoins, faPlus } from '@fortawesome/free-solid-svg-icons'
+import { faCoins, faPaperPlane, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { createElement, Fragment } from 'react'
 import { Section } from '@/ui/dataview/types'
 import { formatVNAFromUVNA } from '@/util/util'
@@ -9,6 +9,7 @@ const t = (key: string) => ({ key })
 export interface AccountData {
   balance: string | null
   getVNA?: string | null // action type
+  sendVNA?: string | null
   network: string | null
 }
 
@@ -44,6 +45,15 @@ export const accountSections: Section<AccountData>[] = [
         description: t('dataview.account.actions.getVNA.desc'),
         icon: faPlus,
         iconClass: 'bg-linear-to-br/srgb from-green-500 to-green-700',
+        iconColorClass: 'text-white',
+      },
+      {
+        name: 'sendVNA',
+        label: t('dataview.account.actions.sendVNA.label'),
+        type: 'action',
+        description: t('dataview.account.actions.sendVNA.desc'),
+        icon: faPaperPlane,
+        iconClass: 'bg-linear-to-br/srgb from-primary-500 to-primary-700',
         iconColorClass: 'text-white',
       },
     ],
