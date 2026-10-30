@@ -1,7 +1,8 @@
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import type { Participant, ParticipantRole } from '@/ui/dataview/datasections/participant'
 
-export type EcosystemOrder = 'newest' | 'trustValue'
+export const ECOSYSTEM_ORDERS = ['newest', 'trustValue'] as const
+export type EcosystemOrder = (typeof ECOSYSTEM_ORDERS)[number]
 
 export type DiscoverFilters = {
   search: string

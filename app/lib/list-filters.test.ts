@@ -62,6 +62,20 @@ describe('list filters', () => {
     expect(loadListFilters('discover', ALICE, DEFAULTS)).toEqual({ search: '', showArchived: true, order: 'newest' })
   })
 
+  it('keeps the default order when the saved one is not a known order', () => {
+    stubStorage({
+      [`verana.list-filters:discover:${ALICE}`]: JSON.stringify({
+        filters: { search: 'ecs', showArchived: false, order: 'oldest' },
+        expiresAt: Date.now() + 1000,
+      }),
+    })
+    expect(loadListFilters('discover', ALICE, DEFAULTS)).toEqual({
+      search: 'ecs',
+      showArchived: false,
+      order: 'newest',
+    })
+  })
+
   it('reads a corrupt entry as nothing saved', () => {
     stubStorage({ [`verana.list-filters:discover:${ALICE}`]: '{not json' })
     expect(loadListFilters('discover', ALICE, DEFAULTS)).toBeNull()

@@ -1,13 +1,14 @@
 import { SESSION_LIFETIME_SECONDS } from '@/config/env'
 import { sessionLifetimeMs } from '@/lib/corporation-discovery'
+import { ECOSYSTEM_ORDERS } from '@/lib/discover-list'
 import { logger } from '@/lib/logger'
 
 export const LIST_FILTER_SCOPES = ['discover', 'ecosystems', 'agents'] as const
 export type ListFilterScope = (typeof LIST_FILTER_SCOPES)[number]
 
-export const GUEST_FILTER_OWNER = 'guest'
-
 const STORAGE_PREFIX = 'verana.list-filters:'
+
+const ALLOWED_VALUES: Record<string, readonly unknown[]> = { order: ECOSYSTEM_ORDERS }
 
 interface StoredFilters {
   filters: Record<string, unknown>
@@ -16,6 +17,11 @@ interface StoredFilters {
 
 function storageKey(scope: ListFilterScope, owner: string): string {
   return `${STORAGE_PREFIX}${scope}:${owner}`
+}
+
+function isAllowed(key: string, value: unknown, fallback: unknown): boolean {
+  if (typeof value !== typeof fallback) return false
+  return ALLOWED_VALUES[key]?.includes(value) ?? true
 }
 
 export function loadListFilters<T extends object>(scope: ListFilterScope, owner: string, defaults: T): T | null {
@@ -34,7 +40,7 @@ export function loadListFilters<T extends object>(scope: ListFilterScope, owner:
     return Object.fromEntries(
       Object.entries(defaults).map(([key, fallback]) => [
         key,
-        typeof saved[key] === typeof fallback ? saved[key] : fallback,
+        isAllowed(key, saved[key], fallback) ? saved[key] : fallback,
       ])
     ) as T
   } catch {
