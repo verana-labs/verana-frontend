@@ -27,7 +27,7 @@ export function CategoryBar({
   return (
     <div className={cn('relative flex h-2 w-full items-center', className)}>
       <motion.div
-        className="flex h-full flex-1 origin-left items-center overflow-hidden rounded-full bg-muted rtl:origin-right"
+        className="flex h-full flex-1 origin-left items-center overflow-hidden rounded-full bg-track rtl:origin-right"
         initial={reduced ? false : { scaleX: 0 }}
         animate={{ scaleX: 1 }}
         transition={{ duration: DURATION.slow * 2, ease: EASE.emphasized }}

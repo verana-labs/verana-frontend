@@ -30,7 +30,21 @@ import { shortenMiddle } from '@/util/util'
 
 const INITIAL_ROWS = 8
 
+export const ACTIVITY_KINDS = ['create', 'update', 'archive', 'revoke', 'other'] as const
+
+export type ActivityKind = (typeof ACTIVITY_KINDS)[number]
+
 type Tone = { icon: LucideIcon; className: string }
+
+export function activityKind(msg: string): ActivityKind {
+  const name = msg.replace(/^Msg/, '')
+  if (name.startsWith('Unarchive') || name.startsWith('Archive')) return 'archive'
+  if (name.startsWith('Create') || name.startsWith('Add')) return 'create'
+  if (name.startsWith('Revoke') || name.startsWith('Delete') || name.startsWith('Slash')) return 'revoke'
+  if (name.startsWith('Update') || name.startsWith('Set') || name.startsWith('Renew') || name.startsWith('Increase'))
+    return 'update'
+  return 'other'
+}
 
 function toneOf(msg: string): Tone {
   const name = msg.replace(/^Msg/, '')
@@ -47,9 +61,9 @@ function toneOf(msg: string): Tone {
   return { icon: ActivityIcon, className: 'bg-muted text-muted-foreground' }
 }
 
-export function HistoryTimeline({ rows }: { rows: ActivityRow[] }) {
+export function HistoryTimeline({ rows, initialRows = INITIAL_ROWS }: { rows: ActivityRow[]; initialRows?: number }) {
   const [expanded, setExpanded] = useState(false)
-  const visible = expanded ? rows : rows.slice(0, INITIAL_ROWS)
+  const visible = expanded ? rows : rows.slice(0, initialRows)
   const hiddenCount = rows.length - visible.length
 
   return (

@@ -5,9 +5,13 @@ import { UsersIcon } from 'lucide-react'
 import type { GroupMemberRow, GroupPolicy } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
 import { currentDecisionRule, formatDecisionRule } from '@/lib/decision-policy'
+import { cn } from '@/lib/utils'
+import { ScoreGauge } from '@/ui/common/score-gauge'
 import { DURATION, EASE } from '@/ui/motion/tokens'
 import { Avatar, AvatarFallback } from '@/ui/shadcn/avatar'
-import { addressInitials, Card, Fact, SectionHeader, YouBadge } from './shared'
+import { addressInitials, Card, Fact, rulePercent, SectionHeader, YouBadge } from './shared'
+
+const FACT_TILE = 'rounded-lg bg-tint-neutral px-4 py-3 [&>p:last-child]:text-base'
 
 function shareOf(weight: string, total: number): number {
   const value = Number(weight)
@@ -27,11 +31,21 @@ export function MembersSection({
   const rule = currentDecisionRule(policy)
   const total = Number(policy.totalWeight) || members.reduce((sum, member) => sum + (Number(member.weight) || 0), 0)
   const sorted = [...members].sort((a, b) => Number(b.weight) - Number(a.weight))
+  const required = rulePercent(rule, total)
   const facts = [
     {
       key: 'rule',
       label: translate(`corporation.page.${rule?.kind ?? 'threshold'}`),
-      value: rule ? formatDecisionRule(rule) : translate('common.none'),
+      value: rule ? (
+        <>
+          {formatDecisionRule(rule)}
+          {rule.kind === 'threshold' && total > 0 ? (
+            <span className="font-normal text-muted-foreground"> / {total}</span>
+          ) : null}
+        </>
+      ) : (
+        translate('common.none')
+      ),
     },
     {
       key: 'voting',
@@ -53,26 +67,32 @@ export function MembersSection({
         description={translate('corporation.page.members.note')}
       />
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-        {facts.map((fact) => (
-          <Fact
-            key={fact.key}
-            label={fact.label}
-            value={fact.value}
-            className="rounded-lg bg-muted/50 px-4 py-3 ring-1 ring-border/60 [&>p:last-child]:text-base"
-          />
-        ))}
+        {facts.map((fact) =>
+          fact.key === 'rule' && required !== null ? (
+            <div key={fact.key} className={cn('min-w-0 space-y-2', FACT_TILE)}>
+              <p className="text-xs font-medium text-muted-foreground">{fact.label}</p>
+              <p className="text-base font-medium text-foreground tabular-nums">{fact.value}</p>
+              <ScoreGauge tone="brand" size="sm" percent={required} label={`${fact.label} ${Math.round(required)}%`} />
+            </div>
+          ) : (
+            <Fact key={fact.key} label={fact.label} value={fact.value} className={FACT_TILE} />
+          )
+        )}
       </div>
-      <ul className="divide-y divide-border/70">
+      <ul className="space-y-1">
         {sorted.map((member, index) => {
           const share = shareOf(member.weight, total)
           return (
             <li
               key={member.address}
-              className="flex flex-col gap-2 py-3 text-sm first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:gap-4"
+              className={cn(
+                '-mx-2 flex flex-col gap-2 rounded-lg px-2 py-3 text-sm transition-colors duration-(--duration-fast) ease-standard hover:bg-tint-neutral sm:flex-row sm:items-center sm:gap-4',
+                member.address === walletAddress && 'bg-tint-accent hover:bg-tint-accent'
+              )}
             >
               <span className="flex min-w-0 flex-1 items-start gap-3">
                 <Avatar size="sm" className="mt-0.5 shrink-0">
-                  <AvatarFallback className="bg-primary/10 text-[10px] font-semibold text-primary">
+                  <AvatarFallback className="bg-linear-to-br from-primary/25 to-primary/5 text-[10px] font-semibold text-primary">
                     {addressInitials(member.address)}
                   </AvatarFallback>
                 </Avatar>
@@ -81,7 +101,7 @@ export function MembersSection({
                     {member.address}
                     {member.address === walletAddress ? <YouBadge /> : null}
                   </span>
-                  <span aria-hidden="true" className="block h-1.5 overflow-hidden rounded-full bg-muted">
+                  <span aria-hidden="true" className="block h-1.5 overflow-hidden rounded-full bg-track">
                     <motion.span
                       className="block h-full origin-left rounded-full bg-primary rtl:origin-right"
                       style={{ width: `${share}%` }}

@@ -24,6 +24,7 @@ import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessa
 import { useRegistryLabels } from '@/providers/api-rest-query-provider-context'
 import { AddressIssueNote, addressIssue } from '@/ui/common/address-issue'
 import { OperatorGrantOptionsFields, useOperatorGrantDraft } from '@/ui/common/operator-grant-options'
+import { ScoreGauge } from '@/ui/common/score-gauge'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 import { Avatar, AvatarFallback } from '@/ui/shadcn/avatar'
@@ -124,6 +125,28 @@ function limitFacts(limits: GrantLimits, labels: { spendLimit: string; remaining
   return facts
 }
 
+function uvnaTotal(coins: CoinAmount[] | null): number | null {
+  if (!coins || coins.length === 0) return null
+  const uvna = coins.filter((coin) => coin.denom === 'uvna')
+  if (uvna.length !== coins.length) return null
+  return uvna.reduce((sum, coin) => sum + Number(coin.amount), 0)
+}
+
+function SpendMeter({ limits, label }: { limits: GrantLimits; label: string }) {
+  const limit = uvnaTotal(limits.spendLimit)
+  const remaining = uvnaTotal(limits.remainingSpend)
+  if (limit === null || remaining === null || limit <= 0) return null
+  const percent = Math.min(100, Math.max(0, (remaining / limit) * 100))
+  return (
+    <div className="flex items-center gap-3">
+      <ScoreGauge size="sm" percent={percent} label={`${translate(label)} ${Math.round(percent)}%`} />
+      <span aria-hidden="true" className="w-10 shrink-0 text-end text-xs font-medium text-foreground tabular-nums">
+        {Math.round(percent)}%
+      </span>
+    </div>
+  )
+}
+
 function FactGrid({ facts }: { facts: [string, ReactNode][] }) {
   return (
     <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
@@ -174,10 +197,14 @@ function OperatorGrantDetail({
   return (
     <div className="space-y-4 border-t border-border px-4 py-4 sm:ps-14">
       <MsgTypeChips typeUrls={authorization.msgTypes} />
-      <div className="space-y-4 rounded-lg bg-muted/50 p-4 ring-1 ring-border/60">
+      <div className="space-y-4 rounded-lg bg-tint-neutral p-4">
         <FactGrid facts={facts} />
-        <div className="border-t border-border pt-4">
+        <SpendMeter limits={authorization} label="delegation.remainingSpend" />
+        <div className="space-y-4 border-t border-border pt-4">
           {feeGrantsDegraded ? <SectionUnavailable /> : <FactGrid facts={feeFacts} />}
+          {feeGrant && !feeGrantsDegraded ? (
+            <SpendMeter limits={feeGrant} label="delegation.feeRemainingSpend" />
+          ) : null}
         </div>
       </div>
       {feeGrant &&
@@ -202,7 +229,7 @@ function RowChevron() {
 function AddressAvatar({ address, icon }: { address: string; icon?: ReactNode }) {
   return (
     <Avatar className="mt-0.5 shrink-0 rounded-lg after:rounded-lg">
-      <AvatarFallback className="rounded-lg bg-primary/10 text-xs font-semibold text-primary [&_svg]:size-4">
+      <AvatarFallback className="rounded-lg bg-linear-to-br from-primary/25 to-primary/5 text-xs font-semibold text-primary [&_svg]:size-4">
         {icon ?? addressInitials(address)}
       </AvatarFallback>
     </Avatar>
@@ -229,7 +256,7 @@ function OperatorRow({
   if (authorization.spendLimit) summary.push(limitText(authorization))
   if (feeGrant) summary.push(translate('delegation.withFeegrant'))
   return (
-    <li className="rounded-xl bg-card ring-1 ring-border transition-shadow duration-(--duration-base) hover:ring-primary/25">
+    <li className="rounded-xl bg-card shadow-hairline transition-shadow duration-(--duration-base) ease-standard hover:shadow-card">
       <Collapsible open={open} onOpenChange={setOpen} className="group/row">
         <div className="flex flex-col gap-2 p-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
           <CollapsibleTrigger className={ROW_TRIGGER}>
@@ -308,7 +335,7 @@ export function GrantOperatorForm({
 
   return (
     <form
-      className="mt-6 space-y-3 rounded-xl bg-muted/40 p-4 ring-1 ring-border/60 sm:p-5"
+      className="mt-6 space-y-3 rounded-xl bg-tint-neutral p-4 sm:p-5"
       onSubmit={(event) => {
         event.preventDefault()
         if (!canSubmit || !reading.options) return
@@ -432,7 +459,7 @@ export function DelegationDetail({
         <Fact label={translate('delegation.operator')} value={<span className="font-mono">{record.vsOperator}</span>} />
       ) : null}
       <MsgTypeChips typeUrls={record.msgTypes} />
-      <div className="rounded-lg bg-muted/50 p-4 ring-1 ring-border/60">
+      <div className="rounded-lg bg-tint-neutral p-4">
         <FactGrid facts={facts} />
       </div>
       {participantHref ? (
@@ -503,7 +530,7 @@ function AgentAccountRow({
 }) {
   const [open, setOpen] = useState(false)
   return (
-    <li className="rounded-xl bg-card ring-1 ring-border transition-shadow duration-(--duration-base) hover:ring-primary/25">
+    <li className="rounded-xl bg-card shadow-hairline transition-shadow duration-(--duration-base) ease-standard hover:shadow-card">
       <Collapsible open={open} onOpenChange={setOpen} className="group/row">
         <div className="p-2">
           <CollapsibleTrigger className={ROW_TRIGGER}>

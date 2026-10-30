@@ -6,6 +6,8 @@ import type { ReactNode } from 'react'
 import { translate } from '@/i18n/dataview'
 import { cn } from '@/lib/utils'
 import ServiceIdentity from '@/ui/common/service-identity'
+import { ToneTag } from '@/ui/common/tone-tag'
+import { DotPattern } from '@/ui/dashboard/dot-pattern'
 import { getModePillClass } from '@/ui/datatable/columnslist/cs'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { BlurFade } from '@/ui/motion/blur-fade'
@@ -89,7 +91,10 @@ function ModeFact({
       <FactLabel label={label} shortLabel={shortLabel} compact={compact} />
       <dd className={compact ? FACT_VALUE_INLINE : 'mt-1.5'}>
         <Badge
-          className={cn('h-auto rounded-full px-2 py-0.5 font-medium whitespace-normal', getModePillClass(raw, suffix))}
+          className={cn(
+            'h-auto max-w-full rounded-full px-2 py-0.5 font-medium break-all whitespace-normal',
+            getModePillClass(raw, suffix)
+          )}
         >
           {raw}
         </Badge>
@@ -116,10 +121,15 @@ export function SchemaHero({
       <div className="flex min-h-7 items-center">
         <EcosystemBackLink ecosystem={ecosystem} pending={ecosystemPending} />
       </div>
-      <Card className="gap-0 py-0">
+      <Card className="relative isolate gap-0 overflow-hidden py-0">
+        <DotPattern
+          width={18}
+          height={18}
+          className="-z-10 text-primary/25 [mask-image:radial-gradient(320px_circle_at_top_right,white,transparent)]"
+        />
         <div className={cn('flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-start', compact && 'sm:py-5')}>
           <div className="flex min-w-0 flex-1 gap-4">
-            <div className="hidden size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15 sm:flex">
+            <div className="hidden size-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-raised sm:flex">
               <FileJson2Icon aria-hidden="true" className="size-6" />
             </div>
             <div className="min-w-0 flex-1">
@@ -133,15 +143,14 @@ export function SchemaHero({
                   {title}
                 </h1>
                 {status ? (
-                  <Badge
-                    className={cn(
-                      'gap-1.5 rounded-full',
-                      status === 'ARCHIVED' ? 'bg-destructive/10 text-destructive' : 'bg-success/10 text-success'
-                    )}
+                  <ToneTag
+                    tone={status === 'ARCHIVED' ? 'destructive' : 'success'}
+                    dot
+                    pulse={status === 'ACTIVE'}
+                    className="rounded-full"
                   >
-                    <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
                     {status}
-                  </Badge>
+                  </ToneTag>
                 ) : null}
               </div>
               {description ? (

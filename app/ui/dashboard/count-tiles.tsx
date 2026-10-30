@@ -3,6 +3,7 @@
 import { ArrowRightIcon, type LucideIcon } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { DeltaPill, type DeltaPillProps } from '@/ui/common/delta-pill'
 import { DotPattern } from '@/ui/dashboard/dot-pattern'
 import { StatNumber } from '@/ui/dashboard/stat-number'
 import { Shimmer } from '@/ui/motion/shimmer'
@@ -18,85 +19,59 @@ export type CountTile = {
   format?: (value: number) => string
   href?: string
   cta?: string
+  delta?: DeltaPillProps | null
   error?: boolean
 }
 
-function TileCta({ href, cta, className }: { href: string; cta: string; className?: string }) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        'inline-flex items-center gap-1.5 rounded-sm text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
-        className
-      )}
-    >
-      {cta}
-      <ArrowRightIcon aria-hidden="true" className="size-4 rtl:rotate-180" />
-    </Link>
-  )
-}
-
-function Tile({ stat, name, description, Icon, value, display, format, href, cta, error }: CountTile) {
-  const action = href && cta ? { href, cta } : null
+function Tile({ stat, name, description, Icon, value, display, format, href, cta, delta, error }: CountTile) {
   return (
     <div
       data-stat={stat}
       data-stat-value={display ?? undefined}
-      className="group relative flex h-full flex-col justify-between gap-3 overflow-hidden rounded-xl bg-card p-3 shadow-card @md/page:min-h-52 @md/page:p-0"
+      className="group relative isolate flex h-full min-w-0 flex-col overflow-hidden rounded-xl bg-card p-4 shadow-card transition-shadow duration-(--duration-base) ease-standard hover:shadow-raised @md/page:min-h-48 @md/page:p-5"
     >
       <DotPattern
         width={18}
         height={18}
-        className="text-primary/30 [mask-image:radial-gradient(220px_circle_at_top_right,white,transparent)]"
+        className="-z-10 text-primary/25 [mask-image:radial-gradient(200px_circle_at_top_right,white,transparent)]"
       />
-      <div className="relative text-3xl leading-none font-semibold tracking-tight @md/page:absolute @md/page:top-4 @md/page:right-4 @md/page:text-5xl @5xl/page:text-6xl">
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <span
+          aria-hidden="true"
+          className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-tint-accent text-primary transition-transform duration-(--duration-slow) ease-emphasized group-hover:scale-110 motion-reduce:transition-none [&_svg]:size-4.5"
+        >
+          <Icon />
+        </span>
+        {delta ? <DeltaPill {...delta} /> : null}
+      </div>
+      <div
+        className="mt-4 min-w-0 truncate text-3xl leading-tight font-semibold tracking-[-0.03em] text-foreground tabular-nums @5xl/page:text-4xl"
+        title={display ?? undefined}
+      >
         {value !== null ? (
-          <StatNumber value={value} format={format} className="tracking-tight text-foreground" />
+          <StatNumber value={value} format={format} />
         ) : error ? (
           <span className="text-muted-foreground">—</span>
         ) : (
-          <Shimmer className="h-8 w-12 @md/page:h-14 @md/page:w-16" />
+          <Shimmer className="h-9 w-16 @5xl/page:h-10" />
         )}
       </div>
-      <div className="relative @md/page:p-4">
-        <div
-          className={cn(
-            'flex transform-gpu flex-col gap-1 transition-transform duration-(--duration-slow) ease-emphasized motion-reduce:transition-none',
-            action && 'lg:group-focus-within:-translate-y-8 lg:group-hover:-translate-y-8'
-          )}
-        >
-          <Icon
-            aria-hidden="true"
-            className={cn(
-              'hidden size-12 origin-left transform-gpu text-foreground/80 transition-transform duration-(--duration-slow) ease-emphasized @md/page:block',
-              action && 'group-hover:scale-75'
-            )}
-          />
-          <h3 className="flex items-start gap-1.5 text-sm font-medium text-muted-foreground @md/page:text-xl @md/page:font-semibold @md/page:text-foreground @5xl/page:text-base @7xl/page:text-lg">
-            <Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0 @md/page:hidden" />
-            <span className="line-clamp-2 @md/page:line-clamp-1 @md/page:text-balance" title={name}>
-              {name}
-            </span>
-          </h3>
-          <p className="hidden min-h-[2lh] max-w-lg text-sm text-muted-foreground @md/page:line-clamp-2">
-            {description}
-          </p>
-        </div>
-        {action ? <TileCta {...action} className="mt-2 hidden @md/page:inline-flex lg:hidden" /> : null}
-      </div>
-      {action ? (
-        <div className="absolute bottom-0 hidden w-full translate-y-8 p-4 opacity-0 transition-[translate,opacity] duration-(--duration-slow) ease-emphasized group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:translate-y-0 group-hover:opacity-100 lg:flex">
-          <TileCta {...action} />
-        </div>
-      ) : null}
-      {action ? (
+      <h3 className="mt-1 truncate text-sm font-medium text-foreground" title={name}>
+        {name}
+      </h3>
+      <p className="mt-1 hidden text-sm text-muted-foreground @md/page:line-clamp-2">{description}</p>
+      {href && cta ? (
         <Link
-          href={action.href}
-          aria-label={action.cta}
-          className="absolute inset-0 rounded-xl focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 @md/page:hidden"
-        />
+          href={href}
+          className="mt-auto inline-flex items-center gap-1.5 self-start rounded-sm pt-3 text-sm font-medium text-primary underline-offset-4 after:absolute after:inset-0 after:rounded-xl group-hover:underline focus-visible:outline-none focus-visible:after:ring-[3px] focus-visible:after:ring-ring/50"
+        >
+          <span className="truncate">{cta}</span>
+          <ArrowRightIcon
+            aria-hidden="true"
+            className="size-4 shrink-0 transition-transform duration-(--duration-slow) ease-emphasized group-hover:translate-x-0.5 motion-reduce:transition-none rtl:rotate-180"
+          />
+        </Link>
       ) : null}
-      <div className="pointer-events-none absolute inset-0 transition-colors duration-(--duration-slow) group-hover:bg-foreground/[0.02]" />
     </div>
   )
 }

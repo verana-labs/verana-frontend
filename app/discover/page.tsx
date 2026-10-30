@@ -12,6 +12,7 @@ import KeysetPagination from '@/ui/common/keyset-pagination'
 import TitleAndButton from '@/ui/common/title-and-button'
 import { DiscoverCardSkeleton } from '@/ui/discover/discover-card-skeleton'
 import { DiscoverFilters } from '@/ui/discover/discover-filters'
+import { DiscoverStats } from '@/ui/discover/discover-stats'
 import { discoverText as t } from '@/ui/discover/text'
 import { Stagger, StaggerItem } from '@/ui/motion/stagger'
 import { Button } from '@/ui/shadcn/button'
@@ -74,6 +75,12 @@ export default function DiscoverJoinPage() {
   return (
     <>
       <TitleAndButton title={t('discover.title')} description={[t('discover.description')]} />
+
+      <DiscoverStats
+        ecosystems={matching}
+        loading={loading}
+        scope={partial ? (fullWindow ? 'loaded' : 'page') : 'matching'}
+      />
 
       <DiscoverFilters
         value={filters}
