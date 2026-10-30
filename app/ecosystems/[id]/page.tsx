@@ -33,7 +33,7 @@ export default function EcosystemViewPage() {
   const id = params?.id ?? ''
   const router = useRouter()
   const { actingCorporation } = useUserCorporation()
-  const { rolesBySchema } = useCorporationRoles(actingCorporation?.corporation.id)
+  const { rolesBySchema, failureReason: rolesFailure } = useCorporationRoles(actingCorporation?.corporation.id)
   const { ecosystem, errorEcosystem, refetch: refetchEcosystem } = useEcosystemData(id)
   const history = useActivityHistory(
     VERANA_REST_ENDPOINT_ECOSYSTEM && id ? `${VERANA_REST_ENDPOINT_ECOSYSTEM}/history/${id}` : undefined
@@ -301,6 +301,9 @@ export default function EcosystemViewPage() {
           ) : null}
         </div>
         {errorCredentialSchemas ? <div className="error-pane mb-4">{errorCredentialSchemas}</div> : null}
+        {rolesFailure ? (
+          <div className="error-pane mb-4">{translate('ecosystem.roles.failed', { reason: rolesFailure })}</div>
+        ) : null}
         {visibleSchemas.length === 0 ? (
           <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-8 text-center text-sm text-neutral-70">
             {t('datatable.cs.empty', 'No credential schemas')}

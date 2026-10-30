@@ -4,10 +4,11 @@ import { faEye, faSitemap } from '@fortawesome/free-solid-svg-icons'
 import { ReactNode } from 'react'
 import { translate } from '@/i18n/dataview'
 import IconActionButton from '@/ui/common/icon-action-button'
+import { RolePills } from '@/ui/common/role-pills'
 import { type CredentialSchemaListItem, getModePillClass } from '@/ui/datatable/columnslist/cs'
 import type { ParticipantRole } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
-import { formatNumber, formatVNA, roleBadgeClass } from '@/util/util'
+import { formatNumber, formatVNA } from '@/util/util'
 
 export type CsSummaryCardProps = {
   credentialSchema: CredentialSchemaListItem
@@ -95,15 +96,8 @@ export default function CsSummaryCard({ credentialSchema, onView, onParticipants
         ) : null}
 
         {roles.length > 0 ? (
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            {roles.map((role) => (
-              <span
-                key={role}
-                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${roleBadgeClass(role)}`}
-              >
-                {role}
-              </span>
-            ))}
+          <div className="flex min-w-0 items-start gap-2 overflow-hidden mb-4">
+            <RolePills roles={roles} />
           </div>
         ) : null}
 

@@ -11,16 +11,16 @@ import { type DidEnrichment, serviceAvatarUrl, serviceIdenticonUrl } from '@/lib
 import { trustStateBadge } from '@/lib/trust-state'
 import ClaimText from '@/ui/common/claim-text'
 import LogoImage from '@/ui/common/logo-image'
+import { RolePills } from '@/ui/common/role-pills'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import type { ParticipantRole } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
-import { countryCodeToFlag, formatNumber, formatVNAFromUVNA, roleBadgeClass, shortenDID } from '@/util/util'
+import { countryCodeToFlag, formatNumber, formatVNAFromUVNA, shortenDID } from '@/util/util'
 
 export const CARD_BODY_CLASS = 'grid h-full min-h-[20.25rem] grid-rows-[5rem_3.25rem_1.5rem_1fr] gap-3 p-4 sm:p-6'
 const CARD_HEADER_REGION_CLASS = 'flex min-h-0 min-w-0 items-start space-x-3 overflow-hidden'
 const CARD_ORG_REGION_CLASS = 'flex min-h-0 min-w-0 items-start space-x-2 overflow-hidden'
 const CARD_ROLES_REGION_CLASS = 'flex min-h-0 min-w-0 items-start gap-2 overflow-hidden'
-const ROLE_PILL_CLASS = 'inline-flex min-w-0 max-w-[8.5rem] items-center rounded-full px-2.5 py-0.5 text-xs font-medium'
 
 type EcosystemCardData = Pick<
   EcosystemListItem,
@@ -44,11 +44,12 @@ type Props = {
   ecosystem: EcosystemCardData
   enrichment?: DidEnrichment
   roles?: ParticipantRole[]
+  controlled?: boolean
 }
 
 const NO_ROLES: ParticipantRole[] = []
 
-export default function EcosystemCard({ ecosystem, enrichment, roles = NO_ROLES }: Props) {
+export default function EcosystemCard({ ecosystem, enrichment, roles = NO_ROLES, controlled = false }: Props) {
   const router = useRouter()
   const { data: resolved } = useDidTrustEnrichment(enrichment ? undefined : ecosystem.did)
   const identity = enrichment ?? resolved
@@ -59,8 +60,6 @@ export default function EcosystemCard({ ecosystem, enrichment, roles = NO_ROLES 
   const orgName = identity?.organizationName ?? shortenDID(ecosystem.did) ?? ecosystem.did
   const flag = countryCodeToFlag(identity?.countryCode)
   const egfHref = governanceFrameworkHref(ecosystem)
-  const visibleRoles = roles.slice(0, 2)
-  const extraRoleCount = Math.max(0, roles.length - visibleRoles.length)
   const isArchived = Boolean(ecosystem.archived)
 
   const handleClick = () => router.push(`/ecosystems/${encodeURIComponent(ecosystem.id)}`)
@@ -147,23 +146,7 @@ export default function EcosystemCard({ ecosystem, enrichment, roles = NO_ROLES 
         </div>
 
         <div className={CARD_ROLES_REGION_CLASS}>
-          {visibleRoles.length > 0 ? (
-            visibleRoles.map((r) => (
-              <span key={r} className={`${ROLE_PILL_CLASS} ${roleBadgeClass(r)}`} title={r}>
-                <span className="truncate">{r}</span>
-              </span>
-            ))
-          ) : (
-            <span className="sr-only">{t('datatable.ecosystem.card.noRoles', 'No roles')}</span>
-          )}
-          {extraRoleCount > 0 ? (
-            <span
-              className="inline-flex shrink-0 items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
-              title={roles.slice(visibleRoles.length).join(', ')}
-            >
-              +{extraRoleCount}
-            </span>
-          ) : null}
+          <RolePills roles={roles} controlled={controlled} />
         </div>
 
         <div className="space-y-2 text-sm">

@@ -7,7 +7,7 @@ import { ECOSYSTEMS_PAGE_SIZE } from '@/hooks/useEcosystems'
 import { useCorporationRoles } from '@/hooks/useParticipants'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
-import { cardRoles } from '@/lib/discover-list'
+import { roleFiltersPending } from '@/lib/discover-list'
 import { useEcosystemsCtx } from '@/providers/api-rest-query-provider-context'
 import { EntityActionButton } from '@/ui/common/capability-button'
 import EcosystemCard from '@/ui/common/ecosystem-card'
@@ -69,9 +69,7 @@ export default function EcosystemsPage() {
   }, [actingCorporationId, ecosystemsList, filters, rolesByEcosystem])
 
   const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
-  const gridLoading =
-    (ecosystemsLoading && ecosystemsList.length === 0) ||
-    (rolesLoading && (filters.hideOwned || filters.hideParticipant))
+  const gridLoading = (ecosystemsLoading && ecosystemsList.length === 0) || roleFiltersPending(filters, rolesLoading)
 
   if (!actingCorporation && !corporationLoading) {
     if (discoveryError) return <div className="p-6 error-pane">{translate('corporation.page.error')}</div>
@@ -110,7 +108,7 @@ export default function EcosystemsPage() {
 
       <section id="ecosystems-grid" className="mb-8">
         {failureReason ? (
-          <div className="error-pane mb-4">{translate('discover.roles.failed', { reason: failureReason })}</div>
+          <div className="error-pane mb-4">{translate('ecosystems.roles.failed', { reason: failureReason })}</div>
         ) : null}
         {gridLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
@@ -131,7 +129,8 @@ export default function EcosystemsPage() {
                     key={ecosystem.id}
                     ecosystem={ecosystem}
                     enrichment={ecosystem.trustData}
-                    roles={cardRoles(ecosystem, rolesByEcosystem[ecosystem.id], actingCorporationId)}
+                    roles={rolesByEcosystem[ecosystem.id]}
+                    controlled={ecosystem.corporationId === actingCorporationId}
                   />
                 ))}
               </div>

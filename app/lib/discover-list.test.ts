@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import type { DidEnrichment } from '@/lib/resolverClient'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import {
-  cardRoles,
   clientPage,
   type DiscoverFilters,
   distinctRoles,
@@ -218,17 +217,5 @@ describe('groupRolesBySchema', () => {
         { schema_id: '7', role: 'VERIFIER' },
       ])
     ).toEqual({ '7': ['ISSUER', 'VERIFIER'], '8': ['HOLDER'] })
-  })
-})
-
-describe('cardRoles', () => {
-  it('marks an ecosystem the acting corporation controls even before it has a root participant', () => {
-    expect(cardRoles(ecosystem('1'), undefined, 1)).toEqual(['ECOSYSTEM'])
-    expect(cardRoles(ecosystem('1'), ['ISSUER'], 1)).toEqual(['ECOSYSTEM', 'ISSUER'])
-  })
-
-  it('keeps the participant roles as they are for a joined ecosystem or a controller that already has one', () => {
-    expect(cardRoles(ecosystem('1'), ['ISSUER', 'VERIFIER'], 9)).toEqual(['ISSUER', 'VERIFIER'])
-    expect(cardRoles(ecosystem('1'), ['ECOSYSTEM'], 1)).toEqual(['ECOSYSTEM'])
   })
 })
