@@ -46,7 +46,7 @@ export const ModalAction: React.FC<ModalActionProps> = ({
     <div
       ref={overlayRef}
       data-modal-action
-      className={`${modalHidden ? 'hidden' : ''} fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50`}
+      className={`${modalHidden ? 'hidden' : ''} fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50`}
     >
       <div
         className={

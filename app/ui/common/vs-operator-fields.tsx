@@ -20,7 +20,8 @@ type VsOperatorFieldsProps = {
 
 type TextField = 'vsOperator' | 'spendLimit' | 'periodDays' | 'feeSpendLimit'
 
-const CHECKBOX_CLASS = 'w-4 h-4 text-primary-600 border-neutral-20 dark:border-neutral-70 rounded'
+const CHECKBOX_CLASS =
+  'w-4 h-4 text-primary-600 border-neutral-20 dark:border-neutral-70 rounded checked:border-transparent'
 
 function t(key: string): string {
   return resolveTranslatable({ key }, translate) ?? key

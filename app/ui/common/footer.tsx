@@ -42,7 +42,7 @@ export function Footer() {
   const { state } = useComponentsVersion()
 
   return (
-    <div className="flex-shrink-0 px-2 py-4 border-t border-neutral-20 dark:border-neutral-70">
+    <div className="shrink-0 px-2 py-4 border-t border-neutral-20 dark:border-neutral-70">
       {/* Logo & versions */}
       <div className="flex items-center">
         <Image src={configFooter.img} alt="Verana Logo" width={24} height={24} className="w-6 h-6 me-2" />

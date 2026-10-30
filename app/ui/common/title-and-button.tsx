@@ -78,7 +78,7 @@ export default function TitleAndButton({
                     type="checkbox"
                     checked={checkFilter?.show}
                     onChange={(e) => checkFilter?.changeFilter(e.target.checked)}
-                    className="w-4 h-4 text-primary-600 bg-white dark:bg-surface border-neutral-20 dark:border-neutral-70 rounded focus:ring-2 focus:ring-primary-500"
+                    className="w-4 h-4 text-primary-600 bg-white dark:bg-surface border-neutral-20 dark:border-neutral-70 rounded checked:bg-current checked:border-transparent focus:ring-2 focus:ring-primary-500"
                   />
                   <span className="text-sm text-gray-700 dark:text-gray-300">{checkFilter?.label}</span>
                 </label>

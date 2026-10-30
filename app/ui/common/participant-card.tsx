@@ -396,7 +396,7 @@ export default function ParticipantCard({
             <LogoImage
               src={enrichment?.serviceLogoUrl}
               fallbackSrc={serviceIdenticonUrl(did)}
-              className="w-16 h-16 rounded-lg flex-shrink-0 object-contain"
+              className="w-16 h-16 rounded-lg shrink-0 object-contain"
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-2 mb-2">
@@ -442,14 +442,14 @@ export default function ParticipantCard({
             <LogoImage
               src={enrichment?.organizationLogoUrl}
               fallbackSrc={serviceAvatarUrl(did)}
-              className="w-6 h-6 rounded flex-shrink-0 object-contain"
+              className="w-6 h-6 rounded shrink-0 object-contain"
             />
             <h4 className="text-base font-medium text-gray-900 dark:text-white break-words">
               {organizationLabel || '—'}
             </h4>
             {!enrichment?.organizationName && did ? <span className="sr-only">Unverified organization</span> : null}
             {enrichment?.countryCode ? (
-              <span className="text-lg flex-shrink-0" aria-hidden="true">
+              <span className="text-lg shrink-0" aria-hidden="true">
                 {countryCodeToFlag(enrichment.countryCode)}
               </span>
             ) : null}
