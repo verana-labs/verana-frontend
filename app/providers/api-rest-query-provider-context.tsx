@@ -5,12 +5,13 @@ import { type AccountBalanceData, useAccountBalance } from '@/hooks/useAccountBa
 import { type EcosystemSchemaPage, useCredentialSchemasByEcosystem } from '@/hooks/useCredentialSchemas'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
-import { useEcosystems } from '@/hooks/useEcosystems'
+import { ECOSYSTEMS_PAGE_SIZE, useEcosystems } from '@/hooks/useEcosystems'
 import { usePendingParticipants } from '@/hooks/usePendingParticipants'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { type DiscoverFilters, INITIAL_DISCOVER_FILTERS, needsFullWindow } from '@/lib/discover-list'
 import { coalesceIndexerEvents, refreshTargets } from '@/lib/indexer-event'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
+import { type EcosystemsFilterState, INITIAL_ECOSYSTEMS_FILTER } from '@/ui/common/ecosystems-filter-bar'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { DashboardData } from '@/ui/dataview/datasections/dashboard'
 import type { PendingEcosystem } from '@/ui/dataview/datasections/participant'
@@ -52,10 +53,10 @@ type EcosystemsCtxValue = KeysetPageControls & {
   ecosystemsList: EcosystemListItem[]
   ecosystemsLoading: boolean
   refetch: () => Promise<void>
-  onlyActiveEcosystem: boolean
-  setOnlyActiveEcosystem: React.Dispatch<React.SetStateAction<boolean>>
-  ecosystemFilters: Record<string, string | boolean>
-  setEcosystemFilters: React.Dispatch<React.SetStateAction<Record<string, string | boolean>>>
+  ecosystemFilters: EcosystemsFilterState
+  setEcosystemFilters: React.Dispatch<React.SetStateAction<EcosystemsFilterState>>
+  ecosystemsSearch: string
+  ecosystemsFullWindow: boolean
 }
 
 type AccountCtxValue = {
@@ -70,8 +71,8 @@ type DashboardCtxValue = {
 
 export const DISCOVER_PAGE_SIZE = 5
 // The indexer caps limit at 1024 and the keyset request asks for one extra row.
-export const DISCOVER_FULL_WINDOW = 1024 - 1
-const DISCOVER_SEARCH_DEBOUNCE_MS = 300
+export const FULL_WINDOW = 1024 - 1
+const SEARCH_DEBOUNCE_MS = 300
 
 const PendingTasksContext = createContext<PendingTasksCtxValue | undefined>(undefined)
 const DiscoverContext = createContext<DiscoverCtxValue | undefined>(undefined)
@@ -91,8 +92,9 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
     refetch: refetchPendingParticipants,
   } = usePendingParticipants()
 
-  const [onlyActiveEcosystem, setOnlyActiveEcosystem] = useState(true)
-  const [ecosystemFilters, setEcosystemFilters] = useState<Record<string, string | boolean>>({})
+  const [ecosystemFilters, setEcosystemFilters] = useState<EcosystemsFilterState>(INITIAL_ECOSYSTEMS_FILTER)
+  const ecosystemsSearch = useDebouncedValue(ecosystemFilters.search, SEARCH_DEBOUNCE_MS)
+  const ecosystemsFullWindow = needsFullWindow({ ...ecosystemFilters, search: ecosystemsSearch })
   const {
     ecosystems: ecosystemsList,
     loading: ecosystemsLoading,
@@ -101,10 +103,10 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
     hasPrevious: ecosystemsHasPrevious,
     nextPage: ecosystemsNextPage,
     previousPage: ecosystemsPreviousPage,
-  } = useEcosystems(false, onlyActiveEcosystem)
+  } = useEcosystems(false, !ecosystemFilters.showArchived, ecosystemsFullWindow ? FULL_WINDOW : ECOSYSTEMS_PAGE_SIZE)
 
   const [discoverFilters, setDiscoverFilters] = useState<DiscoverFilters>(INITIAL_DISCOVER_FILTERS)
-  const discoverSearch = useDebouncedValue(discoverFilters.search, DISCOVER_SEARCH_DEBOUNCE_MS)
+  const discoverSearch = useDebouncedValue(discoverFilters.search, SEARCH_DEBOUNCE_MS)
   const fullWindow = needsFullWindow({ ...discoverFilters, search: discoverSearch })
   const [shownEcosystemIds, setShownEcosystemIds] = useState<string[]>([])
   const {
@@ -116,7 +118,7 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
     hasPrevious: discoverHasPrevious,
     nextPage: discoverNextPage,
     previousPage: discoverPreviousPage,
-  } = useEcosystems(true, !discoverFilters.showArchived, fullWindow ? DISCOVER_FULL_WINDOW : DISCOVER_PAGE_SIZE)
+  } = useEcosystems(true, !discoverFilters.showArchived, fullWindow ? FULL_WINDOW : DISCOVER_PAGE_SIZE)
   const discoverEcosystemIds = useMemo(
     () => (fullWindow ? shownEcosystemIds : discoverList.map((ecosystem) => ecosystem.id)),
     [discoverList, fullWindow, shownEcosystemIds]
@@ -228,10 +230,10 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
       ecosystemsList,
       ecosystemsLoading,
       refetch: refetchEcosystems,
-      onlyActiveEcosystem,
-      setOnlyActiveEcosystem,
       ecosystemFilters,
       setEcosystemFilters,
+      ecosystemsSearch,
+      ecosystemsFullWindow,
       hasNext: ecosystemsHasNext,
       hasPrevious: ecosystemsHasPrevious,
       nextPage: ecosystemsNextPage,
@@ -241,8 +243,9 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
       ecosystemsList,
       ecosystemsLoading,
       refetchEcosystems,
-      onlyActiveEcosystem,
       ecosystemFilters,
+      ecosystemsSearch,
+      ecosystemsFullWindow,
       ecosystemsHasNext,
       ecosystemsHasPrevious,
       ecosystemsNextPage,
