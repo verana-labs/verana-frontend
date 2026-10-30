@@ -4,6 +4,7 @@ import { useChain } from '@cosmos-kit/react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useCorporationDetails } from '@/hooks/useCorporationDetails'
+import { useGranterBalance } from '@/hooks/useGranterBalance'
 import { useActionSigning } from '@/hooks/useSigningMode'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
@@ -71,6 +72,8 @@ export default function CorporationPage() {
     }
   }, [actingCorporationId, addIndexerEventListener, refetch])
 
+  const balance = useGranterBalance(details?.profile.policyAddress, votesVersion)
+
   const creating = searchParams.get('create') === '1'
   const tab = pick(TABS, searchParams.get('tab'), 'overview')
 
@@ -132,6 +135,7 @@ export default function CorporationPage() {
     actingCorporation,
     details,
     enrichment,
+    balance,
     walletAddress: address,
     openProposals,
     unrepaidSlash,

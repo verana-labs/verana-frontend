@@ -702,6 +702,8 @@
   "corporation.page.language": "Idioma",
   "corporation.page.created": "Creada",
   "corporation.page.rotatedid": "Rotar DID",
+  "corporation.page.balance": "Saldo",
+  "corporation.page.balance.failed": "no disponible",
   "corporation.page.rotatedid.submit": "Actualizar DID",
   "corporation.page.threshold": "Umbral",
   "corporation.page.votingperiod": "Periodo de votación",
