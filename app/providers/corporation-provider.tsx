@@ -17,6 +17,7 @@ import {
   saveActingCorporationId,
 } from '@/lib/corporation-discovery'
 import { EVENT_COALESCE_MS, refreshTargets, triggersDiscovery } from '@/lib/indexer-event'
+import { forgetListFilters } from '@/lib/list-filters'
 import { logger } from '@/lib/logger'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 
@@ -90,6 +91,7 @@ export function CorporationProvider({ children }: { children: React.ReactNode })
     const previousAccount = lastAccount.current
     if (previousAccount && invalidatesActingSession(previousAccount, address, isWalletDisconnected)) {
       forgetActingCorporationId(previousAccount)
+      forgetListFilters(previousAccount)
       forgetLocale()
       applyLocale(resolveLocale(null, navigator.languages))
     }
