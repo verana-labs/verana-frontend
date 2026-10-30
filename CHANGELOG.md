@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.20.0](https://github.com/verana-labs/verana-frontend/compare/v0.19.1...v0.20.0) (2026-10-30)
+
+
+### Features
+
+* [Corporation] show the full policy address with a copy button ([#580](https://github.com/verana-labs/verana-frontend/issues/580)) ([3184ca2](https://github.com/verana-labs/verana-frontend/commit/3184ca249f9b6a1de5b653ca163761167cde9879))
+* [Settings] keep the list filters for the session ([#572](https://github.com/verana-labs/verana-frontend/issues/572)) ([55ae61f](https://github.com/verana-labs/verana-frontend/commit/55ae61f0fdd0e93eb3f8640962a02c9073e0bc93))
+
 ## [0.19.1](https://github.com/verana-labs/verana-frontend/compare/v0.19.0...v0.19.1) (2026-10-27)
 
 
