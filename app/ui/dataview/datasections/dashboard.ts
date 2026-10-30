@@ -1,18 +1,12 @@
-import {
-  faCertificate,
-  faCheck,
-  faCoins,
-  faCubes,
-  faFileLines,
-  faShieldHalved,
-  faUsers,
-} from '@fortawesome/free-solid-svg-icons'
-import { Section } from '@/ui/dataview/types'
-import { formatNumber, formatVNAFromUVNA } from '@/util/util'
+export interface ParticipantRoles {
+  ecosystem: number
+  issuer: number
+  verifier: number
+  holder: number
+  issuerGrantor: number
+  verifierGrantor: number
+}
 
-const t = (key: string) => ({ key })
-
-//Dashboard data
 export interface DashboardData {
   blockHeight?: number | null
   ecosystems?: number | null
@@ -21,78 +15,5 @@ export interface DashboardData {
   totalLockedTrustDeposit?: string | null
   issuedCredentials?: number | null
   verifiedCredentials?: number | null
+  roles?: ParticipantRoles | null
 }
-
-// Sections configuration for DashboardData
-export const dashboardSections: Section<DashboardData>[] = [
-  {
-    // name: t("dataview.dashboard.sections.connectionDetails"),
-    cardView: true,
-    classFormEdit: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6',
-    fields: [
-      {
-        name: 'blockHeight',
-        label: t('dataview.dashboard.fields.blockHeight'),
-        type: 'data',
-        icon: faCubes,
-        iconClass: 'bg-blue-100 dark:bg-blue-900/20',
-        iconColorClass: 'text-blue-600 dark:text-blue-400 text-xl',
-        format: (value) => formatNumber(String(value), true, true),
-      },
-      {
-        name: 'ecosystems',
-        label: t('dataview.dashboard.fields.ecosystems'),
-        type: 'data',
-        icon: faShieldHalved,
-        iconClass: 'bg-purple-100 dark:bg-purple-900/20',
-        iconColorClass: 'text-purple-600 dark:text-purple-400 text-xl',
-        format: (value) => formatNumber(String(value), true, true),
-      },
-      {
-        name: 'schemas',
-        label: t('dataview.dashboard.fields.schemas'),
-        type: 'data',
-        icon: faFileLines,
-        iconClass: 'bg-slate-100 dark:bg-slate-900/20',
-        iconColorClass: 'text-slate-600 dark:text-slate-400 text-xl',
-        format: (value) => formatNumber(String(value), true, true),
-      },
-      {
-        name: 'participants',
-        label: t('dataview.dashboard.fields.participants'),
-        type: 'data',
-        icon: faUsers,
-        iconClass: 'bg-indigo-100 dark:bg-indigo-900/20',
-        iconColorClass: 'text-indigo-600 dark:text-indigo-400 text-xl',
-        format: (value) => formatNumber(String(value), true, true),
-      },
-      {
-        name: 'totalLockedTrustDeposit',
-        label: t('dataview.dashboard.fields.totalLockedTrustDeposit'),
-        type: 'data',
-        icon: faCoins,
-        iconClass: 'bg-yellow-100 dark:bg-yellow-900/20',
-        iconColorClass: 'text-yellow-600 dark:text-yellow-400 text-xl',
-        format: (value) => formatVNAFromUVNA(String(value)),
-      },
-      {
-        name: 'issuedCredentials',
-        label: t('dataview.dashboard.fields.issuedCredentials'),
-        type: 'data',
-        icon: faCertificate,
-        iconClass: 'bg-green-100 dark:bg-green-900/20',
-        iconColorClass: 'text-green-600 dark:text-green-400 text-xl',
-        format: (value) => formatNumber(String(value), true, true),
-      },
-      {
-        name: 'verifiedCredentials',
-        label: t('dataview.dashboard.fields.verifiedCredentials'),
-        type: 'data',
-        icon: faCheck,
-        iconClass: 'bg-orange-100 dark:bg-orange-900/20',
-        iconColorClass: 'text-orange-600 dark:text-orange-400 text-xl',
-        format: (value) => formatNumber(String(value), true, true),
-      },
-    ],
-  },
-]

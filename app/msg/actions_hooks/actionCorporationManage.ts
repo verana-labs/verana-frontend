@@ -54,7 +54,7 @@ import {
 } from '@/msg/util/indexerWait'
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import { extractTxHeight } from '@/msg/util/signerUtil'
-import { proposalExecution, proposalSubmittedMessage, rejectionNotice, txFailureNotice } from '@/msg/util/tx-outcome'
+import { notifyRejection, proposalExecution, proposalSubmittedMessage, txFailureNotice } from '@/msg/util/tx-outcome'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
 import { useProtocolParams } from '@/providers/protocol-params-context'
@@ -382,8 +382,7 @@ export function useCorporationManage(onDone?: () => void) {
       return true
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error)
-      const notice = rejectionNotice(text, text)
-      await notify(notice.message, 'error', notice.title, notice.link)
+      await notifyRejection(notify, text, text)
       return false
     } finally {
       inFlight.current = false

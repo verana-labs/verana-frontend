@@ -1,21 +1,30 @@
 'use client'
 
-import { faUpRightFromSquare } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { ExternalLinkIcon, EyeIcon, FileTextIcon, XIcon } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 import { translate } from '@/i18n/dataview'
 import type { GfVersion } from '@/lib/gf-document'
 import { getLanguageLabel, useLanguageData } from '@/lib/language'
+import { cn } from '@/lib/utils'
 import GfDocumentViewer from '@/ui/common/gf-document-viewer'
 import { resolveTranslatable } from '@/ui/dataview/types'
+import { BlurFade } from '@/ui/motion/blur-fade'
+import { Badge } from '@/ui/shadcn/badge'
+import { Button } from '@/ui/shadcn/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/shadcn/table'
 import { formatDate } from '@/util/util'
 
-const HEADER_CELL_CLASS =
-  'px-4 sm:px-6 py-3 text-left text-xs font-medium text-neutral-70 dark:text-neutral-70 uppercase tracking-wider'
-const BODY_CELL_CLASS = 'px-4 sm:px-6 py-4'
-
-function Th({ children }: { children: ReactNode }) {
-  return <th className={HEADER_CELL_CLASS}>{children}</th>
+function Th({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <TableHead
+      className={cn(
+        'h-10 px-4 text-xs font-medium tracking-wide text-muted-foreground uppercase first:pl-5 last:pr-5',
+        className
+      )}
+    >
+      {children}
+    </TableHead>
+  )
 }
 
 export type EgfDocumentsTableProps = {
@@ -36,14 +45,16 @@ type Row = {
   statusText: string
 }
 
-function statusPillClass(state: RowState): string {
-  if (state === 'active') {
-    return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-  }
-  if (state === 'draft') {
-    return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-  }
-  return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+const STATUS_CLASS: Record<RowState, string> = {
+  active: 'bg-success/10 text-success dark:bg-success/20',
+  draft: 'bg-warning/10 text-warning dark:bg-warning/20',
+  inactive: 'bg-muted text-muted-foreground',
+}
+
+const STATUS_DOT: Record<RowState, string> = {
+  active: 'bg-success',
+  draft: 'bg-warning',
+  inactive: 'bg-muted-foreground/60',
 }
 
 function buildRows(versions: GfVersion[], activeVersion: number, resolveLabel: (value: string) => string): Row[] {
@@ -120,84 +131,89 @@ export default function EgfDocumentsTable({ versions, activeVersion }: EgfDocume
   const languageHeader = resolveTranslatable({ key: 'datalist.egf.header.language' }, translate) ?? 'Language'
   const statusHeader = resolveTranslatable({ key: 'datalist.egf.header.status' }, translate) ?? 'Status'
   const actionsHeader = resolveTranslatable({ key: 'datalist.egf.header.actions' }, translate) ?? 'Actions'
+  const viewLabel = resolveTranslatable({ key: 'datalist.egf.view' }, translate) ?? 'View'
 
   return (
-    <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-neutral-20 dark:divide-neutral-70">
-          <thead className="bg-gray-50 dark:bg-gray-800">
-            <tr>
+    <div className="space-y-4">
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <Table>
+          <TableHeader className="bg-muted/50">
+            <TableRow className="hover:bg-transparent">
               <Th>{versionHeader}</Th>
               <Th>{uriHeader}</Th>
               <Th>{languageHeader}</Th>
               <Th>{statusHeader}</Th>
-              <Th>{actionsHeader}</Th>
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-surface divide-y divide-neutral-20 dark:divide-neutral-70">
-            {rows.map((row) => (
-              <tr key={row.key} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <td className={`${BODY_CELL_CLASS} whitespace-nowrap`}>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {versionHeader} {row.version}
-                  </span>
-                </td>
-                <td className={BODY_CELL_CLASS}>
-                  <a
-                    href={row.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={row.url}
-                    aria-label={row.url}
-                    className="inline-flex p-1.5 text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
-                  >
-                    <FontAwesomeIcon icon={faUpRightFromSquare} />
-                  </a>
-                </td>
-                <td className={`${BODY_CELL_CLASS} whitespace-nowrap`}>
-                  <span className="text-sm text-gray-900 dark:text-white">{row.language}</span>
-                </td>
-                <td className={`${BODY_CELL_CLASS} whitespace-nowrap`}>
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusPillClass(row.state)}`}
-                  >
-                    {row.statusText}
-                  </span>
-                </td>
-                <td className={`${BODY_CELL_CLASS} whitespace-nowrap`}>
-                  <button
-                    type="button"
-                    onClick={() => setViewing({ versionId: row.versionId, documentId: row.documentId })}
-                    className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
-                  >
-                    {resolveTranslatable({ key: 'datalist.egf.view' }, translate) ?? 'View'}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+              <Th className="text-right">{actionsHeader}</Th>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((row) => {
+              const selected = viewing?.versionId === row.versionId && viewing.documentId === row.documentId
+              return (
+                <TableRow key={row.key} data-state={selected ? 'selected' : undefined}>
+                  <TableCell className="py-3 pr-4 pl-5 whitespace-nowrap">
+                    <span className="flex items-center gap-2.5 font-medium">
+                      <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <FileTextIcon className="size-3.5" aria-hidden="true" />
+                      </span>
+                      {versionHeader} {row.version}
+                    </span>
+                  </TableCell>
+                  <TableCell className="px-4 py-3">
+                    <Button asChild variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-primary">
+                      <a href={row.url} target="_blank" rel="noopener noreferrer" title={row.url} aria-label={row.url}>
+                        <ExternalLinkIcon />
+                      </a>
+                    </Button>
+                  </TableCell>
+                  <TableCell className="px-4 py-3 whitespace-nowrap">{row.language}</TableCell>
+                  <TableCell className="px-4 py-3 whitespace-nowrap">
+                    <Badge className={cn('h-6 gap-1.5 px-2.5', STATUS_CLASS[row.state])}>
+                      <span aria-hidden="true" className={cn('size-1.5 rounded-full', STATUS_DOT[row.state])} />
+                      {row.statusText}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="py-3 pr-5 pl-4 text-right whitespace-nowrap">
+                    <Button
+                      type="button"
+                      variant={selected ? 'secondary' : 'outline'}
+                      size="sm"
+                      onClick={() => setViewing({ versionId: row.versionId, documentId: row.documentId })}
+                    >
+                      <EyeIcon aria-hidden="true" />
+                      {viewLabel}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
+            {rows.length === 0 ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                  {resolveTranslatable({ key: 'datalist.egf.empty' }, translate)}
+                </TableCell>
+              </TableRow>
+            ) : null}
+          </TableBody>
+        </Table>
       </div>
       {viewing && viewingVersion ? (
-        <div className="border-t border-neutral-20 dark:border-neutral-70 p-4 sm:p-6">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+        <BlurFade
+          key={`${viewing.versionId}-${viewing.documentId}`}
+          className="rounded-xl border border-border bg-card p-4 sm:p-5"
+        >
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h3 className="flex items-center gap-2 text-sm font-semibold">
+              <FileTextIcon className="size-4 text-primary" aria-hidden="true" />
               {versionHeader} {viewingVersion.version}
             </h3>
-            <button
-              type="button"
-              onClick={() => setViewing(null)}
-              className="text-sm text-neutral-70 dark:text-neutral-70 hover:text-gray-900 dark:hover:text-white"
-            >
+            <Button type="button" variant="ghost" size="sm" onClick={() => setViewing(null)}>
+              <XIcon aria-hidden="true" />
               {resolveTranslatable({ key: 'datalist.egf.viewer.close' }, translate) ?? 'Close'}
-            </button>
+            </Button>
           </div>
-          <GfDocumentViewer
-            key={`${viewing.versionId}-${viewing.documentId}`}
-            documents={viewingVersion.documents}
-            initialDocumentId={viewing.documentId}
-          />
-        </div>
+          <GfDocumentViewer documents={viewingVersion.documents} initialDocumentId={viewing.documentId} />
+        </BlurFade>
       ) : null}
     </div>
   )

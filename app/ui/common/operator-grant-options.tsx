@@ -16,20 +16,16 @@ import {
   unlistedMsgTypes,
   updateGrantOptions,
 } from '@/lib/operator-grant'
-
-const INPUT =
-  'mt-2 w-full px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface disabled:opacity-50'
-const LABEL = 'text-sm font-medium text-gray-700 dark:text-gray-300 block'
-const HINT = 'mt-1 text-xs text-gray-500 dark:text-gray-400'
+import { FIELD_CHECKBOX, FIELD_HINT, FIELD_INPUT, FIELD_LABEL } from '@/ui/corporation/form-styles'
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
     <div>
-      <label className={LABEL}>
+      <label className={FIELD_LABEL}>
         {label}
         {children}
       </label>
-      {hint ? <p className={HINT}>{hint}</p> : null}
+      {hint ? <p className={FIELD_HINT}>{hint}</p> : null}
     </div>
   )
 }
@@ -92,14 +88,14 @@ export function OperatorGrantOptionsFields({
 }) {
   const set = (patch: Partial<GrantOptionsInput>) => onChange(updateGrantOptions(value, patch))
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-xl">
+    <div className="grid max-w-2xl grid-cols-1 gap-4 md:grid-cols-2">
       <div className="md:col-span-2">
         <Field label={translate('corporation.grant.expiration')} hint={translate('corporation.grant.expiration.hint')}>
           <input
             type="datetime-local"
             value={value.expiration}
             onChange={(event) => set({ expiration: event.target.value })}
-            className={INPUT}
+            className={FIELD_INPUT}
           />
         </Field>
       </div>
@@ -108,7 +104,7 @@ export function OperatorGrantOptionsFields({
           inputMode="decimal"
           value={value.spendLimit}
           onChange={(event) => set({ spendLimit: event.target.value })}
-          className={INPUT}
+          className={FIELD_INPUT}
         />
       </Field>
       <Field label={translate('corporation.grant.period')}>
@@ -117,20 +113,20 @@ export function OperatorGrantOptionsFields({
           value={value.spendPeriodDays}
           onChange={(event) => set({ spendPeriodDays: event.target.value })}
           disabled={value.spendLimit.trim() === ''}
-          className={INPUT}
+          className={FIELD_INPUT}
         />
       </Field>
-      <label className="md:col-span-2 flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-background p-3 text-sm text-foreground transition-colors duration-(--duration-base) has-checked:border-primary/40 has-checked:bg-primary/5 md:col-span-2 dark:bg-input/30">
         <input
           type="checkbox"
           checked={value.withFeegrant}
           onChange={(event) => set({ withFeegrant: event.target.checked })}
-          className="mt-0.5"
+          className={`mt-0.5 ${FIELD_CHECKBOX}`}
         />
         {translate('corporation.grant.feegrant')}
       </label>
       {replacesFeeGrant && !value.withFeegrant ? (
-        <p className="md:col-span-2 text-xs text-amber-700 dark:text-amber-300">
+        <p className="rounded-lg border border-warning/25 bg-warning/10 px-3 py-2 text-xs text-warning md:col-span-2">
           {translate('corporation.grant.feegrant.revokewarning')}
         </p>
       ) : null}
@@ -141,7 +137,7 @@ export function OperatorGrantOptionsFields({
               inputMode="decimal"
               value={value.feeSpendLimit}
               onChange={(event) => set({ feeSpendLimit: event.target.value })}
-              className={INPUT}
+              className={FIELD_INPUT}
             />
           </Field>
           <Field label={translate('corporation.grant.feeperiod')}>
@@ -150,7 +146,7 @@ export function OperatorGrantOptionsFields({
               value={value.feePeriodDays}
               onChange={(event) => set({ feePeriodDays: event.target.value })}
               disabled={value.feeSpendLimit.trim() === ''}
-              className={INPUT}
+              className={FIELD_INPUT}
             />
           </Field>
         </>

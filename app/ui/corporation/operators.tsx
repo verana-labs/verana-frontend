@@ -1,7 +1,6 @@
 'use client'
 
-import { faChevronDown, faRobot } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { BotIcon, CheckIcon, ChevronDownIcon, KeyRoundIcon, ShieldCheckIcon } from 'lucide-react'
 import Link from 'next/link'
 import { type ReactNode, useMemo, useState } from 'react'
 import type {
@@ -19,21 +18,47 @@ import {
   readGrantOptions,
   sameMsgTypes,
 } from '@/lib/operator-grant'
+import { cn } from '@/lib/utils'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
 import { useRegistryLabels } from '@/providers/api-rest-query-provider-context'
 import { AddressIssueNote, addressIssue } from '@/ui/common/address-issue'
 import { OperatorGrantOptionsFields, useOperatorGrantDraft } from '@/ui/common/operator-grant-options'
+import { ScoreGauge } from '@/ui/common/score-gauge'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 import type { Participant } from '@/ui/dataview/datasections/participant'
+import { Avatar, AvatarFallback } from '@/ui/shadcn/avatar'
+import { Badge } from '@/ui/shadcn/badge'
+import { Button } from '@/ui/shadcn/button'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/ui/shadcn/collapsible'
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from '@/ui/shadcn/empty'
+import { Input } from '@/ui/shadcn/input'
 import { formatVNAFromUVNA, participantCardHref, roleBadgeClass, shortenDID } from '@/util/util'
 import { groupMsgTypes, MODULE_LABELS } from './msg-type-groups'
-import { atLeast, Card, Fact, formatDate, PartialNote, SectionTitle, SectionUnavailable, YouBadge } from './shared'
+import {
+  addressInitials,
+  atLeast,
+  Card,
+  Fact,
+  formatDate,
+  PartialNote,
+  SectionHeader,
+  SectionUnavailable,
+  YouBadge,
+} from './shared'
 
-const CHIP = 'text-xs px-2 py-1 rounded-md border max-w-full break-all text-left'
-const CHIP_ON =
-  'border-primary-300 bg-primary-100 text-primary-800 dark:border-primary-700 dark:bg-primary-900/30 dark:text-primary-200'
-const CHIP_OFF = 'border-neutral-20 dark:border-neutral-70 text-gray-400 line-through'
+const CHIP =
+  'inline-flex max-w-full items-center gap-1 rounded-md border px-2 py-0.5 text-start font-mono text-[11px] leading-5 break-all'
+const CHIP_ON = 'border-primary/25 bg-primary/10 text-primary'
+const CHIP_OFF = 'border-border bg-transparent text-muted-foreground'
+const CHIP_READONLY = 'border-border bg-muted text-foreground/80'
+const TOGGLE_CHIP =
+  'transition-colors duration-(--duration-base) ease-standard hover:border-primary/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50'
+const ROW_TRIGGER =
+  'flex min-w-0 flex-1 items-start gap-3 rounded-lg p-1 text-start outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50'
+const COLLAPSIBLE_CONTENT = 'overflow-hidden data-open:animate-collapsible-down data-closed:animate-collapsible-up'
+const DISCLOSURE = 'h-8 gap-1.5 px-2 text-xs font-medium text-primary hover:text-primary'
+const CHEVRON = 'transition-transform duration-(--duration-base) ease-standard'
 
 export function MsgTypeChips({
   typeUrls,
@@ -45,31 +70,34 @@ export function MsgTypeChips({
   onToggle?: (typeUrl: string) => void
 }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       {groupMsgTypes(typeUrls).map((group) => (
-        <div key={group.module} className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 w-full sm:w-32">
+        <div key={group.module} className="flex flex-col gap-1.5 sm:flex-row sm:items-start">
+          <span className="w-full shrink-0 pt-0.5 text-[11px] font-medium text-muted-foreground sm:w-36">
             {MODULE_LABELS[group.module] ?? group.module}
           </span>
-          {group.entries.map((entry) => {
-            const active = selected ? selected.has(entry.typeUrl) : true
-            const className = `${CHIP} ${active ? CHIP_ON : CHIP_OFF}`
-            return onToggle ? (
-              <button
-                key={entry.typeUrl}
-                type="button"
-                onClick={() => onToggle(entry.typeUrl)}
-                aria-pressed={active}
-                className={className}
-              >
-                {entry.name}
-              </button>
-            ) : (
-              <span key={entry.typeUrl} className={className}>
-                {entry.name}
-              </span>
-            )
-          })}
+          <div className="flex min-w-0 flex-wrap gap-1.5">
+            {group.entries.map((entry) => {
+              const active = selected ? selected.has(entry.typeUrl) : true
+              const className = cn(CHIP, onToggle ? (active ? CHIP_ON : CHIP_OFF) : CHIP_READONLY)
+              return onToggle ? (
+                <button
+                  key={entry.typeUrl}
+                  type="button"
+                  onClick={() => onToggle(entry.typeUrl)}
+                  aria-pressed={active}
+                  className={cn(className, TOGGLE_CHIP)}
+                >
+                  {active ? <CheckIcon aria-hidden="true" className="size-3 shrink-0" /> : null}
+                  {entry.name}
+                </button>
+              ) : (
+                <span key={entry.typeUrl} className={className}>
+                  {entry.name}
+                </span>
+              )
+            })}
+          </div>
         </div>
       ))}
     </div>
@@ -97,9 +125,31 @@ function limitFacts(limits: GrantLimits, labels: { spendLimit: string; remaining
   return facts
 }
 
+function uvnaTotal(coins: CoinAmount[] | null): number | null {
+  if (!coins || coins.length === 0) return null
+  const uvna = coins.filter((coin) => coin.denom === 'uvna')
+  if (uvna.length !== coins.length) return null
+  return uvna.reduce((sum, coin) => sum + Number(coin.amount), 0)
+}
+
+function SpendMeter({ limits, label }: { limits: GrantLimits; label: string }) {
+  const limit = uvnaTotal(limits.spendLimit)
+  const remaining = uvnaTotal(limits.remainingSpend)
+  if (limit === null || remaining === null || limit <= 0) return null
+  const percent = Math.min(100, Math.max(0, (remaining / limit) * 100))
+  return (
+    <div className="flex items-center gap-3">
+      <ScoreGauge size="sm" percent={percent} label={`${translate(label)} ${Math.round(percent)}%`} />
+      <span aria-hidden="true" className="w-10 shrink-0 text-end text-xs font-medium text-foreground tabular-nums">
+        {Math.round(percent)}%
+      </span>
+    </div>
+  )
+}
+
 function FactGrid({ facts }: { facts: [string, ReactNode][] }) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
       {facts.map(([key, value]) => (
         <Fact key={key} label={translate(key)} value={value} />
       ))}
@@ -145,10 +195,18 @@ function OperatorGrantDetail({
       ]
     : [['delegation.withFeegrant', translate('common.no')]]
   return (
-    <div className="mt-2 ml-5 space-y-3">
+    <div className="space-y-4 border-t border-border px-4 py-4 sm:ps-14">
       <MsgTypeChips typeUrls={authorization.msgTypes} />
-      <FactGrid facts={facts} />
-      {feeGrantsDegraded ? <SectionUnavailable /> : <FactGrid facts={feeFacts} />}
+      <div className="space-y-4 rounded-lg bg-tint-neutral p-4">
+        <FactGrid facts={facts} />
+        <SpendMeter limits={authorization} label="delegation.remainingSpend" />
+        <div className="space-y-4 border-t border-border pt-4">
+          {feeGrantsDegraded ? <SectionUnavailable /> : <FactGrid facts={feeFacts} />}
+          {feeGrant && !feeGrantsDegraded ? (
+            <SpendMeter limits={feeGrant} label="delegation.feeRemainingSpend" />
+          ) : null}
+        </div>
+      </div>
       {feeGrant &&
       !feeGrantsDegraded &&
       feeGrant.msgTypes.length > 0 &&
@@ -156,6 +214,25 @@ function OperatorGrantDetail({
         <MsgTypeChips typeUrls={feeGrant.msgTypes} />
       ) : null}
     </div>
+  )
+}
+
+function RowChevron() {
+  return (
+    <ChevronDownIcon
+      aria-hidden="true"
+      className="mt-2 size-4 shrink-0 text-muted-foreground transition-transform duration-(--duration-base) ease-standard group-data-[state=open]/row:rotate-180"
+    />
+  )
+}
+
+function AddressAvatar({ address, icon }: { address: string; icon?: ReactNode }) {
+  return (
+    <Avatar className="mt-0.5 shrink-0 rounded-lg after:rounded-lg">
+      <AvatarFallback className="rounded-lg bg-linear-to-br from-primary/25 to-primary/5 text-xs font-semibold text-primary [&_svg]:size-4">
+        {icon ?? addressInitials(address)}
+      </AvatarFallback>
+    </Avatar>
   )
 }
 
@@ -179,40 +256,40 @@ function OperatorRow({
   if (authorization.spendLimit) summary.push(limitText(authorization))
   if (feeGrant) summary.push(translate('delegation.withFeegrant'))
   return (
-    <li className="py-2 text-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
-        <button
-          type="button"
-          onClick={() => setOpen(!open)}
-          aria-expanded={open}
-          className="min-w-0 text-left flex items-start gap-2"
-        >
-          <FontAwesomeIcon
-            icon={faChevronDown}
-            className={`text-xs text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
-          />
-          <span className="min-w-0">
-            <span className="font-mono break-all flex flex-wrap items-center gap-x-2 gap-y-1">
-              {authorization.operator}
-              {authorization.operator === walletAddress ? <YouBadge /> : null}
+    <li className="rounded-xl bg-card shadow-hairline transition-shadow duration-(--duration-base) ease-standard hover:shadow-card">
+      <Collapsible open={open} onOpenChange={setOpen} className="group/row">
+        <div className="flex flex-col gap-2 p-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+          <CollapsibleTrigger className={ROW_TRIGGER}>
+            <RowChevron />
+            <AddressAvatar address={authorization.operator} />
+            <span className="min-w-0">
+              <span className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-sm break-all text-foreground">
+                {authorization.operator}
+                {authorization.operator === walletAddress ? <YouBadge /> : null}
+              </span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">{summary.join(' · ')}</span>
             </span>
-            <span className="block text-xs text-gray-500 dark:text-gray-400">{summary.join(' · ')}</span>
-          </span>
-        </button>
-        {revokeMode ? (
-          <button
-            type="button"
-            onClick={() => onRevoke(authorization.operator)}
-            className="self-start shrink-0 px-3 py-1.5 border border-red-300 text-red-700 dark:text-red-300 rounded-lg text-sm font-medium flex items-center gap-2"
-          >
-            <SigningModeIcon mode={revokeMode} />
-            {translate('corporation.page.revoke')}
-          </button>
-        ) : null}
-      </div>
-      {open ? (
-        <OperatorGrantDetail authorization={authorization} feeGrant={feeGrant} feeGrantsDegraded={feeGrantsDegraded} />
-      ) : null}
+          </CollapsibleTrigger>
+          {revokeMode ? (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => onRevoke(authorization.operator)}
+              className="ms-12 shrink-0 gap-2 self-start sm:ms-0 sm:self-center"
+            >
+              <SigningModeIcon mode={revokeMode} />
+              {translate('corporation.page.revoke')}
+            </Button>
+          ) : null}
+        </div>
+        <CollapsibleContent className={COLLAPSIBLE_CONTENT}>
+          <OperatorGrantDetail
+            authorization={authorization}
+            feeGrant={feeGrant}
+            feeGrantsDegraded={feeGrantsDegraded}
+          />
+        </CollapsibleContent>
+      </Collapsible>
     </li>
   )
 }
@@ -258,7 +335,7 @@ export function GrantOperatorForm({
 
   return (
     <form
-      className="mt-4 space-y-3"
+      className="mt-6 space-y-3 rounded-xl bg-tint-neutral p-4 sm:p-5"
       onSubmit={(event) => {
         event.preventDefault()
         if (!canSubmit || !reading.options) return
@@ -272,10 +349,13 @@ export function GrantOperatorForm({
         })
       }}
     >
-      <div className="flex flex-wrap items-end gap-2">
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 grow max-w-xl">
-          {translate('corporation.page.grant')}
-          <input
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+        <label className="flex min-w-0 grow flex-col gap-2 text-sm font-medium text-foreground sm:max-w-xl">
+          <span className="flex items-center gap-2">
+            <KeyRoundIcon aria-hidden="true" className="size-4 text-primary" />
+            {translate('corporation.page.grant')}
+          </span>
+          <Input
             value={draft.grantee}
             onChange={(event) => {
               const existing = draft.setGrantee(event.target.value)
@@ -283,74 +363,74 @@ export function GrantOperatorForm({
               if (existing.authorization) setShowTypes(true)
             }}
             placeholder="verana1…"
-            className="mt-2 w-full px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface"
+            aria-invalid={granteeIssue ? true : undefined}
+            className="h-9 bg-background font-mono"
           />
         </label>
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium disabled:opacity-60 flex items-center gap-2"
-        >
+        <Button type="submit" size="lg" disabled={!canSubmit} className="h-9 gap-2">
           <SigningModeIcon mode={mode} />
           {translate('corporation.page.grant.submit')}
-        </button>
+        </Button>
       </div>
       <AddressIssueNote issue={granteeIssue} />
       <AddressIssueNote issue={reading.issue} />
-      <button
-        type="button"
-        onClick={() => setShowTypes(!showTypes)}
-        aria-expanded={showTypes}
-        className="text-xs py-1 text-primary-700 dark:text-primary-300 flex items-center gap-1"
-      >
-        <FontAwesomeIcon icon={faChevronDown} className={`transition-transform ${showTypes ? 'rotate-180' : ''}`} />
-        {translate('corporation.page.grant.count', {
-          selected: selected.size,
-          total: OPERATOR_GRANT_MESSAGE_TYPES.length,
-        })}
-      </button>
+      <div className="flex flex-wrap gap-1">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => setShowTypes(!showTypes)}
+          aria-expanded={showTypes}
+          className={DISCLOSURE}
+        >
+          <ChevronDownIcon aria-hidden="true" className={cn(CHEVRON, showTypes && 'rotate-180')} />
+          {translate('corporation.page.grant.count', {
+            selected: selected.size,
+            total: OPERATOR_GRANT_MESSAGE_TYPES.length,
+          })}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => setShowOptions(!showOptions)}
+          aria-expanded={showOptions}
+          className={DISCLOSURE}
+        >
+          <ChevronDownIcon aria-hidden="true" className={cn(CHEVRON, showOptions && 'rotate-180')} />
+          {translate('corporation.grant.options')}
+        </Button>
+      </div>
       {showTypes ? (
-        <div className="space-y-2">
-          <div className="flex gap-3 text-xs">
-            <button
+        <div className="space-y-3 rounded-lg bg-card p-4 ring-1 ring-border animate-in fade-in-0 slide-in-from-top-1">
+          <div className="flex gap-1">
+            <Button
               type="button"
+              variant="outline"
+              size="xs"
               onClick={() => draft.setMsgTypes([...OPERATOR_GRANT_MESSAGE_TYPES])}
-              className="py-1 text-primary-700 dark:text-primary-300"
             >
               {translate('corporation.page.msgtypes.all')}
-            </button>
-            <button
-              type="button"
-              onClick={() => draft.setMsgTypes([])}
-              className="py-1 text-primary-700 dark:text-primary-300"
-            >
+            </Button>
+            <Button type="button" variant="outline" size="xs" onClick={() => draft.setMsgTypes([])}>
               {translate('corporation.page.msgtypes.none')}
-            </button>
+            </Button>
           </div>
           <MsgTypeChips typeUrls={OPERATOR_GRANT_MESSAGE_TYPES} selected={selected} onToggle={toggle} />
           {draft.keptMsgTypes.length > 0 ? (
-            <>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{translate('corporation.page.grant.kept')}</p>
+            <div className="space-y-2 border-t border-border pt-3">
+              <p className="text-xs text-muted-foreground">{translate('corporation.page.grant.kept')}</p>
               <MsgTypeChips typeUrls={draft.keptMsgTypes} />
-            </>
+            </div>
           ) : null}
         </div>
       ) : null}
-      <button
-        type="button"
-        onClick={() => setShowOptions(!showOptions)}
-        aria-expanded={showOptions}
-        className="text-xs py-1 text-primary-700 dark:text-primary-300 flex items-center gap-1"
-      >
-        <FontAwesomeIcon icon={faChevronDown} className={`transition-transform ${showOptions ? 'rotate-180' : ''}`} />
-        {translate('corporation.grant.options')}
-      </button>
       {showOptions ? (
-        <OperatorGrantOptionsFields
-          value={draft.options}
-          onChange={draft.setOptions}
-          replacesFeeGrant={draft.existingFeeGrant !== undefined}
-        />
+        <div className="rounded-lg bg-card p-4 ring-1 ring-border animate-in fade-in-0 slide-in-from-top-1">
+          <OperatorGrantOptionsFields
+            value={draft.options}
+            onChange={draft.setOptions}
+            replacesFeeGrant={draft.existingFeeGrant !== undefined}
+          />
+        </div>
       ) : null}
     </form>
   )
@@ -379,15 +459,13 @@ export function DelegationDetail({
         <Fact label={translate('delegation.operator')} value={<span className="font-mono">{record.vsOperator}</span>} />
       ) : null}
       <MsgTypeChips typeUrls={record.msgTypes} />
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {facts.map(([key, value]) => (
-          <Fact key={key} label={translate(key)} value={value} />
-        ))}
+      <div className="rounded-lg bg-tint-neutral p-4">
+        <FactGrid facts={facts} />
       </div>
       {participantHref ? (
         <Link
           href={participantHref}
-          className="inline-block text-xs font-medium text-primary-700 dark:text-primary-300"
+          className="inline-flex items-center gap-1 text-xs font-medium text-primary underline-offset-4 hover:underline"
         >
           {translate('delegation.participant')}
         </Link>
@@ -405,21 +483,23 @@ function AgentRecord({
 }) {
   const labels = useRegistryLabels()
   return (
-    <li className="py-2 space-y-2">
+    <li className="space-y-3 py-4 first:pt-0 last:pb-0">
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+        <span className="text-xs font-medium text-muted-foreground">
           {translate('corporation.page.agents.participant')}
         </span>
-        <span className="font-mono">#{record.participantId}</span>
+        <Badge variant="outline" className="font-mono">
+          #{record.participantId}
+        </Badge>
         {participant ? (
           <>
-            <span className={`text-xs px-2 py-0.5 rounded-full ${roleBadgeClass(participant.role)}`}>
+            <span className={cn('rounded-full px-2 py-0.5 text-xs', roleBadgeClass(participant.role))}>
               {participant.role}
             </span>
             {participant.did ? (
               <span className="font-mono text-xs break-all">{shortenDID(participant.did)}</span>
             ) : null}
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="text-xs text-muted-foreground">
               {translate('agents.card.schema')} {labels.schemaLabel(Number(participant.schema_id))}
               {participant.ecosystem_id != null
                 ? ` · ${translate('agents.card.ecosystem')} ${labels.ecosystemLabel(participant.ecosystem_id)}`
@@ -450,35 +530,32 @@ function AgentAccountRow({
 }) {
   const [open, setOpen] = useState(false)
   return (
-    <li className="py-2 text-sm">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-        className="min-w-0 text-left flex items-start gap-2"
-      >
-        <FontAwesomeIcon
-          icon={faChevronDown}
-          className={`text-xs text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
-        />
-        <span className="min-w-0">
-          <span className="font-mono break-all block">{vsOperator}</span>
-          <span className="block text-xs text-gray-500 dark:text-gray-400">
-            {atLeast(records.length, partial)} {translate('corporation.page.agents.records')}
-          </span>
-        </span>
-      </button>
-      {open ? (
-        <ul className="mt-2 ml-5 divide-y divide-neutral-20 dark:divide-neutral-70">
-          {records.map((record) => (
-            <AgentRecord
-              key={record.participantId}
-              record={record}
-              participant={participantsById.get(record.participantId)}
-            />
-          ))}
-        </ul>
-      ) : null}
+    <li className="rounded-xl bg-card shadow-hairline transition-shadow duration-(--duration-base) ease-standard hover:shadow-card">
+      <Collapsible open={open} onOpenChange={setOpen} className="group/row">
+        <div className="p-2">
+          <CollapsibleTrigger className={ROW_TRIGGER}>
+            <RowChevron />
+            <AddressAvatar address={vsOperator} icon={<BotIcon aria-hidden="true" />} />
+            <span className="min-w-0">
+              <span className="block font-mono text-sm break-all text-foreground">{vsOperator}</span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">
+                {atLeast(records.length, partial)} {translate('corporation.page.agents.records')}
+              </span>
+            </span>
+          </CollapsibleTrigger>
+        </div>
+        <CollapsibleContent className={COLLAPSIBLE_CONTENT}>
+          <ul className="divide-y divide-border border-t border-border px-4 py-4 sm:ps-14">
+            {records.map((record) => (
+              <AgentRecord
+                key={record.participantId}
+                record={record}
+                participant={participantsById.get(record.participantId)}
+              />
+            ))}
+          </ul>
+        </CollapsibleContent>
+      </Collapsible>
     </li>
   )
 }
@@ -491,6 +568,23 @@ function groupByOperator(rows: VsOperatorAuthorizationRow[]): [string, VsOperato
     else groups.set(row.vsOperator, [row])
   }
   return [...groups.entries()]
+}
+
+function EmptyRow({ degraded, emptyKey, icon }: { degraded: boolean; emptyKey: string; icon: ReactNode }) {
+  return (
+    <li>
+      {degraded ? (
+        <SectionUnavailable />
+      ) : (
+        <Empty className="border border-dashed border-border py-8">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">{icon}</EmptyMedia>
+            <EmptyDescription>{translate(emptyKey)}</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      )}
+    </li>
+  )
 }
 
 export function OperatorsSection({
@@ -533,11 +627,20 @@ export function OperatorsSection({
   return (
     <div id="operators" className="space-y-6">
       <Card>
-        <div className="mb-3">
-          <SectionTitle>{translate('corporation.page.operators')}</SectionTitle>
-        </div>
+        <SectionHeader
+          icon={<ShieldCheckIcon />}
+          title={translate('corporation.page.operators')}
+          description={
+            degradedOperators ? null : (
+              <span className="tabular-nums">
+                {atLeast(authorizations.length, partialOperators)}{' '}
+                {translate('corporation.tab.operators').toLowerCase()}
+              </span>
+            )
+          }
+        />
         {partialOperators ? <PartialNote /> : null}
-        <ul className="divide-y divide-neutral-20 dark:divide-neutral-70">
+        <ul className="space-y-2">
           {authorizations.map((authorization) => (
             <OperatorRow
               key={authorization.id}
@@ -550,9 +653,11 @@ export function OperatorsSection({
             />
           ))}
           {authorizations.length === 0 ? (
-            <li className="py-2 text-sm text-gray-500">
-              {degradedOperators ? <SectionUnavailable /> : translate('corporation.page.operators.empty')}
-            </li>
+            <EmptyRow
+              degraded={degradedOperators}
+              emptyKey="corporation.page.operators.empty"
+              icon={<KeyRoundIcon />}
+            />
           ) : null}
         </ul>
         {grantMode ? (
@@ -566,18 +671,21 @@ export function OperatorsSection({
         ) : null}
       </Card>
       <Card id="agents">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <SectionTitle>{translate('corporation.page.agents')}</SectionTitle>
-          <Link
-            href="/agents"
-            className="text-sm font-medium text-primary-700 dark:text-primary-300 flex items-center gap-2"
-          >
-            <FontAwesomeIcon icon={faRobot} />
-            {translate('corporation.page.agents.link')}
-          </Link>
-        </div>
+        <SectionHeader
+          icon={<BotIcon />}
+          title={translate('corporation.page.agents')}
+          description={translate('corporation.page.agents.note')}
+          action={
+            <Button asChild variant="outline" className="gap-2">
+              <Link href="/agents">
+                <BotIcon aria-hidden="true" />
+                {translate('corporation.page.agents.link')}
+              </Link>
+            </Button>
+          }
+        />
         {partialAgents ? <PartialNote /> : null}
-        <ul className="divide-y divide-neutral-20 dark:divide-neutral-70">
+        <ul className="space-y-2">
           {agentAccounts.map(([vsOperator, records]) => (
             <AgentAccountRow
               key={vsOperator}
@@ -588,12 +696,9 @@ export function OperatorsSection({
             />
           ))}
           {agentAccounts.length === 0 ? (
-            <li className="py-2 text-sm text-gray-500">
-              {degradedAgents ? <SectionUnavailable /> : translate('corporation.page.agents.empty')}
-            </li>
+            <EmptyRow degraded={degradedAgents} emptyKey="corporation.page.agents.empty" icon={<BotIcon />} />
           ) : null}
         </ul>
-        <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">{translate('corporation.page.agents.note')}</p>
       </Card>
     </div>
   )

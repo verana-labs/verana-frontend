@@ -1,61 +1,86 @@
 'use client'
 
-import { faBuilding, faPlus } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { Building2Icon, PlusIcon, WalletIcon } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
-import type { CorporationProfile } from '@/hooks/useCorporationDetails'
+import type { CorporationProfile, GroupMemberRow } from '@/hooks/useCorporationDetails'
 import type { ActionSigning } from '@/hooks/useSigningMode'
 import { translate } from '@/i18n/dataview'
-import type { DidEnrichment } from '@/lib/resolverClient'
+import type { DidEnrichment, DidTrustState } from '@/lib/resolverClient'
+import { cn } from '@/lib/utils'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import { CapabilityButton } from '@/ui/common/capability-button'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
+import TrustBadge from '@/ui/common/trust-badge'
+import { DotPattern } from '@/ui/dashboard/dot-pattern'
+import { BlurFade } from '@/ui/motion/blur-fade'
+import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount } from '@/ui/shadcn/avatar'
+import { Badge } from '@/ui/shadcn/badge'
+import { Button, buttonVariants } from '@/ui/shadcn/button'
+import { Input } from '@/ui/shadcn/input'
 import { countryCodeToFlag, shortenMiddle } from '@/util/util'
 import { isValidDID } from '@/util/validations'
+import { addressInitials, nameInitials } from './shared'
 
-const TRUST_DOT: Record<string, string> = {
-  TRUSTED: 'bg-success-500',
-  UNTRUSTED: 'bg-red-500',
-  UNRESOLVED: 'bg-neutral-70',
-}
-
-const OUTLINE_BUTTON =
-  'px-3 py-1.5 border border-neutral-20 dark:border-neutral-70 rounded-lg text-sm font-medium flex items-center gap-2'
+const VISIBLE_AVATARS = 4
 
 export function RotateDidForm({ mode, onSubmit }: { mode: CorporationSigningMode; onSubmit: (did: string) => void }) {
   const [draft, setDraft] = useState('')
   const valid = isValidDID(draft.trim())
   return (
-    <form
-      className="mt-4 flex flex-wrap items-end gap-2"
-      onSubmit={(event) => {
-        event.preventDefault()
-        if (valid) {
-          onSubmit(draft.trim())
-          setDraft('')
-        }
-      }}
-    >
-      <input
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        placeholder="did:method:identifier"
-        className="grow max-w-xl px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface"
-      />
-      <button
-        type="submit"
-        disabled={!valid}
-        className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium disabled:opacity-60 flex items-center gap-2"
+    <BlurFade>
+      <form
+        className="flex flex-col gap-2 border-t border-border bg-muted/40 px-5 py-4 sm:flex-row sm:items-center sm:px-6"
+        onSubmit={(event) => {
+          event.preventDefault()
+          if (valid) {
+            onSubmit(draft.trim())
+            setDraft('')
+          }
+        }}
       >
-        <SigningModeIcon mode={mode} />
-        {translate('corporation.page.rotatedid.submit')}
-      </button>
-    </form>
+        <Input
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          placeholder="did:method:identifier"
+          aria-label={translate('corporation.page.rotatedid')}
+          className="h-9 bg-background font-mono sm:max-w-xl"
+        />
+        <Button type="submit" size="lg" disabled={!valid}>
+          <SigningModeIcon mode={mode} />
+          {translate('corporation.page.rotatedid.submit')}
+        </Button>
+      </form>
+    </BlurFade>
+  )
+}
+
+function MemberStack({ members }: { members: GroupMemberRow[] }) {
+  if (members.length === 0) return null
+  const shown = members.slice(0, VISIBLE_AVATARS)
+  const rest = members.length - shown.length
+  return (
+    <div className="flex items-center gap-2">
+      <AvatarGroup className="-space-x-1.5">
+        {shown.map((member) => (
+          <Avatar key={member.address} title={member.address} className="size-7 ring-2 ring-card">
+            <AvatarFallback className="bg-linear-to-br from-primary/25 to-primary/5 text-[10px] font-semibold text-primary">
+              {addressInitials(member.address)}
+            </AvatarFallback>
+          </Avatar>
+        ))}
+        {rest > 0 ? <AvatarGroupCount className="size-7 text-[10px]">+{rest}</AvatarGroupCount> : null}
+      </AvatarGroup>
+      <span className="text-xs text-muted-foreground tabular-nums">
+        {members.length}{' '}
+        {translate(members.length === 1 ? 'corporation.selector.member' : 'corporation.tab.members').toLowerCase()}
+      </span>
+    </div>
   )
 }
 
 export function CorporationHeader({
   profile,
+  members,
   enrichment,
   rotate,
   rotating,
@@ -65,6 +90,7 @@ export function CorporationHeader({
   nav,
 }: {
   profile: CorporationProfile
+  members: GroupMemberRow[]
   enrichment: DidEnrichment | null
   rotate: ActionSigning
   rotating: boolean
@@ -74,39 +100,67 @@ export function CorporationHeader({
   nav?: ReactNode
 }) {
   const displayName = enrichment?.organizationName ?? enrichment?.serviceName
-  const trust = enrichment?.trustStatus ?? 'UNRESOLVED'
+  const trust = (enrichment?.trustStatus ?? 'UNRESOLVED') as DidTrustState
 
   return (
-    <section className="mb-6 rounded-xl border border-neutral-20 dark:border-neutral-70 bg-white dark:bg-surface p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-start gap-4 min-w-0">
-          <span className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 flex items-center justify-center text-xl">
-            <FontAwesomeIcon icon={faBuilding} />
+    <section className="overflow-hidden rounded-xl bg-card shadow-card">
+      <div className="relative isolate flex flex-col gap-5 bg-linear-to-br from-primary/10 via-card to-card p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
+        <DotPattern
+          width={16}
+          height={16}
+          className="-z-10 text-primary/25 [mask-image:radial-gradient(320px_circle_at_top_right,white,transparent)] rtl:[mask-image:radial-gradient(320px_circle_at_top_left,white,transparent)]"
+        />
+        <div className="flex min-w-0 items-start gap-4">
+          <span
+            aria-hidden="true"
+            className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-primary-400 to-primary-700 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25)] sm:size-14"
+          >
+            {displayName ? (
+              <span className="text-base font-semibold tracking-tight sm:text-lg">{nameInitials(displayName)}</span>
+            ) : (
+              <Building2Icon className="size-6" />
+            )}
           </span>
-          <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
+          <div className="min-w-0 space-y-2">
+            <h1 className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
               {enrichment?.countryCode ? (
                 <span aria-hidden="true">{countryCodeToFlag(enrichment.countryCode)}</span>
               ) : null}
-              <span className="truncate">{displayName ?? shortenMiddle(profile.did, 40)}</span>
-              <span title={trust} className={`inline-block w-2.5 h-2.5 rounded-full ${TRUST_DOT[trust]}`} />
+              <span className="min-w-0 break-all">{displayName ?? shortenMiddle(profile.did, 40)}</span>
+              <TrustBadge state={trust} size="md" />
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 break-all">
-              {displayName ? `${profile.did} · ` : ''}#{profile.id} · {shortenMiddle(profile.policyAddress, 26)}
-            </p>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
+              {displayName ? (
+                <span className="min-w-0 font-mono break-all" title={profile.did}>
+                  {profile.did}
+                </span>
+              ) : null}
+              <Badge variant="outline" className="border-transparent bg-tint-accent font-mono text-primary">
+                #{profile.id}
+              </Badge>
+              <span className="inline-flex items-center gap-1 font-mono" title={profile.policyAddress}>
+                <WalletIcon aria-hidden="true" className="size-3.5" />
+                {shortenMiddle(profile.policyAddress, 26)}
+              </span>
+            </div>
+            <MemberStack members={members} />
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-start gap-2">
           <CapabilityButton
             signing={rotate}
             label={translate('corporation.page.rotatedid')}
             onClick={onToggleRotate}
-            className={OUTLINE_BUTTON}
+            className={cn(
+              buttonVariants({ variant: rotating ? 'secondary' : 'outline', size: 'lg' }),
+              'gap-2',
+              !rotating && 'bg-background'
+            )}
           />
-          <button type="button" onClick={onCreate} className={OUTLINE_BUTTON}>
-            <FontAwesomeIcon icon={faPlus} />
+          <Button type="button" variant="outline" size="lg" onClick={onCreate} className="gap-2 bg-background">
+            <PlusIcon aria-hidden="true" />
             {translate('corporation.page.new')}
-          </button>
+          </Button>
         </div>
       </div>
       {rotating && rotate.mode ? rotateForm : null}

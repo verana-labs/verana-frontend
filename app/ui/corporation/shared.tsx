@@ -1,30 +1,77 @@
 'use client'
 
+import { InfoIcon, TriangleAlertIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { translate } from '@/i18n/dataview'
+import type { DecisionRule } from '@/lib/decision-policy'
+import { cn } from '@/lib/utils'
+import { type Tone, ToneTag } from '@/ui/common/tone-tag'
+import { Badge } from '@/ui/shadcn/badge'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/shadcn/tooltip'
 
 export function Card({ id, className, children }: { id?: string; className?: string; children: ReactNode }) {
   return (
-    <section
-      id={id}
-      className={`rounded-xl border border-neutral-20 dark:border-neutral-70 bg-white dark:bg-surface p-6 ${className ?? ''}`}
-    >
+    <section id={id} className={cn('min-w-0 scroll-mt-20 rounded-xl bg-card p-5 shadow-card sm:p-6', className)}>
       {children}
     </section>
   )
 }
 
-export function SectionTitle({ children }: { children: ReactNode }) {
-  return <h2 className="text-lg font-bold text-gray-900 dark:text-white">{children}</h2>
+export function SectionTitle({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <h2 className={cn('text-base leading-6 font-semibold tracking-[-0.01em] text-foreground', className)}>
+      {children}
+    </h2>
+  )
+}
+
+export function SectionHeader({
+  title,
+  description,
+  icon,
+  action,
+  className,
+}: {
+  title: ReactNode
+  description?: ReactNode
+  icon?: ReactNode
+  action?: ReactNode
+  className?: string
+}) {
+  return (
+    <div className={cn('mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between', className)}>
+      <div className="flex min-w-0 items-start gap-3">
+        {icon ? (
+          <span
+            aria-hidden="true"
+            className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-tint-accent text-primary [&_svg]:size-4"
+          >
+            {icon}
+          </span>
+        ) : null}
+        <div className="min-w-0 space-y-0.5">
+          <SectionTitle>{title}</SectionTitle>
+          {description ? <div className="text-[13px] leading-5 text-muted-foreground">{description}</div> : null}
+        </div>
+      </div>
+      {action ? <div className="flex shrink-0 flex-wrap items-center gap-2">{action}</div> : null}
+    </div>
+  )
 }
 
 export function SectionUnavailable() {
-  return <p className="text-sm text-amber-700 dark:text-amber-300">{translate('corporation.page.section.error')}</p>
+  return (
+    <p className="flex items-start gap-2 rounded-lg bg-tint-warning px-3 py-2 text-sm text-warning">
+      <TriangleAlertIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+      {translate('corporation.page.section.error')}
+    </p>
+  )
 }
 
 export function PartialNote({ filtered = false }: { filtered?: boolean }) {
   return (
-    <p className="pb-2 text-xs text-neutral-70 dark:text-neutral-70">
+    <p className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+      <InfoIcon aria-hidden="true" className="size-3.5 shrink-0" />
       {translate(filtered ? 'pagination.loadedOnly' : 'pagination.truncated')}
     </p>
   )
@@ -34,11 +81,11 @@ export function atLeast(count: number, partial: boolean): string {
   return partial ? `${count}+` : String(count)
 }
 
-export function Fact({ label, value }: { label: string; value: ReactNode }) {
+export function Fact({ label, value, className }: { label: string; value: ReactNode; className?: string }) {
   return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
-      <p className="text-sm text-gray-900 dark:text-white break-all">{value}</p>
+    <div className={cn('min-w-0', className)}>
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <p className="mt-1 text-sm font-medium break-words text-foreground tabular-nums">{value}</p>
     </div>
   )
 }
@@ -64,26 +111,84 @@ export function formatRelative(value: string | null, now: number = Date.now()): 
   return translate(minutes >= 0 ? 'corporation.time.in' : 'corporation.time.ago', { value: unit })
 }
 
-const STATUS_CLASSES: Record<string, string> = {
-  SUBMITTED: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200',
-  ACCEPTED: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-200',
-  REJECTED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200',
-  ABORTED: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-200',
-  WITHDRAWN: 'bg-neutral-20 text-gray-700 dark:bg-neutral-70 dark:text-gray-200',
+export const STATUS_TONE: Record<string, { tone: Tone; dot: string }> = {
+  SUBMITTED: { tone: 'info', dot: 'bg-info' },
+  ACCEPTED: { tone: 'success', dot: 'bg-success' },
+  REJECTED: { tone: 'destructive', dot: 'bg-destructive' },
+  ABORTED: { tone: 'warning', dot: 'bg-warning' },
+  WITHDRAWN: { tone: 'neutral', dot: 'bg-muted-foreground' },
 }
 
-export function StatusBadge({ status }: { status: string }) {
+const STATUS_KEYS: Record<string, string> = {
+  SUBMITTED: 'corporation.proposals.filter.open',
+  ACCEPTED: 'corporation.proposals.filter.accepted',
+  REJECTED: 'corporation.proposals.filter.rejected',
+  ABORTED: 'corporation.proposals.filter.aborted',
+  WITHDRAWN: 'corporation.proposals.filter.withdrawn',
+}
+
+export function statusLabel(status: string): string {
+  return STATUS_KEYS[status] ? translate(STATUS_KEYS[status]) : status
+}
+
+export function StatusBadge({ status, votingEnded = false }: { status: string; votingEnded?: boolean }) {
+  const awaiting = status === 'SUBMITTED' && votingEnded
+  const open = status === 'SUBMITTED' && !votingEnded
+  const tone: Tone = awaiting ? 'neutral' : (STATUS_TONE[status] ?? STATUS_TONE.WITHDRAWN).tone
+  const badge = (
+    <ToneTag tone={tone} dot pulse={open}>
+      {awaiting ? translate('corporation.proposals.status.awaitingtally') : statusLabel(status)}
+    </ToneTag>
+  )
+  if (status !== 'ABORTED') return badge
   return (
-    <span className={`text-xs font-semibold px-2 py-0.5 rounded ${STATUS_CLASSES[status] ?? STATUS_CLASSES.WITHDRAWN}`}>
-      {status}
-    </span>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          className="relative inline-flex cursor-default rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        >
+          {badge}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>{translate('corporation.proposals.aborted.hint')}</TooltipContent>
+    </Tooltip>
   )
 }
 
 export function YouBadge() {
   return (
-    <span className="shrink-0 whitespace-nowrap text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
+    <Badge
+      variant="outline"
+      className="h-4.5 border-primary/25 bg-primary/10 px-1.5 text-[10px] tracking-wide text-primary uppercase"
+    >
       {translate('corporation.page.you')}
-    </span>
+    </Badge>
   )
+}
+
+export function addressInitials(address: string): string {
+  return address
+    .replace(/^verana1/, '')
+    .slice(0, 2)
+    .toUpperCase()
+}
+
+export function nameInitials(name: string): string {
+  const words = name
+    .replace(/^did:[^:]+:/, '')
+    .split(/[\s.:_-]+/)
+    .filter(Boolean)
+  const letters = words.length > 1 ? `${words[0][0]}${words[1][0]}` : (words[0] ?? '?').slice(0, 2)
+  return letters.toUpperCase()
+}
+
+export function rulePercent(rule: DecisionRule | null, totalWeight: number): number | null {
+  if (!rule) return null
+  if (rule.kind === 'percentage') {
+    const value = Number(rule.percentage) * 100
+    return Number.isFinite(value) ? value : null
+  }
+  const threshold = Number(rule.threshold)
+  return totalWeight > 0 && Number.isFinite(threshold) ? Math.min(100, (threshold / totalWeight) * 100) : null
 }

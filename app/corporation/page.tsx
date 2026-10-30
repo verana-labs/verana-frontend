@@ -13,9 +13,9 @@ import { logger } from '@/lib/logger'
 import { type DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
 import { corporationSigningMode, useCorporationManage } from '@/msg/actions_hooks/actionCorporationManage'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
-import { CorporationCreateWizard } from '@/ui/common/corporation-create-wizard'
 import { ProposalComposer } from '@/ui/common/proposal-composer'
 import { type CorporationTab, type CorporationView, TABS, TabsLayout } from '@/ui/corporation/layouts'
+import { CorporationPageSkeleton } from '@/ui/corporation/page-skeleton'
 
 const PAGE_TARGETS: IndexerRefreshTarget[] = ['corporationDetails', 'participants']
 
@@ -29,12 +29,7 @@ export default function CorporationPage() {
   const searchParams = useSearchParams()
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
-  const {
-    actingCorporation,
-    loading: actingLoading,
-    error: discoveryError,
-    refetch: refetchCorporations,
-  } = useUserCorporation()
+  const { actingCorporation, loading: actingLoading, refetch: refetchCorporations } = useUserCorporation()
   const { details, loading, error, refetch } = useCorporationDetails(actingCorporation?.corporation.id)
   const { addIndexerEventListener } = useIndexerEvents()
   const [votesVersion, setVotesVersion] = useState(0)
@@ -48,7 +43,6 @@ export default function CorporationPage() {
   const [rotating, setRotating] = useState(false)
   const [composing, setComposing] = useState(false)
   const [enrichment, setEnrichment] = useState<DidEnrichment | null>(null)
-  const [wizardPinned, setWizardPinned] = useState(false)
 
   const actingCorporationId = actingCorporation?.corporation.id
   // [VFE-DATA-WS-3] participant, delegation and group events of the acting Corporation refresh this page.
@@ -89,6 +83,11 @@ export default function CorporationPage() {
     }
   }, [did])
 
+  const toWizard = !actingLoading && (!actingCorporation || creating)
+  useEffect(() => {
+    if (toWizard) router.replace('/corporation/new')
+  }, [toWizard, router])
+
   function selectTab(next: CorporationTab) {
     const params = new URLSearchParams(searchParams.toString())
     if (next === 'overview') params.delete('tab')
@@ -96,33 +95,12 @@ export default function CorporationPage() {
     router.replace(`${pathname}${params.size ? `?${params.toString()}` : ''}`)
   }
 
-  if (!wizardPinned && (actingLoading || (actingCorporation && loading && !details))) {
-    return <p className="p-6 text-sm text-gray-500">{translate('corporation.page.loading')}</p>
-  }
-
-  if (!actingCorporation || creating || wizardPinned) {
-    return (
-      <>
-        {!actingCorporation && discoveryError ? (
-          <div className="mb-4 error-pane">{translate('corporation.page.error')}</div>
-        ) : null}
-        {!actingCorporation && !discoveryError ? (
-          <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">{translate('corporation.page.nocorp')}</p>
-        ) : null}
-        <CorporationCreateWizard
-          onCreating={setWizardPinned}
-          onDone={() => {
-            setWizardPinned(false)
-            void refetchCorporations()
-            router.replace(pathname)
-          }}
-        />
-      </>
-    )
+  if (toWizard || !actingCorporation || actingLoading || (loading && !details)) {
+    return <CorporationPageSkeleton />
   }
 
   if (error || !details) {
-    return <div className="p-6 error-pane">{error ?? translate('corporation.page.error')}</div>
+    return <div className="error-pane">{error ?? translate('corporation.page.error')}</div>
   }
 
   const { members, policy, trustDeposit, proposals } = details
@@ -148,7 +126,7 @@ export default function CorporationPage() {
         if (ok) setRotating(false)
       })
     },
-    onCreate: () => router.push(`${pathname}?create=1`),
+    onCreate: () => router.push('/corporation/new'),
     onRefresh: refreshAfterTx,
     onGrant: (grantee, msgTypes, options, replacesFeeGrant) =>
       manage.grantOperator(actingCorporation, grantee, msgTypes, options, replacesFeeGrant),

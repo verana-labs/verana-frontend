@@ -354,6 +354,7 @@ test('a member without grants gets the proposal fallback on an owned ecosystem',
   await dialog.getByRole('button', { name: 'Cancel' }).click()
   await expect(dialog).toBeHidden()
 
+  await page.getByRole('tab', { name: 'Governance' }).click()
   const increase = page.getByRole('button', { name: /Increase Active EGF/ })
   await expect(increase).toBeEnabled()
   await expect(increase.getByLabel('Opens a governance proposal')).toBeVisible()
@@ -372,7 +373,7 @@ test('a fresh wallet sees no corporation nav and lands on the wizard', async ({ 
 
   const createCorporation = page.getByRole('link', { name: /Create new Corporation/ })
   await expect(page.getByRole('heading', { name: 'Create your corporation' })).toBeVisible({ timeout: 15_000 })
-  const sidebar = page.locator('nav')
+  const sidebar = page.locator('[data-shell="sidebar"] nav')
   await expect(sidebar.locator('a[href="/account"]')).toBeVisible()
   for (const href of ['/corporation', '/ecosystems', '/agents', '/pendingtasks']) {
     await expect(sidebar.locator(`a[href="${href}"]`)).toHaveCount(0)
@@ -455,28 +456,33 @@ test('the creation wizard gates each step and confirms the built message before 
   const mock = await installMockChain(page, { address: wallet.bech32Address, stubCorporation: false })
   await page.goto('/corporation')
 
-  const next = page.getByRole('button', { name: 'Continue' })
-  await expect(next).toBeDisabled()
+  const next = page.getByRole('button', { name: 'Continue', exact: true })
+  const missing = page.locator('[data-slot="wizard"] [data-missing]')
+  await expect(page).toHaveURL(/\/corporation\/new$/)
+  await expect(missing).toHaveText('Enter a valid DID')
+  await next.click()
+  await expect(page.getByLabel('Corporation DID')).toBeFocused()
+  await expect(page.getByLabel('Corporation DID')).toHaveAttribute('aria-invalid', 'true')
 
   await page.getByLabel('Corporation DID').fill('not-a-did')
   await page.getByLabel('CGF document URL').fill('https://example.com/cgf.pdf')
-  await expect(next).toBeDisabled()
+  await expect(missing).toHaveText('Enter a valid DID')
 
   await page.getByLabel('Corporation DID').fill('did:web:new-corp.example')
   await expect(next).toBeEnabled()
   await next.click()
 
   await page.getByRole('button', { name: 'Add member' }).click()
-  await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled()
+  await expect(missing).toHaveText('Fix the member list')
   await page.getByRole('button', { name: 'Remove member' }).click()
-  await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled()
+  await expect(next).toBeEnabled()
   await page.getByLabel('Decision policy').selectOption('percentage')
   await page.getByLabel('Percentage (%)').fill('0')
-  await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled()
+  await expect(missing).toHaveText('Complete the decision policy')
   await page.getByLabel('Percentage (%)').fill('66.67')
   await page.getByLabel('Minimum execution period (seconds)').fill('3600')
-  await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled()
-  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(next).toBeEnabled()
+  await next.click()
 
   await expect(page.getByText('66.67% / 60s / 3600s')).toBeVisible()
   await expect(page.getByText(/you keep no personal privileges/)).toBeVisible()
@@ -606,7 +612,9 @@ test('the overview reads unknown for every stat whose source failed', async ({ p
     timeout: 15_000,
   })
   await expect(page.getByText('Unknown', { exact: true })).toHaveCount(3)
-  await expect(page.getByText('0 (0 open)')).toBeHidden()
+  const proposalsTile = page.locator('#overview [data-stat="proposals"]')
+  await expect(proposalsTile).toContainText('Unknown')
+  await expect(proposalsTile).not.toContainText(/open/)
 })
 
 test('the corporation page and picker hold at mobile and tablet widths', async ({ page }) => {
@@ -623,7 +631,6 @@ test('the corporation page and picker hold at mobile and tablet widths', async (
   await expect(page.getByText('#41')).toBeVisible()
   await noHorizontalOverflow(page)
 
-  await page.getByRole('button', { name: 'Open main menu' }).click()
   await page
     .getByRole('button', { name: /Acme Trust AG/ })
     .first()
@@ -810,8 +817,14 @@ test('live updates: guest mode holds no subscription and still tracks the height
   await expect.poll(() => socket.openConnections().length).toBe(1)
   expect(socket.subscribedCorporationIds()).toEqual([])
 
-  const blockHeight = page.getByText('Block height').locator('..')
-  const readHeight = async () => Number((await blockHeight.innerText()).replace(/\D/g, ''))
+  const blockHeight = page.locator('[data-stat="blockHeight"]')
+  const readHeight = async () =>
+    Number(
+      ((await blockHeight.getAttribute('data-stat-value', { timeout: 1_000 }).catch(() => null)) ?? '').replace(
+        /\D/g,
+        ''
+      )
+    )
   await expect.poll(readHeight, { timeout: 15_000 }).toBeGreaterThan(1001)
   const seen = await readHeight()
   await expect.poll(readHeight, { timeout: 30_000 }).toBeGreaterThan(seen)

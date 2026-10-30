@@ -1,8 +1,9 @@
 'use client'
 
-import { LinkIcon, LinkSlashIcon } from '@heroicons/react/24/outline'
+import { LinkIcon, UnlinkIcon } from 'lucide-react'
 import Image from 'next/image'
 import { translate } from '@/i18n/dataview'
+import { EmptyState } from '@/ui/common/empty-state'
 import Wallet from '@/wallet/wallet'
 import { resolveTranslatable } from '../dataview/types'
 
@@ -23,37 +24,25 @@ interface ConnectedProps {
 
 export default function Connected({ isConnected, wallet }: ConnectedProps) {
   return (
-    <div className="dash-card">
-      <div className="dash-icon-wrap">
-        <div className="dash-icon">
-          {isConnected ? <LinkIcon className="dash-icon-svg" /> : <LinkSlashIcon className="dash-icon-svg" />}
-        </div>
-      </div>
-      <div className="dash-copy">
-        <div className="dash-title">
-          {isConnected
-            ? resolveTranslatable({ key: 'connected.title' }, translate)
-            : resolveTranslatable({ key: 'notconnected.title' }, translate)}
-        </div>
-        <div className="dash-desc">
-          {isConnected
-            ? resolveTranslatable({ key: 'connected.msg' }, translate)
-            : resolveTranslatable({ key: 'notconnected.msg' }, translate)}
-        </div>
-        {isConnected ? (
+    <EmptyState
+      className="bg-card py-12 ring-1 ring-foreground/10"
+      outline={false}
+      icon={isConnected ? <LinkIcon /> : <UnlinkIcon />}
+      title={resolveTranslatable({ key: isConnected ? 'connected.title' : 'notconnected.title' }, translate)}
+      description={resolveTranslatable({ key: isConnected ? 'connected.msg' : 'notconnected.msg' }, translate)}
+      action={
+        isConnected ? (
           <Image
             src={wallet?.logo ? wallet.logo.toString() : ''}
             alt={wallet?.prettyName ? wallet.prettyName : ''}
-            width={80}
-            height={80}
-            className="dash-wallet-logo"
+            width={56}
+            height={56}
+            className="size-14"
           />
         ) : (
-          <div className="wallet-cta">
-            <Wallet />
-          </div>
-        )}
-      </div>
-    </div>
+          <Wallet />
+        )
+      }
+    />
   )
 }

@@ -1,3 +1,5 @@
+import { cn } from '@/lib/utils'
+import { Skeleton } from '@/ui/shadcn/skeleton'
 import { CARD_BODY_CLASS } from './ecosystem-card'
 
 const STAT_ROW_COUNT = 5
@@ -11,11 +13,11 @@ type SkeletonMediaRowProps = {
 
 function SkeletonMediaRow({ rowClass, iconClass, titleClass, subtitleClass }: SkeletonMediaRowProps) {
   return (
-    <div className={`flex items-start overflow-hidden ${rowClass}`}>
-      <div className={`skeleton shrink-0 ${iconClass}`} />
-      <div className="flex-1 min-w-0 space-y-2">
-        <div className={`skeleton ${titleClass}`} />
-        <div className={`skeleton ${subtitleClass}`} />
+    <div className={cn('flex items-start overflow-hidden', rowClass)}>
+      <Skeleton className={cn('shrink-0', iconClass)} />
+      <div className="min-w-0 flex-1 space-y-2">
+        <Skeleton className={titleClass} />
+        <Skeleton className={subtitleClass} />
       </div>
     </div>
   )
@@ -24,8 +26,8 @@ function SkeletonMediaRow({ rowClass, iconClass, titleClass, subtitleClass }: Sk
 function SkeletonStatRow() {
   return (
     <div className="flex items-center justify-between gap-3">
-      <div className="skeleton h-4 w-1/2" />
-      <div className="skeleton h-4 w-16" />
+      <Skeleton className="h-4 w-1/2" />
+      <Skeleton className="h-4 w-16" />
     </div>
   )
 }
@@ -34,25 +36,25 @@ export default function EcosystemCardSkeleton() {
   return (
     <div
       aria-hidden="true"
-      className="h-full bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 overflow-hidden"
+      className="skeleton-delay h-full overflow-hidden rounded-xl border border-border bg-card text-card-foreground"
     >
       <div className={CARD_BODY_CLASS}>
         <SkeletonMediaRow
-          rowClass="space-x-3"
-          iconClass="w-12 h-12 rounded-lg"
+          rowClass="gap-3"
+          iconClass="size-12 rounded-lg"
           titleClass="h-5 w-3/4"
           subtitleClass="h-3 w-1/2"
         />
         <SkeletonMediaRow
-          rowClass="space-x-2"
-          iconClass="w-8 h-8 rounded"
+          rowClass="gap-2"
+          iconClass="size-8 rounded-md"
           titleClass="h-4 w-2/3"
           subtitleClass="h-3 w-1/4"
         />
 
         <div className="flex items-start gap-2">
-          <div className="skeleton-badge w-20" />
-          <div className="skeleton-badge w-14" />
+          <Skeleton className="h-5 w-20 rounded-full" />
+          <Skeleton className="h-5 w-14 rounded-full" />
         </div>
 
         <div className="space-y-2">

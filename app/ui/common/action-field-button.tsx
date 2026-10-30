@@ -1,8 +1,8 @@
 'use client'
 
-import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import clsx from 'clsx'
+import { ChevronDownIcon, ZapIcon } from 'lucide-react'
 import { type ReactNode, useEffect, useId, useState } from 'react'
 import { useActionSigning } from '@/hooks/useSigningMode'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
@@ -10,6 +10,8 @@ import { CapabilityReason } from '@/ui/common/capability-button'
 import { ActionFieldProps, renderActionComponent } from '@/ui/common/data-view-typed'
 import IconLabelButton from '@/ui/common/icon-label-button'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
+import { Card } from '@/ui/shadcn/card'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/ui/shadcn/collapsible'
 
 export function ActionLabel({ label, mode }: { label: ReactNode; mode: CorporationSigningMode | null }) {
   return (
@@ -54,9 +56,48 @@ export default function ActionFieldButton({
     setActive(isActive)
   }, [isActive])
 
+  if (type !== 'button') {
+    return (
+      <Collapsible open={active} onOpenChange={toggle} disabled={disabled} asChild>
+        <Card className="gap-0 py-0">
+          <CollapsibleTrigger
+            title={reason}
+            className={clsx(
+              'group/trigger flex w-full items-center gap-3 px-4 py-3 text-left transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset disabled:cursor-not-allowed disabled:opacity-50',
+              field.isWarning ? 'not-disabled:hover:bg-destructive/5' : 'not-disabled:hover:bg-muted/50'
+            )}
+          >
+            <span
+              aria-hidden="true"
+              className={clsx(
+                'flex size-9 shrink-0 items-center justify-center rounded-lg',
+                field.isWarning ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'
+              )}
+            >
+              {field.icon ? <FontAwesomeIcon icon={field.icon} className="size-4" /> : <ZapIcon className="size-4" />}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm leading-snug font-medium text-foreground">
+                <ActionLabel label={field.label} mode={mode} />
+              </span>
+              <span className="block text-sm text-muted-foreground">{reason ?? field.description}</span>
+            </span>
+            <ChevronDownIcon
+              aria-hidden="true"
+              className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=open]/trigger:rotate-180 motion-reduce:transition-none"
+            />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="border-t border-border p-4">
+            {renderActionComponent(field.value, toggle, data, onRefresh)}
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+    )
+  }
+
   return (
     <div>
-      {type === 'button' && !active && (
+      {!active && (
         <>
           <IconLabelButton
             label={<ActionLabel label={field.label} mode={mode} />}
@@ -72,34 +113,6 @@ export default function ActionFieldButton({
           />
           <CapabilityReason id={reasonId} reason={reason} />
         </>
-      )}
-
-      {type !== 'button' && (
-        <button
-          type="button"
-          onClick={toggle}
-          disabled={disabled}
-          title={reason}
-          className={clsx(
-            'w-full px-6 py-4 text-left flex items-center justify-between transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
-            field.isWarning ? 'hover:bg-red-50 dark:hover:bg-red-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
-          )}
-        >
-          <div className="flex items-center">
-            {field.icon && (
-              <div className={clsx('w-10 h-10 rounded-lg flex items-center justify-center mr-3', field.iconClass)}>
-                <FontAwesomeIcon icon={field.icon} className={field.iconColorClass ?? field.iconClass ?? ''} />
-              </div>
-            )}
-            <div>
-              <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-                <ActionLabel label={field.label} mode={mode} />
-              </h4>
-              <p className="text-sm text-neutral-70 dark:text-neutral-70">{reason ?? field.description}</p>
-            </div>
-          </div>
-          <FontAwesomeIcon icon={active ? faChevronUp : faChevronDown} />
-        </button>
       )}
 
       {active ? renderActionComponent(field.value, toggle, data, onRefresh) : null}

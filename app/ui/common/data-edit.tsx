@@ -1,7 +1,8 @@
 'use client'
 
 import clsx from 'clsx'
-import React, { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { InfoIcon, TriangleAlertIcon } from 'lucide-react'
+import React, { type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { canonicalizeLanguageTag } from '@/lib/language'
@@ -19,6 +20,12 @@ import {
   translateSections,
   visibleFieldsForMode,
 } from '@/ui/dataview/types'
+import { AlertDescription, AlertTitle } from '@/ui/shadcn/alert'
+import { Field, FieldDescription, FieldError } from '@/ui/shadcn/field'
+import { Input } from '@/ui/shadcn/input'
+import { Label } from '@/ui/shadcn/label'
+import { Spinner } from '@/ui/shadcn/spinner'
+import { Textarea } from '@/ui/shadcn/textarea'
 import { formatVNAFromUVNA, isJson } from '@/util/util'
 import { getErrorMessage, isValidField } from '@/util/validations'
 
@@ -36,6 +43,11 @@ type EditableDataViewProps<T extends object> = Omit<DataViewProps<T>, 'data'> & 
   saveDisabled?: boolean
   children?: ReactNode
 }
+
+const NOTICE_CLASS =
+  'group/alert grid w-full grid-cols-[auto_1fr] gap-x-2.5 gap-y-0.5 rounded-lg border px-4 py-3 text-left text-sm *:[svg]:row-span-2 *:[svg]:size-4 *:[svg]:translate-y-0.5'
+
+const IRREVERSIBLE_MSG = /^Msg(Revoke|Slash)/
 
 type FieldValidationError = {
   key: string
@@ -64,8 +76,12 @@ export default function EditableDataView<T extends object>({
   const [submitting, setSubmitting] = useState(false)
   const { loading: corporationLoading } = useUserCorporation()
   const uiMsgType = resolveMsgCopy(messageType)
+  const irreversible = IRREVERSIBLE_MSG.test(messageType)
   const action = id ? 'edit' : 'create'
   const [hasTriedSubmit, setHasTriedSubmit] = useState(false)
+  const formId = useId()
+  const requiredLabel = resolveTranslatable({ key: 'messages.required' }, translate) ?? 'Required'
+  const selectPlaceholder = resolveTranslatable({ key: 'messages.select' }, translate) ?? 'Select…'
 
   const validatedRequiredField = useCallback((field: ResolvedField<T>, value: unknown): boolean => {
     if (!field.required) return true
@@ -85,7 +101,6 @@ export default function EditableDataView<T extends object>({
 
   const autoSaveRan = useRef(false)
 
-  // Updates form state and manages error tracking on change
   function handleChange(fieldName: keyof T, value: unknown, field: ResolvedDataField<T>) {
     setFormData((prev) => ({ ...prev, [fieldName]: value }))
     setErrorFields((prev) => {
@@ -107,7 +122,7 @@ export default function EditableDataView<T extends object>({
         const key = String(field.name)
         requiredErrors.set(key, {
           key,
-          errorMessage: 'Required',
+          errorMessage: requiredLabel,
         })
       }
     }
@@ -116,7 +131,7 @@ export default function EditableDataView<T extends object>({
       return [...nonRequiredErrors, ...Array.from(requiredErrors.values())]
     })
     return requiredErrors.size > 0
-  }, [formData, validatedRequiredField, visibleFields])
+  }, [formData, requiredLabel, validatedRequiredField, visibleFields])
 
   const hasInvalidData = useCallback((): boolean => {
     const invalid = new Map<string, string>()
@@ -155,7 +170,6 @@ export default function EditableDataView<T extends object>({
     onCancel?.()
   }, [corporationLoading, handleSave, noForm, noFormReady, onCancel, setModalHidden])
 
-  // Handles cancel action; disables button while submitting
   function handleCancel() {
     if (submitting || !onCancel) return
     setSubmitting(true)
@@ -176,28 +190,34 @@ export default function EditableDataView<T extends object>({
     const key = String(field.name)
     const fieldError = errorFields.find((err) => err.key === key)
     const showError = hasTriedSubmit && (Boolean(fieldError) || !validatedRequiredField(typedField, value))
-    const errorMessage = fieldError?.errorMessage ?? 'Required'
+    const errorMessage = fieldError?.errorMessage ?? requiredLabel
+    const controlId = `${formId}-${key}`
+    const errorId = `${controlId}-error`
+    const descriptionId = `${controlId}-description`
+    const describedBy =
+      [showError ? errorId : null, field.description ? descriptionId : null].filter(Boolean).join(' ') || undefined
+    const controlProps = {
+      id: controlId,
+      disabled: isDisabled,
+      'aria-invalid': showError || undefined,
+      'aria-describedby': describedBy,
+      'aria-required': field.required || undefined,
+    }
 
-    // Build base input class for all fields
-    const baseInputClass = `input${showError ? ' border-red-500' : ''}${
-      isDisabled ? ' bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed' : ''
-    }`
-
-    // Render different input types
     let inputEl: React.ReactNode
 
     if (field.inputType === 'textarea') {
       const jsonValue = isJson(value)
       inputEl =
         action === 'edit' && jsonValue ? (
-          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 h-64 overflow-y-auto border border-neutral-20 dark:border-neutral-70">
-            <JsonCodeBlock value={jsonValue} className="data-view-label" />
+          <div className="h-64 overflow-y-auto rounded-lg border border-border bg-muted/50">
+            <JsonCodeBlock value={jsonValue} />
           </div>
         ) : (
-          <textarea
-            className={`${baseInputClass} w-full`}
+          <Textarea
+            {...controlProps}
+            className="field-sizing-fixed font-mono text-sm md:text-sm"
             value={String(value ?? '')}
-            disabled={isDisabled}
             onChange={(e) => handleChange(field.name as keyof T, e.target.value, field)}
             rows={8}
           />
@@ -205,13 +225,13 @@ export default function EditableDataView<T extends object>({
     } else if (field.inputType === 'select') {
       inputEl = (
         <select
-          className={baseInputClass}
+          {...controlProps}
+          className="select"
           value={String(value ?? '')}
-          disabled={isDisabled}
           onChange={(e) => handleChange(field.name as keyof T, e.target.value, field)}
         >
           <option value="" disabled>
-            Select…
+            {selectPlaceholder}
           </option>
           {(field.options ?? []).map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -226,16 +246,16 @@ export default function EditableDataView<T extends object>({
           value={String(value ?? '')}
           onChange={(val) => handleChange(field.name as keyof T, canonicalizeLanguageTag(val), field)}
           disabled={isDisabled}
-          className={showError ? 'border-red-500' : ''}
+          className={showError ? 'border-destructive' : ''}
         />
       )
     } else if (field.inputType === 'number') {
       inputEl = (
-        <input
+        <Input
+          {...controlProps}
           type="number"
-          className={baseInputClass}
+          className="h-9 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           value={String(value ?? '')}
-          disabled={isDisabled}
           onChange={(e) => {
             const raw = e.target.value
             const parsed = raw === '' ? '' : Number(raw)
@@ -245,21 +265,21 @@ export default function EditableDataView<T extends object>({
       )
     } else if (field.inputType === 'date') {
       inputEl = (
-        <input
+        <Input
+          {...controlProps}
           type="datetime-local"
-          className={baseInputClass}
+          className="h-9"
           value={String(value ?? '')}
-          disabled={isDisabled}
           onChange={(e) => handleChange(field.name as keyof T, e.target.value, field)}
         />
       )
     } else {
       inputEl = (
-        <input
+        <Input
+          {...controlProps}
           type="text"
-          className={baseInputClass}
+          className="h-9"
           value={String(value ?? '')}
-          disabled={isDisabled}
           placeholder={field.placeholder}
           onChange={(e) => handleChange(field.name as keyof T, e.target.value, field)}
         />
@@ -267,22 +287,31 @@ export default function EditableDataView<T extends object>({
     }
 
     const fieldBlock = (
-      <div key={field.name as string}>
-        {/* Label with asterisk if required */}
-        <label className="data-edit-label">
+      <Field key={key} data-invalid={showError || undefined} data-disabled={isDisabled || undefined}>
+        <Label htmlFor={controlId} className="data-edit-label block">
           {field.label}
-          {field.required && <span className="data-edit-required">*</span>}
-        </label>
-        {/* Input and error message */}
+          {field.required && (
+            <span className="data-edit-required" aria-hidden="true">
+              *
+            </span>
+          )}
+        </Label>
         {inputEl}
-        {showError && <div className="data-edit-error">{errorMessage}</div>}
-        {/* Description inputType */}
-        {field.description && <p className="data-edit-input-description">{field.description}</p>}
-      </div>
+        {showError && (
+          <FieldError id={errorId} className="data-edit-error">
+            {errorMessage}
+          </FieldError>
+        )}
+        {field.description && (
+          <FieldDescription id={descriptionId} className="data-edit-input-description">
+            {field.description}
+          </FieldDescription>
+        )}
+      </Field>
     )
 
     if (field.inputType === 'textarea') {
-      textareaInputs.push(<div key={field.name as string}>{fieldBlock}</div>)
+      textareaInputs.push(fieldBlock)
     } else {
       normalInputs.push(fieldBlock)
     }
@@ -290,73 +319,61 @@ export default function EditableDataView<T extends object>({
 
   return (
     <div
-      className={`bg-white dark:bg-surface ${withinView ? '' : 'rounded-xl border border-neutral-20 dark:border-neutral-70 p-6 space-y-4'}`}
+      className={clsx(
+        'flex flex-col gap-5 text-card-foreground',
+        !withinView && !isModal && 'rounded-xl bg-card p-4 ring-1 ring-foreground/10 sm:p-6'
+      )}
     >
       {(basicSection?.name || basicSection?.nameCreate) && action === 'create' && (
         <h2 className="data-edit-section-title">{basicSection?.nameCreate ?? basicSection?.name}</h2>
       )}
       {!noForm && normalInputs.length > 0 && (
         <div
-          className={`${action === 'create' && basicSection?.classFormCreate !== undefined ? basicSection?.classFormCreate : basicSection?.classFormEdit}`}
+          className={
+            (action === 'create' && basicSection?.classFormCreate !== undefined
+              ? basicSection.classFormCreate
+              : basicSection?.classFormEdit) ?? 'flex flex-col gap-5'
+          }
         >
           {normalInputs}
         </div>
       )}
 
-      {/* Inputs Textarea */}
-      {textareaInputs.length > 0 && textareaInputs}
+      {textareaInputs.length > 0 && <div className="flex flex-col gap-5">{textareaInputs}</div>}
 
       {children}
 
-      {/* Transaction cost */}
       {transactionCost && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
-          <p className="data-edit-form-description">
+        <div className={clsx(NOTICE_CLASS, 'border-info/30 bg-info/10 dark:border-info/40 *:[svg]:text-info')}>
+          <InfoIcon aria-hidden="true" />
+          <AlertDescription className="data-edit-form-description text-foreground">
             {getCostMessage(uiMsgType.cost, formatVNAFromUVNA(transactionCost))}
-          </p>
+          </AlertDescription>
         </div>
       )}
 
-      {/* Warning Message */}
       {uiMsgType.warning && (
-        <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 mb-4">
-          <div className="flex">
-            <i className="text-red-600 dark:text-red-400 mt-0.5 mr-3" data-fa-i2svg="">
-              <svg
-                className="svg-inline--fa fa-triangle-exclamation"
-                aria-hidden="true"
-                focusable="false"
-                data-prefix="fas"
-                data-icon="triangle-exclamation"
-                role="img"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 512 512"
-                data-fa-i2svg=""
-              >
-                <path
-                  fill="currentColor"
-                  d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"
-                ></path>
-              </svg>
-            </i>
-            <div>
-              <h5 className="font-medium text-red-900 dark:text-red-100">
-                {resolveTranslatable({ key: 'messages.warning' }, translate)}
-              </h5>
-              <p className="text-sm text-red-700 dark:text-red-300 mt-1">{uiMsgType.warning}</p>
-            </div>
-          </div>
+        <div
+          className={clsx(
+            NOTICE_CLASS,
+            irreversible
+              ? 'border-destructive/30 bg-destructive/10 dark:border-destructive/40 *:[svg]:text-destructive'
+              : 'border-warning/30 bg-warning/10 dark:bg-warning/20 *:[svg]:text-warning'
+          )}
+        >
+          <TriangleAlertIcon aria-hidden="true" />
+          <AlertTitle className={irreversible ? 'text-destructive' : 'text-warning'}>
+            {resolveTranslatable({ key: 'messages.warning' }, translate)}
+          </AlertTitle>
+          <AlertDescription className="text-foreground">{uiMsgType.warning}</AlertDescription>
         </div>
       )}
 
-      {/* Action buttons: disabled if submitting or validation fails */}
-      <div className="actions-center">
+      <div className="actions-center pt-1">
         {onCancel && (
           <button
-            className={clsx(
-              'btn-action-cancel', // base
-              isModal ? 'flex-1' : ''
-            )}
+            type="button"
+            className={clsx('btn-action-cancel', isModal ? 'flex-1' : '')}
             onClick={handleCancel}
             disabled={submitting || corporationLoading}
           >
@@ -364,14 +381,13 @@ export default function EditableDataView<T extends object>({
           </button>
         )}
         <button
-          className={clsx(
-            'btn-action-confirm', // base
-            isModal ? 'flex-1' : '',
-            msgTypeStyle[messageType].button // specific
-          )}
+          type="button"
+          className={clsx('btn-action-confirm', isModal ? 'flex-1' : '', msgTypeStyle[messageType].button)}
           onClick={handleSave}
           disabled={submitting || corporationLoading || !noFormReady || saveDisabled}
+          aria-busy={submitting || undefined}
         >
+          {submitting ? <Spinner aria-hidden="true" /> : null}
           {uiMsgType.label}
         </button>
       </div>

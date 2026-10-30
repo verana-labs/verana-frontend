@@ -20,8 +20,8 @@ export type SchemaHeaderProps = {
 
 function statusPillClass(status: SchemaStatus) {
   return status === 'ARCHIVED'
-    ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-    : 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+    ? 'bg-destructive/10 text-destructive dark:bg-destructive/20'
+    : 'bg-success/10 text-success dark:bg-success/20'
 }
 
 function ModePill({ value, suffix }: { value?: string | number; suffix: string }) {
@@ -29,14 +29,18 @@ function ModePill({ value, suffix }: { value?: string | number; suffix: string }
   if (!raw.trim()) return null
   const klass = getModePillClass(raw, suffix)
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${klass}`}>{raw}</span>
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide ${klass}`}
+    >
+      {raw}
+    </span>
   )
 }
 
 function HeaderRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-sm text-neutral-70 dark:text-neutral-70 font-medium">{label}:</span>
+      <span className="text-sm text-muted-foreground">{label}:</span>
       {children}
     </div>
   )
@@ -63,14 +67,14 @@ export default function SchemaHeader({
 }: SchemaHeaderProps) {
   return (
     <section className="mb-8">
-      <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-6 sm:p-8">
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-3 mb-3">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white">{title}</h1>
+      <div className="rounded-xl bg-card p-5 shadow-card sm:p-6">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="mb-3 flex flex-wrap items-center gap-3">
+              <h1 className="min-w-0 text-2xl font-semibold tracking-tight break-words sm:text-3xl">{title}</h1>
               {status ? (
                 <span
-                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusPillClass(status)}`}
+                  className={`inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium tracking-wide ${statusPillClass(status)}`}
                 >
                   {status}
                 </span>
@@ -78,15 +82,15 @@ export default function SchemaHeader({
             </div>
 
             {description ? (
-              <p className="text-sm sm:text-base text-neutral-70 dark:text-neutral-70 mb-4">{description}</p>
+              <p className="mb-5 max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">{description}</p>
             ) : null}
 
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-neutral-70 dark:text-neutral-70 font-medium">
+                <span className="text-sm text-muted-foreground">
                   {resolveTranslatable({ key: 'dataview.cs.fields.id' }, translate) ?? 'ID'}:
                 </span>
-                <span className="text-sm text-gray-900 dark:text-white font-mono">{id}</span>
+                <span className="font-mono text-sm">{id}</span>
               </div>
 
               <OnboardingModeRow

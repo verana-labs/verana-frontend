@@ -1,11 +1,14 @@
 'use client'
 
 import { faEye, faSitemap } from '@fortawesome/free-solid-svg-icons'
-import { ReactNode } from 'react'
+import { FileJson2Icon } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { translate } from '@/i18n/dataview'
+import { cn } from '@/lib/utils'
 import IconActionButton from '@/ui/common/icon-action-button'
 import { type CredentialSchemaListItem, getModePillClass } from '@/ui/datatable/columnslist/cs'
 import { resolveTranslatable } from '@/ui/dataview/types'
+import { hoverLift } from '@/ui/motion/interaction'
 import { formatNumber, formatVNA } from '@/util/util'
 
 export type CsSummaryCardProps = {
@@ -17,10 +20,11 @@ export type CsSummaryCardProps = {
 function ModeRow({ label, value, suffix }: { label: string; value: string | null; suffix: string }) {
   if (!value?.trim()) return null
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2">
-      <span className="text-neutral-70 dark:text-neutral-70">{label}:</span>
+    <div className="flex min-w-0 items-center justify-between gap-3">
+      <span className="shrink-0 text-muted-foreground">{label}:</span>
       <span
-        className={`ml-auto inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getModePillClass(value, suffix)}`}
+        title={value}
+        className={`inline-flex min-w-0 items-center truncate rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide ${getModePillClass(value, suffix)}`}
       >
         {value}
       </span>
@@ -28,11 +32,11 @@ function ModeRow({ label, value, suffix }: { label: string; value: string | null
   )
 }
 
-function StatRow({ label, value }: { label: string; value: ReactNode }) {
+function Stat({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="flex justify-between gap-2">
-      <span className="text-neutral-70 dark:text-neutral-70">{label}:</span>
-      <span className="font-medium text-gray-900 dark:text-white">{value}</span>
+    <div className="min-w-0">
+      <dt className="truncate text-xs text-muted-foreground">{label}</dt>
+      <dd className="mt-0.5 truncate text-base font-semibold tracking-tight tabular-nums">{value}</dd>
     </div>
   )
 }
@@ -55,54 +59,59 @@ export default function CsSummaryCard({ credentialSchema, onView, onParticipants
 
   return (
     <div
-      className={`relative bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 hover:shadow-lg transition-shadow overflow-hidden ${isArchived ? 'opacity-95' : ''}`}
+      className={cn(
+        'group/schema relative flex h-full flex-col overflow-hidden rounded-xl bg-card shadow-card',
+        hoverLift,
+        isArchived && 'bg-muted/40'
+      )}
     >
       {isArchived ? (
-        <>
-          <div aria-hidden className="pointer-events-none absolute inset-0 bg-black/[0.03] dark:bg-white/[0.04]" />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 flex items-center justify-center select-none"
-          >
-            <span className="text-3xl sm:text-4xl font-bold text-red-500/20 dark:text-white/15 -rotate-45 whitespace-nowrap tracking-widest">
-              {archivedLabel}
-            </span>
-          </div>
-        </>
+        <div aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center select-none">
+          <span className="-rotate-12 text-3xl font-bold tracking-[0.3em] whitespace-nowrap text-destructive/15 sm:text-4xl dark:text-destructive/20">
+            {archivedLabel}
+          </span>
+        </div>
       ) : null}
 
-      <div className="relative z-10 p-4 sm:p-6">
-        <div className="flex items-start justify-between mb-4 gap-2">
-          <button
-            type="button"
-            onClick={onView}
-            className="text-left text-base sm:text-lg font-semibold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors flex-1 pr-2 break-words"
-          >
-            {credentialSchema.title}
-          </button>
-          <div className="flex items-center gap-1 shrink-0">
+      <div className={cn('relative z-10 flex flex-1 flex-col p-5', isArchived && 'opacity-75')}>
+        <div className="flex items-start gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <FileJson2Icon className="size-4" aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <button
+              type="button"
+              onClick={onView}
+              className="block max-w-full truncate rounded-sm text-left text-base font-semibold tracking-tight transition-colors outline-none hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50"
+              title={credentialSchema.title}
+            >
+              {credentialSchema.title}
+            </button>
+            <p className="font-mono text-xs text-muted-foreground">#{credentialSchema.id}</p>
+          </div>
+          <div className="-mt-1 -mr-1.5 flex shrink-0 items-center">
             <IconActionButton icon={faEye} label={previewLabel} onClick={onView} />
             <IconActionButton icon={faSitemap} label={participantsLabel} onClick={onParticipants} />
           </div>
         </div>
 
         {credentialSchema.description ? (
-          <p className="text-xs sm:text-sm text-neutral-70 dark:text-neutral-70 mb-4 line-clamp-2">
-            {credentialSchema.description}
-          </p>
+          <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{credentialSchema.description}</p>
         ) : null}
 
-        <div className="space-y-2 mb-4 text-xs sm:text-sm">
+        <div className="mt-4 space-y-2 text-sm">
           <ModeRow label={issuerLabel} value={credentialSchema.issuerOnboardingMode} suffix="_ISSUER" />
           <ModeRow label={verifierLabel} value={credentialSchema.verifierOnboardingMode} suffix="_VERIFIER" />
           <ModeRow label={holderLabel} value={credentialSchema.holderOnboardingMode} suffix="_HOLDER" />
         </div>
 
-        <div className="space-y-2 text-xs sm:text-sm">
-          <StatRow label={participants} value={formatNumber(credentialSchema.participants, true)} />
-          <StatRow label={issued} value={formatNumber(credentialSchema.issuedCredentials, true)} />
-          <StatRow label={verified} value={formatNumber(credentialSchema.verifiedCredentials, true)} />
-          <StatRow label={trustValue} value={formatVNA(String(credentialSchema.weight), 6) || '0 VNA'} />
+        <div className="mt-auto pt-5">
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border pt-4">
+            <Stat label={participants} value={formatNumber(credentialSchema.participants, true)} />
+            <Stat label={trustValue} value={formatVNA(String(credentialSchema.weight), 6) || '0 VNA'} />
+            <Stat label={issued} value={formatNumber(credentialSchema.issuedCredentials, true)} />
+            <Stat label={verified} value={formatNumber(credentialSchema.verifiedCredentials, true)} />
+          </dl>
         </div>
       </div>
     </div>

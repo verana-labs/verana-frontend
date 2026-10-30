@@ -40,7 +40,7 @@ test('opening a membership switches the acting corporation and lands on the corp
   await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
 
   await page.goto('/account')
-  const card = page.locator('div', { has: page.getByRole('heading', { name: 'Corporations' }) }).last()
+  const card = page.getByRole('region', { name: 'Corporations' })
   const list = card.getByRole('list')
   const acme = list.getByRole('button', { name: /Acme Trust AG/ })
   await expect(acme).toBeVisible({ timeout: 15_000 })
@@ -55,7 +55,7 @@ test('opening a membership switches the acting corporation and lands on the corp
   await expect(page).toHaveURL(/\/corporation(\?|$)/)
   await expect(page.getByRole('heading', { name: /Acme Trust AG/ })).toBeVisible({ timeout: 15_000 })
 
-  await page.locator('aside a[href="/account"]').click()
+  await page.locator('[data-shell="sidebar"] a[href="/account"]').click()
   await expect(
     page
       .getByRole('main')

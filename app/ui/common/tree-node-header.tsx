@@ -1,22 +1,32 @@
 'use client'
 
-import {
-  faChartColumn,
-  faChevronRight,
-  faCoins,
-  faCrown,
-  faHandshake,
-  faScaleBalanced,
-} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  BadgeCheckIcon,
+  BarChart3Icon,
+  ChevronRightIcon,
+  CoinsIcon,
+  FolderIcon,
+  HandshakeIcon,
+  type LucideIcon,
+  ScaleIcon,
+  ScanSearchIcon,
+  ShieldCheckIcon,
+  ShieldIcon,
+  WalletIcon,
+} from 'lucide-react'
 import type { MouseEvent, ReactNode } from 'react'
 import { useActionSigning } from '@/hooks/useSigningMode'
 import { translate } from '@/i18n/dataview'
 import { formatSchemaAmount, type SchemaPricing } from '@/lib/pricing-asset'
+import { cn } from '@/lib/utils'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import ServiceIdentity from '@/ui/common/service-identity'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 import { resolveTranslatable } from '@/ui/dataview/types'
+import { Badge } from '@/ui/shadcn/badge'
+import { Button } from '@/ui/shadcn/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/shadcn/tooltip'
 import {
   formatVNAFromUVNA,
   isExpireSoon,
@@ -29,16 +39,29 @@ export type TreeNodeHeaderProps = {
   node: TreeNode
   type: 'participants' | 'tasks'
   isExpanded: boolean
+  isSelected?: boolean
+  childCount?: string
   showWeight: boolean
   showBusiness: boolean
   showStats: boolean
   onToggle: (id: string, role?: string, validatorId?: string) => void
-  onSelect: (id: string) => void
   onJoin: (node: TreeNode) => void
   joinBlockedReason?: string
   feePricing?: SchemaPricing
   onConnect?: () => void
 }
+
+const ROLE_ICON: Record<string, LucideIcon> = {
+  ISSUER_GRANTOR: ShieldCheckIcon,
+  VERIFIER_GRANTOR: ShieldIcon,
+  ISSUER: BadgeCheckIcon,
+  VERIFIER: ScanSearchIcon,
+  HOLDER: WalletIcon,
+}
+
+const PILL = 'h-5 rounded-full px-2 font-medium'
+
+const NAME_TRUNCATE = 'min-w-0 [&>span:nth-child(2)]:truncate [&>span:nth-child(2)]:break-normal'
 
 function JoinButton({
   action,
@@ -52,18 +75,52 @@ function JoinButton({
   const { mode, disabled, reason } = useActionSigning(action)
   const shownReason = blockedReason ?? reason
   return (
-    <button
+    <Button
       type="button"
-      className="inline-flex items-center gap-1 hover:text-purple-600 cursor-pointer whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+      variant="outline"
+      size="xs"
+      className="gap-1.5 bg-card px-2 text-xs disabled:pointer-events-auto disabled:cursor-not-allowed"
       disabled={disabled || Boolean(blockedReason)}
       title={shownReason}
       onClick={onClick}
     >
-      <FontAwesomeIcon icon={faHandshake} />
+      <HandshakeIcon aria-hidden="true" />
       {resolveTranslatable({ key: 'participants.btn.join' }, translate)}
       <SigningModeIcon mode={mode} />
       {shownReason ? <span className="sr-only">{shownReason}</span> : null}
-    </button>
+    </Button>
+  )
+}
+
+function authorityLabelKey(node: TreeNode): string | undefined {
+  if (node.isValidator) return 'participants.authority.validator'
+  if (node.isCorporation) return 'participants.authority.corporation'
+  if (node.isPredecessor) return 'participants.authority.predecessor'
+}
+
+function AuthorityIcon({ node }: { node: TreeNode }) {
+  const key = authorityLabelKey(node)
+  if (!key) return null
+  const label = resolveTranslatable({ key }, translate) ?? ''
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex shrink-0">
+          <FontAwesomeIcon icon={node.icon} className={cn('size-3.5', node.iconColorClass)} aria-hidden="true" />
+          <span className="sr-only">{label}</span>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  )
+}
+
+function Metric({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md bg-muted/70 px-1.5 py-0.5 text-[11px] whitespace-nowrap text-muted-foreground tabular-nums">
+      <Icon aria-hidden="true" className="size-3 shrink-0" />
+      {children}
+    </span>
   )
 }
 
@@ -71,11 +128,12 @@ export default function TreeNodeHeader({
   node,
   type,
   isExpanded,
+  isSelected = false,
+  childCount,
   showWeight,
   showBusiness,
   showStats,
   onToggle,
-  onSelect,
   onJoin,
   joinBlockedReason,
   feePricing,
@@ -93,39 +151,32 @@ export default function TreeNodeHeader({
   const fee = (value: string | number | undefined) =>
     feePricing ? formatSchemaAmount(value ?? 0, feePricing) : formatVNAFromUVNA(String(value ?? 0))
 
-  let participantMetrics: ReactNode = null
+  let trailing: ReactNode = null
   if (type === 'participants') {
-    if (!node.group && participant) {
-      participantMetrics = (
-        <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ml-auto ${node.roleColorClass}`}>
-          {showWeight ? (
-            <span className="whitespace-nowrap">
-              <FontAwesomeIcon icon={faScaleBalanced} className="mr-1" />
-              {formatVNAFromUVNA(String(participant.weight ?? 0))}
-            </span>
-          ) : null}
+    if (!node.group && participant && (showWeight || showBusiness || showStats)) {
+      trailing = (
+        <div className="flex flex-wrap items-center gap-1.5 ms-auto">
+          {showWeight ? <Metric icon={ScaleIcon}>{formatVNAFromUVNA(String(participant.weight ?? 0))}</Metric> : null}
           {showBusiness ? (
-            <span className="whitespace-nowrap">
-              <FontAwesomeIcon icon={faCoins} className="mr-1" />
+            <Metric icon={CoinsIcon}>
               {`validation: ${fee(participant.validation_fees)} | issuance: ${fee(participant.issuance_fees)} | verification: ${fee(participant.verification_fees)}`}
-            </span>
+            </Metric>
           ) : null}
           {showStats ? (
-            <span className="whitespace-nowrap">
-              <FontAwesomeIcon icon={faChartColumn} className="mr-1" />
-              {`issued: ${participant.issued ?? 0} | verified: ${participant.verified ?? 0}`}
-            </span>
+            <Metric
+              icon={BarChart3Icon}
+            >{`issued: ${participant.issued ?? 0} | verified: ${participant.verified ?? 0}`}</Metric>
           ) : null}
         </div>
       )
     } else if (node.group) {
-      participantMetrics = (
-        <div className={`text-xs flex flex-wrap items-center gap-x-3 gap-y-1 ml-auto ${node.roleColorClass}`}>
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${node.iconColorClass}`}
-          >
-            {node.onboardingLabel}
-          </span>
+      trailing = (
+        <div className="flex flex-wrap items-center gap-2 ms-auto">
+          {node.onboardingLabel ? (
+            <Badge variant="secondary" className={cn(PILL, node.iconColorClass)}>
+              {node.onboardingLabel}
+            </Badge>
+          ) : null}
           {node.enabledJoin ? (
             <JoinButton
               action={node.onboardingAction ?? ''}
@@ -148,26 +199,38 @@ export default function TreeNodeHeader({
     }
   }
 
+  const RoleIcon = ROLE_ICON[node.type ?? ''] ?? FolderIcon
+
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
+    <div
+      className={cn(
+        'flex min-h-10 flex-wrap items-center gap-x-2 gap-y-1.5 rounded-lg py-1.5 pe-2 transition-colors duration-(--duration-base) ease-standard',
+        'group-hover/row:bg-muted/60 group-focus-visible/row:ring-[3px] group-focus-visible/row:ring-ring/50',
+        isSelected && 'bg-(--selected) ring-1 ring-primary/15 ring-inset group-hover/row:bg-(--selected)'
+      )}
+    >
+      <div className="flex min-w-0 flex-1 basis-56 items-center gap-2">
         {hasChildren || node.group ? (
           <button
             type="button"
+            tabIndex={-1}
             onClick={(event) => {
               event.stopPropagation()
               onToggle(node.nodeId, node.type, node.parentId)
             }}
-            className="text-gray-400 text-xs w-4 shrink-0"
+            className="flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             aria-label="Toggle"
           >
-            <FontAwesomeIcon
-              icon={faChevronRight}
-              className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+            <ChevronRightIcon
+              aria-hidden="true"
+              className={cn(
+                'size-4 transition-transform duration-(--duration-base) ease-standard rtl:rotate-180',
+                isExpanded && 'rotate-90 rtl:rotate-90'
+              )}
             />
           </button>
         ) : (
-          <div className="w-4 shrink-0" />
+          <span aria-hidden="true" className="size-5 shrink-0" />
         )}
 
         {node.group ? (
@@ -179,69 +242,64 @@ export default function TreeNodeHeader({
                 fallbackName={node.serviceTitle ?? node.name}
                 showFlag={Boolean(node.serviceDid)}
                 showTrust={Boolean(node.serviceDid)}
+                className={NAME_TRUNCATE}
               />
               {node.badgeCount ? (
-                <span className="text-sm text-neutral-70 dark:text-neutral-30">({node.badgeCount})</span>
+                <span className="shrink-0 text-sm text-muted-foreground tabular-nums">({node.badgeCount})</span>
               ) : null}
             </>
           ) : (
             <>
-              <FontAwesomeIcon icon={node.icon} className={`${node.iconColorClass} text-sm`} />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 break-all">{node.name}</span>
+              <span
+                aria-hidden="true"
+                className={cn('flex size-6 shrink-0 items-center justify-center rounded-md', node.iconColorClass)}
+              >
+                <RoleIcon className="size-3.5" />
+              </span>
+              <span className="min-w-0 truncate text-sm font-medium text-foreground">{node.name}</span>
+              {childCount ? (
+                <span className="shrink-0 rounded-full bg-muted px-1.5 text-[11px] font-medium text-muted-foreground tabular-nums">
+                  {childCount}
+                </span>
+              ) : null}
             </>
           )
         ) : (
           <>
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation()
-                onSelect(node.nodeId)
-              }}
-              className="cursor-pointer min-w-0 inline-flex items-center"
-            >
-              <ServiceIdentity
-                did={participant?.did ?? undefined}
-                enrichment={participant?.trustData}
-                fallbackName={node.name}
-              />
-            </button>
-            <FontAwesomeIcon icon={faCrown} className="text-yellow-500 text-sm" aria-hidden="true" />
+            <ServiceIdentity
+              did={participant?.did ?? undefined}
+              enrichment={participant?.trustData}
+              fallbackName={node.name}
+              className={cn(NAME_TRUNCATE, isSelected && '[&>span:nth-child(2)]:text-primary')}
+            />
+            <AuthorityIcon node={node} />
           </>
         )}
 
         {showParticipantState && !node.group && participant?.participant_state ? (
-          <>
-            <span
-              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${participantState.classParticipantState}`}
-            >
+          <span className="flex shrink-0 items-center gap-1">
+            <Badge variant="secondary" className={cn(PILL, participantState.classParticipantState)}>
               {participantState.labelParticipantState}
-            </span>
+            </Badge>
             {participantState.expireSoon ? (
-              <span
-                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${participantState.expireSoon.classExpireSoon}`}
-              >
+              <Badge variant="secondary" className={cn(PILL, participantState.expireSoon.classExpireSoon)}>
                 {participantState.expireSoon.labelExpireSoon}
-              </span>
+              </Badge>
             ) : null}
-          </>
+          </span>
         ) : null}
         {type === 'tasks' && participant?.op_state ? (
-          <>
-            <span
-              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${onboardingState.classOnboardingState}`}
-            >
+          <span className="flex shrink-0 items-center gap-1">
+            <Badge variant="secondary" className={cn(PILL, onboardingState.classOnboardingState)}>
               {onboardingState.labelOnboardingState}
-            </span>
-            <span
-              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${roleBadgeClass(participant.role)}`}
-            >
+            </Badge>
+            <Badge variant="secondary" className={cn(PILL, roleBadgeClass(participant.role))}>
               {participant.role}
-            </span>
-          </>
+            </Badge>
+          </span>
         ) : null}
       </div>
-      {participantMetrics}
+      {trailing}
     </div>
   )
 }

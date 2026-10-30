@@ -7,7 +7,7 @@ export type FieldRowProps = {
   labelClassName?: string
 }
 
-const DEFAULT_LABEL_CLASS = 'text-sm text-neutral-70 dark:text-neutral-70 block mb-1'
+const DEFAULT_LABEL_CLASS = 'mb-1 block text-sm text-muted-foreground'
 
 export default function FieldRow({ label, children, className, labelClassName }: FieldRowProps) {
   return (

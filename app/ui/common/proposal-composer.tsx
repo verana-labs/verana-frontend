@@ -1,8 +1,7 @@
 'use client'
 
 import type { EncodeObject } from '@cosmjs/proto-signing'
-import { faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { GavelIcon, PlusIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 import type { FeeGrantRow, GroupMemberRow, GroupPolicy, OperatorAuthorizationRow } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
@@ -10,6 +9,7 @@ import type { CorporationMembership } from '@/lib/corporation-discovery'
 import { currentDecisionPolicyDraft, formatDecisionRule, readDecisionPolicyDraft } from '@/lib/decision-policy'
 import { grantOptionLines, readGrantOptions } from '@/lib/operator-grant'
 import type { CostLine } from '@/lib/tx-preview'
+import { cn } from '@/lib/utils'
 import {
   buildGrantOperatorMessage,
   buildRevokeOperatorMessage,
@@ -25,15 +25,15 @@ import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessa
 import { AddressIssueNote, addressIssue } from '@/ui/common/address-issue'
 import { DecisionPolicyFields } from '@/ui/common/decision-policy-fields'
 import { OperatorGrantOptionsFields, useOperatorGrantDraft } from '@/ui/common/operator-grant-options'
+import { FIELD_CHECKBOX, FIELD_INPUT, FIELD_LABEL, FIELD_SELECT } from '@/ui/corporation/form-styles'
 import { MsgTypeChips } from '@/ui/corporation/operators'
 import { PartialNote } from '@/ui/corporation/shared'
+import { Button } from '@/ui/shadcn/button'
+import { Spinner } from '@/ui/shadcn/spinner'
 import { isValidDID } from '@/util/validations'
 
 const KINDS = ['grant', 'revoke', 'members', 'policy', 'rotate'] as const
 type ComposerKind = (typeof KINDS)[number]
-
-const inputClass =
-  'mt-2 w-full px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface'
 
 export function ProposalComposer({
   membership,
@@ -158,167 +158,188 @@ export function ProposalComposer({
   }
 
   return (
-    <div className="mb-4 border border-neutral-20 dark:border-neutral-70 rounded-lg p-4">
-      <div className="flex items-center justify-between gap-3 mb-3">
-        <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+    <div className="overflow-hidden rounded-xl bg-muted/40 ring-1 ring-border/60">
+      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-5">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <span className="flex size-7 items-center justify-center rounded-md bg-primary/10 text-primary">
+            <GavelIcon aria-hidden="true" className="size-3.5" />
+          </span>
           {translate('corporation.composer.title')}
         </h3>
-        <button type="button" onClick={onClose} className="text-sm text-gray-500 dark:text-gray-400">
+        <Button type="button" variant="ghost" size="sm" onClick={onClose} className="gap-1 text-muted-foreground">
+          <XIcon aria-hidden="true" />
           {translate('corporation.composer.close')}
-        </button>
+        </Button>
       </div>
-      <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block max-w-sm">
-        {translate('corporation.composer.kind')}
-        <select value={kind} onChange={(event) => setKind(event.target.value as ComposerKind)} className={inputClass}>
-          {KINDS.map((entry) => (
-            <option key={entry} value={entry}>
-              {translate(`corporation.composer.kind.${entry}`)}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      {kind === 'grant' || kind === 'revoke' ? (
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block max-w-xl mt-3">
-          {translate('corporation.composer.grantee')}
-          <input
-            value={draft.grantee}
-            onChange={(event) => draft.setGrantee(event.target.value)}
-            placeholder="verana1…"
-            className={inputClass}
-          />
-          <AddressIssueNote issue={granteeIssue} />
-        </label>
-      ) : null}
-
-      {kind === 'grant' ? (
-        <fieldset className="mt-3">
-          <legend className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {translate('corporation.composer.msgtypes')} ({msgTypes.length}/{OPERATOR_GRANT_MESSAGE_TYPES.length})
-          </legend>
-          <div className="mt-2 max-h-44 overflow-y-auto border border-neutral-20 dark:border-neutral-70 rounded-lg p-2 grid grid-cols-1 md:grid-cols-2 gap-1">
-            {OPERATOR_GRANT_MESSAGE_TYPES.map((msgType) => (
-              <label
-                key={msgType}
-                className="flex items-center gap-2 text-xs font-mono text-gray-700 dark:text-gray-300"
-              >
-                <input
-                  type="checkbox"
-                  checked={msgTypes.includes(msgType)}
-                  onChange={(event) =>
-                    setMsgTypes(
-                      event.target.checked ? [...msgTypes, msgType] : msgTypes.filter((entry) => entry !== msgType)
-                    )
-                  }
-                />
-                <span className="truncate">{msgType.split('.Msg').pop()}</span>
-              </label>
+      <div className="space-y-5 p-4 sm:p-5">
+        <label className={cn(FIELD_LABEL, 'max-w-sm')}>
+          {translate('corporation.composer.kind')}
+          <select
+            value={kind}
+            onChange={(event) => setKind(event.target.value as ComposerKind)}
+            className={FIELD_SELECT}
+          >
+            {KINDS.map((entry) => (
+              <option key={entry} value={entry}>
+                {translate(`corporation.composer.kind.${entry}`)}
+              </option>
             ))}
+          </select>
+        </label>
+
+        {kind === 'grant' || kind === 'revoke' ? (
+          <div className="max-w-xl">
+            <label className={FIELD_LABEL}>
+              {translate('corporation.composer.grantee')}
+              <input
+                value={draft.grantee}
+                onChange={(event) => draft.setGrantee(event.target.value)}
+                placeholder="verana1…"
+                aria-invalid={granteeIssue ? true : undefined}
+                className={cn(FIELD_INPUT, 'font-mono')}
+              />
+            </label>
+            <AddressIssueNote issue={granteeIssue} />
           </div>
-          {draft.keptMsgTypes.length > 0 ? (
-            <div className="mt-2 space-y-2">
-              <p className="text-xs text-gray-500 dark:text-gray-400">{translate('corporation.page.grant.kept')}</p>
-              <MsgTypeChips typeUrls={draft.keptMsgTypes} />
-            </div>
-          ) : null}
-        </fieldset>
-      ) : null}
+        ) : null}
 
-      {kind === 'grant' ? (
-        <div className="mt-3">
-          {partialGrants ? <PartialNote /> : null}
-          <OperatorGrantOptionsFields
-            value={draft.options}
-            onChange={draft.setOptions}
-            replacesFeeGrant={draft.existingFeeGrant !== undefined}
-          />
-          <AddressIssueNote issue={grantReading.issue} />
-        </div>
-      ) : null}
-
-      {kind === 'members' ? (
-        <div className="mt-3 space-y-2">
-          {memberUpdates.map((update, index) => (
-            <div key={`update-${index}`}>
-              <div className="flex items-center gap-2 text-sm">
-                <input
-                  value={update.address}
-                  onChange={(event) =>
-                    setMemberUpdates(
-                      memberUpdates.map((entry, i) => (i === index ? { ...entry, address: event.target.value } : entry))
-                    )
-                  }
-                  placeholder="verana1…"
-                  className="grow px-2 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface font-mono"
-                />
-                <label className="text-gray-500 dark:text-gray-400">
-                  {translate('corporation.page.weight')}
+        {kind === 'grant' ? (
+          <fieldset className="space-y-2">
+            <legend className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+              {translate('corporation.composer.msgtypes')}
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary tabular-nums">
+                {msgTypes.length}/{OPERATOR_GRANT_MESSAGE_TYPES.length}
+              </span>
+            </legend>
+            <div className="grid max-h-56 grid-cols-1 gap-1 overflow-y-auto rounded-lg border border-border bg-background p-2 md:grid-cols-2 dark:bg-input/30">
+              {OPERATOR_GRANT_MESSAGE_TYPES.map((msgType) => (
+                <label
+                  key={msgType}
+                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 font-mono text-xs text-foreground transition-colors duration-(--duration-base) hover:bg-muted has-checked:text-primary"
+                >
                   <input
-                    value={update.weight}
+                    type="checkbox"
+                    checked={msgTypes.includes(msgType)}
+                    onChange={(event) =>
+                      setMsgTypes(
+                        event.target.checked ? [...msgTypes, msgType] : msgTypes.filter((entry) => entry !== msgType)
+                      )
+                    }
+                    className={FIELD_CHECKBOX}
+                  />
+                  <span className="truncate">{msgType.split('.Msg').pop()}</span>
+                </label>
+              ))}
+            </div>
+            {draft.keptMsgTypes.length > 0 ? (
+              <div className="space-y-2 pt-1">
+                <p className="text-xs text-muted-foreground">{translate('corporation.page.grant.kept')}</p>
+                <MsgTypeChips typeUrls={draft.keptMsgTypes} />
+              </div>
+            ) : null}
+          </fieldset>
+        ) : null}
+
+        {kind === 'grant' ? (
+          <div>
+            {partialGrants ? <PartialNote /> : null}
+            <OperatorGrantOptionsFields
+              value={draft.options}
+              onChange={draft.setOptions}
+              replacesFeeGrant={draft.existingFeeGrant !== undefined}
+            />
+            <AddressIssueNote issue={grantReading.issue} />
+          </div>
+        ) : null}
+
+        {kind === 'members' ? (
+          <div className="space-y-2">
+            {memberUpdates.map((update, index) => (
+              <div key={`update-${index}`}>
+                <div className="flex flex-wrap items-center gap-2 text-sm sm:flex-nowrap">
+                  <input
+                    value={update.address}
                     onChange={(event) =>
                       setMemberUpdates(
                         memberUpdates.map((entry, i) =>
-                          i === index ? { ...entry, weight: event.target.value } : entry
+                          i === index ? { ...entry, address: event.target.value } : entry
                         )
                       )
                     }
-                    className="ml-2 w-16 px-2 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface"
+                    placeholder="verana1…"
+                    aria-invalid={updateIssues[index] ? true : undefined}
+                    className={cn(FIELD_INPUT, 'grow basis-full font-mono sm:basis-auto')}
                   />
-                </label>
-                <button
-                  type="button"
-                  aria-label={translate('corporation.wizard.removemember')}
-                  onClick={() => setMemberUpdates(memberUpdates.filter((_, i) => i !== index))}
-                  className="text-red-500 px-2"
-                >
-                  <FontAwesomeIcon icon={faTrash} />
-                </button>
+                  <label className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+                    {translate('corporation.page.weight')}
+                    <input
+                      inputMode="numeric"
+                      value={update.weight}
+                      onChange={(event) =>
+                        setMemberUpdates(
+                          memberUpdates.map((entry, i) =>
+                            i === index ? { ...entry, weight: event.target.value } : entry
+                          )
+                        )
+                      }
+                      className={cn(FIELD_INPUT, 'w-16 text-center tabular-nums')}
+                    />
+                  </label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={translate('corporation.wizard.removemember')}
+                    onClick={() => setMemberUpdates(memberUpdates.filter((_, i) => i !== index))}
+                    className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2Icon aria-hidden="true" />
+                  </Button>
+                </div>
+                <AddressIssueNote issue={updateIssues[index]} />
               </div>
-              <AddressIssueNote issue={updateIssues[index]} />
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => setMemberUpdates([...memberUpdates, { address: '', weight: '1' }])}
-            className="text-sm font-medium text-primary-700 dark:text-primary-300 flex items-center gap-2"
-          >
-            <FontAwesomeIcon icon={faPlus} />
-            {translate('corporation.wizard.addmember')}
-          </button>
-          <p className="text-xs text-gray-500 dark:text-gray-400">{translate('corporation.composer.members.note')}</p>
-        </div>
-      ) : null}
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setMemberUpdates([...memberUpdates, { address: '', weight: '1' }])}
+              className="gap-1.5 bg-background"
+            >
+              <PlusIcon aria-hidden="true" />
+              {translate('corporation.wizard.addmember')}
+            </Button>
+            <p className="text-xs text-muted-foreground">{translate('corporation.composer.members.note')}</p>
+          </div>
+        ) : null}
 
-      {kind === 'policy' ? (
-        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-xl">
-          <DecisionPolicyFields
-            value={policyDraft}
-            onChange={setPolicyDraft}
-            totalWeight={Number(policy.totalWeight)}
-          />
-        </div>
-      ) : null}
+        {kind === 'policy' ? (
+          <div className="grid max-w-2xl grid-cols-1 gap-4 md:grid-cols-2">
+            <DecisionPolicyFields
+              value={policyDraft}
+              onChange={setPolicyDraft}
+              totalWeight={Number(policy.totalWeight)}
+            />
+          </div>
+        ) : null}
 
-      {kind === 'rotate' ? (
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block max-w-xl mt-3">
-          DID
-          <input
-            value={did}
-            onChange={(event) => setDid(event.target.value)}
-            placeholder="did:method:identifier"
-            className={inputClass}
-          />
-        </label>
-      ) : null}
-
-      <button
-        type="button"
-        disabled={!ready || submitting}
-        onClick={() => void submit()}
-        className="mt-4 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium disabled:opacity-60"
-      >
-        {translate(submitting ? 'corporation.composer.submitting' : 'corporation.composer.submit')}
-      </button>
+        {kind === 'rotate' ? (
+          <label className={cn(FIELD_LABEL, 'max-w-xl')}>
+            DID
+            <input
+              value={did}
+              onChange={(event) => setDid(event.target.value)}
+              placeholder="did:method:identifier"
+              className={cn(FIELD_INPUT, 'font-mono')}
+            />
+          </label>
+        ) : null}
+      </div>
+      <div className="flex justify-end border-t border-border px-4 py-3 sm:px-5">
+        <Button type="button" size="lg" disabled={!ready || submitting} onClick={() => void submit()} className="gap-2">
+          {submitting ? <Spinner aria-hidden="true" /> : <GavelIcon aria-hidden="true" />}
+          {translate(submitting ? 'corporation.composer.submitting' : 'corporation.composer.submit')}
+        </Button>
+      </div>
     </div>
   )
 }

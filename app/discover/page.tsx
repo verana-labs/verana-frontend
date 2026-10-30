@@ -1,27 +1,28 @@
 'use client'
 
+import { CompassIcon, SearchXIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { EcosystemSchemaPage } from '@/hooks/useCredentialSchemas'
 import { useCorporationRolesByEcosystem } from '@/hooks/useParticipants'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
-import { translate } from '@/i18n/dataview'
 import { clientPage, filterEcosystems, orderEcosystems, roleFiltersPending } from '@/lib/discover-list'
 import { DISCOVER_PAGE_SIZE, useDiscoverCtx } from '@/providers/api-rest-query-provider-context'
 import { DiscoverEcosystemCard } from '@/ui/common/discover-ecosystem-card'
-import EcosystemsFilterBar from '@/ui/common/ecosystems-filter-bar'
 import KeysetPagination from '@/ui/common/keyset-pagination'
 import TitleAndButton from '@/ui/common/title-and-button'
-import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
+import { DiscoverCardSkeleton } from '@/ui/discover/discover-card-skeleton'
+import { DiscoverFilters } from '@/ui/discover/discover-filters'
+import { DiscoverStats } from '@/ui/discover/discover-stats'
+import { discoverText as t } from '@/ui/discover/text'
+import { Stagger, StaggerItem } from '@/ui/motion/stagger'
+import { Button } from '@/ui/shadcn/button'
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/shadcn/empty'
 
 const NO_SCHEMAS: EcosystemSchemaPage = { items: [], hasNext: false }
 const NO_ECOSYSTEM_IDS: string[] = []
 
 function scrollToTop(): void {
-  document.getElementById('app-scroll')?.scrollTo({ top: 0, behavior: 'smooth' })
-}
-
-function t(key: string, values?: I18nValues): string {
-  return resolveTranslatable({ key, values }, translate) ?? key
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 export default function DiscoverJoinPage() {
@@ -73,31 +74,20 @@ export default function DiscoverJoinPage() {
 
   return (
     <>
-      <TitleAndButton title={t('discover.title')} />
+      <TitleAndButton title={t('discover.title')} description={[t('discover.description')]} />
 
-      <EcosystemsFilterBar
+      <DiscoverStats
+        ecosystems={matching}
+        loading={loading}
+        scope={partial ? (fullWindow ? 'loaded' : 'page') : 'matching'}
+      />
+
+      <DiscoverFilters
         value={filters}
-        onChange={(next) => setDiscoverFilters({ ...filters, ...next })}
+        onChange={setDiscoverFilters}
         corporationFilters={actingCorporationId !== undefined}
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          <label htmlFor="discover-order" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {t('discover.order.label')}
-          </label>
-          <select
-            id="discover-order"
-            value={filters.order}
-            onChange={(e) =>
-              setDiscoverFilters({ ...filters, order: e.target.value === 'trustValue' ? 'trustValue' : 'newest' })
-            }
-            className="px-3 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface text-sm text-gray-900 dark:text-white focus:border-blue-600 focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="newest">{t('discover.order.newest')}</option>
-            <option value="trustValue">{t('discover.order.trustValue')}</option>
-          </select>
-        </div>
-        {partial ? <p className="text-xs text-neutral-70 dark:text-neutral-70">{t('pagination.loadedOnly')}</p> : null}
-      </EcosystemsFilterBar>
+        loadedOnly={partial}
+      />
 
       {errors.map((message) => (
         <div key={message} className="error-pane mb-6">
@@ -105,35 +95,42 @@ export default function DiscoverJoinPage() {
         </div>
       ))}
 
-      <section id="ecosystem-list" className="space-y-6">
+      <section id="ecosystem-list" aria-busy={loading} className="flex flex-col gap-4 sm:gap-5">
         {loading ? (
-          [...Array(3)].map((_, i) => (
-            <div key={i} className="skeleton-card rounded-xl border border-neutral-20 dark:border-neutral-70">
-              <div className="skeleton-title mb-2 w-1/2" />
-              <div className="skeleton-text w-1/3 mb-6" />
-              <div className="space-y-4">
-                <div className="skeleton-block h-16 rounded-lg" />
-                <div className="skeleton-block h-16 rounded-lg" />
-              </div>
-            </div>
-          ))
-        ) : shown.length === 0 ? (
-          <div className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-8 text-center">
-            <p className="text-sm text-neutral-70 dark:text-neutral-70">{t('discover.empty')}</p>
-          </div>
+          [0, 1, 2].map((slot) => <DiscoverCardSkeleton key={slot} />)
+        ) : shown.length === 0 && errors.length === 0 ? (
+          <Empty className="rounded-xl border border-dashed bg-card py-12">
+            <EmptyHeader>
+              <EmptyMedia variant="icon" className="size-10 rounded-xl">
+                {filters.search ? <SearchXIcon className="size-5" /> : <CompassIcon className="size-5" />}
+              </EmptyMedia>
+              <EmptyTitle className="text-base">{t('discover.empty')}</EmptyTitle>
+              <EmptyDescription>{t('discover.empty.hint')}</EmptyDescription>
+            </EmptyHeader>
+            {filters.search ? (
+              <EmptyContent>
+                <Button variant="outline" onClick={() => setDiscoverFilters({ ...filters, search: '' })}>
+                  {t('discover.search.clear')}
+                </Button>
+              </EmptyContent>
+            ) : null}
+          </Empty>
         ) : (
-          shown.map((ecosystem) => (
-            <DiscoverEcosystemCard
-              key={ecosystem.id}
-              ecosystem={ecosystem}
-              credentialSchemas={discoverCtx.credentialSchemasByEcosystem[ecosystem.id] ?? NO_SCHEMAS}
-              schemasError={discoverCtx.errorCredentialSchemas}
-              moreSchemasFailed={Boolean(discoverCtx.moreSchemaErrors[ecosystem.id])}
-              onLoadMoreSchemas={() => discoverCtx.loadMoreCredentialSchemas(ecosystem.id)}
-              roles={rolesByEcosystem[ecosystem.id] ?? []}
-              canJoin={actingCorporationId !== undefined}
-            />
-          ))
+          <Stagger className="flex flex-col gap-4 sm:gap-5">
+            {shown.map((ecosystem) => (
+              <StaggerItem key={ecosystem.id}>
+                <DiscoverEcosystemCard
+                  ecosystem={ecosystem}
+                  credentialSchemas={discoverCtx.credentialSchemasByEcosystem[ecosystem.id] ?? NO_SCHEMAS}
+                  schemasError={discoverCtx.errorCredentialSchemas}
+                  moreSchemasFailed={Boolean(discoverCtx.moreSchemaErrors[ecosystem.id])}
+                  onLoadMoreSchemas={() => discoverCtx.loadMoreCredentialSchemas(ecosystem.id)}
+                  roles={rolesByEcosystem[ecosystem.id] ?? []}
+                  canJoin={actingCorporationId !== undefined}
+                />
+              </StaggerItem>
+            ))}
+          </Stagger>
         )}
       </section>
 

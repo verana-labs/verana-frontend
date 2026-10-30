@@ -3,6 +3,7 @@
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/ui/shadcn/button'
 
 interface TitleAndButtonProps {
   title: string
@@ -35,32 +36,25 @@ export default function TitleAndButton({
 
   return (
     <>
-      {/* Back Navigation */}
       {backLink && (
         <section id="back-nav" className="mb-6">
           {(buttonLabel || icon) && (
-            <button
-              type="button"
-              onClick={handleClick}
-              className="inline-flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
-            >
+            <Button variant="ghost" size="sm" onClick={handleClick} className="-ms-2 text-primary hover:text-primary">
               {icon ? <FontAwesomeIcon className="icon-sm" aria-hidden="true" icon={icon} /> : null}
-              {buttonLabel && <span className="inline">&nbsp;{buttonLabel}</span>}
-            </button>
+              {buttonLabel && <span>{buttonLabel}</span>}
+            </Button>
           )}
         </section>
       )}
 
-      <section id="page-header" className={type === 'table' ? '' : 'mb-8'}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-          <div>
+      <section id="page-header" className={type === 'table' ? '' : 'mb-6'}>
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div className="min-w-0">
             {type === 'table' ? (
               <h3 className="data-table-title">{title}</h3>
             ) : (
               <h1 className={type === 'view' ? 'view-title' : 'page-title'}>{title}</h1>
             )}
-
-            {/* Help Section (if present) */}
             {description &&
               Array.isArray(description) &&
               description.map((d, idx) => (
@@ -69,26 +63,24 @@ export default function TitleAndButton({
                 </p>
               ))}
           </div>
-          {}
-          {!backLink && (
-            <div className="mt-4 sm:mt-0 flex items-center space-x-6">
+          {!backLink && (checkFilter || buttonLabel || icon) && (
+            <div className="flex shrink-0 flex-wrap items-center gap-4">
               {checkFilter && (
-                <label className="flex items-center space-x-2 cursor-pointer">
+                <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
                   <input
                     type="checkbox"
                     checked={checkFilter?.show}
                     onChange={(e) => checkFilter?.changeFilter(e.target.checked)}
-                    className="w-4 h-4 text-primary-600 bg-white dark:bg-surface border-neutral-20 dark:border-neutral-70 rounded checked:bg-current checked:border-transparent focus:ring-2 focus:ring-primary-500"
+                    className="size-4"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">{checkFilter?.label}</span>
+                  <span>{checkFilter?.label}</span>
                 </label>
               )}
-              {/* Render button only if buttonLabel or Icon is provided */}
               {(buttonLabel || icon) && (
-                <button onClick={handleClick} className="btn-link">
+                <Button size="lg" onClick={handleClick} className="px-4">
                   {icon ? <FontAwesomeIcon className="icon-sm" aria-hidden="true" icon={icon} /> : null}
-                  {buttonLabel && <span className="inline">&nbsp;{buttonLabel}</span>}
-                </button>
+                  {buttonLabel && <span>{buttonLabel}</span>}
+                </Button>
               )}
             </div>
           )}

@@ -1,7 +1,14 @@
 'use client'
 
-import { faBuilding } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  BotIcon,
+  Building2Icon,
+  GlobeIcon,
+  HourglassIcon,
+  LoaderCircleIcon,
+  ShieldCheckIcon,
+  TriangleAlertIcon,
+} from 'lucide-react'
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { useAgents } from '@/hooks/useAgents'
@@ -9,13 +16,88 @@ import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { useIndexerEntityEvents } from '@/providers/indexer-events-provider'
 import AgentCard from '@/ui/agents/agent-card'
+import { AgentCardSkeleton } from '@/ui/agents/agent-card-skeleton'
 import AgentsFilterBar, { type AgentsFilterState, INITIAL_AGENTS_FILTER } from '@/ui/agents/agents-filter-bar'
-import EcosystemCardSkeleton from '@/ui/common/ecosystem-card-skeleton'
+import { CorporationRequired } from '@/ui/agents-tasks-settings/corporation-required'
+import { EmptyState } from '@/ui/common/empty-state'
 import { ShowMoreButton } from '@/ui/common/keyset-pagination'
+import { ScoreGauge } from '@/ui/common/score-gauge'
+import { StatTile, UnknownStat } from '@/ui/common/stat-tile'
 import { PartialNote } from '@/ui/corporation/shared'
+import { BlurFade } from '@/ui/motion/blur-fade'
+import { Stagger, StaggerItem } from '@/ui/motion/stagger'
+import { Button } from '@/ui/shadcn/button'
 
-const SKELETONS = 3
-const DEGRADED = 'text-sm text-amber-700 dark:text-amber-300'
+const SKELETONS = 4
+const GRID = 'grid grid-cols-1 items-start gap-4 xl:grid-cols-2'
+const STAT_ITEM = 'w-[42%] min-w-36 shrink-0 snap-start sm:w-auto sm:min-w-0'
+
+type AgentStatsProps = {
+  total: number
+  more: boolean
+  trusted: number
+  ecosystems: number | null
+  pending: number | null
+}
+
+function AgentStats({ total, more, trusted, ecosystems, pending }: AgentStatsProps) {
+  const suffix = more ? '+' : ''
+  const trustedPercent = total > 0 ? (trusted / total) * 100 : 0
+  return (
+    <Stagger
+      tabIndex={0}
+      aria-label={translate('agents.stats')}
+      className="-mx-4 mb-5 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 py-1 [scrollbar-width:none] outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:mx-0 sm:mb-6 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:p-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden"
+    >
+      <StaggerItem className={STAT_ITEM}>
+        <StatTile icon={<BotIcon />} label={translate('agents.title')} value={`${total}${suffix}`} />
+      </StaggerItem>
+      <StaggerItem className={STAT_ITEM}>
+        <StatTile
+          icon={<ShieldCheckIcon />}
+          label={translate('participant.labelTrustState.trusted')}
+          value={trusted}
+          pattern={false}
+          hint={
+            <ScoreGauge
+              percent={trustedPercent}
+              tone="brand"
+              size="sm"
+              label={`${translate('participant.labelTrustState.trusted')} ${Math.round(trustedPercent)}%`}
+              className="max-w-40"
+            />
+          }
+        />
+      </StaggerItem>
+      <StaggerItem className={STAT_ITEM}>
+        <StatTile
+          icon={<GlobeIcon />}
+          label={translate('ecosystemList.title')}
+          value={ecosystems === null ? <UnknownStat /> : ecosystems}
+          pattern={false}
+        />
+      </StaggerItem>
+      <StaggerItem className={STAT_ITEM}>
+        <StatTile
+          icon={<HourglassIcon />}
+          label={translate('agents.stats.pending')}
+          value={pending === null ? <UnknownStat /> : pending}
+          pattern={false}
+        />
+      </StaggerItem>
+    </Stagger>
+  )
+}
+
+function AgentsSkeletonGrid() {
+  return (
+    <div className={GRID}>
+      {Array.from({ length: SKELETONS }, (_, index) => (
+        <AgentCardSkeleton key={index} />
+      ))}
+    </div>
+  )
+}
 
 export default function AgentsPage() {
   const { actingCorporation, loading: actingLoading, error: discoveryError } = useUserCorporation()
@@ -49,39 +131,98 @@ export default function AgentsPage() {
   )
 
   if (actingLoading) {
-    return <p className="p-6 text-sm text-gray-500">{translate('agents.loading')}</p>
+    return (
+      <div className="flex flex-col gap-6">
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <LoaderCircleIcon aria-hidden="true" className="size-4 animate-spin text-primary" />
+          {translate('agents.loading')}
+        </p>
+        <AgentsSkeletonGrid />
+      </div>
+    )
   }
-  if (!actingCorporation) {
-    if (discoveryError) return <div className="p-6 error-pane">{translate('corporation.page.error')}</div>
-    return <p className="p-6 text-sm text-gray-600 dark:text-gray-300">{translate('corporation.page.nocorp')}</p>
-  }
+  if (!actingCorporation)
+    return (
+      <CorporationRequired
+        failed={Boolean(discoveryError)}
+        title={translate('agents.title')}
+        description={translate('agents.description')}
+      />
+    )
+
+  const trustedCount = agents.filter((agent) => resolutions.get(agent.did)?.enrichment.trustStatus === 'TRUSTED').length
+  const showStats = !loading && (!error || partialError) && agents.length > 0
+
+  const degradedKeys = [
+    degraded.ecosystems && 'agents.degraded.ecosystems',
+    degraded.delegations && 'agents.degraded.delegations',
+    degraded.pending && 'agents.degraded.pending',
+    partialError && 'agents.error.more',
+  ].filter((key): key is string => Boolean(key))
 
   return (
     <>
-      <section id="page-header" className="mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="page-title">{translate('agents.title')}</h1>
-            <p className="page-description">{translate('agents.description')}</p>
+      <BlurFade>
+        <section id="page-header" className="mb-6">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div className="min-w-0">
+              <h1 className="page-title">{translate('agents.title')}</h1>
+              <p className="page-description">{translate('agents.description')}</p>
+            </div>
+            <Button asChild variant="outline" size="lg" className="w-fit px-3">
+              <Link href="/corporation?tab=operators#agents">
+                <Building2Icon aria-hidden="true" />
+                {translate('agents.rawlink')}
+              </Link>
+            </Button>
           </div>
-          <Link
-            href="/corporation?tab=operators#agents"
-            className="inline-flex items-center gap-2 px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300"
+        </section>
+      </BlurFade>
+
+      <BlurFade delay={0.05} className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <AgentsFilterBar value={filters} onChange={setFilters} />
+        {!loading && !error && agents.length > 0 ? (
+          <p
+            className="flex h-7 w-fit items-center gap-2 rounded-full bg-card px-3 text-xs font-medium text-muted-foreground tabular-nums shadow-hairline"
+            aria-live="polite"
           >
-            <FontAwesomeIcon icon={faBuilding} />
-            {translate('agents.rawlink')}
-          </Link>
-        </div>
-      </section>
+            {translate('agents.summary', { count: visible.length, total: agents.length })}
+            {visible.length < agents.length && !filters.showUnverifiable ? (
+              <button
+                type="button"
+                onClick={() => setFilters({ ...filters, showUnverifiable: true })}
+                className="rounded-sm font-medium text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                {translate('participants.filters.showall')}
+              </button>
+            ) : null}
+          </p>
+        ) : null}
+      </BlurFade>
 
-      <AgentsFilterBar value={filters} onChange={setFilters} />
+      {showStats ? (
+        <AgentStats
+          total={agents.length}
+          more={hasNext}
+          trusted={trustedCount}
+          ecosystems={degraded.ecosystems ? null : agents.filter((agent) => agent.label === 'ecosystem').length}
+          pending={degraded.pending ? null : pending.length}
+        />
+      ) : null}
 
-      {degraded.ecosystems || degraded.delegations || degraded.pending || partialError ? (
-        <div className="mb-4 space-y-1">
-          {degraded.ecosystems ? <p className={DEGRADED}>{translate('agents.degraded.ecosystems')}</p> : null}
-          {degraded.delegations ? <p className={DEGRADED}>{translate('agents.degraded.delegations')}</p> : null}
-          {degraded.pending ? <p className={DEGRADED}>{translate('agents.degraded.pending')}</p> : null}
-          {partialError ? <p className={DEGRADED}>{translate('agents.error.more')}</p> : null}
+      {degradedKeys.length > 0 ? (
+        <div
+          role="status"
+          className="mb-6 flex gap-3 rounded-xl bg-tint-warning py-3 ps-3 pe-4 text-sm text-warning ring-1 ring-warning/25"
+        >
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-card shadow-hairline">
+            <TriangleAlertIcon aria-hidden="true" className="size-4" />
+          </span>
+          <div className="flex min-w-0 flex-col gap-1 pt-1.5 font-medium">
+            {degradedKeys.map((key) => (
+              <p key={key}>{translate(key)}</p>
+            ))}
+          </div>
         </div>
       ) : null}
 
@@ -89,30 +230,25 @@ export default function AgentsPage() {
         {hasNext ? <PartialNote filtered /> : null}
         {delegationsPartial ? <PartialNote /> : null}
         {error && !partialError ? (
-          <div className="p-6 error-pane">{translate('agents.error')}</div>
+          <div className="error-pane">{translate('agents.error')}</div>
         ) : loading ? (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
-            {[...Array(SKELETONS)].map((_, index) => (
-              <EcosystemCardSkeleton key={index} />
-            ))}
-          </div>
+          <AgentsSkeletonGrid />
         ) : visible.length === 0 ? (
-          <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-8 text-center text-sm text-neutral-70 dark:text-neutral-70">
-            {translate('agents.empty')}
-          </div>
+          <EmptyState icon={<BotIcon />} title={translate('agents.empty')} className="bg-card py-14" />
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
+          <Stagger className={GRID}>
             {visible.map((agent) => (
-              <AgentCard
-                key={agent.did}
-                agent={agent}
-                resolution={resolutions.get(agent.did)}
-                unavailable={unavailableDids.has(agent.did)}
-                delegations={delegations}
-                pending={pending}
-              />
+              <StaggerItem key={agent.did}>
+                <AgentCard
+                  agent={agent}
+                  resolution={resolutions.get(agent.did)}
+                  unavailable={unavailableDids.has(agent.did)}
+                  delegations={delegations}
+                  pending={pending}
+                />
+              </StaggerItem>
             ))}
-          </div>
+          </Stagger>
         )}
         {(!error || partialError) && !loading && hasNext ? <ShowMoreButton onClick={loadMore} /> : null}
       </section>

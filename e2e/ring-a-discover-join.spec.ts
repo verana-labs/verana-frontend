@@ -179,11 +179,11 @@ test('discover lists every ecosystem of the window, finds one by name and orders
   await expect(page.locator('#ecosystem-list article')).toHaveCount(1)
   const acme = page.getByRole('article', { name: 'Acme Join Registry' })
   const counters = [
-    ['Active Schemas:', '1'],
-    ['Participants:', '2'],
-    ['Trust Value:', '0.003 VNA'],
-    ['Issued Credentials:', '3'],
-    ['Verified Credentials:', '4'],
+    ['Active Schemas', '1'],
+    ['Participants', '2'],
+    ['Trust Value', '0.003 VNA'],
+    ['Issued Credentials', '3'],
+    ['Verified Credentials', '4'],
   ] as const
   for (const [label, value] of counters) {
     const counter = acme.locator('dl > div').filter({ has: page.locator('dt', { hasText: label }) })
@@ -265,11 +265,11 @@ test('an acting corporation sees its roles from one corporation query and joins 
   await page.locator('#hide-participant').uncheck()
 
   const join = acme.getByRole('link', { name: 'Join' })
-  await expect(join).toHaveAttribute('href', `/participants/${SCHEMA.id}`)
+  await expect(join).toHaveAttribute('href', `/credential-schemas/${SCHEMA.id}?tab=participants`)
   await join.click()
-  await expect(page).toHaveURL(new RegExp(`/participants/${SCHEMA.id}$`))
+  await expect(page).toHaveURL(new RegExp(`/credential-schemas/${SCHEMA.id}\\?tab=participants$`))
   await expect(
-    page.locator('div.rounded-lg.p-2').filter({ hasText: 'Issuers' }).getByRole('button', { name: /join/ })
+    page.locator('[data-slot="tree-row"]').filter({ hasText: 'Issuers' }).getByRole('button', { name: /join/ })
   ).toBeVisible({ timeout: 15_000 })
 })
 
@@ -285,7 +285,7 @@ test('joining a folder of the participant tree broadcasts the VS operator named 
 
   await page.goto(`/participants/${SCHEMA.id}`)
   await page
-    .locator('div.rounded-lg.p-2')
+    .locator('[data-slot="tree-row"]')
     .filter({ hasText: 'Issuers' })
     .getByRole('button', { name: /join/ })
     .click({ timeout: 15_000 })
