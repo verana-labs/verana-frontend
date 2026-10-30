@@ -9,6 +9,7 @@ import { AccountAddress } from '@/ui/account/account-address'
 import { AccountCorporations } from '@/ui/account/account-corporations'
 import ColumnsDataView from '@/ui/common/data-view-columns'
 import { GET_VNA_ACTION } from '@/ui/common/get-vna'
+import { SEND_RECIPIENT_PARAM, SEND_VNA_ACTION } from '@/ui/common/send-vna'
 import TitleAndButton from '@/ui/common/title-and-button'
 import { AccountData, accountSections } from '@/ui/dataview/datasections/account'
 import { resolveTranslatable } from '@/ui/dataview/types'
@@ -17,6 +18,7 @@ export default function AccountPage() {
   const searchParams = useSearchParams()
   // Only pre-open the "getVNA" action if the URL includes ?getVNA=true
   const openGetVNA = searchParams.get('getVNA') === 'true'
+  const openSendVNA = searchParams.has(SEND_RECIPIENT_PARAM)
 
   const { accountData, refetch: refetchAccount } = useAccountCtx()
   const [refresh, setRefresh] = useState<boolean>(true)
@@ -36,7 +38,7 @@ export default function AccountPage() {
     if (accountData) {
       // Per [VFE-PAGE-ACCT-3]: no faucet URL, no Get VNA action.
       const getVNA = VERANA_FAUCET_URL ? GET_VNA_ACTION : null
-      setData({ ...accountData, getVNA })
+      setData({ ...accountData, getVNA, sendVNA: SEND_VNA_ACTION })
     }
   }, [accountData])
 
@@ -52,7 +54,7 @@ export default function AccountPage() {
           sectionsI18n={accountSections}
           data={data}
           onRefresh={() => setRefresh(true)}
-          activeActionField={openGetVNA ? 'getVNA' : undefined}
+          activeActionField={openGetVNA ? 'getVNA' : openSendVNA ? 'sendVNA' : undefined}
           loading={false}
         />
       )}

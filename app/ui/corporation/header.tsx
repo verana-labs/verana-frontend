@@ -1,7 +1,8 @@
 'use client'
 
-import { faBuilding, faPlus } from '@fortawesome/free-solid-svg-icons'
+import { faBuilding, faPaperPlane, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import Link from 'next/link'
 import { type ReactNode, useState } from 'react'
 import type { CorporationProfile } from '@/hooks/useCorporationDetails'
 import type { ActionSigning } from '@/hooks/useSigningMode'
@@ -9,6 +10,7 @@ import { translate } from '@/i18n/dataview'
 import type { DidEnrichment } from '@/lib/resolverClient'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import { CapabilityButton } from '@/ui/common/capability-button'
+import { SEND_RECIPIENT_PARAM } from '@/ui/common/send-vna'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 import { countryCodeToFlag, shortenMiddle } from '@/util/util'
 import { isValidDID } from '@/util/validations'
@@ -103,6 +105,13 @@ export function CorporationHeader({
             onClick={onToggleRotate}
             className={OUTLINE_BUTTON}
           />
+          <Link
+            href={`/account?${SEND_RECIPIENT_PARAM}=${encodeURIComponent(profile.policyAddress)}`}
+            className={OUTLINE_BUTTON}
+          >
+            <FontAwesomeIcon icon={faPaperPlane} />
+            {translate('corporation.page.send')}
+          </Link>
           <button type="button" onClick={onCreate} className={OUTLINE_BUTTON}>
             <FontAwesomeIcon icon={faPlus} />
             {translate('corporation.page.new')}
