@@ -702,6 +702,7 @@
   "corporation.page.language": "Idioma",
   "corporation.page.created": "Creada",
   "corporation.page.rotatedid": "Rotar DID",
+  "corporation.page.addresscopy": "Copiar dirección de la corporación",
   "corporation.page.rotatedid.submit": "Actualizar DID",
   "corporation.page.threshold": "Umbral",
   "corporation.page.votingperiod": "Periodo de votación",
