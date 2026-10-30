@@ -90,7 +90,7 @@ export default function DiscoverJoinPage() {
             onChange={(e) =>
               setDiscoverFilters({ ...filters, order: e.target.value === 'trustValue' ? 'trustValue' : 'newest' })
             }
-            className="px-3 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500"
+            className="px-3 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface text-sm text-gray-900 dark:text-white focus:border-blue-600 focus:ring-2 focus:ring-primary-500"
           >
             <option value="newest">{t('discover.order.newest')}</option>
             <option value="trustValue">{t('discover.order.trustValue')}</option>

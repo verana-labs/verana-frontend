@@ -88,7 +88,7 @@ export default function EcosystemCard({ ecosystem, enrichment, roles = NO_ROLES 
           <LogoImage
             src={identity?.serviceLogoUrl}
             fallbackSrc={serviceIdenticonUrl(ecosystem.did)}
-            className="w-12 h-12 rounded-lg flex-shrink-0 object-contain"
+            className="w-12 h-12 rounded-lg shrink-0 object-contain"
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
@@ -100,7 +100,7 @@ export default function EcosystemCard({ ecosystem, enrichment, roles = NO_ROLES 
               </h3>
               <FontAwesomeIcon
                 icon={trustBadge.icon}
-                className={`text-xl ${trustBadge.iconColorClass} flex-shrink-0`}
+                className={`text-xl ${trustBadge.iconColorClass} shrink-0`}
                 title={trustBadge.label}
                 aria-label={trustBadge.label}
               />
@@ -120,14 +120,14 @@ export default function EcosystemCard({ ecosystem, enrichment, roles = NO_ROLES 
           <LogoImage
             src={identity?.organizationLogoUrl}
             fallbackSrc={serviceAvatarUrl(identity?.organizationName ?? ecosystem.did)}
-            className="w-8 h-8 rounded flex-shrink-0 object-contain"
+            className="w-8 h-8 rounded shrink-0 object-contain"
           />
           <div className="flex-1 min-w-0">
             <h4 className="truncate text-sm font-medium text-gray-900 dark:text-white" title={orgName}>
               {orgName}
             </h4>
             <div className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden">
-              <span className="flex-shrink-0 text-lg" aria-hidden="true">
+              <span className="shrink-0 text-lg" aria-hidden="true">
                 {flag}
               </span>
               {egfHref ? (
@@ -139,7 +139,7 @@ export default function EcosystemCard({ ecosystem, enrichment, roles = NO_ROLES 
                   className="flex min-w-0 items-center space-x-1 text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
                 >
                   <span className="truncate">{t('datatable.ecosystem.card.egf', 'EGF')}</span>
-                  <FontAwesomeIcon icon={faExternalLinkAlt} className="flex-shrink-0 text-xs" />
+                  <FontAwesomeIcon icon={faExternalLinkAlt} className="shrink-0 text-xs" />
                 </a>
               ) : null}
             </div>
@@ -158,7 +158,7 @@ export default function EcosystemCard({ ecosystem, enrichment, roles = NO_ROLES 
           )}
           {extraRoleCount > 0 ? (
             <span
-              className="inline-flex flex-shrink-0 items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
+              className="inline-flex shrink-0 items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
               title={roles.slice(visibleRoles.length).join(', ')}
             >
               +{extraRoleCount}
