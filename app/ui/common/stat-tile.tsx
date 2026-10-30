@@ -4,6 +4,7 @@ import { TriangleAlertIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { translate } from '@/i18n/dataview'
 import { cn } from '@/lib/utils'
+import { DeltaPill, type DeltaPillProps } from '@/ui/common/delta-pill'
 import { DotPattern } from '@/ui/dashboard/dot-pattern'
 
 export type StatTileProps = {
@@ -11,7 +12,9 @@ export type StatTileProps = {
   value: ReactNode
   icon: ReactNode
   hint?: ReactNode
+  delta?: DeltaPillProps | null
   trend?: ReactNode
+  meter?: ReactNode
   pattern?: boolean
   stat?: string
   statValue?: string
@@ -23,7 +26,9 @@ export function StatTile({
   value,
   icon,
   hint,
+  delta,
   trend,
+  meter,
   pattern = true,
   stat,
   statValue,
@@ -34,35 +39,37 @@ export function StatTile({
       data-stat={stat}
       data-stat-value={statValue}
       className={cn(
-        'relative isolate flex h-full min-w-0 flex-col overflow-hidden rounded-xl bg-card p-4 shadow-card sm:p-5',
+        'group relative isolate flex h-full min-w-0 flex-col justify-between overflow-hidden rounded-xl bg-card p-4 shadow-card sm:min-h-36 sm:p-5',
         className
       )}
     >
       {pattern ? (
         <DotPattern
-          width={14}
-          height={14}
-          className="-z-10 text-primary/25 [mask-image:radial-gradient(160px_circle_at_top_right,white,transparent)]"
+          width={18}
+          height={18}
+          className="-z-10 text-primary/25 [mask-image:radial-gradient(180px_circle_at_top_right,white,transparent)]"
         />
       ) : null}
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-w-0 items-center justify-between gap-3">
         <span
           aria-hidden="true"
-          className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary [&_svg]:size-3.5"
+          className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-tint-accent text-primary transition-transform duration-(--duration-slow) ease-emphasized group-hover:scale-90 motion-reduce:transition-none sm:size-9 [&_svg]:size-4 sm:[&_svg]:size-4.5"
         >
           {icon}
         </span>
-        <span className="line-clamp-2 min-w-0 text-xs leading-snug font-medium text-muted-foreground sm:text-sm">
-          {label}
-        </span>
+        {meter ? <div className="flex w-24 min-w-0 sm:w-28">{meter}</div> : null}
       </div>
-      <div className="mt-3 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-        <div className="min-w-0 truncate text-2xl leading-tight font-semibold tracking-tight text-foreground tabular-nums sm:text-3xl">
-          {value}
+      <div className="mt-3 min-w-0 sm:mt-4">
+        <p className="truncate text-xs font-medium text-muted-foreground sm:text-[13px]">{label}</p>
+        <div className="mt-1 flex min-h-8 min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 sm:min-h-9">
+          <div className="min-w-0 truncate text-2xl leading-tight font-semibold tracking-[-0.025em] text-foreground tabular-nums sm:text-3xl">
+            {value}
+          </div>
+          {delta ? <DeltaPill {...delta} /> : null}
+          {trend ? <div className="shrink-0 text-xs font-medium tabular-nums">{trend}</div> : null}
         </div>
-        {trend ? <div className="shrink-0 text-xs font-medium tabular-nums">{trend}</div> : null}
+        <div className="mt-1 min-h-4 truncate text-xs text-muted-foreground">{hint}</div>
       </div>
-      {hint ? <div className="mt-1 min-w-0 truncate text-xs text-muted-foreground">{hint}</div> : null}
     </div>
   )
 }

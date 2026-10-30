@@ -13,10 +13,12 @@ import GfDocumentViewer from '@/ui/common/gf-document-viewer'
 import { ShowMoreButton } from '@/ui/common/keyset-pagination'
 import LogoImage from '@/ui/common/logo-image'
 import TrustBadge from '@/ui/common/trust-badge'
+import { DotPattern } from '@/ui/dashboard/dot-pattern'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import type { ParticipantRole } from '@/ui/dataview/datasections/participant'
 import { SchemaCard } from '@/ui/discover/schema-card'
 import { discoverText as t } from '@/ui/discover/text'
+import { statLabel } from '@/ui/ecosystems/i18n'
 import { DURATION, EASE } from '@/ui/motion/tokens'
 import { Button } from '@/ui/shadcn/button'
 import { countryCodeToFlag, formatNumber, formatVNAFromUVNA, roleBadgeClass, shortenDID } from '@/util/util'
@@ -83,10 +85,15 @@ export function DiscoverEcosystemCard({
     <article
       aria-label={serviceName}
       className={cn(
-        '@container/eco relative overflow-hidden rounded-xl bg-card text-card-foreground shadow-card',
+        '@container/eco group/eco relative isolate overflow-hidden rounded-xl bg-card text-card-foreground shadow-card transition-shadow duration-(--duration-base) ease-standard hover:shadow-raised',
         archived && 'archived-watermark'
       )}
     >
+      <DotPattern
+        width={18}
+        height={18}
+        className="-z-10 text-primary/20 [mask-image:radial-gradient(260px_circle_at_top_right,white,transparent)]"
+      />
       <div className={cn('flex flex-col gap-5 p-4 sm:p-6', archived && 'archived-bg')}>
         <header className="flex flex-col gap-4 @2xl/eco:flex-row @2xl/eco:items-start @2xl/eco:justify-between">
           <div className="flex min-w-0 items-start gap-4">
@@ -181,16 +188,19 @@ export function DiscoverEcosystemCard({
           </div>
         ) : null}
 
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 border-t pt-4 @md/eco:grid-cols-3 @2xl/eco:grid-cols-5 @2xl/eco:gap-0 @2xl/eco:divide-x">
+        <dl className="grid grid-cols-2 gap-2 @md/eco:grid-cols-3 @2xl/eco:grid-cols-5">
           {counters.map(({ key, value, empty }) => (
             <div
               key={key}
-              className="flex min-w-0 flex-col gap-0.5 @2xl/eco:px-5 @2xl/eco:first:pl-0 @2xl/eco:last:pr-0"
+              className={cn(
+                'flex min-w-0 flex-col gap-1 rounded-lg px-3 py-2.5 ring-1 ring-inset last:col-span-2 @md/eco:last:col-span-1',
+                empty ? 'bg-muted/40 ring-border/60' : 'bg-tint-accent ring-primary/10'
+              )}
             >
-              <dt className="text-xs text-pretty text-muted-foreground">{t(key)}</dt>
+              <dt className="text-xs text-pretty text-muted-foreground">{statLabel(key, t(key))}</dt>
               <dd
                 className={cn(
-                  'text-sm font-semibold tracking-tight break-words tabular-nums',
+                  'text-lg leading-tight font-semibold tracking-[-0.02em] break-words tabular-nums',
                   empty ? 'text-muted-foreground' : 'text-foreground'
                 )}
               >
@@ -231,7 +241,11 @@ export function DiscoverEcosystemCard({
                   <SchemaCard
                     key={schema.id}
                     credentialSchema={schema}
-                    joinHref={canJoin && !archived && !schema.archived ? `/participants/${schema.id}` : undefined}
+                    joinHref={
+                      canJoin && !archived && !schema.archived
+                        ? `/credential-schemas/${schema.id}?tab=participants`
+                        : undefined
+                    }
                   />
                 ))}
                 {moreSchemasFailed ? <p className="text-sm text-warning">{t('discover.cs.more.error')}</p> : null}

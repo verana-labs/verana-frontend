@@ -118,7 +118,7 @@ export default function EcosystemsFilterBar({ value, onChange, corporationFilter
         {actions ? <div className="ms-auto flex shrink-0 items-center gap-2">{actions}</div> : null}
       </div>
 
-      <div className="-mx-4 -my-1 flex min-w-0 snap-x scroll-px-4 items-center gap-2 overflow-x-auto px-4 py-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
+      <div className="-mx-4 -my-1 flex min-w-0 snap-x scroll-px-4 items-center gap-2 overflow-x-auto px-4 py-1 [scrollbar-width:none] max-sm:pe-10 max-sm:[mask-image:linear-gradient(to_right,black_calc(100%-2.5rem),transparent)] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
         <FilterChip
           id="show-archived"
           checked={value.showArchived}
