@@ -19,13 +19,16 @@ import {
 import { useEffect, useState } from 'react'
 import { getDictionary, getLocale, translate } from '@/i18n/dataview'
 import { cn } from '@/lib/utils'
+import { BlockHeader } from '@/ui/common/block-card'
+import { GhostEmpty } from '@/ui/common/ghost-empty'
+import { TONE_CLASSES, type Tone, ToneTag } from '@/ui/common/tone-tag'
 import { formatCount, relativeTime } from '@/ui/dashboard/format'
+import { GhostRows } from '@/ui/dashboard/ghost-visuals'
 import { type NetworkEvent, useNetworkEvents } from '@/ui/dashboard/use-network-events'
 import { Shimmer } from '@/ui/motion/shimmer'
 import { DURATION, EASE } from '@/ui/motion/tokens'
 import { Button } from '@/ui/shadcn/button'
-import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '@/ui/shadcn/card'
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/shadcn/empty'
+import { Card, CardHeader } from '@/ui/shadcn/card'
 
 const MODULE_ICONS: Record<string, LucideIcon> = {
   co: Building2Icon,
@@ -36,6 +39,17 @@ const MODULE_ICONS: Record<string, LucideIcon> = {
   cs: FileJson2Icon,
   tr: NetworkIcon,
   td: CoinsIcon,
+}
+
+const MODULE_TONES: Record<string, Tone> = {
+  co: 'accent',
+  group: 'info',
+  de: 'warning',
+  pp: 'success',
+  perm: 'success',
+  cs: 'info',
+  tr: 'accent',
+  td: 'warning',
 }
 
 function sentence(identifier: string): string {
@@ -71,8 +85,13 @@ function EventRow({ event, now }: { event: NetworkEvent; now: number }) {
   const Icon = MODULE_ICONS[event.module] ?? ActivityIcon
   const entity = entityLine(event)
   return (
-    <div className="flex items-center gap-3 rounded-xl bg-card p-3 shadow-card">
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+    <div className="flex items-center gap-3 rounded-xl bg-card p-3 shadow-card transition-shadow duration-(--duration-base) hover:shadow-raised">
+      <span
+        className={cn(
+          'flex size-9 shrink-0 items-center justify-center rounded-lg',
+          TONE_CLASSES[MODULE_TONES[event.module] ?? 'accent']
+        )}
+      >
         <Icon aria-hidden="true" className="size-4" />
       </span>
       <div className="min-w-0 flex-1">
@@ -109,27 +128,34 @@ export function LiveActivity({ className }: { className?: string }) {
   return (
     <Card data-dashboard="live-activity" className={cn('gap-0', className)}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <ActivityIcon aria-hidden="true" className="size-4 text-primary" />
-          <h2>{translate('dashboard.activity.title')}</h2>
-        </CardTitle>
-        <CardDescription>
-          {feed.paused ? translate('dashboard.activity.paused') : translate('dashboard.activity.desc')}
-        </CardDescription>
-        <CardAction>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-8"
-            onClick={feed.togglePaused}
-            aria-pressed={feed.paused}
-            aria-label={pauseLabel}
-            title={pauseLabel}
-            disabled={feed.events === null}
-          >
-            {feed.paused ? <PlayIcon /> : <PauseIcon />}
-          </Button>
-        </CardAction>
+        <BlockHeader
+          icon={<ActivityIcon />}
+          title={translate('dashboard.activity.title')}
+          caption={translate('dashboard.activity.desc')}
+          actions={
+            <>
+              {feed.paused ? (
+                <ToneTag dot>{translate('dashboard.activity.paused')}</ToneTag>
+              ) : feed.events !== null && !feed.error ? (
+                <ToneTag tone="success" dot pulse>
+                  {translate('dashboard.activity.live')}
+                </ToneTag>
+              ) : null}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8"
+                onClick={feed.togglePaused}
+                aria-pressed={feed.paused}
+                aria-label={pauseLabel}
+                title={pauseLabel}
+                disabled={feed.events === null}
+              >
+                {feed.paused ? <PlayIcon /> : <PauseIcon />}
+              </Button>
+            </>
+          }
+        />
       </CardHeader>
       <div aria-live="polite" className="sr-only">
         {feed.announced
@@ -153,27 +179,25 @@ export function LiveActivity({ className }: { className?: string }) {
             ))}
           </div>
         ) : feed.error ? (
-          <Empty className="border border-dashed">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <TriangleAlertIcon />
-              </EmptyMedia>
-              <EmptyTitle>{translate('dashboard.activity.error')}</EmptyTitle>
-            </EmptyHeader>
-            <Button variant="outline" size="sm" onClick={feed.retry}>
-              {translate('dashboard.retry')}
-            </Button>
-          </Empty>
+          <GhostEmpty
+            icon={<TriangleAlertIcon />}
+            title={translate('dashboard.activity.error')}
+            action={
+              <Button variant="outline" size="sm" onClick={feed.retry}>
+                {translate('dashboard.retry')}
+              </Button>
+            }
+          >
+            <GhostRows rows={4} />
+          </GhostEmpty>
         ) : feed.events && feed.events.length === 0 ? (
-          <Empty className="border border-dashed">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <ActivityIcon />
-              </EmptyMedia>
-              <EmptyTitle>{translate('dashboard.activity.empty')}</EmptyTitle>
-              <EmptyDescription>{translate('dashboard.activity.emptyDesc')}</EmptyDescription>
-            </EmptyHeader>
-          </Empty>
+          <GhostEmpty
+            icon={<ActivityIcon />}
+            title={translate('dashboard.activity.empty')}
+            description={translate('dashboard.activity.emptyDesc')}
+          >
+            <GhostRows rows={4} />
+          </GhostEmpty>
         ) : (
           <ol className="relative flex flex-col gap-3">
             <AnimatePresence mode="popLayout" initial={false}>

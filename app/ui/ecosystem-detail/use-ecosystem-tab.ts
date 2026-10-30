@@ -3,7 +3,7 @@
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect } from 'react'
 
-export const ECOSYSTEM_TABS = ['overview', 'governance', 'schemas', 'activity', 'json'] as const
+export const ECOSYSTEM_TABS = ['overview', 'governance', 'schemas', 'participants', 'activity', 'json'] as const
 
 export type EcosystemTab = (typeof ECOSYSTEM_TABS)[number]
 

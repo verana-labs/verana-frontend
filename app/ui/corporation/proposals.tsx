@@ -15,13 +15,13 @@ import { translate } from '@/i18n/dataview'
 import { formatDecisionRule } from '@/lib/decision-policy'
 import { cn } from '@/lib/utils'
 import type { VoteChoice } from '@/msg/actions_hooks/actionCorporationManage'
+import { GhostEmpty } from '@/ui/common/ghost-empty'
+import { type Tone, ToneTag } from '@/ui/common/tone-tag'
 import { BlurFade } from '@/ui/motion/blur-fade'
 import { Stagger, StaggerItem } from '@/ui/motion/stagger'
 import { TabIndicator } from '@/ui/motion/tab-indicator'
 import { Avatar, AvatarFallback } from '@/ui/shadcn/avatar'
-import { Badge } from '@/ui/shadcn/badge'
 import { Button } from '@/ui/shadcn/button'
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from '@/ui/shadcn/empty'
 import { shortenMiddle } from '@/util/util'
 import { humanizeMsg } from './activity'
 import { CategoryBar } from './category-bar'
@@ -82,19 +82,19 @@ const TALLY_SEGMENTS: { key: keyof ProposalTally; className: string; dot: string
   { key: 'abstain', className: 'bg-muted-foreground/45', dot: 'bg-muted-foreground/45' },
 ]
 
-const VOTE_OPTIONS: Record<string, { key: keyof ProposalTally; tone: string }> = {
-  YES: { key: 'yes', tone: 'border-success/25 bg-success/10 text-success' },
-  NO: { key: 'no', tone: 'border-destructive/25 bg-destructive/10 text-destructive' },
-  NO_WITH_VETO: { key: 'veto', tone: 'border-destructive/25 bg-destructive/10 text-destructive' },
-  ABSTAIN: { key: 'abstain', tone: 'border-border bg-muted text-muted-foreground' },
+const VOTE_OPTIONS: Record<string, { key: keyof ProposalTally; tone: Tone }> = {
+  YES: { key: 'yes', tone: 'success' },
+  NO: { key: 'no', tone: 'destructive' },
+  NO_WITH_VETO: { key: 'veto', tone: 'destructive' },
+  ABSTAIN: { key: 'abstain', tone: 'neutral' },
 }
 
 function VoteBadge({ option }: { option: string }) {
   const known = VOTE_OPTIONS[option.replace(/^VOTE_OPTION_/, '')]
   return (
-    <Badge variant="outline" className={cn('ms-auto', known?.tone ?? 'bg-muted font-mono text-[10px]')}>
+    <ToneTag tone={known?.tone ?? 'neutral'} dot={Boolean(known)} className={cn('ms-auto', !known && 'font-mono')}>
       {known ? translate(`corporation.proposals.option.${known.key}`) : option}
-    </Badge>
+    </ToneTag>
   )
 }
 
@@ -181,7 +181,7 @@ export function TallyBar({ tally, scale }: { tally: ProposalTally; scale: TallyS
   )
 }
 
-function hasEnded(votingPeriodEnd: string | null): boolean {
+export function hasEnded(votingPeriodEnd: string | null): boolean {
   if (!votingPeriodEnd) return false
   const end = Date.parse(votingPeriodEnd)
   return Number.isFinite(end) && end <= Date.now()
@@ -191,7 +191,7 @@ function proposerList(proposal: ProposalRow): string {
   return proposal.proposers.map((proposer) => shortenMiddle(proposer, 16)).join(', ')
 }
 
-function messageTitle(proposal: ProposalRow): string | null {
+export function messageTitle(proposal: ProposalRow): string | null {
   const type = proposal.messages[0]?.['@type']
   if (typeof type !== 'string') return null
   const name = humanizeMsg(type.split('.').pop() ?? type)
@@ -205,17 +205,8 @@ function executorLabel(result: string): string {
 }
 
 function ExecutorBadge({ result }: { result: string }) {
-  const tone =
-    result === 'SUCCESS'
-      ? 'border-success/25 bg-success/10 text-success'
-      : result === 'FAILURE'
-        ? 'border-destructive/25 bg-destructive/10 text-destructive'
-        : 'border-border bg-muted text-muted-foreground'
-  return (
-    <Badge variant="outline" className={tone}>
-      {executorLabel(result)}
-    </Badge>
-  )
+  const tone: Tone = result === 'SUCCESS' ? 'success' : result === 'FAILURE' ? 'destructive' : 'neutral'
+  return <ToneTag tone={tone}>{executorLabel(result)}</ToneTag>
 }
 
 type StageState = 'done' | 'pending' | 'skipped'
@@ -259,7 +250,7 @@ function Lifecycle({ proposal }: { proposal: ProposalRow }) {
     },
   ]
   return (
-    <Timeline className="h-fit rounded-lg bg-muted/40 p-4 ring-1 ring-border/60">
+    <Timeline className="h-fit rounded-lg bg-tint-neutral p-4">
       {stages.map((stage) => (
         <TimelineItem key={stage.key} done={stage.state === 'done'}>
           <TimelineIndicator
@@ -407,8 +398,8 @@ function ProposalCard({ proposal, ctx }: { proposal: ProposalRow; ctx: ProposalC
   return (
     <article
       className={cn(
-        'rounded-xl bg-card ring-1 ring-border transition-shadow duration-(--duration-base) ease-standard hover:ring-primary/25',
-        open && 'shadow-raised ring-primary/25'
+        'rounded-xl bg-card shadow-hairline transition-shadow duration-(--duration-base) ease-standard hover:shadow-card',
+        open && 'shadow-raised ring-1 ring-primary/25'
       )}
     >
       <div className="relative flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 pt-4 pb-3">
@@ -449,6 +440,32 @@ function ProposalCard({ proposal, ctx }: { proposal: ProposalRow; ctx: ProposalC
   )
 }
 
+const GHOST_TALLIES = [
+  { id: 'ghost-a', yes: 62, no: 18 },
+  { id: 'ghost-b', yes: 34, no: 40 },
+  { id: 'ghost-c', yes: 80, no: 6 },
+]
+
+function GhostProposals() {
+  return (
+    <div className="flex w-full flex-col justify-center gap-3">
+      {GHOST_TALLIES.map((row) => (
+        <div key={row.id} className="space-y-2.5 rounded-xl p-4 shadow-hairline">
+          <div className="flex items-center gap-3">
+            <span className="h-3 w-8 rounded bg-muted-foreground/40" />
+            <span className="h-3 w-40 rounded bg-foreground/40" />
+            <span className="h-4 w-16 rounded-md bg-tint-info" />
+          </div>
+          <div className="flex h-2 overflow-hidden rounded-full bg-track">
+            <span className="h-full bg-success" style={{ width: `${row.yes}%` }} />
+            <span className="h-full border-s-2 border-card bg-destructive" style={{ width: `${row.no}%` }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function ProposalsSection({
   proposals,
   ctx,
@@ -485,7 +502,7 @@ export function ProposalsSection({
       />
       {composing ? <BlurFade className="mb-6">{composer}</BlurFade> : null}
       {partial ? <PartialNote filtered /> : null}
-      <div className="mb-5 flex w-fit max-w-full flex-nowrap gap-1 overflow-x-auto rounded-lg bg-muted p-1 [scrollbar-width:none]">
+      <div className="mb-5 flex w-fit max-w-full flex-nowrap gap-1 overflow-x-auto rounded-lg bg-tint-neutral p-1 [scrollbar-width:none]">
         {FILTERS.map((entry) => {
           const count = entry === 'all' ? proposals.length : proposals.filter((p) => p.status === entry).length
           const active = filter === entry
@@ -502,7 +519,14 @@ export function ProposalsSection({
             >
               {active ? <TabIndicator layoutId="corporation-proposal-filter" /> : null}
               {translate(FILTER_KEYS[entry])}
-              <span className="text-muted-foreground tabular-nums">{atLeast(count, partial)}</span>
+              <span
+                className={cn(
+                  'inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1 text-[11px] leading-none tabular-nums',
+                  active ? 'bg-tint-accent text-primary' : 'text-muted-foreground'
+                )}
+              >
+                {atLeast(count, partial)}
+              </span>
             </button>
           )
         })}
@@ -510,14 +534,13 @@ export function ProposalsSection({
       {degraded ? (
         <SectionUnavailable />
       ) : visible.length === 0 ? (
-        <Empty className="border border-dashed border-border py-10">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <VoteIcon />
-            </EmptyMedia>
-            <EmptyDescription>{translate('corporation.page.proposals.empty')}</EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        <GhostEmpty
+          icon={<VoteIcon />}
+          title={translate('corporation.page.proposals.empty')}
+          className="rounded-xl border border-dashed border-border p-4"
+        >
+          <GhostProposals />
+        </GhostEmpty>
       ) : (
         <Stagger key={filter} className="space-y-3">
           {visible.map((proposal) => (

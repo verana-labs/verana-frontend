@@ -27,6 +27,10 @@ export type NetworkPoint = {
   participantsDelta: number
 }
 
+export type PeriodTotals = { issued: number; verified: number; participants: number }
+
+export type NetworkSeries = { points: NetworkPoint[]; previous: PeriodTotals }
+
 export type SchemaSummary = {
   id: number
   ecosystem_id: number
@@ -88,7 +92,7 @@ function useRemote<T>(url: string | undefined, parse: (json: unknown) => T): Rem
 
 function parseSchemas(json: unknown): SchemaSummary[] {
   const list = isRecord(json) && Array.isArray(json.schemas) ? json.schemas : []
-  return list.filter(isRecord).map((schema) => ({
+  const schemas = list.filter(isRecord).map((schema) => ({
     id: count(schema.id),
     ecosystem_id: count(schema.ecosystem_id),
     title: typeof schema.title === 'string' ? schema.title : '',
@@ -98,6 +102,7 @@ function parseSchemas(json: unknown): SchemaSummary[] {
     verified: count(schema.verified),
     issuer_onboarding_mode: typeof schema.issuer_onboarding_mode === 'string' ? schema.issuer_onboarding_mode : '',
   }))
+  return [...new Map(schemas.map((schema) => [schema.id, schema])).values()]
 }
 
 const HOUR_MS = 3_600_000
@@ -129,10 +134,43 @@ export function fillBuckets(json: unknown, { from, until, step }: SeriesWindow):
   return points
 }
 
+function totals(points: NetworkPoint[]): PeriodTotals {
+  return points.reduce(
+    (sum, p) => ({
+      issued: sum.issued + p.issuedDelta,
+      verified: sum.verified + p.verifiedDelta,
+      participants: sum.participants + p.participantsDelta,
+    }),
+    { issued: 0, verified: 0, participants: 0 }
+  )
+}
+
+function withPreviousPeriod({ from, until, step }: SeriesWindow): SeriesWindow {
+  const buckets = Math.ceil((until - from) / step)
+  return { from: from - buckets * step, until, step }
+}
+
+function splitPeriods(json: unknown, window: SeriesWindow, now: number): NetworkSeries {
+  const all = fillBuckets(json, withPreviousPeriod(window))
+  const half = Math.floor(all.length / 2)
+  const points = all.slice(half)
+  const earlier = all.slice(0, half)
+  const lastStart = Date.parse(points.at(-1)?.timestamp ?? '')
+  const elapsed = Number.isFinite(lastStart) ? Math.min(1, Math.max(0, (now - lastStart) / window.step)) : 1
+  const full = totals(earlier)
+  const unmatched = totals(earlier.slice(-1))
+  const previous: PeriodTotals = {
+    issued: full.issued - unmatched.issued * (1 - elapsed),
+    verified: full.verified - unmatched.verified * (1 - elapsed),
+    participants: full.participants - unmatched.participants * (1 - elapsed),
+  }
+  return { points, previous }
+}
+
 export function useLatestSchemas(limit = 12): Remote<SchemaSummary[]> {
   return useRemote(
     VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA
-      ? `${VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA}/list?response_max_size=${limit}`
+      ? `${VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA}/list?limit=${limit}`
       : undefined,
     parseSchemas
   )
@@ -149,7 +187,7 @@ export function useTopEcosystems(): Remote<EcosystemListItem[]> & { loading: boo
   )
 }
 
-export function useNetworkSeries(range: Range): Remote<NetworkPoint[]> & { loading: boolean } {
+export function useNetworkSeries(range: Range): Remote<NetworkSeries> & { loading: boolean } {
   const hour = Math.ceil(Date.now() / HOUR_MS)
   const { url, parse } = useMemo(() => {
     const window = seriesWindow(range, hour * HOUR_MS)
@@ -157,13 +195,13 @@ export function useNetworkSeries(range: Range): Remote<NetworkPoint[]> & { loadi
     const params = new URLSearchParams({
       entity_type: 'GLOBAL',
       granularity,
-      timestamp_from: new Date(window.from).toISOString(),
+      timestamp_from: new Date(withPreviousPeriod(window).from).toISOString(),
       timestamp_until: new Date(window.until).toISOString(),
       result_type: 'BUCKETS',
     })
     return {
       url: VERANA_REST_ENDPOINT_STATS ? `${VERANA_REST_ENDPOINT_STATS}/stats?${params}` : undefined,
-      parse: (json: unknown) => fillBuckets(json, window),
+      parse: (json: unknown) => splitPeriods(json, window, Date.now()),
     }
   }, [range, hour])
   return useRemote(url, parse)

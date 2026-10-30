@@ -10,13 +10,14 @@ import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import { cn } from '@/lib/utils'
+import { BlockHeader, BlockLinkButton } from '@/ui/common/block-card'
 import { CorporationDiscoveryFailure } from '@/ui/common/corporation-discovery-failure'
 import { CorporationMembershipRow } from '@/ui/common/corporation-membership-row'
+import { ToneTag } from '@/ui/common/tone-tag'
 import { Shimmer } from '@/ui/motion/shimmer'
 import { Stagger, StaggerItem } from '@/ui/motion/stagger'
-import { Badge } from '@/ui/shadcn/badge'
 import { Button } from '@/ui/shadcn/button'
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/shadcn/card'
+import { Card, CardContent, CardHeader } from '@/ui/shadcn/card'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/shadcn/empty'
 
 export function AccountCorporations() {
@@ -41,20 +42,28 @@ export function AccountCorporations() {
       className="shadow-card [--card-spacing:--spacing(5)] sm:[--card-spacing:--spacing(6)]"
     >
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-          <h2 id={headingId}>{translate('account.corporations.title')}</h2>
-          {memberships.length > 0 ? (
-            <Badge variant="secondary" className="tabular-nums">
-              {memberships.length}
-            </Badge>
-          ) : null}
-        </CardTitle>
-        <CardDescription>{translate('account.corporations.notice')}</CardDescription>
-        {showEmpty ? null : (
-          <CardAction className="self-center">
-            <OpenCorporationLink />
-          </CardAction>
-        )}
+        <BlockHeader
+          id={headingId}
+          icon={<Building2Icon />}
+          title={translate('account.corporations.title')}
+          caption={translate('account.corporations.notice')}
+          tag={
+            memberships.length > 0 ? (
+              <ToneTag tone="accent" className="tabular-nums">
+                {memberships.length}
+              </ToneTag>
+            ) : null
+          }
+          actions={
+            showEmpty ? null : (
+              <BlockLinkButton
+                href="/corporation"
+                label={translate('account.corporations.notice.link')}
+                className="text-primary hover:text-primary/80"
+              />
+            )
+          }
+        />
       </CardHeader>
       <CardContent>
         <CorporationDiscoveryFailure />
@@ -67,7 +76,7 @@ export function AccountCorporations() {
         {showEmpty ? (
           <Empty className="gap-4 border border-dashed border-border py-8">
             <EmptyHeader>
-              <EmptyMedia variant="icon">
+              <EmptyMedia variant="icon" className="bg-tint-accent text-primary">
                 <Building2Icon aria-hidden="true" />
               </EmptyMedia>
               <EmptyTitle>{translate('account.corporations.empty.title')}</EmptyTitle>
@@ -84,7 +93,7 @@ export function AccountCorporations() {
           </Empty>
         ) : null}
         {memberships.length > 0 ? (
-          <Stagger as="ul" className="overflow-hidden rounded-lg ring-1 ring-border divide-y divide-border">
+          <Stagger as="ul" className="divide-y divide-border overflow-hidden rounded-lg shadow-hairline">
             {memberships.map((membership) => {
               const isActing = actingCorporation?.corporation.id === membership.corporation.id
               return (
@@ -120,20 +129,5 @@ export function AccountCorporations() {
         ) : null}
       </CardContent>
     </Card>
-  )
-}
-
-function OpenCorporationLink() {
-  return (
-    <Link
-      href="/corporation"
-      className="group/link inline-flex items-center gap-1 rounded-sm text-sm font-medium whitespace-nowrap text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring"
-    >
-      {translate('account.corporations.notice.link')}
-      <ArrowRightIcon
-        aria-hidden="true"
-        className="size-3.5 transition-transform duration-(--duration-base) ease-emphasized group-hover/link:translate-x-0.5 rtl:rotate-180"
-      />
-    </Link>
   )
 }
