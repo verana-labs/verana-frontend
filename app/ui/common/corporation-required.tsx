@@ -56,7 +56,7 @@ export function CorporationRequired({ title, description, failed, className }: C
               </Button>
             ) : (
               <Button asChild size="lg">
-                <Link href="/corporation?create=1">
+                <Link href="/corporation/new">
                   <PlusIcon aria-hidden="true" />
                   {translate('corporation.selector.create')}
                 </Link>

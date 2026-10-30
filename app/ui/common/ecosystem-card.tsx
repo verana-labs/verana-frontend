@@ -1,17 +1,18 @@
 'use client'
 
-import { ArchiveIcon, ArrowUpRightIcon } from 'lucide-react'
+import { ArrowUpRightIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { type DidEnrichment, serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import { trustStateBadge } from '@/lib/trust-state'
 import { cn } from '@/lib/utils'
 import ClaimText from '@/ui/common/claim-text'
 import LogoImage from '@/ui/common/logo-image'
+import { ToneTag } from '@/ui/common/tone-tag'
 import TrustBadge from '@/ui/common/trust-badge'
+import { DotPattern } from '@/ui/dashboard/dot-pattern'
 import { type EcosystemCardData, ecosystemHref, useEcosystemIdentity } from '@/ui/ecosystems/ecosystem-identity'
 import { statLabel, tr } from '@/ui/ecosystems/i18n'
 import { interactiveCard } from '@/ui/motion/interaction'
-import { Badge } from '@/ui/shadcn/badge'
 import { formatNumber, formatVNAFromUVNA, roleBadgeClass, shortenMiddle } from '@/util/util'
 
 export const CARD_BODY_CLASS = 'grid h-full min-h-[20.25rem] grid-rows-[5rem_3.25rem_1.5rem_1fr] gap-3 p-4 sm:p-6'
@@ -22,11 +23,12 @@ const ROLE_PILL_CLASS =
 type Props = {
   ecosystem: EcosystemCardData
   enrichment?: DidEnrichment
+  owned?: boolean
 }
 
 type EcosystemIdentity = ReturnType<typeof useEcosystemIdentity>
 
-export default function EcosystemCard({ ecosystem, enrichment }: Props) {
+export default function EcosystemCard({ ecosystem, enrichment, owned = false }: Props) {
   const router = useRouter()
   const eco = useEcosystemIdentity(ecosystem, enrichment)
   const visibleRoles = eco.roles.slice(0, 2)
@@ -49,18 +51,23 @@ export default function EcosystemCard({ ecosystem, enrichment }: Props) {
       }}
       data-archived={eco.archived || undefined}
       className={cn(
-        'flex h-full cursor-pointer flex-col overflow-hidden rounded-xl bg-card text-card-foreground shadow-card',
+        'group/eco relative isolate flex h-full cursor-pointer flex-col overflow-hidden rounded-xl bg-card text-card-foreground shadow-card',
         interactiveCard,
         eco.archived && 'bg-muted/40 dark:bg-muted/30'
       )}
     >
+      <DotPattern
+        width={16}
+        height={16}
+        className="-z-10 text-primary/20 transition-opacity duration-(--duration-slow) ease-standard [mask-image:radial-gradient(180px_circle_at_top_right,white,transparent)] opacity-70 group-hover/eco:opacity-100 motion-reduce:transition-none"
+      />
       <div className="flex flex-col gap-3.5 p-5">
         <div className="flex min-w-0 items-start gap-3.5">
           <LogoImage
             src={eco.identity?.serviceLogoUrl}
             fallbackSrc={serviceIdenticonUrl(ecosystem.did)}
             className={cn(
-              'size-12 shrink-0 rounded-lg bg-background object-contain ring-1 ring-border',
+              'size-12 shrink-0 rounded-xl bg-background object-contain shadow-xs ring-1 ring-border',
               eco.archived && 'grayscale'
             )}
           />
@@ -94,14 +101,10 @@ export default function EcosystemCard({ ecosystem, enrichment }: Props) {
           </p>
         )}
 
-        {eco.roles.length > 0 || eco.archived ? (
+        {eco.roles.length > 0 || eco.archived || owned ? (
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            {eco.archived ? (
-              <Badge variant="outline" className="text-muted-foreground">
-                <ArchiveIcon data-icon="inline-start" aria-hidden="true" />
-                {tr('ecosystems.card.archived', 'Archived')}
-              </Badge>
-            ) : null}
+            {owned ? <ToneTag tone="accent">{tr('ecosystems.owned', 'Owned')}</ToneTag> : null}
+            {eco.archived ? <ToneTag dot>{tr('ecosystems.card.archived', 'Archived')}</ToneTag> : null}
             {visibleRoles.map((role) => (
               <span key={role} className={cn(ROLE_PILL_CLASS, roleBadgeClass(role))} title={role}>
                 <span className="truncate">{role}</span>
@@ -146,7 +149,7 @@ export default function EcosystemCard({ ecosystem, enrichment }: Props) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="-mx-1.5 inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 font-medium text-primary transition-colors duration-(--duration-base) hover:bg-primary/10 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+            className="-mx-1.5 inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 font-medium text-primary transition-colors duration-(--duration-base) hover:bg-tint-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
           >
             {tr('datatable.ecosystem.card.egf', 'EGF')}
             <ArrowUpRightIcon className="size-3.5" aria-hidden="true" />
@@ -202,7 +205,7 @@ function Stat({ label, value }: { label: string; value: number }) {
       <dt className="truncate text-xs text-muted-foreground" title={label}>
         {label}
       </dt>
-      <dd className="mt-0.5 text-lg leading-6 font-semibold tracking-tight tabular-nums" title={formatted}>
+      <dd className="mt-0.5 text-lg leading-6 font-semibold tracking-[-0.025em] tabular-nums" title={formatted}>
         {formatted}
       </dd>
     </div>

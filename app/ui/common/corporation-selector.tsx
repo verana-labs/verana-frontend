@@ -113,7 +113,7 @@ export function CorporationSelector() {
           {translate('corporation.selector.refresh')}
         </DropdownMenuItem>
         <DropdownMenuItem asChild className="gap-2 rounded-lg p-2 font-medium">
-          <Link href="/corporation?create=1">
+          <Link href="/corporation/new">
             <span className="flex size-6 items-center justify-center rounded-md border border-border">
               <PlusIcon aria-hidden="true" className="size-3.5" />
             </span>

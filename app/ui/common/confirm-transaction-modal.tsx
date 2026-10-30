@@ -3,7 +3,7 @@
 import { toBase64 } from '@cosmjs/encoding'
 import type { EncodeObject } from '@cosmjs/proto-signing'
 import { useChain } from '@cosmos-kit/react'
-import { ChevronRightIcon, TriangleAlertIcon } from 'lucide-react'
+import { ChevronRightIcon, FileSignatureIcon, TriangleAlertIcon } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { LOW_BALANCE_WARN_UVNA, VERANA_FAUCET_URL } from '@/config/env'
 import { useAccountBalance } from '@/hooks/useAccountBalance'
@@ -29,6 +29,7 @@ import {
 import JsonCodeBlock from '@/ui/common/json-code-block'
 import { restoreModalFocus, trapTabKey } from '@/ui/common/modal-action'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
+import { DotPattern } from '@/ui/dashboard/dot-pattern'
 import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 import { Alert, AlertDescription } from '@/ui/shadcn/alert'
 import { Button } from '@/ui/shadcn/button'
@@ -39,7 +40,7 @@ import { shortenMiddle } from '@/util/util'
 const SETTLE_DELAY_MS = 400
 const BALANCE_WAIT_MS = 5_000
 const UVNA_PER_VNA = 1_000_000
-const DESTRUCTIVE_ALERT = 'border-destructive/30 bg-destructive/10 px-3 py-2.5 dark:bg-destructive/20'
+const DESTRUCTIVE_ALERT = 'rounded-lg border-destructive/25 bg-tint-destructive px-3 py-2.5'
 
 function t(key: string, values?: I18nValues): string {
   return resolveTranslatable({ key, values }, translate) ?? key
@@ -74,7 +75,7 @@ function rawMessages(msgs: readonly EncodeObject[]): string {
 function RawMessages({ msgs }: { msgs: readonly EncodeObject[] }) {
   const raw = useMemo(() => rawMessages(msgs), [msgs])
   return (
-    <div className="mt-2 max-h-64 overflow-auto rounded-md bg-muted text-xs dark:bg-foreground/5">
+    <div className="mt-2 max-h-64 overflow-auto rounded-lg bg-tint-neutral text-xs shadow-hairline">
       <JsonCodeBlock value={raw} />
     </div>
   )
@@ -82,9 +83,9 @@ function RawMessages({ msgs }: { msgs: readonly EncodeObject[] }) {
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-4 py-2">
-      <dt className="shrink-0 text-muted-foreground">{label}</dt>
-      <dd className="text-right font-medium text-foreground break-all">{children}</dd>
+    <div className="flex items-start justify-between gap-4 py-2.5">
+      <dt className="shrink-0 text-[13px] text-muted-foreground">{label}</dt>
+      <dd className="text-end font-medium text-foreground tabular-nums break-all">{children}</dd>
     </div>
   )
 }
@@ -153,7 +154,7 @@ function WarningBox({ severity, children }: { severity: TxSeverity | undefined; 
       variant={severity === 'notice' ? 'default' : 'destructive'}
       className={
         severity === 'notice'
-          ? 'border-warning/30 bg-warning/10 px-3 py-2.5 text-warning dark:bg-warning/20'
+          ? 'rounded-lg border-warning/25 bg-tint-warning px-3 py-2.5 text-warning'
           : DESTRUCTIVE_ALERT
       }
     >
@@ -261,7 +262,7 @@ export function ConfirmTransactionModal({
     <div className="fixed inset-0 z-50 overflow-y-auto overscroll-contain" onClick={onCancel}>
       <div
         aria-hidden="true"
-        className="fixed inset-0 bg-black/20 animate-in fade-in-0 duration-100 supports-backdrop-filter:backdrop-blur-xs dark:bg-black/50"
+        className="fixed inset-0 bg-black/25 animate-in fade-in-0 duration-(--duration-base) supports-backdrop-filter:backdrop-blur-sm motion-reduce:animate-none dark:bg-black/55"
       />
       <div className="relative flex min-h-full items-center justify-center p-4">
         <div
@@ -272,16 +273,32 @@ export function ConfirmTransactionModal({
           tabIndex={-1}
           onClick={(event) => event.stopPropagation()}
           onKeyDown={trapTabKey}
-          className="w-full max-w-lg rounded-xl bg-popover text-sm text-popover-foreground shadow-overlay ring-1 ring-foreground/10 outline-none animate-in fade-in-0 zoom-in-95 duration-100"
+          className="relative isolate w-full max-w-lg overflow-hidden rounded-2xl bg-popover text-sm text-popover-foreground shadow-overlay ring-1 ring-foreground/10 outline-none animate-in fade-in-0 zoom-in-[0.97] slide-in-from-bottom-2 duration-(--duration-slow) ease-standard motion-reduce:animate-none"
         >
+          <DotPattern
+            width={14}
+            height={14}
+            className="-z-10 text-primary/20 [mask-image:radial-gradient(220px_circle_at_top_right,white,transparent)] rtl:[mask-image:radial-gradient(220px_circle_at_top_left,white,transparent)]"
+          />
           <div className="space-y-4 p-4 sm:p-6">
-            <div className="space-y-1.5">
-              <h2 id="txconfirm-title" className="text-lg font-semibold leading-snug text-foreground">
-                {t(request.titleKey)}
-              </h2>
-              <p className="text-sm text-muted-foreground">{request.effect}</p>
+            <div className="flex items-start gap-3">
+              <span
+                aria-hidden="true"
+                className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary/70 text-primary-foreground shadow-hairline"
+              >
+                <FileSignatureIcon className="size-5" />
+              </span>
+              <div className="min-w-0 space-y-1">
+                <h2
+                  id="txconfirm-title"
+                  className="text-lg leading-snug font-semibold tracking-[-0.015em] text-foreground"
+                >
+                  {t(request.titleKey)}
+                </h2>
+                <p className="text-sm text-muted-foreground">{request.effect}</p>
+              </div>
             </div>
-            <dl className="divide-y divide-border rounded-md border border-border px-3">
+            <dl className="divide-y divide-border rounded-xl bg-card px-3.5 shadow-hairline">
               <Row label={t('txconfirm.executesas')}>
                 <span className="inline-flex items-center gap-2">
                   <SigningModeIcon mode={request.mode === 'account' ? null : request.mode} />
@@ -319,7 +336,7 @@ export function ConfirmTransactionModal({
               </div>
             ) : null}
             <div className="space-y-2">
-              <dl className="divide-y divide-border rounded-md bg-muted/60 px-3 dark:bg-foreground/5">
+              <dl className="divide-y divide-border/70 rounded-xl bg-tint-accent px-3.5">
                 <Row label={t('txconfirm.fee')}>
                   <FeeValue simulation={currentSimulation} />
                 </Row>
@@ -371,8 +388,8 @@ export function ConfirmTransactionModal({
             ) : null}
             <Collapsible>
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="group/raw -ml-2 text-muted-foreground">
-                  <ChevronRightIcon className="transition-transform duration-(--duration-base) group-data-[state=open]/raw:rotate-90" />
+                <Button variant="ghost" size="sm" className="group/raw -ms-2 text-muted-foreground">
+                  <ChevronRightIcon className="transition-transform duration-(--duration-base) ease-standard group-data-[state=open]/raw:rotate-90 rtl:rotate-180 rtl:group-data-[state=open]/raw:rotate-90" />
                   {t('txconfirm.raw')}
                 </Button>
               </CollapsibleTrigger>
@@ -381,7 +398,7 @@ export function ConfirmTransactionModal({
               </CollapsibleContent>
             </Collapsible>
           </div>
-          <div className="flex flex-col-reverse gap-2 rounded-b-xl border-t border-border bg-muted/50 px-4 py-3 sm:flex-row sm:justify-end sm:px-6">
+          <div className="flex flex-col-reverse gap-2 border-t border-border bg-muted/40 px-4 py-3 sm:flex-row sm:justify-end sm:px-6 dark:bg-foreground/[0.03]">
             <Button type="button" variant="outline" size="lg" className="btn-action-cancel px-4" onClick={onCancel}>
               {t('txconfirm.cancel')}
             </Button>

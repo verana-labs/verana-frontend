@@ -6,9 +6,10 @@ import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { serviceAvatarUrl } from '@/lib/resolverClient'
 import ClaimText from '@/ui/common/claim-text'
 import LogoImage from '@/ui/common/logo-image'
+import { ToneTag } from '@/ui/common/tone-tag'
 import TrustBadge from '@/ui/common/trust-badge'
+import { DotPattern } from '@/ui/dashboard/dot-pattern'
 import { CopyButton } from '@/ui/ecosystem-detail/copy-button'
-import { Badge } from '@/ui/shadcn/badge'
 import { shortenDID, shortenMiddle } from '@/util/util'
 
 export type EcosystemStatus = 'ARCHIVED'
@@ -18,9 +19,10 @@ export type EcosystemHeaderProps = {
   status?: EcosystemStatus
   meta?: ReactNode
   actions?: ReactNode
+  aside?: ReactNode
 }
 
-export default function EcosystemHeader({ did, status, meta, actions }: EcosystemHeaderProps) {
+export default function EcosystemHeader({ did, status, meta, actions, aside }: EcosystemHeaderProps) {
   const { data: enrichment } = useDidTrustEnrichment(did)
   const description = enrichment?.serviceDescription
   const minAgeRaw = enrichment?.serviceMinAge
@@ -30,10 +32,19 @@ export default function EcosystemHeader({ did, status, meta, actions }: Ecosyste
   const nameIsDid = displayName === did
 
   return (
-    <section className="mb-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-5">
+    <section className="relative isolate mb-4 overflow-hidden rounded-2xl bg-linear-to-br from-primary/10 via-card to-card p-5 shadow-card sm:mb-5 sm:p-6 dark:from-primary/15">
+      <DotPattern
+        width={16}
+        height={16}
+        className="-z-10 text-primary/25 [mask-image:radial-gradient(320px_circle_at_top_right,white,transparent)]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-28 -right-20 -z-10 size-72 rounded-full bg-primary/15 blur-3xl dark:bg-primary/20"
+      />
+      <div className="flex flex-col gap-5 md:flex-row md:items-start md:gap-6">
         <div className="flex min-w-0 flex-1 items-start gap-4 sm:gap-5">
-          <div className="size-14 shrink-0 overflow-hidden rounded-2xl bg-card p-1 shadow-card sm:size-20">
+          <div className="size-14 shrink-0 overflow-hidden rounded-2xl bg-card p-1 shadow-card ring-1 ring-primary/10 sm:size-20">
             <LogoImage
               src={enrichment?.serviceLogoUrl}
               fallbackSrc={serviceAvatarUrl(did)}
@@ -67,9 +78,9 @@ export default function EcosystemHeader({ did, status, meta, actions }: Ecosyste
                 {nameIsDid ? <CopyButton value={did} className="ml-1 align-middle" /> : null}
               </h1>
               {status === 'ARCHIVED' ? (
-                <Badge variant="destructive" className="h-6 px-2.5 tracking-wide">
+                <ToneTag tone="destructive" dot className="h-6 tracking-wide">
                   ARCHIVED
-                </Badge>
+                </ToneTag>
               ) : null}
             </div>
 
@@ -93,10 +104,12 @@ export default function EcosystemHeader({ did, status, meta, actions }: Ecosyste
             {showMinAge || meta ? (
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 {showMinAge ? (
-                  <Badge variant="outline" className="h-6 gap-1.5 px-2.5 text-foreground">
-                    <BabyIcon aria-hidden="true" className="text-muted-foreground" />
-                    {minAgeNum}+
-                  </Badge>
+                  <ToneTag className="h-6 text-foreground">
+                    <span className="inline-flex items-center gap-1.5">
+                      <BabyIcon aria-hidden="true" className="size-3.5 text-muted-foreground" />
+                      {minAgeNum}+
+                    </span>
+                  </ToneTag>
                 ) : null}
                 {meta}
               </div>
@@ -104,7 +117,12 @@ export default function EcosystemHeader({ did, status, meta, actions }: Ecosyste
           </div>
         </div>
 
-        {actions ? <div className="flex shrink-0 flex-wrap items-start gap-2 md:justify-end">{actions}</div> : null}
+        {actions || aside ? (
+          <div className="flex shrink-0 flex-col gap-4 md:items-end">
+            {actions ? <div className="flex flex-wrap items-start gap-2 md:justify-end">{actions}</div> : null}
+            {aside}
+          </div>
+        ) : null}
       </div>
     </section>
   )

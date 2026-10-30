@@ -294,6 +294,21 @@
   --shadow-raised: var(--elevation-raised);
   --shadow-overlay: var(--elevation-overlay);
   --shadow-focus: 0 0 0 3px color-mix(in oklab, var(--ring) 35%, transparent);
+  --shadow-hairline: var(--elevation-hairline);
+  --shadow-pop: var(--elevation-pop);
+  --shadow-segment: var(--elevation-segment);
+
+  --color-tint-accent: var(--tint-accent);
+  --color-tint-success: var(--tint-success);
+  --color-tint-warning: var(--tint-warning);
+  --color-tint-info: var(--tint-info);
+  --color-tint-destructive: var(--tint-destructive);
+  --color-tint-neutral: var(--tint-neutral);
+  --color-track: var(--track);
+  --color-tooltip: var(--tooltip);
+  --color-tooltip-foreground: var(--tooltip-foreground);
+  --color-tooltip-muted: var(--tooltip-muted);
+  --color-tooltip-border: var(--tooltip-border);
 }
 
 @layer base {
@@ -1036,7 +1051,7 @@
   }
 
   .lowBalanceLink {
-    @apply text-sm font-medium text-primary underline underline-offset-4 cursor-pointer break-all hover:decoration-2;
+    @apply text-sm font-medium text-primary underline underline-offset-4 cursor-pointer break-words hover:decoration-2;
   }
 }
 
@@ -1109,9 +1124,26 @@
   --elevation-raised: 0 0 0 1px rgb(0 0 0 / 0.04), 0 4px 8px rgb(0 0 0 / 0.06), 0 16px 32px rgb(0 0 0 / 0.08);
   --elevation-overlay: 0 0 0 1px rgb(0 0 0 / 0.05), 0 8px 16px rgb(0 0 0 / 0.08), 0 24px 48px rgb(0 0 0 / 0.14);
 
-  --duration-fast: 100ms;
-  --duration-base: 200ms;
-  --duration-slow: 300ms;
+  --elevation-hairline: 0 0 0 1px rgb(19 17 26 / 0.07), 0 1px 2px rgb(19 17 26 / 0.04);
+  --elevation-pop: 0 12px 12px rgb(14 18 27 / 0.06), 0 1px 1px rgb(14 18 27 / 0.03);
+  --elevation-segment: 0 1px 2px rgb(13 18 26 / 0.06), 0 4px 6px rgb(13 18 26 / 0.06);
+
+  --tint-accent: color-mix(in oklab, var(--primary-text) 10%, transparent);
+  --tint-success: color-mix(in oklab, var(--success) 12%, transparent);
+  --tint-warning: color-mix(in oklab, var(--warning) 14%, transparent);
+  --tint-info: color-mix(in oklab, var(--info) 10%, transparent);
+  --tint-destructive: color-mix(in oklab, var(--destructive) 10%, transparent);
+  --tint-neutral: color-mix(in oklab, var(--foreground) 6%, transparent);
+  --track: var(--neutral-200);
+
+  --tooltip: var(--neutral-900);
+  --tooltip-foreground: #ffffff;
+  --tooltip-muted: rgb(255 255 255 / 0.68);
+  --tooltip-border: transparent;
+
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 240ms;
 
   --header-height: 3rem;
   --tab-bar-height: calc(4.5rem + env(safe-area-inset-bottom));
@@ -1159,6 +1191,22 @@
   --elevation-card: 0 0 0 1px rgb(255 255 255 / 0.1);
   --elevation-raised: 0 0 0 1px rgb(255 255 255 / 0.1), 0 8px 24px rgb(0 0 0 / 0.5);
   --elevation-overlay: 0 0 0 1px rgb(255 255 255 / 0.12), 0 24px 48px rgb(0 0 0 / 0.6);
+  --elevation-hairline: 0 0 0 1px rgb(255 255 255 / 0.08);
+  --elevation-pop: 0 12px 24px rgb(0 0 0 / 0.55), 0 1px 1px rgb(0 0 0 / 0.3);
+  --elevation-segment: 0 0 0 1px rgb(255 255 255 / 0.08), 0 1px 2px rgb(0 0 0 / 0.3);
+
+  --tint-accent: color-mix(in oklab, var(--primary-text) 18%, transparent);
+  --tint-success: color-mix(in oklab, var(--success) 18%, transparent);
+  --tint-warning: color-mix(in oklab, var(--warning) 18%, transparent);
+  --tint-info: color-mix(in oklab, var(--info) 18%, transparent);
+  --tint-destructive: color-mix(in oklab, var(--destructive) 18%, transparent);
+  --tint-neutral: rgb(255 255 255 / 0.08);
+  --track: var(--neutral-700);
+
+  --tooltip: var(--neutral-800);
+  --tooltip-foreground: var(--neutral-50);
+  --tooltip-muted: rgb(255 255 255 / 0.62);
+  --tooltip-border: rgb(255 255 255 / 0.1);
 }
 
 ::view-transition-old(root),

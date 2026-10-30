@@ -1,7 +1,7 @@
 'use client'
 
 import { faPlus } from '@fortawesome/free-solid-svg-icons'
-import { Columns3Icon, EyeIcon, EyeOffIcon, ListCollapseIcon, ListTreeIcon, NetworkIcon } from 'lucide-react'
+import { Columns3Icon, ListCollapseIcon, ListTreeIcon, NetworkIcon, Rows3Icon } from 'lucide-react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useParticipant } from '@/hooks/useParticipant'
@@ -11,18 +11,19 @@ import type { SchemaPricing } from '@/lib/pricing-asset'
 import { cn } from '@/lib/utils'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { EntityActionButton } from '@/ui/common/capability-button'
-import { EmptyState } from '@/ui/common/empty-state'
 import { HolderWebsite } from '@/ui/common/holder-website'
 import JoinFlow from '@/ui/common/join-flow'
 import { ShowMoreButton } from '@/ui/common/keyset-pagination'
 import type { ParticipantRefreshState, TreeNode } from '@/ui/common/participant-tree-types'
 import { PricingNotice, unsupportedPricingReason } from '@/ui/common/pricing-notice'
+import { SegmentedControl } from '@/ui/common/segmented-control'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { BlurFade } from '@/ui/motion/blur-fade'
 import { DetailSheet } from '@/ui/participants/detail-sheet'
 import { ParticipantTreeView } from '@/ui/participants/participant-tree-view'
 import { SchemaHero, SchemaHeroSkeleton, type SchemaStatus } from '@/ui/participants/schema-hero'
+import { HiddenByFilters } from '@/ui/participants/tree-states'
 import { useMobileQuery } from '@/ui/participants/use-mobile-query'
 import { useScrollFade } from '@/ui/participants/use-scroll-fade'
 import { Badge } from '@/ui/shadcn/badge'
@@ -41,9 +42,23 @@ import { participantAuthority, roleColorClass } from '@/util/util'
 import { renderActionComponent } from './data-view-typed'
 import { ModalAction } from './modal-action'
 import ParticipantCard, { ParticipantCardPlaceholder, participantCardTitle } from './participant-card'
-import { collectParticipantTrust, countParticipants, filterParticipantTree } from './participant-tree-filter'
+import {
+  collectParticipantTrust,
+  countParticipants,
+  filterParticipantTree,
+  type ParticipantTreeFilterOptions,
+} from './participant-tree-filter'
 
 export const ROOT_NODE_ID = 'root'
+
+export type ParticipantView = 'tree' | 'table'
+
+export type ParticipantTableSlot = {
+  selectedId?: string
+  onSelect: (id: string) => void
+  filters: ParticipantTreeFilterOptions
+  onShowAll: () => void
+}
 
 const SIDE_BY_SIDE_MIN_WIDTH = 1040
 
@@ -69,6 +84,10 @@ type ParticipantTreeProps = {
   onConnect?: () => void
   onRetryFetch?: () => void
   placeholder?: ReactNode
+  embedded?: boolean
+  view?: ParticipantView
+  onViewChange?: (view: ParticipantView) => void
+  renderTable?: (slot: ParticipantTableSlot) => ReactNode
 }
 
 function findNodeAndPath(nodes: TreeNode[], id: string): { node?: TreeNode; path: TreeNode[] } {
@@ -191,6 +210,10 @@ export default function ParticipantTree({
   onConnect,
   onRetryFetch,
   placeholder,
+  embedded = false,
+  view = 'tree',
+  onViewChange,
+  renderTable,
 }: ParticipantTreeProps) {
   const [showUnresolvable, setShowUnresolvable] = useState(false)
   const [showDisabled, setShowDisabled] = useState(false)
@@ -284,7 +307,10 @@ export default function ParticipantTree({
   const detailNode = selection.node ?? linkedNode
   const allHidden = visibleTree.length === 0 && hiddenCount > 0
   const sideBySide =
-    measured && !isMobile && layoutWidth >= SIDE_BY_SIDE_MIN_WIDTH && (Boolean(detailNode) || visibleTree.length > 0)
+    measured &&
+    !isMobile &&
+    layoutWidth >= SIDE_BY_SIDE_MIN_WIDTH &&
+    (Boolean(detailNode) || (view === 'tree' && visibleTree.length > 0))
   const detailFade = useScrollFade<HTMLDivElement>(sideBySide)
   const requestedLinkedId = useRef<string>(undefined)
 
@@ -404,10 +430,11 @@ export default function ParticipantTree({
     ['stats', showStats, setShowStats],
   ]
   const activeColumns = columns.filter(([, checked]) => checked).length
+  const tableView = type === 'participants' && view === 'table' && renderTable !== undefined
 
   return (
     <>
-      {type === 'participants' ? (
+      {type === 'participants' && !embedded ? (
         schemaTitle && schemaId ? (
           <SchemaHero
             compact
@@ -425,7 +452,7 @@ export default function ParticipantTree({
           <SchemaHeroSkeleton />
         ) : null
       ) : null}
-      {unsupportedPricing ? <PricingNotice schema={unsupportedPricing} className="mb-6" /> : null}
+      {unsupportedPricing && !embedded ? <PricingNotice schema={unsupportedPricing} className="mb-6" /> : null}
       {type === 'tasks' ? (
         <BlurFade className="mb-6">
           <section>
@@ -443,10 +470,15 @@ export default function ParticipantTree({
           <Card className="gap-0 py-0">
             <CardHeader className="py-4">
               <CardTitle>
-                <h2 className="flex items-center gap-2 text-base font-semibold">
-                  <NetworkIcon aria-hidden="true" className="size-4 text-muted-foreground" />
-                  {treeTitle}
-                  {visibleCount > 0 ? (
+                <h2 className="flex items-center gap-2.5 text-base font-semibold tracking-[-0.01em]">
+                  <span
+                    aria-hidden="true"
+                    className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-tint-accent text-primary"
+                  >
+                    {tableView ? <Rows3Icon className="size-4" /> : <NetworkIcon className="size-4" />}
+                  </span>
+                  {tableView ? tr('participants.title', 'Participants') : treeTitle}
+                  {visibleCount > 0 && !tableView ? (
                     <Badge variant="secondary" className="tabular-nums">
                       {visibleCount}
                       {moreNodeIds?.size ? '+' : ''}
@@ -455,7 +487,27 @@ export default function ParticipantTree({
                 </h2>
               </CardTitle>
               <CardAction className="flex items-center gap-1">
-                {visibleTree.length > 0 ? (
+                {type === 'participants' && onViewChange && renderTable ? (
+                  <SegmentedControl
+                    label={tr('participants.view.label', 'View')}
+                    value={view}
+                    onValueChange={onViewChange}
+                    className="me-1"
+                    items={[
+                      {
+                        value: 'tree',
+                        label: <span className="max-sm:sr-only">{tr('participants.view.tree', 'Tree')}</span>,
+                        icon: <NetworkIcon aria-hidden="true" />,
+                      },
+                      {
+                        value: 'table',
+                        label: <span className="max-sm:sr-only">{tr('participants.view.table', 'Table')}</span>,
+                        icon: <Rows3Icon aria-hidden="true" />,
+                      },
+                    ]}
+                  />
+                ) : null}
+                {visibleTree.length > 0 && !tableView ? (
                   <>
                     <IconTooltipButton
                       label={tr('participants.tree.expandAll', 'Expand all')}
@@ -471,7 +523,7 @@ export default function ParticipantTree({
                     </IconTooltipButton>
                   </>
                 ) : null}
-                {type === 'participants' ? (
+                {type === 'participants' && !tableView ? (
                   <DropdownMenu>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -543,68 +595,54 @@ export default function ParticipantTree({
               <div className="border-t" />
             )}
 
-            <div className="px-2 py-3 sm:px-3">
-              {type === 'participants' && moreNodeIds?.size ? (
-                <p className="px-2 pb-2 text-xs text-muted-foreground">
-                  {resolveTranslatable({ key: 'pagination.loadedOnly' }, translate) ??
-                    'Sorting and filters apply to the loaded results only.'}
-                </p>
-              ) : null}
-              {allHidden ? (
-                <EmptyState
-                  outline={false}
-                  className="py-10"
-                  icon={<EyeOffIcon />}
-                  title={translate('participants.filters.hidden', { count: hiddenCount })}
-                  action={
-                    <Button size="sm" onClick={showAll} className="gap-1.5">
-                      <EyeIcon aria-hidden="true" />
-                      {translate('participants.filters.showall')}
-                    </Button>
-                  }
+            {tableView ? (
+              <div className="px-2 py-3 sm:px-3">
+                {renderTable({
+                  selectedId,
+                  onSelect: select,
+                  filters: { includeUnresolvable: showUnresolvable, includeDisabled: showDisabled },
+                  onShowAll: showAll,
+                })}
+              </div>
+            ) : (
+              <div className="px-2 py-3 sm:px-3">
+                {type === 'participants' && moreNodeIds?.size ? (
+                  <p className="px-2 pb-2 text-xs text-muted-foreground">
+                    {resolveTranslatable({ key: 'pagination.loadedOnly' }, translate) ??
+                      'Sorting and filters apply to the loaded results only.'}
+                  </p>
+                ) : null}
+                <HiddenByFilters count={hiddenCount} all={allHidden} onShowAll={showAll} />
+                {placeholder}
+                <ParticipantTreeView
+                  type={type}
+                  label={treeTitle}
+                  nodes={visibleTree}
+                  selectedId={selectedId}
+                  expandedIds={expandedIds}
+                  onExpandedChange={applyExpanded}
+                  showWeight={showWeight}
+                  showBusiness={showBusiness}
+                  showStats={showStats}
+                  onSelect={select}
+                  onToggle={toggle}
+                  onJoin={(node) => {
+                    setNodeRequestParams?.()
+                    setJoinNode(node)
+                  }}
+                  joinBlockedReason={joinBlockedReason}
+                  feePricing={unsupportedPricing}
+                  onConnect={onConnect}
+                  moreNodeIds={moreNodeIds}
+                  onLoadMore={loadMore}
                 />
-              ) : hiddenCount > 0 ? (
-                <p className="mx-1 mb-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-lg bg-muted/60 px-3 py-2 text-sm text-muted-foreground">
-                  <EyeOffIcon aria-hidden="true" className="size-4 shrink-0" />
-                  {translate('participants.filters.hidden', { count: hiddenCount })}{' '}
-                  <button
-                    type="button"
-                    onClick={showAll}
-                    className="rounded-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                  >
-                    {translate('participants.filters.showall')}
-                  </button>
-                </p>
-              ) : null}
-              {placeholder}
-              <ParticipantTreeView
-                type={type}
-                label={treeTitle}
-                nodes={visibleTree}
-                selectedId={selectedId}
-                expandedIds={expandedIds}
-                onExpandedChange={applyExpanded}
-                showWeight={showWeight}
-                showBusiness={showBusiness}
-                showStats={showStats}
-                onSelect={select}
-                onToggle={toggle}
-                onJoin={(node) => {
-                  setNodeRequestParams?.()
-                  setJoinNode(node)
-                }}
-                joinBlockedReason={joinBlockedReason}
-                feePricing={unsupportedPricing}
-                onConnect={onConnect}
-                moreNodeIds={moreNodeIds}
-                onLoadMore={loadMore}
-              />
-              {moreNodeIds?.has(ROOT_NODE_ID) && loadMore ? (
-                <div className="px-1 pt-1">
-                  <ShowMoreButton onClick={() => loadMore(ROOT_NODE_ID)} />
-                </div>
-              ) : null}
-            </div>
+                {moreNodeIds?.has(ROOT_NODE_ID) && loadMore ? (
+                  <div className="px-1 pt-1">
+                    <ShowMoreButton onClick={() => loadMore(ROOT_NODE_ID)} />
+                  </div>
+                ) : null}
+              </div>
+            )}
           </Card>
         </BlurFade>
 

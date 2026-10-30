@@ -20,7 +20,7 @@ import {
 import { Button } from '@/ui/shadcn/button'
 import { Kbd, KbdGroup } from '@/ui/shadcn/kbd'
 import { Separator } from '@/ui/shadcn/separator'
-import { SidebarTrigger } from '@/ui/shadcn/sidebar'
+import { SidebarTrigger, useSidebar } from '@/ui/shadcn/sidebar'
 import { ecosystemLabel, useCommandMenu, useModifierKeyLabel, useSearchableEntities } from '@/ui/shell/command-menu'
 import { useNavItems } from '@/ui/shell/nav-items'
 import { ThemeToggle } from '@/ui/shell/theme-toggle'
@@ -49,6 +49,11 @@ function useCrumbs(pathname: string | null): Crumb[] | null {
   const rootItem =
     navItems.find((item) => item.url === '/ecosystems') ?? navItems.find((item) => item.url === '/discover')
   const crumbs: Crumb[] = rootItem ? [{ label: rootItem.title, href: rootItem.url }] : []
+
+  if (id === 'add' && section !== 'participants') {
+    crumbs.push({ label: translate(section === 'ecosystems' ? 'datatable.ecosystem.add' : 'datatable.cs.add') })
+    return crumbs
+  }
 
   if (section === 'ecosystems') {
     const ecosystem = ecosystemsById.get(id)
@@ -145,6 +150,7 @@ export function SiteHeader({ title }: { title?: string }) {
   const pathname = usePathname()
   const crumbs = useCrumbs(pathname)
   const settingsLabel = translate('navbar.settings.title')
+  const { isMobile } = useSidebar()
 
   return (
     <header
@@ -171,9 +177,11 @@ export function SiteHeader({ title }: { title?: string }) {
         <div className="ml-auto flex shrink-0 items-center gap-1.5 lg:gap-2">
           <SearchButton />
           <NetworkChip />
-          <div className="contents max-sm:[&_[data-slot=dropdown-menu-trigger]>span:nth-of-type(2)]:sr-only max-sm:[&_[data-slot=dropdown-menu-trigger]>svg]:hidden">
-            <CorporationSelector />
-          </div>
+          {isMobile ? (
+            <div className="contents max-sm:[&_[data-slot=dropdown-menu-trigger]>span:nth-of-type(2)]:sr-only max-sm:[&_[data-slot=dropdown-menu-trigger]>svg]:hidden">
+              <CorporationSelector />
+            </div>
+          ) : null}
           <ThemeToggle />
           <Button asChild variant="ghost" size="icon" className="hidden md:inline-flex">
             <Link href="/settings" aria-label={settingsLabel} title={settingsLabel}>
