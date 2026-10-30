@@ -14,7 +14,7 @@ function WindowPreview({ dark, className }: { dark: boolean; className?: string 
   return (
     <div className={cn('flex h-full w-full gap-1.5 p-2', dark ? 'bg-neutral-950' : 'bg-neutral-100', className)}>
       <div className="flex w-1/4 flex-col gap-1 pt-1">
-        <span className="h-1.5 w-3/4 rounded-full bg-primary/80" />
+        <span className="h-1.5 w-3/4 rounded-full bg-linear-to-r from-primary to-primary/50" />
         <span className={cn('h-1.5 w-full rounded-full', line)} />
         <span className={cn('h-1.5 w-2/3 rounded-full', line)} />
       </div>
@@ -26,9 +26,13 @@ function WindowPreview({ dark, className }: { dark: boolean; className?: string 
       >
         <span className={cn('h-2 w-1/2 rounded-full', dark ? 'bg-white/70' : 'bg-neutral-900/80')} />
         <span className={cn('h-1.5 w-5/6 rounded-full', line)} />
-        <div className="mt-auto flex gap-1">
+        <div className="mt-auto flex items-end gap-1">
           <span className={cn('h-4 flex-1 rounded-sm', dark ? 'bg-white/10' : 'bg-neutral-900/5')} />
-          <span className={cn('h-4 flex-1 rounded-sm', dark ? 'bg-white/10' : 'bg-neutral-900/5')} />
+          <span className="flex h-4 flex-1 items-end gap-px rounded-sm bg-primary/15 px-0.5 pb-0.5">
+            <span className="h-1/3 flex-1 rounded-[1px] bg-primary/60" />
+            <span className="h-2/3 flex-1 rounded-[1px] bg-primary/80" />
+            <span className="h-full flex-1 rounded-[1px] bg-primary" />
+          </span>
         </div>
       </div>
     </div>
@@ -71,11 +75,11 @@ export function ThemeRadioCards({
               value={option}
               checked={checked}
               onChange={() => onChange(option)}
-              className="peer absolute inset-0 z-10 size-full cursor-pointer appearance-none rounded-lg opacity-0 outline-none"
+              className="peer absolute inset-0 z-10 size-full cursor-pointer appearance-none rounded-xl opacity-0 outline-none"
             />
             <span
               aria-hidden="true"
-              className="relative aspect-[4/3] overflow-hidden rounded-lg border border-input shadow-xs outline-offset-2 transition-[border-color,box-shadow] duration-(--duration-base) ease-standard group-hover:border-ring/60 peer-checked:border-primary peer-checked:shadow-[0_0_0_1px_var(--color-primary)] peer-focus-visible:outline-2 peer-focus-visible:outline-ring"
+              className="relative aspect-[4/3] overflow-hidden rounded-xl border border-input shadow-xs outline-offset-2 transition-[border-color,box-shadow,translate] duration-(--duration-base) ease-standard group-hover:-translate-y-px group-hover:border-ring/60 peer-checked:border-primary peer-checked:shadow-[0_0_0_1px_var(--color-primary),0_0_0_5px_var(--color-tint-accent)] motion-reduce:transition-none motion-reduce:group-hover:translate-y-0 peer-focus-visible:outline-2 peer-focus-visible:outline-ring"
             >
               <ThemePreview option={option} />
               <span className="absolute end-1.5 top-1.5 flex size-4 scale-0 items-center justify-center rounded-full bg-primary text-primary-foreground opacity-0 shadow-sm transition-[scale,opacity] duration-(--duration-base) ease-emphasized group-has-checked:scale-100 group-has-checked:opacity-100">

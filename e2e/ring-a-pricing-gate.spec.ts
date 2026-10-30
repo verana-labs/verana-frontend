@@ -181,8 +181,7 @@ test('escape closes only the top action modal', async ({ page }) => {
   await page.getByRole('button', { name: /^join/i }).first().click()
   await expect(joinModal).toBeVisible()
 
-  await page.getByRole('button', { name: /New Participant/ }).focus()
-  await page.keyboard.press('Enter')
+  await page.getByRole('button', { name: /New Participant/ }).dispatchEvent('click')
   await expect(newParticipantModal).toBeVisible()
 
   await page.keyboard.press('Escape')

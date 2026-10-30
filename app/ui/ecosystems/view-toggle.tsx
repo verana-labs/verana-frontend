@@ -2,8 +2,8 @@
 
 import { LayoutGridIcon, ListIcon } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
+import { SegmentedControl } from '@/ui/common/segmented-control'
 import { tr } from '@/ui/ecosystems/i18n'
-import { ToggleGroup, ToggleGroupItem } from '@/ui/shadcn/toggle-group'
 
 export type EcosystemsView = 'grid' | 'list'
 
@@ -35,23 +35,26 @@ export function useEcosystemsView(): [EcosystemsView, (view: EcosystemsView) => 
 
 export function ViewToggle({ value, onChange }: { value: EcosystemsView; onChange: (view: EcosystemsView) => void }) {
   return (
-    <ToggleGroup
-      type="single"
-      variant="outline"
-      spacing={0}
+    <SegmentedControl<EcosystemsView>
+      label={tr('ecosystems.view.label', 'View')}
       value={value}
-      onValueChange={(next) => {
-        if (isView(next)) onChange(next)
-      }}
-      aria-label={tr('ecosystems.view.label', 'View')}
-      className="bg-card shadow-xs dark:bg-input/30"
-    >
-      <ToggleGroupItem value="grid" aria-label={tr('ecosystems.view.grid', 'Grid view')} className="h-8 w-9">
-        <LayoutGridIcon aria-hidden="true" />
-      </ToggleGroupItem>
-      <ToggleGroupItem value="list" aria-label={tr('ecosystems.view.list', 'List view')} className="h-8 w-9">
-        <ListIcon aria-hidden="true" />
-      </ToggleGroupItem>
-    </ToggleGroup>
+      onValueChange={onChange}
+      size="md"
+      className="shadow-xs"
+      items={[
+        {
+          value: 'grid',
+          label: null,
+          ariaLabel: tr('ecosystems.view.grid', 'Grid view'),
+          icon: <LayoutGridIcon aria-hidden="true" />,
+        },
+        {
+          value: 'list',
+          label: null,
+          ariaLabel: tr('ecosystems.view.list', 'List view'),
+          icon: <ListIcon aria-hidden="true" />,
+        },
+      ]}
+    />
   )
 }

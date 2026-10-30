@@ -14,7 +14,7 @@ import GettingStarted from '@/ui/common/getting-started'
 import { type CountTile, CountTiles } from '@/ui/dashboard/count-tiles'
 import { DashboardHeader } from '@/ui/dashboard/dashboard-header'
 import { EcosystemsCard } from '@/ui/dashboard/ecosystems-card'
-import { formatCompact, formatCount } from '@/ui/dashboard/format'
+import { formatCompact, formatCount, periodDelta } from '@/ui/dashboard/format'
 import { LiveActivity } from '@/ui/dashboard/live-activity'
 import { NetworkActivityChart, rangeText } from '@/ui/dashboard/network-activity-chart'
 import { type Range, rolesOf, useLatestSchemas, useNetworkSeries, useTopEcosystems } from '@/ui/dashboard/network-data'
@@ -28,6 +28,10 @@ import { formatVNAFromUVNA } from '@/util/util'
 
 function vnaFromUvna(uvna: string): number {
   return Number(uvna) / 1_000_000
+}
+
+function formatVna(vna: number): string {
+  return formatCompact(vna, 2)
 }
 
 export default function Page() {
@@ -59,7 +63,8 @@ export default function Page() {
   const locked = stats.totalLockedTrustDeposit ?? null
   const lockedDisplay = locked === null ? null : formatVNAFromUVNA(locked)
   const rate = issued && verified !== null ? (verified / issued) * 100 : 0
-  const points = useMemo(() => series.data ?? [], [series.data])
+  const points = useMemo(() => series.data?.points ?? [], [series.data])
+  const previous = series.data?.previous ?? null
   const roles = useMemo(() => rolesOf(dashboardData?.roles), [dashboardData?.roles])
   const joined = points.reduce((sum, p) => sum + p.participantsDelta, 0)
 
@@ -103,7 +108,7 @@ export default function Page() {
       Icon: LockIcon,
       value: locked === null ? null : vnaFromUvna(locked),
       display: lockedDisplay,
-      format: formatCompact,
+      format: formatVna,
       href: isWalletConnected ? '/account' : undefined,
       cta: translate('dashboard.tiles.deposit.cta'),
       error: statsError,
@@ -132,6 +137,7 @@ export default function Page() {
             issued={issued}
             statsError={statsError}
             points={points}
+            previous={previous}
             loading={series.loading}
             error={series.error}
             onRetry={series.retry}
@@ -146,6 +152,11 @@ export default function Page() {
               onRetry={loadStats}
               total={stats.participants ?? null}
               joined={joined}
+              joinedDelta={
+                previous
+                  ? periodDelta(joined, previous.participants, translate(`dashboard.chart.vsPrevious.${range}`))
+                  : null
+              }
               period={rangeText(range)}
             />
             <WalletCard noCorporation={noCorporation} className="justify-center @5xl/page:justify-between" />
@@ -176,7 +187,13 @@ export default function Page() {
         />
       </section>
 
-      <SchemasCard schemas={schemas.data} error={schemas.error} onRetry={schemas.retry} ecosystems={ecosystems.data} />
+      <SchemasCard
+        schemas={schemas.data}
+        total={stats.schemas ?? null}
+        error={schemas.error}
+        onRetry={schemas.retry}
+        ecosystems={ecosystems.data}
+      />
 
       <DashboardFooter className="mt-4" />
     </div>

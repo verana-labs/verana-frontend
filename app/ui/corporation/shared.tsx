@@ -3,7 +3,9 @@
 import { InfoIcon, TriangleAlertIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { translate } from '@/i18n/dataview'
+import type { DecisionRule } from '@/lib/decision-policy'
 import { cn } from '@/lib/utils'
+import { type Tone, ToneTag } from '@/ui/common/tone-tag'
 import { Badge } from '@/ui/shadcn/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/shadcn/tooltip'
 
@@ -16,7 +18,11 @@ export function Card({ id, className, children }: { id?: string; className?: str
 }
 
 export function SectionTitle({ children, className }: { children: ReactNode; className?: string }) {
-  return <h2 className={cn('text-base font-semibold tracking-tight text-foreground', className)}>{children}</h2>
+  return (
+    <h2 className={cn('text-base leading-6 font-semibold tracking-[-0.01em] text-foreground', className)}>
+      {children}
+    </h2>
+  )
 }
 
 export function SectionHeader({
@@ -36,13 +42,16 @@ export function SectionHeader({
     <div className={cn('mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between', className)}>
       <div className="flex min-w-0 items-start gap-3">
         {icon ? (
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary [&_svg]:size-4.5">
+          <span
+            aria-hidden="true"
+            className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-tint-accent text-primary [&_svg]:size-4"
+          >
             {icon}
           </span>
         ) : null}
-        <div className="min-w-0 space-y-1">
+        <div className="min-w-0 space-y-0.5">
           <SectionTitle>{title}</SectionTitle>
-          {description ? <div className="text-sm text-muted-foreground">{description}</div> : null}
+          {description ? <div className="text-[13px] leading-5 text-muted-foreground">{description}</div> : null}
         </div>
       </div>
       {action ? <div className="flex shrink-0 flex-wrap items-center gap-2">{action}</div> : null}
@@ -52,7 +61,7 @@ export function SectionHeader({
 
 export function SectionUnavailable() {
   return (
-    <p className="flex items-start gap-2 rounded-lg border border-warning/25 bg-warning/10 px-3 py-2 text-sm text-warning">
+    <p className="flex items-start gap-2 rounded-lg bg-tint-warning px-3 py-2 text-sm text-warning">
       <TriangleAlertIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
       {translate('corporation.page.section.error')}
     </p>
@@ -102,12 +111,12 @@ export function formatRelative(value: string | null, now: number = Date.now()): 
   return translate(minutes >= 0 ? 'corporation.time.in' : 'corporation.time.ago', { value: unit })
 }
 
-export const STATUS_TONE: Record<string, { badge: string; dot: string }> = {
-  SUBMITTED: { badge: 'border-info/25 bg-info/10 text-info', dot: 'bg-info' },
-  ACCEPTED: { badge: 'border-success/25 bg-success/10 text-success', dot: 'bg-success' },
-  REJECTED: { badge: 'border-destructive/25 bg-destructive/10 text-destructive', dot: 'bg-destructive' },
-  ABORTED: { badge: 'border-warning/25 bg-warning/10 text-warning', dot: 'bg-warning' },
-  WITHDRAWN: { badge: 'border-border bg-muted text-muted-foreground', dot: 'bg-muted-foreground' },
+export const STATUS_TONE: Record<string, { tone: Tone; dot: string }> = {
+  SUBMITTED: { tone: 'info', dot: 'bg-info' },
+  ACCEPTED: { tone: 'success', dot: 'bg-success' },
+  REJECTED: { tone: 'destructive', dot: 'bg-destructive' },
+  ABORTED: { tone: 'warning', dot: 'bg-warning' },
+  WITHDRAWN: { tone: 'neutral', dot: 'bg-muted-foreground' },
 }
 
 const STATUS_KEYS: Record<string, string> = {
@@ -122,16 +131,14 @@ export function statusLabel(status: string): string {
   return STATUS_KEYS[status] ? translate(STATUS_KEYS[status]) : status
 }
 
-const AWAITING_TALLY_TONE = { badge: 'border-border bg-muted text-muted-foreground', dot: 'bg-info' }
-
 export function StatusBadge({ status, votingEnded = false }: { status: string; votingEnded?: boolean }) {
   const awaiting = status === 'SUBMITTED' && votingEnded
-  const tone = awaiting ? AWAITING_TALLY_TONE : (STATUS_TONE[status] ?? STATUS_TONE.WITHDRAWN)
+  const open = status === 'SUBMITTED' && !votingEnded
+  const tone: Tone = awaiting ? 'neutral' : (STATUS_TONE[status] ?? STATUS_TONE.WITHDRAWN).tone
   const badge = (
-    <Badge variant="outline" className={cn('gap-1.5', tone.badge)}>
-      <span aria-hidden="true" className={cn('size-1.5 rounded-full', tone.dot)} />
+    <ToneTag tone={tone} dot pulse={open}>
       {awaiting ? translate('corporation.proposals.status.awaitingtally') : statusLabel(status)}
-    </Badge>
+    </ToneTag>
   )
   if (status !== 'ABORTED') return badge
   return (
@@ -139,7 +146,7 @@ export function StatusBadge({ status, votingEnded = false }: { status: string; v
       <TooltipTrigger asChild>
         <button
           type="button"
-          className="relative inline-flex cursor-default rounded-4xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          className="relative inline-flex cursor-default rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
         >
           {badge}
         </button>
@@ -174,4 +181,14 @@ export function nameInitials(name: string): string {
     .filter(Boolean)
   const letters = words.length > 1 ? `${words[0][0]}${words[1][0]}` : (words[0] ?? '?').slice(0, 2)
   return letters.toUpperCase()
+}
+
+export function rulePercent(rule: DecisionRule | null, totalWeight: number): number | null {
+  if (!rule) return null
+  if (rule.kind === 'percentage') {
+    const value = Number(rule.percentage) * 100
+    return Number.isFinite(value) ? value : null
+  }
+  const threshold = Number(rule.threshold)
+  return totalWeight > 0 && Number.isFinite(threshold) ? Math.min(100, (threshold / totalWeight) * 100) : null
 }

@@ -11,6 +11,7 @@ import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporati
 import { CapabilityButton } from '@/ui/common/capability-button'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 import TrustBadge from '@/ui/common/trust-badge'
+import { DotPattern } from '@/ui/dashboard/dot-pattern'
 import { BlurFade } from '@/ui/motion/blur-fade'
 import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount } from '@/ui/shadcn/avatar'
 import { Badge } from '@/ui/shadcn/badge'
@@ -61,8 +62,8 @@ function MemberStack({ members }: { members: GroupMemberRow[] }) {
     <div className="flex items-center gap-2">
       <AvatarGroup className="-space-x-1.5">
         {shown.map((member) => (
-          <Avatar key={member.address} title={member.address} className="size-7">
-            <AvatarFallback className="bg-muted text-[10px] font-semibold text-primary">
+          <Avatar key={member.address} title={member.address} className="size-7 ring-2 ring-card">
+            <AvatarFallback className="bg-linear-to-br from-primary/25 to-primary/5 text-[10px] font-semibold text-primary">
               {addressInitials(member.address)}
             </AvatarFallback>
           </Avatar>
@@ -70,7 +71,8 @@ function MemberStack({ members }: { members: GroupMemberRow[] }) {
         {rest > 0 ? <AvatarGroupCount className="size-7 text-[10px]">+{rest}</AvatarGroupCount> : null}
       </AvatarGroup>
       <span className="text-xs text-muted-foreground tabular-nums">
-        {members.length} {translate('corporation.tab.members').toLowerCase()}
+        {members.length}{' '}
+        {translate(members.length === 1 ? 'corporation.selector.member' : 'corporation.tab.members').toLowerCase()}
       </span>
     </div>
   )
@@ -102,11 +104,16 @@ export function CorporationHeader({
 
   return (
     <section className="overflow-hidden rounded-xl bg-card shadow-card">
-      <div className="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
+      <div className="relative isolate flex flex-col gap-5 bg-linear-to-br from-primary/10 via-card to-card p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
+        <DotPattern
+          width={16}
+          height={16}
+          className="-z-10 text-primary/25 [mask-image:radial-gradient(320px_circle_at_top_right,white,transparent)] rtl:[mask-image:radial-gradient(320px_circle_at_top_left,white,transparent)]"
+        />
         <div className="flex min-w-0 items-start gap-4">
           <span
             aria-hidden="true"
-            className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15 sm:size-14"
+            className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-primary-400 to-primary-700 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25)] sm:size-14"
           >
             {displayName ? (
               <span className="text-base font-semibold tracking-tight sm:text-lg">{nameInitials(displayName)}</span>
@@ -128,7 +135,7 @@ export function CorporationHeader({
                   {profile.did}
                 </span>
               ) : null}
-              <Badge variant="outline" className="font-mono">
+              <Badge variant="outline" className="border-transparent bg-tint-accent font-mono text-primary">
                 #{profile.id}
               </Badge>
               <span className="inline-flex items-center gap-1 font-mono" title={profile.policyAddress}>

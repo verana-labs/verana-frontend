@@ -1,6 +1,6 @@
 'use client'
 
-import { HistoryIcon } from 'lucide-react'
+import { HistoryIcon, InfoIcon } from 'lucide-react'
 import { type ReactNode, useEffect, useRef } from 'react'
 import type { CorporationDetails } from '@/hooks/useCorporationDetails'
 import type { ActionSigning } from '@/hooks/useSigningMode'
@@ -10,6 +10,7 @@ import type { OperatorGrantOptions } from '@/lib/operator-grant'
 import type { DidEnrichment } from '@/lib/resolverClient'
 import { cn } from '@/lib/utils'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
+import { BlockCard } from '@/ui/common/block-card'
 import { BlurFade } from '@/ui/motion/blur-fade'
 import { TabIndicator } from '@/ui/motion/tab-indicator'
 import { ActivityTimeline } from './activity'
@@ -17,9 +18,9 @@ import { GovernanceSection } from './governance'
 import { CorporationHeader, RotateDidForm } from './header'
 import { MembersSection } from './members'
 import { OperatorsSection } from './operators'
-import { OverviewDetails, OverviewTiles } from './overview'
+import { MemberWeights, OverviewDetails, OverviewTiles, RecentProposals } from './overview'
 import { type ProposalContext, ProposalsSection } from './proposals'
-import { atLeast, Card, SectionHeader } from './shared'
+import { atLeast } from './shared'
 import { TrustDepositSection } from './trust-deposit'
 
 export const TABS = ['overview', 'members', 'governance', 'deposit', 'operators', 'proposals'] as const
@@ -117,13 +118,22 @@ function section(view: CorporationView, tab: CorporationTab) {
         <div id="overview" className="space-y-4 lg:space-y-5">
           <OverviewTiles details={details} openProposals={view.openProposals} />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-5">
-            <Card id="activity" className="lg:col-span-2">
-              <SectionHeader icon={<HistoryIcon />} title={translate('activity.title')} />
-              <ActivityTimeline rows={details.history} limit={5} />
-            </Card>
-            <Card>
+            <div id="activity" className="min-w-0 scroll-mt-20 lg:col-span-2">
+              <BlockCard icon={<HistoryIcon />} title={translate('activity.title')} className="h-full">
+                <ActivityTimeline rows={details.history} limit={5} />
+              </BlockCard>
+            </div>
+            <BlockCard icon={<InfoIcon />} title={translate('corporation.page.details')}>
               <OverviewDetails details={details} />
-            </Card>
+            </BlockCard>
+            {details.degraded.proposals ? null : (
+              <div className="lg:col-span-2">
+                <RecentProposals details={details} />
+              </div>
+            )}
+            <div className={details.degraded.proposals ? 'lg:col-span-3' : undefined}>
+              <MemberWeights details={details} walletAddress={view.walletAddress} />
+            </div>
           </div>
         </div>
       )

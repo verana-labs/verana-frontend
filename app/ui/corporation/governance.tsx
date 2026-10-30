@@ -5,7 +5,7 @@ import type { CorporationGovernance } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
 import EgfDocumentsTable from '@/ui/common/egf-documents-table'
 import { GovernanceFrameworkActions } from '@/ui/common/governance-framework-actions'
-import { Badge } from '@/ui/shadcn/badge'
+import { ToneTag } from '@/ui/common/tone-tag'
 import { Card, SectionHeader, SectionUnavailable } from './shared'
 
 export function GovernanceSection({
@@ -26,9 +26,9 @@ export function GovernanceSection({
         title={translate('corporation.governance.title')}
         description={
           governance ? (
-            <Badge variant="outline" className="mt-0.5 border-primary/25 bg-primary/10 text-primary tabular-nums">
+            <ToneTag tone="accent" dot className="mt-1 tabular-nums">
               {translate('corporation.governance.active', { version: governance.activeVersion })}
-            </Badge>
+            </ToneTag>
           ) : null
         }
         action={
