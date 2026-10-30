@@ -33,7 +33,7 @@ export default function EcosystemsPage() {
   } = useEcosystemsCtx()
   const { actingCorporation, loading: corporationLoading, error: discoveryError } = useUserCorporation()
   const actingCorporationId = actingCorporation?.corporation.id
-  const { rolesByEcosystem, rolesLoading } = useCorporationRolesByEcosystem(actingCorporationId)
+  const { rolesByEcosystem, rolesLoading, failureReason } = useCorporationRolesByEcosystem(actingCorporationId)
 
   const [addEcosystem, setAddEcosystem] = useState(false)
 
@@ -56,6 +56,7 @@ export default function EcosystemsPage() {
   const shown = page.items
 
   const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
+  const rolesError = failureReason ? translate('discover.roles.failed', { reason: failureReason }) : null
   const gridLoading = (ecosystemsLoading && ecosystemsList.length === 0) || roleFiltersPending(filters, rolesLoading)
   const partial = hasNext || hasPrevious
 
@@ -93,6 +94,8 @@ export default function EcosystemsPage() {
           </p>
         ) : null}
       </EcosystemsFilterBar>
+
+      {rolesError ? <div className="error-pane mb-6">{rolesError}</div> : null}
 
       <section id="ecosystems-grid" className="mb-8">
         {gridLoading ? (

@@ -858,6 +858,8 @@ test('a service description claim renders as text or Markdown, never as HTML', a
   }
 })
 
+const UNTRUSTED_ROW = 2
+
 const ECOSYSTEM_ROWS = Array.from({ length: 13 }, (_, i) => ({
   ...ACME_ECOSYSTEM_ROW,
   id: 9450 - i,
@@ -865,7 +867,7 @@ const ECOSYSTEM_ROWS = Array.from({ length: 13 }, (_, i) => ({
   corporation_id: i === 0 ? 13 : 999,
   trust_data: {
     did: `did:web:eco-${9450 - i}.example`,
-    trusted: true,
+    trusted: i !== UNTRUSTED_ROW,
     evaluatedAtTime: '2026-09-01T10:00:00Z',
     evaluatedAtBlock: 1,
     expiresAtTime: null,
@@ -875,10 +877,34 @@ const ECOSYSTEM_ROWS = Array.from({ length: 13 }, (_, i) => ({
   },
 }))
 
+const OWNED_ECOSYSTEM_ID = ECOSYSTEM_ROWS[0].id
 const JOINED_ECOSYSTEM_ID = ECOSYSTEM_ROWS[1].id
+const OWNED_ECOSYSTEM_NAME = 'Registry 01'
+const JOINED_ECOSYSTEM_NAME = 'Registry 02'
+const UNTRUSTED_ECOSYSTEM_NAME = 'Registry 03'
 
 const cardNames = (page: Page) =>
   page.locator('#ecosystems-grid h3').evaluateAll((cards) => cards.map((card) => card.textContent?.trim() ?? ''))
+
+const issuerParticipant = (id: number, ecosystemId: number) => ({
+  id,
+  schema_id: 1,
+  ecosystem_id: ecosystemId,
+  role: 'ISSUER',
+  did: ACME_ECOSYSTEM_DID,
+  corporation_id: 13,
+  participant_state: 'ACTIVE',
+  op_state: 'VALIDATED',
+  validator_participant_id: null,
+  effective_from: '2026-09-01T10:00:00Z',
+  effective_until: null,
+  validation_fees: 0,
+  issuance_fees: 0,
+  verification_fees: 0,
+  deposit: 0,
+  corporation_available_actions: [],
+  validator_available_actions: [],
+})
 
 test('the ecosystems filter reaches every row of the result set, not only the loaded page', async ({ page }) => {
   await installCorporationStubs(page)
@@ -890,32 +916,13 @@ test('the ecosystems filter reaches every row of the result set, not only the lo
     if (params.has('participant_corporation_id')) listLimits.push(params.get('limit') ?? '')
     return route.fallback()
   })
+  // The acting corporation joined one ecosystem it does not control and one it does.
   await page.route('**/v4/participant/list*', (route) =>
     route.fulfill({
       json: {
         participants:
           new URL(route.request().url()).searchParams.get('corporation_id') === '13'
-            ? [
-                {
-                  id: 31,
-                  schema_id: 1,
-                  ecosystem_id: JOINED_ECOSYSTEM_ID,
-                  role: 'ISSUER',
-                  did: ACME_ECOSYSTEM_DID,
-                  corporation_id: 13,
-                  participant_state: 'ACTIVE',
-                  op_state: 'VALIDATED',
-                  validator_participant_id: null,
-                  effective_from: '2026-09-01T10:00:00Z',
-                  effective_until: null,
-                  validation_fees: 0,
-                  issuance_fees: 0,
-                  verification_fees: 0,
-                  deposit: 0,
-                  corporation_available_actions: [],
-                  validator_available_actions: [],
-                },
-              ]
+            ? [issuerParticipant(31, JOINED_ECOSYSTEM_ID), issuerParticipant(32, OWNED_ECOSYSTEM_ID)]
             : [],
       },
     })
@@ -928,6 +935,9 @@ test('the ecosystems filter reaches every row of the result set, not only the lo
   await page.goto('/ecosystems')
   await expect.poll(() => cardNames(page), { timeout: 15_000 }).toHaveLength(9)
   await expect.poll(() => cardNames(page)).not.toContain('Registry 11')
+  // Untrusted ecosystems are listed by default, like on Discover.
+  await expect.poll(() => cardNames(page)).toContain(UNTRUSTED_ECOSYSTEM_NAME)
+  expect(listLimits.length).toBeGreaterThan(0)
   expect(listLimits.every((limit) => limit === '10')).toBe(true)
   await expect(loadedOnly).toHaveCount(1)
 
@@ -938,11 +948,22 @@ test('the ecosystems filter reaches every row of the result set, not only the lo
   await page.locator('#ecosystem-search').fill('')
   await expect.poll(() => cardNames(page)).toHaveLength(9)
   await page.locator('#hide-participant').check()
-  await expect.poll(() => cardNames(page)).not.toContain('Registry 02')
+  await expect.poll(() => cardNames(page)).not.toContain(JOINED_ECOSYSTEM_NAME)
+  await expect.poll(() => cardNames(page)).toContain(OWNED_ECOSYSTEM_NAME)
   await expect(loadedOnly).toHaveCount(0)
   await page.getByRole('button', { name: 'Next page' }).click()
   await expect.poll(() => cardNames(page)).toEqual(['Registry 11', 'Registry 12', 'Registry 13'])
   await expect(loadedOnly).toHaveCount(0)
+
+  await page.locator('#hide-participant').uncheck()
+  await page.locator('#hide-owned').check()
+  await expect.poll(() => cardNames(page)).not.toContain(OWNED_ECOSYSTEM_NAME)
+  await expect.poll(() => cardNames(page)).toContain(JOINED_ECOSYSTEM_NAME)
+
+  await page.locator('#hide-owned').uncheck()
+  await page.locator('#show-untrusted').uncheck()
+  await expect.poll(() => cardNames(page)).not.toContain(UNTRUSTED_ECOSYSTEM_NAME)
+  await expect.poll(() => cardNames(page)).toHaveLength(9)
 })
 
 test('the governance tab lists the CGF versions and gates the increase on the primary language', async ({ page }) => {

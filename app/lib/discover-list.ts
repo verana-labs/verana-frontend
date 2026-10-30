@@ -75,7 +75,9 @@ export function filterEcosystems<T extends EcosystemListItem>(
     if (!filters.showArchived && ecosystem.archived) return false
     if (!filters.showUntrusted && ecosystem.trustData?.trustStatus === 'UNTRUSTED') return false
     if (filters.hideOwned && owned) return false
-    if (filters.hideParticipant && roles.some((role) => role !== 'ECOSYSTEM')) return false
+    // A controlled ecosystem stays controlled even when the corporation also joined it, so the
+    // joined filter only hides the ones it is not controlling, per [VFE-PAGE-ES-LIST-1].
+    if (filters.hideParticipant && !owned && roles.some((role) => role !== 'ECOSYSTEM')) return false
     return matchesSearch(ecosystem, term)
   })
 }
