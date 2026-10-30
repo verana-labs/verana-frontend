@@ -120,6 +120,21 @@ test('switching the acting corporation closes a form opened for the previous one
   await expect(did).toHaveValue(ACME_ECOSYSTEM_DID)
 })
 
+test('the header shows the full policy address and copies it', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await installCorporationStubs(page)
+  await seedActingCorporation(page, 13)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  await page.goto('/corporation')
+  const main = page.getByRole('main')
+  await expect(main.getByText(ACME_POLICY_ADDRESS, { exact: true })).toBeVisible({ timeout: 15_000 })
+
+  await main.getByRole('button', { name: 'Copy corporation address' }).click()
+  await expect(main.getByRole('button', { name: 'Copied!' })).toBeVisible()
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(ACME_POLICY_ADDRESS)
+})
+
 test('tabs, deep links and proposal actions', async ({ page }) => {
   await installCorporationStubs(page)
   await seedActingCorporation(page, 13)
