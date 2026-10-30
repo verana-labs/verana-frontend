@@ -4,19 +4,24 @@ import { LandmarkIcon } from 'lucide-react'
 import type { CorporationTrustDeposit } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
+import { EmptyState } from '@/ui/common/empty-state'
+import { KpiStat } from '@/ui/common/kpi-stat'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
+import { ToneTag } from '@/ui/common/tone-tag'
+import { DotPattern } from '@/ui/dashboard/dot-pattern'
 import { NumberTicker } from '@/ui/motion/number-ticker'
 import { Button } from '@/ui/shadcn/button'
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from '@/ui/shadcn/empty'
 import { formatVNAFromUVNA } from '@/util/util'
 import { CategoryBar } from './category-bar'
 import { Card, Fact, formatDate, SectionHeader, SectionUnavailable } from './shared'
+
+const FACT_TILE = 'rounded-lg bg-tint-neutral px-4 py-3'
 
 function formatUvna(value: number): string {
   return formatVNAFromUVNA(String(Math.round(value)))
 }
 
-function SlashBalance({ trustDeposit }: { trustDeposit: CorporationTrustDeposit }) {
+function RepaymentMeter({ trustDeposit }: { trustDeposit: CorporationTrustDeposit }) {
   const repaid = Math.min(trustDeposit.repaidDeposit, trustDeposit.slashedDeposit)
   const outstanding = Math.max(trustDeposit.slashedDeposit - trustDeposit.repaidDeposit, 0)
   const legend = [
@@ -24,7 +29,7 @@ function SlashBalance({ trustDeposit }: { trustDeposit: CorporationTrustDeposit 
     { key: 'outstanding', label: translate('corporation.page.outstanding'), value: outstanding, dot: 'bg-destructive' },
   ]
   return (
-    <div className="space-y-3 rounded-lg bg-muted/50 p-4 ring-1 ring-border/60">
+    <div className="space-y-3 rounded-lg bg-tint-neutral p-4">
       <CategoryBar
         segments={[
           { key: 'repaid', value: repaid, className: 'bg-success' },
@@ -73,38 +78,53 @@ export function TrustDepositSection({
         action={repay}
       />
       {trustDeposit ? (
-        <div className="space-y-6">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">{translate('corporation.page.deposit')}</p>
-            <p className="mt-1 text-4xl font-semibold tracking-tight text-foreground tabular-nums">
-              <NumberTicker value={trustDeposit.deposit} format={formatUvna} />
-            </p>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-6">
+          <div className="relative isolate flex flex-col gap-5 overflow-hidden rounded-xl bg-linear-to-br from-primary/10 via-card to-card p-5 ring-1 ring-primary/10">
+            <DotPattern
+              width={16}
+              height={16}
+              className="-z-10 text-primary/25 [mask-image:radial-gradient(240px_circle_at_top_right,white,transparent)] rtl:[mask-image:radial-gradient(240px_circle_at_top_left,white,transparent)]"
+            />
+            <KpiStat
+              size="lg"
+              label={translate('corporation.page.deposit')}
+              value={<NumberTicker value={trustDeposit.deposit} format={formatUvna} />}
+            >
+              {unrepaidSlash > 0 ? (
+                <ToneTag tone="destructive" dot pulse className="mt-1 w-fit">
+                  {translate('corporation.page.outstanding')}
+                </ToneTag>
+              ) : null}
+            </KpiStat>
+            {trustDeposit.slashedDeposit > 0 ? <RepaymentMeter trustDeposit={trustDeposit} /> : null}
           </div>
-          {trustDeposit.slashedDeposit > 0 ? <SlashBalance trustDeposit={trustDeposit} /> : null}
-          <div className="grid grid-cols-1 gap-4 border-t border-border pt-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 content-start gap-3 sm:grid-cols-2">
             <Fact
               label={translate('corporation.page.slashed')}
               value={`${formatVNAFromUVNA(String(trustDeposit.slashedDeposit))} (${trustDeposit.slashCount})`}
+              className={FACT_TILE}
             />
             <Fact
               label={translate('corporation.page.repaid')}
               value={formatVNAFromUVNA(String(trustDeposit.repaidDeposit))}
+              className={FACT_TILE}
             />
-            <Fact label={translate('corporation.page.lastslashed')} value={formatDate(trustDeposit.lastSlashed)} />
-            <Fact label={translate('corporation.page.lastrepaid')} value={formatDate(trustDeposit.lastRepaid)} />
+            <Fact
+              label={translate('corporation.page.lastslashed')}
+              value={formatDate(trustDeposit.lastSlashed)}
+              className={FACT_TILE}
+            />
+            <Fact
+              label={translate('corporation.page.lastrepaid')}
+              value={formatDate(trustDeposit.lastRepaid)}
+              className={FACT_TILE}
+            />
           </div>
         </div>
       ) : degraded ? (
         <SectionUnavailable />
       ) : (
-        <Empty className="border border-dashed border-border py-10">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <LandmarkIcon />
-            </EmptyMedia>
-            <EmptyDescription>{translate('corporation.page.trustdeposit.empty')}</EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        <EmptyState icon={<LandmarkIcon />} title={translate('corporation.page.trustdeposit.empty')} />
       )}
     </Card>
   )

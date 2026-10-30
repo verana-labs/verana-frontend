@@ -1,11 +1,18 @@
 'use client'
 
 import { faBoxArchive, faPenToSquare, faPlus } from '@fortawesome/free-solid-svg-icons'
-import { ArrowLeftIcon, FileJson2Icon, LanguagesIcon, RotateCwIcon } from 'lucide-react'
+import {
+  ArrowLeftIcon,
+  FileJson2Icon,
+  InfoIcon,
+  LanguagesIcon,
+  RotateCwIcon,
+  ScrollTextIcon,
+  SlidersHorizontalIcon,
+} from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import { type ReactNode, useEffect, useState } from 'react'
 import { VERANA_REST_ENDPOINT_ECOSYSTEM } from '@/config/env'
-import AddCredentialSchemaPage from '@/credential-schemas/add/add'
 import { useActivityHistory } from '@/hooks/useActivityHistory'
 import { useCredentialSchemas } from '@/hooks/useCredentialSchemas'
 import { useEcosystemData } from '@/hooks/useEcosystemData'
@@ -14,6 +21,7 @@ import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { useLanguageLabel } from '@/lib/language'
 import { ActivityHistorySection } from '@/ui/common/activity-history-section'
+import { BlockCard, BlockHeader } from '@/ui/common/block-card'
 import { EntityActionButton } from '@/ui/common/capability-button'
 import CsSummaryCard from '@/ui/common/cs-summary-card'
 import { renderActionComponent } from '@/ui/common/data-view-typed'
@@ -23,30 +31,33 @@ import { EmptyState } from '@/ui/common/empty-state'
 import { GovernanceFrameworkActions } from '@/ui/common/governance-framework-actions'
 import JsonCodeBlock from '@/ui/common/json-code-block'
 import KeysetPagination from '@/ui/common/keyset-pagination'
+import { KpiStat } from '@/ui/common/kpi-stat'
 import { ModalAction } from '@/ui/common/modal-action'
 import ServiceProviderCard from '@/ui/common/service-provider-card'
+import { ToneTag } from '@/ui/common/tone-tag'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { actionButtonClass } from '@/ui/ecosystem-detail/action-button-class'
 import { CopyButton } from '@/ui/ecosystem-detail/copy-button'
 import { EcosystemDetailSkeleton, SchemaCardsSkeleton } from '@/ui/ecosystem-detail/detail-skeleton'
+import { EcosystemParticipantsTab } from '@/ui/ecosystem-detail/participants-tab'
 import { EcosystemStatTiles } from '@/ui/ecosystem-detail/stat-tiles'
 import { type EcosystemTab, revealTabTrigger, useEcosystemTab } from '@/ui/ecosystem-detail/use-ecosystem-tab'
 import { BlurFade } from '@/ui/motion/blur-fade'
 import { Stagger, StaggerItem } from '@/ui/motion/stagger'
 import { TabIndicator } from '@/ui/motion/tab-indicator'
-import { Badge } from '@/ui/shadcn/badge'
 import { Button } from '@/ui/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/shadcn/card'
 import { Input } from '@/ui/shadcn/input'
 import { Label } from '@/ui/shadcn/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/shadcn/tabs'
-import { formatDateTime } from '@/util/util'
+import { formatDateTime, formatNumber, formatVNAFromUVNA, participantCardHref } from '@/util/util'
 import { isValidDID } from '@/util/validations'
 
 const TAB_LABEL_KEYS: Record<EcosystemTab, string> = {
   overview: 'ecosystem.tab.overview',
   governance: 'ecosystem.tab.governance',
   schemas: 'datatable.cs.title',
+  participants: 'participants.title',
   activity: 'activity.title',
   json: 'ecosystem.tab.json',
 }
@@ -54,15 +65,37 @@ const TAB_LABEL_KEYS: Record<EcosystemTab, string> = {
 const TAB_TRIGGER_CLASS =
   'relative isolate h-10 flex-none rounded-none px-2.5 focus-visible:rounded-md focus-visible:ring-inset sm:px-3 after:hidden data-active:bg-transparent data-active:shadow-none dark:data-active:border-transparent dark:data-active:bg-transparent'
 
-function SectionHeading({ title, description, action }: { title: string; description?: string; action?: ReactNode }) {
+function SectionHeading({
+  title,
+  description,
+  icon,
+  action,
+}: {
+  title: string
+  description?: string
+  icon: ReactNode
+  action?: ReactNode
+}) {
   return (
     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-      <div className="min-w-0">
-        <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
-        {description ? <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{description}</p> : null}
-      </div>
+      <BlockHeader icon={icon} title={title} caption={description} className="min-w-0 flex-1" />
       {action}
     </div>
+  )
+}
+
+function TabCount({ value, active }: { value: number | undefined; active: boolean }) {
+  if (value === undefined) return null
+  return (
+    <span
+      className={
+        active
+          ? 'ms-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-tint-accent px-1.5 text-[11px] font-semibold text-primary tabular-nums'
+          : 'ms-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-tint-neutral px-1.5 text-[11px] font-semibold text-muted-foreground tabular-nums'
+      }
+    >
+      {formatNumber(value, true, true)}
+    </span>
   )
 }
 
@@ -70,7 +103,13 @@ function Property({ label, children, mono = false }: { label: string; children: 
   return (
     <div className="min-w-0">
       <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className={mono ? 'mt-1 font-mono text-sm break-all' : 'mt-1 text-sm font-medium'}>{children}</dd>
+      <dd
+        className={
+          mono ? 'mt-1 font-mono text-sm break-all' : 'mt-1 text-sm font-medium tracking-[-0.01em] tabular-nums'
+        }
+      >
+        {children}
+      </dd>
     </div>
   )
 }
@@ -89,7 +128,6 @@ export default function EcosystemViewPage() {
     credentialSchemas,
     loading: schemasLoading,
     errorCredentialSchemas,
-    refetch: refetchCredentialSchemas,
     hasNext: schemasHasNext,
     hasPrevious: schemasHasPrevious,
     nextPage: schemasNextPage,
@@ -101,14 +139,10 @@ export default function EcosystemViewPage() {
   const [editDid, setEditDid] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [archiveActive, setArchiveActive] = useState(false)
-  const [addCredentialSchema, setAddCredentialSchema] = useState(false)
 
   const refreshEcosystem = () => {
     void refetchEcosystem()
     void history.refetch()
-  }
-  const refreshCredentialSchemas = () => {
-    void refetchCredentialSchemas()
   }
 
   const { submitTx } = useSubmitTxMsgTypeFromObject(() => {
@@ -197,11 +231,41 @@ export default function EcosystemViewPage() {
     }
   }
 
+  const activeDocuments = ecosystem.versions.find((version) => version.version === ecosystem.activeVersion)?.documents
+  const draftVersions = ecosystem.versions.filter((version) => version.version > ecosystem.activeVersion).length
+  const documentCount = ecosystem.versions.reduce((total, version) => total + version.documents.length, 0)
+  const schemasPaged = schemasHasNext || schemasHasPrevious
+  const schemaCount =
+    !schemasLoading && !schemasPaged ? visibleSchemas.length : showArchived ? undefined : ecosystem.activeSchemas
+  const tabCounts: Partial<Record<EcosystemTab, number>> = {
+    governance: documentCount,
+    schemas: schemaCount,
+  }
+
   const headerMeta = (
-    <Badge variant="outline" className="h-6 gap-1.5 px-2.5 text-muted-foreground">
-      <LanguagesIcon aria-hidden="true" />
-      {resolvedLanguage}
-    </Badge>
+    <>
+      <ToneTag className="h-6">
+        <span className="inline-flex items-center gap-1.5">
+          <LanguagesIcon aria-hidden="true" className="size-3.5" />
+          {resolvedLanguage}
+        </span>
+      </ToneTag>
+      {ecosystem.activeVersion > 0 ? (
+        <ToneTag tone="accent" dot className="h-6">
+          {translate('ecosystem.hero.version', { version: ecosystem.activeVersion })}
+        </ToneTag>
+      ) : null}
+      {owner ? <ToneTag className="h-6">{t('ecosystems.owned', 'Owned')}</ToneTag> : null}
+    </>
+  )
+
+  const headerAside = (
+    <KpiStat
+      label={t('datatable.cs.card.trustValue', 'Trust Value')}
+      value={formatVNAFromUVNA(ecosystem.weight == null ? null : String(ecosystem.weight))}
+      stat="trust-value"
+      className="min-w-0 border-border/70 md:min-w-48 md:border-s md:ps-6 md:text-end [&>div]:md:justify-end"
+    />
   )
 
   const headerActions = owner ? (
@@ -209,8 +273,8 @@ export default function EcosystemViewPage() {
       msgType="MsgCreateCredentialSchema"
       icon={faPlus}
       label={t('button.cs.add', 'New Schema')}
-      onClick={() => setAddCredentialSchema(true)}
-      className={actionButtonClass('default', 'h-9 px-3')}
+      onClick={() => router.push(`/credential-schemas/add?ecosystem=${encodeURIComponent(String(id))}`)}
+      className={actionButtonClass('default', 'h-9 px-3 [&>svg:last-child]:text-primary-foreground/80')}
     />
   ) : null
 
@@ -224,6 +288,7 @@ export default function EcosystemViewPage() {
           status={isArchived ? 'ARCHIVED' : undefined}
           meta={headerMeta}
           actions={headerActions}
+          aside={headerAside}
         />
       </BlurFade>
 
@@ -243,6 +308,7 @@ export default function EcosystemViewPage() {
               ref={tab === value ? revealTabTrigger : undefined}
             >
               {translate(TAB_LABEL_KEYS[value])}
+              <TabCount value={tabCounts[value]} active={tab === value} />
               {tab === value ? (
                 <TabIndicator layoutId="ecosystem-detail-tabs" variant="underline" className="bottom-0" />
               ) : null}
@@ -252,51 +318,43 @@ export default function EcosystemViewPage() {
 
         <TabsContent value="overview" className="mt-6">
           <BlurFade offset={4} className="space-y-6">
-            <div className="grid gap-4 lg:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    <h2 className="text-base font-semibold">
-                      {t('dataview.ecosystem.sections.basicInformation', 'Basic Information')}
-                    </h2>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
-                    <Property label={t('dataview.ecosystem.fields.id', 'ID')}>{ecosystem.id}</Property>
-                    <Property label={t('dataview.ecosystem.fields.corporationId', 'Corporation ID')}>
-                      {ecosystem.corporationId}
-                    </Property>
-                    <Property label={t('dataview.ecosystem.fields.language', 'Primary Governance Framework Language')}>
-                      {resolvedLanguage}
-                    </Property>
-                    <Property label={t('dataview.ecosystem.fields.activeVersion', 'Active GF Version')}>
-                      {ecosystem.activeVersion}
-                    </Property>
-                    <Property label={t('dataview.ecosystem.fields.created', 'Created')}>
-                      {formatDateTime(ecosystem.created)}
-                    </Property>
-                    <Property label={t('dataview.ecosystem.fields.modified', 'Modified')}>
-                      {formatDateTime(ecosystem.modified)}
-                    </Property>
-                  </dl>
-                </CardContent>
-              </Card>
+            <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+              <BlockCard
+                icon={<InfoIcon />}
+                title={t('dataview.ecosystem.sections.basicInformation', 'Basic Information')}
+                pattern
+              >
+                <dl className="grid grid-cols-2 gap-x-6 gap-y-4 pt-1">
+                  <Property label={t('dataview.ecosystem.fields.id', 'ID')}>{ecosystem.id}</Property>
+                  <Property label={t('dataview.ecosystem.fields.corporationId', 'Corporation ID')}>
+                    {ecosystem.corporationId}
+                  </Property>
+                  <Property label={t('dataview.ecosystem.fields.language', 'Primary Governance Framework Language')}>
+                    {resolvedLanguage}
+                  </Property>
+                  <Property label={t('dataview.ecosystem.fields.activeVersion', 'Active GF Version')}>
+                    {ecosystem.activeVersion}
+                  </Property>
+                  <Property label={t('dataview.ecosystem.fields.created', 'Created')}>
+                    {formatDateTime(ecosystem.created)}
+                  </Property>
+                  <Property label={t('dataview.ecosystem.fields.modified', 'Modified')}>
+                    {formatDateTime(ecosystem.modified)}
+                  </Property>
+                </dl>
+              </BlockCard>
 
-              <section className="flex flex-col overflow-hidden rounded-xl bg-card text-sm ring-1 ring-foreground/10">
-                <div className="flex flex-1 flex-col gap-4 p-4">
-                  <div>
-                    <h2 className="text-base font-semibold">
-                      {t('dataview.section.mutable', 'Mutable Configuration')}
-                    </h2>
-                    {canEdit ? (
-                      <p className="mt-1 text-sm text-muted-foreground">{translate('ecosystem.mutable.description')}</p>
-                    ) : null}
-                  </div>
+              <section className="flex flex-col overflow-hidden rounded-xl bg-card text-sm shadow-card">
+                <div className="flex flex-1 flex-col gap-4 p-4 sm:p-5">
+                  <BlockHeader
+                    icon={<SlidersHorizontalIcon />}
+                    title={t('dataview.section.mutable', 'Mutable Configuration')}
+                    caption={canEdit ? translate('ecosystem.mutable.description') : undefined}
+                  />
                   {!editMode ? (
                     <div>
                       <span className="text-xs text-muted-foreground">{t('dataview.ecosystem.fields.did', 'DID')}</span>
-                      <div className="mt-1.5 flex items-start gap-1 rounded-lg bg-muted/60 py-2 pr-1.5 pl-3">
+                      <div className="mt-1.5 flex items-start gap-1 rounded-lg bg-tint-neutral py-2 pr-1.5 pl-3 ring-1 ring-border/60">
                         <p className="min-w-0 flex-1 py-0.5 font-mono text-sm break-all">{ecosystem.did}</p>
                         <CopyButton value={ecosystem.did} />
                       </div>
@@ -324,7 +382,7 @@ export default function EcosystemViewPage() {
                   )}
                 </div>
                 {canEdit ? (
-                  <div className="flex flex-col gap-2 border-t border-border bg-muted/50 px-4 py-3 sm:flex-row sm:justify-end">
+                  <div className="flex flex-col gap-2 border-t border-border/70 bg-muted/40 px-4 py-3 sm:flex-row sm:justify-end sm:px-5">
                     {editMode ? (
                       <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
                         <Button type="button" variant="outline" onClick={cancelEdit} disabled={submitting}>
@@ -359,6 +417,44 @@ export default function EcosystemViewPage() {
                   </div>
                 ) : null}
               </section>
+
+              <BlockCard
+                icon={<ScrollTextIcon />}
+                title={t('datalist.egf.title', 'Governance Framework Documents')}
+                link={{
+                  href: `/ecosystems/${encodeURIComponent(ecosystem.id)}?tab=governance`,
+                  label: translate('dashboard.ecosystems.viewAll'),
+                }}
+                pattern
+                className="lg:col-span-2 xl:col-span-1"
+              >
+                <div className="grid grid-cols-3 gap-4 pt-1">
+                  <KpiStat
+                    size="sm"
+                    label={t('datalist.egf.header.version', 'Version')}
+                    value={ecosystem.activeVersion > 0 ? `v${ecosystem.activeVersion}` : '—'}
+                  />
+                  <KpiStat
+                    size="sm"
+                    label={translate('ecosystem.governance.summary.documents')}
+                    value={formatNumber(documentCount, true, true)}
+                  />
+                  <KpiStat
+                    size="sm"
+                    label={translate('ecosystem.governance.summary.drafts')}
+                    value={formatNumber(draftVersions, true, true)}
+                  />
+                </div>
+                {activeDocuments && activeDocuments.length > 0 ? (
+                  <div className="mt-4 flex flex-wrap gap-1.5 border-t border-border/70 pt-4">
+                    {activeDocuments.map((document) => (
+                      <ToneTag key={document.id} tone="success" dot className="uppercase">
+                        {document.language}
+                      </ToneTag>
+                    ))}
+                  </div>
+                ) : null}
+              </BlockCard>
             </div>
 
             <ServiceProviderCard did={ecosystem.did} />
@@ -368,6 +464,7 @@ export default function EcosystemViewPage() {
         <TabsContent value="governance" className="mt-6">
           <section>
             <SectionHeading
+              icon={<ScrollTextIcon />}
               title={t('datalist.egf.title', 'Governance Framework Documents')}
               description={translate('ecosystem.governance.description')}
               action={
@@ -394,6 +491,7 @@ export default function EcosystemViewPage() {
         <TabsContent value="schemas" className="mt-6">
           <section>
             <SectionHeading
+              icon={<FileJson2Icon />}
               title={t('datatable.cs.title', 'Credential Schemas')}
               description={translate('datatable.cs.description')}
               action={
@@ -424,7 +522,7 @@ export default function EcosystemViewPage() {
                     <CsSummaryCard
                       credentialSchema={credentialSchema}
                       onView={() => router.push(`/credential-schemas/${credentialSchema.id}`)}
-                      onParticipants={() => router.push(`/participants/${credentialSchema.id}`)}
+                      onParticipants={() => router.push(participantCardHref(credentialSchema.id))}
                     />
                   </StaggerItem>
                 ))}
@@ -439,6 +537,17 @@ export default function EcosystemViewPage() {
               onNext={schemasNextPage}
             />
           </section>
+        </TabsContent>
+
+        <TabsContent value="participants" className="mt-6">
+          <BlurFade offset={4}>
+            <EcosystemParticipantsTab
+              schemas={credentialSchemas}
+              schemasPartial={schemasPaged}
+              schemasLoading={schemasLoading && credentialSchemas.length === 0}
+              active={tab === 'participants'}
+            />
+          </BlurFade>
         </TabsContent>
 
         <TabsContent value="activity" className="mt-6">
@@ -469,25 +578,6 @@ export default function EcosystemViewPage() {
       <ModalAction isActive={archiveActive} titleKey={archiveTitleKey} onClose={() => setArchiveActive(false)}>
         {renderActionComponent(archiveMessageType, () => setArchiveActive(false), ecosystem, refreshEcosystem)}
       </ModalAction>
-
-      {addCredentialSchema ? (
-        <ModalAction
-          onClose={() => setAddCredentialSchema(false)}
-          titleKey="datatable.cs.add"
-          isActive={addCredentialSchema}
-          classModal="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-xl bg-white dark:bg-surface"
-        >
-          <AddCredentialSchemaPage
-            ecosystemId={Number(id)}
-            onCancel={() => setAddCredentialSchema(false)}
-            onRefresh={() => {
-              refreshCredentialSchemas()
-              setAddCredentialSchema(false)
-              setTab('schemas')
-            }}
-          />
-        </ModalAction>
-      ) : null}
     </>
   )
 }

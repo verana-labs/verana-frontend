@@ -63,7 +63,7 @@ export function WalletCard({ noCorporation, className }: { noCorporation: boolea
         </CardHeader>
         <CardFooter className="relative border-0 bg-transparent pb-(--card-spacing)">
           <Button asChild>
-            <Link href="/corporation?create=1">
+            <Link href="/corporation/new">
               <Building2Icon aria-hidden="true" />
               {translate('corporation.selector.create')}
             </Link>

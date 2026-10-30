@@ -1,11 +1,11 @@
 'use client'
 
-import { PlusIcon } from 'lucide-react'
+import { PlusIcon, WalletIcon } from 'lucide-react'
 import { translate } from '@/i18n/dataview'
+import { BlockCard } from '@/ui/common/block-card'
 import { BlurFade } from '@/ui/motion/blur-fade'
 import { Shimmer } from '@/ui/motion/shimmer'
 import { Button } from '@/ui/shadcn/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/ui/shadcn/card'
 import { formatVNAFromUVNA } from '@/util/util'
 
 const DECIMAL_SEPARATOR = new Intl.NumberFormat(undefined).format(1.5).charAt(1)
@@ -23,17 +23,18 @@ export function AccountBalance({ balance, onGetVNA }: { balance: string | null; 
   const amount = splitAmount(balance)
 
   return (
-    <Card className="h-full shadow-card [--card-spacing:--spacing(5)] sm:[--card-spacing:--spacing(6)]">
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold tracking-tight">
-          <h2>{translate('dataview.account.fields.balance.label')}</h2>
-        </CardTitle>
-        <CardDescription>{translate('dataview.account.fields.balance.desc')}</CardDescription>
-      </CardHeader>
-      <CardContent className="mt-auto flex min-h-14 items-end" aria-live="polite" aria-busy={amount == null}>
+    <BlockCard
+      icon={<WalletIcon />}
+      title={translate('dataview.account.fields.balance.label')}
+      caption={translate('dataview.account.fields.balance.desc')}
+      pattern
+      className="h-full"
+      contentClassName="justify-between gap-6 pt-6"
+    >
+      <div aria-live="polite" aria-busy={amount == null} className="flex min-h-20 items-end">
         {amount ? (
-          <BlurFade>
-            <p className="flex flex-wrap items-baseline gap-x-2 leading-none font-semibold tracking-tight text-foreground tabular-nums">
+          <BlurFade className="min-w-0">
+            <p className="flex flex-wrap items-baseline gap-x-2 leading-none font-semibold tracking-[-0.03em] text-foreground tabular-nums">
               <span className="text-4xl break-all sm:text-5xl">
                 {amount.whole}
                 <span className="text-2xl text-muted-foreground sm:text-3xl">{amount.fraction}</span>
@@ -44,15 +45,15 @@ export function AccountBalance({ balance, onGetVNA }: { balance: string | null; 
         ) : (
           <Shimmer className="h-12 w-48" />
         )}
-      </CardContent>
+      </div>
       {onGetVNA ? (
-        <CardFooter>
+        <div className="border-t border-border/70 pt-4">
           <Button variant="outline" size="sm" onClick={onGetVNA} className="bg-card">
             <PlusIcon aria-hidden="true" data-icon="inline-start" />
             {translate('dataview.account.actions.getVNA.label')}
           </Button>
-        </CardFooter>
+        </div>
       ) : null}
-    </Card>
+    </BlockCard>
   )
 }

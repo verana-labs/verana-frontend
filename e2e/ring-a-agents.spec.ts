@@ -112,7 +112,7 @@ test('an accreditation row with a delegation record expands, one without has no 
   await expect(delegated.getByText('Spend cycle ends')).toBeVisible()
   await expect(delegated.getByRole('link', { name: 'Open participant card' })).toHaveAttribute(
     'href',
-    /\/participants\/26.*102/
+    /\/credential-schemas\/26\?tab=participants&participant=102/
   )
 
   const plain = page.locator(CARD).filter({ hasText: AGENT_TWO_DID })

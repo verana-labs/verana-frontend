@@ -6,12 +6,13 @@ import { type ReactNode, useEffect, useState } from 'react'
 import { VERANA_GRAPH_URL, VERANA_INDEXER_BASE_URL } from '@/config/env'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { getLocale, isLocale, SUPPORTED_LOCALES, saveLocale, setLocale, translate } from '@/i18n/dataview'
+import { cn } from '@/lib/utils'
 import { CopyValueButton } from '@/ui/agents-tasks-settings/copy-value-button'
 import { THEMES, type ThemeOption, ThemeRadioCards } from '@/ui/agents-tasks-settings/theme-radio-cards'
+import { BlockCard } from '@/ui/common/block-card'
 import TitleAndButton from '@/ui/common/title-and-button'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { Stagger, StaggerItem } from '@/ui/motion/stagger'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/shadcn/card'
 
 const t = (key: string) => resolveTranslatable({ key }, translate) ?? key
 
@@ -21,27 +22,29 @@ function SettingsSection({
   icon: Icon,
   title,
   description,
+  pattern,
+  className,
   children,
 }: {
   icon: LucideIcon
   title: string
   description: string
+  pattern?: boolean
+  className?: string
   children: ReactNode
 }) {
   return (
-    <StaggerItem as="section">
-      <Card className="gap-5 py-5 shadow-card ring-0 sm:py-6 [--card-spacing:--spacing(5)] sm:[--card-spacing:--spacing(6)]">
-        <CardHeader className="grid-cols-[auto_1fr] gap-x-3">
-          <span className="row-span-2 flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Icon aria-hidden="true" className="size-4" />
-          </span>
-          <CardTitle>
-            <h2 className="text-base font-semibold">{title}</h2>
-          </CardTitle>
-          <CardDescription>{description}</CardDescription>
-        </CardHeader>
-        <CardContent>{children}</CardContent>
-      </Card>
+    <StaggerItem className={cn('min-w-0', className)}>
+      <BlockCard
+        icon={<Icon />}
+        title={title}
+        caption={description}
+        pattern={pattern}
+        className="h-full"
+        contentClassName="pt-4"
+      >
+        {children}
+      </BlockCard>
     </StaggerItem>
   )
 }
@@ -77,11 +80,12 @@ export default function SettingsPage() {
     <>
       <TitleAndButton title={t('settings.title')} description={[t('settings.desc')]} />
 
-      <Stagger className="flex max-w-3xl flex-col gap-4">
+      <Stagger className="grid max-w-5xl grid-cols-1 gap-4 lg:grid-cols-2">
         <SettingsSection
           icon={LanguagesIcon}
           title={t('settings.locale.title')}
           description={t('settings.locale.desc')}
+          pattern
         >
           <div className="flex flex-col gap-2">
             <label htmlFor="settings-locale" className="sr-only">
@@ -111,22 +115,32 @@ export default function SettingsPage() {
           />
         </SettingsSection>
 
-        <SettingsSection icon={GlobeIcon} title={t('settings.network.title')} description={t('settings.network.desc')}>
-          <dl className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+        <SettingsSection
+          icon={GlobeIcon}
+          title={t('settings.network.title')}
+          description={t('settings.network.desc')}
+          className="lg:col-span-2"
+        >
+          <dl className="divide-y divide-border overflow-hidden rounded-lg bg-card shadow-hairline">
             {network.map(([key, value]) => (
               <div
                 key={key}
-                className="grid grid-cols-1 gap-x-6 gap-y-0.5 px-3.5 py-2.5 transition-colors duration-(--duration-base) hover:bg-muted/40 sm:grid-cols-[10rem_1fr] sm:items-center"
+                className="grid grid-cols-1 gap-x-6 gap-y-0.5 px-3.5 py-2.5 transition-colors duration-(--duration-fast) ease-standard hover:bg-tint-accent/60 sm:grid-cols-[10rem_1fr] sm:items-center"
               >
-                <dt className="text-sm text-muted-foreground">{t(`settings.network.${key}`)}</dt>
+                <dt className="text-[13px] font-medium text-muted-foreground">{t(`settings.network.${key}`)}</dt>
                 <dd className="flex min-w-0 items-center justify-between gap-2">
                   {value ? (
                     <>
-                      <span className="min-w-0 font-mono text-xs break-all text-foreground sm:text-sm">{value}</span>
+                      <span className="min-w-0 font-mono text-xs break-all text-foreground tabular-nums sm:text-[13px]">
+                        {value}
+                      </span>
                       <CopyValueButton value={value} label={t(`settings.network.${key}`)} className="-me-1.5" />
                     </>
                   ) : (
-                    <span className="text-sm text-muted-foreground italic">{t('settings.network.missing')}</span>
+                    <span className="inline-flex h-[22px] items-center gap-1.5 rounded-md bg-tint-neutral px-2 text-xs font-medium text-muted-foreground">
+                      <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
+                      {t('settings.network.missing')}
+                    </span>
                   )}
                 </dd>
               </div>
