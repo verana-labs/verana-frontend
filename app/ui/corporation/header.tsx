@@ -10,6 +10,7 @@ import { translate } from '@/i18n/dataview'
 import type { DidEnrichment, DidTrustState } from '@/lib/resolverClient'
 import { cn } from '@/lib/utils'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
+import { CopyValueButton } from '@/ui/agents-tasks-settings/copy-value-button'
 import { CapabilityButton } from '@/ui/common/capability-button'
 import { SEND_RECIPIENT_PARAM } from '@/ui/common/send-vna'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
@@ -150,9 +151,10 @@ export function CorporationHeader({
               <Badge variant="outline" className="border-transparent bg-tint-accent font-mono text-primary">
                 #{profile.id}
               </Badge>
-              <span className="inline-flex items-center gap-1 font-mono" title={profile.policyAddress}>
-                <WalletIcon aria-hidden="true" className="size-3.5" />
-                {shortenMiddle(profile.policyAddress, 26)}
+              <span className="inline-flex min-w-0 items-center gap-1 font-mono">
+                <WalletIcon aria-hidden="true" className="size-3.5 shrink-0" />
+                <span className="break-all">{profile.policyAddress}</span>
+                <CopyValueButton value={profile.policyAddress} label={translate('corporation.page.address')} />
               </span>
             </div>
             <p className="text-sm text-muted-foreground">

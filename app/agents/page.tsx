@@ -10,14 +10,15 @@ import {
   TriangleAlertIcon,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useAgents } from '@/hooks/useAgents'
+import { usePersistedFilters } from '@/hooks/usePersistedFilters'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { useIndexerEntityEvents } from '@/providers/indexer-events-provider'
 import AgentCard from '@/ui/agents/agent-card'
 import { AgentCardSkeleton } from '@/ui/agents/agent-card-skeleton'
-import AgentsFilterBar, { type AgentsFilterState, INITIAL_AGENTS_FILTER } from '@/ui/agents/agents-filter-bar'
+import AgentsFilterBar, { INITIAL_AGENTS_FILTER } from '@/ui/agents/agents-filter-bar'
 import { CorporationRequired } from '@/ui/agents-tasks-settings/corporation-required'
 import { EmptyState } from '@/ui/common/empty-state'
 import { ShowMoreButton } from '@/ui/common/keyset-pagination'
@@ -101,7 +102,7 @@ function AgentsSkeletonGrid() {
 
 export default function AgentsPage() {
   const { actingCorporation, loading: actingLoading, error: discoveryError } = useUserCorporation()
-  const [filters, setFilters] = useState<AgentsFilterState>(INITIAL_AGENTS_FILTER)
+  const [filters, setFilters] = usePersistedFilters('agents', INITIAL_AGENTS_FILTER)
   const {
     agents,
     delegations,
