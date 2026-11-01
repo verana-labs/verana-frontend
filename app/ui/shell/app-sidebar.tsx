@@ -15,7 +15,7 @@ import {
   SidebarRail,
   useSidebar,
 } from '@/ui/shadcn/sidebar'
-import { useNavItems } from '@/ui/shell/nav-items'
+import { useNavItems, useShellSettling } from '@/ui/shell/nav-items'
 import { NavMain } from '@/ui/shell/nav-main'
 import { NavStatus } from '@/ui/shell/nav-status'
 import { NavUser } from '@/ui/shell/nav-user'
@@ -23,6 +23,7 @@ import { TeamSwitcher } from '@/ui/shell/team-switcher'
 
 export function AppSidebar({ className, ...props }: React.ComponentProps<typeof Sidebar>) {
   const items = useNavItems()
+  const settling = useShellSettling()
   const { setOpenMobile } = useSidebar()
 
   return (
@@ -50,11 +51,11 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
         <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={items} />
+        <NavMain items={items} settling={settling} />
         <NavStatus className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser />
+        <NavUser settling={settling} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

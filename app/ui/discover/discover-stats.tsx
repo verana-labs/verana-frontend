@@ -20,10 +20,12 @@ export type DiscoverStatsScope = 'matching' | 'page' | 'loaded'
 export function DiscoverStats({
   ecosystems,
   loading,
+  unavailable = false,
   scope,
 }: {
   ecosystems: EcosystemListItem[]
   loading: boolean
+  unavailable?: boolean
   scope: DiscoverStatsScope
 }) {
   const totals = useMemo(
@@ -37,8 +39,11 @@ export function DiscoverStats({
     [ecosystems]
   )
   const suffix = scope === 'matching' ? '' : '+'
-  const value = (text: string) => (loading ? <Shimmer className="h-8 w-16" /> : text)
-  const hint = t(`discover.stats.${scope}`)
+  const value = (text: string) => {
+    if (loading) return <Shimmer className="h-8 w-16" />
+    return unavailable ? <span className="text-muted-foreground">—</span> : text
+  }
+  const hint = unavailable ? t('discover.stats.unavailable') : t(`discover.stats.${scope}`)
 
   return (
     <Stagger className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
@@ -47,7 +52,7 @@ export function DiscoverStats({
           icon={<LandmarkIcon />}
           label={t('discover.stats.ecosystems')}
           value={value(`${formatNumber(totals.ecosystems, true, true)}${suffix}`)}
-          hint={loading ? hint : t('discover.stats.trusted', { n: totals.trusted })}
+          hint={loading || unavailable ? hint : t('discover.stats.trusted', { n: totals.trusted })}
         />
       </StaggerItem>
       <StaggerItem>

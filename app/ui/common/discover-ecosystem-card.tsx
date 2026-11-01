@@ -1,7 +1,7 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowUpRightIcon, LandmarkIcon, ScaleIcon } from 'lucide-react'
+import { ArrowUpRightIcon, LandmarkIcon, RotateCwIcon, ScaleIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import type { EcosystemSchemaPage } from '@/hooks/useCredentialSchemas'
@@ -103,14 +103,16 @@ export function DiscoverEcosystemCard({
               className="size-12 shrink-0 rounded-xl bg-background object-contain p-1 ring-1 ring-foreground/10 sm:size-14"
             />
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
+              <div className="flex items-start gap-2">
                 <h2
-                  className="min-w-0 text-lg leading-snug font-semibold tracking-tight break-words text-foreground"
+                  className="line-clamp-2 min-w-0 text-lg leading-snug font-semibold tracking-tight [overflow-wrap:anywhere] text-foreground"
                   title={serviceName}
                 >
                   {serviceName}
                 </h2>
-                <TrustBadge state={identity?.trustStatus} size="xl" />
+                <span className="flex h-lh shrink-0 items-center text-lg leading-snug">
+                  <TrustBadge state={identity?.trustStatus} size="xl" />
+                </span>
               </div>
               {identity?.serviceDescription ? (
                 <ClaimText
@@ -248,8 +250,15 @@ export function DiscoverEcosystemCard({
                     }
                   />
                 ))}
-                {moreSchemasFailed ? <p className="text-sm text-warning">{t('discover.cs.more.error')}</p> : null}
-                {credentialSchemas.hasNext ? (
+                {moreSchemasFailed ? (
+                  <div role="alert" className="error-pane items-center">
+                    <span className="min-w-0 flex-1">{t('discover.cs.more.error')}</span>
+                    <Button type="button" variant="outline" size="sm" onClick={onLoadMoreSchemas}>
+                      <RotateCwIcon aria-hidden="true" />
+                      {t('discover.retry')}
+                    </Button>
+                  </div>
+                ) : credentialSchemas.hasNext ? (
                   <div>
                     <ShowMoreButton onClick={onLoadMoreSchemas} />
                   </div>

@@ -64,7 +64,7 @@ export function EcosystemsCard({
           }
           tag={
             ranked.length > 0 && count > 0 ? (
-              <ToneTag tone="accent" className="tabular-nums">
+              <ToneTag tone="accent" className="hidden shrink-0 tabular-nums @[420px]/card:inline-flex">
                 {translate('dashboard.ecosystems.showing', {
                   shown: formatCount(ranked.length),
                   total: formatCount(count),
@@ -162,7 +162,7 @@ export function EcosystemsCard({
                             </div>
                             {hasDisplayName(ecosystem) ? (
                               <div className="truncate font-mono text-xs text-muted-foreground" title={ecosystem.did}>
-                                {shortenMiddle(ecosystem.did, 30)}
+                                {shortenMiddle(ecosystem.did, 24)}
                               </div>
                             ) : (
                               <div className="text-xs text-muted-foreground tabular-nums">

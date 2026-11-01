@@ -56,14 +56,17 @@ function Tile({ stat, name, description, Icon, value, display, format, href, cta
           <Shimmer className="h-9 w-16 @5xl/page:h-10" />
         )}
       </div>
-      <h3 className="mt-1 truncate text-sm font-medium text-foreground" title={name}>
+      <h3
+        className="mt-1 line-clamp-2 text-sm leading-5 font-medium text-pretty text-foreground [overflow-wrap:anywhere]"
+        title={name}
+      >
         {name}
       </h3>
-      <p className="mt-1 hidden text-sm text-muted-foreground @md/page:line-clamp-2">{description}</p>
+      <p className="mt-1 hidden text-sm text-pretty text-muted-foreground @md/page:line-clamp-3">{description}</p>
       {href && cta ? (
         <Link
           href={href}
-          className="mt-auto inline-flex items-center gap-1.5 self-start rounded-sm pt-3 text-sm font-medium text-primary underline-offset-4 after:absolute after:inset-0 after:rounded-xl group-hover:underline focus-visible:outline-none focus-visible:after:ring-[3px] focus-visible:after:ring-ring/50"
+          className="mt-auto inline-flex max-w-full min-w-0 items-center gap-1.5 self-start rounded-sm pt-3 text-sm font-medium text-primary underline-offset-4 after:absolute after:inset-0 after:rounded-xl group-hover:underline focus-visible:outline-none focus-visible:after:ring-[3px] focus-visible:after:ring-ring/50"
         >
           <span className="truncate">{cta}</span>
           <ArrowRightIcon

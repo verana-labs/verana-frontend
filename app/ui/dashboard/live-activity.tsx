@@ -19,6 +19,7 @@ import {
 import { useEffect, useState } from 'react'
 import { getDictionary, getLocale, translate } from '@/i18n/dataview'
 import { cn } from '@/lib/utils'
+import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { BlockHeader } from '@/ui/common/block-card'
 import { GhostEmpty } from '@/ui/common/ghost-empty'
 import { TONE_CLASSES, type Tone, ToneTag } from '@/ui/common/tone-tag'
@@ -61,14 +62,17 @@ function sentence(identifier: string): string {
   return words.map((word, i) => (i === 0 || /^[A-Z0-9]+$/.test(word) ? word : word.toLowerCase())).join(' ')
 }
 
+function labelOr(key: string, fallback: string): string {
+  return getDictionary(getLocale())[key] ? translate(key) : fallback
+}
+
 export function eventTitle(eventType: string): string {
-  const key = `dashboard.activity.event.${eventType}`
-  return getDictionary(getLocale())[key] ? translate(key) : sentence(eventType)
+  return labelOr(`dashboard.activity.event.${eventType}`, sentence(eventType))
 }
 
 function entityLine(event: NetworkEvent): string | null {
   if (!event.entityType) return null
-  const entity = sentence(event.entityType)
+  const entity = labelOr(`dashboard.activity.entity.${event.entityType}`, sentence(event.entityType))
   return event.entityId ? `${entity} #${event.entityId}` : entity
 }
 
@@ -122,6 +126,7 @@ function EventRow({ event, now }: { event: NetworkEvent; now: number }) {
 
 export function LiveActivity({ className }: { className?: string }) {
   const feed = useNetworkEvents(6)
+  const { isConnected } = useIndexerEvents()
   const now = useNow()
   const pauseLabel = translate(feed.paused ? 'dashboard.activity.resume' : 'dashboard.activity.pause')
 
@@ -136,7 +141,7 @@ export function LiveActivity({ className }: { className?: string }) {
             <>
               {feed.paused ? (
                 <ToneTag dot>{translate('dashboard.activity.paused')}</ToneTag>
-              ) : feed.events !== null && !feed.error ? (
+              ) : isConnected && feed.events !== null && !feed.error ? (
                 <ToneTag tone="success" dot pulse>
                   {translate('dashboard.activity.live')}
                 </ToneTag>

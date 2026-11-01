@@ -30,21 +30,30 @@ export type GhostEmptyProps = {
 export function GhostEmpty({ title, description, icon, action, children, className }: GhostEmptyProps) {
   return (
     <div className={cn('relative isolate flex min-h-48 flex-1', className)}>
-      <div aria-hidden="true" className="pointer-events-none flex w-full flex-1 opacity-[0.22] select-none">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none flex w-full flex-1 opacity-[0.16] select-none [mask-image:radial-gradient(ellipse_at_center,transparent_18%,black_75%)] dark:opacity-[0.12]"
+      >
         {children ?? <GhostBars />}
       </div>
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
-        {icon ? (
-          <span
-            aria-hidden="true"
-            className="mb-1 flex size-9 items-center justify-center rounded-lg bg-card text-primary shadow-hairline [&_svg]:size-4"
-          >
-            {icon}
-          </span>
-        ) : null}
-        <p className="text-sm font-medium text-foreground text-balance">{title}</p>
-        {description ? <p className="max-w-xs text-xs text-muted-foreground text-balance">{description}</p> : null}
-        {action ? <div className="mt-1.5">{action}</div> : null}
+      <div className="absolute inset-0 flex items-center justify-center p-4">
+        <div className="flex max-w-sm flex-col items-center gap-2 rounded-xl bg-card/85 px-5 py-4 text-center shadow-hairline supports-backdrop-filter:backdrop-blur-sm">
+          {icon ? (
+            <span
+              aria-hidden="true"
+              className="mb-1 flex size-9 items-center justify-center rounded-lg bg-tint-accent text-primary [&_svg]:size-4"
+            >
+              {icon}
+            </span>
+          ) : null}
+          <p className="text-sm font-medium text-foreground text-balance [overflow-wrap:anywhere]">{title}</p>
+          {description ? (
+            <p className="max-w-xs text-xs leading-5 text-muted-foreground text-pretty [overflow-wrap:anywhere]">
+              {description}
+            </p>
+          ) : null}
+          {action ? <div className="mt-1.5">{action}</div> : null}
+        </div>
       </div>
     </div>
   )

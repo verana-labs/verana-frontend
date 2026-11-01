@@ -3,8 +3,16 @@
 import { toBase64 } from '@cosmjs/encoding'
 import type { EncodeObject } from '@cosmjs/proto-signing'
 import { useChain } from '@cosmos-kit/react'
-import { ChevronRightIcon, FileSignatureIcon, TriangleAlertIcon } from 'lucide-react'
+import {
+  ChevronRightIcon,
+  FileSignatureIcon,
+  InfoIcon,
+  OctagonXIcon,
+  RotateCwIcon,
+  TriangleAlertIcon,
+} from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { LOW_BALANCE_WARN_UVNA, VERANA_FAUCET_URL } from '@/config/env'
 import { useAccountBalance } from '@/hooks/useAccountBalance'
 import { type FeeGrantLookup, useFeeGrant } from '@/hooks/useFeeGrant'
@@ -41,16 +49,17 @@ const SETTLE_DELAY_MS = 400
 const BALANCE_WAIT_MS = 5_000
 const UVNA_PER_VNA = 1_000_000
 const DESTRUCTIVE_ALERT = 'rounded-lg border-destructive/25 bg-tint-destructive px-3 py-2.5'
+const WARNING_ALERT = 'rounded-lg border-warning/25 bg-tint-warning px-3 py-2.5 text-warning'
 
 function t(key: string, values?: I18nValues): string {
   return resolveTranslatable({ key, values }, translate) ?? key
 }
 
-function simulationRejection(message: string): string {
+function simulationRejection(message: string): { text: string; retryable: boolean } {
   const reason = authorizationRejection(message)
   return reason
-    ? t('txconfirm.simulation.unauthorized', { reason })
-    : t('txconfirm.simulation.rejected', { msg: chainRejection(message) ?? message })
+    ? { text: t('txconfirm.simulation.unauthorized', { reason }), retryable: false }
+    : { text: t('txconfirm.simulation.rejected', { msg: chainRejection(message) ?? message }), retryable: true }
 }
 
 function proposalPolicy(msgs: EncodeObject[]): string {
@@ -75,9 +84,12 @@ function rawMessages(msgs: readonly EncodeObject[]): string {
 function RawMessages({ msgs }: { msgs: readonly EncodeObject[] }) {
   const raw = useMemo(() => rawMessages(msgs), [msgs])
   return (
-    <div className="mt-2 max-h-64 overflow-auto rounded-lg bg-tint-neutral text-xs shadow-hairline">
+    <section
+      aria-label={t('txconfirm.raw')}
+      className="mt-2 max-h-64 overflow-y-auto overscroll-contain rounded-lg bg-tint-neutral text-xs shadow-hairline outline-none focus-visible:ring-3 focus-visible:ring-ring/50 [&_pre]:whitespace-pre-wrap [&_pre]:[overflow-wrap:anywhere]"
+    >
       <JsonCodeBlock value={raw} />
-    </div>
+    </section>
   )
 }
 
@@ -85,7 +97,9 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4 py-2.5">
       <dt className="shrink-0 text-[13px] text-muted-foreground">{label}</dt>
-      <dd className="text-end font-medium text-foreground tabular-nums break-all">{children}</dd>
+      <dd className="min-w-0 text-end font-medium text-pretty text-foreground tabular-nums [overflow-wrap:anywhere]">
+        {children}
+      </dd>
     </div>
   )
 }
@@ -112,6 +126,15 @@ function grantPayer(
   )
 }
 
+function TxNote({ children, pulse = false }: { children: ReactNode; pulse?: boolean }) {
+  return (
+    <p className="flex items-start gap-1.5 text-xs leading-5 text-muted-foreground">
+      <InfoIcon aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
+      <span className={pulse ? 'animate-pulse motion-reduce:animate-none' : undefined}>{children}</span>
+    </p>
+  )
+}
+
 function BalanceWarning({
   balance,
   balanceUnknown,
@@ -128,9 +151,9 @@ function BalanceWarning({
   if (feeGranted && totalDebitUvna(costLines ?? []) === 0) return null
   if (balance === null)
     return balanceUnknown ? (
-      <p className="text-sm text-muted-foreground">{t('txconfirm.balance.unavailable')}</p>
+      <TxNote>{t('txconfirm.balance.unavailable')}</TxNote>
     ) : (
-      <p className="text-sm animate-pulse text-muted-foreground">{t('txconfirm.balance.checking')}</p>
+      <TxNote pulse>{t('txconfirm.balance.checking')}</TxNote>
     )
   const warning = balanceWarning(balance, feeUvna, costLines, LOW_BALANCE_WARN_UVNA ?? '0', feeGranted)
   if (!warning) return null
@@ -139,8 +162,13 @@ function BalanceWarning({
     value: Number(balance) / UVNA_PER_VNA,
     fee: warning.requiredUvna / UVNA_PER_VNA,
   })
+  const shortfall = warning.kind === 'shortfall'
   return (
-    <Alert variant="destructive" className={DESTRUCTIVE_ALERT}>
+    <Alert
+      role={shortfall ? 'alert' : 'note'}
+      variant={shortfall ? 'destructive' : 'default'}
+      className={shortfall ? DESTRUCTIVE_ALERT : WARNING_ALERT}
+    >
       <TriangleAlertIcon />
       <AlertDescription className="text-current" dangerouslySetInnerHTML={{ __html: html }} />
     </Alert>
@@ -152,11 +180,7 @@ function WarningBox({ severity, children }: { severity: TxSeverity | undefined; 
     <Alert
       role="note"
       variant={severity === 'notice' ? 'default' : 'destructive'}
-      className={
-        severity === 'notice'
-          ? 'rounded-lg border-warning/25 bg-tint-warning px-3 py-2.5 text-warning'
-          : DESTRUCTIVE_ALERT
-      }
+      className={severity === 'notice' ? WARNING_ALERT : DESTRUCTIVE_ALERT}
     >
       <TriangleAlertIcon />
       <AlertDescription className="text-current">{children}</AlertDescription>
@@ -251,6 +275,7 @@ export function ConfirmTransactionModal({
     holdForBalance
   const waiting = blocked && currentSimulation.status !== 'failed'
   const panelRef = useRef<HTMLDivElement>(null)
+  const rejection = currentSimulation.status === 'failed' ? simulationRejection(currentSimulation.message) : null
 
   useEffect(() => {
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
@@ -258,7 +283,8 @@ export function ConfirmTransactionModal({
     return () => restoreModalFocus(opener)
   }, [])
 
-  return (
+  if (typeof document === 'undefined') return null
+  return createPortal(
     <div className="fixed inset-0 z-50 overflow-y-auto overscroll-contain" onClick={onCancel}>
       <div
         aria-hidden="true"
@@ -278,7 +304,7 @@ export function ConfirmTransactionModal({
           <DotPattern
             width={14}
             height={14}
-            className="-z-10 text-primary/20 [mask-image:radial-gradient(220px_circle_at_top_right,white,transparent)] rtl:[mask-image:radial-gradient(220px_circle_at_top_left,white,transparent)]"
+            className="-z-10 text-primary/15 [mask-image:radial-gradient(140px_circle_at_top_right,white,transparent)] rtl:[mask-image:radial-gradient(140px_circle_at_top_left,white,transparent)]"
           />
           <div className="space-y-4 p-4 sm:p-6">
             <div className="flex items-start gap-3">
@@ -322,7 +348,11 @@ export function ConfirmTransactionModal({
               <div className="space-y-3">
                 <label className={labelClass}>
                   {t('txconfirm.proposal.title')}
-                  <input value={title} onChange={(event) => setTitle(event.target.value)} className="input mt-1" />
+                  <input
+                    value={title}
+                    onChange={(event) => setTitle(event.target.value)}
+                    className="input mt-1 text-ellipsis"
+                  />
                 </label>
                 <label className={labelClass}>
                   {t('txconfirm.proposal.summary')}
@@ -353,16 +383,12 @@ export function ConfirmTransactionModal({
                   )}
                 </Row>
               </dl>
-              {granter ? <p className="text-xs text-muted-foreground">{t('txconfirm.feegrant.covered')}</p> : null}
+              {granter ? <TxNote>{t('txconfirm.feegrant.covered')}</TxNote> : null}
               {granter && granterBalance.status === 'failed' ? (
-                <p className="text-xs text-muted-foreground">{t('txconfirm.feegrant.balanceUnknown')}</p>
+                <TxNote>{t('txconfirm.feegrant.balanceUnknown')}</TxNote>
               ) : null}
-              {payerByGrant === 'granter-short' ? (
-                <p className="text-xs text-muted-foreground">{t('txconfirm.feegrant.short')}</p>
-              ) : null}
-              {feeGrantLookup.status === 'failed' ? (
-                <p className="text-xs text-muted-foreground">{t('txconfirm.feegrant.unavailable')}</p>
-              ) : null}
+              {payerByGrant === 'granter-short' ? <TxNote>{t('txconfirm.feegrant.short')}</TxNote> : null}
+              {feeGrantLookup.status === 'failed' ? <TxNote>{t('txconfirm.feegrant.unavailable')}</TxNote> : null}
             </div>
             {request.warning ? <WarningBox severity={request.severity}>{request.warning}</WarningBox> : null}
             {request.payer === address && !payerPending && currentSimulation.status === 'ready' ? (
@@ -374,17 +400,25 @@ export function ConfirmTransactionModal({
                 costLines={request.costLines}
               />
             ) : null}
-            {currentSimulation.status === 'failed' ? (
-              <WarningBox severity="irreversible">
-                {simulationRejection(currentSimulation.message)}{' '}
-                <button
-                  type="button"
-                  onClick={() => void simulate()}
-                  className="rounded-sm font-medium underline underline-offset-2 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-                >
-                  {t('txconfirm.retry')}
-                </button>
-              </WarningBox>
+            {rejection ? (
+              <Alert role="alert" variant="destructive" className={DESTRUCTIVE_ALERT}>
+                <OctagonXIcon />
+                <AlertDescription className="flex flex-col items-start gap-2 text-current [&_p]:mb-0!">
+                  <p className="[overflow-wrap:anywhere]">{rejection.text}</p>
+                  {rejection.retryable ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="xs"
+                      onClick={() => void simulate()}
+                      className="border-destructive/30 bg-transparent text-current hover:bg-destructive/10 hover:text-current"
+                    >
+                      <RotateCwIcon aria-hidden="true" />
+                      {t('txconfirm.retry')}
+                    </Button>
+                  ) : null}
+                </AlertDescription>
+              </Alert>
             ) : null}
             <Collapsible>
               <CollapsibleTrigger asChild>
@@ -419,6 +453,7 @@ export function ConfirmTransactionModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

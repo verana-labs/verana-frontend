@@ -41,6 +41,12 @@ const LINK =
   'inline-flex items-center gap-0.5 rounded-sm text-xs font-medium text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50'
 const ADMIN_API_TYPE = 'VsAgentAdminAPI'
 
+function roleName(role: string): string {
+  const key = `participantcard.role.singular.${role.toLowerCase().replaceAll('_', '')}`
+  const label = translate(key)
+  return label === key ? role : label
+}
+
 function CredentialRow({ credential }: { credential: PresentedCredential }) {
   const labels = useRegistryLabels()
   return (
@@ -76,7 +82,9 @@ function AccreditationRow({
   const onboarding = participation.opState === 'PENDING' ? onboardingStateColor(participation.opState) : undefined
   const summary = (
     <>
-      <span className={cn(PILL, roleBadgeClass(participation.role as ParticipantRole))}>{participation.role}</span>
+      <span className={cn(PILL, 'uppercase', roleBadgeClass(participation.role as ParticipantRole))}>
+        {roleName(participation.role)}
+      </span>
       <span className="font-medium text-foreground">{labels.schemaLabel(participation.credentialSchemaId)}</span>
       <span className="text-muted-foreground">{labels.ecosystemLabel(participation.ecosystemId)}</span>
       <span className={cn(PILL, state.classParticipantState)}>{state.labelParticipantState}</span>
@@ -205,7 +213,10 @@ export default function AgentCard({
                 {serviceName}
               </h3>
               {agent.label ? (
-                <span className="inline-flex h-5 items-center rounded-full border border-primary/20 bg-primary/10 px-2 text-xs font-medium text-primary">
+                <span
+                  data-agent-label={agent.label}
+                  className="inline-flex h-5 items-center rounded-full border border-primary/20 bg-primary/10 px-2 text-xs font-medium text-primary"
+                >
                   {translate(`agents.label.${agent.label}`)}
                 </span>
               ) : null}

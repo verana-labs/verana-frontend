@@ -63,7 +63,7 @@ export function SchemasCard({
           link={{ href: '/discover', label: translate('dashboard.schemas.viewAll') }}
           tag={
             ranked.length > 0 && count > 0 ? (
-              <ToneTag tone="accent" className="tabular-nums">
+              <ToneTag tone="accent" className="hidden shrink-0 tabular-nums @[420px]/card:inline-flex">
                 {translate('dashboard.schemas.showing', {
                   shown: formatCount(ranked.length),
                   total: formatCount(count),

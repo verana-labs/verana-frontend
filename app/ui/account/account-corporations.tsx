@@ -10,7 +10,7 @@ import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import { cn } from '@/lib/utils'
-import { BlockHeader, BlockLinkButton } from '@/ui/common/block-card'
+import { BlockHeader } from '@/ui/common/block-card'
 import { CorporationDiscoveryFailure } from '@/ui/common/corporation-discovery-failure'
 import { CorporationMembershipRow } from '@/ui/common/corporation-membership-row'
 import { ToneTag } from '@/ui/common/tone-tag'
@@ -56,11 +56,13 @@ export function AccountCorporations() {
           }
           actions={
             showEmpty ? null : (
-              <BlockLinkButton
+              <Link
                 href="/corporation"
-                label={translate('account.corporations.notice.link')}
-                className="text-primary hover:text-primary/80"
-              />
+                className="inline-flex shrink-0 items-center gap-0.5 rounded-md px-1 py-0.5 text-[13px] font-medium text-primary transition-colors duration-(--duration-fast) outline-none hover:text-primary/80 focus-visible:ring-[3px] focus-visible:ring-ring/50 max-sm:size-8 max-sm:justify-center max-sm:bg-tint-accent max-sm:px-0"
+              >
+                <span className="max-sm:sr-only">{translate('account.corporations.notice.link')}</span>
+                <ChevronRightIcon aria-hidden="true" className="size-3.5 rtl:rotate-180 max-sm:size-4" />
+              </Link>
             )
           }
         />

@@ -58,8 +58,9 @@ export function Stepper({ steps, activeStep, label, completedLabel, className }:
               <span className="flex min-w-0 flex-col gap-0.5 pt-1">
                 <span
                   className={cn(
-                    'text-sm leading-tight font-medium',
-                    state === 'inactive' ? 'text-muted-foreground' : 'text-foreground'
+                    'text-sm leading-tight font-medium text-balance',
+                    state === 'inactive' ? 'text-muted-foreground' : 'text-foreground',
+                    state !== 'active' && 'max-sm:sr-only'
                   )}
                 >
                   {title}

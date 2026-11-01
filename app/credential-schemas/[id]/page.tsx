@@ -2,17 +2,21 @@
 
 import { faBoxArchive, faPenToSquare } from '@fortawesome/free-solid-svg-icons'
 import {
+  ArrowLeftIcon,
   BracesIcon,
+  CloudOffIcon,
   CoinsIcon,
   FingerprintIcon,
   HistoryIcon,
   InfinityIcon,
   type LucideIcon,
   NetworkIcon,
+  RotateCwIcon,
+  SearchXIcon,
   SlidersHorizontalIcon,
   TriangleAlertIcon,
 } from 'lucide-react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useId, useState } from 'react'
 import { VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA } from '@/config/env'
 import { useActivityHistory } from '@/hooks/useActivityHistory'
@@ -22,13 +26,14 @@ import { useEcosystemData } from '@/hooks/useEcosystemData'
 import { useActionSigning } from '@/hooks/useSigningMode'
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
-import { translate } from '@/i18n/dataview'
+import { getLocale, translate } from '@/i18n/dataview'
 import { isNativePricing, pricingAssetLabel } from '@/lib/pricing-asset'
 import { cn } from '@/lib/utils'
 import { useProtocolParams } from '@/providers/protocol-params-context'
 import { ActivityHistorySection } from '@/ui/common/activity-history-section'
 import { CapabilityButton, EntityActionButton } from '@/ui/common/capability-button'
 import { renderActionComponent } from '@/ui/common/data-view-typed'
+import { EmptyState } from '@/ui/common/empty-state'
 import JsonCodeBlock from '@/ui/common/json-code-block'
 import { ModalAction } from '@/ui/common/modal-action'
 import { PricingNotice } from '@/ui/common/pricing-notice'
@@ -166,7 +171,7 @@ function ValidityFieldInput({
         disabled={disabled}
         aria-invalid={invalid}
         aria-describedby={invalid ? errorId : undefined}
-        className="tabular-nums"
+        className="tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
       {invalid ? (
         <p id={errorId} className="data-edit-error">
@@ -195,6 +200,11 @@ function SchemaFacts({
 }) {
   const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
   const native = isNativePricing(schema)
+  const assetType = pricingAssetLabel({ pricingAssetType: schema.pricingAssetType, pricingAsset: null })
+  const assetHint =
+    !native && schema.pricingAsset && schema.pricingAsset.toLowerCase() !== assetType.toLowerCase()
+      ? schema.pricingAsset
+      : undefined
   const latest = history.rows[0]
   const activityValue = history.failed ? (
     <UnknownStat />
@@ -208,8 +218,8 @@ function SchemaFacts({
       <StatTile
         icon={<CoinsIcon />}
         label={t('dataview.cs.fields.pricingAsset', 'Pricing Asset')}
-        value={native ? 'VNA' : (schema.pricingAsset ?? '-')}
-        hint={pricingAssetLabel(schema)}
+        value={native ? 'VNA' : assetType}
+        hint={assetHint}
       />
       <StatTile
         icon={<FingerprintIcon />}
@@ -223,7 +233,7 @@ function SchemaFacts({
         value={activityValue}
         hint={
           latest
-            ? translate('cs.facts.lastChange', { date: new Date(latest.timestamp).toLocaleDateString() })
+            ? translate('cs.facts.lastChange', { date: new Date(latest.timestamp).toLocaleDateString(getLocale()) })
             : undefined
         }
       />
@@ -259,6 +269,7 @@ function SchemaPageSkeleton() {
 
 export default function CredentialSchemaViewPage() {
   const params = useParams<{ id: string }>()
+  const router = useRouter()
   const id = params?.id ?? ''
   const { tab, setTab, view, setView } = useSchemaTab()
   const { credentialSchema, errorCredentialSchema, refetch: refetchCredentialSchema } = useCredentialSchemaData(id)
@@ -296,11 +307,44 @@ export default function CredentialSchemaViewPage() {
 
   if (!credentialSchema) {
     if (errorCredentialSchema) {
+      const tr = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
+      const notFound = errorCredentialSchema.startsWith('Error 404')
       return (
-        <div className="error-pane">
-          {errorCredentialSchema ||
-            (resolveTranslatable({ key: 'error.cs.notfound' }, translate) ?? 'Credential Schema not found')}
-        </div>
+        <>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push('/ecosystems')}
+            className="mb-4 -ms-2 text-muted-foreground"
+          >
+            <ArrowLeftIcon aria-hidden="true" className="rtl:rotate-180" />
+            {tr('button.ecosystem.back', 'Back')}
+          </Button>
+          {notFound ? (
+            <EmptyState
+              className="bg-card/50 py-16"
+              icon={<SearchXIcon />}
+              title={tr('error.cs.notfound', 'Credential schema not found.')}
+              description={`${tr('dataview.cs.fields.id', 'ID')} ${id}`}
+            />
+          ) : (
+            <EmptyState
+              className="bg-card/50 py-16"
+              icon={<CloudOffIcon />}
+              title={tr('error.fetch.cs.title', 'Error fetching credential schema')}
+              description={tr(
+                'ecosystems.error.description',
+                'The indexer did not answer. Check the network and retry.'
+              )}
+              action={
+                <Button type="button" variant="outline" size="sm" onClick={() => void refetchCredentialSchema()}>
+                  <RotateCwIcon data-icon="inline-start" aria-hidden="true" />
+                  {tr('ecosystems.retry', 'Retry')}
+                </Button>
+              }
+            />
+          )}
+        </>
       )
     }
     return <SchemaPageSkeleton />

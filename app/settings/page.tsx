@@ -2,7 +2,7 @@
 
 import { GlobeIcon, LanguagesIcon, type LucideIcon, PaletteIcon } from 'lucide-react'
 import { useTheme } from 'next-themes'
-import { type ReactNode, useEffect, useState } from 'react'
+import { Fragment, type ReactNode, useEffect, useState } from 'react'
 import { VERANA_GRAPH_URL, VERANA_INDEXER_BASE_URL } from '@/config/env'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { getLocale, isLocale, SUPPORTED_LOCALES, saveLocale, setLocale, translate } from '@/i18n/dataview'
@@ -15,6 +15,20 @@ import { resolveTranslatable } from '@/ui/dataview/types'
 import { Stagger, StaggerItem } from '@/ui/motion/stagger'
 
 const t = (key: string) => resolveTranslatable({ key }, translate) ?? key
+
+function breakableValue(value: string): ReactNode[] {
+  let offset = 0
+  return value.split(/(?<=[/.:?&=#_-])/).map((part) => {
+    const key = offset
+    offset += part.length
+    return (
+      <Fragment key={key}>
+        {part}
+        <wbr />
+      </Fragment>
+    )
+  })
+}
 
 const isThemeOption = (value: string | undefined): value is ThemeOption => THEMES.some((option) => option === value)
 
@@ -131,8 +145,8 @@ export default function SettingsPage() {
                 <dd className="flex min-w-0 items-center justify-between gap-2">
                   {value ? (
                     <>
-                      <span className="min-w-0 font-mono text-xs break-all text-foreground tabular-nums sm:text-[13px]">
-                        {value}
+                      <span className="min-w-0 font-mono text-xs [overflow-wrap:anywhere] text-foreground tabular-nums sm:text-[13px]">
+                        {breakableValue(value)}
                       </span>
                       <CopyValueButton value={value} label={t(`settings.network.${key}`)} className="-me-1.5" />
                     </>

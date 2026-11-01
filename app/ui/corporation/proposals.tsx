@@ -1,7 +1,7 @@
 'use client'
 
 import { ChevronDownIcon, PlusIcon, VoteIcon } from 'lucide-react'
-import { type ReactNode, useEffect, useReducer, useState } from 'react'
+import { type ReactNode, useEffect, useReducer, useRef, useState } from 'react'
 import {
   type GroupPolicy,
   type ProposalRow,
@@ -47,6 +47,7 @@ import {
   TimelineSeparator,
   TimelineTitle,
 } from './timeline'
+import { revealChild, useScrollEdges } from './use-scroll-edges'
 
 const FILTERS = ['all', 'SUBMITTED', 'ACCEPTED', 'REJECTED', 'ABORTED', 'WITHDRAWN'] as const
 type Filter = (typeof FILTERS)[number]
@@ -348,7 +349,7 @@ function ProposalDetail({ proposal, ctx }: { proposal: ProposalRow; ctx: Proposa
           {proposal.messages.map((message, index) => (
             <pre
               key={`${proposal.id}-${index}-${String(message['@type'] ?? '')}`}
-              className="max-h-80 overflow-auto rounded-lg bg-muted/60 p-3 font-mono text-xs leading-relaxed text-foreground ring-1 ring-border/60"
+              className="max-h-80 overflow-y-auto rounded-lg bg-muted/60 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap text-foreground ring-1 ring-border/60 outline-none [overflow-wrap:anywhere] focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               {JSON.stringify(message, null, 2)}
             </pre>
@@ -485,6 +486,8 @@ export function ProposalsSection({
 }) {
   const [filter, setFilter] = useState<Filter>('all')
   const visible = filter === 'all' ? proposals : proposals.filter((proposal) => proposal.status === filter)
+  const filtersRef = useRef<HTMLDivElement>(null)
+  const fade = useScrollEdges(filtersRef)
 
   return (
     <Card id="proposals">
@@ -502,35 +505,46 @@ export function ProposalsSection({
       />
       {composing ? <BlurFade className="mb-6">{composer}</BlurFade> : null}
       {partial ? <PartialNote filtered /> : null}
-      <div className="mb-5 flex w-fit max-w-full flex-nowrap gap-1 overflow-x-auto rounded-lg bg-tint-neutral p-1 [scrollbar-width:none]">
-        {FILTERS.map((entry) => {
-          const count = entry === 'all' ? proposals.length : proposals.filter((p) => p.status === entry).length
-          const active = filter === entry
-          return (
-            <button
-              key={entry}
-              type="button"
-              onClick={() => setFilter(entry)}
-              aria-pressed={active}
-              className={cn(
-                'relative isolate flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium outline-none transition-colors duration-(--duration-base) focus-visible:ring-[3px] focus-visible:ring-ring/50',
-                active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {active ? <TabIndicator layoutId="corporation-proposal-filter" /> : null}
-              {translate(FILTER_KEYS[entry])}
-              <span
+      {degraded ? null : (
+        <div
+          ref={filtersRef}
+          className={cn(
+            'mb-5 flex w-fit max-w-full flex-nowrap gap-1 overflow-x-auto rounded-lg bg-tint-neutral p-1 [scrollbar-width:none]',
+            fade
+          )}
+        >
+          {FILTERS.map((entry) => {
+            const count = entry === 'all' ? proposals.length : proposals.filter((p) => p.status === entry).length
+            const active = filter === entry
+            return (
+              <button
+                key={entry}
+                type="button"
+                onClick={(event) => {
+                  setFilter(entry)
+                  if (filtersRef.current) revealChild(filtersRef.current, event.currentTarget)
+                }}
+                aria-pressed={active}
                 className={cn(
-                  'inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1 text-[11px] leading-none tabular-nums',
-                  active ? 'bg-tint-accent text-primary' : 'text-muted-foreground'
+                  'relative isolate flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium outline-none transition-colors duration-(--duration-base) focus-visible:ring-[3px] focus-visible:ring-ring/50',
+                  active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
                 )}
               >
-                {atLeast(count, partial)}
-              </span>
-            </button>
-          )
-        })}
-      </div>
+                {active ? <TabIndicator layoutId="corporation-proposal-filter" /> : null}
+                {translate(FILTER_KEYS[entry])}
+                <span
+                  className={cn(
+                    'inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1 text-[11px] leading-none tabular-nums',
+                    active ? 'bg-tint-accent text-primary' : 'text-muted-foreground'
+                  )}
+                >
+                  {atLeast(count, partial)}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      )}
       {degraded ? (
         <SectionUnavailable />
       ) : visible.length === 0 ? (

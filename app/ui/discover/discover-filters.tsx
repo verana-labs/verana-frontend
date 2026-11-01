@@ -44,7 +44,7 @@ function FilterChip({
     <label
       htmlFor={id}
       className={cn(
-        'inline-flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-full border px-3.5 text-sm whitespace-nowrap select-none sm:h-8 sm:px-3',
+        'inline-flex min-h-9 max-w-full cursor-pointer items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm leading-tight select-none sm:min-h-8 sm:px-3 sm:py-1',
         'transition-[color,background-color,border-color] duration-(--duration-base) ease-standard',
         'has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50',
         checked
@@ -56,7 +56,7 @@ function FilterChip({
         id={id}
         checked={checked}
         onCheckedChange={(next) => onCheckedChange(next === true)}
-        className="size-3.5 rounded-[4px] focus-visible:ring-0 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground [&_svg]:size-3"
+        className="size-3.5 shrink-0 rounded-[4px] focus-visible:ring-0 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground [&_svg]:size-3"
       />
       {label}
     </label>
@@ -122,7 +122,7 @@ export function DiscoverFilters({ value, onChange, corporationFilters, loadedOnl
         </div>
       </div>
 
-      <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 py-1 [mask-image:linear-gradient(to_right,transparent,black_1rem,black_calc(100%-1rem),transparent)] [scrollbar-width:none] sm:mx-0 sm:mt-4 sm:flex-wrap sm:overflow-visible sm:px-0 sm:[mask-image:none]">
+      <div className="mt-3 flex flex-wrap gap-2 sm:mt-4">
         {chips.map((chip) => (
           <FilterChip
             key={chip.id}

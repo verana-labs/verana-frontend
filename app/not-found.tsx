@@ -21,10 +21,7 @@ export default function NotFound() {
           <p className="bg-linear-to-r from-primary-700 via-primary-600 to-primary-400 bg-clip-text text-7xl leading-none font-semibold tracking-[-0.06em] text-transparent tabular-nums sm:text-8xl dark:from-primary-400 dark:via-primary-300 dark:to-primary-200">
             404
           </p>
-          <EmptyMedia
-            variant="icon"
-            className="-mt-4 size-10 rounded-xl bg-card text-primary shadow-hairline ring-4 ring-page"
-          >
+          <EmptyMedia variant="icon" className="mt-1 size-10 rounded-xl bg-card text-primary shadow-hairline">
             <CompassIcon className="size-5" />
           </EmptyMedia>
           <EmptyTitle>

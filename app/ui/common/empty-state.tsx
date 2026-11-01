@@ -16,12 +16,20 @@ export function EmptyState({ icon, title, description, action, outline = true, c
     <Empty className={cn(outline && 'border border-dashed border-border', className)}>
       <EmptyHeader>
         {icon ? (
-          <EmptyMedia variant="icon" className="size-9 bg-tint-accent text-primary" aria-hidden="true">
+          <EmptyMedia
+            variant="icon"
+            className="size-9 rounded-lg bg-tint-accent text-primary [&_svg]:size-4"
+            aria-hidden="true"
+          >
             {icon}
           </EmptyMedia>
         ) : null}
-        <EmptyTitle className="text-base font-semibold tracking-[-0.01em]">{title}</EmptyTitle>
-        {description ? <EmptyDescription>{description}</EmptyDescription> : null}
+        <EmptyTitle className="text-base font-semibold tracking-[-0.01em] text-balance [overflow-wrap:anywhere]">
+          {title}
+        </EmptyTitle>
+        {description ? (
+          <EmptyDescription className="text-pretty [overflow-wrap:anywhere]">{description}</EmptyDescription>
+        ) : null}
       </EmptyHeader>
       {action ? <EmptyContent>{action}</EmptyContent> : null}
     </Empty>

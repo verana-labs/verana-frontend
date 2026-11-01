@@ -234,26 +234,28 @@ function AttributeGrid({
   columns?: 2 | 3
 }) {
   return (
-    <dl
-      className={cn(
-        'grid grid-cols-1 gap-x-6 gap-y-4',
-        columns === 3 ? '@lg/card:grid-cols-3' : '@md/card:grid-cols-2'
-      )}
-    >
-      {items.map((item) => {
-        const value = itemValue(participant, item)
-        if (value === null || (item.hiddenZero && Number(value) === 0)) return null
-        return (
-          <ParticipantAttribute
-            key={item.attr}
-            label={item.label}
-            value={value}
-            mono={item.mono}
-            actions={item.extraActions}
-          />
-        )
-      })}
-    </dl>
+    <div className="@container/card">
+      <dl
+        className={cn(
+          'grid grid-cols-1 gap-x-6 gap-y-4',
+          columns === 3 ? '@[29rem]/card:grid-cols-3' : '@[25rem]/card:grid-cols-2'
+        )}
+      >
+        {items.map((item) => {
+          const value = itemValue(participant, item)
+          if (value === null || (item.hiddenZero && Number(value) === 0)) return null
+          return (
+            <ParticipantAttribute
+              key={item.attr}
+              label={item.label}
+              value={value}
+              mono={item.mono}
+              actions={item.extraActions}
+            />
+          )
+        })}
+      </dl>
+    </div>
   )
 }
 
@@ -427,7 +429,7 @@ export default function ParticipantCard({
 
   const title = participantCardTitle(participant, schemaTitle)
   const leaf = LEAF_ROLES.has(participant.role)
-  const countSpan = leaf ? '@md/card:col-span-3' : '@md/card:col-span-2'
+  const countSpan = leaf ? '@[25rem]/card:col-span-3' : '@[25rem]/card:col-span-2'
   const historyEmpty = participantHistory.length === 0
 
   return (
@@ -437,7 +439,7 @@ export default function ParticipantCard({
       animate={{ opacity: 1 }}
       transition={{ duration: DURATION.base, ease: EASE.standard }}
       className={cn(
-        '@container/card text-sm text-card-foreground',
+        'text-sm text-card-foreground',
         !embedded && 'overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10'
       )}
     >
@@ -559,28 +561,30 @@ export default function ParticipantCard({
           </div>
         </div>
 
-        <dl className="mt-4 grid grid-cols-2 gap-2 @md/card:grid-cols-6">
-          <StatTile label={tr('participantcard.meta.issued', 'Issued Credentials')} className={countSpan}>
-            {countOf(participant.issued)}
-          </StatTile>
-          <StatTile label={tr('participantcard.meta.verified', 'Verified Credentials')} className={countSpan}>
-            {countOf(participant.verified)}
-          </StatTile>
-          {leaf ? null : (
-            <StatTile label={tr('participantcard.meta.participants', 'Participants')} className={countSpan}>
-              {countOf(participant.participants)}
+        <div className="@container/card mt-4">
+          <dl className="grid grid-cols-2 gap-2 @[25rem]/card:grid-cols-6">
+            <StatTile label={tr('participantcard.meta.issued', 'Issued Credentials')} className={countSpan}>
+              {countOf(participant.issued)}
             </StatTile>
-          )}
-          <StatTile label={tr('participantcard.meta.deposit', 'Deposit')} className="@md/card:col-span-3">
-            <span className="font-mono text-base">{formatVNAFromUVNA(String(participant.deposit ?? 0))}</span>
-          </StatTile>
-          <StatTile
-            label={tr('participantcard.meta.weight', 'Weight')}
-            className={cn('@md/card:col-span-3', !leaf && 'col-span-2')}
-          >
-            <span className="font-mono text-base">{formatVNAFromUVNA(String(participant.weight ?? 0))}</span>
-          </StatTile>
-        </dl>
+            <StatTile label={tr('participantcard.meta.verified', 'Verified Credentials')} className={countSpan}>
+              {countOf(participant.verified)}
+            </StatTile>
+            {leaf ? null : (
+              <StatTile label={tr('participantcard.meta.participants', 'Participants')} className={countSpan}>
+                {countOf(participant.participants)}
+              </StatTile>
+            )}
+            <StatTile label={tr('participantcard.meta.deposit', 'Deposit')} className="@[25rem]/card:col-span-3">
+              <span className="font-mono text-base">{formatVNAFromUVNA(String(participant.deposit ?? 0))}</span>
+            </StatTile>
+            <StatTile
+              label={tr('participantcard.meta.weight', 'Weight')}
+              className={cn('@[25rem]/card:col-span-3', !leaf && 'col-span-2')}
+            >
+              <span className="font-mono text-base">{formatVNAFromUVNA(String(participant.weight ?? 0))}</span>
+            </StatTile>
+          </dl>
+        </div>
       </header>
 
       <Section icon={InfoIcon} title={tr('participantcard.meta.title', 'Key Metadata')}>

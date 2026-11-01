@@ -261,11 +261,11 @@ function PeriodStrip({
         <KpiStat
           key={item.key}
           size="sm"
-          className="px-3 sm:px-4"
+          className="px-3 sm:px-4 *:first:whitespace-normal"
           label={
             <span className="flex items-center gap-1.5">
               <Swatch color={item.color} />
-              <span className="truncate">{item.label}</span>
+              <span className="min-w-0 leading-4 hyphens-auto">{item.label}</span>
             </span>
           }
           value={`+${formatCount(current[item.key])}`}

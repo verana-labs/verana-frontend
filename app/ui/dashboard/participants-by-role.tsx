@@ -33,7 +33,7 @@ export function ParticipantsByRole({
   rolesError: boolean
   onRetry: () => void
   total: number | null
-  joined: number
+  joined: number | null
   joinedDelta: DeltaPillProps | null
   period: string
   className?: string
@@ -129,14 +129,16 @@ export function ParticipantsByRole({
             )}
           </span>
         </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs leading-none text-muted-foreground">
-          <span>
-            {joined > 0
-              ? translate('dashboard.roles.joined', { count: formatCount(joined), range: period })
-              : translate('dashboard.roles.nojoin', { range: period })}
-          </span>
-          {joinedDelta ? <DeltaPill {...joinedDelta} /> : null}
-        </div>
+        {joined !== null ? (
+          <div className="flex flex-wrap items-center gap-2 text-xs leading-none text-muted-foreground">
+            <span>
+              {joined > 0
+                ? translate('dashboard.roles.joined', { count: formatCount(joined), range: period })
+                : translate('dashboard.roles.nojoin', { range: period })}
+            </span>
+            {joinedDelta ? <DeltaPill {...joinedDelta} /> : null}
+          </div>
+        ) : null}
       </CardFooter>
     </Card>
   )

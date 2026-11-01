@@ -72,7 +72,11 @@ export default function JoinFlow({ ecosystemId, nodeJoin, onCancel, onRefresh }:
 
   useEffect(() => {
     if (!errorEcosystem || errorNotified) return
-    void notify(errorEcosystem, 'error', resolveTranslatable({ key: 'error.fetch.ecosystem.title' }, translate))
+    void notify(
+      t('join.error.ecosystem', { reason: errorEcosystem }),
+      'error',
+      resolveTranslatable({ key: 'error.fetch.ecosystem.title' }, translate)
+    )
     setErrorNotified(true)
     router.push('/ecosystems')
   }, [errorEcosystem, errorNotified, notify, router])
@@ -99,30 +103,32 @@ export default function JoinFlow({ ecosystemId, nodeJoin, onCancel, onRefresh }:
           <motion.div key="egf" {...slide}>
             {ecosystem ? (
               <EgfCard ecosystem={ecosystem} accepted={accepted} onAcceptedChange={setAccepted} />
-            ) : errorEcosystem ? null : (
+            ) : errorEcosystem ? (
+              <div role="alert" className="error-pane mb-6">
+                {t('join.error.ecosystem', { reason: errorEcosystem })}
+              </div>
+            ) : (
               <EgfSkeleton />
             )}
-            {errorEcosystem ? null : (
-              <div className="grid grid-cols-2 gap-3">
-                <Button type="button" variant="outline" size="lg" className="w-full" onClick={onCancel}>
-                  {t('join.btn.cancel')}
-                </Button>
-                <Button
-                  type="button"
-                  size="lg"
-                  className="w-full"
-                  disabled={!ecosystem || !accepted}
-                  onClick={() => {
-                    if (!accepted) return
-                    setCurrentStep(2)
-                    window.scrollTo({ top: 0, behavior: 'smooth' })
-                  }}
-                >
-                  {t('join.btn.continue')}
-                  <ArrowRightIcon aria-hidden="true" data-icon="inline-end" />
-                </Button>
-              </div>
-            )}
+            <div className="sticky bottom-0 z-10 -mx-4 -mb-4 grid grid-cols-2 gap-3 rounded-b-2xl border-t bg-popover/95 px-4 py-3 supports-backdrop-filter:backdrop-blur-sm sm:-mx-6 sm:-mb-6 sm:px-6 sm:py-4">
+              <Button type="button" variant="outline" size="lg" className="w-full" onClick={onCancel}>
+                {t('join.btn.cancel')}
+              </Button>
+              <Button
+                type="button"
+                size="lg"
+                className="w-full"
+                disabled={!ecosystem || !accepted}
+                onClick={() => {
+                  if (!accepted) return
+                  setCurrentStep(2)
+                  window.scrollTo({ top: 0, behavior: 'smooth' })
+                }}
+              >
+                {t('join.btn.continue')}
+                <ArrowRightIcon aria-hidden="true" data-icon="inline-end" />
+              </Button>
+            </div>
           </motion.div>
         ) : (
           <motion.div key="join" {...slide}>

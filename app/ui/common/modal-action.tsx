@@ -15,7 +15,7 @@ interface ModalActionProps {
 }
 
 const PANEL_CLASS =
-  'relative mx-auto my-4 w-[calc(100%-2rem)] max-w-2xl rounded-xl bg-popover p-4 text-sm text-popover-foreground shadow-overlay ring-1 ring-foreground/10 outline-none animate-in fade-in-0 zoom-in-95 duration-100 sm:my-16 sm:p-6'
+  'relative w-full max-w-2xl rounded-2xl bg-popover p-4 text-sm text-popover-foreground shadow-overlay ring-1 ring-foreground/10 outline-none animate-in fade-in-0 zoom-in-[0.97] slide-in-from-bottom-2 duration-(--duration-slow) ease-standard motion-reduce:animate-none sm:p-6'
 
 const FOCUSABLE =
   'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
@@ -112,30 +112,32 @@ export const ModalAction: React.FC<ModalActionProps> = ({
     >
       <div
         aria-hidden="true"
-        className="fixed inset-0 bg-black/20 animate-in fade-in-0 duration-100 supports-backdrop-filter:backdrop-blur-xs dark:bg-black/50"
+        className="fixed inset-0 bg-black/25 animate-in fade-in-0 duration-(--duration-base) supports-backdrop-filter:backdrop-blur-sm motion-reduce:animate-none dark:bg-black/55"
       />
-      <div
-        ref={panelRef}
-        data-modal-action-panel
-        tabIndex={-1}
-        onKeyDown={trapTabKey}
-        className={cn(PANEL_CLASS, classModal)}
-      >
-        <div className="mb-4 flex items-start justify-between gap-4 pr-8">
-          <h3 className="text-lg font-semibold leading-snug text-foreground">
-            {resolveTranslatable({ key: titleKey }, translate)}
-          </h3>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={onClose}
-            className="absolute top-3 right-3 text-muted-foreground sm:top-4 sm:right-4"
-            aria-label={translate('common.close')}
-          >
-            <XIcon />
-          </Button>
+      <div className="relative flex min-h-full items-center justify-center p-4">
+        <div
+          ref={panelRef}
+          data-modal-action-panel
+          tabIndex={-1}
+          onKeyDown={trapTabKey}
+          className={cn(PANEL_CLASS, classModal)}
+        >
+          <div className="mb-5 flex items-start justify-between gap-4 pe-8">
+            <h3 className="text-lg leading-snug font-semibold tracking-[-0.015em] text-pretty text-foreground [overflow-wrap:anywhere]">
+              {resolveTranslatable({ key: titleKey }, translate)}
+            </h3>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onClose}
+              className="absolute end-3 top-3 text-muted-foreground sm:end-4 sm:top-4"
+              aria-label={translate('common.close')}
+            >
+              <XIcon />
+            </Button>
+          </div>
+          {children}
         </div>
-        {children}
       </div>
     </div>
   )
