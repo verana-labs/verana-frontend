@@ -996,6 +996,7 @@
   "corporation.page.language": "Idioma",
   "corporation.page.created": "Creada",
   "corporation.page.rotatedid": "Rotar DID",
+  "corporation.page.address": "dirección de la corporación",
   "corporation.page.addresscopy": "Copiar dirección de la corporación",
   "corporation.page.send": "Enviar VNA",
   "corporation.page.balance": "Saldo",
