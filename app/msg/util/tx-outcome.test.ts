@@ -259,7 +259,7 @@ describe('signature cancellation', () => {
   it('shows an info toast without waiting for it on cancellation', async () => {
     const notify = vi.fn(() => new Promise<void>(() => {}))
     await notifyRejection(notify, 'Unable to archive the ecosystem.', 'Request rejected')
-    expect(notify).toHaveBeenCalledWith('Signature cancelled', 'info')
+    expect(notify).toHaveBeenCalledWith('Signature cancelled', 'notice')
   })
 
   it('keeps the error toast for every other failure', async () => {

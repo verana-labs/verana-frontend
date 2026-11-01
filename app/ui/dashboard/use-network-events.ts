@@ -18,8 +18,10 @@ export type NetworkEvent = {
 }
 
 const PAGE_LIMIT = 500
-const LOOKBACK_BLOCKS = [500, 5_000, 50_000, 500_000]
-const MAX_PAGES = 40
+const INITIAL_WINDOW = 10_000
+const TARGET_EVENTS = 100
+const SPARSE_GROWTH = 100
+const MAX_PROBES = 3
 const POLL_MIN_MS = 12_000
 const KEEP = 30
 
@@ -64,27 +66,41 @@ async function fetchPage(after: number, signal: AbortSignal): Promise<NetworkEve
   return list.map(parseEvent).filter((event): event is NetworkEvent => event !== null)
 }
 
-async function fetchAfter(after: number, signal: AbortSignal): Promise<{ events: NetworkEvent[]; total: number }> {
-  let events: NetworkEvent[] = []
-  let total = 0
-  let cursor = after
-  for (let page = 0; page < MAX_PAGES; page++) {
-    const batch = await fetchPage(cursor, signal)
-    total += batch.length
-    events = [...events, ...batch].slice(-KEEP)
-    if (batch.length < PAGE_LIMIT) break
-    cursor = batch[batch.length - 1].blockHeight
+type Page = { events: NetworkEvent[]; complete: boolean }
+
+async function fetchAfter(after: number, signal: AbortSignal): Promise<Page> {
+  const events = await fetchPage(after, signal)
+  return { events, complete: events.length < PAGE_LIMIT }
+}
+
+function nextAfter(height: number, after: number, page: Page): number {
+  if (!page.complete) {
+    const covered = Math.max(1, (page.events.at(-1)?.blockHeight ?? height) - after)
+    const window = Math.max(1, Math.floor((covered * TARGET_EVENTS) / PAGE_LIMIT))
+    return Math.min(height - 1, Math.max(after + 1, height - window))
   }
-  return { events, total }
+  const window = height - after
+  const grown =
+    page.events.length === 0 ? window * SPARSE_GROWTH : Math.ceil((window * TARGET_EVENTS) / page.events.length)
+  return Math.max(0, height - grown)
 }
 
 async function fetchLatest(height: number, want: number, signal: AbortSignal): Promise<NetworkEvent[]> {
-  for (const lookback of LOOKBACK_BLOCKS) {
-    if (lookback >= height) break
-    const { events, total } = await fetchAfter(height - lookback, signal)
-    if (total >= want) return events
+  let after = Math.max(0, height - INITIAL_WINDOW)
+  let best: NetworkEvent[] | null = null
+  let last: NetworkEvent[] = []
+  for (let probe = 0; probe < MAX_PROBES; probe++) {
+    const page = await fetchAfter(after, signal)
+    last = page.events
+    if (page.complete) {
+      best = page.events
+      if (page.events.length >= want || after === 0) break
+    }
+    const next = nextAfter(height, after, page)
+    if (next === after) break
+    after = next
   }
-  return (await fetchAfter(0, signal)).events
+  return (best ?? last).slice(-KEEP)
 }
 
 function newestFirst(events: NetworkEvent[]): NetworkEvent[] {
@@ -153,9 +169,11 @@ export function useNetworkEvents(want = 8) {
     lastPollRef.current = now
     inFlightRef.current = true
     const controller = unmountRef.current ?? new AbortController()
+    const height = latestProcessedHeight
     fetchAfter(cursor, controller.signal)
-      .then(({ events: list }) => {
-        cursorRef.current = Math.max(cursor, latestProcessedHeight, list.at(-1)?.blockHeight ?? 0)
+      .then((page) => (page.complete ? page.events : fetchLatest(height, want, controller.signal)))
+      .then((list) => {
+        cursorRef.current = Math.max(cursor, height, list.at(-1)?.blockHeight ?? 0)
         const added = fresh(list)
         if (added.length === 0) return
         if (pausedRef.current) {
@@ -173,7 +191,7 @@ export function useNetworkEvents(want = 8) {
       .finally(() => {
         inFlightRef.current = false
       })
-  }, [latestProcessedHeight, fresh])
+  }, [latestProcessedHeight, want, fresh])
 
   const flush = useCallback(() => {
     const queued = pendingRef.current

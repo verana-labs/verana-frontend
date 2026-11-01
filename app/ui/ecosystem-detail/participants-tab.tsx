@@ -196,7 +196,7 @@ export function EcosystemParticipantsTab({
         data={schemasLoading ? null : schemaIds.length === 0 ? [] : visible}
         label={translate('participants.title')}
         getRowId={(row) => row.id}
-        rowHref={(row) => participantCardHref(row.schema_id)}
+        rowHref={(row) => participantCardHref(row.schema_id, row.id)}
         search={search}
         pageSize={10}
         error={error ? { message: translate('participants.tree.error'), onRetry: refetch } : null}
