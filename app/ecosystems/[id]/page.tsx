@@ -3,11 +3,13 @@
 import { faBoxArchive, faPenToSquare, faPlus } from '@fortawesome/free-solid-svg-icons'
 import {
   ArrowLeftIcon,
+  CloudOffIcon,
   FileJson2Icon,
   InfoIcon,
   LanguagesIcon,
   RotateCwIcon,
   ScrollTextIcon,
+  SearchXIcon,
   SlidersHorizontalIcon,
 } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
@@ -122,7 +124,7 @@ export default function EcosystemViewPage() {
   const { actingCorporation } = useUserCorporation()
   const { ecosystem, errorEcosystem, refetch: refetchEcosystem } = useEcosystemData(id)
   const history = useActivityHistory(
-    VERANA_REST_ENDPOINT_ECOSYSTEM && id ? `${VERANA_REST_ENDPOINT_ECOSYSTEM}/history/${id}` : undefined
+    VERANA_REST_ENDPOINT_ECOSYSTEM && ecosystem ? `${VERANA_REST_ENDPOINT_ECOSYSTEM}/history/${id}` : undefined
   )
   const {
     credentialSchemas,
@@ -175,24 +177,27 @@ export default function EcosystemViewPage() {
     return (
       <>
         {backButton}
-        <div className="error-pane">
-          <p className="min-w-0 flex-1 break-words">
-            {errorEcosystem ||
-              (resolveTranslatable({ key: 'error.ecosystem.notfound' }, translate) ?? 'Ecosystem not found')}
-          </p>
-          {notFound ? null : (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => void refetchEcosystem()}
-              className="-my-1 shrink-0 text-foreground"
-            >
-              <RotateCwIcon aria-hidden="true" />
-              {translate('ecosystems.retry')}
-            </Button>
-          )}
-        </div>
+        {notFound ? (
+          <EmptyState
+            className="bg-card/50 py-16"
+            icon={<SearchXIcon />}
+            title={t('error.ecosystem.notfound', 'Ecosystem not found')}
+            description={`${t('dataview.ecosystem.fields.id', 'ID')} ${id}`}
+          />
+        ) : (
+          <EmptyState
+            className="bg-card/50 py-16"
+            icon={<CloudOffIcon />}
+            title={t('error.fetch.ecosystem.title', 'Error fetching ecosystem')}
+            description={t('ecosystems.error.description', 'The indexer did not answer. Check the network and retry.')}
+            action={
+              <Button type="button" variant="outline" size="sm" onClick={() => void refetchEcosystem()}>
+                <RotateCwIcon data-icon="inline-start" aria-hidden="true" />
+                {t('ecosystems.retry', 'Retry')}
+              </Button>
+            }
+          />
+        )}
       </>
     )
   }

@@ -73,9 +73,12 @@ function StatusRow({
         <span className="capitalize">{label}</span>
       </SidebarMenuButton>
       <SidebarMenuBadge className="gap-1.5 font-mono text-[11px] text-muted-foreground">
-        {shownVersion}
+        {health === 'unreachable' && !version ? null : shownVersion}
         {health && !HEALTHY.has(health) ? (
-          <span title={reason ?? undefined} className={`pointer-events-auto font-sans ${HEALTH_TEXT[health]}`}>
+          <span
+            title={reason ?? undefined}
+            className={`pointer-events-auto font-sans font-medium ${HEALTH_TEXT[health]}`}
+          >
             {translate(`footer.health.${health}`)}
           </span>
         ) : null}

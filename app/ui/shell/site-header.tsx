@@ -21,8 +21,9 @@ import { Button } from '@/ui/shadcn/button'
 import { Kbd, KbdGroup } from '@/ui/shadcn/kbd'
 import { Separator } from '@/ui/shadcn/separator'
 import { SidebarTrigger, useSidebar } from '@/ui/shadcn/sidebar'
+import { Skeleton } from '@/ui/shadcn/skeleton'
 import { ecosystemLabel, useCommandMenu, useModifierKeyLabel, useSearchableEntities } from '@/ui/shell/command-menu'
-import { useNavItems } from '@/ui/shell/nav-items'
+import { useNavItems, useShellSettling } from '@/ui/shell/nav-items'
 import { ThemeToggle } from '@/ui/shell/theme-toggle'
 
 type Crumb = { label: string; href?: string }
@@ -149,6 +150,7 @@ function SearchButton() {
 export function SiteHeader({ title }: { title?: string }) {
   const pathname = usePathname()
   const crumbs = useCrumbs(pathname)
+  const settling = useShellSettling()
   const settingsLabel = translate('navbar.settings.title')
   const { isMobile } = useSidebar()
 
@@ -169,7 +171,12 @@ export function SiteHeader({ title }: { title?: string }) {
         {crumbs || title ? (
           <Separator orientation="vertical" className="mx-1 hidden data-[orientation=vertical]:h-4 md:block" />
         ) : null}
-        {crumbs ? (
+        {crumbs && settling ? (
+          <div role="status" aria-label={translate('shell.loading')} className="hidden items-center gap-2 sm:flex">
+            <Skeleton className="hidden h-4 w-20 md:block" />
+            <Skeleton className="h-4 w-36" />
+          </div>
+        ) : crumbs ? (
           <HeaderBreadcrumb crumbs={crumbs} />
         ) : title ? (
           <span className="min-w-0 truncate text-sm font-medium md:text-base">{title}</span>

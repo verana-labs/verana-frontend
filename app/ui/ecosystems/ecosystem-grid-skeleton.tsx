@@ -57,7 +57,10 @@ export function EcosystemGridSkeleton({
   return (
     <div aria-hidden="true" className={className}>
       {Array.from({ length: count }, (_, i) => (
-        <div key={i} className={cn('h-full', ghost && 'max-md:[&:nth-child(n+2)]:hidden')}>
+        <div
+          key={i}
+          className={cn('h-full', ghost ? 'max-md:[&:nth-child(n+2)]:hidden' : 'max-md:[&:nth-child(n+4)]:hidden')}
+        >
           <CardSkeleton ghost={ghost} />
         </div>
       ))}

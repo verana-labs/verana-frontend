@@ -139,7 +139,7 @@ export function TeamSwitcher() {
                 className="mx-1 mb-1 rounded-lg border border-destructive/25 bg-destructive/10 px-3 py-2"
               >
                 <p className="text-xs font-semibold text-destructive">{translate('corporation.selector.error')}</p>
-                <p className="mt-0.5 text-xs break-all text-muted-foreground">{error}</p>
+                <p className="mt-0.5 text-xs [overflow-wrap:anywhere] text-muted-foreground">{error}</p>
               </div>
             ) : null}
             {memberships.length === 0 && !error ? (

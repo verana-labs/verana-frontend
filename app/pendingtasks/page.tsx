@@ -30,34 +30,38 @@ function participantNode(participant: Participant, corporationId?: number): Tree
 }
 
 function buildTree(ecosystems: PendingEcosystem[], corporationId?: number): TreeNode[] {
-  return ecosystems.map((ecosystem) => ({
-    nodeId: `ecosystem:${ecosystem.id}`,
-    name: ecosystem.did ?? `Ecosystem ${ecosystem.id}`,
-    group: true,
-    parentId: 'root',
-    isCorporation: false,
-    isValidator: false,
-    roleColorClass: 'text-primary',
-    icon: faFolder,
-    iconColorClass: 'text-primary',
-    serviceDid: ecosystem.did ?? undefined,
-    serviceTrustData: ecosystem.trustData,
-    badgeCount: ecosystem.pending_tasks,
-    children: ecosystem.schemas.map((schema) => ({
-      nodeId: `schema:${schema.id}`,
-      name: schema.title,
+  return ecosystems.map((ecosystem) => {
+    const fallbackName = translate('task.tree.ecosystem', { id: ecosystem.id })
+    return {
+      nodeId: `ecosystem:${ecosystem.id}`,
+      name: ecosystem.did ?? fallbackName,
       group: true,
-      parentId: `ecosystem:${ecosystem.id}`,
+      parentId: 'root',
       isCorporation: false,
       isValidator: false,
-      roleColorClass: 'text-muted-foreground',
+      roleColorClass: 'text-primary',
       icon: faFolder,
-      iconColorClass: 'text-muted-foreground',
-      serviceTitle: schema.title,
-      badgeCount: schema.pending_tasks,
-      children: schema.pending_participants.map((participant) => participantNode(participant, corporationId)),
-    })),
-  }))
+      iconColorClass: 'text-primary',
+      serviceDid: ecosystem.did ?? undefined,
+      serviceTitle: ecosystem.did ? undefined : fallbackName,
+      serviceTrustData: ecosystem.trustData,
+      badgeCount: ecosystem.pending_tasks,
+      children: ecosystem.schemas.map((schema) => ({
+        nodeId: `schema:${schema.id}`,
+        name: schema.title,
+        group: true,
+        parentId: `ecosystem:${ecosystem.id}`,
+        isCorporation: false,
+        isValidator: false,
+        roleColorClass: 'text-muted-foreground',
+        icon: faFolder,
+        iconColorClass: 'text-muted-foreground',
+        serviceTitle: schema.title,
+        badgeCount: schema.pending_tasks,
+        children: schema.pending_participants.map((participant) => participantNode(participant, corporationId)),
+      })),
+    }
+  })
 }
 
 export default function PendingTasksPage() {

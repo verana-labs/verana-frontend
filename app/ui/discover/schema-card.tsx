@@ -4,7 +4,7 @@ import { Code2Icon, FileJson2Icon, LogInIcon } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import JsonCodeBlock from '@/ui/common/json-code-block'
-import { type CredentialSchemaListItem, getModePillClass } from '@/ui/datatable/columnslist/cs'
+import { type CredentialSchemaListItem, getModeLabel, getModePillClass } from '@/ui/datatable/columnslist/cs'
 import { discoverText as t } from '@/ui/discover/text'
 import { Button } from '@/ui/shadcn/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/ui/shadcn/dialog'
@@ -18,11 +18,11 @@ function ModePill({ mode, suffix }: { mode: string; suffix: string }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide',
+        'inline-flex max-w-full items-center rounded-full px-2 py-0.5 text-xs font-medium',
         getModePillClass(mode, suffix)
       )}
     >
-      {mode}
+      {getModeLabel(mode)}
     </span>
   )
 }
@@ -113,7 +113,7 @@ export function SchemaCard({ credentialSchema: schema, joinHref }: SchemaCardPro
         {facts.map(({ key, value }) => (
           <div key={key} className="flex min-w-0 items-center justify-between gap-3 @sm/eco:block">
             <dt className="text-xs text-pretty text-muted-foreground">{t(key)}</dt>
-            <dd className="shrink-0 text-sm font-medium text-foreground tabular-nums @sm/eco:mt-1">{value}</dd>
+            <dd className="min-w-0 text-sm font-medium text-foreground tabular-nums @sm/eco:mt-1">{value}</dd>
           </div>
         ))}
       </dl>

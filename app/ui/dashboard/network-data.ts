@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA,
   VERANA_REST_ENDPOINT_ECOSYSTEM,
@@ -218,4 +218,16 @@ export function rolesOf(roles: ParticipantRoles | null | undefined): RoleCount[]
     { role: 'verifierGrantor', participants: roles.verifierGrantor },
   ]
   return all.filter((r) => r.participants > 0 || ['ecosystem', 'issuer', 'verifier', 'holder'].includes(r.role))
+}
+
+function sameRoles(a: RoleCount[] | null, b: RoleCount[] | null): boolean {
+  if (a === null || b === null) return a === b
+  return a.length === b.length && a.every((r, i) => r.role === b[i].role && r.participants === b[i].participants)
+}
+
+export function useRoleCounts(roles: ParticipantRoles | null | undefined): RoleCount[] | null {
+  const stable = useRef<RoleCount[] | null>(null)
+  const next = rolesOf(roles)
+  if (!sameRoles(stable.current, next)) stable.current = next
+  return stable.current
 }

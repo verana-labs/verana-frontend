@@ -63,7 +63,7 @@ export function EcosystemStatTiles({ ecosystem, className }: { ecosystem: Ecosys
             label={label}
             icon={<Icon />}
             value={<NumberTicker value={value} />}
-            hint={hint}
+            hint={hint ? <span className="line-clamp-2 whitespace-normal text-pretty">{hint}</span> : undefined}
             meter={
               percent === undefined ? undefined : <ScoreGauge percent={percent} label={label} tone="brand" size="sm" />
             }
