@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParticipants } from '@/hooks/useParticipants'
-import { translate } from '@/i18n/dataview'
+import { getLocale, translate } from '@/i18n/dataview'
 import { cn } from '@/lib/utils'
 import { DataTable, dataTableColumns } from '@/ui/common/data-table/data-table'
 import { DataTableToolbar } from '@/ui/common/data-table/data-table-toolbar'
@@ -46,7 +46,7 @@ function StateCell({ participant }: { participant: Participant }) {
 function formatDay(value?: string | null): string {
   if (!value) return '-'
   const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? '-' : date.toLocaleDateString()
+  return Number.isNaN(date.getTime()) ? '-' : date.toLocaleDateString(getLocale())
 }
 
 export function ParticipantsTable({
@@ -150,6 +150,7 @@ export function ParticipantsTable({
   return (
     <div className="flex flex-col gap-3">
       <DataTableToolbar
+        className="max-sm:[&>[role=group]]:flex-wrap"
         search={{ value: search, onChange: setSearch, label: tr('datatable.search', 'Search') }}
         scopes={{
           value: role,

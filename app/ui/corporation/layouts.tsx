@@ -1,7 +1,7 @@
 'use client'
 
 import { HistoryIcon, InfoIcon } from 'lucide-react'
-import { type ReactNode, useEffect, useRef } from 'react'
+import { type ReactNode, useCallback, useEffect, useRef } from 'react'
 import type { CorporationDetails } from '@/hooks/useCorporationDetails'
 import type { GranterBalance } from '@/hooks/useGranterBalance'
 import type { ActionSigning } from '@/hooks/useSigningMode'
@@ -23,6 +23,7 @@ import { MemberWeights, OverviewDetails, OverviewTiles, RecentProposals } from '
 import { type ProposalContext, ProposalsSection } from './proposals'
 import { atLeast } from './shared'
 import { TrustDepositSection } from './trust-deposit'
+import { revealChild, useScrollEdges } from './use-scroll-edges'
 
 export const TABS = ['overview', 'members', 'governance', 'deposit', 'operators', 'proposals'] as const
 export type CorporationTab = (typeof TABS)[number]
@@ -152,48 +153,48 @@ export function TabsLayout({
   onSelectTab: (tab: CorporationTab) => void
 }) {
   const navRef = useRef<HTMLElement>(null)
-  useEffect(() => {
+  const revealActive = useCallback(() => {
     const nav = navRef.current
     const active = nav?.querySelector<HTMLElement>(`[data-tab="${tab}"]`)
-    if (!nav || !active) return
-    const start = active.offsetLeft - nav.offsetLeft
-    if (start < nav.scrollLeft || start + active.offsetWidth > nav.scrollLeft + nav.clientWidth) {
-      nav.scrollTo({ left: start - 16 })
-    }
+    if (nav && active) revealChild(nav, active)
   }, [tab])
+  useEffect(revealActive, [revealActive])
+  const fade = useScrollEdges(navRef, revealActive)
   const nav = (
-    <nav
-      ref={navRef}
-      aria-label={translate('corporation.page.title')}
-      className="flex gap-1 overflow-x-auto border-t border-border px-3 [scrollbar-width:none] sm:px-4"
-    >
-      {TABS.map((entry) => {
-        const active = tab === entry
-        return (
-          <button
-            key={entry}
-            type="button"
-            data-tab={entry}
-            onClick={() => onSelectTab(entry)}
-            aria-current={active ? 'page' : undefined}
-            className={cn(
-              'relative isolate flex h-11 shrink-0 items-center gap-2 px-3 text-sm font-medium whitespace-nowrap outline-none transition-colors duration-(--duration-base) ease-standard focus-visible:rounded-md focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-inset',
-              active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            {translate(`corporation.tab.${entry}`)}
-            {entry === 'proposals' && view.openProposals > 0 ? (
-              <span className="inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-destructive px-1 text-[11px] leading-none font-semibold text-white tabular-nums dark:text-neutral-950">
-                {atLeast(view.openProposals, view.details.partial.proposals)}
-              </span>
-            ) : null}
-            {active ? (
-              <TabIndicator layoutId="corporation-tabs" variant="underline" className="-bottom-px rounded-full" />
-            ) : null}
-          </button>
-        )
-      })}
-    </nav>
+    <div className="border-t border-border">
+      <nav
+        ref={navRef}
+        aria-label={translate('corporation.page.title')}
+        className={cn('flex gap-1 overflow-x-auto px-3 [scrollbar-width:none] sm:px-4', fade)}
+      >
+        {TABS.map((entry) => {
+          const active = tab === entry
+          return (
+            <button
+              key={entry}
+              type="button"
+              data-tab={entry}
+              onClick={() => onSelectTab(entry)}
+              aria-current={active ? 'page' : undefined}
+              className={cn(
+                'relative isolate flex h-11 shrink-0 items-center gap-2 px-3 text-sm font-medium whitespace-nowrap outline-none transition-colors duration-(--duration-base) ease-standard focus-visible:rounded-md focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-inset',
+                active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {translate(`corporation.tab.${entry}`)}
+              {entry === 'proposals' && view.openProposals > 0 ? (
+                <span className="inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-destructive px-1 text-[11px] leading-none font-semibold text-white tabular-nums dark:text-neutral-950">
+                  {atLeast(view.openProposals, view.details.partial.proposals)}
+                </span>
+              ) : null}
+              {active ? (
+                <TabIndicator layoutId="corporation-tabs" variant="underline" className="-bottom-px rounded-full" />
+              ) : null}
+            </button>
+          )
+        })}
+      </nav>
+    </div>
   )
   return (
     <>

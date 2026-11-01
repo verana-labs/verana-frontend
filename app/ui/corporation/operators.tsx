@@ -349,7 +349,7 @@ export function GrantOperatorForm({
         })
       }}
     >
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
         <label className="flex min-w-0 grow flex-col gap-2 text-sm font-medium text-foreground sm:max-w-xl">
           <span className="flex items-center gap-2">
             <KeyRoundIcon aria-hidden="true" className="size-4 text-primary" />
@@ -367,12 +367,16 @@ export function GrantOperatorForm({
             className="h-9 bg-background font-mono"
           />
         </label>
+        {granteeIssue ? (
+          <div className="-mt-1.5 sm:order-last sm:mt-0 sm:basis-full">
+            <AddressIssueNote issue={granteeIssue} />
+          </div>
+        ) : null}
         <Button type="submit" size="lg" disabled={!canSubmit} className="h-9 gap-2">
           <SigningModeIcon mode={mode} />
           {translate('corporation.page.grant.submit')}
         </Button>
       </div>
-      <AddressIssueNote issue={granteeIssue} />
       <AddressIssueNote issue={reading.issue} />
       <div className="flex flex-wrap gap-1">
         <Button

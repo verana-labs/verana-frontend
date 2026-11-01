@@ -1,13 +1,15 @@
 'use client'
 
+import { ExternalLinkIcon } from 'lucide-react'
 import { createContext, type ReactNode, useCallback, useContext, useMemo, useRef } from 'react'
 import { type ExternalToast, toast } from 'sonner'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { translate } from '@/i18n/dataview'
 import { Toaster } from '@/ui/shadcn/sonner'
 import { Spinner } from '@/ui/shadcn/spinner'
+import { shortenMiddle } from '@/util/util'
 
-type NotificationType = 'success' | 'error' | 'info' | 'inProgress'
+type NotificationType = 'success' | 'error' | 'info' | 'notice' | 'inProgress'
 
 // Per [VFE-TX-UX-1] a notification can link a transaction hash to the explorer.
 export type NotificationLink = {
@@ -30,6 +32,7 @@ const DURATION: Record<NotificationType, number> = {
   success: 5000,
   error: 10000,
   info: Number.POSITIVE_INFINITY,
+  notice: 5000,
   inProgress: Number.POSITIVE_INFINITY,
 }
 
@@ -37,10 +40,13 @@ const TYPE_CLASS: Record<NotificationType, string> = {
   success: 'notify-success',
   error: 'notify-error',
   info: 'notify-info',
+  notice: 'notify-info',
   inProgress: 'notify-in-progress',
 }
 
 const PHONE_OFFSET = { bottom: 'calc(var(--tab-bar-height) + 0.5rem)', right: 16, left: 16 }
+const DESKTOP_OFFSET = { bottom: 24, right: 24 }
+const LINK_LABEL_MAX = 23
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined)
 
@@ -50,18 +56,24 @@ export const useNotification = () => {
   return context
 }
 
+function shortLinkLabel(label: string) {
+  return /\s/.test(label) ? label : shortenMiddle(label, LINK_LABEL_MAX)
+}
+
 function NotificationBody({ message, link }: { message?: string; link?: NotificationLink }) {
   return (
     <>
-      {message ? <span className="block break-words">{message}</span> : null}
+      {message ? <span className="block text-pretty [overflow-wrap:anywhere]">{message}</span> : null}
       {link ? (
         <a
           href={link.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="notify-msg-link mt-1 block break-all font-mono text-xs text-primary underline underline-offset-2 hover:text-foreground focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          title={link.label}
+          className="notify-msg-link mt-1.5 inline-flex max-w-full items-center gap-1 rounded-sm font-mono text-xs text-primary underline underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
-          {link.label}
+          <span className="truncate">{shortLinkLabel(link.label)}</span>
+          <ExternalLinkIcon aria-hidden="true" className="size-3 shrink-0" />
         </a>
       ) : null}
     </>
@@ -82,15 +94,15 @@ function showToast(entry: ShownToast, message: string, title?: string, link?: No
   const text = title ?? message
   const heading =
     type === 'error' ? (
-      <span role="alert" data-toast-alert>
+      <span role="alert" data-toast-alert className="[overflow-wrap:anywhere]">
         {text}
       </span>
     ) : (
-      text
+      <span className="[overflow-wrap:anywhere]">{text}</span>
     )
   if (type === 'success') toast.success(heading, options)
   else if (type === 'error') toast.error(heading, options)
-  else if (type === 'info') toast.info(heading, options)
+  else if (type === 'info' || type === 'notice') toast.info(heading, options)
   else toast(heading, { ...options, icon: <Spinner aria-hidden="true" className="text-info" /> })
 }
 
@@ -141,9 +153,9 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     <NotificationContext.Provider value={contextValue}>
       {children}
       <Toaster
-        position={isPhone ? 'bottom-center' : 'top-right'}
+        position={isPhone ? 'bottom-center' : 'bottom-right'}
         closeButton
-        offset={isPhone ? PHONE_OFFSET : { top: 60, right: 24 }}
+        offset={isPhone ? PHONE_OFFSET : DESKTOP_OFFSET}
         mobileOffset={PHONE_OFFSET}
         containerAriaLabel={translate('notification.region')}
         toastOptions={{ closeButtonAriaLabel: translate('common.close') }}

@@ -1,6 +1,6 @@
 'use client'
 
-import { BracesIcon, CircleAlertIcon, FileJson2Icon, TriangleAlertIcon } from 'lucide-react'
+import { BracesIcon, FileJson2Icon, ShieldAlertIcon, TriangleAlertIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useEcosystemData } from '@/hooks/useEcosystemData'
@@ -8,7 +8,7 @@ import { useActionSigning } from '@/hooks/useSigningMode'
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
-import { NATIVE_PRICING } from '@/lib/pricing-asset'
+import { isNativePricing, NATIVE_PRICING, pricingAssetLabel } from '@/lib/pricing-asset'
 import { resolveMsgCopy } from '@/msg/constants/resolveMsgTypeConfig'
 import { useProtocolParams } from '@/providers/protocol-params-context'
 import { CorporationRequired } from '@/ui/common/corporation-required'
@@ -256,7 +256,7 @@ function SchemaSummary({
           <FileJson2Icon className="size-4" />
         </span>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold tracking-tight text-foreground">
+          <p className="text-sm font-semibold tracking-tight text-pretty break-words text-foreground">
             {preview?.title || translate('ecosystem.credentialSchema.add.title')}
           </p>
           <p className="truncate font-mono text-xs text-muted-foreground">{ecosystemLabel}</p>
@@ -264,9 +264,13 @@ function SchemaSummary({
       </div>
       <div className="flex items-baseline justify-between gap-2 border-t border-border/70 pt-3">
         <span className="text-xs text-muted-foreground">{translate('wizard.schema.attributes')}</span>
-        <span className="text-xl font-semibold tracking-[-0.02em] text-foreground tabular-nums">
-          {preview ? preview.attributes.length : '—'}
-        </span>
+        {preview ? (
+          <span className="text-xl font-semibold tracking-[-0.02em] text-foreground tabular-nums">
+            {preview.attributes.length}
+          </span>
+        ) : (
+          <span className="text-sm text-muted-foreground">-</span>
+        )}
       </div>
       <dl className="flex flex-col gap-2 border-t border-border/70 pt-3">
         {roles.map((role) => (
@@ -280,8 +284,8 @@ function SchemaSummary({
       </dl>
       <dl className="flex flex-col gap-1.5 border-t border-border/70 pt-3">
         {validity.map((entry) => (
-          <div key={entry.label} className="flex items-baseline justify-between gap-2 text-xs">
-            <dt className="min-w-0 truncate text-muted-foreground">{entry.label}</dt>
+          <div key={entry.label} className="flex items-baseline justify-between gap-3 text-xs">
+            <dt className="min-w-0 text-pretty text-muted-foreground">{entry.label}</dt>
             <dd className="shrink-0 font-medium text-foreground tabular-nums">{entry.value}</dd>
           </div>
         ))}
@@ -461,9 +465,9 @@ export function AddCredentialSchemaWizard({ ecosystemId }: { ecosystemId: number
       {reviewBlocker && !submitted ? (
         <div
           role="note"
-          className="mb-5 flex items-start gap-2.5 rounded-lg border border-destructive/25 bg-tint-destructive px-4 py-3 text-sm text-destructive"
+          className="mb-5 flex items-start gap-2.5 rounded-lg border border-warning/25 bg-tint-warning px-4 py-3 text-sm text-foreground"
         >
-          <CircleAlertIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          <ShieldAlertIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
           <p>{reviewBlocker}</p>
         </div>
       ) : null}
@@ -499,7 +503,9 @@ export function AddCredentialSchemaWizard({ ecosystemId }: { ecosystemId: number
               <dt className="text-xs font-medium text-muted-foreground">
                 {translate('dataview.cs.fields.pricingAsset')}
               </dt>
-              <dd className="mt-0.5 font-mono text-sm text-foreground">{draft.pricingAsset}</dd>
+              <dd className="mt-0.5 text-sm font-medium text-foreground">
+                {isNativePricing(draft) ? 'VNA' : pricingAssetLabel(draft)}
+              </dd>
             </div>
           </dl>
           {uiMsgType.warning ? (

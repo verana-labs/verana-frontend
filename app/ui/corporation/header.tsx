@@ -66,7 +66,7 @@ function MemberStack({ members }: { members: GroupMemberRow[] }) {
     <div className="flex items-center gap-2">
       <AvatarGroup className="-space-x-1.5">
         {shown.map((member) => (
-          <Avatar key={member.address} title={member.address} className="size-7 ring-2 ring-card">
+          <Avatar key={member.address} title={member.address} className="size-7 bg-card ring-2 ring-card">
             <AvatarFallback className="bg-linear-to-br from-primary/25 to-primary/5 text-[10px] font-semibold text-primary">
               {addressInitials(member.address)}
             </AvatarFallback>

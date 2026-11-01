@@ -1,7 +1,7 @@
 'use client'
 
 import { faPlus } from '@fortawesome/free-solid-svg-icons'
-import { CloudOffIcon, CompassIcon, LayersIcon, RotateCwIcon, SearchXIcon } from 'lucide-react'
+import { Building2Icon, CloudOffIcon, CompassIcon, LayersIcon, RotateCwIcon, SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
@@ -117,8 +117,15 @@ export default function EcosystemsPage() {
   }, [filtered.length, introPlayed])
 
   if (!actingCorporation && !corporationLoading) {
-    if (discoveryError) return <div className="p-6 error-pane">{translate('corporation.page.error')}</div>
-    return <p className="p-6 text-sm text-muted-foreground">{translate('corporation.page.nocorp')}</p>
+    return (
+      <PageTransition>
+        <EmptyState
+          className="bg-card/50 py-16"
+          icon={discoveryError ? <CloudOffIcon /> : <Building2Icon />}
+          title={translate(discoveryError ? 'corporation.page.error' : 'corporation.page.nocorp')}
+        />
+      </PageTransition>
+    )
   }
 
   const openCreate = () => router.push('/ecosystems/add')
@@ -275,7 +282,7 @@ export default function EcosystemsPage() {
               </Stagger>
             )}
 
-            {listError ? null : (
+            {listError || (filtered.length === 0 && !hasPrevious && !hasNext) ? null : (
               <KeysetPagination
                 showing={filtered.length}
                 itemsLabel={tr('datatable.ecosystem.pagination.ecosystems', 'ecosystems')}

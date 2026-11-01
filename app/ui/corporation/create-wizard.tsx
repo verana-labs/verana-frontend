@@ -55,6 +55,10 @@ function approvalPercent(policy: DecisionPolicyInput, totalWeight: number): numb
   return Math.min(100, (Number(policy.rule.threshold) / totalWeight) * 100)
 }
 
+function exceedsTotal(policy: DecisionPolicyInput, totalWeight: number): boolean {
+  return policy.rule.kind === 'threshold' && totalWeight > 0 && Number(policy.rule.threshold) > totalWeight
+}
+
 function ruleLabel(policy: DecisionPolicyInput, totalWeight: number): string {
   if (policy.rule.kind === 'percentage') return `${decimalToPercent(policy.rule.percentage) ?? policy.rule.percentage}%`
   return `${policy.rule.threshold} / ${totalWeight}`
@@ -122,16 +126,16 @@ function CorporationPreview({
         </div>
       </div>
       <div className="flex items-center justify-between gap-3 border-t border-border/70 pt-3">
-        <div className="flex -space-x-2">
+        <div className="flex -space-x-1.5">
           {shown.map((member, index) => (
             <MemberAvatar
               key={`stack-${index}-${member.address}`}
               address={member.address}
-              className="ring-2 ring-card"
+              className="bg-card ring-2 ring-card data-[size=sm]:size-7"
             />
           ))}
           {extra > 0 ? (
-            <span className="flex size-6 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground ring-2 ring-card">
+            <span className="flex size-7 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground ring-2 ring-card">
               +{extra}
             </span>
           ) : null}
@@ -143,7 +147,12 @@ function CorporationPreview({
       <div className="border-t border-border/70 pt-3">
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-xs text-muted-foreground">{translate('corporation.wizard.summary.quorum')}</span>
-          <span className="text-sm font-semibold tracking-tight text-foreground tabular-nums">
+          <span
+            className={cn(
+              'text-sm font-semibold tracking-tight tabular-nums',
+              policy && exceedsTotal(policy, totalWeight) ? 'text-warning' : 'text-foreground'
+            )}
+          >
             {policy ? ruleLabel(policy, totalWeight) : '—'}
           </span>
         </div>
@@ -407,7 +416,7 @@ export function CorporationCreateWizard({
                 key={`member-${index}`}
                 className="animate-in duration-(--duration-base) fade-in-0 slide-in-from-top-1 motion-reduce:animate-none"
               >
-                <div className="flex flex-wrap items-center gap-2 px-3 text-sm sm:flex-nowrap">
+                <div className="flex flex-wrap items-center gap-2 px-3 text-sm">
                   <MemberAvatar address={member.address.trim()} />
                   <input
                     value={member.address}
@@ -424,6 +433,11 @@ export function CorporationCreateWizard({
                     aria-invalid={memberIssues[index + 1] ? true : undefined}
                     className={cn(FIELD_INPUT, INVALID, 'min-w-0 flex-1 basis-[calc(100%-2rem)] font-mono sm:basis-0')}
                   />
+                  {memberIssues[index + 1] ? (
+                    <div className="-mt-1.5 basis-full ps-8 sm:order-last">
+                      <AddressIssueNote issue={memberIssues[index + 1]} />
+                    </div>
+                  ) : null}
                   <label className="ms-8 flex shrink-0 items-center gap-2 text-xs text-muted-foreground sm:ms-0">
                     {translate('corporation.page.weight')}
                     <input
@@ -450,9 +464,6 @@ export function CorporationCreateWizard({
                   >
                     <Trash2Icon aria-hidden="true" />
                   </Button>
-                </div>
-                <div className="ps-12">
-                  <AddressIssueNote issue={memberIssues[index + 1]} />
                 </div>
               </div>
             ))}

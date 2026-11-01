@@ -1051,7 +1051,7 @@
   }
 
   .lowBalanceLink {
-    @apply text-sm font-medium text-primary underline underline-offset-4 cursor-pointer break-words hover:decoration-2;
+    @apply rounded-sm font-semibold text-current underline underline-offset-2 cursor-pointer outline-none [overflow-wrap:anywhere] hover:decoration-2 focus-visible:ring-3 focus-visible:ring-ring/50;
   }
 }
 
@@ -1207,6 +1207,46 @@
   --tooltip-foreground: var(--neutral-50);
   --tooltip-muted: rgb(255 255 255 / 0.62);
   --tooltip-border: rgb(255 255 255 / 0.1);
+}
+
+.data-edit-error {
+  font-size: var(--text-xs);
+  line-height: 1.25rem;
+  font-weight: 500;
+  color: var(--destructive);
+  overflow-wrap: anywhere;
+}
+
+[data-modal-action-panel] > .bg-card.ring-1 {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-modal-action-panel] .actions-center {
+  flex-direction: column-reverse;
+  gap: 0.5rem;
+  margin-inline: -1rem;
+  margin-bottom: -1rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 1rem 1rem;
+  background: color-mix(in oklab, var(--muted) 40%, transparent);
+}
+
+[data-modal-action-panel] .actions-center > button {
+  flex: none;
+  min-height: 2.25rem;
+}
+
+@media (width >= 40rem) {
+  [data-modal-action-panel] .actions-center {
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-inline: -1.5rem;
+    margin-bottom: -1.5rem;
+    padding-inline: 1.5rem;
+  }
 }
 
 ::view-transition-old(root),

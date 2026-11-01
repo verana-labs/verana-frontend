@@ -60,9 +60,19 @@ function EcosystemBackLink({
 
 const FACT_INLINE = 'flex items-center gap-1.5 md:block'
 const FACT_VALUE_INLINE = 'md:mt-1.5'
+const FACT_ROW = 'flex items-center justify-between gap-3 md:block'
+const FACT_VALUE_ROW = 'min-w-0 text-end md:mt-1.5 md:text-start'
 
-function FactLabel({ label, shortLabel, compact }: { label: string; shortLabel: string; compact: boolean }) {
-  if (!compact) return <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+function humanizeMode(raw: string): string {
+  const words = raw.toLowerCase().replaceAll('_', ' ')
+  return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+function modeLabel(raw: string): string {
+  return tr(`dataview.cs.managementMode.${raw}`, humanizeMode(raw))
+}
+
+function FactLabel({ label, shortLabel }: { label: string; shortLabel: string }) {
   return (
     <dt className="text-xs font-medium text-muted-foreground">
       <span className="md:hidden">{shortLabel}</span>
@@ -87,16 +97,17 @@ function ModeFact({
   const raw = value !== undefined && value !== null ? String(value) : ''
   if (!raw.trim()) return null
   return (
-    <div className={cn('min-w-0', compact && FACT_INLINE)}>
-      <FactLabel label={label} shortLabel={shortLabel} compact={compact} />
-      <dd className={compact ? FACT_VALUE_INLINE : 'mt-1.5'}>
+    <div className={cn('min-w-0', compact ? FACT_INLINE : FACT_ROW)}>
+      <FactLabel label={label} shortLabel={shortLabel} />
+      <dd className={compact ? FACT_VALUE_INLINE : FACT_VALUE_ROW}>
         <Badge
+          title={raw}
           className={cn(
-            'h-auto max-w-full rounded-full px-2 py-0.5 font-medium break-all whitespace-normal',
+            'h-auto max-w-full rounded-full px-2 py-0.5 font-medium break-words whitespace-normal',
             getModePillClass(raw, suffix)
           )}
         >
-          {raw}
+          {modeLabel(raw)}
         </Badge>
       </dd>
     </div>
@@ -149,7 +160,9 @@ export function SchemaHero({
                     pulse={status === 'ACTIVE'}
                     className="rounded-full"
                   >
-                    {status}
+                    {status === 'ARCHIVED'
+                      ? tr('dataview.archived.label', 'ARCHIVED')
+                      : tr('participant.labelstate.active', 'ACTIVE')}
                   </ToneTag>
                 ) : null}
               </div>
@@ -170,13 +183,16 @@ export function SchemaHero({
         <dl
           className={cn(
             'border-t bg-muted/40 px-5 py-4 sm:px-6 md:grid md:grid-cols-4 md:gap-x-6 md:gap-y-4',
-            compact ? 'flex flex-wrap gap-x-4 gap-y-2 py-3 md:py-4' : 'grid grid-cols-2 gap-x-6 gap-y-4'
+            compact ? 'flex flex-wrap gap-x-4 gap-y-2 py-3 md:py-4' : 'grid grid-cols-1 gap-y-3'
           )}
         >
-          <div className={cn('min-w-0', compact && FACT_INLINE)}>
+          <div className={cn('min-w-0', compact ? FACT_INLINE : FACT_ROW)}>
             <dt className="text-xs font-medium text-muted-foreground">{tr('dataview.cs.fields.id', 'ID')}</dt>
             <dd
-              className={cn('font-mono text-sm text-foreground tabular-nums', compact ? FACT_VALUE_INLINE : 'mt-1.5')}
+              className={cn(
+                'font-mono text-sm text-foreground tabular-nums',
+                compact ? FACT_VALUE_INLINE : FACT_VALUE_ROW
+              )}
             >
               {id}
             </dd>

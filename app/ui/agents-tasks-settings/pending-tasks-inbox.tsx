@@ -10,11 +10,10 @@ import {
   LoaderCircleIcon,
   type LucideIcon,
   RotateCwIcon,
-  TriangleAlertIcon,
   VoteIcon,
 } from 'lucide-react'
 import Link from 'next/link'
-import { translate } from '@/i18n/dataview'
+import { getLocale, translate } from '@/i18n/dataview'
 import { INDEXER_MAX_LIMIT } from '@/lib/indexer-json'
 import { cn } from '@/lib/utils'
 import { GhostEmpty } from '@/ui/common/ghost-empty'
@@ -61,8 +60,15 @@ function VotesCallout({ count }: { count: number }) {
           className="pulse-dot absolute motion-reduce:before:hidden -end-0.5 -top-0.5 size-2 rounded-full bg-primary"
         />
       </span>
-      <p className="min-w-0 flex-1 text-sm font-medium text-foreground">{translate('task.votes.pending', { count })}</p>
-      <Button asChild size="sm" variant="ghost" className="text-primary hover:bg-card/70 hover:text-primary">
+      <p className="min-w-48 flex-1 text-sm font-medium text-pretty text-foreground">
+        {translate('task.votes.pending', { count })}
+      </p>
+      <Button
+        asChild
+        size="sm"
+        variant="ghost"
+        className="text-primary hover:bg-card/70 hover:text-primary max-sm:ms-auto"
+      >
         <Link href="/corporation?tab=proposals">
           {translate('task.votes.open')}
           <ArrowRightIcon aria-hidden="true" className="rtl:rotate-180" />
@@ -109,9 +115,7 @@ function SummaryTile({
           format={format}
           className="text-xl leading-none font-semibold tracking-[-0.025em] text-foreground tabular-nums sm:text-[28px]"
         />
-        <span title={label} className="line-clamp-2 text-xs leading-snug text-muted-foreground">
-          {label}
-        </span>
+        <span className="text-xs leading-snug text-balance break-words text-muted-foreground">{label}</span>
       </div>
     </StaggerItem>
   )
@@ -120,8 +124,8 @@ function SummaryTile({
 function SummaryStats({ ecosystems, partial }: { ecosystems: PendingEcosystem[]; partial: boolean }) {
   const tasks = ecosystems.reduce((sum, ecosystem) => sum + ecosystem.pending_tasks, 0)
   const schemas = ecosystems.reduce((sum, ecosystem) => sum + ecosystem.schemas.length, 0)
-  const suffix = partial ? '+' : ''
-  const format = (value: number) => `${Math.round(value).toLocaleString()}${suffix}`
+  const numbers = new Intl.NumberFormat(getLocale())
+  const format = (value: number) => `${numbers.format(Math.round(value))}${partial && value > 0 ? '+' : ''}`
   const stats: [string, number, LucideIcon][] = [
     ['task.summary.tasks', tasks, ListChecksIcon],
     ['task.summary.ecosystems', ecosystems.length, GlobeIcon],
@@ -175,9 +179,9 @@ function GhostTree() {
     <div className="flex w-full flex-col gap-3.5 p-5 max-sm:[mask-image:radial-gradient(ellipse_75%_55%_at_center,transparent_35%,black_85%)]">
       {GHOST_ROWS.map(({ id, depth, width }) => (
         <div key={id} className="flex items-center gap-2.5" style={{ paddingInlineStart: `${depth * 28}px` }}>
-          <span className="size-4 shrink-0 rounded-sm bg-primary" />
+          <span className="size-4 shrink-0 rounded-sm bg-muted-foreground" />
           <span className={cn('h-3 max-w-[60%] rounded-full bg-foreground', width)} />
-          <span className="h-3 w-8 shrink-0 rounded-full bg-primary" />
+          <span className="h-3 w-8 shrink-0 rounded-full bg-muted-foreground" />
         </div>
       ))}
     </div>
@@ -197,15 +201,9 @@ export function PendingTasksInbox({
     return (
       <>
         {votes}
-        <div
-          role="alert"
-          className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl bg-tint-warning py-2.5 ps-3 pe-2 text-sm text-warning ring-1 ring-warning/25"
-        >
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-card shadow-hairline">
-            <TriangleAlertIcon aria-hidden="true" className="size-4" />
-          </span>
-          <p className="min-w-0 flex-1 font-medium">{translate('task.tree.error')}</p>
-          <Button type="button" size="sm" variant="outline" onClick={onRetry}>
+        <div role="alert" className="error-pane mb-2 flex-wrap items-center gap-y-2 py-2.5 pe-2.5">
+          <p className="min-w-40 flex-1">{translate('task.tree.error')}</p>
+          <Button type="button" size="sm" variant="outline" onClick={onRetry} className="text-foreground">
             <RotateCwIcon aria-hidden="true" />
             {translate('participants.tree.retry')}
           </Button>

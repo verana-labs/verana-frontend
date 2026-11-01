@@ -153,6 +153,7 @@ export default function AgentsPage() {
 
   const trustedCount = agents.filter((agent) => resolutions.get(agent.did)?.enrichment.trustStatus === 'TRUSTED').length
   const showStats = !loading && (!error || partialError) && agents.length > 0
+  const hiddenByTrust = agents.length > 0 && !filters.showUnverifiable
 
   const degradedKeys = [
     degraded.ecosystems && 'agents.degraded.ecosystems',
@@ -219,7 +220,7 @@ export default function AgentsPage() {
           <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-card shadow-hairline">
             <TriangleAlertIcon aria-hidden="true" className="size-4" />
           </span>
-          <div className="flex min-w-0 flex-col gap-1 pt-1.5 font-medium">
+          <div className="flex min-w-0 flex-col gap-1 pt-1.5 text-foreground">
             {degradedKeys.map((key) => (
               <p key={key}>{translate(key)}</p>
             ))}
@@ -235,7 +236,19 @@ export default function AgentsPage() {
         ) : loading ? (
           <AgentsSkeletonGrid />
         ) : visible.length === 0 ? (
-          <EmptyState icon={<BotIcon />} title={translate('agents.empty')} className="bg-card py-14" />
+          <EmptyState
+            icon={<BotIcon />}
+            title={translate(hiddenByTrust ? 'agents.empty' : 'agents.empty.none')}
+            description={hiddenByTrust ? translate('agents.empty.hint') : undefined}
+            action={
+              hiddenByTrust ? (
+                <Button variant="outline" size="sm" onClick={() => setFilters({ ...filters, showUnverifiable: true })}>
+                  {translate('agents.filter.showUnverifiable')}
+                </Button>
+              ) : undefined
+            }
+            className="bg-card py-14"
+          />
         ) : (
           <Stagger className={GRID}>
             {visible.map((agent) => (
@@ -251,7 +264,11 @@ export default function AgentsPage() {
             ))}
           </Stagger>
         )}
-        {(!error || partialError) && !loading && hasNext ? <ShowMoreButton onClick={loadMore} /> : null}
+        {(!error || partialError) && !loading && hasNext ? (
+          <div className="mt-4 flex justify-center">
+            <ShowMoreButton onClick={loadMore} />
+          </div>
+        ) : null}
       </section>
     </>
   )

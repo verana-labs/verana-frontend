@@ -1,6 +1,7 @@
 'use client'
 
 import { useChain } from '@cosmos-kit/react'
+import { CircleAlertIcon, RotateCwIcon } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useCorporationDetails } from '@/hooks/useCorporationDetails'
@@ -14,9 +15,11 @@ import { logger } from '@/lib/logger'
 import { type DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
 import { corporationSigningMode, useCorporationManage } from '@/msg/actions_hooks/actionCorporationManage'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
+import { EmptyState } from '@/ui/common/empty-state'
 import { ProposalComposer } from '@/ui/common/proposal-composer'
 import { type CorporationTab, type CorporationView, TABS, TabsLayout } from '@/ui/corporation/layouts'
 import { CorporationPageSkeleton } from '@/ui/corporation/page-skeleton'
+import { Button } from '@/ui/shadcn/button'
 
 const PAGE_TARGETS: IndexerRefreshTarget[] = ['corporationDetails', 'participants']
 
@@ -104,7 +107,21 @@ export default function CorporationPage() {
   }
 
   if (error || !details) {
-    return <div className="error-pane">{error ?? translate('corporation.page.error')}</div>
+    return (
+      <EmptyState
+        icon={<CircleAlertIcon />}
+        title={translate('corporation.page.error')}
+        description={error ?? undefined}
+        action={
+          <Button type="button" variant="outline" size="sm" onClick={() => void refetch()}>
+            <RotateCwIcon aria-hidden="true" data-icon="inline-start" />
+            {translate('shell.error.retry')}
+          </Button>
+        }
+        outline={false}
+        className="rounded-xl bg-card py-12 shadow-card"
+      />
+    )
   }
 
   const { members, policy, trustDeposit, proposals } = details

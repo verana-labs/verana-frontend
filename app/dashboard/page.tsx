@@ -17,7 +17,13 @@ import { EcosystemsCard } from '@/ui/dashboard/ecosystems-card'
 import { formatCompact, formatCount, periodDelta } from '@/ui/dashboard/format'
 import { LiveActivity } from '@/ui/dashboard/live-activity'
 import { NetworkActivityChart, rangeText } from '@/ui/dashboard/network-activity-chart'
-import { type Range, rolesOf, useLatestSchemas, useNetworkSeries, useTopEcosystems } from '@/ui/dashboard/network-data'
+import {
+  type Range,
+  useLatestSchemas,
+  useNetworkSeries,
+  useRoleCounts,
+  useTopEcosystems,
+} from '@/ui/dashboard/network-data'
 import { ParticipantsByRole } from '@/ui/dashboard/participants-by-role'
 import { SchemasCard } from '@/ui/dashboard/schemas-card'
 import { WalletCard } from '@/ui/dashboard/wallet-card'
@@ -65,8 +71,8 @@ export default function Page() {
   const rate = issued && verified !== null ? (verified / issued) * 100 : 0
   const points = useMemo(() => series.data?.points ?? [], [series.data])
   const previous = series.data?.previous ?? null
-  const roles = useMemo(() => rolesOf(dashboardData?.roles), [dashboardData?.roles])
-  const joined = points.reduce((sum, p) => sum + p.participantsDelta, 0)
+  const roles = useRoleCounts(dashboardData?.roles)
+  const joined = series.data ? points.reduce((sum, p) => sum + p.participantsDelta, 0) : null
 
   const tiles: CountTile[] = [
     {
@@ -92,10 +98,10 @@ export default function Page() {
     {
       stat: 'verifiedCredentials',
       name: translate('dataview.dashboard.fields.verifiedCredentials'),
-      description: translate('dashboard.tiles.verified.desc', {
-        rate: rate.toFixed(0),
-        issued: formatCount(issued ?? 0),
-      }),
+      description:
+        issued === null || verified === null
+          ? translate('dashboard.tiles.verified.descPending')
+          : translate('dashboard.tiles.verified.desc', { rate: rate.toFixed(0), issued: formatCount(issued) }),
       Icon: BadgeCheckIcon,
       value: verified,
       display: verified === null ? null : formatCount(verified),
@@ -104,7 +110,10 @@ export default function Page() {
     {
       stat: 'totalLockedTrustDeposit',
       name: translate('dataview.dashboard.fields.totalLockedTrustDeposit'),
-      description: translate('dashboard.tiles.deposit.desc', { amount: lockedDisplay ?? '—' }),
+      description:
+        lockedDisplay === null
+          ? translate('dashboard.tiles.deposit.descPending')
+          : translate('dashboard.tiles.deposit.desc', { amount: lockedDisplay }),
       Icon: LockIcon,
       value: locked === null ? null : vnaFromUvna(locked),
       display: lockedDisplay,
@@ -124,7 +133,7 @@ export default function Page() {
           <TriangleAlertIcon />
           <AlertDescription>{translate('dashboard.stats.error')}</AlertDescription>
           <AlertAction>
-            <Button variant="outline" size="sm" onClick={loadStats}>
+            <Button variant="outline" size="sm" className="text-foreground" onClick={loadStats}>
               {translate('dashboard.retry')}
             </Button>
           </AlertAction>
@@ -153,7 +162,7 @@ export default function Page() {
               total={stats.participants ?? null}
               joined={joined}
               joinedDelta={
-                previous
+                previous && joined !== null
                   ? periodDelta(joined, previous.participants, translate(`dashboard.chart.vsPrevious.${range}`))
                   : null
               }

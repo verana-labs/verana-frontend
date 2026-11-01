@@ -1,6 +1,6 @@
 'use client'
 
-import { CompassIcon, SearchXIcon } from 'lucide-react'
+import { CompassIcon, RotateCwIcon, SearchXIcon, ServerCrashIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { EcosystemSchemaPage } from '@/hooks/useCredentialSchemas'
 import { useCorporationRolesByEcosystem } from '@/hooks/useParticipants'
@@ -15,6 +15,7 @@ import {
 } from '@/lib/discover-list'
 import { DISCOVER_PAGE_SIZE, useDiscoverCtx } from '@/providers/api-rest-query-provider-context'
 import { DiscoverEcosystemCard } from '@/ui/common/discover-ecosystem-card'
+import { EmptyState } from '@/ui/common/empty-state'
 import KeysetPagination from '@/ui/common/keyset-pagination'
 import TitleAndButton from '@/ui/common/title-and-button'
 import { DiscoverCardSkeleton } from '@/ui/discover/discover-card-skeleton'
@@ -23,7 +24,6 @@ import { DiscoverStats } from '@/ui/discover/discover-stats'
 import { discoverText as t } from '@/ui/discover/text'
 import { Stagger, StaggerItem } from '@/ui/motion/stagger'
 import { Button } from '@/ui/shadcn/button'
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/shadcn/empty'
 
 const NO_SCHEMAS: EcosystemSchemaPage = { items: [], hasNext: false }
 const NO_ECOSYSTEM_IDS: string[] = []
@@ -75,10 +75,10 @@ export default function DiscoverJoinPage() {
 
   const partial = discoverCtx.hasNext || discoverCtx.hasPrevious
   const loading = (discoverCtx.loading && discoverList.length === 0) || roleFiltersPending(filters, rolesLoading)
-  const errors = [
-    discoverCtx.error,
-    failureReason ? t('discover.roles.failed', { reason: failureReason }) : null,
-  ].filter((message): message is string => message !== null)
+  const listError = discoverCtx.error
+  const listFailed = Boolean(listError) && !loading && discoverList.length === 0
+  const rolesError = failureReason ? t('discover.roles.failed', { reason: failureReason }) : null
+  const showPagination = !loading && !listFailed && (shown.length > 0 || page.hasPrevious || page.hasNext)
 
   return (
     <>
@@ -87,6 +87,7 @@ export default function DiscoverJoinPage() {
       <DiscoverStats
         ecosystems={matching}
         loading={loading}
+        unavailable={listFailed}
         scope={partial ? (fullWindow ? 'loaded' : 'page') : 'matching'}
       />
 
@@ -97,32 +98,44 @@ export default function DiscoverJoinPage() {
         loadedOnly={partial}
       />
 
-      {errors.map((message) => (
-        <div key={message} className="error-pane mb-6">
-          {message}
-        </div>
-      ))}
+      {rolesError ? <div className="error-pane mb-6">{rolesError}</div> : null}
+      {listError && !listFailed ? <div className="error-pane mb-6">{listError}</div> : null}
 
       <section id="ecosystem-list" aria-busy={loading} className="flex flex-col gap-4 sm:gap-5">
         {loading ? (
           [0, 1, 2].map((slot) => <DiscoverCardSkeleton key={slot} />)
-        ) : shown.length === 0 && errors.length === 0 ? (
-          <Empty className="rounded-xl border border-dashed bg-card py-12">
-            <EmptyHeader>
-              <EmptyMedia variant="icon" className="size-10 rounded-xl">
-                {filters.search ? <SearchXIcon className="size-5" /> : <CompassIcon className="size-5" />}
-              </EmptyMedia>
-              <EmptyTitle className="text-base">{t('discover.empty')}</EmptyTitle>
-              <EmptyDescription>{t('discover.empty.hint')}</EmptyDescription>
-            </EmptyHeader>
-            {filters.search ? (
-              <EmptyContent>
+        ) : listFailed ? (
+          <EmptyState
+            className="rounded-xl bg-card py-12"
+            icon={<ServerCrashIcon />}
+            title={t('discover.error.title')}
+            description={
+              <>
+                {t('discover.error.hint')}
+                <span className="mt-2 block font-mono text-xs text-muted-foreground/80">{listError}</span>
+              </>
+            }
+            action={
+              <Button variant="outline" onClick={() => void discoverCtx.refetch()}>
+                <RotateCwIcon aria-hidden="true" />
+                {t('discover.retry')}
+              </Button>
+            }
+          />
+        ) : shown.length === 0 ? (
+          <EmptyState
+            className="rounded-xl bg-card py-12"
+            icon={filters.search ? <SearchXIcon /> : <CompassIcon />}
+            title={t('discover.empty')}
+            description={t('discover.empty.hint')}
+            action={
+              filters.search ? (
                 <Button variant="outline" onClick={() => setDiscoverFilters({ ...filters, search: '' })}>
                   {t('discover.search.clear')}
                 </Button>
-              </EmptyContent>
-            ) : null}
-          </Empty>
+              ) : undefined
+            }
+          />
         ) : (
           <Stagger className="flex flex-col gap-4 sm:gap-5">
             {shown.map((ecosystem) => (
@@ -142,23 +155,25 @@ export default function DiscoverJoinPage() {
         )}
       </section>
 
-      <KeysetPagination
-        showing={shown.length}
-        itemsLabel={t('datatable.ecosystem.pagination.ecosystems')}
-        hasPrevious={page.hasPrevious}
-        hasNext={page.hasNext}
-        loadedOnlyNote={false}
-        onPrevious={() => {
-          if (fullWindow) setPaging({ key: pagingKey, index: page.page - 1 })
-          else discoverCtx.previousPage()
-          scrollToTop()
-        }}
-        onNext={() => {
-          if (fullWindow) setPaging({ key: pagingKey, index: page.page + 1 })
-          else discoverCtx.nextPage()
-          scrollToTop()
-        }}
-      />
+      {showPagination ? (
+        <KeysetPagination
+          showing={shown.length}
+          itemsLabel={t('datatable.ecosystem.pagination.ecosystems')}
+          hasPrevious={page.hasPrevious}
+          hasNext={page.hasNext}
+          loadedOnlyNote={false}
+          onPrevious={() => {
+            if (fullWindow) setPaging({ key: pagingKey, index: page.page - 1 })
+            else discoverCtx.previousPage()
+            scrollToTop()
+          }}
+          onNext={() => {
+            if (fullWindow) setPaging({ key: pagingKey, index: page.page + 1 })
+            else discoverCtx.nextPage()
+            scrollToTop()
+          }}
+        />
+      ) : null}
     </>
   )
 }

@@ -18,15 +18,36 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/shadcn/dropdown-menu'
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/ui/shadcn/sidebar'
+import { Skeleton } from '@/ui/shadcn/skeleton'
 import { shortenMiddle } from '@/util/util'
 
-export function NavUser() {
+export function NavUser({ settling = false }: { settling?: boolean }) {
   const { isMobile } = useSidebar()
   const veranaChain = useVeranaChain()
   const explorerUrl = veranaChain.explorers?.[0]?.url
   const { status, address, connect, openView } = useChain(veranaChain.chain_name)
   const { copied, copy } = useCopyFeedback(address)
   const [qrOpen, setQrOpen] = useState(false)
+
+  if (!address && settling) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <div
+            role="status"
+            aria-label={translate('wallet.connecting')}
+            className="flex h-12 items-center gap-2 rounded-lg p-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0"
+          >
+            <Skeleton className="size-8 shrink-0 rounded-lg" />
+            <div className="flex flex-1 flex-col gap-1.5 group-data-[collapsible=icon]:hidden">
+              <Skeleton className="h-3.5 w-24" />
+              <Skeleton className="h-3 w-32" />
+            </div>
+          </div>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    )
+  }
 
   if (!address) {
     return (
