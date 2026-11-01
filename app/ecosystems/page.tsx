@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { ECOSYSTEMS_PAGE_SIZE } from '@/hooks/useEcosystems'
+import { usePersistedFilters } from '@/hooks/usePersistedFilters'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { cn } from '@/lib/utils'
@@ -13,7 +14,6 @@ import { useEcosystemsCtx } from '@/providers/api-rest-query-provider-context'
 import { EntityActionButton } from '@/ui/common/capability-button'
 import EcosystemCard from '@/ui/common/ecosystem-card'
 import EcosystemsFilterBar, {
-  EcosystemsFilterState,
   hasActiveEcosystemFilters,
   INITIAL_ECOSYSTEMS_FILTER,
 } from '@/ui/common/ecosystems-filter-bar'
@@ -77,7 +77,6 @@ export default function EcosystemsPage() {
     ecosystemsList,
     ecosystemsLoading,
     refetch: refetchEcosystems,
-    onlyActiveEcosystem,
     setOnlyActiveEcosystem,
     hasNext,
     hasPrevious,
@@ -87,10 +86,10 @@ export default function EcosystemsPage() {
   const listError = readListError(ecosystemsCtx)
   const { actingCorporation, loading: corporationLoading, error: discoveryError } = useUserCorporation()
 
-  const [filters, setFilters] = useState<EcosystemsFilterState>({
-    ...INITIAL_ECOSYSTEMS_FILTER,
-    showArchived: !onlyActiveEcosystem,
-  })
+  const [filters, setFilters] = usePersistedFilters('ecosystems', INITIAL_ECOSYSTEMS_FILTER)
+  useEffect(() => {
+    setOnlyActiveEcosystem(!filters.showArchived)
+  }, [filters.showArchived, setOnlyActiveEcosystem])
   const [view, setView] = useEcosystemsView()
   const [introPlayed, setIntroPlayed] = useState(false)
 
@@ -117,11 +116,6 @@ export default function EcosystemsPage() {
     if (!introPlayed && filtered.length > 0) setIntroPlayed(true)
   }, [filtered.length, introPlayed])
 
-  const applyFilters = (nextFilters: EcosystemsFilterState) => {
-    setFilters(nextFilters)
-    setOnlyActiveEcosystem(!nextFilters.showArchived)
-  }
-
   if (!actingCorporation && !corporationLoading) {
     if (discoveryError) return <div className="p-6 error-pane">{translate('corporation.page.error')}</div>
     return <p className="p-6 text-sm text-muted-foreground">{translate('corporation.page.nocorp')}</p>
@@ -129,17 +123,17 @@ export default function EcosystemsPage() {
 
   const openCreate = () => router.push('/ecosystems/add')
   const showUntrustedAction = hiddenUntrusted ? (
-    <Button variant="outline" size="sm" onClick={() => applyFilters({ ...filters, showUntrusted: true })}>
+    <Button variant="outline" size="sm" onClick={() => setFilters({ ...filters, showUntrusted: true })}>
       {tr('datatable.ecosystem.filter.showUntrusted', 'Show untrusted ecosystems')}
     </Button>
   ) : null
   const clearFiltersAction = filtersActive ? (
-    <Button variant="outline" size="sm" onClick={() => applyFilters({ ...INITIAL_ECOSYSTEMS_FILTER })}>
+    <Button variant="outline" size="sm" onClick={() => setFilters({ ...INITIAL_ECOSYSTEMS_FILTER })}>
       {tr('ecosystems.filter.clear', 'Clear filters')}
     </Button>
   ) : null
   const showArchivedAction = filters.showArchived ? null : (
-    <Button variant="ghost" size="sm" onClick={() => applyFilters({ ...filters, showArchived: true })}>
+    <Button variant="ghost" size="sm" onClick={() => setFilters({ ...filters, showArchived: true })}>
       {tr('datatable.ecosystem.filter.showArchived', 'Show archived')}
     </Button>
   )
@@ -254,7 +248,7 @@ export default function EcosystemsPage() {
 
       <EcosystemsFilterBar
         value={filters}
-        onChange={applyFilters}
+        onChange={setFilters}
         actions={<ViewToggle value={view} onChange={setView} />}
       />
 

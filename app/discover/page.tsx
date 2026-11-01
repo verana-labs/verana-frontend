@@ -4,8 +4,15 @@ import { CompassIcon, SearchXIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { EcosystemSchemaPage } from '@/hooks/useCredentialSchemas'
 import { useCorporationRolesByEcosystem } from '@/hooks/useParticipants'
+import { useFilterPersistence } from '@/hooks/usePersistedFilters'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
-import { clientPage, filterEcosystems, orderEcosystems, roleFiltersPending } from '@/lib/discover-list'
+import {
+  clientPage,
+  filterEcosystems,
+  INITIAL_DISCOVER_FILTERS,
+  orderEcosystems,
+  roleFiltersPending,
+} from '@/lib/discover-list'
 import { DISCOVER_PAGE_SIZE, useDiscoverCtx } from '@/providers/api-rest-query-provider-context'
 import { DiscoverEcosystemCard } from '@/ui/common/discover-ecosystem-card'
 import KeysetPagination from '@/ui/common/keyset-pagination'
@@ -35,6 +42,7 @@ export default function DiscoverJoinPage() {
     fullWindow,
     setShownEcosystemIds,
   } = discoverCtx
+  useFilterPersistence('discover', filters, setDiscoverFilters, INITIAL_DISCOVER_FILTERS)
   const { actingCorporation } = useUserCorporation()
   const actingCorporationId = actingCorporation?.corporation.id
   const { rolesByEcosystem, rolesLoading, failureReason } = useCorporationRolesByEcosystem(actingCorporationId)
