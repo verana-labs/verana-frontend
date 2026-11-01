@@ -4,6 +4,7 @@ import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import { Columns3Icon, ListCollapseIcon, ListTreeIcon, NetworkIcon, Rows3Icon } from 'lucide-react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { useParticipant } from '@/hooks/useParticipant'
 import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
@@ -24,7 +25,6 @@ import { DetailSheet } from '@/ui/participants/detail-sheet'
 import { ParticipantTreeView } from '@/ui/participants/participant-tree-view'
 import { SchemaHero, SchemaHeroSkeleton, type SchemaStatus } from '@/ui/participants/schema-hero'
 import { HiddenByFilters } from '@/ui/participants/tree-states'
-import { useMobileQuery } from '@/ui/participants/use-mobile-query'
 import { useScrollFade } from '@/ui/participants/use-scroll-fade'
 import { Badge } from '@/ui/shadcn/badge'
 import { Button, buttonVariants } from '@/ui/shadcn/button'
@@ -226,9 +226,8 @@ export default function ParticipantTree({
   const [refreshState, setRefreshState] = useState<ParticipantRefreshState>({})
   const detailRef = useRef<HTMLDivElement | null>(null)
   const [layoutRef, layoutWidth] = useElementWidth<HTMLDivElement>()
-  const mobileQuery = useMobileQuery()
-  const isMobile = mobileQuery === true
-  const measured = layoutWidth > 0 && mobileQuery !== undefined
+  const isMobile = useIsMobile()
+  const measured = layoutWidth > 0
   const { latestProcessedHeight } = useIndexerEvents()
   const joinBlockedReason = unsupportedPricing ? unsupportedPricingReason() : undefined
   const tr = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
@@ -470,7 +469,7 @@ export default function ParticipantTree({
           <Card className="gap-0 py-0">
             <CardHeader className="py-4">
               <CardTitle>
-                <h2 className="flex items-center gap-2.5 text-base font-semibold tracking-[-0.01em]">
+                <h2 className="flex min-w-0 items-center gap-2.5 text-base font-semibold tracking-[-0.01em] whitespace-nowrap">
                   <span
                     aria-hidden="true"
                     className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-tint-accent text-primary"
@@ -486,7 +485,7 @@ export default function ParticipantTree({
                   ) : null}
                 </h2>
               </CardTitle>
-              <CardAction className="flex items-center gap-1">
+              <CardAction className="flex flex-wrap items-center gap-1 @max-xl/card-header:col-start-1 @max-xl/card-header:row-span-1 @max-xl/card-header:row-start-2 @max-xl/card-header:mt-2 @max-xl/card-header:w-full @max-xl/card-header:justify-self-stretch">
                 {type === 'participants' && onViewChange && renderTable ? (
                   <SegmentedControl
                     label={tr('participants.view.label', 'View')}
@@ -568,7 +567,7 @@ export default function ParticipantTree({
                     label={translate('participants.action.newparticipant')}
                     blockedReason={joinBlockedReason}
                     onClick={() => setAddingRoot(true)}
-                    className={buttonVariants({ size: 'sm', className: 'ms-1 gap-1.5' })}
+                    className={buttonVariants({ size: 'sm', className: 'ms-auto gap-1.5' })}
                   />
                 ) : null}
               </CardAction>
@@ -653,7 +652,7 @@ export default function ParticipantTree({
               detailFade.ref.current = element
             }}
             data-faded={detailFade.faded || undefined}
-            className="sticky top-[calc(var(--header-height)+1rem)] z-30 max-h-[calc(100svh-var(--header-height)-2rem)] min-w-0 overflow-y-auto overscroll-contain rounded-xl data-faded:[mask-image:linear-gradient(to_bottom,black_calc(100%-3rem),transparent)]"
+            className="sticky top-[calc(var(--header-height)+1rem)] z-10 max-h-[calc(100svh-var(--header-height)-2rem)] min-w-0 overflow-y-auto overscroll-contain rounded-xl has-[[data-modal-action]:not(.hidden)]:z-50 data-faded:not-has-[[data-modal-action]:not(.hidden)]:[mask-image:linear-gradient(to_bottom,black_calc(100%-1.25rem),transparent)]"
           >
             {detailCard ?? (visibleTree.length > 0 ? <ParticipantCardPlaceholder /> : null)}
           </div>
@@ -692,7 +691,9 @@ export default function ParticipantTree({
       {joinNode ? (
         <ModalAction
           onClose={() => setJoinNode(undefined)}
-          titleKey={`${resolveTranslatable({ key: 'join.title' }, translate)} - ${schemaTitle} - ${joinNode.name ?? ''}`}
+          titleKey={[resolveTranslatable({ key: 'join.title' }, translate), schemaTitle?.trim(), joinNode.name?.trim()]
+            .filter(Boolean)
+            .join(' - ')}
           isActive={true}
           classModal="max-w-4xl"
         >

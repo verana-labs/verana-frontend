@@ -19,7 +19,7 @@ export interface TxNotice {
   cancelled?: true
 }
 
-type Notify = (message: string, type: 'error' | 'info', title?: string, link?: NotificationLink) => Promise<void>
+type Notify = (message: string, type: 'error' | 'notice', title?: string, link?: NotificationLink) => Promise<void>
 
 const EVENT_EXEC = 'cosmos.group.v1.EventExec'
 const FAILED_LOGS_PREFIX = /^proposal execution failed on proposal \d+, because of error /
@@ -99,7 +99,7 @@ export function rejectionNotice(fallback: string, text: string): TxNotice {
 export async function notifyRejection(notify: Notify, fallback: string, text: string): Promise<void> {
   const notice = rejectionNotice(fallback, text)
   if (notice.cancelled) {
-    void notify(notice.message, 'info')
+    void notify(notice.message, 'notice')
     return
   }
   await notify(notice.message, 'error', notice.title, notice.link)

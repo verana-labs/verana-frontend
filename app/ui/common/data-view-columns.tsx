@@ -139,10 +139,7 @@ export default function ColumnsDataView<T extends object>({
 
   return (
     <div
-      className={cn(
-        'mb-6',
-        generalBorder && 'rounded-xl bg-card p-4 text-card-foreground ring-1 ring-foreground/10 sm:p-6'
-      )}
+      className={cn(generalBorder && 'rounded-xl bg-card p-4 text-card-foreground ring-1 ring-foreground/10 sm:p-6')}
     >
       {showViewTitle && viewTitle.title ? (
         <div className="mb-6 border-b border-border">
