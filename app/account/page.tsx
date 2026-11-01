@@ -62,8 +62,7 @@ export default function AccountPage() {
           </BlurFade>
         </div>
         <BlurFade delay={0.1}>
-          {/* ColumnsDataView's root always carries mb-6, which would double the column gap */}
-          <div ref={actionsRef} className="-mb-6 scroll-mt-24">
+          <div ref={actionsRef} className="scroll-mt-24">
             <ColumnsDataView<AccountActionsData>
               key={getVNARequest}
               sectionsI18n={accountActionSections}
