@@ -1,8 +1,9 @@
 'use client'
 
-import { faBuilding, faPlus } from '@fortawesome/free-solid-svg-icons'
+import { faBuilding, faCheck, faCopy, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { type ReactNode, useState } from 'react'
+import { useCopyFeedback } from '@/hooks/useCopyFeedback'
 import type { CorporationProfile } from '@/hooks/useCorporationDetails'
 import type { GranterBalance } from '@/hooks/useGranterBalance'
 import type { ActionSigning } from '@/hooks/useSigningMode'
@@ -10,6 +11,7 @@ import { translate } from '@/i18n/dataview'
 import type { DidEnrichment } from '@/lib/resolverClient'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import { CapabilityButton } from '@/ui/common/capability-button'
+import IconLabelButton from '@/ui/common/icon-label-button'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 import { countryCodeToFlag, formatVNAFromUVNA, shortenMiddle } from '@/util/util'
 import { isValidDID } from '@/util/validations'
@@ -56,7 +58,8 @@ export function RotateDidForm({ mode, onSubmit }: { mode: CorporationSigningMode
 }
 
 function balanceLabel(balance: GranterBalance): string {
-  if (balance.status === 'ready') return formatVNAFromUVNA(balance.amount)
+  if (balance.status === 'ready')
+    return formatVNAFromUVNA(balance.amount) || translate('corporation.page.balance.failed')
   if (balance.status === 'failed') return translate('corporation.page.balance.failed')
   return '…'
 }
@@ -84,6 +87,7 @@ export function CorporationHeader({
 }) {
   const displayName = enrichment?.organizationName ?? enrichment?.serviceName
   const trust = enrichment?.trustStatus ?? 'UNRESOLVED'
+  const { copied, copy } = useCopyFeedback(profile.policyAddress)
 
   return (
     <section className="mb-6 rounded-xl border border-neutral-20 dark:border-neutral-70 bg-white dark:bg-surface p-6">
@@ -101,7 +105,19 @@ export function CorporationHeader({
               <span title={trust} className={`inline-block w-2.5 h-2.5 rounded-full ${TRUST_DOT[trust]}`} />
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 break-all">
-              {displayName ? `${profile.did} · ` : ''}#{profile.id} · {shortenMiddle(profile.policyAddress, 26)}
+              {displayName ? `${profile.did} · ` : ''}#{profile.id}
+            </p>
+            <p className="mt-1 flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+              <span className="font-mono break-all">{profile.policyAddress}</span>
+              <IconLabelButton
+                icon={copied ? faCheck : faCopy}
+                label={
+                  copied ? <span className="ml-1.5 text-xs font-medium">{translate('copied.label')}</span> : undefined
+                }
+                title={translate('corporation.page.addresscopy')}
+                className={`navbar-icon flex items-center shrink-0 ${copied ? 'text-success-600 dark:text-success-400' : ''}`}
+                onClick={() => void copy()}
+              />
             </p>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               {translate('corporation.page.balance')}{' '}

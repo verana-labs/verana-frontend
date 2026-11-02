@@ -37,11 +37,13 @@ export default function CorporationPage() {
     refetch: refetchCorporations,
   } = useUserCorporation()
   const { details, loading, error, refetch } = useCorporationDetails(actingCorporation?.corporation.id)
+  const { balance, refetch: refetchBalance } = useGranterBalance(details?.profile.policyAddress)
   const { addIndexerEventListener } = useIndexerEvents()
   const [votesVersion, setVotesVersion] = useState(0)
   const refreshAfterTx = () => {
     void refetch()
     void refetchCorporations()
+    refetchBalance()
     setVotesVersion((version) => version + 1)
   }
   const manage = useCorporationManage(refreshAfterTx)
@@ -63,6 +65,7 @@ export default function CorporationPage() {
       timer = setTimeout(() => {
         timer = null
         void refetch()
+        refetchBalance()
         setVotesVersion((version) => version + 1)
       }, EVENT_COALESCE_MS)
     })
@@ -70,9 +73,7 @@ export default function CorporationPage() {
       unsubscribe()
       if (timer) clearTimeout(timer)
     }
-  }, [actingCorporationId, addIndexerEventListener, refetch])
-
-  const balance = useGranterBalance(details?.profile.policyAddress, votesVersion)
+  }, [actingCorporationId, addIndexerEventListener, refetch, refetchBalance])
 
   const creating = searchParams.get('create') === '1'
   const tab = pick(TABS, searchParams.get('tab'), 'overview')

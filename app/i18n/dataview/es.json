@@ -702,6 +702,7 @@
   "corporation.page.language": "Idioma",
   "corporation.page.created": "Creada",
   "corporation.page.rotatedid": "Rotar DID",
+  "corporation.page.addresscopy": "Copiar dirección de la corporación",
   "corporation.page.balance": "Saldo",
   "corporation.page.balance.failed": "no disponible",
   "corporation.page.rotatedid.submit": "Actualizar DID",

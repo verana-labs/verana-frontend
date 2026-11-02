@@ -5,7 +5,7 @@ import {
   QuerySpendableBalanceByDenomRequest,
   QuerySpendableBalanceByDenomResponse,
 } from 'cosmjs-types/cosmos/bank/v1beta1/query'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { VERANA_RPC_ENDPOINT } from '@/config/env'
 import { veranaDenom } from '@/config/veranaChain.sign.client'
 import { FEE_GRANT_LOOKUP_TIMEOUT_MS } from '@/hooks/useFeeGrant'
@@ -80,14 +80,18 @@ export function startGranterBalanceLookup(
   }
 }
 
-export function useGranterBalance(granter: string | undefined, refreshKey = 0): GranterBalance {
+export function useGranterBalance(granter: string | undefined) {
   const [balance, setBalance] = useState<GranterBalance>({ status: 'idle' })
-  const shownFor = useRef<string | undefined>(undefined)
+  const cancelLookup = useRef<(() => void) | null>(null)
+
+  const refetch = useCallback(() => {
+    cancelLookup.current?.()
+    if (!granter || !VERANA_RPC_ENDPOINT) return
+    cancelLookup.current = startGranterBalanceLookup(VERANA_RPC_ENDPOINT, granter, setBalance)
+  }, [granter])
 
   useEffect(() => {
-    void refreshKey
     if (!granter) {
-      shownFor.current = undefined
       setBalance({ status: 'idle' })
       return
     }
@@ -95,12 +99,10 @@ export function useGranterBalance(granter: string | undefined, refreshKey = 0): 
       setBalance({ status: 'failed' })
       return
     }
-    if (shownFor.current !== granter) {
-      shownFor.current = granter
-      setBalance({ status: 'loading' })
-    }
-    return startGranterBalanceLookup(VERANA_RPC_ENDPOINT, granter, setBalance)
-  }, [granter, refreshKey])
+    setBalance({ status: 'loading' })
+    refetch()
+    return () => cancelLookup.current?.()
+  }, [granter, refetch])
 
-  return balance
+  return { balance, refetch }
 }

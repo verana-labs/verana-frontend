@@ -3,13 +3,14 @@
 import { faBuilding } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useAgents } from '@/hooks/useAgents'
+import { usePersistedFilters } from '@/hooks/usePersistedFilters'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { useIndexerEntityEvents } from '@/providers/indexer-events-provider'
 import AgentCard from '@/ui/agents/agent-card'
-import AgentsFilterBar, { type AgentsFilterState, INITIAL_AGENTS_FILTER } from '@/ui/agents/agents-filter-bar'
+import AgentsFilterBar, { INITIAL_AGENTS_FILTER } from '@/ui/agents/agents-filter-bar'
 import EcosystemCardSkeleton from '@/ui/common/ecosystem-card-skeleton'
 import { ShowMoreButton } from '@/ui/common/keyset-pagination'
 import { PartialNote } from '@/ui/corporation/shared'
@@ -19,7 +20,7 @@ const DEGRADED = 'text-sm text-amber-700 dark:text-amber-300'
 
 export default function AgentsPage() {
   const { actingCorporation, loading: actingLoading, error: discoveryError } = useUserCorporation()
-  const [filters, setFilters] = useState<AgentsFilterState>(INITIAL_AGENTS_FILTER)
+  const [filters, setFilters] = usePersistedFilters('agents', INITIAL_AGENTS_FILTER)
   const {
     agents,
     delegations,
