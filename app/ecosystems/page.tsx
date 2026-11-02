@@ -1,10 +1,11 @@
 'use client'
 
 import { faPlus } from '@fortawesome/free-solid-svg-icons'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import AddEcosystemPage from '@/ecosystems/add/add'
 import { ECOSYSTEMS_PAGE_SIZE } from '@/hooks/useEcosystems'
 import { useCorporationRoles } from '@/hooks/useParticipants'
+import { usePersistedFilters } from '@/hooks/usePersistedFilters'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { roleFiltersPending } from '@/lib/discover-list'
@@ -12,10 +13,7 @@ import { useEcosystemsCtx } from '@/providers/api-rest-query-provider-context'
 import { EntityActionButton } from '@/ui/common/capability-button'
 import EcosystemCard from '@/ui/common/ecosystem-card'
 import EcosystemCardSkeleton from '@/ui/common/ecosystem-card-skeleton'
-import EcosystemsFilterBar, {
-  EcosystemsFilterState,
-  INITIAL_ECOSYSTEMS_FILTER,
-} from '@/ui/common/ecosystems-filter-bar'
+import EcosystemsFilterBar, { INITIAL_ECOSYSTEMS_FILTER } from '@/ui/common/ecosystems-filter-bar'
 import KeysetPagination from '@/ui/common/keyset-pagination'
 import { ModalAction } from '@/ui/common/modal-action'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
@@ -38,7 +36,6 @@ export default function EcosystemsPage() {
     ecosystemsList,
     ecosystemsLoading,
     refetch: refetchEcosystems,
-    onlyActiveEcosystem,
     setOnlyActiveEcosystem,
     hasNext,
     hasPrevious,
@@ -49,10 +46,10 @@ export default function EcosystemsPage() {
   const actingCorporationId = actingCorporation?.corporation.id
   const { rolesByEcosystem, rolesLoading, failureReason } = useCorporationRoles(actingCorporationId)
 
-  const [filters, setFilters] = useState<EcosystemsFilterState>({
-    ...INITIAL_ECOSYSTEMS_FILTER,
-    showArchived: !onlyActiveEcosystem,
-  })
+  const [filters, setFilters] = usePersistedFilters('ecosystems', INITIAL_ECOSYSTEMS_FILTER)
+  useEffect(() => {
+    setOnlyActiveEcosystem(!filters.showArchived)
+  }, [filters.showArchived, setOnlyActiveEcosystem])
   const [addEcosystem, setAddEcosystem] = useState(false)
 
   const filtered = useMemo(() => {
@@ -98,13 +95,7 @@ export default function EcosystemsPage() {
         </div>
       </section>
 
-      <EcosystemsFilterBar
-        value={filters}
-        onChange={(nextFilters) => {
-          setFilters(nextFilters)
-          setOnlyActiveEcosystem(!nextFilters.showArchived)
-        }}
-      />
+      <EcosystemsFilterBar value={filters} onChange={setFilters} />
 
       <section id="ecosystems-grid" className="mb-8">
         {failureReason ? (
