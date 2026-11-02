@@ -80,7 +80,7 @@ export function useActionSend() {
       return true
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error)
-      const notice = rejectionNotice(text, text)
+      const notice = rejectionNotice(translate('notification.MsgSend.error'), text)
       await notify(notice.message, 'error', notice.title, notice.link)
       return false
     } finally {

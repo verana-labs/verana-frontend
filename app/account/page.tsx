@@ -16,7 +16,6 @@ import { resolveTranslatable } from '@/ui/dataview/types'
 
 export default function AccountPage() {
   const searchParams = useSearchParams()
-  // Only pre-open the "getVNA" action if the URL includes ?getVNA=true
   const openGetVNA = searchParams.get('getVNA') === 'true'
   const openSendVNA = searchParams.has(SEND_RECIPIENT_PARAM)
 
