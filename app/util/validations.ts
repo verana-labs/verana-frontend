@@ -1,6 +1,8 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: legacy code */
 import { fromBech32 } from '@cosmjs/encoding'
+import { translate } from '@/i18n/dataview'
 import type { DataField } from '@/ui/dataview/types'
+import { parseVNAExact } from '@/util/util'
 
 const DID_PATTERN = /^did:[a-zA-Z0-9]+:[a-zA-Z0-9._:%-]+$/
 const LANGUAGE_TAG_PATTERN = /^[a-z]{2}$/
@@ -80,6 +82,16 @@ export function isValidField(field: DataField<any>, value: unknown): boolean {
       if (lessThanOrEqual !== undefined && !(numericValue <= lessThanOrEqual)) return false
       return true
     }
+    case 'VNA': {
+      if (typeof value !== 'number' && typeof value !== 'string') return false
+      if (parseVNAExact(String(value)) === null) return false
+      const numericValue = Number(value)
+      if (greaterThan !== undefined && !(numericValue > greaterThan)) return false
+      if (greaterThanOrEqual !== undefined && !(numericValue >= greaterThanOrEqual)) return false
+      if (lessThan !== undefined && !(numericValue < lessThan)) return false
+      if (lessThanOrEqual !== undefined && !(numericValue <= lessThanOrEqual)) return false
+      return true
+    }
     default:
       return true
   }
@@ -122,6 +134,8 @@ export function getErrorMessage(field: DataField<any>): string {
       return `Enter a valid number${rangeHint}.`.trim()
     case 'Long':
       return `Enter a valid number${rangeHint}.`.trim()
+    case 'VNA':
+      return translate('dataview.validation.vna', { range: rangeHint })
     default:
       return field.required ? 'Required' : 'Invalid value'
   }

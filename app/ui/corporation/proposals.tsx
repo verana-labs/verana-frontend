@@ -2,12 +2,30 @@
 
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { type ReactNode, useState } from 'react'
-import { type GroupPolicy, type ProposalRow, type ProposalTally, useProposalVotes } from '@/hooks/useCorporationDetails'
+import { type ReactNode, useEffect, useReducer, useState } from 'react'
+import {
+  type GroupPolicy,
+  type ProposalRow,
+  type ProposalTally,
+  proposalExecutableFrom,
+  proposalTallyScale,
+  type TallyScale,
+  useProposalVotes,
+} from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
+import { formatDecisionRule } from '@/lib/decision-policy'
 import type { VoteChoice } from '@/msg/actions_hooks/actionCorporationManage'
 import { shortenMiddle } from '@/util/util'
-import { Card, formatDate, formatRelative, SectionTitle, SectionUnavailable, StatusBadge } from './shared'
+import {
+  atLeast,
+  Card,
+  formatDate,
+  formatRelative,
+  PartialNote,
+  SectionTitle,
+  SectionUnavailable,
+  StatusBadge,
+} from './shared'
 
 const FILTERS = ['all', 'SUBMITTED', 'ACCEPTED', 'REJECTED', 'ABORTED', 'WITHDRAWN'] as const
 type Filter = (typeof FILTERS)[number]
@@ -50,9 +68,24 @@ export interface ProposalContext {
   actions: ProposalActions
 }
 
-export function TallyBar({ tally, policy }: { tally: ProposalTally; policy: GroupPolicy }) {
-  const total = Number(policy.totalWeight) || 0
-  const threshold = Number(policy.threshold) || 0
+const MAX_TIMEOUT_MS = 2_147_483_647
+
+const TALLY_TEXT = 'mt-1 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap'
+
+export function TallyBar({ tally, scale }: { tally: ProposalTally; scale: TallyScale }) {
+  const { total, threshold, percentage } = scale
+  if (total === null) {
+    return (
+      <p className={TALLY_TEXT}>
+        {translate('corporation.proposals.tally.votes', {
+          yes: tally.yes,
+          no: tally.no,
+          abstain: tally.abstain,
+          veto: tally.veto,
+        })}
+      </p>
+    )
+  }
   const percent = (value: number) => (total > 0 ? `${(value / total) * 100}%` : '0%')
   return (
     <div className="min-w-[8rem]">
@@ -61,15 +94,21 @@ export function TallyBar({ tally, policy }: { tally: ProposalTally; policy: Grou
         <div className="h-full bg-red-500" style={{ width: percent(tally.no) }} />
         <div className="h-full bg-red-800" style={{ width: percent(tally.veto) }} />
         <div className="h-full bg-gray-400" style={{ width: percent(tally.abstain) }} />
-        {threshold > 0 && total > 0 ? (
+        {threshold !== null && threshold > 0 && total > 0 ? (
           <span
             className="absolute top-0 h-full w-0.5 bg-gray-900 dark:bg-white"
             style={{ left: percent(threshold) }}
           />
         ) : null}
       </div>
-      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-        {translate('corporation.proposals.tally', { yes: tally.yes, total, threshold })}
+      <p className={TALLY_TEXT}>
+        {threshold === null
+          ? translate('corporation.proposals.tally.total', { yes: tally.yes, total })
+          : translate('corporation.proposals.tally', {
+              yes: tally.yes,
+              total,
+              threshold: percentage === null ? threshold : formatDecisionRule({ kind: 'percentage', percentage }),
+            })}
       </p>
     </div>
   )
@@ -89,9 +128,23 @@ function ProposalDetail({ proposal, ctx }: { proposal: ProposalRow; ctx: Proposa
   const votes = useProposalVotes(proposal.id)
   const open = ctx.isMember && proposal.status === 'SUBMITTED'
   const votable = open && !hasEnded(proposal.votingPeriodEnd)
-  const voted = votes == null || votes.some((vote) => vote.voter === ctx.walletAddress)
+  const voted = votes == null || votes.value.some((vote) => vote.voter === ctx.walletAddress)
   const withdrawable = open && ctx.walletAddress !== undefined && proposal.proposers.includes(ctx.walletAddress)
   const executable = ctx.isMember && proposal.status === 'ACCEPTED' && proposal.executorResult !== 'SUCCESS'
+  const executableFrom = proposalExecutableFrom(proposal, ctx.policy)
+  const waiting = executableFrom !== null && executableFrom > Date.now()
+  const [, rerender] = useReducer((count: number) => count + 1, 0)
+
+  useEffect(() => {
+    if (executableFrom === null) return
+    let timer: ReturnType<typeof setTimeout>
+    const arm = () => {
+      const remaining = Math.max(0, executableFrom - Date.now())
+      timer = setTimeout(remaining > MAX_TIMEOUT_MS ? arm : rerender, Math.min(remaining, MAX_TIMEOUT_MS))
+    }
+    arm()
+    return () => clearTimeout(timer)
+  }, [executableFrom])
 
   return (
     <div className="space-y-3">
@@ -107,15 +160,16 @@ function ProposalDetail({ proposal, ctx }: { proposal: ProposalRow; ctx: Proposa
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
           {translate('corporation.proposals.votes')}
         </p>
+        {votes?.partial ? <PartialNote /> : null}
         {votes === undefined ? (
           <p className="text-sm text-gray-500">…</p>
         ) : votes === null ? (
           <p className="text-sm text-red-600 dark:text-red-400">{translate('corporation.proposals.voteserror')}</p>
-        ) : votes.length === 0 ? (
+        ) : votes.value.length === 0 ? (
           <p className="text-sm text-gray-500">{translate('corporation.proposals.novotes')}</p>
         ) : (
           <ul className="text-sm text-gray-700 dark:text-gray-200 space-y-1">
-            {votes.map((vote) => (
+            {votes.value.map((vote) => (
               <li key={vote.voter} className="flex items-center gap-2">
                 <span className="font-mono">{shortenMiddle(vote.voter, 24)}</span>
                 <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-surface-muted dark:bg-neutral-70/40">
@@ -150,7 +204,11 @@ function ProposalDetail({ proposal, ctx }: { proposal: ProposalRow; ctx: Proposa
               {translate('corporation.proposals.withdraw')}
             </button>
           ) : null}
-          {executable ? (
+          {executable && waiting ? (
+            <p className="self-center text-sm text-gray-500 dark:text-gray-400">
+              {translate('corporation.proposals.executablefrom', { date: new Date(executableFrom).toLocaleString() })}
+            </p>
+          ) : executable ? (
             <button
               type="button"
               onClick={() => ctx.actions.onExecute(proposal.id)}
@@ -191,7 +249,7 @@ function ProposalCard({ proposal, ctx }: { proposal: ProposalRow; ctx: ProposalC
         <FontAwesomeIcon icon={faChevronDown} className={`text-xs transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       <div className="px-4 pb-3">
-        <TallyBar tally={proposal.tally} policy={ctx.policy} />
+        <TallyBar tally={proposal.tally} scale={proposalTallyScale(proposal, ctx.policy)} />
       </div>
       {open ? (
         <div className="px-4 pb-4">
@@ -207,6 +265,7 @@ export function ProposalsSection({
   ctx,
   composing,
   degraded,
+  partial,
   onCompose,
   composer,
 }: {
@@ -214,6 +273,7 @@ export function ProposalsSection({
   ctx: ProposalContext
   composing: boolean
   degraded: boolean
+  partial: boolean
   onCompose: () => void
   composer: ReactNode
 }) {
@@ -235,6 +295,7 @@ export function ProposalsSection({
         ) : null}
       </div>
       {composing ? composer : null}
+      {partial ? <PartialNote filtered /> : null}
       <div className="flex flex-wrap gap-1.5 mb-4">
         {FILTERS.map((entry) => {
           const count = entry === 'all' ? proposals.length : proposals.filter((p) => p.status === entry).length
@@ -251,7 +312,7 @@ export function ProposalsSection({
                   : 'border-neutral-20 dark:border-neutral-70 text-gray-600 dark:text-gray-300'
               }`}
             >
-              {translate(FILTER_KEYS[entry])} · {count}
+              {translate(FILTER_KEYS[entry])} · {atLeast(count, partial)}
             </button>
           )
         })}

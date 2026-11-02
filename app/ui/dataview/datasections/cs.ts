@@ -1,5 +1,6 @@
 import { faBoxArchive, faEdit } from '@fortawesome/free-solid-svg-icons'
-import { getModeLabel } from '@/ui/datatable/columnslist/cs'
+import { HolderOnboardingMode } from '@verana-labs/verana-types/codec/verana/cs/v1/types'
+import type { ProtocolParams } from '@/lib/protocolParams'
 import type { I18nValues } from '@/ui/dataview/types'
 import { Section, typeOf } from '@/ui/dataview/types'
 import { MSG_SCHEMA_ID } from '@/util/json_schema_util'
@@ -38,6 +39,22 @@ export const onboardingModeOptions = [
   { value: 3, label: t('dataview.cs.managementMode.GRANTOR_ONBOARDING_PROCESS') },
 ]
 
+export const holderOnboardingModeOptions = [
+  {
+    value: HolderOnboardingMode.HOLDER_ONBOARDING_MODE_ISSUER_ONBOARDING_PROCESS,
+    label: t('dataview.cs.managementMode.ISSUER_ONBOARDING_PROCESS'),
+  },
+  {
+    value: HolderOnboardingMode.HOLDER_ONBOARDING_MODE_PERMISSIONLESS,
+    label: t('dataview.cs.managementMode.PERMISSIONLESS'),
+  },
+]
+
+export const digestAlgorithmOptions = [
+  { value: 'sha384', label: 'sha384' },
+  { value: 'sha512', label: 'sha512' },
+]
+
 export const credentialSchemaSections: Section<CredentialSchemaData>[] = [
   {
     name: t('dataview.cs.sections.main'),
@@ -71,8 +88,6 @@ export const credentialSchemaSections: Section<CredentialSchemaData>[] = [
         update: false,
         inputType: 'select',
         options: onboardingModeOptions,
-        format: (value) => getModeLabel(String(value), '_ISSUER'),
-        isHtml: true,
       },
       {
         name: 'verifierOnboardingMode',
@@ -82,8 +97,6 @@ export const credentialSchemaSections: Section<CredentialSchemaData>[] = [
         update: false,
         inputType: 'select',
         options: onboardingModeOptions,
-        format: (value) => getModeLabel(String(value), '_VERIFIER'),
-        isHtml: true,
       },
       {
         name: 'holderOnboardingMode',
@@ -187,8 +200,6 @@ export const credentialSchemaSections: Section<CredentialSchemaData>[] = [
         update: false,
         inputType: 'select',
         options: onboardingModeOptions,
-        format: (value) => getModeLabel(String(value), '_ISSUER'),
-        isHtml: true,
         show: 'create',
       },
       {
@@ -199,8 +210,26 @@ export const credentialSchemaSections: Section<CredentialSchemaData>[] = [
         update: false,
         inputType: 'select',
         options: onboardingModeOptions,
-        format: (value) => getModeLabel(String(value), '_VERIFIER'),
-        isHtml: true,
+        show: 'create',
+      },
+      {
+        name: 'holderOnboardingMode',
+        label: t('dataview.cs.fields.holderOnboardingMode'),
+        type: 'data',
+        required: true,
+        update: false,
+        inputType: 'select',
+        options: holderOnboardingModeOptions,
+        show: 'create',
+      },
+      {
+        name: 'digestAlgorithm',
+        label: t('dataview.cs.fields.digestAlgorithm'),
+        type: 'data',
+        required: true,
+        update: false,
+        inputType: 'select',
+        options: digestAlgorithmOptions,
         show: 'create',
       },
       {
@@ -241,3 +270,39 @@ export const credentialSchemaSections: Section<CredentialSchemaData>[] = [
     ],
   },
 ]
+
+type ValidityPeriodField =
+  | 'issuerGrantorValidationValidityPeriod'
+  | 'verifierGrantorValidationValidityPeriod'
+  | 'issuerValidationValidityPeriod'
+  | 'verifierValidationValidityPeriod'
+  | 'holderValidationValidityPeriod'
+
+export const VALIDITY_MAX_DAYS: Record<ValidityPeriodField, keyof ProtocolParams> = {
+  issuerGrantorValidationValidityPeriod: 'issuerGrantorValidityMaxDays',
+  verifierGrantorValidationValidityPeriod: 'verifierGrantorValidityMaxDays',
+  issuerValidationValidityPeriod: 'issuerValidityMaxDays',
+  verifierValidationValidityPeriod: 'verifierValidityMaxDays',
+  holderValidationValidityPeriod: 'holderValidityMaxDays',
+}
+
+function isValidityPeriodField(name: string): name is ValidityPeriodField {
+  return name in VALIDITY_MAX_DAYS
+}
+
+export function boundedCredentialSchemaSections(params: ProtocolParams): Section<CredentialSchemaData>[] {
+  return credentialSchemaSections.map((section) => ({
+    ...section,
+    fields: section.fields?.map((field) => {
+      if (field.type !== 'data' || !isValidityPeriodField(String(field.name))) return field
+      const max = params[VALIDITY_MAX_DAYS[field.name as ValidityPeriodField]]
+      if (max === null)
+        return { ...field, validation: { ...field.validation, type: 'Long' as const, greaterThanOrEqual: 0 } }
+      return {
+        ...field,
+        description: t('dataview.cs.value.boundDays', { n: max }),
+        validation: { ...field.validation, type: 'Long' as const, greaterThanOrEqual: 0, lessThanOrEqual: max },
+      }
+    }),
+  }))
+}

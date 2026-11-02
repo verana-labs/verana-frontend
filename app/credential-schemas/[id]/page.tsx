@@ -3,18 +3,27 @@
 import { faBoxArchive, faPenToSquare, faSitemap } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useParams, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
+import { VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA } from '@/config/env'
+import { useActivityHistory } from '@/hooks/useActivityHistory'
+import { useCanonicalJsonSchema } from '@/hooks/useCanonicalJsonSchema'
 import { useCredentialSchemaData } from '@/hooks/useCredentialSchemaData'
 import { useEcosystemData } from '@/hooks/useEcosystemData'
+import { useActionSigning } from '@/hooks/useSigningMode'
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
+import { isNativePricing } from '@/lib/pricing-asset'
+import { useProtocolParams } from '@/providers/protocol-params-context'
+import { ActivityHistorySection } from '@/ui/common/activity-history-section'
+import { CapabilityButton, EntityActionButton } from '@/ui/common/capability-button'
 import { renderActionComponent } from '@/ui/common/data-view-typed'
 import EcosystemBreadcrumb from '@/ui/common/ecosystem-breadcrumb'
 import JsonCodeBlock from '@/ui/common/json-code-block'
 import { ModalAction } from '@/ui/common/modal-action'
+import { PricingNotice } from '@/ui/common/pricing-notice'
 import SchemaHeader, { type SchemaStatus } from '@/ui/common/schema-header'
-import type { CredentialSchemaData } from '@/ui/dataview/datasections/cs'
+import { type CredentialSchemaData, VALIDITY_MAX_DAYS } from '@/ui/dataview/datasections/cs'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
 type ValidityField = keyof Pick<
@@ -69,22 +78,28 @@ function ValidityFieldView({ labelKey, value }: { labelKey: string; value: numbe
 function ValidityFieldInput({
   labelKey,
   value,
+  max,
   onChange,
   disabled,
 }: {
   labelKey: string
   value: number
+  max: number | null
   onChange: (value: number) => void
   disabled: boolean
 }) {
   const label = resolveTranslatable({ key: labelKey }, translate) ?? labelKey
   const days = resolveTranslatable({ key: 'dataview.cs.value.daysShort' }, translate) ?? 'days'
+  const bound = max === null ? '' : `, ${translate('dataview.cs.value.maxDays', { n: max })}`
+  const invalid = max !== null && value > max
+  const errorId = useId()
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{`${label} (${days})`}</label>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{`${label} (${days}${bound})`}</label>
       <input
         type="number"
         min={0}
+        max={max ?? undefined}
         step={1}
         value={value}
         onChange={(event) => {
@@ -92,8 +107,15 @@ function ValidityFieldInput({
           if (Number.isFinite(parsed)) onChange(Math.max(0, Math.floor(parsed)))
         }}
         disabled={disabled}
-        className="w-full px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-surface text-gray-900 dark:text-white text-sm disabled:opacity-60"
+        aria-invalid={invalid}
+        aria-describedby={invalid ? errorId : undefined}
+        className={`w-full px-4 py-2 border ${invalid ? 'border-red-500' : 'border-neutral-20 dark:border-neutral-70'} rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-surface text-gray-900 dark:text-white text-sm disabled:opacity-60`}
       />
+      {invalid ? (
+        <p id={errorId} className="data-edit-error">
+          {translate('dataview.cs.value.overMax', { n: max })}
+        </p>
+      ) : null}
     </div>
   )
 }
@@ -103,9 +125,15 @@ export default function CredentialSchemaViewPage() {
   const id = params?.id ?? ''
   const router = useRouter()
   const { credentialSchema, errorCredentialSchema, refetch: refetchCredentialSchema } = useCredentialSchemaData(id)
+  const canonicalJsonSchema = useCanonicalJsonSchema(id)
+  const history = useActivityHistory(
+    VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA && id ? `${VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA}/history/${id}` : undefined
+  )
   const ecosystemId = credentialSchema ? String(credentialSchema.ecosystemId) : ''
   const { ecosystem } = useEcosystemData(ecosystemId)
   const { actingCorporation } = useUserCorporation()
+  const update = useActionSigning('MsgUpdateCredentialSchema')
+  const protocolParams = useProtocolParams()
 
   const [mode, setMode] = useState<'view' | 'edit'>('view')
   const [editValues, setEditValues] = useState<ValidityValues | null>(null)
@@ -114,21 +142,20 @@ export default function CredentialSchemaViewPage() {
 
   const refresh = () => {
     void refetchCredentialSchema()
+    void history.refetch()
   }
   const { submitTx } = useSubmitTxMsgTypeFromObject(() => setMode('view'), refresh)
 
-  const canManage =
-    credentialSchema !== null &&
-    ecosystem !== null &&
-    actingCorporation?.corporation.id === ecosystem.corporationId &&
-    actingCorporation.operator
+  const owner =
+    credentialSchema !== null && ecosystem !== null && actingCorporation?.corporation.id === ecosystem.corporationId
+  const editable = owner && update.reason === undefined
 
   useEffect(() => {
-    if (!canManage && mode === 'edit') {
+    if (!editable && mode === 'edit') {
       setMode('view')
       setEditValues(null)
     }
-  }, [canManage, mode])
+  }, [editable, mode])
 
   if (!credentialSchema) {
     if (errorCredentialSchema) {
@@ -183,6 +210,13 @@ export default function CredentialSchemaViewPage() {
     }
   }
 
+  const outOfBounds =
+    editValues !== null &&
+    VALIDITY_FIELDS.some(({ field }) => {
+      const max = protocolParams[VALIDITY_MAX_DAYS[field]]
+      return max !== null && editValues[field] > max
+    })
+
   function patchEditValue(field: ValidityField, value: number) {
     setEditValues((previous) => (previous ? { ...previous, [field]: value } : previous))
   }
@@ -204,6 +238,7 @@ export default function CredentialSchemaViewPage() {
         status={status}
         issuerOnboardingMode={credentialSchema.issuerOnboardingMode}
         verifierOnboardingMode={credentialSchema.verifierOnboardingMode}
+        holderOnboardingMode={credentialSchema.holderOnboardingMode ?? undefined}
         action={
           <button
             type="button"
@@ -216,33 +251,33 @@ export default function CredentialSchemaViewPage() {
         }
       />
 
+      {isNativePricing(credentialSchema) ? null : <PricingNotice schema={credentialSchema} className="mb-8" />}
+
       <section className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
             {t('dataview.section.mutable', 'Mutable Configuration')}
           </h2>
-          {canManage && mode === 'view' ? (
+          {owner && mode === 'view' ? (
             <div className="flex flex-col sm:flex-row gap-2">
-              <button
-                type="button"
+              <CapabilityButton
+                signing={update}
+                icon={faPenToSquare}
+                label={t('dataview.cs.button.editConfiguration', 'Edit Configuration')}
                 onClick={startEdit}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium"
-              >
-                <FontAwesomeIcon icon={faPenToSquare} />
-                <span>{t('dataview.cs.button.editConfiguration', 'Edit Configuration')}</span>
-              </button>
-              <button
-                type="button"
+              />
+              <EntityActionButton
+                msgType={archiveMessageType}
+                icon={faBoxArchive}
+                label={
+                  isArchived
+                    ? t('dataview.cs.button.unarchive', 'Unarchive')
+                    : t('dataview.cs.button.archive', 'Archive')
+                }
                 onClick={() => setArchiveActive(true)}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium"
-              >
-                <FontAwesomeIcon icon={faBoxArchive} />
-                <span>
-                  {isArchived
-                    ? t('dataview.cs.button.unarchive', 'Unarchive')
-                    : t('dataview.cs.button.archive', 'Archive')}
-                </span>
-              </button>
+              />
             </div>
           ) : null}
         </div>
@@ -261,6 +296,7 @@ export default function CredentialSchemaViewPage() {
                     key={field}
                     labelKey={labelKey}
                     value={editValues[field]}
+                    max={protocolParams[VALIDITY_MAX_DAYS[field]]}
                     onChange={(value) => patchEditValue(field, value)}
                     disabled={submitting}
                   />
@@ -278,7 +314,7 @@ export default function CredentialSchemaViewPage() {
                 <button
                   type="button"
                   onClick={confirmEdit}
-                  disabled={submitting}
+                  disabled={submitting || outOfBounds}
                   className="flex-1 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium disabled:opacity-60"
                 >
                   {t('messages.confirm', 'Confirm')}
@@ -294,9 +330,22 @@ export default function CredentialSchemaViewPage() {
           {t('dataview.cs.fields.jsonSchema', 'JSON Schema')}
         </h2>
         <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-4 sm:p-6">
-          <JsonCodeBlock value={credentialSchema.jsonSchema} />
+          {canonicalJsonSchema.schema ? (
+            <JsonCodeBlock value={canonicalJsonSchema.schema} />
+          ) : canonicalJsonSchema.failed ? (
+            <>
+              <p className="mb-3 text-sm text-amber-700 dark:text-amber-300">
+                {translate('dataview.cs.jsonSchema.stored')}
+              </p>
+              <JsonCodeBlock value={credentialSchema.jsonSchema} />
+            </>
+          ) : (
+            <div className="skeleton h-24 w-full" />
+          )}
         </div>
       </section>
+
+      <ActivityHistorySection history={history} />
 
       <ModalAction isActive={archiveActive} titleKey={archiveTitleKey} onClose={() => setArchiveActive(false)}>
         {renderActionComponent(archiveMessageType, () => setArchiveActive(false), credentialSchema, refresh)}

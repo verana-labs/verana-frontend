@@ -1,10 +1,8 @@
 'use client'
 
-import { faCheckCircle, faCoins, faLock } from '@fortawesome/free-solid-svg-icons'
+import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import clsx from 'clsx'
-import { useProtocolParams } from '@/providers/protocol-params-context'
-import { formatUSDfromUVNA } from '@/util/util'
 import { ResolvedDataField } from '../dataview/types'
 
 type CardViewProps<T> = {
@@ -15,9 +13,6 @@ type CardViewProps<T> = {
 
 export default function CardView<T>({ field, data, largeTexts }: CardViewProps<T>) {
   const value = field.format ? String(field.format(data[field.name])) : String(data[field.name])
-  const trustUnitPrice = useProtocolParams().trustUnitPrice
-  const conversionFactorUSDfromVNA = trustUnitPrice ? 1_000_000 / Number(trustUnitPrice) : 0
-  const valueUSD = field.usdValue ? formatUSDfromUVNA(value.split('VNA')[0], conversionFactorUSDfromVNA) : null
   const iconWrapperClass = field.iconClass ?? ''
   const iconColorClass = field.iconColorClass ?? field.iconClass ?? ''
   return (
@@ -40,7 +35,6 @@ export default function CardView<T>({ field, data, largeTexts }: CardViewProps<T
             </div>
             <div className="mb-4">
               <div className="text-2xl font-bold text-gray-900 dark:text-white font-mono">{value}</div>
-              <div className="text-sm text-neutral-70 dark:text-neutral-70 mt-1">{valueUSD ?? ''}</div>
             </div>
             <div className="flex items-center justify-between text-sm">
               {field.name === 'balance' && (
@@ -49,29 +43,12 @@ export default function CardView<T>({ field, data, largeTexts }: CardViewProps<T
                   Available
                 </span>
               )}
-              {field.name === 'totalTrustDeposit' && (
-                <>
-                  <span className="text-blue-600 dark:text-blue-400 flex items-center">
-                    <FontAwesomeIcon icon={faLock} />
-                    Locked
-                  </span>
-                  {data['claimableInterests' as keyof T] && (
-                    <span className="text-orange-600 dark:text-orange-400 flex items-center">
-                      <FontAwesomeIcon icon={faCoins} />
-                      {String(data['claimableInterests' as keyof T])}
-                    </span>
-                  )}
-                  <span className="text-neutral-70 dark:text-neutral-70">
-                    APY: <strong>4.2%</strong>
-                  </span>
-                </>
-              )}
               {/* <span className="text-neutral-70 dark:text-neutral-70">Last updated: 2 min ago</span> */}
             </div>
           </>
         ) : (
           <div className="flex items-center">
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               {field.icon && (
                 <div className={clsx('w-12 h-12 rounded-xl flex items-center justify-center', iconWrapperClass)}>
                   <FontAwesomeIcon icon={field.icon} className={iconColorClass} />

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { connectWallet } from './support/connect'
-import { fillEcosystemForm } from './support/flows'
+import { confirmTransaction, fillEcosystemForm } from './support/flows'
 import { installMockChain, stubCorporationRoutes } from './support/mock-chain'
 
 const FAKE_ECOSYSTEM_ID = '777'
@@ -19,6 +19,12 @@ test('Ring A — create ecosystem reaches faked success without a real chain wri
     docUrl: `https://ring-a-${stamp}.example/egf.md`,
   })
   await page.locator('.btn-action-confirm').click()
+  await confirmTransaction(page)
+  await expect(page.locator('.notify-msg-link').first()).toHaveAttribute(
+    'href',
+    /^https:\/\/explorer\.devnet\.verana\.network\/Verana%20Devnet\/tx\/[0-9A-F]{64}$/,
+    { timeout: 30_000 }
+  )
 
   const ecosystemUrl = new RegExp(`/ecosystems/${FAKE_ECOSYSTEM_ID}(\\?|$)`)
   await expect.poll(() => page.url(), { timeout: 60_000 }).toMatch(ecosystemUrl)

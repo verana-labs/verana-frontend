@@ -160,7 +160,7 @@ type BaseField = {
 
 /* Field validation params by all field types */
 export type FieldValidation = {
-  type: 'DID' | 'URL' | 'JSON_SCHEMA' | 'String' | 'Number' | 'Long'
+  type: 'DID' | 'URL' | 'JSON_SCHEMA' | 'String' | 'Number' | 'Long' | 'VNA'
   lessThan?: number
   lessThanOrEqual?: number
   greaterThan?: number
@@ -186,8 +186,8 @@ export type DataField<T> = BaseField & {
   placeholder?: Translatable
   validation?: FieldValidation
   classField?: string
-  isHtml?: boolean
   usdValue?: boolean
+  isHtml?: boolean
   hasStats?: boolean
   format?: (value: T[keyof T]) => ReactNode
 }

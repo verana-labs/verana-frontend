@@ -11,7 +11,7 @@ import { resolveTranslatable } from '@/ui/dataview/types'
 const ONBOARDING_MODES = new Set(['OPEN', 'ECOSYSTEM_ONBOARDING_PROCESS', 'GRANTOR_ONBOARDING_PROCESS'])
 const HOLDER_ONBOARDING_MODES = new Set(['ISSUER_ONBOARDING_PROCESS', 'PERMISSIONLESS'])
 
-const { record, string, number, nullableString } = indexerValidators('credential schema')
+const { record, string, number, nullableString, missingAsNull } = indexerValidators('credential schema')
 
 function mode(value: unknown, path: string, allowed: Set<string>): string {
   const result = string(value, path)
@@ -55,8 +55,8 @@ export function parseCredentialSchemaResponse(payload: unknown): CredentialSchem
       source.holder_onboarding_mode === null
         ? null
         : mode(source.holder_onboarding_mode, 'schema.holder_onboarding_mode', HOLDER_ONBOARDING_MODES),
-    pricingAssetType: nullableString(source.pricing_asset_type, 'schema.pricing_asset_type'),
-    pricingAsset: nullableString(source.pricing_asset, 'schema.pricing_asset'),
+    pricingAssetType: missingAsNull(source.pricing_asset_type, 'schema.pricing_asset_type'),
+    pricingAsset: missingAsNull(source.pricing_asset, 'schema.pricing_asset'),
     digestAlgorithm: nullableString(source.digest_algorithm, 'schema.digest_algorithm'),
     archived: nullableString(source.archived, 'schema.archived'),
     title: typeof source.title === 'string' ? source.title : undefined,

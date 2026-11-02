@@ -12,6 +12,7 @@ import {
   chooseActingMembership,
   claimIntendedMembership,
   discoverCorporations,
+  discoveryIncomplete,
   findCorporationMembership,
   forgetActingCorporationId,
   invalidatesActingSession,
@@ -34,15 +35,14 @@ function corporationPayload(id: number) {
 }
 
 function stubFetch(routes: Record<string, unknown>) {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (url: string) => {
-      const match = Object.entries(routes).find(([prefix]) => url.startsWith(prefix))
-      if (!match) throw new Error(`Unexpected fetch: ${url}`)
-      if (match[1] === null) return { ok: false, status: 502, json: async () => ({}) }
-      return { ok: true, json: async () => match[1] }
-    })
-  )
+  const fetchMock = vi.fn(async (url: string) => {
+    const match = Object.entries(routes).find(([prefix]) => url.startsWith(prefix))
+    if (!match) throw new Error(`Unexpected fetch: ${url}`)
+    if (match[1] === null) return { ok: false, status: 502, json: async () => ({}) }
+    return { ok: true, json: async () => match[1] }
+  })
+  vi.stubGlobal('fetch', fetchMock)
+  return fetchMock
 }
 
 function stubStorage(initial: Record<string, string> = {}) {
@@ -110,7 +110,82 @@ describe('discoverCorporations', () => {
         },
       ],
       error: null,
+      partial: false,
     })
+  })
+
+  it('discovers a corporation granted past the first window of operator authorizations', async () => {
+    const grant = (id: number, corporationId: number) => ({
+      id,
+      corporation_id: corporationId,
+      msg_types: ['/verana.ec.v1.MsgCreateEcosystem'],
+    })
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.startsWith(AUTHORIZATIONS)) {
+        const authorizations = url.includes('max_id=')
+          ? [grant(1, 9)]
+          : Array.from({ length: 1024 }, (_, index) => grant(2000 - index, 7))
+        return { ok: true, json: async () => ({ authorizations }) }
+      }
+      if (url.startsWith(MEMBERSHIPS)) return { ok: true, json: async () => ({ memberships: [] }) }
+      return { ok: true, json: async () => corporationPayload(Number(url.slice(CORPORATION.length).split('?')[0])) }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const discovered = await discoverCorporations('verana1operator')
+
+    expect(discovered.memberships.map((entry) => [entry.corporation.id, entry.operator])).toEqual([
+      [7, true],
+      [9, true],
+    ])
+    expect(discovered.error).toBeNull()
+  })
+
+  it('reads the memberships past the first window, keyed by corporation id', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.startsWith(AUTHORIZATIONS)) return { ok: true, json: async () => ({ authorizations: [] }) }
+      if (url.startsWith(MEMBERSHIPS)) {
+        const memberships = url.includes('max_id=')
+          ? [{ corporation_id: 3, weight: '1' }]
+          : Array.from({ length: 1024 }, (_, index) => ({ corporation_id: 2000 - index, weight: '1' }))
+        return { ok: true, json: async () => ({ memberships }) }
+      }
+      return { ok: true, json: async () => corporationPayload(Number(url.slice(CORPORATION.length).split('?')[0])) }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const discovered = await discoverCorporations('verana1operator')
+
+    expect(discovered.memberships).toHaveLength(1024)
+    expect(discovered.memberships[0].corporation.id).toBe(3)
+    expect(fetchMock).toHaveBeenCalledWith(`${MEMBERSHIPS}?account=verana1operator&limit=1024&sort=-id&max_id=978`)
+  })
+
+  it('reports a discovery cut short as partial, not as a failure, and keeps the persisted corporation', async () => {
+    const authorizations = (from: number) =>
+      Array.from({ length: 1024 }, (_, index) => ({ id: from - index, corporation_id: 7, msg_types: [] }))
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.startsWith(AUTHORIZATIONS)) {
+        const maxId = new URL(url).searchParams.get('max_id')
+        return { ok: true, json: async () => ({ authorizations: authorizations(maxId ? Number(maxId) - 1 : 90_000) }) }
+      }
+      if (url.startsWith(MEMBERSHIPS)) return { ok: true, json: async () => ({ memberships: [] }) }
+      return { ok: true, json: async () => corporationPayload(7) }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const store = stubStorage()
+    saveActingCorporationId('verana1operator', 9)
+
+    const discovered = await discoverCorporations('verana1operator')
+
+    expect(discovered.memberships.map((entry) => entry.corporation.id)).toEqual([7])
+    expect(discovered.error).toBeNull()
+    expect(discovered.partial).toBe(true)
+    expect(discoveryIncomplete(discovered)).toBe(true)
+    expect(restoreActingMembership('verana1operator', discovered.memberships, discoveryIncomplete(discovered))).toEqual(
+      { membership: null, lost: false }
+    )
+    expect(store.has(STORAGE_KEY)).toBe(true)
   })
 
   it('keeps the operator grants when the group source fails', async () => {
@@ -373,5 +448,36 @@ describe('restoreActingMembership', () => {
       lost: false,
     })
     expect(loadActingCorporationId('verana1operator')).toBe(4)
+  })
+})
+
+describe('corporation identity comes from the inline trust_data', () => {
+  it('asks the corporation method for the enrichment and maps it onto the membership', async () => {
+    const fetchMock = stubFetch({
+      [AUTHORIZATIONS]: { authorizations: [{ id: 1, corporation_id: 7, msg_types: [] }] },
+      [MEMBERSHIPS]: { memberships: [] },
+      [`${CORPORATION}7`]: {
+        corporation: {
+          id: 7,
+          policy_address: 'verana1policy7',
+          did: 'did:web:corp7.example',
+          trust_data: {
+            did: 'did:web:corp7.example',
+            trusted: true,
+            expiresAtTime: null,
+            ecsCredentials: [
+              { ecsSchema: 'OrganizationCredential', credentialSubject: { name: 'Acme Corp', countryCode: 'BE' } },
+            ],
+          },
+        },
+      },
+    })
+
+    const { memberships } = await discoverCorporations('verana1operator')
+
+    expect(fetchMock.mock.calls.map(([url]) => url)).toContain(`${CORPORATION}7?trust_data=full`)
+    expect(memberships[0].corporation.trustData?.trustStatus).toBe('TRUSTED')
+    expect(memberships[0].corporation.trustData?.organizationName).toBe('Acme Corp')
+    expect(memberships[0].corporation.trustData?.countryCode).toBe('BE')
   })
 })

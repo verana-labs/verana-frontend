@@ -1,6 +1,7 @@
 'use client'
 
 import { faCheck, faCopy } from '@fortawesome/free-solid-svg-icons'
+import { useTheme } from 'next-themes'
 import { Highlight, themes } from 'prism-react-renderer'
 import { useEffect, useMemo, useState } from 'react'
 import IconLabelButton from './icon-label-button'
@@ -37,6 +38,7 @@ export default function JsonCodeBlock({ value, className }: JsonCodeBlockProps) 
     return value == null ? '' : String(value)
   }, [value])
 
+  const { resolvedTheme } = useTheme()
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
@@ -61,7 +63,7 @@ export default function JsonCodeBlock({ value, className }: JsonCodeBlockProps) 
 
   return (
     <div className="relative">
-      <Highlight code={code} language="json" theme={themes.github}>
+      <Highlight code={code} language="json" theme={resolvedTheme === 'dark' ? themes.vsDark : themes.github}>
         {({ className: highlightClassName, style, tokens, getLineProps, getTokenProps }) => (
           <pre
             className={[highlightClassName, className, 'bg-[#f6f8fa] dark:bg-slate-900 dark:text-slate-200']

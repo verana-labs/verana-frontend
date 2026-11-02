@@ -1,21 +1,26 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { HolderOnboardingMode } from '@/lib/participant-onboarding'
 import {
+  childRoleOnboardingAction,
+  childRoleOnboardingLabel,
   countryCodeToFlag,
   countryNameFromCode,
+  expireBeforeDays,
   formatDateTime,
   formatNumber,
-  formatUSDfromUVNA,
   formatVNA,
   formatVNAFromUVNA,
   getStatus,
-  isExpired,
   isExpireSoon,
   isJson,
+  nodeChildRoles,
+  onboardingStateColor,
   parseVNA,
+  parseVNAExact,
+  participantStateBadgeClass,
   roleBadgeClass,
   roleColorClass,
   roleJoinColorClass,
-  rolesSchema,
   shortenDID,
   shortenMiddle,
   withCurrentLocalTimePlusOneMinute,
@@ -94,6 +99,23 @@ describe('formatVNAFromUVNA', () => {
   })
 })
 
+describe('parseVNAExact', () => {
+  it.each([
+    ['0', '0'],
+    ['1', '1000000'],
+    ['1.5', '1500000'],
+    ['0.000001', '1'],
+    [' 2 ', '2000000'],
+    ['12345678901234567890.123456', '12345678901234567890123456'],
+  ])('reads %j VNA as %s uvna', (vna, uvna) => {
+    expect(parseVNAExact(vna)).toBe(uvna)
+  })
+
+  it.each(['', '0.0000001', '-1', '1,5', '1e3', 'abc', '.5'])('rejects %j', (vna) => {
+    expect(parseVNAExact(vna)).toBeNull()
+  })
+})
+
 describe('parseVNA', () => {
   it('is the inverse of formatVNA for whole and fractional VNA', () => {
     expect(parseVNA('1 VNA')).toBe('1000000')
@@ -117,37 +139,6 @@ describe('parseVNA', () => {
   it('returns "0" for empty or unparseable input', () => {
     expect(parseVNA('')).toBe('0')
     expect(parseVNA('VNA')).toBe('0')
-  })
-})
-
-describe('formatUSDfromUVNA', () => {
-  it('multiplies the VNA amount by the conversion factor with a USD prefix', () => {
-    expect(formatUSDfromUVNA('10', 1.5)).toBe('≈ $15 USD')
-    expect(formatUSDfromUVNA('2', 0.5)).toBe('≈ $1 USD')
-  })
-
-  it('clamps the displayed value to two fractional digits', () => {
-    expect(formatUSDfromUVNA('1', 0.125)).toBe('≈ $0.13 USD')
-  })
-
-  it('ignores thousands separators in the amount', () => {
-    expect(formatUSDfromUVNA('1,000', 2)).toBe('≈ $2,000 USD')
-  })
-
-  it('returns an empty string for an empty amount', () => {
-    expect(formatUSDfromUVNA(null, 1)).toBe('')
-    expect(formatUSDfromUVNA('', 1)).toBe('')
-  })
-
-  it('returns an empty string for a non-positive or non-finite factor', () => {
-    expect(formatUSDfromUVNA('10', 0)).toBe('')
-    expect(formatUSDfromUVNA('10', -1)).toBe('')
-    expect(formatUSDfromUVNA('10', Number.NaN)).toBe('')
-    expect(formatUSDfromUVNA('10', Number.POSITIVE_INFINITY)).toBe('')
-  })
-
-  it('returns an empty string when the amount has no numeric content', () => {
-    expect(formatUSDfromUVNA('abc', 1)).toBe('')
   })
 })
 
@@ -271,22 +262,17 @@ describe('isJson', () => {
   })
 })
 
-describe('isExpired', () => {
-  afterEach(() => {
-    vi.useRealTimers()
+describe('expireBeforeDays', () => {
+  it('defaults to thirty days when the window is unset or unusable', () => {
+    expect(expireBeforeDays(undefined)).toBe(30)
+    expect(expireBeforeDays('')).toBe(30)
+    expect(expireBeforeDays('nope')).toBe(30)
+    expect(expireBeforeDays('0')).toBe(30)
+    expect(expireBeforeDays('-5')).toBe(30)
   })
 
-  it('treats dates strictly before today (midnight) as expired', () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date(2026, 5, 23, 14, 0, 0))
-    expect(isExpired(new Date(2026, 5, 22))).toBe(true)
-  })
-
-  it('treats today and future dates as not expired', () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date(2026, 5, 23, 14, 0, 0))
-    expect(isExpired(new Date(2026, 5, 23, 14, 0, 0))).toBe(false)
-    expect(isExpired(new Date(2026, 5, 24))).toBe(false)
+  it('honours a configured window', () => {
+    expect(expireBeforeDays('7')).toBe(7)
   })
 })
 
@@ -295,22 +281,84 @@ describe('isExpireSoon', () => {
     vi.useRealTimers()
   })
 
-  it('is true for a date within 24h of today midnight', () => {
+  it('is true for a date inside the default thirty-day window', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 5, 23, 14, 0, 0))
     expect(isExpireSoon(new Date(2026, 5, 23, 20, 0, 0))).toBe(true)
+    expect(isExpireSoon(new Date(2026, 6, 20))).toBe(true)
+    expect(isExpireSoon('2026-07-10T09:30:00.000Z')).toBe(true)
+    expect(isExpireSoon('2026-09-10T09:30:00.000Z')).toBe(false)
   })
 
-  it('is false for already-expired dates', () => {
+  it('counts the window from now, inclusive of its last instant', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 5, 23, 14, 0, 0))
+    expect(isExpireSoon(new Date(2026, 6, 23, 14, 0, 0))).toBe(true)
+    expect(isExpireSoon(new Date(2026, 6, 23, 14, 1, 0))).toBe(false)
+  })
+
+  it('is false for already-expired dates, including earlier today', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 5, 23, 14, 0, 0))
     expect(isExpireSoon(new Date(2026, 5, 22))).toBe(false)
+    expect(isExpireSoon(new Date(2026, 5, 23, 9, 0, 0))).toBe(false)
   })
 
-  it('is false for dates more than a day past today midnight', () => {
+  it('is false beyond the window and for a missing or unparsable date', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 5, 23, 14, 0, 0))
-    expect(isExpireSoon(new Date(2026, 5, 25))).toBe(false)
+    expect(isExpireSoon(new Date(2026, 7, 25))).toBe(false)
+    expect(isExpireSoon(null)).toBe(false)
+    expect(isExpireSoon(undefined)).toBe(false)
+    expect(isExpireSoon('not a date')).toBe(false)
+  })
+})
+
+describe('participantStateBadgeClass', () => {
+  it('keeps FUTURE and INACTIVE neutral, apart from the gray of EXPIRED and REVOKED', () => {
+    for (const state of ['FUTURE', 'INACTIVE'] as const) {
+      expect(participantStateBadgeClass(state, false, 'header').classParticipantState).toMatch(
+        /^bg-white text-gray-600 ring-1/
+      )
+    }
+    for (const state of ['EXPIRED', 'REVOKED'] as const) {
+      expect(participantStateBadgeClass(state, false, 'header').classParticipantState).toMatch(/^bg-gray-100/)
+    }
+    expect(participantStateBadgeClass('EXPIRED', false, 'header').labelParticipantState).toBe('EXPIRED')
+    expect(participantStateBadgeClass('REVOKED', false).labelParticipantState).toBe('revoked')
+  })
+
+  it('renders ACTIVE green in the tree, SLASHED strong red and REPAID muted red', () => {
+    expect(participantStateBadgeClass('ACTIVE', false).classParticipantState).toContain('bg-green-100')
+    expect(participantStateBadgeClass('SLASHED', false).classParticipantState).toContain('bg-red-900 text-red-100')
+    expect(participantStateBadgeClass('REPAID', false).classParticipantState).toContain('bg-gray-100 text-red-800')
+  })
+
+  it('adds the expires-soon indicator alongside ACTIVE instead of replacing it', () => {
+    const badge = participantStateBadgeClass('ACTIVE', true, 'header')
+    expect(badge.labelParticipantState).toBe('ACTIVE')
+    expect(badge.classParticipantState).toContain('blue')
+    expect(badge.expireSoon?.labelExpireSoon).toBe('EXPIRES SOON')
+    expect(badge.expireSoon?.classExpireSoon).toContain('yellow')
+  })
+
+  it('carries no indicator when the participant is not expiring or not active', () => {
+    expect(participantStateBadgeClass('ACTIVE', false).expireSoon).toBeNull()
+    expect(participantStateBadgeClass('SLASHED', true).expireSoon).toBeNull()
+  })
+
+  it('lowercases both badges in the tree variant', () => {
+    const badge = participantStateBadgeClass('ACTIVE', true)
+    expect(badge.labelParticipantState).toBe('active')
+    expect(badge.expireSoon?.labelExpireSoon).toBe('expires soon')
+  })
+})
+
+describe('onboardingStateColor', () => {
+  it('renders PENDING yellow, VALIDATED green and TERMINATED gray', () => {
+    expect(onboardingStateColor('PENDING').classOnboardingState).toContain('yellow')
+    expect(onboardingStateColor('VALIDATED').classOnboardingState).toContain('green')
+    expect(onboardingStateColor('TERMINATED').classOnboardingState).toContain('gray')
   })
 })
 
@@ -366,43 +414,11 @@ describe('withCurrentLocalTimePlusOneMinute', () => {
   })
 })
 
-describe('rolesSchema', () => {
-  it('adds grantor roles only under the V4 grantor onboarding mode', () => {
-    expect(rolesSchema('GRANTOR_ONBOARDING_PROCESS', 'GRANTOR_ONBOARDING_PROCESS')).toEqual([
-      'ISSUER_GRANTOR',
-      'ISSUER',
-      'VERIFIER_GRANTOR',
-      'VERIFIER',
-      'HOLDER',
-    ])
-  })
-
-  it('omits grantor roles for OPEN and ecosystem onboarding modes', () => {
-    expect(rolesSchema('OPEN', 'OPEN')).toEqual(['ISSUER', 'VERIFIER', 'HOLDER'])
-    expect(rolesSchema('ECOSYSTEM_ONBOARDING_PROCESS', 'ECOSYSTEM_ONBOARDING_PROCESS')).toEqual([
-      'ISSUER',
-      'VERIFIER',
-      'HOLDER',
-    ])
-  })
-
-  it('handles mixed issuer and verifier modes', () => {
-    expect(rolesSchema('GRANTOR_ONBOARDING_PROCESS', 'OPEN')).toEqual([
-      'ISSUER_GRANTOR',
-      'ISSUER',
-      'VERIFIER',
-      'HOLDER',
-    ])
-  })
-
-  it('always includes HOLDER', () => {
-    expect(rolesSchema('OPEN', 'OPEN')).toContain('HOLDER')
-  })
-})
-
 describe('role class helpers', () => {
   it('roleBadgeClass returns distinct classes per known role and a gray default', () => {
     expect(roleBadgeClass('ECOSYSTEM')).toContain('purple')
+    expect(roleBadgeClass('ISSUER_GRANTOR')).toContain('blue')
+    expect(roleBadgeClass('VERIFIER_GRANTOR')).toContain('slate')
     expect(roleBadgeClass('ISSUER')).toContain('green')
     expect(roleBadgeClass('VERIFIER')).toContain('orange')
     expect(roleBadgeClass('HOLDER')).toContain('pink')
@@ -415,9 +431,49 @@ describe('role class helpers', () => {
     expect(roleColorClass('whatever')).toBe('text-gray-500')
   })
 
-  it('roleJoinColorClass omits ECOSYSTEM and defaults to gray', () => {
-    expect(roleJoinColorClass('ISSUER')).toBe('bg-green-100 text-green-500')
-    expect(roleJoinColorClass('ECOSYSTEM')).toBe('bg-gray-100 text-gray-500')
-    expect(roleJoinColorClass('whatever')).toBe('bg-gray-100 text-gray-500')
+  it('roleJoinColorClass omits ECOSYSTEM and defaults to gray, and carries both themes', () => {
+    expect(roleJoinColorClass('ISSUER')).toBe('bg-green-100 text-green-500 dark:bg-green-900/20 dark:text-green-400')
+    expect(roleJoinColorClass('ECOSYSTEM')).toBe(roleJoinColorClass('whatever'))
+    expect(roleJoinColorClass('whatever')).toBe('bg-gray-100 text-gray-500 dark:bg-gray-900/20 dark:text-gray-400')
+  })
+})
+
+describe('nodeChildRoles', () => {
+  const holderValidation = (holderMode: HolderOnboardingMode | null) =>
+    nodeChildRoles('OPEN', 'OPEN', holderMode, 'ISSUER').map((child) => [child.role, child.validation])
+
+  it('onboards holders through the issuer only under the issuer onboarding process', () => {
+    expect(holderValidation('ISSUER_ONBOARDING_PROCESS')).toEqual([['HOLDER', true]])
+    expect(holderValidation('PERMISSIONLESS')).toEqual([['HOLDER', false]])
+  })
+
+  it('treats a schema without a holder onboarding mode as permissionless, as the chain does', () => {
+    expect(holderValidation(null)).toEqual([['HOLDER', false]])
+  })
+})
+
+describe('childRoleOnboardingAction', () => {
+  it('sends permissionless holders to the issuer, with or without a wallet', () => {
+    expect(childRoleOnboardingAction({ role: 'HOLDER', validation: false }, true)).toBe('LinkDID')
+    expect(childRoleOnboardingAction({ role: 'HOLDER', validation: false }, false)).toBe('LinkDID')
+  })
+
+  it('starts an onboarding process for validated holders like any validated role', () => {
+    expect(childRoleOnboardingAction({ role: 'HOLDER', validation: true }, true)).toBe('MsgStartParticipantOP')
+    expect(childRoleOnboardingAction({ role: 'ISSUER', validation: true }, true)).toBe('MsgStartParticipantOP')
+    expect(childRoleOnboardingAction({ role: 'HOLDER', validation: true }, false)).toBe('Connect')
+  })
+
+  it('self-creates open roles once a wallet is connected', () => {
+    expect(childRoleOnboardingAction({ role: 'VERIFIER', validation: false }, true)).toBe('MsgSelfCreateParticipant')
+    expect(childRoleOnboardingAction({ role: 'VERIFIER', validation: false }, false)).toBe('Connect')
+  })
+})
+
+describe('childRoleOnboardingLabel', () => {
+  it('names the permissionless holder mode instead of open', () => {
+    expect(childRoleOnboardingLabel({ role: 'HOLDER', validation: false })).toBe('Permissionless')
+    expect(childRoleOnboardingLabel({ role: 'VERIFIER', validation: false })).toBe('open')
+    expect(childRoleOnboardingLabel({ role: 'HOLDER', validation: true })).toBe('onboarding process')
   })
 })

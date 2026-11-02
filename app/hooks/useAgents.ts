@@ -1,0 +1,395 @@
+'use client'
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { VERANA_REST_ENDPOINT_ECOSYSTEM, VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
+import {
+  parseVsOperatorAuthorizations,
+  type VsOperatorAuthorizationRow,
+  vsOperatorAuthorizationsUrl,
+} from '@/hooks/useCorporationDetails'
+import { parseEcosystemsResponse } from '@/hooks/useEcosystems'
+import { useLoadMore } from '@/hooks/useKeysetPages'
+import { parseParticipantsResponse } from '@/hooks/useParticipants'
+import { translate } from '@/i18n/dataview'
+import { type IndexerEvent, refreshesEntityLists, SESSION_EVENT } from '@/lib/indexer-event'
+import {
+  applyKeysetParams,
+  degrade,
+  emptyWindow,
+  fetchJson,
+  fetchKeysetPages,
+  type KeysetWindow,
+  takeKeysetPage,
+} from '@/lib/indexer-json'
+import { logger } from '@/lib/logger'
+import {
+  type AgentResolution,
+  ALL_PARTICIPATION_STATES,
+  fetchAgentResolution,
+  invalidateDid,
+  type ParticipationState,
+  type ResolvedParticipation,
+} from '@/lib/resolverClient'
+import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
+import type { OnboardingProcessState, Participant } from '@/ui/dataview/datasections/participant'
+import { resolveTranslatable } from '@/ui/dataview/types'
+
+type AgentLabel = 'corporation' | 'ecosystem' | null
+
+export interface AgentEntry {
+  did: string
+  label: AgentLabel
+  pinned: boolean
+}
+
+export interface DegradedAgentSections {
+  ecosystems: boolean
+  delegations: boolean
+  pending: boolean
+}
+
+const NOTHING_DEGRADED: DegradedAgentSections = { ecosystems: false, delegations: false, pending: false }
+
+interface AgentSources {
+  corporationDid: string
+  ecosystemDids: string[]
+  participantDids: string[]
+}
+
+const ACTIVE_ONLY: readonly ParticipationState[] = ['ACTIVE']
+
+export const AGENTS_PAGE_SIZE = 25
+
+export function agentParticipantsUrl(
+  base: string,
+  corporationId: number,
+  includeInactive: boolean,
+  pageSize: number,
+  after?: string
+): string {
+  const params = new URLSearchParams({ corporation_id: String(corporationId) })
+  applyKeysetParams(params, { pageSize, after })
+  if (!includeInactive) params.set('participant_state', 'ACTIVE')
+  return `${base}/list?${params.toString()}`
+}
+
+export function agentPendingUrl(base: string, corporationId: number, pageSize: number, after?: string): string {
+  const params = new URLSearchParams({ corporation_id: String(corporationId) })
+  applyKeysetParams(params, { pageSize, after })
+  params.set('op_state', 'PENDING')
+  return `${base}/list?${params.toString()}`
+}
+
+export type AccreditationRowData = ResolvedParticipation & { opState?: OnboardingProcessState | null }
+
+function pendingAccreditation(participant: Participant): AccreditationRowData {
+  return {
+    id: Number(participant.id),
+    vsOperator: participant.vs_operator ?? null,
+    role: participant.role,
+    state: participant.participant_state,
+    credentialSchemaId: Number(participant.schema_id),
+    ecosystemId: participant.ecosystem_id ?? null,
+    validatorParticipantId: participant.validator_participant_id ? Number(participant.validator_participant_id) : null,
+    opState: participant.op_state,
+  }
+}
+
+export function withPendingAccreditations(
+  did: string,
+  participations: ResolvedParticipation[],
+  pending: Participant[]
+): AccreditationRowData[] {
+  const pendingById = new Map(
+    pending.filter((participant) => participant.did === did).map((participant) => [Number(participant.id), participant])
+  )
+  const rows: AccreditationRowData[] = participations.map((participation) => {
+    const participant = pendingById.get(participation.id)
+    if (!participant) return participation
+    pendingById.delete(participation.id)
+    return { ...participation, state: participant.participant_state, opState: participant.op_state }
+  })
+  return [...rows, ...[...pendingById.values()].map(pendingAccreditation)]
+}
+
+export function agentEcosystemsUrl(base: string, corporationId: number, pageSize: number, after?: string): string {
+  const params = new URLSearchParams({ corporation_id: String(corporationId) })
+  applyKeysetParams(params, { pageSize, after })
+  return `${base}/list?${params.toString()}`
+}
+
+type AgentPage<T> = { items: T[]; hasNext: boolean }
+
+function noMore<T>(): AgentPage<T> {
+  return { items: [], hasNext: false }
+}
+
+type AgentWindow = {
+  participants: Participant[]
+  pending: Participant[]
+  ecosystems: EcosystemListItem[]
+  participantsHasNext: boolean
+}
+
+const EMPTY_WINDOW: AgentWindow = {
+  participants: [],
+  pending: [],
+  ecosystems: [],
+  participantsHasNext: false,
+}
+
+function cursor(rows: { id: string }[]): string | undefined {
+  return rows[rows.length - 1]?.id
+}
+
+async function nextPage<T>(url: string, context: string, parse: (payload: unknown) => T[]): Promise<AgentPage<T>> {
+  return takeKeysetPage(parse(await fetchJson(url, context)), AGENTS_PAGE_SIZE)
+}
+
+export function fetchAgentDelegations(corporationId: number): Promise<KeysetWindow<VsOperatorAuthorizationRow[]>> {
+  return fetchKeysetPages(
+    vsOperatorAuthorizationsUrl(corporationId, false),
+    'authorizations',
+    'Unable to fetch VS operator authorizations',
+    parseVsOperatorAuthorizations
+  )
+}
+
+export async function allPages<T extends { id: string }>(
+  url: (after?: string) => string,
+  context: string,
+  parse: (payload: unknown) => T[]
+): Promise<AgentPage<T>> {
+  const items: T[] = []
+  let after: string | undefined
+  for (;;) {
+    const page = await nextPage(url(after), context, parse)
+    items.push(...page.items)
+    const last = cursor(page.items)
+    if (!page.hasNext || last === undefined || last === after) return { items, hasNext: false }
+    after = last
+  }
+}
+
+// Per [VFE-PAGE-AGENTS-1] agents come from Participant DIDs only; VSOA entries never add an agent.
+// Per [VFE-PAGE-AGENTS-1a] the Corporation DID and the controlled Ecosystem DIDs stay pinned first, as one card each.
+export function buildAgentList({ corporationDid, ecosystemDids, participantDids }: AgentSources): AgentEntry[] {
+  const seen = new Set<string>()
+  const agents: AgentEntry[] = []
+  const add = (did: string, label: AgentLabel) => {
+    if (!did || seen.has(did)) return
+    seen.add(did)
+    agents.push({ did, label, pinned: label !== null })
+  }
+  add(corporationDid, 'corporation')
+  for (const did of ecosystemDids) add(did, 'ecosystem')
+  for (const did of participantDids) add(did, null)
+  return agents
+}
+
+export function agentRefreshNeeded(
+  events: IndexerEvent[],
+  corporationId: number,
+  knownDids: Set<string>
+): { lists: boolean; dids: string[] } {
+  const dids = new Set<string>()
+  let lists = false
+  for (const event of events) {
+    if (event.eventType !== SESSION_EVENT) {
+      for (const did of [event.did, ...event.relatedDids]) {
+        if (did && knownDids.has(did)) dids.add(did)
+      }
+    }
+    if (refreshesEntityLists(event, corporationId, knownDids)) lists = true
+  }
+  return { lists, dids: [...dids] }
+}
+
+export function useAgents(corporation: { id: number; did: string } | undefined, includeInactive: boolean) {
+  const corporationId = corporation?.id
+  const corporationDid = corporation?.did
+  const [agents, setAgents] = useState<AgentEntry[]>([])
+  const [delegations, setDelegations] = useState<Map<number, VsOperatorAuthorizationRow>>(new Map())
+  const [delegationsPartial, setDelegationsPartial] = useState(false)
+  const [degraded, setDegraded] = useState<DegradedAgentSections>(NOTHING_DEGRADED)
+  const [resolutions, setResolutions] = useState<Map<string, AgentResolution>>(new Map())
+  const [unavailableDids, setUnavailableDids] = useState<ReadonlySet<string>>(new Set())
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [reloadToken, setReloadToken] = useState(0)
+  const [agentWindow, setAgentWindow] = useState<AgentWindow>(EMPTY_WINDOW)
+  const requestRef = useRef(0)
+  const windowRef = useRef(agentWindow)
+  windowRef.current = agentWindow
+
+  const states = includeInactive ? ALL_PARTICIPATION_STATES : ACTIVE_ONLY
+
+  const load = useCallback(
+    async ({ background = false, append = false }: { background?: boolean; append?: boolean } = {}) => {
+      const requestId = ++requestRef.current
+      if (corporationId === undefined || corporationDid === undefined) {
+        setAgentWindow(EMPTY_WINDOW)
+        setAgents([])
+        setDelegations(new Map())
+        setDelegationsPartial(false)
+        setDegraded(NOTHING_DEGRADED)
+        setError(null)
+        setLoading(false)
+        return
+      }
+      const participantBase = VERANA_REST_ENDPOINT_PARTICIPANT
+      const ecosystemBase = VERANA_REST_ENDPOINT_ECOSYSTEM
+      if (!participantBase || !ecosystemBase) {
+        setAgentWindow(EMPTY_WINDOW)
+        setAgents([])
+        setDegraded(NOTHING_DEGRADED)
+        setError(resolveTranslatable({ key: 'error.fetch.participant' }, translate) ?? 'Missing endpoint URL')
+        setLoading(false)
+        return
+      }
+      if (!background) setLoading(true)
+      setError(null)
+      const base = append ? windowRef.current : EMPTY_WINDOW
+      try {
+        const [participants, ecosystems, authorizations, pending] = await Promise.all([
+          append && !base.participantsHasNext
+            ? noMore<Participant>()
+            : nextPage(
+                agentParticipantsUrl(
+                  participantBase,
+                  corporationId,
+                  includeInactive,
+                  AGENTS_PAGE_SIZE,
+                  cursor(base.participants)
+                ),
+                'Unable to fetch participants',
+                parseParticipantsResponse
+              ),
+          degrade('agents ecosystems', noMore<EcosystemListItem>(), async () =>
+            append
+              ? noMore<EcosystemListItem>()
+              : allPages(
+                  (after) => agentEcosystemsUrl(ecosystemBase, corporationId, AGENTS_PAGE_SIZE, after),
+                  'Unable to fetch ecosystems',
+                  parseEcosystemsResponse
+                )
+          ),
+          degrade('agents delegations', emptyWindow<VsOperatorAuthorizationRow>(), () =>
+            fetchAgentDelegations(corporationId)
+          ),
+          degrade('agents pending', noMore<Participant>(), async () =>
+            append
+              ? noMore<Participant>()
+              : allPages(
+                  (after) => agentPendingUrl(participantBase, corporationId, AGENTS_PAGE_SIZE, after),
+                  'Unable to fetch pending participants',
+                  parseParticipantsResponse
+                )
+          ),
+        ])
+        if (requestRef.current !== requestId) return
+        const next: AgentWindow = {
+          participants: [...base.participants, ...participants.items],
+          pending: [...base.pending, ...pending.value.items],
+          ecosystems: [...base.ecosystems, ...ecosystems.value.items],
+          participantsHasNext: participants.hasNext,
+        }
+        setAgentWindow(next)
+        setAgents(
+          buildAgentList({
+            corporationDid,
+            ecosystemDids: next.ecosystems.map((ecosystem) => ecosystem.did),
+            participantDids: [...next.participants, ...next.pending].flatMap((participant) =>
+              participant.did ? [participant.did] : []
+            ),
+          })
+        )
+        setDelegations(new Map(authorizations.value.value.map((row) => [row.participantId, row])))
+        setDelegationsPartial(authorizations.value.partial)
+        setDegraded((previous) => ({
+          ecosystems: append ? previous.ecosystems : ecosystems.failed,
+          delegations: authorizations.failed,
+          pending: append ? previous.pending : pending.failed,
+        }))
+      } catch (cause) {
+        if (requestRef.current !== requestId) return
+        if (!append) {
+          setAgentWindow(base)
+          setAgents([])
+          setDelegationsPartial(false)
+          setDegraded(NOTHING_DEGRADED)
+        }
+        setError(cause instanceof Error ? cause.message : String(cause))
+      } finally {
+        if (requestRef.current === requestId) setLoading(false)
+      }
+    },
+    [corporationId, corporationDid, includeInactive]
+  )
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  const loadMore = useLoadMore(() => load({ append: true, background: true }))
+
+  const didsKey = agents.map((agent) => agent.did).join('|')
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reloadToken re-runs the resolve after a cache invalidation
+  useEffect(() => {
+    const dids = didsKey ? didsKey.split('|') : []
+    if (dids.length === 0) {
+      setResolutions(new Map())
+      setUnavailableDids(new Set())
+      return
+    }
+    let cancelled = false
+    for (const did of dids) {
+      fetchAgentResolution(did, states)
+        .then((resolution) => {
+          if (cancelled) return
+          setResolutions((current) => new Map(current).set(did, resolution))
+          setUnavailableDids((current) => {
+            if (!current.has(did)) return current
+            const next = new Set(current)
+            next.delete(did)
+            return next
+          })
+        })
+        .catch((cause) => {
+          logger.error(`agent resolve ${did}`, cause)
+          if (!cancelled) setUnavailableDids((current) => new Set(current).add(did))
+        })
+    }
+    return () => {
+      cancelled = true
+    }
+  }, [didsKey, states, reloadToken])
+
+  const knownDids = useMemo(() => new Set(didsKey ? didsKey.split('|') : []), [didsKey])
+  const applyEvents = useCallback(
+    (events: IndexerEvent[]) => {
+      if (corporationId === undefined) return
+      const { lists, dids } = agentRefreshNeeded(events, corporationId, knownDids)
+      for (const did of dids) invalidateDid(did)
+      if (lists) void load({ background: true })
+      if (dids.length > 0) setReloadToken((token) => token + 1)
+    },
+    [corporationId, knownDids, load]
+  )
+
+  return {
+    agents,
+    delegations,
+    pending: agentWindow.pending,
+    delegationsPartial,
+    degraded,
+    resolutions,
+    unavailableDids,
+    loading,
+    error,
+    hasNext: agentWindow.participantsHasNext,
+    loadMore,
+    refetch: load,
+    applyEvents,
+  }
+}

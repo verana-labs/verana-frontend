@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
 import { parseParticipantRecord } from '@/hooks/useParticipant'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
-import { indexerValidators } from '@/lib/indexer-json'
+import { INDEXER_MAX_LIMIT, indexerValidators } from '@/lib/indexer-json'
+import { enrichmentFromTrustData } from '@/lib/resolverClient'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type { PendingEcosystem } from '@/ui/dataview/datasections/participant'
 
@@ -22,9 +23,11 @@ export function parsePendingParticipantsResponse(payload: unknown): PendingEcosy
     if (!Array.isArray(ecosystem.schemas)) {
       throw new Error(`Invalid pending participants response: ${path}.schemas`)
     }
+    const did = ecosystem.did === null ? null : string(ecosystem.did, `${path}.did`)
     return {
       id: String(number(ecosystem.id, `${path}.id`)),
-      did: ecosystem.did === null ? null : string(ecosystem.did, `${path}.did`),
+      did,
+      trustData: did === null ? undefined : enrichmentFromTrustData(did, ecosystem.trust_data),
       pending_tasks: number(ecosystem.pending_tasks, `${path}.pending_tasks`),
       participants: number(ecosystem.participants, `${path}.participants`),
       schemas: ecosystem.schemas.map((value, schemaIndex) => {
@@ -48,22 +51,30 @@ export function parsePendingParticipantsResponse(payload: unknown): PendingEcosy
 }
 
 export function pendingParticipantsUrl(endpoint: string, corporationId: number): string {
-  return `${endpoint}/pending/flat?corporation_id=${corporationId}&limit=1024`
+  return `${endpoint}/pending/flat?corporation_id=${corporationId}&trust_data=summary&limit=${INDEXER_MAX_LIMIT}`
 }
 
 export function usePendingParticipants() {
   const { actingCorporation } = useUserCorporation()
   const corporationId = actingCorporation?.corporation.id
   const [pendingParticipants, setPendingParticipants] = useState<PendingEcosystem[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [settled, setSettled] = useState(false)
   const [errorPendingParticipants, setError] = useState<string | null>(null)
   const requestRef = useRef(0)
+  const corporationRef = useRef<number | undefined>(undefined)
 
   const fetchPendingParticipants = useCallback(async () => {
     const request = ++requestRef.current
-    if (corporationId === undefined || !VERANA_REST_ENDPOINT_PARTICIPANT) {
+    if (corporationRef.current !== corporationId) {
+      corporationRef.current = corporationId
       setPendingParticipants([])
+      setSettled(false)
+    }
+    if (corporationId === undefined || !VERANA_REST_ENDPOINT_PARTICIPANT) {
+      setError(null)
       setLoading(false)
+      setSettled(true)
       return
     }
 
@@ -80,7 +91,10 @@ export function usePendingParticipants() {
     } catch (error) {
       if (request === requestRef.current) setError(error instanceof Error ? error.message : String(error))
     } finally {
-      if (request === requestRef.current) setLoading(false)
+      if (request === requestRef.current) {
+        setLoading(false)
+        setSettled(true)
+      }
     }
   }, [corporationId])
 
@@ -88,5 +102,12 @@ export function usePendingParticipants() {
     void fetchPendingParticipants()
   }, [fetchPendingParticipants])
 
-  return { pendingParticipants, loading, errorPendingParticipants, refetch: fetchPendingParticipants }
+  return {
+    pendingParticipants,
+    partial: pendingParticipants.length >= INDEXER_MAX_LIMIT,
+    loading,
+    settled,
+    errorPendingParticipants,
+    refetch: fetchPendingParticipants,
+  }
 }

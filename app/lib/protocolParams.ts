@@ -1,44 +1,34 @@
-import {
-  VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA,
-  VERANA_REST_ENDPOINT_ECOSYSTEM,
-  VERANA_REST_ENDPOINT_TRUST_DEPOSIT,
-} from '@/config/env'
+import { VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA, VERANA_REST_ENDPOINT_TRUST_DEPOSIT } from '@/config/env'
 import { translate } from '@/i18n/dataview'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
 export type ProtocolParams = {
-  trustUnitPrice: number | null
-  trustDepositReclaimBurnRate: number | null
   trustDepositRate: number | null
   credentialSchemaSchemaMaxSize: number | null
+  issuerGrantorValidityMaxDays: number | null
+  verifierGrantorValidityMaxDays: number | null
+  issuerValidityMaxDays: number | null
+  verifierValidityMaxDays: number | null
+  holderValidityMaxDays: number | null
 }
 
 export const protocolParamsInitialState: ProtocolParams = {
-  trustUnitPrice: null,
-  trustDepositReclaimBurnRate: null,
   trustDepositRate: null,
   credentialSchemaSchemaMaxSize: null,
+  issuerGrantorValidityMaxDays: null,
+  verifierGrantorValidityMaxDays: null,
+  issuerValidityMaxDays: null,
+  verifierValidityMaxDays: null,
+  holderValidityMaxDays: null,
 }
 
 type ParamConfig = {
   key: keyof ProtocolParams
   responseKey: string
   endpoint: string | undefined
-  transform?: (value: number) => number
 }
 
 const CONFIGS: ParamConfig[] = [
-  {
-    key: 'trustUnitPrice',
-    responseKey: 'trust_unit_price',
-    endpoint: VERANA_REST_ENDPOINT_ECOSYSTEM,
-  },
-  {
-    key: 'trustDepositReclaimBurnRate',
-    responseKey: 'trust_deposit_reclaim_burn_rate',
-    endpoint: VERANA_REST_ENDPOINT_TRUST_DEPOSIT,
-    transform: (value) => value * 100,
-  },
   {
     key: 'trustDepositRate',
     responseKey: 'trust_deposit_rate',
@@ -49,6 +39,19 @@ const CONFIGS: ParamConfig[] = [
     responseKey: 'credential_schema_schema_max_size',
     endpoint: VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA,
   },
+  ...(
+    [
+      ['issuerGrantorValidityMaxDays', 'issuer_grantor'],
+      ['verifierGrantorValidityMaxDays', 'verifier_grantor'],
+      ['issuerValidityMaxDays', 'issuer'],
+      ['verifierValidityMaxDays', 'verifier'],
+      ['holderValidityMaxDays', 'holder'],
+    ] as const
+  ).map(([key, role]) => ({
+    key,
+    responseKey: `credential_schema_${role}_validation_validity_period_max_days`,
+    endpoint: VERANA_REST_ENDPOINT_CREDENTIAL_SCHEMA,
+  })),
 ]
 
 function paramsEnvelope(payload: unknown): Record<string, unknown> {
@@ -77,36 +80,46 @@ export type ProtocolParamsResult = {
 export async function getProtocolParams(): Promise<ProtocolParamsResult> {
   const params: ProtocolParams = { ...protocolParamsInitialState }
   const errors: string[] = []
-  const responses = new Map<string, Promise<Record<string, unknown>>>()
 
-  function load(base: string): Promise<Record<string, unknown>> {
-    const existing = responses.get(base)
-    if (existing) return existing
-    const request = fetch(`${base}/params`).then(async (response) => {
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
-      return paramsEnvelope(await response.json())
-    })
-    responses.set(base, request)
-    return request
+  function fail(subject: string, error: unknown) {
+    errors.push(
+      `${resolveTranslatable({ key: 'error.fetch.td.param.failed' }, translate)} ${subject}: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    )
+  }
+
+  const loads = new Map<string, Promise<Record<string, unknown> | null>>()
+
+  function load(base: string): Promise<Record<string, unknown> | null> {
+    const pending =
+      loads.get(base) ??
+      fetch(`${base}/params`)
+        .then(async (response) => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`)
+          return paramsEnvelope(await response.json())
+        })
+        .catch((error: unknown) => {
+          fail(`${base}/params`, error)
+          return null
+        })
+    loads.set(base, pending)
+    return pending
   }
 
   await Promise.all(
-    CONFIGS.map(async ({ key, responseKey, endpoint, transform }) => {
+    CONFIGS.map(async ({ key, responseKey, endpoint }) => {
       if (!endpoint) {
         errors.push(`${resolveTranslatable({ key: 'error.fetch.td.param.missing' }, translate)} ${responseKey}`)
         return
       }
+      const responseParams = await load(endpoint)
+      if (!responseParams) return
       try {
-        const responseParams = await load(endpoint)
         if (!(responseKey in responseParams)) throw new Error(`${responseKey} not found in response`)
-        const value = numeric(responseParams[responseKey], responseKey)
-        params[key] = value === null ? null : (transform?.(value) ?? value)
+        params[key] = numeric(responseParams[responseKey], responseKey)
       } catch (error) {
-        errors.push(
-          `${resolveTranslatable({ key: 'error.fetch.td.param.failed' }, translate)} ${responseKey}: ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        )
+        fail(responseKey, error)
       }
     })
   )

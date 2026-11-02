@@ -3,13 +3,14 @@ const ROUTES = [
   '/dashboard',
   '/account',
   '/corporation',
+  '/agents',
   '/ecosystems',
   '/ecosystems/13',
   '/credential-schemas/26',
   '/participants/26',
   '/discover',
-  '/join/13',
   '/pendingtasks',
+  '/settings',
 ]
 
 export default async function warmUp() {

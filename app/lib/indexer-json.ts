@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger'
+
 export function indexerValidators(label: string) {
   const invalid = (path: string) => new Error(`Invalid ${label} response: ${path}`)
 
@@ -43,6 +45,10 @@ export function indexerValidators(label: string) {
     return string(value, path)
   }
 
+  function missingAsNull(value: unknown, path: string): string | null {
+    return value === undefined ? null : nullableString(value, path)
+  }
+
   function stringArray(value: unknown, path: string): string[] {
     if (!Array.isArray(value) || !value.every((entry) => typeof entry === 'string')) throw invalid(path)
     return value
@@ -58,6 +64,110 @@ export function indexerValidators(label: string) {
     nullableString,
     nullableTimestamp: nullableString,
     optionalString,
+    missingAsNull,
     stringArray,
+  }
+}
+
+export type KeysetSort = '+id' | '-id'
+
+export interface KeysetPageRequest {
+  pageSize: number
+  after?: string
+  sort?: KeysetSort
+}
+
+export function applyKeysetParams(params: URLSearchParams, request: KeysetPageRequest): void {
+  const sort = request.sort ?? '-id'
+  params.set('limit', String(request.pageSize + 1))
+  params.set('sort', sort)
+  if (request.after === undefined) return
+  if (sort === '-id') params.set('max_id', request.after)
+  else params.set('min_id', (BigInt(request.after) + BigInt(1)).toString())
+}
+
+export function takeKeysetPage<T>(window: T[], pageSize: number): { items: T[]; hasNext: boolean } {
+  return { items: window.slice(0, pageSize), hasNext: window.length > pageSize }
+}
+
+export const INDEXER_MAX_LIMIT = 1024
+const KEYSET_MAX_PAGES = 8
+
+const keyset = indexerValidators('keyset page')
+
+export interface KeysetWindow<T> {
+  value: T
+  partial: boolean
+}
+
+export function emptyWindow<T>(): KeysetWindow<T[]> {
+  return { value: [], partial: false }
+}
+
+export interface KeysetPagesOptions {
+  cursor?: string
+  maxPages?: number
+}
+
+async function fetchKeysetBatch(url: string, field: string, context: string, params: URLSearchParams) {
+  const payload = await fetchJson(`${url}${url.includes('?') ? '&' : '?'}${params.toString()}`, context)
+  const batch = keyset.record(payload, 'response')[field]
+  if (!Array.isArray(batch)) throw new Error(`Invalid keyset page response: missing ${field} envelope`)
+  return batch
+}
+
+export async function fetchKeysetPages<T>(
+  url: string,
+  field: string,
+  context: string,
+  parse: (payload: Record<string, unknown[]>) => T,
+  { cursor = 'id', maxPages = KEYSET_MAX_PAGES }: KeysetPagesOptions = {}
+): Promise<KeysetWindow<T>> {
+  const pageSize = INDEXER_MAX_LIMIT - 1
+  const rows: unknown[] = []
+  const settle = (partial: boolean) => ({ value: parse({ [field]: rows }), partial })
+  const cursorOf = (row: unknown, path: string) =>
+    keyset.decimalAmount(keyset.record(row, path)[cursor], `${path}.${cursor}`)
+  let after: string | undefined
+  for (let page = 0; page < maxPages; page++) {
+    const params = new URLSearchParams()
+    applyKeysetParams(params, { pageSize, after })
+    let batch: unknown[]
+    try {
+      batch = await fetchKeysetBatch(url, field, context, params)
+    } catch (cause) {
+      if (after === undefined) throw cause
+      logger.error(context, cause)
+      return settle(true)
+    }
+    const { items, hasNext } = takeKeysetPage(batch, pageSize)
+    if (after !== undefined && items.length > 0 && BigInt(cursorOf(items[0], `${field}[0]`)) >= BigInt(after)) {
+      logger.error(context, new Error(`${field} page did not move past ${cursor} ${after}`))
+      return settle(true)
+    }
+    rows.push(...items)
+    if (!hasNext) return settle(false)
+    after = cursorOf(items[items.length - 1], `${field}[${items.length - 1}]`)
+  }
+  return settle(true)
+}
+
+export interface Degradable<T> {
+  value: T
+  failed: boolean
+}
+
+export async function fetchJson(url: string, context: string): Promise<unknown> {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`${context}: ${response.status}`)
+  return response.json()
+}
+
+export async function degrade<T>(context: string, fallback: T, task: () => Promise<T>): Promise<Degradable<T>> {
+  try {
+    return { value: await task(), failed: false }
+  } catch (cause) {
+    logger.error(context, cause)
+    return { value: fallback, failed: true }
   }
 }

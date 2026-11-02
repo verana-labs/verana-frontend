@@ -13,6 +13,7 @@ import {
 } from '@verana-labs/verana-types/codec/verana/pp/v1/tx'
 import { ParticipantRole } from '@verana-labs/verana-types/codec/verana/pp/v1/types'
 import { describe, expect, it } from 'vitest'
+import { veranaAmino } from '@/config/veranaChain.sign.client'
 import { buildParticipantMessage, createdParticipantId, type ParticipantActionParams } from './actionParticipant'
 
 const context = { corporation: 'verana1policy', operator: 'verana1operator' }
@@ -89,6 +90,56 @@ describe('buildParticipantMessage', () => {
       verificationFees: 2,
       ...emptyVsOperatorAuthorization,
     })
+  })
+
+  it('carries the VS operator delegation into both creation messages, direct and Amino', () => {
+    const vsOperator = {
+      vsOperator: 'verana1pjluhuuyzgdey0syket0xqthv2usmjfe4pta2s',
+      msgTypes: ['/verana.pp.v1.MsgCreateOrUpdateParticipantSession'],
+      spendLimit: '1000',
+      periodDays: '7',
+      withFeegrant: true,
+      feeSpendLimit: '200',
+    }
+    const delegation = {
+      vsOperator: vsOperator.vsOperator,
+      vsOperatorAuthzMsgTypes: vsOperator.msgTypes,
+      vsOperatorAuthzSpendLimit: [{ denom: 'uvna', amount: '1000' }],
+      vsOperatorAuthzWithFeegrant: true,
+      vsOperatorAuthzFeeSpendLimit: [{ denom: 'uvna', amount: '200' }],
+      vsOperatorAuthzPeriod: { seconds: 604_800, nanos: 0 },
+    }
+    const start = buildParticipantMessage(
+      {
+        msgType: 'MsgStartParticipantOP',
+        role: 'VERIFIER',
+        validatorParticipantId: 9,
+        did: 'did:web:v.example',
+        vsOperator,
+      },
+      context
+    )
+    const selfCreate = buildParticipantMessage(
+      {
+        msgType: 'MsgSelfCreateParticipant',
+        role: 'VERIFIER',
+        validatorParticipantId: 5,
+        did: 'did:web:v.example',
+        vsOperator,
+      },
+      context
+    )
+
+    expect(
+      MsgStartParticipantOP.decode(MsgStartParticipantOP.encode(start.value as MsgStartParticipantOP).finish())
+    ).toEqual(expect.objectContaining(delegation))
+    expect(
+      MsgSelfCreateParticipant.decode(
+        MsgSelfCreateParticipant.encode(selfCreate.value as MsgSelfCreateParticipant).finish()
+      )
+    ).toEqual(expect.objectContaining(delegation))
+    expect(veranaAmino.fromAmino(veranaAmino.toAmino(start)).value).toEqual(expect.objectContaining(delegation))
+    expect(veranaAmino.fromAmino(veranaAmino.toAmino(selfCreate)).value).toEqual(expect.objectContaining(delegation))
   })
 
   it('round-trips every V4 root-participant field', () => {

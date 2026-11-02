@@ -13,6 +13,8 @@ const schema = {
   issuer_onboarding_mode: 'GRANTOR_ONBOARDING_PROCESS',
   verifier_onboarding_mode: 'ECOSYSTEM_ONBOARDING_PROCESS',
   holder_onboarding_mode: 'ISSUER_ONBOARDING_PROCESS',
+  pricing_asset_type: 'COIN',
+  pricing_asset: 'uvna',
   participants: 3,
   weight: '4',
   issued: 5,
@@ -41,6 +43,23 @@ describe('parseCredentialSchemasResponse', () => {
   it('rejects a non-canonical weight', () => {
     expect(() => parseCredentialSchemasResponse({ schemas: [{ ...schema, weight: '4.0' }] })).toThrow(
       'schemas[0].weight'
+    )
+  })
+
+  it('keeps the pricing asset for the join gate', () => {
+    expect(
+      parseCredentialSchemasResponse({ schemas: [{ ...schema, pricing_asset_type: 'TU', pricing_asset: 'tu' }] })[0]
+    ).toMatchObject({ pricingAssetType: 'TU', pricingAsset: 'tu' })
+  })
+
+  it('reads a missing pricing asset as unset instead of failing the list', () => {
+    const [unpriced, priced] = parseCredentialSchemasResponse({
+      schemas: [{ ...schema, pricing_asset_type: undefined, pricing_asset: undefined }, schema],
+    })
+    expect(unpriced).toMatchObject({ pricingAssetType: null, pricingAsset: null })
+    expect(priced).toMatchObject({ pricingAssetType: 'COIN', pricingAsset: 'uvna' })
+    expect(() => parseCredentialSchemasResponse({ schemas: [{ ...schema, pricing_asset: 42 }] })).toThrow(
+      'schemas[0].pricing_asset'
     )
   })
 

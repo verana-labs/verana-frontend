@@ -3,15 +3,25 @@
 import { useChain } from '@cosmos-kit/react'
 import { faCheck, faPlus, faTrash, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { UserCorporation } from '@/lib/corporation-discovery'
+import {
+  DEFAULT_DECISION_POLICY_DRAFT,
+  type DecisionPolicyDraft,
+  formatDecisionRule,
+  readDecisionPolicyDraft,
+} from '@/lib/decision-policy'
 import { canonicalizeLanguageTag } from '@/lib/language'
-import { type CorporationMemberInput, useActionCorporation } from '@/msg/actions_hooks/actionCorporation'
+import {
+  type CorporationMemberInput,
+  type CreateCorporationParams,
+  useActionCorporation,
+} from '@/msg/actions_hooks/actionCorporation'
 import { AddressIssueNote, addressIssue } from '@/ui/common/address-issue'
+import { DecisionPolicyFields } from '@/ui/common/decision-policy-fields'
 import { LanguageCombobox } from '@/ui/common/language-combobox'
-import { ThresholdHint } from '@/ui/common/threshold-hint'
 import { shortenMiddle } from '@/util/util'
 import { isValidDID, isValidHttpUrl } from '@/util/validations'
 
@@ -64,7 +74,13 @@ function StepDots({ current, created }: { current: WizardStep; created: boolean 
   )
 }
 
-export function CorporationCreateWizard({ onDone }: { onDone: () => void }) {
+export function CorporationCreateWizard({
+  onCreating,
+  onDone,
+}: {
+  onCreating: (active: boolean) => void
+  onDone: () => void
+}) {
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
   const { createOnly, grantFirstOperator } = useActionCorporation()
@@ -75,18 +91,30 @@ export function CorporationCreateWizard({ onDone }: { onDone: () => void }) {
   const [docUrl, setDocUrl] = useState('')
   const [extraMembers, setExtraMembers] = useState<CorporationMemberInput[]>([])
   const [ownWeight, setOwnWeight] = useState('1')
-  const [threshold, setThreshold] = useState('1')
-  const [votingPeriod, setVotingPeriod] = useState('60')
+  const [policyDraft, setPolicyDraft] = useState<DecisionPolicyDraft>(DEFAULT_DECISION_POLICY_DRAFT)
   const [fundingUvna, setFundingUvna] = useState('0')
   const [busy, setBusy] = useState(false)
   const [created, setCreated] = useState<UserCorporation | null>(null)
 
+  const members = useMemo<CorporationMemberInput[]>(
+    () => [
+      { address: address ?? '', weight: ownWeight },
+      ...extraMembers.map((member) => ({ ...member, address: member.address.trim() })),
+    ],
+    [address, ownWeight, extraMembers]
+  )
+  const createParams = useMemo<Omit<CreateCorporationParams, 'decisionPolicy'>>(
+    () => ({
+      did: did.trim(),
+      language,
+      docUrl: docUrl.trim(),
+      members,
+    }),
+    [did, language, docUrl, members]
+  )
+
   if (!address) return null
 
-  const members: CorporationMemberInput[] = [
-    { address, weight: ownWeight },
-    ...extraMembers.map((member) => ({ ...member, address: member.address.trim() })),
-  ]
   const memberIssues = members.map((member, index) =>
     addressIssue(
       member.address,
@@ -94,30 +122,26 @@ export function CorporationCreateWizard({ onDone }: { onDone: () => void }) {
     )
   )
   const identityValid = isValidDID(did.trim()) && language.length > 0 && isValidHttpUrl(docUrl.trim())
+  const decisionPolicy = readDecisionPolicyDraft(policyDraft)
   const membersValid =
     members.every(
       (member, index) => member.address.length > 0 && memberIssues[index] === null && /^[1-9]\d*$/.test(member.weight)
-    ) &&
-    /^[1-9]\d*$/.test(threshold) &&
-    /^[1-9]\d*$/.test(votingPeriod)
+    ) && decisionPolicy !== null
   const fundingValid = /^\d+$/.test(fundingUvna)
   const totalWeight = totalMemberWeight(members)
 
   async function create() {
+    if (!decisionPolicy) return
+    onCreating(true)
     setBusy(true)
     try {
-      const corporation = await createOnly({
-        did: did.trim(),
-        language,
-        docUrl: docUrl.trim(),
-        members,
-        threshold,
-        votingPeriodSeconds: Number(votingPeriod),
-      })
-      if (corporation) {
-        setCreated(corporation)
-        setStep('grant')
+      const corporation = await createOnly({ ...createParams, decisionPolicy })
+      if (!corporation) {
+        onCreating(false)
+        return
       }
+      setCreated(corporation)
+      setStep('grant')
     } finally {
       setBusy(false)
     }
@@ -240,17 +264,7 @@ export function CorporationCreateWizard({ onDone }: { onDone: () => void }) {
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {translate('corporation.page.threshold')}
-                <input value={threshold} onChange={(e) => setThreshold(e.target.value)} className={inputClass} />
-              </label>
-              <ThresholdHint threshold={Number(threshold)} totalWeight={totalWeight} />
-            </div>
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {translate('corporation.wizard.votingperiod')}
-              <input value={votingPeriod} onChange={(e) => setVotingPeriod(e.target.value)} className={inputClass} />
-            </label>
+            <DecisionPolicyFields value={policyDraft} onChange={setPolicyDraft} totalWeight={totalWeight} />
           </div>
           <div className="flex justify-between">
             <button type="button" onClick={() => setStep('identity')} className={ghostButton}>
@@ -298,14 +312,18 @@ export function CorporationCreateWizard({ onDone }: { onDone: () => void }) {
                 ))}
               </dd>
             </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                {translate('corporation.page.threshold')} / {translate('corporation.wizard.votingperiod')}
-              </dt>
-              <dd>
-                {threshold} / {votingPeriod}s
-              </dd>
-            </div>
+            {decisionPolicy ? (
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  {translate(`corporation.page.${decisionPolicy.rule.kind}`)} /{' '}
+                  {translate('corporation.page.votingperiod')} / {translate('corporation.page.minexecutionperiod')}
+                </dt>
+                <dd>
+                  {formatDecisionRule(decisionPolicy.rule)} / {decisionPolicy.votingPeriodSeconds}s /{' '}
+                  {decisionPolicy.minExecutionPeriodSeconds}s
+                </dd>
+              </div>
+            ) : null}
           </dl>
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block max-w-xs">
             {translate('corporation.setup.funding')}

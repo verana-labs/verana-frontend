@@ -38,6 +38,7 @@ jobs:
 
   e2e:
     name: E2E Ring A (fund-free)
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     # Ring A only: drives the real UI and real client-side direct signing, but the
     # Tendermint RPC is fully intercepted (e2e/support/mock-chain.ts), so nothing is
@@ -45,7 +46,7 @@ jobs:
     # throwaway mnemonic when .test-mnemonic / E2E_MNEMONIC are absent.
     #
     # The real-broadcast Ring B specs (connect-and-create-ecosystem, create-schema,
-    # archive-ecosystem, reclaim-yield) sign and broadcast to devnet and need a funded
+    # archive-ecosystem) sign and broadcast to devnet and need a funded
     # wallet plus chain env. They live in a SEPARATE nightly/manual workflow and
     # are intentionally NOT part of this PR gate.
     env:

@@ -10,6 +10,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import type { ReactNode } from 'react'
 import { translate } from '@/i18n/dataview'
+import type { DidEnrichment } from '@/lib/resolverClient'
 import type { MessageType } from '@/msg/constants/types'
 import type { Field, Section } from '@/ui/dataview/types'
 import { resolveTranslatable } from '@/ui/dataview/types'
@@ -97,7 +98,7 @@ function feeFields(includeIssuance: boolean): Field<ParticipantData>[] {
       show: 'edit create',
       required: false,
       update: true,
-      validation: { type: 'Long', greaterThanOrEqual: 0 },
+      validation: { type: 'VNA' },
     },
   ]
   if (includeIssuance) {
@@ -109,7 +110,7 @@ function feeFields(includeIssuance: boolean): Field<ParticipantData>[] {
       show: 'edit create',
       required: false,
       update: true,
-      validation: { type: 'Long', greaterThanOrEqual: 0 },
+      validation: { type: 'VNA' },
     })
   }
   fields.push({
@@ -120,7 +121,7 @@ function feeFields(includeIssuance: boolean): Field<ParticipantData>[] {
     show: 'edit create',
     required: false,
     update: true,
-    validation: { type: 'Long', greaterThanOrEqual: 0 },
+    validation: { type: 'VNA' },
   })
   return fields
 }
@@ -224,7 +225,7 @@ export function getParticipantActionSections(
           show: 'edit',
           required: true,
           update: true,
-          validation: { type: 'Long', greaterThan: 0 },
+          validation: { type: 'VNA', greaterThan: 0 },
         },
         {
           name: 'reason',
@@ -244,6 +245,7 @@ export function getParticipantActionSections(
 export interface Participant {
   id: string
   schema_id: string
+  ecosystem_id?: number | null
   role: ParticipantRole
   did: string | null
   corporation_id: number
@@ -279,11 +281,12 @@ export interface Participant {
   weight?: string | number
   issued?: string | number
   verified?: string | number
-  expire_soon?: boolean | null
-  transaction_cost?: string
+  trustData?: DidEnrichment
+  validator_validation_fees?: string | number
 }
 
 export interface ParticipantHistory {
+  id: string
   entity_id: string
   entity_type: string
   timestamp: string
@@ -415,6 +418,7 @@ export interface PendingEcosystem {
   did: string | null
   pending_tasks: number
   participants: number
+  trustData?: DidEnrichment
   schemas: {
     id: string
     title: string

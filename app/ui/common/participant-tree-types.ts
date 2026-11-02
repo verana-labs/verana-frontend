@@ -1,4 +1,5 @@
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import type { DidEnrichment } from '@/lib/resolverClient'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 
 export type TreeNode = {
@@ -7,6 +8,7 @@ export type TreeNode = {
   iconColorClass: string
   isCorporation: boolean
   isValidator: boolean
+  isPredecessor?: boolean
   group?: boolean
   schemaId?: string
   parentId?: string
@@ -20,6 +22,7 @@ export type TreeNode = {
   enabledJoin?: boolean
   serviceDid?: string
   serviceTitle?: string
+  serviceTrustData?: DidEnrichment
   badgeCount?: number
 }
 

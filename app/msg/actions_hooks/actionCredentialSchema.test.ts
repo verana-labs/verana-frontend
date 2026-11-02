@@ -23,6 +23,8 @@ describe('buildCredentialSchemaMessage', () => {
         holderValidationValidityPeriod: 23,
         issuerOnboardingMode: 3,
         verifierOnboardingMode: 2,
+        holderOnboardingMode: HolderOnboardingMode.HOLDER_ONBOARDING_MODE_ISSUER_ONBOARDING_PROCESS,
+        digestAlgorithm: 'sha512',
       },
       context
     )
@@ -43,11 +45,41 @@ describe('buildCredentialSchemaMessage', () => {
       holderValidationValidityPeriod: { value: 23 },
       issuerOnboardingMode: 3,
       verifierOnboardingMode: 2,
-      holderOnboardingMode: HolderOnboardingMode.HOLDER_ONBOARDING_MODE_PERMISSIONLESS,
+      holderOnboardingMode: HolderOnboardingMode.HOLDER_ONBOARDING_MODE_ISSUER_ONBOARDING_PROCESS,
       pricingAssetType: PricingAssetType.COIN,
       pricingAsset: 'uvna',
-      digestAlgorithm: 'sha384',
+      digestAlgorithm: 'sha512',
     })
+  })
+
+  it.each([
+    [HolderOnboardingMode.HOLDER_ONBOARDING_MODE_PERMISSIONLESS, 'sha384'],
+    [HolderOnboardingMode.HOLDER_ONBOARDING_MODE_ISSUER_ONBOARDING_PROCESS, 'sha384'],
+    [HolderOnboardingMode.HOLDER_ONBOARDING_MODE_PERMISSIONLESS, 'sha512'],
+  ])('carries holder onboarding mode %i and digest algorithm %s from the form', (holderOnboardingMode, digestAlgorithm) => {
+    const message = buildCredentialSchemaMessage(
+      {
+        msgType: 'MsgCreateCredentialSchema',
+        ecosystemId: 7,
+        jsonSchema: '{"title":"Example"}',
+        issuerGrantorValidationValidityPeriod: 0,
+        verifierGrantorValidationValidityPeriod: 0,
+        issuerValidationValidityPeriod: 0,
+        verifierValidationValidityPeriod: 0,
+        holderValidationValidityPeriod: 0,
+        issuerOnboardingMode: 1,
+        verifierOnboardingMode: 1,
+        holderOnboardingMode,
+        digestAlgorithm,
+      },
+      context
+    )
+    const value = MsgCreateCredentialSchema.decode(
+      MsgCreateCredentialSchema.encode(message.value as MsgCreateCredentialSchema).finish()
+    )
+
+    expect(value.holderOnboardingMode).toBe(holderOnboardingMode)
+    expect(value.digestAlgorithm).toBe(digestAlgorithm)
   })
 
   it('round-trips every mutable V4 day-count field', () => {

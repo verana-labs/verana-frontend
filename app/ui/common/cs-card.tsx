@@ -1,7 +1,8 @@
 'use client'
 
-import { faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faRightToBracket, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import Link from 'next/link'
 import { useState } from 'react'
 import { translate } from '@/i18n/dataview'
 import { type CredentialSchemaListItem, getModePillClass } from '../datatable/columnslist/cs'
@@ -10,41 +11,16 @@ import JsonCodeBlock from './json-code-block'
 
 export type CsCardProps = {
   credentialSchema: CredentialSchemaListItem
-  onSelect?: () => void
-  selected?: boolean
+  joinHref?: string
 }
 
-function cn(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(' ')
-}
-
-export default function CsCard({ credentialSchema, onSelect, selected }: CsCardProps) {
+export default function CsCard({ credentialSchema, joinHref }: CsCardProps) {
   const [showJsonSchemaModal, setShowJsonSchemaModal] = useState<boolean>(false)
 
   return (
     <>
-      <div
-        onClick={onSelect ? () => onSelect() : undefined}
-        className={
-          onSelect
-            ? cn(
-                'border-2 rounded-xl p-4 cursor-pointer transition-all',
-                selected
-                  ? 'border-primary-600 shadow-[0_0_0_3px_rgba(118,62,240,0.2)]'
-                  : 'border-neutral-20 dark:border-neutral-70',
-                'hover:border-primary-300 dark:hover:border-primary-600'
-              )
-            : 'bg-gray-50 dark:bg-gray-800/50 border border-neutral-20 dark:border-neutral-70 rounded-lg p-4 cursor-default'
-        }
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') onSelect?.()
-        }}
-      >
+      <div className="bg-gray-50 dark:bg-gray-800/50 border border-neutral-20 dark:border-neutral-70 rounded-lg p-4 cursor-default">
         <div className="flex items-start space-x-3">
-          {onSelect && <input type="radio" checked={selected} readOnly className="mt-1 w-4 h-4 text-primary-600" />}
-
           <div className="flex-1">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-base font-semibold text-gray-900 dark:text-white">{credentialSchema.title}</h3>
@@ -103,24 +79,50 @@ export default function CsCard({ credentialSchema, onSelect, selected }: CsCardP
                   </span>
                 </p>
               </div>
+
+              {credentialSchema.holderOnboardingMode ? (
+                <div>
+                  <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
+                    {resolveTranslatable({ key: 'dataview.cs.fields.holderOnboardingMode' }, translate)}
+                  </label>
+                  <p>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getModePillClass(
+                        credentialSchema.holderOnboardingMode,
+                        '_HOLDER'
+                      )}`}
+                    >
+                      {credentialSchema.holderOnboardingMode}
+                    </span>
+                  </p>
+                </div>
+              ) : null}
             </div>
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowJsonSchemaModal(true)
-              }}
-              className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
-              type="button"
-            >
-              {'</>'} View JSON Schema
-            </button>
+            <div className="flex flex-wrap items-center gap-4">
+              <button
+                onClick={() => setShowJsonSchemaModal(true)}
+                className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                type="button"
+              >
+                {'</>'} {resolveTranslatable({ key: 'dataview.cs.viewJsonSchema' }, translate)}
+              </button>
+              {joinHref ? (
+                <Link
+                  href={joinHref}
+                  className="inline-flex items-center px-3 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
+                >
+                  <FontAwesomeIcon className="mr-2" aria-hidden="true" icon={faRightToBracket} />
+                  {resolveTranslatable({ key: 'discover.btn.join' }, translate)}
+                </Link>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
 
       {showJsonSchemaModal && credentialSchema.jsonSchema && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div className="fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-xl bg-gray-50 dark:bg-gray-900">
             <div className="flex items-center justify-between mb-6">
               <button

@@ -34,6 +34,7 @@ describe('parseDashboardMetricsResponse', () => {
     expect(parseDashboardMetricsResponse(SNAPSHOT)).toEqual({
       ecosystems: 13,
       schemas: 25,
+      participants: 31,
       totalLockedTrustDeposit: '100000',
       issuedCredentials: 184,
       verifiedCredentials: 2671,

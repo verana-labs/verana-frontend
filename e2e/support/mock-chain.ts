@@ -1,9 +1,14 @@
 import { Buffer } from 'node:buffer'
-import { toBase64, toHex } from '@cosmjs/encoding'
+import { fromHex, toBase64, toHex } from '@cosmjs/encoding'
 import type { Page, Route } from '@playwright/test'
 import { BaseAccount } from 'cosmjs-types/cosmos/auth/v1beta1/auth'
 import { QueryAccountResponse } from 'cosmjs-types/cosmos/auth/v1beta1/query'
-import { QueryBalanceResponse } from 'cosmjs-types/cosmos/bank/v1beta1/query'
+import {
+  QueryBalanceRequest,
+  QueryBalanceResponse,
+  QuerySpendableBalanceByDenomRequest,
+  QuerySpendableBalanceByDenomResponse,
+} from 'cosmjs-types/cosmos/bank/v1beta1/query'
 import { GasInfo } from 'cosmjs-types/cosmos/base/abci/v1beta1/abci'
 import { Coin } from 'cosmjs-types/cosmos/base/v1beta1/coin'
 import { SimulateResponse } from 'cosmjs-types/cosmos/tx/v1beta1/service'
@@ -21,14 +26,18 @@ export type MockChainOptions = {
   rpcEndpoint?: string
   chainId?: string
   address: string
-  accountNumber?: number
+  accountNumber?: bigint
   sequence?: number
   gasUsed?: number
+  gasDriftPerSimulation?: number
   ecosystemId?: string
   corporationId?: number
   corporationPolicyAddress?: string
   stubSri?: boolean
   stubCorporation?: boolean
+  balanceUvna?: string
+  txEvents?: { type: string; attributes: { key: string; value: string; index: boolean }[] }[]
+  balancesUvna?: Record<string, string | null>
 }
 
 const NOW = '2026-01-01T00:00:00.000000000Z'
@@ -36,6 +45,7 @@ const ZERO_HASH_HEX = '0'.repeat(64)
 const ZERO_HASH_B64 = toBase64(new Uint8Array(32))
 const FAKE_TX_HASH_HEX = 'A'.repeat(64)
 const FAKE_TX_HASH_B64 = Buffer.from(FAKE_TX_HASH_HEX, 'hex').toString('base64')
+const ACCOUNT_NUMBER_ABOVE_MAX_SAFE_INTEGER = BigInt('15667172330941460096')
 
 const jsonRpcResult = (id: number | string, result: unknown) => ({
   jsonrpc: '2.0',
@@ -43,14 +53,14 @@ const jsonRpcResult = (id: number | string, result: unknown) => ({
   result,
 })
 
-// CometBFT 0.38 status; version must start with "0.38." or CosmJS connectComet rejects it
+// CometBFT 0.39 status; CosmJS connectComet would pick its 0.34 client for it
 const statusResult = (chainId: string) => ({
   node_info: {
     protocol_version: { p2p: '8', block: '11', app: '0' },
     id: '0000000000000000000000000000000000000000',
     listen_addr: 'tcp://0.0.0.0:26656',
     network: chainId,
-    version: '0.38.0',
+    version: '0.39.4',
     channels: '40202122233038606100',
     moniker: 'e2e-mock',
     other: { tx_index: 'on', rpc_address: 'tcp://0.0.0.0:26657' },
@@ -70,10 +80,10 @@ const statusResult = (chainId: string) => ({
 })
 
 // height must be a non-zero string or CosmJS queryAbci throws
-const accountQueryResult = (address: string, accountNumber: number, sequence: number) => {
+const accountQueryResult = (address: string, accountNumber: bigint, sequence: number) => {
   const baseAccount = BaseAccount.fromPartial({
     address,
-    accountNumber: BigInt(accountNumber),
+    accountNumber,
     sequence: BigInt(sequence),
   })
   const accountAny = Any.fromPartial({
@@ -115,10 +125,11 @@ const simulateQueryResult = (gasUsed: number) => {
   }
 }
 
-const balanceQueryResult = () => {
-  const value = QueryBalanceResponse.encode(
-    QueryBalanceResponse.fromPartial({ balance: Coin.fromPartial({ denom: 'uvna', amount: '1000000000' }) })
-  ).finish()
+const balanceQueryResult = (amount: string, spendable: boolean) => {
+  const balance = Coin.fromPartial({ denom: 'uvna', amount })
+  const value = spendable
+    ? QuerySpendableBalanceByDenomResponse.encode({ balance }).finish()
+    : QueryBalanceResponse.encode({ balance }).finish()
   return {
     response: {
       code: 0,
@@ -141,7 +152,12 @@ const broadcastSyncResult = () => ({
   hash: FAKE_TX_HASH_HEX,
 })
 
-const txSearchResult = (ecosystemId: string) => ({
+const txSearchResult = (
+  ecosystemId: string,
+  corporationId: number,
+  policyAddress: string,
+  extraEvents: NonNullable<MockChainOptions['txEvents']>
+) => ({
   txs: [
     {
       hash: FAKE_TX_HASH_HEX,
@@ -162,6 +178,14 @@ const txSearchResult = (ecosystemId: string) => ({
               { key: 'creator', value: 'e2e', index: true },
             ],
           },
+          {
+            type: 'create_corporation',
+            attributes: [
+              { key: 'corporation_id', value: String(corporationId), index: true },
+              { key: 'policy_address', value: policyAddress, index: true },
+            ],
+          },
+          ...extraEvents,
         ],
       },
       tx: FAKE_TX_HASH_B64,
@@ -186,17 +210,24 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
     rpcEndpoint = process.env.NEXT_PUBLIC_VERANA_RPC_ENDPOINT ?? 'https://rpc.devnet.verana.network',
     chainId = process.env.NEXT_PUBLIC_VERANA_CHAIN_ID ?? 'vna-devnet-1',
     address,
-    accountNumber = 12,
+    accountNumber = ACCOUNT_NUMBER_ABOVE_MAX_SAFE_INTEGER,
     sequence = 7,
     gasUsed = 200_000,
+    gasDriftPerSimulation = 0,
     ecosystemId = '4242',
     corporationId = 7,
     corporationPolicyAddress = address,
     stubSri = true,
     stubCorporation = true,
+    balanceUvna = '1000000000',
+    txEvents = [],
+    balancesUvna = {},
   } = opts
 
   const seen: string[] = []
+  const broadcasts: string[] = []
+  const balanceOwners: string[] = []
+  let simulations = 0
 
   const rpcPattern = new RegExp(`^${escapeRegExp(rpcEndpoint.replace(/\/+$/, ''))}/?(\\?.*)?$`)
 
@@ -220,16 +251,25 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
       case 'status':
         return fulfill(statusResult(chainId))
       case 'abci_query': {
-        if (path.includes('Service/Simulate')) return fulfill(simulateQueryResult(gasUsed))
+        if (path.includes('Service/Simulate'))
+          return fulfill(simulateQueryResult(gasUsed + gasDriftPerSimulation * simulations++))
         if (path.includes('Query/Account')) return fulfill(accountQueryResult(address, accountNumber, sequence))
-        if (path.includes('Query/Balance')) return fulfill(balanceQueryResult())
+        const spendable = path.includes('Query/SpendableBalanceByDenom')
+        if (spendable || path.includes('Query/Balance')) {
+          const request = spendable ? QuerySpendableBalanceByDenomRequest : QueryBalanceRequest
+          const owner = typeof req.params?.data === 'string' ? request.decode(fromHex(req.params.data)).address : ''
+          balanceOwners.push(owner)
+          const amount = owner in balancesUvna ? balancesUvna[owner] : balanceUvna
+          return amount === null ? route.abort('failed') : fulfill(balanceQueryResult(amount, spendable))
+        }
         return fulfill(accountQueryResult(address, accountNumber, sequence))
       }
       case 'broadcast_tx_sync':
       case 'broadcast_tx_async':
+        if (typeof req.params?.tx === 'string') broadcasts.push(req.params.tx)
         return fulfill(broadcastSyncResult())
       case 'tx_search':
-        return fulfill(txSearchResult(ecosystemId))
+        return fulfill(txSearchResult(ecosystemId, corporationId, corporationPolicyAddress, txEvents))
       case 'health':
         return fulfill({})
       default:
@@ -251,6 +291,8 @@ export async function installMockChain(page: Page, opts: MockChainOptions) {
 
   return {
     seenMethods: () => [...seen],
+    broadcastTxs: () => [...broadcasts],
+    balanceOwners: () => [...balanceOwners],
     teardown: async () => {
       await page.unroute(rpcPattern)
       if (stubSri) await page.unroute('**/api/sri**')

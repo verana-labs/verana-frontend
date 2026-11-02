@@ -5,12 +5,6 @@ import { I18nValues, Translatable } from '@/ui/dataview/types'
 const t = (key: string, values?: I18nValues): Translatable => ({ key, values })
 
 export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
-  MsgReclaimTrustDepositYield: {
-    label: t('messages.MsgReclaimTrustDepositYield.label'),
-    description: t('messages.MsgReclaimTrustDepositYield.description'),
-    cost: t('messages.MsgReclaimTrustDepositYield.cost'), // {value}
-  },
-
   MsgCreateEcosystem: {
     label: t('messages.MsgCreateEcosystem.label'),
     description: t('messages.MsgCreateEcosystem.description'),
@@ -46,6 +40,7 @@ export const msgTypeConfig: Record<MessageType, MsgTypeInfoI18n> = {
     label: t('messages.MsgCreateCredentialSchema.label'),
     description: t('messages.MsgCreateCredentialSchema.description'),
     cost: t('messages.MsgCreateCredentialSchema.cost'), // {value}
+    warning: t('messages.MsgCreateCredentialSchema.warning'),
   },
   MsgUpdateCredentialSchema: {
     label: t('messages.MsgUpdateCredentialSchema.label'),
@@ -121,18 +116,12 @@ export function getCostMessage(template: string, value: string | number, td?: st
   return template.replace('{value}', String(value)).replace('{td}', String(td))
 }
 
-// Utility function to fill {value} and {link} in the low balance message
-export function getLowBalanceMessage(template: string, value: string, fee?: string) {
-  return template.replace('{value}', value).replace('{fee}', String(fee))
-}
-
 // Utility function to fill {addBalance} and {burnRate} in the description message
 export function getDescriptionMessage(template: string, addBalance: string | number, burnRate: string | number) {
   return template.replace('{addBalance}', String(addBalance)).replace('{burnRate}', String(burnRate))
 }
 
 export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
-  MsgReclaimTrustDepositYield: {},
   MsgCreateEcosystem: {},
   MsgUpdateEcosystem: {},
   MsgArchiveEcosystem: {

@@ -10,11 +10,28 @@ export interface IconLabelButtonProps {
   icon?: IconDefinition
   className?: string
   title?: string
+  disabled?: boolean
+  describedBy?: string
 }
 
-export default function IconLabelButton({ onClick, label, icon, title, className }: IconLabelButtonProps) {
+export default function IconLabelButton({
+  onClick,
+  label,
+  icon,
+  title,
+  className,
+  disabled,
+  describedBy,
+}: IconLabelButtonProps) {
   return (
-    <button type="button" onClick={onClick} title={title} className={className}>
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={className}
+      disabled={disabled}
+      aria-describedby={describedBy}
+    >
       {icon && <FontAwesomeIcon icon={icon} />}
       {label}
     </button>

@@ -1,8 +1,11 @@
 'use client'
 
 import { faFolder } from '@fortawesome/free-solid-svg-icons'
-import { useEffect, useMemo, useState } from 'react'
-import { useUserCorporation } from '@/hooks/useUserCorporation'
+import Link from 'next/link'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import { useActingPendingVotes, useUserCorporation } from '@/hooks/useUserCorporation'
+import { translate } from '@/i18n/dataview'
+import { INDEXER_MAX_LIMIT } from '@/lib/indexer-json'
 import { usePendingTasksCtx } from '@/providers/api-rest-query-provider-context'
 import ParticipantTree from '@/ui/common/participant-tree'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
@@ -38,6 +41,7 @@ function buildTree(ecosystems: PendingEcosystem[], corporationId?: number): Tree
     icon: faFolder,
     iconColorClass: 'text-purple-300',
     serviceDid: ecosystem.did ?? undefined,
+    serviceTrustData: ecosystem.trustData,
     badgeCount: ecosystem.pending_tasks,
     children: ecosystem.schemas.map((schema) => ({
       nodeId: `schema:${schema.id}`,
@@ -56,9 +60,26 @@ function buildTree(ecosystems: PendingEcosystem[], corporationId?: number): Tree
   }))
 }
 
+function treePlaceholder(count: number, partial: boolean, settled: boolean, error: string | null): ReactNode {
+  if (error) return <p className="p-2 text-sm text-amber-700 dark:text-amber-300">{translate('task.tree.error')}</p>
+  if (partial)
+    return (
+      <p className="p-2 text-xs text-neutral-70 dark:text-neutral-70">
+        {translate('task.tree.partial', { count: INDEXER_MAX_LIMIT })}
+      </p>
+    )
+  if (count > 0) return null
+  return (
+    <p className="p-2 text-sm text-neutral-70 dark:text-neutral-70">
+      {translate(settled ? 'task.tree.empty' : 'task.tree.loading')}
+    </p>
+  )
+}
+
 export default function PendingTasksPage() {
-  const { actingCorporation } = useUserCorporation()
-  const { pendingParticipants, refetch } = usePendingTasksCtx()
+  const { actingCorporation, loading: corporationLoading, error: discoveryError } = useUserCorporation()
+  const pendingVotes = useActingPendingVotes()
+  const { pendingParticipants, partial, settled, error, refetch } = usePendingTasksCtx()
   const [refreshRoot, setRefreshRoot] = useState(true)
   const participantTree = useMemo(
     () => buildTree(pendingParticipants, actingCorporation?.corporation.id),
@@ -71,12 +92,31 @@ export default function PendingTasksPage() {
     setRefreshRoot(false)
   }, [refetch, refreshRoot])
 
+  if (!actingCorporation && !corporationLoading) {
+    if (discoveryError) return <div className="p-6 error-pane">{translate('corporation.page.error')}</div>
+    return <p className="p-6 text-sm text-gray-600 dark:text-gray-300">{translate('corporation.page.nocorp')}</p>
+  }
+
   return (
-    <ParticipantTree
-      tree={participantTree}
-      type="tasks"
-      viewerCorporationId={actingCorporation?.corporation.id}
-      refreshRoot={() => setRefreshRoot(true)}
-    />
+    <>
+      {pendingVotes > 0 ? (
+        <p className="mb-4 ps-2 text-sm text-gray-700 dark:text-gray-300">
+          {translate('task.votes.pending', { count: pendingVotes })}{' '}
+          <Link
+            href="/corporation?tab=proposals"
+            className="font-medium text-primary-600 dark:text-primary-400 hover:underline"
+          >
+            {translate('task.votes.open')}
+          </Link>
+        </p>
+      ) : null}
+      <ParticipantTree
+        tree={participantTree}
+        type="tasks"
+        viewerCorporationId={actingCorporation?.corporation.id}
+        refreshRoot={() => setRefreshRoot(true)}
+        placeholder={treePlaceholder(pendingParticipants.length, partial, settled && !corporationLoading, error)}
+      />
+    </>
   )
 }

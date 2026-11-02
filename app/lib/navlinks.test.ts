@@ -3,20 +3,35 @@ import { translate } from '@/i18n/dataview'
 import { allowedOffline, getNavLinks } from '@/lib/navlinks'
 
 describe('getNavLinks', () => {
-  it('puts the pending votes on the corporation entry and the pending tasks on pending tasks', () => {
+  it('combines the pending tasks and votes on pending tasks and keeps the votes on the corporation entry', () => {
     const byHref = new Map(getNavLinks(3, 2).map((link) => [link.href, link.count]))
     expect(byHref.get('/corporation')).toBe(2)
-    expect(byHref.get('/pendingtasks')).toBe(3)
+    expect(byHref.get('/pendingtasks')).toBe(5)
   })
 
-  it('returns the six top-level destinations in order', () => {
+  it('counts the pending votes on pending tasks when no validation is pending', () => {
+    expect(getNavLinks(undefined, 4).find((link) => link.href === '/pendingtasks')?.count).toBe(4)
+  })
+
+  it('returns the top-level destinations in the order of VFE-PAGE-NAV-1, settings last', () => {
     const hrefs = getNavLinks().map((link) => link.href)
-    expect(hrefs).toEqual(['/dashboard', '/account', '/corporation', '/ecosystems', '/discover', '/pendingtasks'])
+    expect(hrefs).toEqual([
+      '/dashboard',
+      '/account',
+      '/corporation',
+      '/ecosystems',
+      '/agents',
+      '/discover',
+      '/pendingtasks',
+      '/settings',
+    ])
   })
 
-  it('gates the corporation entry on an acting corporation', () => {
-    const byHref = new Map(getNavLinks().map((link) => [link.href, link]))
-    expect(byHref.get('/corporation')?.requiresCorporation).toBe(true)
+  it('gates corporation, ecosystems, agents and pending tasks on an acting corporation per VFE-PAGE-NAV-2', () => {
+    const gated = getNavLinks()
+      .filter((link) => link.requiresCorporation === true)
+      .map((link) => link.href)
+    expect(gated.sort()).toEqual(['/agents', '/corporation', '/ecosystems', '/pendingtasks'])
   })
 
   it('gives every link a non-empty name and an icon', () => {
@@ -34,13 +49,14 @@ describe('getNavLinks', () => {
     expect(byHref.get('/discover')).toBe(translate('discover.title'))
     expect(byHref.get('/pendingtasks')).toBe(translate('task.title'))
     expect(byHref.get('/corporation')).toBe(translate('corporation.page.title'))
+    expect(byHref.get('/settings')).toBe(translate('navbar.settings.title'))
   })
 
-  it('marks dashboard and discover as available offline', () => {
+  it('marks dashboard, discover and settings as available offline per VFE-PAGE-NAV-2', () => {
     const offline = getNavLinks()
       .filter((link) => link.availableOffline === true)
       .map((link) => link.href)
-    expect(offline.sort()).toEqual(['/dashboard', '/discover'])
+    expect(offline.sort()).toEqual(['/dashboard', '/discover', '/settings'])
   })
 
   it('leaves availableOffline unset for online-only links', () => {
@@ -87,6 +103,7 @@ describe('allowedOffline', () => {
   it('allows the exact static offline routes', () => {
     expect(allowedOffline('/dashboard')).toBe(true)
     expect(allowedOffline('/discover')).toBe(true)
+    expect(allowedOffline('/settings')).toBe(true)
   })
 
   it('rejects routes that are not in the offline allow-list', () => {

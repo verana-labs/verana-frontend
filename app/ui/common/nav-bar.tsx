@@ -1,18 +1,22 @@
-/** biome-ignore-all lint/correctness/noUnusedVariables: legacy code */
 'use client'
 
-import { faBars, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faBars, faGear, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react'
+import Link from 'next/link'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
+import { translate } from '@/i18n/dataview'
+import { Footer } from '@/ui/common/footer'
 import NavLinks from '@/ui/common/nav-links'
+import ToggleTheme from '@/ui/common/toggle-theme'
 import VeranaLog from '@/ui/common/verana-logo'
-import { formatNetwork } from '@/util/util'
+import { resolveTranslatable } from '@/ui/dataview/types'
 import AccountZone from './account-zone'
 import { CorporationSelector } from './corporation-selector'
 
 export default function NavBar() {
   const veranaChain = useVeranaChain()
+  const settingsTitle = resolveTranslatable({ key: 'navbar.settings.title' }, translate)
 
   return (
     <Disclosure as="nav" className="navbar-container">
@@ -36,18 +40,18 @@ export default function NavBar() {
               {/* Right: Actions */}
               <div className="navbar-user-actions">
                 {/* Network Status */}
-                <div
-                  className="flex items-center space-x-2 px-3 py-1 bg-success-50 dark:bg-success-900/20 rounded-full"
-                  dangerouslySetInnerHTML={{ __html: formatNetwork(veranaChain.chain_id) }}
-                />
+                <div className="flex items-center space-x-2 px-3 py-1 bg-success-50 dark:bg-success-900/20 rounded-full">
+                  <div className="relative w-2 h-2 bg-success-500 rounded-full pulse-dot" />
+                  <span className="text-sm text-success-700 dark:text-success-300 font-medium">
+                    {veranaChain.chain_id}
+                  </span>
+                </div>
 
-                {/* Settings 
-                <IconLabelButton icon={faGear} title={resolveTranslatable({key: 'navbar.settings.title'}, translate)} className='navbar-icon' />
-*/}
-                {/* Theme Toggle 
-                <ToggleTheme />
-*/}
                 <CorporationSelector />
+                <Link href="/settings" title={settingsTitle} aria-label={settingsTitle} className="navbar-icon">
+                  <FontAwesomeIcon icon={faGear} />
+                </Link>
+                <ToggleTheme />
 
                 {/* Account Zone */}
                 <AccountZone />
@@ -57,8 +61,9 @@ export default function NavBar() {
 
           {/* Mobile panel */}
           <DisclosurePanel className="navbar-mobile-panel">
-            <div className="px-4 pt-3 lg:hidden">
+            <div className="px-4 pt-3 flex items-center justify-between gap-3 lg:hidden">
               <CorporationSelector />
+              <ToggleTheme />
             </div>
             {/* Logo */}
             {/* <div className='navbar-mobile-logo'>
@@ -66,6 +71,7 @@ export default function NavBar() {
             </div> */}
             {/* Links - Sublinks */}
             <NavLinks />
+            <Footer />
           </DisclosurePanel>
         </>
       )}

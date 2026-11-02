@@ -1,24 +1,31 @@
 'use client'
 
 import { faPlus } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useParticipant } from '@/hooks/useParticipant'
 import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
-import { type DidEnrichment, fetchDidEnrichment } from '@/lib/resolverClient'
-import AddJoinPage from '@/participants/add/page'
+import type { SchemaPricing } from '@/lib/pricing-asset'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
+import { EntityActionButton } from '@/ui/common/capability-button'
 import EcosystemBreadcrumb from '@/ui/common/ecosystem-breadcrumb'
+import { HolderWebsite } from '@/ui/common/holder-website'
+import JoinFlow from '@/ui/common/join-flow'
+import { ShowMoreButton } from '@/ui/common/keyset-pagination'
 import type { ParticipantRefreshState, TreeNode } from '@/ui/common/participant-tree-types'
+import { PricingNotice, unsupportedPricingReason } from '@/ui/common/pricing-notice'
 import SchemaHeader, { type SchemaStatus } from '@/ui/common/schema-header'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
+import { participantAuthority, roleColorClass } from '@/util/util'
 import { renderActionComponent } from './data-view-typed'
 import { ModalAction } from './modal-action'
 import ParticipantCard from './participant-card'
-import { collectParticipantDids, filterParticipantTree } from './participant-tree-filter'
+import { collectParticipantTrust, countParticipants, filterParticipantTree } from './participant-tree-filter'
 import TreeNodeHeader from './tree-node-header'
+
+export const ROOT_NODE_ID = 'root'
 
 type ParticipantTreeProps = {
   tree: TreeNode[]
@@ -29,14 +36,19 @@ type ParticipantTreeProps = {
   schemaStatus?: SchemaStatus
   issuerOnboardingMode?: string | number
   verifierOnboardingMode?: string | number
+  holderOnboardingMode?: string | number
   ecosystemTitle?: string
   ecosystemId?: string
+  unsupportedPricing?: SchemaPricing
   isEcosystemController?: boolean
   viewerCorporationId?: number
   setNodeRequestParams?: (nodeId?: string, role?: string, validatorId?: string) => void
+  moreNodeIds?: ReadonlySet<string>
+  loadMore?: (nodeId: string) => void
   refreshRoot?: () => void
   onConnect?: () => void
   onRetryFetch?: () => void
+  placeholder?: ReactNode
 }
 
 function findNodeAndPath(nodes: TreeNode[], id: string): { node?: TreeNode; path: TreeNode[] } {
@@ -60,11 +72,11 @@ function findNode(nodes: TreeNode[], id: string): TreeNode | undefined {
   }
 }
 
-function mergeTrees(previous: TreeNode[], next: TreeNode[]): TreeNode[] {
+export function mergeTrees(previous: TreeNode[], next: TreeNode[]): TreeNode[] {
   const previousById = new Map(previous.map((node) => [node.nodeId, node]))
   return next.map((node) => {
     const oldNode = previousById.get(node.nodeId)
-    if (node.group) return { ...node, children: node.children ?? [] }
+    if (node.group) return { ...node, children: node.children?.length ? node.children : (oldNode?.children ?? []) }
     return {
       ...oldNode,
       ...node,
@@ -95,7 +107,11 @@ function Tree({
   onSelect,
   onToggle,
   onJoin,
+  joinBlockedReason,
+  feePricing,
   onConnect,
+  moreNodeIds,
+  onLoadMore,
   depth = 0,
 }: {
   type: 'participants' | 'tasks'
@@ -108,7 +124,11 @@ function Tree({
   onSelect: (id: string) => void
   onToggle: (id: string, role?: string, validatorId?: string) => void
   onJoin: (node: TreeNode) => void
+  joinBlockedReason?: string
+  feePricing?: SchemaPricing
   onConnect?: () => void
+  moreNodeIds?: ReadonlySet<string>
+  onLoadMore?: (nodeId: string) => void
   depth?: number
 }) {
   return (
@@ -131,6 +151,8 @@ function Tree({
                 onToggle={onToggle}
                 onSelect={onSelect}
                 onJoin={onJoin}
+                joinBlockedReason={joinBlockedReason}
+                feePricing={feePricing}
                 onConnect={onConnect}
               />
             </div>
@@ -146,9 +168,16 @@ function Tree({
                 onSelect={onSelect}
                 onToggle={onToggle}
                 onJoin={onJoin}
+                joinBlockedReason={joinBlockedReason}
+                feePricing={feePricing}
                 onConnect={onConnect}
+                moreNodeIds={moreNodeIds}
+                onLoadMore={onLoadMore}
                 depth={depth + 1}
               />
+            ) : null}
+            {isExpanded && moreNodeIds?.has(node.nodeId) && onLoadMore ? (
+              <ShowMoreButton onClick={() => onLoadMore(node.nodeId)} indent={(depth + 1) * 24} />
             ) : null}
           </div>
         )
@@ -165,15 +194,20 @@ export default function ParticipantTree({
   schemaStatus,
   issuerOnboardingMode,
   verifierOnboardingMode,
+  holderOnboardingMode,
   ecosystemTitle,
   schemaId,
   ecosystemId,
+  unsupportedPricing,
   isEcosystemController,
   viewerCorporationId,
   setNodeRequestParams,
+  moreNodeIds,
+  loadMore,
   refreshRoot,
   onConnect,
   onRetryFetch,
+  placeholder,
 }: ParticipantTreeProps) {
   const [showUnresolvable, setShowUnresolvable] = useState(false)
   const [showDisabled, setShowDisabled] = useState(false)
@@ -186,34 +220,20 @@ export default function ParticipantTree({
   const [refreshState, setRefreshState] = useState<ParticipantRefreshState>({})
   const detailRef = useRef<HTMLDivElement | null>(null)
   const { latestProcessedHeight } = useIndexerEvents()
-  const [enrichmentByDid, setEnrichmentByDid] = useState<Record<string, DidEnrichment>>({})
-
-  useEffect(() => {
-    if (type !== 'participants') return
-    let cancelled = false
-    const pending = collectParticipantDids(treeState).filter((did) => !enrichmentByDid[did])
-    for (const did of pending) {
-      fetchDidEnrichment(did)
-        .catch((): DidEnrichment => ({ did, trustStatus: 'UNRESOLVED' }))
-        .then((enrichment) => {
-          if (cancelled) return
-          setEnrichmentByDid((prev) => (prev[did] ? prev : { ...prev, [did]: enrichment }))
-        })
-    }
-    return () => {
-      cancelled = true
-    }
-  }, [type, treeState, enrichmentByDid])
+  const joinBlockedReason = unsupportedPricing ? unsupportedPricingReason() : undefined
 
   const visibleTree = useMemo(() => {
     if (type !== 'participants') return treeState
-    const trustByDid = Object.fromEntries(Object.entries(enrichmentByDid).map(([did, e]) => [did, e.trustStatus]))
     return filterParticipantTree(
       treeState,
       { includeUnresolvable: showUnresolvable, includeDisabled: showDisabled },
-      trustByDid
+      collectParticipantTrust(treeState)
     )
-  }, [type, treeState, enrichmentByDid, showUnresolvable, showDisabled])
+  }, [type, treeState, showUnresolvable, showDisabled])
+  const hiddenCount = useMemo(
+    () => countParticipants(treeState) - countParticipants(visibleTree),
+    [treeState, visibleTree]
+  )
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => (tree[0] ? { [tree[0].nodeId]: true } : {}))
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -240,6 +260,40 @@ export default function ParticipantTree({
     () => (selectedId ? findNodeAndPath(treeState, selectedId) : { path: [] }),
     [selectedId, treeState]
   )
+
+  // A deep link can name a Participant the lazy tree has not loaded. Fetch it so the card still opens.
+  const missingSelectedId = selectedId && !selection.node ? selectedId : undefined
+  const { participant: linkedParticipant } = useParticipant(missingSelectedId)
+  const linkedNode = useMemo<TreeNode | undefined>(() => {
+    if (!missingSelectedId || linkedParticipant?.id !== missingSelectedId) return undefined
+    const isCorporation = linkedParticipant.corporation_id === viewerCorporationId
+    const authority = participantAuthority(isCorporation, false, false)
+    return {
+      nodeId: linkedParticipant.id,
+      name: linkedParticipant.did ?? linkedParticipant.role,
+      group: false,
+      parentId: linkedParticipant.validator_participant_id ?? 'root',
+      isCorporation,
+      isValidator: false,
+      roleColorClass: roleColorClass(linkedParticipant.role),
+      icon: authority.icon,
+      iconColorClass: authority.iconColorClass,
+      participant: linkedParticipant,
+    }
+  }, [linkedParticipant, missingSelectedId, viewerCorporationId])
+  const detailNode = selection.node ?? linkedNode
+  const requestedLinkedId = useRef<string>(undefined)
+
+  useEffect(() => {
+    const participant = linkedNode?.participant
+    const validatorId = participant?.validator_participant_id
+    if (!participant || !validatorId || requestedLinkedId.current === participant.id) return
+    if (!findNode(treeState, validatorId)) return
+    requestedLinkedId.current = participant.id
+    const folderId = `group:${validatorId}:${participant.role}`
+    setExpanded((current) => ({ ...current, [validatorId]: true, [folderId]: true }))
+    setNodeRequestParams?.(folderId, participant.role, validatorId)
+  }, [linkedNode, setNodeRequestParams, treeState])
 
   useEffect(() => {
     setTreeState((current) => mergeTrees(current, tree))
@@ -286,13 +340,22 @@ export default function ParticipantTree({
     setRefreshState((current) => ({ ...current, txHeight: undefined }))
   }, [latestProcessedHeight, refreshState.joinNode, refreshState.txHeight, setNodeRequestParams])
 
+  const retriedJoin = useRef<string>(undefined)
+
   useEffect(() => {
     const { joinNode: refreshedJoin, id, txHeight } = refreshState
     if (!refreshedJoin || txHeight != null) return
     if (!id || !findNode(treeState, id)) {
+      const attempt = `${refreshedJoin.nodeId}:${id ?? ''}`
+      if (retriedJoin.current === attempt) {
+        setRefreshState({})
+        return
+      }
+      retriedJoin.current = attempt
       onRetryFetch?.()
       return
     }
+    retriedJoin.current = undefined
     setExpanded((current) => ({ ...current, [refreshedJoin.nodeId]: true }))
     select(id)
     setRefreshState({})
@@ -311,8 +374,10 @@ export default function ParticipantTree({
           status={schemaStatus}
           issuerOnboardingMode={issuerOnboardingMode}
           verifierOnboardingMode={verifierOnboardingMode}
+          holderOnboardingMode={holderOnboardingMode}
         />
       ) : null}
+      {unsupportedPricing ? <PricingNotice schema={unsupportedPricing} className="mb-6" /> : null}
       {type === 'tasks' ? (
         <section className="mb-8">
           <h1 className="page-title">{resolveTranslatable({ key: 'task.title' }, translate) ?? ''}</h1>
@@ -340,7 +405,7 @@ export default function ParticipantTree({
                 <label key={String(name)} className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    className="w-4 h-4 text-primary-600 border-neutral-20 rounded focus:ring-primary-500"
+                    className="w-4 h-4 text-primary-600 border-neutral-20 rounded checked:border-transparent focus:ring-primary-500"
                     checked={Boolean(checked)}
                     onChange={(event) => (setChecked as (value: boolean) => void)(event.target.checked)}
                   />
@@ -353,12 +418,28 @@ export default function ParticipantTree({
           ) : null}
         </div>
 
-        {type === 'participants' && treeState.length > 0 && visibleTree.length === 0 ? (
-          <p className="p-2 text-sm text-neutral-70 dark:text-neutral-70">
-            {resolveTranslatable({ key: 'participants.filters.allhidden' }, translate) ??
-              'All participants are hidden by the current filters.'}
+        {type === 'participants' && moreNodeIds?.size ? (
+          <p className="p-2 text-xs text-neutral-70 dark:text-neutral-70">
+            {resolveTranslatable({ key: 'pagination.loadedOnly' }, translate) ??
+              'Sorting and filters apply to the loaded results only.'}
           </p>
         ) : null}
+        {hiddenCount > 0 ? (
+          <p className="p-2 text-sm text-neutral-70 dark:text-neutral-70">
+            {translate('participants.filters.hidden', { count: hiddenCount })}{' '}
+            <button
+              type="button"
+              onClick={() => {
+                setShowUnresolvable(true)
+                setShowDisabled(true)
+              }}
+              className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+            >
+              {translate('participants.filters.showall')}
+            </button>
+          </p>
+        ) : null}
+        {placeholder}
         <Tree
           type={type}
           nodes={visibleTree}
@@ -373,20 +454,23 @@ export default function ParticipantTree({
             setNodeRequestParams?.()
             setJoinNode(node)
           }}
+          joinBlockedReason={joinBlockedReason}
+          feePricing={unsupportedPricing}
           onConnect={onConnect}
+          moreNodeIds={moreNodeIds}
+          onLoadMore={loadMore}
         />
+        {moreNodeIds?.has(ROOT_NODE_ID) && loadMore ? <ShowMoreButton onClick={() => loadMore(ROOT_NODE_ID)} /> : null}
 
         {type === 'participants' && isEcosystemController ? (
-          <button
-            type="button"
-            className="flex items-center space-x-2 p-2 text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+          <EntityActionButton
+            msgType="MsgCreateRootParticipant"
+            icon={faPlus}
+            label={translate('participants.action.newparticipant')}
+            blockedReason={joinBlockedReason}
             onClick={() => setAddingRoot(true)}
-          >
-            <FontAwesomeIcon icon={faPlus} className="text-sm" />
-            <span className="text-sm font-medium">
-              {resolveTranslatable({ key: 'participants.action.newparticipant' }, translate)}
-            </span>
-          </button>
+            className="flex items-center gap-2 p-2 text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+          />
         ) : null}
       </section>
 
@@ -412,21 +496,27 @@ export default function ParticipantTree({
           isActive={true}
           classModal="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-xl bg-white dark:bg-surface"
         >
-          <AddJoinPage
-            ecosystemId={ecosystemId ?? ''}
-            nodeJoin={joinNode}
-            onCancel={() => setJoinNode(undefined)}
-            onRefresh={(id, txHeight) => setRefreshState({ joinNode, id, txHeight })}
-          />
+          {joinNode.onboardingAction === 'LinkDID' ? (
+            <HolderWebsite issuerDid={joinNode.participant?.did ?? ''} onCancel={() => setJoinNode(undefined)} />
+          ) : (
+            <JoinFlow
+              ecosystemId={ecosystemId ?? ''}
+              nodeJoin={joinNode}
+              onCancel={() => setJoinNode(undefined)}
+              onRefresh={(id, txHeight) => setRefreshState({ joinNode, id, txHeight })}
+            />
+          )}
         </ModalAction>
       ) : null}
 
-      {selection.node ? (
+      {detailNode ? (
         <div ref={detailRef}>
           <ParticipantCard
-            selectedNode={selection.node}
-            path={selection.path}
+            key={detailNode.nodeId}
+            selectedNode={detailNode}
+            path={selection.node ? selection.path : [detailNode]}
             schemaTitle={schemaTitle ?? ''}
+            pricingNoticeShown={Boolean(unsupportedPricing)}
             viewerCorporationId={viewerCorporationId}
             onRefresh={(participant) => setTreeState((current) => updateParticipant(current, participant))}
             onRefreshList={onRetryFetch}

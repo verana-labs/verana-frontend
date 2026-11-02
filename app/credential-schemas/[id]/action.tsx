@@ -1,10 +1,11 @@
 'use client'
 
+import { useMemo } from 'react'
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
 import type { MsgTypeCS } from '@/msg/constants/notificationMsgForMsgType'
-import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
+import { useProtocolParams } from '@/providers/protocol-params-context'
 import EditableDataView from '@/ui/common/data-edit'
-import { type CredentialSchemaData, credentialSchemaSections } from '@/ui/dataview/datasections/cs'
+import { boundedCredentialSchemaSections, type CredentialSchemaData } from '@/ui/dataview/datasections/cs'
 
 interface CredentialSchemaActionProps {
   action: MsgTypeCS
@@ -22,6 +23,8 @@ export default function CredentialSchemaActionPage({
   setModalHidden,
 }: CredentialSchemaActionProps) {
   const credentialSchema = data as CredentialSchemaData
+  const params = useProtocolParams()
+  const sections = useMemo(() => boundedCredentialSchemaSections(params), [params])
   const { submitTx } = useSubmitTxMsgTypeFromObject(onClose, onRefresh)
   const noForm = action === 'MsgArchiveCredentialSchema' || action === 'MsgUnarchiveCredentialSchema'
 
@@ -29,20 +32,13 @@ export default function CredentialSchemaActionPage({
     await submitTx(action, value)
   }
 
-  async function onSimulate(value: object): Promise<SimulateResult | undefined> {
-    if (!noForm) return
-    const result = await submitTx(action, value, true)
-    if (result && !('transactionHash' in result)) return result
-  }
-
   return (
     <EditableDataView<CredentialSchemaData>
-      sectionsI18n={credentialSchemaSections}
+      sectionsI18n={sections}
       id={String(credentialSchema.id)}
       messageType={action}
       data={credentialSchema}
       onSave={onSave}
-      onSimulate={onSimulate}
       onCancel={onClose}
       noForm={noForm}
       withinView={action === 'MsgUpdateCredentialSchema'}

@@ -19,7 +19,7 @@ export default function GettingStarted() {
               {stepsGettingStarted.map((step, idx) => {
                 return (
                   <div key={`step-${idx}`} className="flex items-start space-x-4">
-                    <div className="flex-shrink-0 w-8 h-8 bg-primary-100 dark:bg-primary-900/20 rounded-full flex items-center justify-center">
+                    <div className="shrink-0 w-8 h-8 bg-primary-100 dark:bg-primary-900/20 rounded-full flex items-center justify-center">
                       <span className="text-sm font-semibold text-primary-600 dark:text-primary-400">{idx + 1}</span>
                     </div>
                     <div>
@@ -31,7 +31,7 @@ export default function GettingStarted() {
               })}
             </div>
             <div className="space-y-4">
-              <div className="bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/10 dark:to-primary-900/20 rounded-lg p-4">
+              <div className="bg-linear-to-br/srgb from-primary-50 to-primary-100 dark:from-primary-900/10 dark:to-primary-900/20 rounded-lg p-4">
                 <h4 className="font-medium text-gray-900 dark:text-white mb-2">{quickLinks.title}</h4>
                 <div className="flex flex-col gap-2">
                   {quickLinks.links.map((link, idx) => {

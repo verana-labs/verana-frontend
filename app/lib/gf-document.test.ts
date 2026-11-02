@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { documentFileName, fetchableDocumentUrl, kindFromContentType, kindFromUrl } from '@/lib/gf-document'
+import {
+  displayedVersion,
+  documentFileName,
+  editableVersions,
+  fetchableDocumentUrl,
+  type GfVersion,
+  hasDocumentIn,
+  kindFromContentType,
+  kindFromUrl,
+  nextVersion,
+} from '@/lib/gf-document'
 
 describe('kindFromUrl', () => {
   it('detects pdf and markdown extensions', () => {
@@ -7,6 +17,8 @@ describe('kindFromUrl', () => {
     expect(kindFromUrl('https://x.example/docs/EGF.PDF')).toBe('pdf')
     expect(kindFromUrl('https://x.example/docs/egf.md')).toBe('markdown')
     expect(kindFromUrl('https://x.example/docs/egf.markdown')).toBe('markdown')
+    expect(kindFromUrl('https://x.example/docs/egf.html')).toBe('html')
+    expect(kindFromUrl('https://x.example/docs/egf.htm')).toBe('html')
   })
 
   it('ignores query strings and unknown extensions', () => {
@@ -21,6 +33,7 @@ describe('kindFromContentType', () => {
     expect(kindFromContentType('application/pdf')).toBe('pdf')
     expect(kindFromContentType('text/markdown; charset=utf-8')).toBe('markdown')
     expect(kindFromContentType('text/x-markdown')).toBe('markdown')
+    expect(kindFromContentType('text/html; charset=utf-8')).toBe('html')
     expect(kindFromContentType('application/octet-stream')).toBeUndefined()
     expect(kindFromContentType(null)).toBeUndefined()
   })
@@ -52,6 +65,80 @@ describe('documentFileName', () => {
   it('falls back per kind when there is no usable segment', () => {
     expect(documentFileName('https://x.example/', 'markdown')).toBe('governance-framework.md')
     expect(documentFileName('https://x.example/', 'pdf')).toBe('governance-framework.pdf')
-    expect(documentFileName('not a url')).toBe('governance-framework.pdf')
+    expect(documentFileName('https://x.example/', 'html')).toBe('governance-framework.html')
+    expect(documentFileName('not a url')).toBe('governance-framework')
+  })
+})
+
+describe('displayedVersion', () => {
+  const versions: GfVersion[] = [
+    { id: '1', version: 1, activeSince: '2026-01-01T00:00:00Z', documents: [] },
+    { id: '2', version: 2, activeSince: null, documents: [] },
+  ]
+
+  it('prefers the active version and falls back to the last activated one, never a draft', () => {
+    expect(displayedVersion(versions, 1)?.id).toBe('1')
+    expect(displayedVersion(versions, 3)?.id).toBe('1')
+    expect(
+      displayedVersion(
+        [
+          versions[0],
+          { id: '2', version: 2, activeSince: '2026-02-01T00:00:00Z', documents: [] },
+          { ...versions[1], id: '3', version: 3 },
+        ],
+        4
+      )?.id
+    ).toBe('2')
+    expect(displayedVersion([versions[1]], 3)).toBeUndefined()
+    expect(displayedVersion([], 1)).toBeUndefined()
+  })
+})
+
+function version(number: number, activeSince: string | null, languages: string[] = []): GfVersion {
+  return {
+    id: String(number),
+    version: number,
+    activeSince,
+    documents: languages.map((language, index) => ({
+      id: `${number}-${index}`,
+      url: `https://x.example/v${number}-${language}.md`,
+      language,
+    })),
+  }
+}
+
+describe('editableVersions', () => {
+  it('offers only the next version when nothing is drafted', () => {
+    expect(editableVersions([version(1, '2026-01-01T00:00:00Z', ['en'])], 1)).toEqual([2])
+  })
+
+  it('offers every existing future version before the next new one', () => {
+    const versions = [
+      version(1, '2026-01-01T00:00:00Z', ['en']),
+      version(2, '2026-02-01T00:00:00Z', ['en']),
+      version(4, null, ['en']),
+      version(3, null, ['en']),
+    ]
+    expect(editableVersions(versions, 2)).toEqual([3, 4, 5])
+  })
+
+  it('never offers the active version or an older one', () => {
+    expect(editableVersions([], 3)).toEqual([4])
+  })
+})
+
+describe('nextVersion', () => {
+  it('is the version right after the active one, once it holds a document', () => {
+    const versions = [version(1, '2026-01-01T00:00:00Z', ['en']), version(2, null, ['es'])]
+    expect(nextVersion(versions, 1)?.version).toBe(2)
+    expect(nextVersion([version(1, '2026-01-01T00:00:00Z', ['en']), version(2, null)], 1)).toBeUndefined()
+    expect(nextVersion([version(1, '2026-01-01T00:00:00Z', ['en']), version(3, null, ['en'])], 1)).toBeUndefined()
+  })
+})
+
+describe('hasDocumentIn', () => {
+  it('matches the exact language tag the chain checks', () => {
+    expect(hasDocumentIn(version(2, null, ['en', 'es']), 'es')).toBe(true)
+    expect(hasDocumentIn(version(2, null, ['en']), 'de')).toBe(false)
   })
 })

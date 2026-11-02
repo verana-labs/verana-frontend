@@ -1,23 +1,28 @@
 'use client'
 
 import { Chain } from '@chain-registry/types'
-import {
-  VERANA_CHAIN_ID,
-  VERANA_CHAIN_NAME,
-  VERANA_EXPLORER_URL,
-  VERANA_REST_ENDPOINT,
-  VERANA_RPC_ENDPOINT,
-} from '@/config/env'
+import { VERANA_CHAIN_ID, VERANA_CHAIN_NAME, VERANA_EXPLORER_URL, VERANA_RPC_ENDPOINT } from '@/config/env'
 import { veranaChainEnv } from '@/config/veranaChain.client'
+import type { NotificationLink } from '@/providers/notification-provider'
+
+// Return the explorer URL of one transaction from the tx_page template. Return undefined without an explorer.
+export function explorerTxUrl(txHash: string): string | undefined {
+  const template = veranaChainEnv.explorers?.[0]?.tx_page
+  return VERANA_EXPLORER_URL && template ? template.replace(/\$\{txHash\}/, txHash) : undefined
+}
+
+export function explorerTxLink(txHash: string): NotificationLink | undefined {
+  const href = explorerTxUrl(txHash)
+  return href ? { href, label: txHash } : undefined
+}
 
 export function useVeranaChain() {
   const chainName = VERANA_CHAIN_NAME
   const chainId = VERANA_CHAIN_ID
   const rpc = VERANA_RPC_ENDPOINT
-  const rest = VERANA_REST_ENDPOINT
   const explorerUrl = VERANA_EXPLORER_URL
 
-  if (chainName && chainId && rpc && rest) {
+  if (chainName && chainId && rpc) {
     return {
       ...veranaChainEnv,
       chain_name: chainName,
@@ -26,7 +31,7 @@ export function useVeranaChain() {
       network_type: chainId.includes('devnet') ? 'devnet' : 'testnet',
       apis: {
         rpc: [{ address: rpc, provider: 'verana' }],
-        rest: [{ address: rest, provider: 'verana' }],
+        rest: [],
       },
       ...(explorerUrl
         ? {

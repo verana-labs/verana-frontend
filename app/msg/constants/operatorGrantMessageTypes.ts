@@ -21,7 +21,6 @@ export const OPERATOR_GRANT_MESSAGE_TYPES = [
   veranaTypeUrls.MsgCancelParticipantOPLastRequest,
   veranaTypeUrls.MsgSlashParticipantTrustDeposit,
   veranaTypeUrls.MsgRepayParticipantSlashedTrustDeposit,
-  veranaTypeUrls.MsgReclaimTrustDepositYield,
   veranaTypeUrls.MsgRepaySlashedTrustDeposit,
   veranaTypeUrls.MsgStoreDigest,
 ] as const

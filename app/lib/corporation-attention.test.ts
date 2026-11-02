@@ -32,15 +32,19 @@ describe('attentionUrls', () => {
   it('scopes both queries to the corporation and the voting account', () => {
     expect(attentionUrls(7, 'verana1member')).toEqual({
       pendingTasks: 'https://indexer.example/v4/participant/pending/flat?corporation_id=7&limit=1024',
-      pendingVotes:
-        'https://indexer.example/v4/group/proposals?corporation_id=7&pending_voter=verana1member&limit=1024',
+      pendingVotes: 'https://indexer.example/v4/group/proposals?corporation_id=7&pending_voter=verana1member',
     })
   })
 })
 
 describe('countPendingTasks', () => {
   it('sums the pending tasks of every ecosystem', () => {
-    expect(countPendingTasks(pendingFlat)).toBe(3)
+    expect(countPendingTasks(pendingFlat)).toEqual({ value: 3, partial: false })
+  })
+
+  it('marks the sum as a lower bound when the ecosystem window is full', () => {
+    const ecosystems = Array.from({ length: 1024 }, (_, id) => ({ id, pending_tasks: 1 }))
+    expect(countPendingTasks({ ecosystems })).toEqual({ value: 1024, partial: true })
   })
 
   it('rejects a payload without the ecosystems envelope', () => {
@@ -68,6 +72,27 @@ describe('fetchAttention', () => {
       })
     )
 
-    expect(await fetchAttention([7, 9], 'verana1member')).toEqual({ 7: { pendingTasks: 3, pendingVotes: 2 } })
+    expect(await fetchAttention([7, 9], 'verana1member')).toEqual({
+      7: { pendingTasks: 3, pendingVotes: 2, pendingTasksPartial: false, pendingVotesPartial: false },
+    })
+  })
+
+  it('counts the pending votes past the first window', async () => {
+    const page = (from: number, count: number) => ({
+      proposals: Array.from({ length: count }, (_, index) => ({ id: from - index })),
+    })
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () =>
+        url.includes('/pending/flat') ? pendingFlat : url.includes('max_id=') ? page(976, 5) : page(2000, 1024),
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    expect(await fetchAttention([7], 'verana1member')).toEqual({
+      7: { pendingTasks: 3, pendingVotes: 1028, pendingTasksPartial: false, pendingVotesPartial: false },
+    })
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://indexer.example/v4/group/proposals?corporation_id=7&pending_voter=verana1member&limit=1024&sort=-id&max_id=978'
+    )
   })
 })

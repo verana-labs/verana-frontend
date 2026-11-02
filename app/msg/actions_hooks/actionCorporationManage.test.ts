@@ -1,3 +1,4 @@
+import type { EncodeObject } from '@cosmjs/proto-signing'
 import { MsgUpdateCorporation } from '@verana-labs/verana-types/codec/verana/co/v1/tx'
 import {
   MsgGrantOperatorAuthorization,
@@ -11,7 +12,7 @@ import {
   MsgUpdateGroupPolicyDecisionPolicy,
   MsgVote,
 } from 'cosmjs-types/cosmos/group/v1/tx'
-import { ThresholdDecisionPolicy, VoteOption } from 'cosmjs-types/cosmos/group/v1/types'
+import { PercentageDecisionPolicy, ThresholdDecisionPolicy, VoteOption } from 'cosmjs-types/cosmos/group/v1/types'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@cosmos-kit/react', () => ({ useChain: () => ({ address: undefined, isWalletConnected: false }) }))
@@ -19,8 +20,12 @@ vi.mock('@/hooks/useVeranaChain', () => ({ useVeranaChain: () => ({ chain_name: 
 vi.mock('@/providers/indexer-events-provider', () => ({ useIndexerEvents: () => ({ waitForBlock: vi.fn() }) }))
 vi.mock('@/providers/notification-provider', () => ({ useNotification: () => ({ notify: vi.fn() }) }))
 vi.mock('@/msg/util/sendTxDetectingMode', () => ({ useSendTxDetectingMode: () => vi.fn() }))
+vi.mock('@/providers/tx-confirm-provider', () => ({
+  useTxConfirm: () => ({ confirmTx: vi.fn().mockResolvedValue({}) }),
+}))
 
 import type { CorporationMembership } from '@/lib/corporation-discovery'
+import { NO_GRANT_OPTIONS } from '@/lib/operator-grant'
 import {
   buildGrantOperatorMessage,
   buildRepaySlashedMessage,
@@ -30,6 +35,9 @@ import {
   buildUpdateMembersMessage,
   buildVoteMessage,
   corporationSigningMode,
+  decisionPolicyChangeLines,
+  delegablePreview,
+  memberChangeLines,
   VOTE_OPTIONS,
   wrapInProposal,
 } from './actionCorporationManage'
@@ -85,7 +93,8 @@ describe('delegable message builders', () => {
       membership(),
       'verana1grantee',
       ['/verana.ec.v1.MsgCreateEcosystem'],
-      POLICY
+      POLICY,
+      NO_GRANT_OPTIONS
     )
     const value = MsgGrantOperatorAuthorization.decode(
       MsgGrantOperatorAuthorization.encode(message.value as MsgGrantOperatorAuthorization).finish()
@@ -95,6 +104,26 @@ describe('delegable message builders', () => {
     expect(value.grantee).toBe('verana1grantee')
     expect(value.msgTypes).toEqual(['/verana.ec.v1.MsgCreateEcosystem'])
     expect(value.withFeegrant).toBe(false)
+  })
+
+  it('carries the grant options into the operator grant', () => {
+    const expiration = new Date('2026-12-01T00:00:00Z')
+    const message = buildGrantOperatorMessage(membership(), 'verana1grantee', [], 'verana1operator', {
+      expiration,
+      spendLimit: { amountUvna: '5000000', periodSeconds: 86_400 },
+      feeGrant: { spendLimit: null },
+    })
+    const value = MsgGrantOperatorAuthorization.decode(
+      MsgGrantOperatorAuthorization.encode(message.value as MsgGrantOperatorAuthorization).finish()
+    )
+    expect(value).toMatchObject({
+      operator: 'verana1operator',
+      expiration,
+      authzSpendLimit: [{ denom: 'uvna', amount: '5000000' }],
+      authzSpendLimitPeriod: { seconds: 86_400, nanos: 0 },
+      withFeegrant: true,
+      feegrantSpendLimit: [],
+    })
   })
 
   it('round-trips the revoke and the slashed-deposit repayment', () => {
@@ -132,10 +161,19 @@ describe('group admin builders', () => {
     ])
   })
 
-  it('round-trips the decision policy update', () => {
-    const message = buildUpdateDecisionPolicyMessage(membership(), '3', 300)
-    const value = MsgUpdateGroupPolicyDecisionPolicy.decode(
+  function decodePolicyUpdate(message: EncodeObject) {
+    return MsgUpdateGroupPolicyDecisionPolicy.decode(
       MsgUpdateGroupPolicyDecisionPolicy.encode(message.value as MsgUpdateGroupPolicyDecisionPolicy).finish()
+    )
+  }
+
+  it('round-trips a threshold policy update with its minimum execution period', () => {
+    const value = decodePolicyUpdate(
+      buildUpdateDecisionPolicyMessage(membership(), {
+        rule: { kind: 'threshold', threshold: '3' },
+        votingPeriodSeconds: 300,
+        minExecutionPeriodSeconds: 600,
+      })
     )
     expect(value.admin).toBe(POLICY)
     expect(value.groupPolicyAddress).toBe(POLICY)
@@ -143,6 +181,104 @@ describe('group admin builders', () => {
     const decision = ThresholdDecisionPolicy.decode(value.decisionPolicy?.value ?? new Uint8Array())
     expect(decision.threshold).toBe('3')
     expect(decision.windows?.votingPeriod?.seconds).toBe(BigInt(300))
+    expect(decision.windows?.minExecutionPeriod?.seconds).toBe(BigInt(600))
+  })
+
+  it('keeps a percentage policy a percentage policy on update', () => {
+    const value = decodePolicyUpdate(
+      buildUpdateDecisionPolicyMessage(membership(), {
+        rule: { kind: 'percentage', percentage: '0.6' },
+        votingPeriodSeconds: 86_400,
+        minExecutionPeriodSeconds: 3_600,
+      })
+    )
+    expect(value.decisionPolicy?.typeUrl).toBe('/cosmos.group.v1.PercentageDecisionPolicy')
+    expect(PercentageDecisionPolicy.decode(value.decisionPolicy?.value ?? new Uint8Array())).toEqual({
+      percentage: '0.6',
+      windows: {
+        votingPeriod: { seconds: BigInt(86_400), nanos: 0 },
+        minExecutionPeriod: { seconds: BigInt(3_600), nanos: 0 },
+      },
+    })
+  })
+})
+
+describe('proposal change lines', () => {
+  const members = [
+    { address: 'verana1aaa', weight: '3' },
+    { address: 'verana1bbb', weight: '2' },
+    { address: 'verana1ccc', weight: '1' },
+  ]
+
+  it('lists the added, removed and reweighted members and skips the unchanged ones', () => {
+    const lines = memberChangeLines(members, [
+      { address: 'verana1aaa', weight: '3' },
+      { address: 'verana1bbb', weight: '0' },
+      { address: 'verana1ccc', weight: '4' },
+      { address: 'verana1ddd', weight: '1' },
+      { address: 'verana1eee', weight: '0' },
+    ])
+    expect(lines).toEqual([
+      { label: 'verana1bbb', value: 'Removed' },
+      { label: 'verana1ccc', value: 'Weight 1 → 4' },
+      { label: 'verana1ddd', value: 'Added with weight 1' },
+    ])
+  })
+
+  const threshold = { threshold: '1', percentage: null, votingPeriod: '300s', minExecutionPeriod: '0s' }
+  const percentage = { threshold: null, percentage: '0.5', votingPeriod: '300s', minExecutionPeriod: '3600s' }
+
+  it('shows the threshold, voting period and minimum execution period before and after the change', () => {
+    expect(
+      decisionPolicyChangeLines(threshold, {
+        rule: { kind: 'threshold', threshold: '2' },
+        votingPeriodSeconds: 3_600,
+        minExecutionPeriodSeconds: 0,
+      })
+    ).toEqual([
+      { label: 'Threshold', value: '1 → 2' },
+      { label: 'Voting period', value: '5m → 1h' },
+      { label: 'Minimum execution period', value: '0s' },
+    ])
+    expect(
+      decisionPolicyChangeLines(
+        { ...threshold, threshold: '2', votingPeriod: null, minExecutionPeriod: null },
+        { rule: { kind: 'threshold', threshold: '2' }, votingPeriodSeconds: 60, minExecutionPeriodSeconds: 600 }
+      )
+    ).toEqual([
+      { label: 'Threshold', value: '2' },
+      { label: 'Voting period', value: '1m' },
+      { label: 'Minimum execution period', value: '10m' },
+    ])
+  })
+
+  it('shows a percentage before and after the change', () => {
+    expect(
+      decisionPolicyChangeLines(percentage, {
+        rule: { kind: 'percentage', percentage: '0.6667' },
+        votingPeriodSeconds: 300,
+        minExecutionPeriodSeconds: 0,
+      })
+    ).toEqual([
+      { label: 'Percentage', value: '50% → 66.67%' },
+      { label: 'Voting period', value: '5m' },
+      { label: 'Minimum execution period', value: '1h → 0s' },
+    ])
+  })
+
+  it('shows the policy type when the change switches it', () => {
+    const toPercentage = { rule: { kind: 'percentage', percentage: '0.5' }, votingPeriodSeconds: 300 } as const
+    expect(decisionPolicyChangeLines(threshold, { ...toPercentage, minExecutionPeriodSeconds: 0 })[0]).toEqual({
+      label: 'Decision policy',
+      value: 'Threshold 1 → Percentage 50%',
+    })
+    expect(
+      decisionPolicyChangeLines(percentage, {
+        rule: { kind: 'threshold', threshold: '3' },
+        votingPeriodSeconds: 300,
+        minExecutionPeriodSeconds: 3_600,
+      })[0]
+    ).toEqual({ label: 'Decision policy', value: 'Percentage 50% → Threshold 3' })
   })
 })
 
@@ -173,6 +309,48 @@ describe('buildVoteMessage', () => {
     expect(value.voter).toBe('verana1member')
     expect(value.option).toBe(VoteOption.VOTE_OPTION_YES)
     expect(value.exec).toBe(Exec.EXEC_TRY)
+  })
+})
+
+describe('delegablePreview', () => {
+  it('describes an operator revoke as irreversible with its warning', () => {
+    const preview = delegablePreview(
+      '/verana.de.v1.MsgRevokeOperatorAuthorization',
+      'operator',
+      membership(),
+      'verana1me',
+      'Revoke',
+      { operator: 'verana1grantee' }
+    )
+    expect(preview.mode).toBe('operator')
+    expect(preview.payer).toBe('verana1me')
+    expect(preview.severity).toBe('irreversible')
+    expect(preview.warning).toMatch(/^Irreversible\./)
+    expect(preview.effect).toBe('Revoke the operator access of verana1grantee on did:web:corp.example.')
+    expect(preview.proposalTitle).toBeUndefined()
+    expect(preview.feeGrant).toEqual({
+      corporationId: 12,
+      grantee: 'verana1me',
+      msgType: '/verana.de.v1.MsgRevokeOperatorAuthorization',
+      granterAddress: POLICY,
+    })
+  })
+
+  it('carries the proposal title only in proposal mode and leaves the repayment unflagged', () => {
+    const preview = delegablePreview(
+      '/verana.td.v1.MsgRepaySlashedTrustDeposit',
+      'proposal',
+      membership(),
+      'verana1me',
+      'Repay',
+      { amount: '2 VNA' }
+    )
+    expect(preview.mode).toBe('proposal')
+    expect(preview.severity).toBeUndefined()
+    expect(preview.warning).toBeUndefined()
+    expect(preview.proposalTitle).toBe('Repay')
+    expect(preview.effect).toBe('Repay 2 VNA of slashed trust deposit for did:web:corp.example.')
+    expect(preview.feeGrant).toBeUndefined()
   })
 })
 

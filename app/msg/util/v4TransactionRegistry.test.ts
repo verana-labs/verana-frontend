@@ -5,7 +5,6 @@ import { buildCreateCorporationMessage, buildGrantOperatorMessages } from '@/msg
 import { buildCredentialSchemaMessage } from '@/msg/actions_hooks/actionCredentialSchema'
 import { buildEcosystemMessage } from '@/msg/actions_hooks/actionEcosystem'
 import { buildParticipantMessage } from '@/msg/actions_hooks/actionParticipant'
-import { buildTrustDepositMessage } from '@/msg/actions_hooks/actionTrustDeposit'
 
 const context = { corporation: 'verana1policy', operator: 'verana1operator' }
 const effectiveFrom = new Date('2026-07-18T00:00:00.000Z')
@@ -17,6 +16,11 @@ const messages: EncodeObject[] = [
       did: 'did:web:corporation.example',
       language: 'en',
       docUrl: 'https://example.com/corporation.pdf',
+      decisionPolicy: {
+        rule: { kind: 'threshold', threshold: '1' },
+        votingPeriodSeconds: 60,
+        minExecutionPeriodSeconds: 0,
+      },
     },
     'verana1operator',
     'sha384-corporation'
@@ -41,7 +45,7 @@ const messages: EncodeObject[] = [
   buildEcosystemMessage(
     {
       msgType: 'MsgAddGovernanceFrameworkDocument',
-      ecosystemId: 1,
+      owner: { kind: 'ecosystem', id: '1' },
       targetVersion: 2,
       docLanguage: 'en',
       docUrl: 'https://example.com/framework-v2.pdf',
@@ -49,7 +53,10 @@ const messages: EncodeObject[] = [
     },
     context
   ),
-  buildEcosystemMessage({ msgType: 'MsgIncreaseActiveGovernanceFrameworkVersion', ecosystemId: 1 }, context),
+  buildEcosystemMessage(
+    { msgType: 'MsgIncreaseActiveGovernanceFrameworkVersion', owner: { kind: 'ecosystem', id: '1' } },
+    context
+  ),
   buildCredentialSchemaMessage(
     {
       msgType: 'MsgCreateCredentialSchema',
@@ -62,6 +69,8 @@ const messages: EncodeObject[] = [
       holderValidationValidityPeriod: 23,
       issuerOnboardingMode: 1,
       verifierOnboardingMode: 1,
+      holderOnboardingMode: 2,
+      digestAlgorithm: 'sha384',
     },
     context
   ),
@@ -136,7 +145,6 @@ const messages: EncodeObject[] = [
   buildParticipantMessage({ msgType: 'MsgRevokeParticipant', id: 1 }, context),
   buildParticipantMessage({ msgType: 'MsgSlashParticipantTrustDeposit', id: 1, amount: 11, reason: 'test' }, context),
   buildParticipantMessage({ msgType: 'MsgRepayParticipantSlashedTrustDeposit', id: 1 }, context),
-  buildTrustDepositMessage({ msgType: 'MsgReclaimTrustDepositYield' }, context),
 ]
 
 describe('dev.25 transaction registries', () => {

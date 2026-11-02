@@ -88,7 +88,7 @@ export function LanguageCombobox({ value, onChange, disabled = false, className 
 
         <ComboboxOptions
           anchor="bottom"
-          className="z-50 max-h-60 w-[var(--input-width)] overflow-auto rounded-lg border border-neutral-20 dark:border-neutral-70 bg-white dark:bg-surface py-1 shadow-lg focus:outline-none"
+          className="z-50 max-h-60 w-[var(--input-width)] overflow-auto rounded-lg border border-neutral-20 dark:border-neutral-70 bg-white dark:bg-surface py-1 shadow-lg focus:outline-hidden"
         >
           {content}
         </ComboboxOptions>

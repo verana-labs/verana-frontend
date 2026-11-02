@@ -3,6 +3,8 @@ import {
   faCircleUser,
   faCompass,
   faGaugeHigh,
+  faGear,
+  faRobot,
   faShieldHalved,
   faTasks,
   IconDefinition,
@@ -48,15 +50,22 @@ export function getNavLinks(pendingCount?: number, pendingVotes?: number): NavLi
       name: resolveTranslatable({ key: 'ecosystemList.title' }, translate) ?? 'My Ecosystems',
       href: '/ecosystems',
       icon: faShieldHalved,
-      iconClass: 'bg-gradient-to-br from-orange-500 to-orange-700 text-white',
+      iconClass: 'bg-linear-to-br/srgb from-orange-500 to-orange-700 text-white',
       featuredService: true,
       description: resolveTranslatable({ key: 'ecosystemList.description' }, translate),
+      requiresCorporation: true,
+    },
+    {
+      name: resolveTranslatable({ key: 'agents.title' }, translate) ?? 'Agents',
+      href: '/agents',
+      icon: faRobot,
+      requiresCorporation: true,
     },
     {
       name: resolveTranslatable({ key: 'discover.title' }, translate) ?? 'Discover & Join',
       href: '/discover',
       icon: faCompass,
-      iconClass: 'bg-gradient-to-br from-blue-500 to-blue-700 text-white',
+      iconClass: 'bg-linear-to-br/srgb from-blue-500 to-blue-700 text-white',
       featuredService: true,
       description: resolveTranslatable({ key: 'discover.description' }, translate),
       availableOffline: true,
@@ -66,7 +75,17 @@ export function getNavLinks(pendingCount?: number, pendingVotes?: number): NavLi
       href: '/pendingtasks',
       icon: faTasks,
       className: 'bg-red-500',
-      count: pendingCount,
+      count:
+        pendingCount === undefined && pendingVotes === undefined
+          ? undefined
+          : (pendingCount ?? 0) + (pendingVotes ?? 0),
+      requiresCorporation: true,
+    },
+    {
+      name: resolveTranslatable({ key: 'navbar.settings.title' }, translate) ?? 'Settings',
+      href: '/settings',
+      icon: faGear,
+      availableOffline: true,
     },
   ]
 }
@@ -74,6 +93,7 @@ export function getNavLinks(pendingCount?: number, pendingVotes?: number): NavLi
 const offlineRoutesAllowed: (string | RegExp)[] = [
   '/dashboard',
   '/discover',
+  '/settings',
   /^\/ecosystems\/[^/]+$/,
   /^\/credential-schemas\/[^/]+$/,
   /^\/participants\/[^/]+$/,

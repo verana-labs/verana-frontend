@@ -44,6 +44,9 @@ next-env.d.ts
 # local tooling
 .claude/
 .playwright-mcp/
+# Next.js 16 writes these on `next dev` when it detects an AI agent
+AGENTS.md
+CLAUDE.md
 
 .test-mnemonic
 playwright-report/

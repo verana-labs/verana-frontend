@@ -16,20 +16,27 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { ReactNode } from 'react'
 import { translate } from '@/i18n/dataview'
+import { formatSchemaAmount, type SchemaPricing } from '@/lib/pricing-asset'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { formatDateTime, formatVNAFromUVNA, shortenMiddle } from '@/util/util'
 import { ParticipantHistory } from '../dataview/datasections/participant'
 
 const tr = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
 
-export default function ParticipantTimeline({ participantHistory }: { participantHistory: ParticipantHistory }) {
+export default function ParticipantTimeline({
+  participantHistory,
+  feePricing,
+}: {
+  participantHistory: ParticipantHistory
+  feePricing?: SchemaPricing | null
+}) {
   const { label, icon, iconBgClass, iconColorClass } = getTimelineStyle(participantHistory.msg)
   const account = participantHistory.account ? shortenMiddle(participantHistory.account, 20) : ''
-  const summary = describeChanges(participantHistory.msg, participantHistory.changes)
+  const summary = describeChanges(participantHistory.msg, participantHistory.changes, feePricing)
 
   return (
     <div className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${iconBgClass}`}>
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${iconBgClass}`}>
         <FontAwesomeIcon icon={icon} className={`text-xs ${iconColorClass}`} />
       </div>
       <div className="flex-1 min-w-0">
@@ -132,7 +139,13 @@ export function getTimelineStyle(msg: string): TimelineStyle {
   }
 }
 
-function describeChanges(msg: string, changes: Record<string, unknown> | unknown): string | null {
+function describeChanges(
+  msg: string,
+  changes: Record<string, unknown> | unknown,
+  feePricing?: SchemaPricing | null
+): string | null {
+  const fee = (value: unknown) =>
+    feePricing ? formatSchemaAmount(String(value), feePricing) : formatVNAFromUVNA(String(value))
   if (!changes || typeof changes !== 'object' || Array.isArray(changes)) return null
   const c = changes as Record<string, unknown>
 
@@ -160,11 +173,10 @@ function describeChanges(msg: string, changes: Record<string, unknown> | unknown
     case 'SetParticipantOPToValidated': {
       const fees: string[] = []
       if (c.validation_fees != null && Number(c.validation_fees) > 0)
-        fees.push(`validation_fees: ${formatVNAFromUVNA(String(c.validation_fees))}`)
-      if (c.issuance_fees != null && Number(c.issuance_fees) > 0)
-        fees.push(`issuance_fees: ${formatVNAFromUVNA(String(c.issuance_fees))}`)
+        fees.push(`validation_fees: ${fee(c.validation_fees)}`)
+      if (c.issuance_fees != null && Number(c.issuance_fees) > 0) fees.push(`issuance_fees: ${fee(c.issuance_fees)}`)
       if (c.verification_fees != null && Number(c.verification_fees) > 0)
-        fees.push(`verification_fees: ${formatVNAFromUVNA(String(c.verification_fees))}`)
+        fees.push(`verification_fees: ${fee(c.verification_fees)}`)
       return fees.length ? `Set ${fees.join(', ')}` : null
     }
     case 'SetParticipantEffectiveUntil': {

@@ -3,28 +3,75 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Image from 'next/image'
 import Link from 'next/link'
+import { VERANA_GRAPH_URL } from '@/config/env'
 import { translate } from '@/i18n/dataview'
+import type { ChainHealth, IndexerHealth } from '@/lib/component-health'
 import { communityLinks, configFooter } from '@/lib/dashlinks'
 import { useComponentsVersion } from '@/providers/components-version-provider'
 import { resolveTranslatable } from '../dataview/types'
+
+const HEALTH_DOT: Record<ChainHealth | IndexerHealth['state'], string> = {
+  synced: 'bg-green-500',
+  crawling: 'bg-green-500',
+  syncing: 'bg-amber-500',
+  stalled: 'bg-amber-500',
+  down: 'bg-red-500',
+  unreachable: 'bg-red-500',
+}
+
+const HEALTH_LABEL: Record<ChainHealth | IndexerHealth['state'], string> = {
+  synced: 'sr-only',
+  crawling: 'sr-only',
+  syncing: 'text-amber-700 dark:text-amber-400',
+  stalled: 'text-amber-700 dark:text-amber-400',
+  down: 'text-red-700 dark:text-red-400',
+  unreachable: 'text-red-700 dark:text-red-400',
+}
+
+function HealthBadge({ state, reason }: { state: ChainHealth | IndexerHealth['state']; reason?: string | null }) {
+  const label = translate(`footer.health.${state}`)
+  return (
+    <span className="inline-flex items-center gap-1" title={reason ?? undefined}>
+      <span aria-hidden="true" className={`inline-block w-1.5 h-1.5 rounded-full ${HEALTH_DOT[state]}`} />
+      <span className={HEALTH_LABEL[state]}>{label}</span>
+    </span>
+  )
+}
 
 export function Footer() {
   const { state } = useComponentsVersion()
 
   return (
-    <div className="flex-shrink-0 px-2 py-4 border-t border-neutral-20 dark:border-neutral-70">
+    <div className="shrink-0 px-2 py-4 border-t border-neutral-20 dark:border-neutral-70">
       {/* Logo & versions */}
       <div className="flex items-center">
-        <Image src={configFooter.img} alt="Verana Logo" width={24} height={24} className="w-6 h-6 mr-2" />
+        <Image src={configFooter.img} alt="Verana Logo" width={24} height={24} className="w-6 h-6 me-2" />
         <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
           {resolveTranslatable({ key: 'footer.title' }, translate)}
         </p>
       </div>
       <div className="mt-1 grid grid-cols-2 text-xs text-neutral-70 dark:text-neutral-70">
         <span>{resolveTranslatable({ key: 'footer.network' }, translate)}</span>
-        <span>{state.ledger.version ?? resolveTranslatable({ key: 'footer.version' }, translate)}</span>
+        <span className="inline-flex items-center gap-1.5">
+          {state.ledger.version ?? resolveTranslatable({ key: 'footer.version' }, translate)}
+          {state.ledger.health ? <HealthBadge state={state.ledger.health} /> : null}
+        </span>
         <span>{resolveTranslatable({ key: 'footer.indexer' }, translate)}</span>
-        <span>{state.indexer.version ?? resolveTranslatable({ key: 'footer.version' }, translate)}</span>
+        <span className="inline-flex items-center gap-1.5">
+          {state.indexer.version ?? resolveTranslatable({ key: 'footer.version' }, translate)}
+          {state.indexer.health ? (
+            <HealthBadge state={state.indexer.health.state} reason={state.indexer.health.reason} />
+          ) : null}
+        </span>
+        {VERANA_GRAPH_URL ? (
+          <>
+            <span>{resolveTranslatable({ key: 'footer.graph' }, translate)}</span>
+            <span className="inline-flex items-center gap-1.5">
+              {state.graph.version ?? resolveTranslatable({ key: 'footer.version' }, translate)}
+              {state.graph.health ? <HealthBadge state={state.graph.health} /> : null}
+            </span>
+          </>
+        ) : null}
         <span>{resolveTranslatable({ key: 'footer.frontend' }, translate)}</span>
         <span>{state.frontend.version ?? resolveTranslatable({ key: 'footer.version' }, translate)}</span>
       </div>

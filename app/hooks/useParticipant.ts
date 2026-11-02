@@ -4,6 +4,7 @@ import deepEqual from 'fast-deep-equal'
 import { useCallback, useEffect, useState } from 'react'
 import { VERANA_REST_ENDPOINT_PARTICIPANT } from '@/config/env'
 import { indexerValidators } from '@/lib/indexer-json'
+import { enrichmentFromTrustData } from '@/lib/resolverClient'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
 import type {
   OnboardingProcessState,
@@ -46,13 +47,6 @@ function optionalAmount(value: unknown, path: string): string | number | undefin
   return value
 }
 
-function optionalNullableBoolean(value: unknown, path: string): boolean | null | undefined {
-  if (value === undefined) return undefined
-  if (value === null) return null
-  if (typeof value !== 'boolean') throw new Error(`Invalid participant response: ${path}`)
-  return value
-}
-
 export function parseParticipantRecord(value: unknown, path = 'participant'): Participant {
   const source = record(value, path)
   const role = string(source.role, `${path}.role`) as ParticipantRole
@@ -69,11 +63,18 @@ export function parseParticipantRecord(value: unknown, path = 'participant'): Pa
     if (!OP_STATES.has(opState)) throw new Error(`Invalid participant response: ${path}.op_state`)
   }
 
+  const did = nullableString(source.did, `${path}.did`)
+
   return {
     id: String(number(source.id, `${path}.id`)),
     schema_id: String(number(source.schema_id, `${path}.schema_id`)),
+    ecosystem_id:
+      source.ecosystem_id === undefined || source.ecosystem_id === null
+        ? source.ecosystem_id
+        : number(source.ecosystem_id, `${path}.ecosystem_id`),
     role,
-    did: nullableString(source.did, `${path}.did`),
+    did,
+    trustData: did === null ? undefined : enrichmentFromTrustData(did, source.trust_data),
     corporation_id: number(source.corporation_id, `${path}.corporation_id`),
     participant_state: state,
     corporation_available_actions: stringArray(
@@ -113,7 +114,6 @@ export function parseParticipantRecord(value: unknown, path = 'participant'): Pa
     weight: optionalAmount(source.weight, `${path}.weight`),
     issued: optionalAmount(source.issued, `${path}.issued`),
     verified: optionalAmount(source.verified, `${path}.verified`),
-    expire_soon: optionalNullableBoolean(source.expire_soon, `${path}.expire_soon`),
   }
 }
 
@@ -123,6 +123,10 @@ export function parseParticipantResponse(payload: unknown): Participant {
     throw new Error('Invalid participant response: missing participant envelope')
   }
   return parseParticipantRecord(envelope.participant)
+}
+
+export function participantDetailUrl(base: string, id: string): string {
+  return `${base}/get/${id}?trust_data=full`
 }
 
 export function mergeParticipantDetailActions(current: Participant, refreshed: Participant): Participant {
@@ -173,13 +177,14 @@ export function useParticipant(id?: string) {
       if (!participantId || !VERANA_REST_ENDPOINT_PARTICIPANT) {
         setParticipant(null)
         setLoading(false)
+        if (participantId) setError('Missing participant endpoint URL')
         return
       }
 
       setError(null)
       setLoading(true)
       try {
-        const response = await fetch(`${VERANA_REST_ENDPOINT_PARTICIPANT}/get/${participantId}`)
+        const response = await fetch(participantDetailUrl(VERANA_REST_ENDPOINT_PARTICIPANT, participantId))
         const json: unknown = await response.json()
         if (!response.ok) {
           const { error, code } = json as ApiErrorResponse

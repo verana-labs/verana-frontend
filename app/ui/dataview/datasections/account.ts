@@ -1,25 +1,15 @@
-import { faCoins, faPlus, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
+import { faCoins, faPlus } from '@fortawesome/free-solid-svg-icons'
+import { createElement, Fragment } from 'react'
 import { Section } from '@/ui/dataview/types'
-import { formatNetwork, formatNumber, formatVNAFromUVNA } from '@/util/util'
+import { formatVNAFromUVNA } from '@/util/util'
 
 const t = (key: string) => ({ key })
 
 //Account data
 export interface AccountData {
   balance: string | null
-  totalTrustDeposit: string | null
-  claimableInterests: string | null
-  reclaimable: string | null
-  message: string | null
-  getVNA?: string // action type
-  claimInterests?: string // action type
-  address: string | null
+  getVNA?: string | null // action type
   network: string | null
-  corporationId: number | null
-  policyAddress: string | null
-  operatorAuthorized: boolean
-  transactionsSent: number | null
-  slashCount: number | null
 }
 
 // Sections configuration for AccountData
@@ -36,21 +26,8 @@ export const accountSections: Section<AccountData>[] = [
         label: t('dataview.account.fields.balance.label'),
         description: t('dataview.account.fields.balance.desc'),
         icon: faCoins,
-        iconClass: 'bg-gradient-to-br from-primary-500 to-primary-700',
+        iconClass: 'bg-linear-to-br/srgb from-primary-500 to-primary-700',
         iconColorClass: 'text-white text-xl',
-        usdValue: true,
-        hasStats: true,
-        format: (value) => formatVNAFromUVNA(String(value)),
-      },
-      {
-        name: 'totalTrustDeposit',
-        type: 'data',
-        label: t('dataview.account.fields.totalTrustDeposit.label'),
-        description: t('dataview.account.fields.totalTrustDeposit.desc'),
-        icon: faShieldHalved,
-        iconClass: 'bg-gradient-to-br from-blue-500 to-blue-700',
-        iconColorClass: 'text-white text-xl',
-        usdValue: true,
         hasStats: true,
         format: (value) => formatVNAFromUVNA(String(value)),
       },
@@ -66,16 +43,7 @@ export const accountSections: Section<AccountData>[] = [
         type: 'action',
         description: t('dataview.account.actions.getVNA.desc'),
         icon: faPlus,
-        iconClass: 'bg-gradient-to-br from-green-500 to-green-700',
-        iconColorClass: 'text-white',
-      },
-      {
-        name: 'claimInterests',
-        label: t('dataview.account.actions.claimInterests.label'),
-        type: 'action',
-        description: t('dataview.account.actions.claimInterests.desc'),
-        icon: faCoins,
-        iconClass: 'bg-gradient-to-br from-orange-500 to-orange-700',
+        iconClass: 'bg-linear-to-br/srgb from-green-500 to-green-700',
         iconColorClass: 'text-white',
       },
     ],
@@ -84,34 +52,22 @@ export const accountSections: Section<AccountData>[] = [
     name: t('dataview.account.sections.accountInformation'),
     sectionBorder: true,
     fields: [
-      { name: 'address', type: 'data', label: t('dataview.account.fields.address') },
       {
         name: 'network',
         label: t('dataview.account.fields.network'),
         type: 'data',
         classField: 'flex items-center space-x-2 px-3 py-1 bg-success-50 dark:bg-success-900/20 rounded-full w-fit',
-        isHtml: true,
-        format: (value) => formatNetwork(String(value)),
-      },
-      {
-        name: 'corporationId',
-        label: t('dataview.account.fields.corporationId'),
-        type: 'data',
-        format: (value) => (value == null ? '' : formatNumber(value, false, true)),
-      },
-      { name: 'policyAddress', label: t('dataview.account.fields.policyAddress'), type: 'data' },
-      { name: 'operatorAuthorized', label: t('dataview.account.fields.operatorAuthorized'), type: 'data' },
-      {
-        name: 'transactionsSent',
-        label: t('dataview.account.fields.transactionsSent'),
-        type: 'data',
-        format: (value) => (value == null ? '' : formatNumber(value, false, true)),
-      },
-      {
-        name: 'slashCount',
-        label: t('dataview.account.fields.slashCount'),
-        type: 'data',
-        format: (value) => (value == null ? '' : formatNumber(value, false, true)),
+        format: (value) =>
+          createElement(
+            Fragment,
+            null,
+            createElement('span', { className: 'relative w-2 h-2 bg-success-500 rounded-full pulse-dot' }),
+            createElement(
+              'span',
+              { className: 'text-sm text-success-700 dark:text-success-300 font-medium' },
+              String(value)
+            )
+          ),
       },
     ],
   },

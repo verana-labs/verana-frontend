@@ -1,16 +1,14 @@
 'use client'
 
-import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { useAccountTxCount } from '@/hooks/useAccountTxCount'
-import { useUserCorporation } from '@/hooks/useUserCorporation'
+import { VERANA_FAUCET_URL } from '@/config/env'
 import { translate } from '@/i18n/dataview'
-import { logger } from '@/lib/logger'
-import { RefreshState } from '@/msg/util/signerUtil'
 import { useAccountCtx } from '@/providers/api-rest-query-provider-context'
-import { useIndexerEvents } from '@/providers/indexer-events-provider'
+import { AccountAddress } from '@/ui/account/account-address'
+import { AccountCorporations } from '@/ui/account/account-corporations'
 import ColumnsDataView from '@/ui/common/data-view-columns'
+import { GET_VNA_ACTION } from '@/ui/common/get-vna'
 import TitleAndButton from '@/ui/common/title-and-button'
 import { AccountData, accountSections } from '@/ui/dataview/datasections/account'
 import { resolveTranslatable } from '@/ui/dataview/types'
@@ -20,57 +18,27 @@ export default function AccountPage() {
   // Only pre-open the "getVNA" action if the URL includes ?getVNA=true
   const openGetVNA = searchParams.get('getVNA') === 'true'
 
-  // Custom hook to fetch account/trust deposit data
   const { accountData, refetch: refetchAccount } = useAccountCtx()
-  const { txCount, refetch: refetchTxCount } = useAccountTxCount()
-  const { actingCorporation, refetch: refetchCorporation } = useUserCorporation()
-  // Refresh account/trust deposit data
   const [refresh, setRefresh] = useState<boolean>(true)
-  const [refreshState, setRefreshState] = useState<RefreshState>({})
-  const { latestProcessedHeight } = useIndexerEvents()
 
   useEffect(() => {
     if (!refresh) return
     ;(async () => {
-      await Promise.all([refetchAccount(), refetchCorporation(), refetchTxCount()])
+      await refetchAccount()
       setRefresh(false)
     })()
-  }, [refresh, refetchAccount, refetchCorporation, refetchTxCount])
-
-  useEffect(() => {
-    if (refreshState.txHeight == null) return
-    logger.info('AccountPage', {
-      txHeight: refreshState.txHeight,
-      latestProcessedHeight,
-      'ss.mmm': new Date().toISOString().slice(17, 23),
-    })
-    if (latestProcessedHeight < refreshState.txHeight) return
-    setRefresh(true)
-  }, [refreshState.txHeight, latestProcessedHeight])
+  }, [refresh, refetchAccount])
 
   // State for processed account data to display in DataView
   const [data, setData] = useState<AccountData>()
 
   useEffect(() => {
     if (accountData) {
-      // Prepare constants and process fields for the UI
-      const typedAccountData = accountData as AccountData
-      const claimableInterests =
-        Number(typedAccountData.claimableInterests) > 0 ? typedAccountData.claimableInterests : null
-      const getVNA = 'GetVNATrustDeposit'
-      const claimInterests = 'MsgReclaimTrustDepositYield'
-      setData({
-        ...typedAccountData,
-        claimableInterests,
-        getVNA,
-        claimInterests,
-        corporationId: actingCorporation?.corporation.id ?? null,
-        policyAddress: actingCorporation?.corporation.policyAddress ?? null,
-        operatorAuthorized: actingCorporation?.operator ?? false,
-        transactionsSent: txCount,
-      })
+      // Per [VFE-PAGE-ACCT-3]: no faucet URL, no Get VNA action.
+      const getVNA = VERANA_FAUCET_URL ? GET_VNA_ACTION : null
+      setData({ ...accountData, getVNA })
     }
-  }, [accountData, actingCorporation, txCount])
+  }, [accountData])
 
   return (
     <>
@@ -78,26 +46,17 @@ export default function AccountPage() {
         title={resolveTranslatable({ key: 'account.title' }, translate) ?? 'Account'}
         description={[resolveTranslatable({ key: 'account.desc' }, translate) ?? '']}
       />
-      <p className="mb-6 -mt-2 text-sm text-gray-500 dark:text-gray-400">
-        {resolveTranslatable({ key: 'account.corporation.moved' }, translate)}{' '}
-        <Link
-          href="/corporation"
-          className="font-medium text-primary-700 dark:text-primary-300 underline underline-offset-2"
-        >
-          {resolveTranslatable({ key: 'account.corporation.moved.link' }, translate)}
-        </Link>
-      </p>
+      <AccountAddress />
       {data && (
         <ColumnsDataView<AccountData>
           sectionsI18n={accountSections}
           data={data}
-          onRefresh={(id?: string, txHeight?: number) => {
-            setRefreshState({ id, txHeight })
-          }}
+          onRefresh={() => setRefresh(true)}
           activeActionField={openGetVNA ? 'getVNA' : undefined}
           loading={false}
         />
       )}
+      <AccountCorporations />
     </>
   )
 }

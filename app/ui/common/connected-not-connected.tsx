@@ -42,8 +42,8 @@ export default function Connected({ isConnected, wallet }: ConnectedProps) {
         </div>
         {isConnected ? (
           <Image
-            src={wallet && wallet.logo ? wallet.logo.toString() : ''}
-            alt={wallet && wallet.prettyName ? wallet.prettyName : ''}
+            src={wallet?.logo ? wallet.logo.toString() : ''}
+            alt={wallet?.prettyName ? wallet.prettyName : ''}
             width={80}
             height={80}
             className="dash-wallet-logo"

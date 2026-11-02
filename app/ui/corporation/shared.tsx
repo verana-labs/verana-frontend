@@ -22,6 +22,18 @@ export function SectionUnavailable() {
   return <p className="text-sm text-amber-700 dark:text-amber-300">{translate('corporation.page.section.error')}</p>
 }
 
+export function PartialNote({ filtered = false }: { filtered?: boolean }) {
+  return (
+    <p className="pb-2 text-xs text-neutral-70 dark:text-neutral-70">
+      {translate(filtered ? 'pagination.loadedOnly' : 'pagination.truncated')}
+    </p>
+  )
+}
+
+export function atLeast(count: number, partial: boolean): string {
+  return partial ? `${count}+` : String(count)
+}
+
 export function Fact({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div>

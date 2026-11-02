@@ -1,38 +1,51 @@
 'use client'
 
-import { faArrowLeft, faArrowUp, faBoxArchive, faPenToSquare, faPlus } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faBoxArchive, faPenToSquare, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { VERANA_REST_ENDPOINT_ECOSYSTEM } from '@/config/env'
 import AddCredentialSchemaPage from '@/credential-schemas/add/add'
+import { useActivityHistory } from '@/hooks/useActivityHistory'
 import { useCredentialSchemas } from '@/hooks/useCredentialSchemas'
 import { useEcosystemData } from '@/hooks/useEcosystemData'
+import { useCorporationRoles } from '@/hooks/useParticipants'
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { useLanguageLabel } from '@/lib/language'
+import { ActivityHistorySection } from '@/ui/common/activity-history-section'
+import { EntityActionButton } from '@/ui/common/capability-button'
 import CsSummaryCard from '@/ui/common/cs-summary-card'
 import { renderActionComponent } from '@/ui/common/data-view-typed'
 import EcosystemHeader from '@/ui/common/ecosystem-header'
 import EgfDocumentsTable from '@/ui/common/egf-documents-table'
 import FieldRow from '@/ui/common/field-row'
+import { GovernanceFrameworkActions } from '@/ui/common/governance-framework-actions'
+import KeysetPagination from '@/ui/common/keyset-pagination'
 import { ModalAction } from '@/ui/common/modal-action'
 import ServiceProviderCard from '@/ui/common/service-provider-card'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { isValidDID } from '@/util/validations'
-
-type GovernanceFrameworkAction = 'MsgAddGovernanceFrameworkDocument' | 'MsgIncreaseActiveGovernanceFrameworkVersion'
 
 export default function EcosystemViewPage() {
   const params = useParams<{ id: string }>()
   const id = params?.id ?? ''
   const router = useRouter()
   const { actingCorporation } = useUserCorporation()
+  const { rolesBySchema, failureReason: rolesFailure } = useCorporationRoles(actingCorporation?.corporation.id)
   const { ecosystem, errorEcosystem, refetch: refetchEcosystem } = useEcosystemData(id)
+  const history = useActivityHistory(
+    VERANA_REST_ENDPOINT_ECOSYSTEM && id ? `${VERANA_REST_ENDPOINT_ECOSYSTEM}/history/${id}` : undefined
+  )
   const {
     credentialSchemas,
     errorCredentialSchemas,
     refetch: refetchCredentialSchemas,
+    hasNext: schemasHasNext,
+    hasPrevious: schemasHasPrevious,
+    nextPage: schemasNextPage,
+    previousPage: schemasPreviousPage,
   } = useCredentialSchemas(id, false, false)
 
   const [showArchived, setShowArchived] = useState(false)
@@ -40,11 +53,11 @@ export default function EcosystemViewPage() {
   const [editDid, setEditDid] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [archiveActive, setArchiveActive] = useState(false)
-  const [governanceFrameworkAction, setGovernanceFrameworkAction] = useState<GovernanceFrameworkAction | null>(null)
   const [addCredentialSchema, setAddCredentialSchema] = useState(false)
 
   const refreshEcosystem = () => {
     void refetchEcosystem()
+    void history.refetch()
   }
   const refreshCredentialSchemas = () => {
     void refetchCredentialSchemas()
@@ -88,13 +101,8 @@ export default function EcosystemViewPage() {
     )
   }
 
-  const canManage = actingCorporation?.corporation.id === ecosystem.corporationId && actingCorporation.operator
+  const owner = actingCorporation?.corporation.id === ecosystem.corporationId
   const isArchived = Boolean(ecosystem.archived)
-  const lastVersion = ecosystem.versions.reduce(
-    (latest, version) => Math.max(latest, version.version),
-    ecosystem.activeVersion
-  )
-  const canIncreaseGovernanceFramework = canManage && lastVersion > ecosystem.activeVersion
   const archiveMessageType = isArchived ? 'MsgUnarchiveEcosystem' : 'MsgArchiveEcosystem'
   const archiveTitleKey = isArchived
     ? 'dataview.ecosystem.actions.unarchiveEcosystem'
@@ -168,30 +176,28 @@ export default function EcosystemViewPage() {
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
             {t('dataview.section.mutable', 'Mutable Configuration')}
           </h2>
-          {canManage && !editMode ? (
+          {owner && !editMode ? (
             <div className="flex flex-col sm:flex-row gap-2">
-              <button
-                type="button"
+              <EntityActionButton
+                msgType="MsgUpdateEcosystem"
+                icon={faPenToSquare}
+                label={t('dataview.ecosystem.actions.updateEcosystem', 'Edit Configuration')}
                 onClick={startEdit}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors"
-              >
-                <FontAwesomeIcon icon={faPenToSquare} />
-                <span>{t('dataview.ecosystem.actions.updateEcosystem', 'Edit Configuration')}</span>
-              </button>
-              <button
-                type="button"
+              />
+              <EntityActionButton
+                msgType={archiveMessageType}
+                icon={faBoxArchive}
+                label={
+                  isArchived
+                    ? t('dataview.ecosystem.actions.unarchiveEcosystem', 'Unarchive')
+                    : t('dataview.ecosystem.actions.archiveEcosystem', 'Archive')
+                }
                 onClick={() => setArchiveActive(true)}
                 className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors ${
                   isArchived ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600 hover:bg-gray-700'
                 }`}
-              >
-                <FontAwesomeIcon icon={faBoxArchive} />
-                <span>
-                  {isArchived
-                    ? t('dataview.ecosystem.actions.unarchiveEcosystem', 'Unarchive')
-                    : t('dataview.ecosystem.actions.archiveEcosystem', 'Archive')}
-                </span>
-              </button>
+              />
             </div>
           ) : null}
         </div>
@@ -251,32 +257,16 @@ export default function EcosystemViewPage() {
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
             {t('datalist.egf.title', 'Governance Framework Documents')}
           </h2>
-          {canManage ? (
-            <div className="flex flex-col sm:flex-row gap-2">
-              <button
-                type="button"
-                onClick={() => setGovernanceFrameworkAction('MsgAddGovernanceFrameworkDocument')}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium"
-              >
-                <FontAwesomeIcon icon={faPlus} />
-                <span>{t('dataview.ecosystem.actions.addGovernanceFrameworkDocument', 'Add New Document')}</span>
-              </button>
-              {canIncreaseGovernanceFramework ? (
-                <button
-                  type="button"
-                  onClick={() => setGovernanceFrameworkAction('MsgIncreaseActiveGovernanceFrameworkVersion')}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium"
-                >
-                  <FontAwesomeIcon icon={faArrowUp} />
-                  <span>
-                    {t(
-                      'dataview.ecosystem.actions.increaseActiveGovernanceFrameworkVersion',
-                      'Increase Active Version'
-                    )}
-                  </span>
-                </button>
-              ) : null}
-            </div>
+          {owner ? (
+            <GovernanceFrameworkActions
+              target={{
+                owner: { kind: 'ecosystem', id: ecosystem.id },
+                language: ecosystem.language,
+                activeVersion: ecosystem.activeVersion,
+                versions: ecosystem.versions,
+              }}
+              onRefresh={refreshEcosystem}
+            />
           ) : null}
         </div>
         <EgfDocumentsTable versions={ecosystem.versions} activeVersion={ecosystem.activeVersion} />
@@ -293,25 +283,27 @@ export default function EcosystemViewPage() {
                 type="checkbox"
                 checked={showArchived}
                 onChange={(event) => setShowArchived(event.target.checked)}
-                className="w-4 h-4 text-primary-600 border-neutral-20 rounded focus:ring-2 focus:ring-primary-500"
+                className="w-4 h-4 text-primary-600 border-neutral-20 rounded checked:border-transparent focus:ring-2 focus:ring-primary-500"
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">
                 {t('datatable.cs.filter.showArchived', 'Show Archived')}
               </span>
             </label>
           </div>
-          {canManage ? (
-            <button
-              type="button"
+          {owner ? (
+            <EntityActionButton
+              msgType="MsgCreateCredentialSchema"
+              icon={faPlus}
+              label={t('button.cs.add', 'New Schema')}
               onClick={() => setAddCredentialSchema(true)}
               className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium"
-            >
-              <FontAwesomeIcon icon={faPlus} />
-              <span>{t('button.cs.add', 'New Schema')}</span>
-            </button>
+            />
           ) : null}
         </div>
         {errorCredentialSchemas ? <div className="error-pane mb-4">{errorCredentialSchemas}</div> : null}
+        {rolesFailure ? (
+          <div className="error-pane mb-4">{translate('ecosystem.roles.failed', { reason: rolesFailure })}</div>
+        ) : null}
         {visibleSchemas.length === 0 ? (
           <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 p-8 text-center text-sm text-neutral-70">
             {t('datatable.cs.empty', 'No credential schemas')}
@@ -324,33 +316,25 @@ export default function EcosystemViewPage() {
                 credentialSchema={credentialSchema}
                 onView={() => router.push(`/credential-schemas/${credentialSchema.id}`)}
                 onParticipants={() => router.push(`/participants/${credentialSchema.id}`)}
+                roles={rolesBySchema[credentialSchema.id]}
               />
             ))}
           </div>
         )}
+        <KeysetPagination
+          showing={visibleSchemas.length}
+          itemsLabel={t('datatable.cs.title', 'Credential Schemas')}
+          hasPrevious={schemasHasPrevious}
+          hasNext={schemasHasNext}
+          onPrevious={schemasPreviousPage}
+          onNext={schemasNextPage}
+        />
       </section>
+
+      <ActivityHistorySection history={history} />
 
       <ModalAction isActive={archiveActive} titleKey={archiveTitleKey} onClose={() => setArchiveActive(false)}>
         {renderActionComponent(archiveMessageType, () => setArchiveActive(false), ecosystem, refreshEcosystem)}
-      </ModalAction>
-
-      <ModalAction
-        isActive={governanceFrameworkAction !== null}
-        titleKey={
-          governanceFrameworkAction === 'MsgIncreaseActiveGovernanceFrameworkVersion'
-            ? 'dataview.ecosystem.actions.increaseActiveGovernanceFrameworkVersion'
-            : 'dataview.ecosystem.actions.addGovernanceFrameworkDocument'
-        }
-        onClose={() => setGovernanceFrameworkAction(null)}
-      >
-        {governanceFrameworkAction
-          ? renderActionComponent(
-              governanceFrameworkAction,
-              () => setGovernanceFrameworkAction(null),
-              { ...ecosystem, lastVersion },
-              refreshEcosystem
-            )
-          : null}
       </ModalAction>
 
       {addCredentialSchema ? (

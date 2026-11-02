@@ -4,21 +4,29 @@ import type { EncodeObject } from '@cosmjs/proto-signing'
 import { faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useState } from 'react'
-import type { GroupMemberRow, GroupPolicy } from '@/hooks/useCorporationDetails'
+import type { FeeGrantRow, GroupMemberRow, GroupPolicy, OperatorAuthorizationRow } from '@/hooks/useCorporationDetails'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
+import { currentDecisionPolicyDraft, formatDecisionRule, readDecisionPolicyDraft } from '@/lib/decision-policy'
+import { grantOptionLines, readGrantOptions } from '@/lib/operator-grant'
+import type { CostLine } from '@/lib/tx-preview'
 import {
   buildGrantOperatorMessage,
   buildRevokeOperatorMessage,
   buildUpdateCorporationMessage,
   buildUpdateDecisionPolicyMessage,
   buildUpdateMembersMessage,
+  decisionPolicyChangeLines,
   type GroupMemberUpdate,
+  memberChangeLines,
   useCorporationManage,
 } from '@/msg/actions_hooks/actionCorporationManage'
 import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessageTypes'
 import { AddressIssueNote, addressIssue } from '@/ui/common/address-issue'
-import { ThresholdHint } from '@/ui/common/threshold-hint'
+import { DecisionPolicyFields } from '@/ui/common/decision-policy-fields'
+import { OperatorGrantOptionsFields, useOperatorGrantDraft } from '@/ui/common/operator-grant-options'
+import { MsgTypeChips } from '@/ui/corporation/operators'
+import { PartialNote } from '@/ui/corporation/shared'
 import { isValidDID } from '@/util/validations'
 
 const KINDS = ['grant', 'revoke', 'members', 'policy', 'rotate'] as const
@@ -31,31 +39,37 @@ export function ProposalComposer({
   membership,
   policy,
   members,
+  authorizations,
+  feeGrants,
+  partialGrants,
   onDone,
   onClose,
 }: {
   membership: CorporationMembership
   policy: GroupPolicy
   members: GroupMemberRow[]
+  authorizations: OperatorAuthorizationRow[]
+  feeGrants: FeeGrantRow[]
+  partialGrants: boolean
   onDone: () => void
   onClose: () => void
 }) {
   const manage = useCorporationManage(onDone)
   const [kind, setKind] = useState<ComposerKind>('grant')
-  const [grantee, setGrantee] = useState('')
-  const [msgTypes, setMsgTypes] = useState<string[]>([...OPERATOR_GRANT_MESSAGE_TYPES])
+  const draft = useOperatorGrantDraft(feeGrants, authorizations)
+  const { msgTypes, setMsgTypes } = draft
   const [memberUpdates, setMemberUpdates] = useState<GroupMemberUpdate[]>(
     members.map((member) => ({ address: member.address, weight: member.weight }))
   )
-  const [threshold, setThreshold] = useState(policy.threshold ?? '1')
-  const [votingPeriod, setVotingPeriod] = useState(policy.votingPeriod?.replace(/s$/, '') ?? '60')
+  const [policyDraft, setPolicyDraft] = useState(() => currentDecisionPolicyDraft(policy))
   const [did, setDid] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   const policyAddress = membership.corporation.policyAddress
-  const target = grantee.trim()
+  const target = draft.target
   const granteeIssue = addressIssue(target, [])
   const granteeValid = target.length > 0 && granteeIssue === null
+  const grantReading = readGrantOptions(draft.options)
   const trimmedUpdates = memberUpdates.map((update) => ({ ...update, address: update.address.trim() }))
   const updateIssues = trimmedUpdates.map((update, index) =>
     addressIssue(
@@ -69,26 +83,35 @@ export function ProposalComposer({
       (update, index) => update.address.length > 0 && updateIssues[index] === null && /^\d+$/.test(update.weight)
     ) &&
     trimmedUpdates.some((update) => update.weight !== '0')
-  const policyValid = /^[1-9]\d*$/.test(threshold) && /^[1-9]\d*$/.test(votingPeriod)
+  const decisionPolicy = readDecisionPolicyDraft(policyDraft)
 
   const ready =
     kind === 'grant'
-      ? granteeValid && msgTypes.length > 0
+      ? granteeValid && msgTypes.length + draft.keptMsgTypes.length > 0 && grantReading.issue === null
       : kind === 'revoke'
         ? granteeValid
         : kind === 'members'
           ? membersValid
           : kind === 'policy'
-            ? policyValid
+            ? decisionPolicy !== null
             : isValidDID(did.trim())
 
-  function compose(): { message: EncodeObject; title: string } {
+  function compose(): { message: EncodeObject; title: string; costLines?: CostLine[]; effectKey?: string } {
     switch (kind) {
-      case 'grant':
+      case 'grant': {
+        if (!grantReading.options) throw new Error(translate(grantReading.issue))
         return {
-          message: buildGrantOperatorMessage(membership, target, msgTypes, policyAddress),
+          message: buildGrantOperatorMessage(
+            membership,
+            target,
+            [...msgTypes, ...draft.keptMsgTypes],
+            policyAddress,
+            grantReading.options
+          ),
           title: `Grant operator authorization to ${target}`,
+          costLines: grantOptionLines(grantReading.options, draft.existingFeeGrant !== undefined),
         }
+      }
       case 'revoke':
         return {
           message: buildRevokeOperatorMessage(membership, target, policyAddress),
@@ -98,12 +121,21 @@ export function ProposalComposer({
         return {
           message: buildUpdateMembersMessage(membership, policy.groupId, trimmedUpdates),
           title: 'Update the group members',
+          costLines: memberChangeLines(members, trimmedUpdates),
+          effectKey: 'txconfirm.effect.proposal.members',
         }
-      case 'policy':
+      case 'policy': {
+        if (!decisionPolicy) throw new Error('Invalid decision policy')
+        const { rule, votingPeriodSeconds, minExecutionPeriodSeconds } = decisionPolicy
+        const share = `${formatDecisionRule(rule)} of ${rule.kind === 'threshold' ? policy.totalWeight : 'the total weight'}`
+        const delay = minExecutionPeriodSeconds > 0 ? `, executable ${minExecutionPeriodSeconds}s after submission` : ''
         return {
-          message: buildUpdateDecisionPolicyMessage(membership, threshold, Number(votingPeriod)),
-          title: `Set the decision policy to ${threshold} of ${policy.totalWeight} over ${votingPeriod}s`,
+          message: buildUpdateDecisionPolicyMessage(membership, decisionPolicy),
+          title: `Set the decision policy to ${share} over ${votingPeriodSeconds}s${delay}`,
+          costLines: decisionPolicyChangeLines(policy, decisionPolicy),
+          effectKey: 'txconfirm.effect.proposal.policy',
         }
+      }
       default:
         return {
           message: buildUpdateCorporationMessage(membership, did.trim(), policyAddress),
@@ -115,8 +147,11 @@ export function ProposalComposer({
   async function submit() {
     setSubmitting(true)
     try {
-      const { message, title } = compose()
-      if (await manage.propose(membership, message, title)) onClose()
+      const { message, title, costLines, effectKey } = compose()
+      if (await manage.propose(membership, message, title, costLines, effectKey)) {
+        draft.reset()
+        onClose()
+      }
     } finally {
       setSubmitting(false)
     }
@@ -147,8 +182,8 @@ export function ProposalComposer({
         <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block max-w-xl mt-3">
           {translate('corporation.composer.grantee')}
           <input
-            value={grantee}
-            onChange={(event) => setGrantee(event.target.value)}
+            value={draft.grantee}
+            onChange={(event) => draft.setGrantee(event.target.value)}
             placeholder="verana1…"
             className={inputClass}
           />
@@ -180,7 +215,25 @@ export function ProposalComposer({
               </label>
             ))}
           </div>
+          {draft.keptMsgTypes.length > 0 ? (
+            <div className="mt-2 space-y-2">
+              <p className="text-xs text-gray-500 dark:text-gray-400">{translate('corporation.page.grant.kept')}</p>
+              <MsgTypeChips typeUrls={draft.keptMsgTypes} />
+            </div>
+          ) : null}
         </fieldset>
+      ) : null}
+
+      {kind === 'grant' ? (
+        <div className="mt-3">
+          {partialGrants ? <PartialNote /> : null}
+          <OperatorGrantOptionsFields
+            value={draft.options}
+            onChange={draft.setOptions}
+            replacesFeeGrant={draft.existingFeeGrant !== undefined}
+          />
+          <AddressIssueNote issue={grantReading.issue} />
+        </div>
       ) : null}
 
       {kind === 'members' ? (
@@ -238,21 +291,11 @@ export function ProposalComposer({
 
       {kind === 'policy' ? (
         <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-xl">
-          <div>
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {translate('corporation.page.threshold')}
-              <input value={threshold} onChange={(event) => setThreshold(event.target.value)} className={inputClass} />
-            </label>
-            <ThresholdHint threshold={Number(threshold)} totalWeight={Number(policy.totalWeight)} />
-          </div>
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {translate('corporation.wizard.votingperiod')}
-            <input
-              value={votingPeriod}
-              onChange={(event) => setVotingPeriod(event.target.value)}
-              className={inputClass}
-            />
-          </label>
+          <DecisionPolicyFields
+            value={policyDraft}
+            onChange={setPolicyDraft}
+            totalWeight={Number(policy.totalWeight)}
+          />
         </div>
       ) : null}
 

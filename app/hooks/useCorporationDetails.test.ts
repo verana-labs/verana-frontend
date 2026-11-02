@@ -9,14 +9,19 @@ vi.mock('@/config/env', () => ({
 
 import { logger } from '@/lib/logger'
 import {
+  corporationFeeGrantsUrl,
   fetchCorporationHistory,
+  fetchProposalVotes,
+  parseCorporationFeeGrants,
+  parseGovernance,
   parseGroup,
-  parseHistory,
   parseOperatorAuthorizations,
   parseProfile,
   parseProposals,
   parseTrustDeposit,
   parseVsOperatorAuthorizations,
+  proposalExecutableFrom,
+  proposalTallyScale,
 } from './useCorporationDetails'
 
 describe('parseProfile', () => {
@@ -43,6 +48,96 @@ describe('parseProfile', () => {
 
   it('rejects a payload without the corporation envelope', () => {
     expect(() => parseProfile({})).toThrow('corporation')
+  })
+})
+
+describe('parseGovernance', () => {
+  const corporation = {
+    id: 1,
+    did: 'did:web:keplr-corp-0929.devnet.verana.network',
+    policy_address: 'verana1afk9zr2hn2jsac63h4hm60vl9z3e5u69gndzf7c99cqge3vzwjzsh3z8fv',
+    language: 'en',
+    active_version: 1,
+    created: '2026-09-29T10:21:17.695Z',
+    modified: '2026-09-29T10:21:17.695Z',
+  }
+  const active = {
+    id: 1,
+    corporation_id: 1,
+    ecosystem_id: null,
+    version: 1,
+    created: '2026-09-29T10:21:17.695Z',
+    active_since: '2026-09-29T10:21:17.695Z',
+    gfv_id: 1,
+    documents: [
+      {
+        id: 1,
+        gfv_id: 1,
+        language: 'en',
+        url: 'https://raw.githubusercontent.com/verana-labs/verana-spec/main/README.md',
+        digest_sri: 'sha384-S8zSx8Po4dAMgxTyw/W2fksmPVbEwSZpNS/UqbSIKNGK7OUbRviXrBoM6PaJVIAg',
+        created: '2026-09-29T10:21:17.695Z',
+        gfd_id: 1,
+      },
+    ],
+  }
+  const draft = {
+    id: 9,
+    corporation_id: 1,
+    ecosystem_id: null,
+    version: 2,
+    created: '2026-10-01T08:00:00.000Z',
+    active_since: null,
+    documents: [{ id: 12, language: 'es', url: 'https://example.com/cgf-v2-es.md', digest_sri: 'sha384-draft' }],
+  }
+
+  it('reads the live CGF versions, drafts included', () => {
+    expect(
+      parseGovernance({ corporation: { ...corporation, versions: [active, draft] }, block_height: 57429 })
+    ).toEqual({
+      activeVersion: 1,
+      versions: [
+        {
+          id: '1',
+          version: 1,
+          activeSince: '2026-09-29T10:21:17.695Z',
+          documents: [
+            {
+              id: '1',
+              url: 'https://raw.githubusercontent.com/verana-labs/verana-spec/main/README.md',
+              language: 'en',
+              digestSri: 'sha384-S8zSx8Po4dAMgxTyw/W2fksmPVbEwSZpNS/UqbSIKNGK7OUbRviXrBoM6PaJVIAg',
+            },
+          ],
+        },
+        {
+          id: '9',
+          version: 2,
+          activeSince: null,
+          documents: [{ id: '12', url: 'https://example.com/cgf-v2-es.md', language: 'es', digestSri: 'sha384-draft' }],
+        },
+      ],
+    })
+  })
+
+  it('rejects a response without versions or active version', () => {
+    expect(() => parseGovernance({ corporation })).toThrow('corporation.versions')
+    expect(() =>
+      parseGovernance({ corporation: { ...corporation, active_version: null, versions: [active] } })
+    ).toThrow('corporation.active_version')
+  })
+
+  it('rejects an activated version without an activation date', () => {
+    expect(() =>
+      parseGovernance({ corporation: { ...corporation, versions: [{ ...active, active_since: null }] } })
+    ).toThrow('corporation.versions[0].active_since')
+  })
+
+  it('rejects a document without a url', () => {
+    const broken = { ...draft, documents: [{ id: 12, language: 'es', digest_sri: 'sha384-draft' }] }
+    expect(() => parseGovernance({ corporation: { ...corporation, versions: [active, broken] } })).toThrow(
+      'corporation.versions[1].documents[0].url'
+    )
   })
 })
 
@@ -76,7 +171,38 @@ describe('parseGroup', () => {
       { address: 'verana1aaa', weight: '3', addedAt: '2026-08-25T20:34:20.109Z' },
       { address: 'verana1bbb', weight: '2', addedAt: null },
     ])
-    expect(policy).toEqual({ threshold: '3', votingPeriod: '300s', totalWeight: '5', groupId: 12 })
+    expect(policy).toEqual({
+      threshold: '3',
+      percentage: null,
+      votingPeriod: '300s',
+      minExecutionPeriod: '0s',
+      totalWeight: '5',
+      groupId: 12,
+      groupVersion: 2,
+      policyVersion: 2,
+    })
+  })
+
+  it('reads a percentage policy and its minimum execution period', () => {
+    const percentage = {
+      group: {
+        ...payload.group,
+        policy: {
+          ...payload.group.policy,
+          decision_policy: {
+            '@type': '/cosmos.group.v1.PercentageDecisionPolicy',
+            percentage: '0.5',
+            windows: { voting_period: '86400s', min_execution_period: '3600s' },
+          },
+        },
+      },
+    }
+    expect(parseGroup(percentage).policy).toMatchObject({
+      threshold: null,
+      percentage: '0.5',
+      votingPeriod: '86400s',
+      minExecutionPeriod: '3600s',
+    })
   })
 
   it('tolerates an empty member list', () => {
@@ -114,17 +240,146 @@ describe('parseTrustDeposit', () => {
 })
 
 describe('parseOperatorAuthorizations', () => {
-  it('keeps every grant row with its message types', () => {
+  it('keeps every grant row with its message types and no limits when the indexer omits them', () => {
     const rows = parseOperatorAuthorizations({
       authorizations: [
         { id: 11, corporation_id: 12, operator: 'verana1op', msg_types: ['/verana.ec.v1.MsgCreateEcosystem'] },
       ],
     })
-    expect(rows).toEqual([{ id: 11, operator: 'verana1op', msgTypes: ['/verana.ec.v1.MsgCreateEcosystem'] }])
+    expect(rows).toEqual([
+      {
+        id: 11,
+        operator: 'verana1op',
+        msgTypes: ['/verana.ec.v1.MsgCreateEcosystem'],
+        spendLimit: null,
+        remainingSpend: null,
+        expiration: null,
+        period: null,
+      },
+    ])
+  })
+
+  it('reads the spend limit, remaining spend, expiration and period', () => {
+    const [row] = parseOperatorAuthorizations({
+      authorizations: [
+        {
+          id: 3,
+          corporation_id: 13,
+          operator: 'verana1op',
+          msg_types: [],
+          spend_limit: [{ denom: 'uvna', amount: '5000000' }],
+          remaining_spend: [{ denom: 'uvna', amount: 3500000 }],
+          expiration: '2026-12-01T00:00:00.000Z',
+          period: '2592000s',
+        },
+      ],
+    })
+    expect(row).toMatchObject({
+      spendLimit: [{ denom: 'uvna', amount: '5000000' }],
+      remainingSpend: [{ denom: 'uvna', amount: '3500000' }],
+      expiration: '2026-12-01T00:00:00.000Z',
+      period: '2592000s',
+    })
+  })
+
+  it('reads a missing remaining spend under a spend limit as exhausted, per denom', () => {
+    const [exhausted, partial] = parseOperatorAuthorizations({
+      authorizations: [
+        { id: 3, operator: 'verana1op', msg_types: [], spend_limit: [{ denom: 'uvna', amount: '5000000' }] },
+        {
+          id: 4,
+          operator: 'verana1op2',
+          msg_types: [],
+          spend_limit: [
+            { denom: 'uvna', amount: '5000000' },
+            { denom: 'uother', amount: '7' },
+          ],
+          remaining_spend: [{ denom: 'uother', amount: '3' }],
+        },
+      ],
+    })
+    expect(exhausted.remainingSpend).toEqual([{ denom: 'uvna', amount: '0' }])
+    expect(partial.remainingSpend).toEqual([
+      { denom: 'uvna', amount: '0' },
+      { denom: 'uother', amount: '3' },
+    ])
+    expect(
+      parseCorporationFeeGrants({
+        fee_grants: [
+          { grantee: 'verana1op', msg_types: [], spend_limit: [{ denom: 'uvna', amount: '1' }], remaining_spend: null },
+        ],
+      })[0].remainingSpend
+    ).toEqual([{ denom: 'uvna', amount: '0' }])
+  })
+
+  it('treats an empty spend limit as unlimited and drops its remaining spend', () => {
+    const [row] = parseOperatorAuthorizations({
+      authorizations: [{ id: 3, operator: 'verana1op', msg_types: [], spend_limit: [], remaining_spend: [] }],
+    })
+    expect(row).toMatchObject({ spendLimit: null, remainingSpend: null })
+  })
+
+  it('rejects a malformed spend limit amount', () => {
+    expect(() =>
+      parseOperatorAuthorizations({
+        authorizations: [
+          { id: 3, operator: 'verana1op', msg_types: [], spend_limit: [{ denom: 'uvna', amount: '-1' }] },
+        ],
+      })
+    ).toThrow('authorizations[0].spend_limit[0].amount')
   })
 
   it('returns an empty list when the envelope has no rows', () => {
     expect(parseOperatorAuthorizations({ authorizations: [] })).toEqual([])
+  })
+})
+
+describe('parseCorporationFeeGrants', () => {
+  it('reads the live fee grant shape, periodic or not', () => {
+    const rows = parseCorporationFeeGrants({
+      fee_grants: [
+        {
+          id: 21,
+          grantor_corporation_id: 5,
+          grantee: 'verana1vs',
+          msg_types: ['/verana.pp.v1.MsgTriggerResolver'],
+          spend_limit: [{ denom: 'uvna', amount: '100000000' }],
+          remaining_spend: [{ denom: 'uvna', amount: '98483858' }],
+          expiration: '2026-09-30T18:45:06.582Z',
+          period: '86400s',
+        },
+        { id: 10, grantor_corporation_id: 5, grantee: 'verana1op', msg_types: ['/verana.ec.v1.MsgCreateEcosystem'] },
+      ],
+    })
+    expect(rows).toEqual([
+      {
+        grantee: 'verana1vs',
+        msgTypes: ['/verana.pp.v1.MsgTriggerResolver'],
+        spendLimit: [{ denom: 'uvna', amount: '100000000' }],
+        remainingSpend: [{ denom: 'uvna', amount: '98483858' }],
+        expiration: '2026-09-30T18:45:06.582Z',
+        period: '86400s',
+      },
+      {
+        grantee: 'verana1op',
+        msgTypes: ['/verana.ec.v1.MsgCreateEcosystem'],
+        spendLimit: null,
+        remainingSpend: null,
+        expiration: null,
+        period: null,
+      },
+    ])
+  })
+
+  it('returns an empty list without rows and rejects a grant without its grantee', () => {
+    expect(parseCorporationFeeGrants({ fee_grants: [] })).toEqual([])
+    expect(() => parseCorporationFeeGrants({ fee_grants: [{ msg_types: [] }] })).toThrow('fee_grants[0].grantee')
+  })
+
+  it('asks for the active grants of the corporation', () => {
+    expect(corporationFeeGrantsUrl(13)).toBe(
+      'https://indexer.example/v4/delegation/fee-grants?grantor_corporation_id=13&only_active=true'
+    )
   })
 })
 
@@ -140,8 +395,11 @@ describe('parseVsOperatorAuthorizations', () => {
             {
               participant_id: 102,
               msg_types: ['/verana.pp.v1.MsgTriggerResolver'],
+              spend_limit: [{ denom: 'uvna', amount: '5000000' }],
+              remaining_spend: [{ denom: 'uvna', amount: '4250000' }],
               with_feegrant: true,
               expiration: '2026-08-27T12:11:01.742Z',
+              period: '2592000s',
             },
             {
               participant_id: 98,
@@ -158,13 +416,23 @@ describe('parseVsOperatorAuthorizations', () => {
         vsOperator: 'verana1vs',
         participantId: 102,
         msgTypes: ['/verana.pp.v1.MsgTriggerResolver'],
+        spendLimit: [{ denom: 'uvna', amount: '5000000' }],
+        remainingSpend: [{ denom: 'uvna', amount: '4250000' }],
+        feeSpendLimit: null,
+        withFeegrant: true,
         expiration: '2026-08-27T12:11:01.742Z',
+        period: '2592000s',
       },
       {
         vsOperator: 'verana1vs',
         participantId: 98,
         msgTypes: ['/verana.pp.v1.MsgCreateOrUpdateParticipantSession'],
+        spendLimit: null,
+        remainingSpend: null,
+        feeSpendLimit: null,
+        withFeegrant: true,
         expiration: null,
+        period: null,
       },
     ])
   })
@@ -204,6 +472,8 @@ describe('parseProposals', () => {
       executorResult: 'SUCCESS',
       proposers: ['verana1aaa'],
       tally: { yes: 3, no: 0, abstain: 0, veto: 0 },
+      groupVersion: 2,
+      policyVersion: 2,
     })
     expect(rows[0].messages[0]['@type']).toBe('/verana.de.v1.MsgGrantOperatorAuthorization')
   })
@@ -220,6 +490,8 @@ describe('parseProposals', () => {
       proposers: [],
       messages: [],
       tally: { yes: 0, no: 2, abstain: 1, veto: 0 },
+      groupVersion: null,
+      policyVersion: null,
     })
   })
 
@@ -228,56 +500,115 @@ describe('parseProposals', () => {
   })
 })
 
-describe('parseHistory', () => {
-  it('reads the live activity shape newest first and tolerates a missing account', () => {
-    const rows = parseHistory({
-      entity_type: 'Corporation',
-      entity_id: '13',
-      activity: [
-        {
-          id: 1,
-          timestamp: '2026-08-30T09:00:00Z',
-          block_height: 404000,
-          entity_type: 'Corporation',
-          entity_id: '13',
-          msg: 'SlashTrustDeposit',
-          changes: null,
-        },
-        {
-          id: 3,
-          timestamp: '2026-09-01T11:00:00Z',
-          block_height: 405300,
-          entity_type: 'Corporation',
-          entity_id: '13',
-          msg: 'UpdateCorporation',
-          changes: { did: 'did:web:acme-trust.ch' },
-          account: 'verana1policy',
-        },
-        {
-          id: 2,
-          timestamp: '2026-09-01T10:00:00Z',
-          block_height: 405000,
-          entity_type: 'Corporation',
-          entity_id: '13',
-          msg: 'CreateCorporation',
-          changes: { did: 'did:web:old.example' },
-          account: 'verana1aaa',
-        },
-      ],
-    })
-    expect(rows.map((row) => row.msg)).toEqual(['UpdateCorporation', 'CreateCorporation', 'SlashTrustDeposit'])
-    expect(rows[2]).toEqual({
-      id: 1,
-      timestamp: '2026-08-30T09:00:00Z',
-      blockHeight: 404000,
-      msg: 'SlashTrustDeposit',
-      account: null,
-      changes: {},
+describe('proposalTallyScale', () => {
+  const policy = {
+    threshold: '2',
+    percentage: null,
+    votingPeriod: '300s',
+    minExecutionPeriod: '0s',
+    totalWeight: '3',
+    groupId: 12,
+    groupVersion: 4,
+    policyVersion: 3,
+  }
+
+  it('scales a proposal decided on the current group and policy against them', () => {
+    expect(proposalTallyScale({ status: 'ACCEPTED', groupVersion: 4, policyVersion: 3 }, policy)).toEqual({
+      total: 3,
+      threshold: 2,
+      percentage: null,
     })
   })
 
-  it('rejects an envelope without the activity list', () => {
-    expect(() => parseHistory({ history: [] })).toThrow('activity')
+  it('drops the total once the members changed and the threshold once the policy changed', () => {
+    expect(proposalTallyScale({ status: 'ACCEPTED', groupVersion: 3, policyVersion: 3 }, policy)).toEqual({
+      total: null,
+      threshold: 2,
+      percentage: null,
+    })
+    expect(proposalTallyScale({ status: 'REJECTED', groupVersion: 4, policyVersion: 2 }, policy)).toEqual({
+      total: 3,
+      threshold: null,
+      percentage: null,
+    })
+  })
+
+  it('places a percentage marker in weight units while the total is known', () => {
+    const percentage = { ...policy, threshold: null, percentage: '0.7' }
+    expect(proposalTallyScale({ status: 'ACCEPTED', groupVersion: 4, policyVersion: 3 }, percentage)).toEqual({
+      total: 3,
+      threshold: 2.1,
+      percentage: '0.7',
+    })
+    expect(proposalTallyScale({ status: 'ACCEPTED', groupVersion: 3, policyVersion: 3 }, percentage)).toEqual({
+      total: null,
+      threshold: null,
+      percentage: null,
+    })
+    expect(proposalTallyScale({ status: 'REJECTED', groupVersion: 4, policyVersion: 2 }, percentage)).toEqual({
+      total: 3,
+      threshold: null,
+      percentage: null,
+    })
+  })
+
+  it('without version snapshots, only an open proposal uses the current group', () => {
+    const unversioned = { groupVersion: null, policyVersion: null }
+    expect(proposalTallyScale({ status: 'SUBMITTED', ...unversioned }, policy)).toEqual({
+      total: 3,
+      threshold: 2,
+      percentage: null,
+    })
+    expect(proposalTallyScale({ status: 'ACCEPTED', ...unversioned }, policy)).toEqual({
+      total: null,
+      threshold: null,
+      percentage: null,
+    })
+  })
+})
+
+describe('fetchProposalVotes', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('reads the votes past the first window of the proposal', async () => {
+    const vote = (id: number) => ({ id, voter: `verana1voter${id}`, option: 'VOTE_OPTION_YES', submit_time: null })
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => ({
+        votes: url.includes('max_id=') ? [vote(1)] : Array.from({ length: 1024 }, (_, index) => vote(1100 - index)),
+      }),
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const votes = await fetchProposalVotes(4)
+
+    expect(votes.partial).toBe(false)
+    expect(votes.value).toHaveLength(1024)
+    expect(votes.value.at(-1)?.voter).toBe('verana1voter1')
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://indexer.example/v4/group/votes?proposal_id=4&limit=1024&sort=-id&max_id=78'
+    )
+  })
+})
+
+describe('proposalExecutableFrom', () => {
+  const submitTime = '2026-10-16T10:00:00.000Z'
+
+  it('adds the minimum execution period and a short grace to the submit time', () => {
+    expect(proposalExecutableFrom({ submitTime }, { minExecutionPeriod: '3600s' })).toBe(
+      Date.parse('2026-10-16T11:00:02.000Z')
+    )
+    expect(proposalExecutableFrom({ submitTime }, { minExecutionPeriod: '60.5s' })).toBe(
+      Date.parse('2026-10-16T10:01:02.500Z')
+    )
+  })
+
+  it('has no wait without a minimum execution period or a submit time', () => {
+    expect(proposalExecutableFrom({ submitTime }, { minExecutionPeriod: '0s' })).toBeNull()
+    expect(proposalExecutableFrom({ submitTime }, { minExecutionPeriod: null })).toBeNull()
+    expect(proposalExecutableFrom({ submitTime: null }, { minExecutionPeriod: '3600s' })).toBeNull()
   })
 })
 

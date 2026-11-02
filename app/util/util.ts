@@ -2,8 +2,10 @@
 
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faCrown, faEye } from '@fortawesome/free-solid-svg-icons'
+import { SHOW_PARTICIPANT_EXPIRE_BEFORE_DAYS } from '@/config/env'
 import { translate } from '@/i18n/dataview'
-import { Role } from '@/ui/common/role-card'
+import type { HolderOnboardingMode } from '@/lib/participant-onboarding'
+import type { TreeNode } from '@/ui/common/participant-tree-types'
 import type { OnboardingProcessState, ParticipantRole, ParticipantState } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
@@ -52,29 +54,13 @@ export function parseVNA(formatted: string, decimals: number = 6): string {
   return micro.toString()
 }
 
-export function formatUSDfromUVNA(amount: string | null, conversionFactorUSDfromVNA: number): string {
-  if (!amount) return ''
-  if (!Number.isFinite(conversionFactorUSDfromVNA) || conversionFactorUSDfromVNA <= 0) return ''
+const VNA_AMOUNT = /^(\d+)(?:\.(\d{1,6}))?$/
+const UVNA_PER_VNA = BigInt(1_000_000)
 
-  // Clean locale-formatted number (remove thousands separators and whitespace)
-  const cleanAmount = amount
-    .trim()
-    .replace(/[^\d.,-]/g, '')
-    .replace(/,/g, '')
-  const numericAmount = parseFloat(cleanAmount)
-
-  if (!Number.isFinite(numericAmount)) return ''
-
-  const usd = numericAmount * conversionFactorUSDfromVNA
-
-  return (
-    '≈ $' +
-    usd.toLocaleString(undefined, {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    }) +
-    ' USD'
-  )
+export function parseVNAExact(text: string): string | null {
+  const match = VNA_AMOUNT.exec(text.trim())
+  if (!match) return null
+  return (BigInt(match[1]) * UVNA_PER_VNA + BigInt((match[2] ?? '').padEnd(6, '0'))).toString()
 }
 
 export function shortenMiddle(str: string, maxLength: number): string {
@@ -83,6 +69,10 @@ export function shortenMiddle(str: string, maxLength: number): string {
   const start = str.slice(0, keep)
   const end = str.slice(-keep)
   return `${start}...${end}`
+}
+
+export function participantCardHref(schemaId: number | string, participantId: number | string): string {
+  return `/participants/${encodeURIComponent(String(schemaId))}?participant=${encodeURIComponent(String(participantId))}`
 }
 
 export function shortenDID(str: string): string {
@@ -130,20 +120,19 @@ export function formatLongDateUserLocale(date: Date | string) {
   })
 }
 
-export function isExpired(input: Date | string | number): boolean {
-  const date = new Date(String(input))
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  return date < today
+const DEFAULT_EXPIRE_BEFORE_DAYS = 30
+
+export function expireBeforeDays(configured: string | undefined = SHOW_PARTICIPANT_EXPIRE_BEFORE_DAYS): number {
+  const days = Number(configured)
+  return Number.isFinite(days) && days > 0 ? days : DEFAULT_EXPIRE_BEFORE_DAYS
 }
 
-const soonDays = 1
-export function isExpireSoon(input: Date | string | number): boolean {
+export function isExpireSoon(input: Date | string | null | undefined): boolean {
+  if (input === null || input === undefined || input === '') return false
   const date = new Date(String(input))
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const diff = date.getTime() - today.getTime()
-  return diff > 0 && diff <= soonDays * 24 * 60 * 60 * 1000
+  if (Number.isNaN(date.getTime())) return false
+  const diff = date.getTime() - Date.now()
+  return diff > 0 && diff <= expireBeforeDays() * 24 * 60 * 60 * 1000
 }
 
 export function isJson(value: unknown): object | null {
@@ -196,14 +185,6 @@ export function countryCodeToFlag(code?: string | null): string {
   return String.fromCodePoint(base + (normalized.charCodeAt(0) - 65), base + (normalized.charCodeAt(1) - 65))
 }
 
-export function formatNetwork(network: string) {
-  const htmlNetwork = `
-    <div class="relative w-2 h-2 bg-success-500 rounded-full pulse-dot"></div>
-    <span class="text-sm text-success-700 dark:text-success-300 font-medium">${network}</span>
-    `
-  return htmlNetwork
-}
-
 export function roleBadgeClass(role: ParticipantRole) {
   switch (role) {
     case 'ECOSYSTEM':
@@ -245,17 +226,17 @@ export function roleColorClass(type: string): string {
 export function roleJoinColorClass(type: string): string {
   switch (type) {
     case 'ISSUER_GRANTOR':
-      return 'bg-blue-100 text-blue-500'
+      return 'bg-blue-100 text-blue-500 dark:bg-blue-900/20 dark:text-blue-400'
     case 'VERIFIER_GRANTOR':
-      return 'bg-slate-100 text-slate-500'
+      return 'bg-slate-100 text-slate-500 dark:bg-slate-900/20 dark:text-slate-400'
     case 'ISSUER':
-      return 'bg-green-100 text-green-500'
+      return 'bg-green-100 text-green-500 dark:bg-green-900/20 dark:text-green-400'
     case 'VERIFIER':
-      return 'bg-orange-100 text-orange-500'
+      return 'bg-orange-100 text-orange-500 dark:bg-orange-900/20 dark:text-orange-400'
     case 'HOLDER':
-      return 'bg-pink-100 text-pink-500'
+      return 'bg-pink-100 text-pink-500 dark:bg-pink-900/20 dark:text-pink-400'
     default:
-      return 'bg-gray-100 text-gray-500'
+      return 'bg-gray-100 text-gray-500 dark:bg-gray-900/20 dark:text-gray-400'
   }
 }
 
@@ -278,16 +259,26 @@ export function roleLabel(type: string): string {
   }
 }
 
+export interface ParticipantStateBadge {
+  labelParticipantState: string
+  classParticipantState: string
+  expireSoon: { labelExpireSoon: string; classExpireSoon: string } | null
+}
+
+const NEUTRAL_BADGE =
+  'bg-white text-gray-600 ring-1 ring-inset ring-gray-300 dark:bg-transparent dark:text-gray-300 dark:ring-gray-600'
+const GRAY_BADGE = 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300'
+const GREEN_BADGE = 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+const YELLOW_BADGE = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300'
+
 export function participantStateBadgeClass(
   participantState: ParticipantState | undefined,
   expireSoon: boolean,
   variant: 'tree' | 'header' = 'tree'
-): { labelParticipantState: string; classParticipantState: string } {
-  if (!participantState) return { labelParticipantState: '', classParticipantState: '' }
+): ParticipantStateBadge {
+  if (!participantState) return { labelParticipantState: '', classParticipantState: '', expireSoon: null }
   const activeClass =
-    variant === 'header'
-      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-      : 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+    variant === 'header' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' : GREEN_BADGE
   const badge = ((): { labelParticipantState: string; classParticipantState: string } => {
     switch (participantState) {
       case 'REPAID':
@@ -298,78 +289,77 @@ export function participantStateBadgeClass(
       case 'SLASHED':
         return {
           labelParticipantState: resolveTranslatable({ key: 'participant.labelstate.slashed' }, translate) ?? 'SLASHED',
-          classParticipantState: 'bg-red-900 text-red-100 dark:bg-red-300/20 dark:text-red-800',
+          classParticipantState: 'bg-red-900 text-red-100 dark:bg-red-800 dark:text-red-100',
         }
       case 'FUTURE':
         return {
           labelParticipantState: resolveTranslatable({ key: 'participant.labelstate.future' }, translate) ?? 'FUTURE',
-          classParticipantState: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300',
+          classParticipantState: NEUTRAL_BADGE,
         }
       case 'ACTIVE':
-        return expireSoon
-          ? {
-              labelParticipantState:
-                resolveTranslatable({ key: 'participant.labelstate.expiresoon' }, translate) ?? 'EXPIRE SOON',
-              classParticipantState: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300',
-            }
-          : {
-              labelParticipantState:
-                resolveTranslatable({ key: 'participant.labelstate.active' }, translate) ?? 'ACTIVE',
-              classParticipantState: activeClass,
-            }
+        return {
+          labelParticipantState: resolveTranslatable({ key: 'participant.labelstate.active' }, translate) ?? 'ACTIVE',
+          classParticipantState: activeClass,
+        }
       case 'INACTIVE':
         return {
           labelParticipantState:
             resolveTranslatable({ key: 'participant.labelstate.inactive' }, translate) ?? 'INACTIVE',
-          classParticipantState: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300',
+          classParticipantState: NEUTRAL_BADGE,
         }
-      default:
+      case 'EXPIRED':
         return {
-          labelParticipantState: participantState,
-          classParticipantState: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300',
+          labelParticipantState: resolveTranslatable({ key: 'participant.labelstate.expired' }, translate) ?? 'EXPIRED',
+          classParticipantState: GRAY_BADGE,
+        }
+      case 'REVOKED':
+        return {
+          labelParticipantState: resolveTranslatable({ key: 'participant.labelstate.revoked' }, translate) ?? 'REVOKED',
+          classParticipantState: GRAY_BADGE,
         }
     }
   })()
-  return variant === 'tree' ? { ...badge, labelParticipantState: badge.labelParticipantState.toLowerCase() } : badge
+  const expireSoonBadge =
+    participantState === 'ACTIVE' && expireSoon
+      ? {
+          labelExpireSoon:
+            resolveTranslatable({ key: 'participant.labelstate.expiresoon' }, translate) ?? 'EXPIRES SOON',
+          classExpireSoon: YELLOW_BADGE,
+        }
+      : null
+  if (variant !== 'tree') return { ...badge, expireSoon: expireSoonBadge }
+  return {
+    labelParticipantState: badge.labelParticipantState.toLowerCase(),
+    classParticipantState: badge.classParticipantState,
+    expireSoon: expireSoonBadge
+      ? { ...expireSoonBadge, labelExpireSoon: expireSoonBadge.labelExpireSoon.toLowerCase() }
+      : null,
+  }
 }
 
-export function onboardingStateColor(
-  onboardingState: OnboardingProcessState | null | undefined,
-  onboardingExpiration: string | null | undefined,
-  expireSoon: boolean
-): { labelOnboardingState: string; classOnboardingState: string } {
-  const GRAY = 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300'
+export function onboardingStateColor(onboardingState: OnboardingProcessState | null | undefined): {
+  labelOnboardingState: string
+  classOnboardingState: string
+} {
   switch (onboardingState) {
     case 'PENDING':
       return {
         labelOnboardingState:
           resolveTranslatable({ key: 'participant.labelopstate.pending' }, translate) ?? 'pending approval',
-        classOnboardingState: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300',
+        classOnboardingState: YELLOW_BADGE,
       }
     case 'TERMINATED':
       return {
         labelOnboardingState:
           resolveTranslatable({ key: 'participant.labelopstate.terminated' }, translate) ?? 'terminated',
-        classOnboardingState: GRAY,
+        classOnboardingState: GRAY_BADGE,
       }
     case 'VALIDATED':
-      return (onboardingExpiration ? isExpired(onboardingExpiration) : false)
-        ? {
-            labelOnboardingState:
-              resolveTranslatable({ key: 'participant.labelopstate.expired' }, translate) ?? 'expired',
-            classOnboardingState: GRAY,
-          }
-        : expireSoon
-          ? {
-              labelOnboardingState:
-                resolveTranslatable({ key: 'participant.labelopstate.expiresoon' }, translate) ?? 'expire soon',
-              classOnboardingState: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300',
-            }
-          : {
-              labelOnboardingState:
-                resolveTranslatable({ key: 'participant.labelopstate.validated' }, translate) ?? 'validated',
-              classOnboardingState: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300',
-            }
+      return {
+        labelOnboardingState:
+          resolveTranslatable({ key: 'participant.labelopstate.validated' }, translate) ?? 'validated',
+        classOnboardingState: GREEN_BADGE,
+      }
     default:
       return { labelOnboardingState: '', classOnboardingState: '' }
   }
@@ -393,40 +383,15 @@ export function participantAuthority(
   }
 }
 
-export function rolesSchema(issuerOnboardingMode: string, verifierOnboardingMode: string): Role[] {
-  const roles = new Set<Role>()
-
-  // Issuance roles
-  if (issuerOnboardingMode === 'GRANTOR_ONBOARDING_PROCESS') {
-    roles.add('ISSUER_GRANTOR')
-    roles.add('ISSUER')
-  } else {
-    // OPEN o ECOSYSTEM
-    roles.add('ISSUER')
-  }
-
-  // Verification roles
-  if (verifierOnboardingMode === 'GRANTOR_ONBOARDING_PROCESS') {
-    roles.add('VERIFIER_GRANTOR')
-    roles.add('VERIFIER')
-  } else {
-    // OPEN o ECOSYSTEM
-    roles.add('VERIFIER')
-  }
-
-  roles.add('HOLDER')
-  return Array.from(roles)
-}
-
 export function nodeChildRoles(
   issuerOnboardingMode: string,
   verifierOnboardingMode: string,
+  holderOnboardingMode: HolderOnboardingMode | null,
   role: string
-): { role: Role; label: string; validation: boolean }[] {
-  const roles = new Set<{ role: Role; label: string; validation: boolean }>()
+): { role: ParticipantRole; label: string; validation: boolean }[] {
+  const roles = new Set<{ role: ParticipantRole; label: string; validation: boolean }>()
 
   if (role === 'ECOSYSTEM') {
-    // Issuance roles
     if (issuerOnboardingMode === 'GRANTOR_ONBOARDING_PROCESS') {
       roles.add({
         role: 'ISSUER_GRANTOR',
@@ -434,14 +399,12 @@ export function nodeChildRoles(
         validation: true,
       })
     } else {
-      // OPEN o ECOSYSTEM
       roles.add({
         role: 'ISSUER',
         label: resolveTranslatable({ key: 'participant.labelRole.issuer' }, translate) ?? 'Issuers',
         validation: issuerOnboardingMode === 'ECOSYSTEM_ONBOARDING_PROCESS',
       })
     }
-    // Verification roles
     if (verifierOnboardingMode === 'GRANTOR_ONBOARDING_PROCESS') {
       roles.add({
         role: 'VERIFIER_GRANTOR',
@@ -449,7 +412,6 @@ export function nodeChildRoles(
         validation: true,
       })
     } else {
-      // OPEN o ECOSYSTEM
       roles.add({
         role: 'VERIFIER',
         label: resolveTranslatable({ key: 'participant.labelRole.verifier' }, translate) ?? 'Verifiers',
@@ -472,11 +434,26 @@ export function nodeChildRoles(
     roles.add({
       role: 'HOLDER',
       label: resolveTranslatable({ key: 'participant.labelRole.holder' }, translate) ?? 'Holders',
-      validation: true,
+      validation: holderOnboardingMode === 'ISSUER_ONBOARDING_PROCESS',
     })
   }
 
   return Array.from(roles)
+}
+
+export function childRoleOnboardingAction(
+  childRole: { role: ParticipantRole; validation: boolean },
+  isWalletConnected: boolean
+): NonNullable<TreeNode['onboardingAction']> {
+  if (childRole.role === 'HOLDER' && !childRole.validation) return 'LinkDID'
+  if (!isWalletConnected) return 'Connect'
+  return childRole.validation ? 'MsgStartParticipantOP' : 'MsgSelfCreateParticipant'
+}
+
+export function childRoleOnboardingLabel(childRole: { role: ParticipantRole; validation: boolean }): string {
+  if (childRole.validation) return 'onboarding process'
+  if (childRole.role !== 'HOLDER') return 'open'
+  return translate('dataview.cs.managementMode.PERMISSIONLESS')
 }
 
 // Takes "YYYY-MM-DD" and returns an ISO string with today's time (+1 min) applied to that date.

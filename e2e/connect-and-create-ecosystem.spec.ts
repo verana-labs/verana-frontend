@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
 import { StargateClient } from '@cosmjs/stargate'
+import { Comet38Client } from '@cosmjs/tendermint-rpc'
 import { test } from '@playwright/test'
 import { VERANA_DEVNET_CHAIN_INFO } from './mocks/chainInfo'
 import { connectWallet } from './support/connect'
@@ -15,7 +16,7 @@ test('connect mocked Keplr and create an ecosystem (real devnet broadcast)', asy
   const prefix = VERANA_DEVNET_CHAIN_INFO.bech32Config.bech32PrefixAccAddr
   const [account] = await (await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, { prefix })).getAccounts()
 
-  const rpc = await StargateClient.connect(VERANA_DEVNET_CHAIN_INFO.rpc)
+  const rpc = await StargateClient.create(await Comet38Client.connect(VERANA_DEVNET_CHAIN_INFO.rpc))
   const balance = BigInt((await rpc.getBalance(account.address, 'uvna')).amount)
   rpc.disconnect()
   if (balance < MIN_BALANCE_UVNA) {

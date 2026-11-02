@@ -12,7 +12,7 @@ type SkeletonMediaRowProps = {
 function SkeletonMediaRow({ rowClass, iconClass, titleClass, subtitleClass }: SkeletonMediaRowProps) {
   return (
     <div className={`flex items-start overflow-hidden ${rowClass}`}>
-      <div className={`skeleton flex-shrink-0 ${iconClass}`} />
+      <div className={`skeleton shrink-0 ${iconClass}`} />
       <div className="flex-1 min-w-0 space-y-2">
         <div className={`skeleton ${titleClass}`} />
         <div className={`skeleton ${subtitleClass}`} />

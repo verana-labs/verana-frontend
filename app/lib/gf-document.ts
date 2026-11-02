@@ -1,6 +1,62 @@
-export type GfDocumentKind = 'pdf' | 'markdown'
+import { indexerValidators } from '@/lib/indexer-json'
 
-/** Detect the document kind from the URL file extension, when it has one. */
+export type GfDocumentKind = 'pdf' | 'markdown' | 'html'
+
+export type GfDocument = {
+  id: string
+  url: string
+  language: string
+  digestSri?: string
+}
+
+export type GfVersion = {
+  id: string
+  version: number
+  activeSince: string | null
+  documents: GfDocument[]
+}
+
+export type GfOwner = { kind: 'ecosystem'; id: string } | { kind: 'corporation'; id: number }
+
+export function parseGfVersions(value: unknown, label: string, path: string): GfVersion[] {
+  const { record, string, number, nullableString, optionalString } = indexerValidators(label)
+  if (!Array.isArray(value)) throw new Error(`Invalid ${label} response: ${path}`)
+  return value.map((entry, index) => {
+    const versionPath = `${path}[${index}]`
+    const source = record(entry, versionPath)
+    if (!Array.isArray(source.documents)) throw new Error(`Invalid ${label} response: ${versionPath}.documents`)
+    return {
+      id: String(number(source.id, `${versionPath}.id`)),
+      version: number(source.version, `${versionPath}.version`),
+      activeSince: nullableString(source.active_since, `${versionPath}.active_since`),
+      documents: source.documents.map((document, documentIndex) => {
+        const documentPath = `${versionPath}.documents[${documentIndex}]`
+        const doc = record(document, documentPath)
+        return {
+          id: String(number(doc.id, `${documentPath}.id`)),
+          url: string(doc.url, `${documentPath}.url`),
+          language: string(doc.language, `${documentPath}.language`),
+          digestSri: optionalString(doc.digest_sri, `${documentPath}.digest_sri`),
+        }
+      }),
+    }
+  })
+}
+
+export function editableVersions(versions: GfVersion[], activeVersion: number): number[] {
+  const latest = versions.reduce((max, version) => Math.max(max, version.version), activeVersion)
+  const drafts = new Set(versions.map((version) => version.version).filter((version) => version > activeVersion))
+  return [...drafts].sort((a, b) => a - b).concat(latest + 1)
+}
+
+export function nextVersion(versions: GfVersion[], activeVersion: number): GfVersion | undefined {
+  return versions.find((version) => version.version === activeVersion + 1 && version.documents.length > 0)
+}
+
+export function hasDocumentIn(version: GfVersion, language: string): boolean {
+  return version.documents.some((document) => document.language === language)
+}
+
 export function kindFromUrl(url: string): GfDocumentKind | undefined {
   let pathname: string
   try {
@@ -10,33 +66,33 @@ export function kindFromUrl(url: string): GfDocumentKind | undefined {
   }
   if (pathname.endsWith('.pdf')) return 'pdf'
   if (pathname.endsWith('.md') || pathname.endsWith('.markdown')) return 'markdown'
+  if (pathname.endsWith('.html') || pathname.endsWith('.htm')) return 'html'
   return undefined
 }
 
-/** Detect the document kind from a Content-Type response header. */
 export function kindFromContentType(contentType: string | null | undefined): GfDocumentKind | undefined {
   if (!contentType) return undefined
   const mime = contentType.split(';')[0].trim().toLowerCase()
   if (mime === 'application/pdf') return 'pdf'
   if (mime === 'text/markdown' || mime === 'text/x-markdown') return 'markdown'
+  if (mime === 'text/html') return 'html'
   return undefined
 }
 
-/**
- * URL to fetch the raw document bytes from. GitHub `/blob/` and `/raw/` page
- * URLs serve the HTML UI (or a redirect) without CORS headers, so they are
- * rewritten to raw.githubusercontent.com, which serves the raw file with
- * `access-control-allow-origin: *`. Every other URL is returned unchanged.
- */
 export function fetchableDocumentUrl(url: string): string {
   const match = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/(?:blob|raw)\/(.+)$/.exec(url)
   if (match) return `https://raw.githubusercontent.com/${match[1]}/${match[2]}/${match[3]}`
   return url
 }
 
-/** File name used when downloading the document. */
+const FALLBACK_FILE_NAMES: Record<GfDocumentKind, string> = {
+  markdown: 'governance-framework.md',
+  html: 'governance-framework.html',
+  pdf: 'governance-framework.pdf',
+}
+
 export function documentFileName(url: string, kind?: GfDocumentKind): string {
-  const fallback = kind === 'markdown' ? 'governance-framework.md' : 'governance-framework.pdf'
+  const fallback = kind ? FALLBACK_FILE_NAMES[kind] : 'governance-framework'
   try {
     const segments = new URL(url).pathname.split('/').filter(Boolean)
     const last = segments[segments.length - 1]
@@ -45,4 +101,11 @@ export function documentFileName(url: string, kind?: GfDocumentKind): string {
   } catch {
     return fallback
   }
+}
+
+export function displayedVersion(versions: GfVersion[], activeVersion: number): GfVersion | undefined {
+  return (
+    versions.find((version) => version.version === activeVersion) ??
+    versions.filter((version) => version.activeSince !== null).at(-1)
+  )
 }

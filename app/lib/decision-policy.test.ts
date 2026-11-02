@@ -1,0 +1,208 @@
+import { PercentageDecisionPolicy, ThresholdDecisionPolicy } from 'cosmjs-types/cosmos/group/v1/types'
+import { describe, expect, it } from 'vitest'
+import {
+  currentDecisionPolicyDraft,
+  DEFAULT_DECISION_POLICY_DRAFT,
+  decimalToPercent,
+  encodeDecisionPolicy,
+  exceedsExecutionWindow,
+  formatDecisionRule,
+  percentToDecimal,
+  readDecisionPolicyDraft,
+} from './decision-policy'
+
+describe('encodeDecisionPolicy', () => {
+  it('encodes a threshold policy with both windows', () => {
+    const encoded = encodeDecisionPolicy({
+      rule: { kind: 'threshold', threshold: '3' },
+      votingPeriodSeconds: 300,
+      minExecutionPeriodSeconds: 3_600,
+    })
+    expect(encoded.typeUrl).toBe('/cosmos.group.v1.ThresholdDecisionPolicy')
+    expect(ThresholdDecisionPolicy.decode(encoded.value)).toEqual({
+      threshold: '3',
+      windows: {
+        votingPeriod: { seconds: BigInt(300), nanos: 0 },
+        minExecutionPeriod: { seconds: BigInt(3_600), nanos: 0 },
+      },
+    })
+  })
+
+  it('encodes a percentage policy with its decimal string', () => {
+    const encoded = encodeDecisionPolicy({
+      rule: { kind: 'percentage', percentage: '0.6667' },
+      votingPeriodSeconds: 86_400,
+      minExecutionPeriodSeconds: 0,
+    })
+    expect(encoded.typeUrl).toBe('/cosmos.group.v1.PercentageDecisionPolicy')
+    expect(PercentageDecisionPolicy.decode(encoded.value)).toEqual({
+      percentage: '0.6667',
+      windows: {
+        votingPeriod: { seconds: BigInt(86_400), nanos: 0 },
+        minExecutionPeriod: { seconds: BigInt(0), nanos: 0 },
+      },
+    })
+  })
+})
+
+describe('percentToDecimal', () => {
+  it.each([
+    ['50', '0.5'],
+    ['100', '1'],
+    ['0100', '1'],
+    ['1', '0.01'],
+    ['33.33', '0.3333'],
+    ['66.6666666666666667', '0.666666666666666667'],
+    ['0.5', '0.005'],
+    ['7.10', '0.071'],
+    ['050', '0.5'],
+  ])('converts %s%% to %s', (percent, decimal) => {
+    expect(percentToDecimal(percent)).toBe(decimal)
+  })
+
+  it.each([
+    '0',
+    '0.0',
+    '100.5',
+    '101',
+    '1000',
+    '-5',
+    '',
+    ' 50',
+    '50%',
+    '1e1',
+    '.5',
+    '5.',
+    '1.00000000000000001',
+  ])('rejects %j', (percent) => {
+    expect(percentToDecimal(percent)).toBeNull()
+  })
+})
+
+describe('decimalToPercent', () => {
+  it.each([
+    ['0.5', '50'],
+    ['1', '100'],
+    ['0.500000000000000000', '50'],
+    ['1.000000000000000000', '100'],
+    ['0.3333', '33.33'],
+    ['0.005', '0.5'],
+    ['0.01', '1'],
+  ])('shows %s as %s%%', (decimal, percent) => {
+    expect(decimalToPercent(decimal)).toBe(percent)
+  })
+
+  it('returns null for a value that is not a decimal', () => {
+    expect(decimalToPercent('half')).toBeNull()
+  })
+
+  it('round-trips with percentToDecimal', () => {
+    for (const percent of ['50', '100', '33.33', '0.5', '12.345']) {
+      expect(decimalToPercent(percentToDecimal(percent) ?? '')).toBe(percent)
+    }
+  })
+})
+
+describe('formatDecisionRule', () => {
+  it('shows a threshold as its weight and a percentage as a percent', () => {
+    expect(formatDecisionRule({ kind: 'threshold', threshold: '3' })).toBe('3')
+    expect(formatDecisionRule({ kind: 'percentage', percentage: '0.5' })).toBe('50%')
+  })
+})
+
+describe('readDecisionPolicyDraft', () => {
+  it('reads the default draft as today’s threshold policy', () => {
+    expect(readDecisionPolicyDraft(DEFAULT_DECISION_POLICY_DRAFT)).toEqual({
+      rule: { kind: 'threshold', threshold: '1' },
+      votingPeriodSeconds: 60,
+      minExecutionPeriodSeconds: 0,
+    })
+  })
+
+  it('reads a percentage draft with a minimum execution period', () => {
+    expect(
+      readDecisionPolicyDraft({
+        ...DEFAULT_DECISION_POLICY_DRAFT,
+        kind: 'percentage',
+        percent: '66.67',
+        minExecutionPeriod: '3600',
+      })
+    ).toEqual({
+      rule: { kind: 'percentage', percentage: '0.6667' },
+      votingPeriodSeconds: 60,
+      minExecutionPeriodSeconds: 3_600,
+    })
+  })
+
+  it('validates only the field of the chosen kind', () => {
+    expect(readDecisionPolicyDraft({ ...DEFAULT_DECISION_POLICY_DRAFT, threshold: '0' })).toBeNull()
+    expect(
+      readDecisionPolicyDraft({ ...DEFAULT_DECISION_POLICY_DRAFT, kind: 'percentage', threshold: '0' })
+    ).not.toBeNull()
+    expect(readDecisionPolicyDraft({ ...DEFAULT_DECISION_POLICY_DRAFT, kind: 'percentage', percent: '0' })).toBeNull()
+    expect(readDecisionPolicyDraft({ ...DEFAULT_DECISION_POLICY_DRAFT, percent: '0' })).not.toBeNull()
+  })
+
+  it('needs a positive voting period and a non-negative whole minimum execution period', () => {
+    expect(readDecisionPolicyDraft({ ...DEFAULT_DECISION_POLICY_DRAFT, votingPeriod: '0' })).toBeNull()
+    expect(readDecisionPolicyDraft({ ...DEFAULT_DECISION_POLICY_DRAFT, minExecutionPeriod: '' })).toBeNull()
+    expect(readDecisionPolicyDraft({ ...DEFAULT_DECISION_POLICY_DRAFT, minExecutionPeriod: '1.5' })).toBeNull()
+  })
+
+  it('rejects durations beyond the safe integer range instead of encoding them', () => {
+    const twentyDigits = '12345678901234567890'
+    expect(readDecisionPolicyDraft({ ...DEFAULT_DECISION_POLICY_DRAFT, votingPeriod: twentyDigits })).toBeNull()
+    expect(readDecisionPolicyDraft({ ...DEFAULT_DECISION_POLICY_DRAFT, votingPeriod: '9'.repeat(400) })).toBeNull()
+    expect(readDecisionPolicyDraft({ ...DEFAULT_DECISION_POLICY_DRAFT, minExecutionPeriod: twentyDigits })).toBeNull()
+  })
+
+  it('keeps the minimum execution period below the voting period plus the 14 day execution window', () => {
+    const atLimit = { ...DEFAULT_DECISION_POLICY_DRAFT, votingPeriod: '60', minExecutionPeriod: '1209660' }
+    const aboveLimit = { ...atLimit, minExecutionPeriod: '1209661' }
+    expect(exceedsExecutionWindow(aboveLimit)).toBe(true)
+    expect(readDecisionPolicyDraft(aboveLimit)).toBeNull()
+    expect(exceedsExecutionWindow(atLimit)).toBe(false)
+    expect(readDecisionPolicyDraft(atLimit)?.minExecutionPeriodSeconds).toBe(1_209_660)
+  })
+})
+
+describe('currentDecisionPolicyDraft', () => {
+  it('prefills a threshold policy from the indexer values', () => {
+    expect(
+      currentDecisionPolicyDraft({
+        threshold: '3',
+        percentage: null,
+        votingPeriod: '300s',
+        minExecutionPeriod: '0s',
+      })
+    ).toEqual({ kind: 'threshold', threshold: '3', percent: '50', votingPeriod: '300', minExecutionPeriod: '0' })
+  })
+
+  it('prefills a percentage policy and its minimum execution period', () => {
+    expect(
+      currentDecisionPolicyDraft({
+        threshold: null,
+        percentage: '0.75',
+        votingPeriod: '86400s',
+        minExecutionPeriod: '3600s',
+      })
+    ).toEqual({ kind: 'percentage', threshold: '1', percent: '75', votingPeriod: '86400', minExecutionPeriod: '3600' })
+  })
+
+  it('rounds fractional indexer durations up to whole seconds', () => {
+    expect(
+      currentDecisionPolicyDraft({
+        threshold: '2',
+        percentage: null,
+        votingPeriod: '300.5s',
+        minExecutionPeriod: '0.250s',
+      })
+    ).toMatchObject({ votingPeriod: '301', minExecutionPeriod: '1' })
+  })
+
+  it('falls back to the defaults for the fields the indexer left out', () => {
+    expect(
+      currentDecisionPolicyDraft({ threshold: null, percentage: null, votingPeriod: null, minExecutionPeriod: null })
+    ).toEqual(DEFAULT_DECISION_POLICY_DRAFT)
+  })
+})

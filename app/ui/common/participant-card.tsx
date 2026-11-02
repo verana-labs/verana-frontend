@@ -11,17 +11,23 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCredentialSchemaData } from '@/hooks/useCredentialSchemaData'
 import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { mergeParticipantDetailActions, refreshParticipantSources, useParticipant } from '@/hooks/useParticipant'
 import { useParticipantHistory } from '@/hooks/useParticipantHistory'
 import { translate } from '@/i18n/dataview'
+import { FEE_BEARING_PARTICIPANT_ACTIONS, formatSchemaAmount, isNativePricing } from '@/lib/pricing-asset'
 import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import ActionFieldButtonModal from '@/ui/common/action-field-button-modal'
+import ClaimText from '@/ui/common/claim-text'
 import type { ActionFieldProps } from '@/ui/common/data-view-typed'
+import { FeeDistributionPreview } from '@/ui/common/fee-distribution'
+import { ShowMoreButton } from '@/ui/common/keyset-pagination'
 import LogoImage from '@/ui/common/logo-image'
 import ParticipantAttribute from '@/ui/common/participant-attribute'
 import ParticipantTimeline from '@/ui/common/participant-timeline'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
+import { feeBlockedReasonFor, PricingNotice } from '@/ui/common/pricing-notice'
 import TrustBadge from '@/ui/common/trust-badge'
 import {
   type Participant,
@@ -38,6 +44,7 @@ import {
   countryCodeToFlag,
   formatDateTime,
   formatVNAFromUVNA,
+  isExpireSoon,
   onboardingStateColor,
   participantStateBadgeClass,
   roleBadgeClass,
@@ -97,6 +104,7 @@ const metadataItems: ParticipantItem[] = [
   { label: 'DID', attr: 'did', mono: true, extraActions: didActions },
   { label: 'ID', attr: 'id', mono: true, extraActions: idActions },
   { label: tr('participantcard.meta.corporation', 'Corporation'), attr: 'corporation_id' },
+  { label: tr('participantcard.meta.ecosystem', 'Ecosystem'), attr: 'ecosystem_id', hiddenZero: true },
   {
     label: tr('participantcard.meta.vsoperator', 'VS Operator'),
     attr: 'vs_operator',
@@ -234,6 +242,7 @@ type ParticipantCardProps = {
   selectedNode: TreeNode
   path: TreeNode[]
   schemaTitle: string
+  pricingNoticeShown?: boolean
   viewerCorporationId?: number
   onRefresh?: (participant: Participant) => void
   onRefreshList?: () => void | Promise<void>
@@ -243,6 +252,7 @@ export default function ParticipantCard({
   selectedNode,
   path,
   schemaTitle,
+  pricingNoticeShown = false,
   viewerCorporationId,
   onRefresh,
   onRefreshList,
@@ -252,7 +262,18 @@ export default function ParticipantCard({
   const did = participant?.did ?? undefined
   const { data: enrichment } = useDidTrustEnrichment(did)
   const { participant: refreshedParticipant, refetch } = useParticipant(participantId)
-  const { participantHistory, refetch: refetchHistory } = useParticipantHistory(participantId)
+  const {
+    participantHistory,
+    refetch: refetchHistory,
+    hasNext: historyHasNext,
+    loadMore: loadMoreHistory,
+  } = useParticipantHistory(participantId)
+  const {
+    credentialSchema,
+    loading: schemaLoading,
+    errorCredentialSchema,
+  } = useCredentialSchemaData(participant?.schema_id ?? '')
+  const feeBlockedReason = feeBlockedReasonFor(credentialSchema)
   const [activeActionId, setActiveActionId] = useState<string | null>(null)
   const participantRef = useRef(participant)
   participantRef.current = participant
@@ -284,12 +305,22 @@ export default function ParticipantCard({
     viewerCorporationId === participant.corporation_id ? participant.corporation_available_actions : []
   const validatorActions = selectedNode.isValidator ? participant.validator_available_actions : []
   const allowed = new Set([...corporationActions, ...validatorActions])
-  const state = participantStateBadgeClass(participant.participant_state, participant.expire_soon ?? false, 'header')
-  const onboardingState = onboardingStateColor(
-    participant.op_state,
-    participant.op_exp,
-    participant.expire_soon ?? false
+  const state = participantStateBadgeClass(
+    participant.participant_state,
+    isExpireSoon(participant.effective_until),
+    'header'
   )
+  const onboardingState = onboardingStateColor(participant.op_state)
+  const pricingSettled = !schemaLoading && (credentialSchema !== null || errorCredentialSchema !== null)
+  const feeActionBlocked =
+    pricingSettled &&
+    Boolean(feeBlockedReason) &&
+    [...allowed].some((name) => FEE_BEARING_PARTICIPANT_ACTIONS.has(name))
+  const businessModels = participantBusinessModels.map((item) => ({
+    ...item,
+    format: (value: Participant[keyof Participant]) => formatSchemaAmount(String(value), credentialSchema),
+  }))
+
   const lifecycleActions = participantLifecycleActions.filter(
     (action) => !participantSlashingActions.some((slashing) => slashing.name === action.name)
   )
@@ -317,6 +348,7 @@ export default function ParticipantCard({
             }
             onClickButton={() => setActiveActionId(activeActionId === action.name ? null : action.name)}
             onClose={() => setActiveActionId(null)}
+            blockedReason={FEE_BEARING_PARTICIPANT_ACTIONS.has(action.name) ? feeBlockedReason : undefined}
           />
         )
       })
@@ -345,6 +377,13 @@ export default function ParticipantCard({
             >
               {state.labelParticipantState}
             </span>
+            {state.expireSoon ? (
+              <span
+                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${state.expireSoon.classExpireSoon}`}
+              >
+                {state.expireSoon.labelExpireSoon}
+              </span>
+            ) : null}
           </div>
         </div>
         {detailBreadcrumb ? <p className="text-sm text-neutral-70 mt-2">{detailBreadcrumb}</p> : null}
@@ -357,7 +396,7 @@ export default function ParticipantCard({
             <LogoImage
               src={enrichment?.serviceLogoUrl}
               fallbackSrc={serviceIdenticonUrl(did)}
-              className="w-16 h-16 rounded-lg flex-shrink-0 object-contain"
+              className="w-16 h-16 rounded-lg shrink-0 object-contain"
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-2 mb-2">
@@ -365,7 +404,11 @@ export default function ParticipantCard({
                 <TrustBadge state={enrichment?.trustStatus} size="xl" />
               </div>
               {enrichment?.serviceDescription ? (
-                <p className="text-sm text-neutral-70 mb-3">{enrichment.serviceDescription}</p>
+                <ClaimText
+                  text={enrichment.serviceDescription}
+                  format={enrichment.serviceDescriptionFormat}
+                  className="text-sm text-neutral-70 mb-3"
+                />
               ) : null}
               <div className="flex flex-wrap items-center gap-3 text-sm">
                 {enrichment?.serviceMinAge ? (
@@ -399,14 +442,14 @@ export default function ParticipantCard({
             <LogoImage
               src={enrichment?.organizationLogoUrl}
               fallbackSrc={serviceAvatarUrl(did)}
-              className="w-6 h-6 rounded flex-shrink-0 object-contain"
+              className="w-6 h-6 rounded shrink-0 object-contain"
             />
             <h4 className="text-base font-medium text-gray-900 dark:text-white break-words">
               {organizationLabel || '—'}
             </h4>
             {!enrichment?.organizationName && did ? <span className="sr-only">Unverified organization</span> : null}
             {enrichment?.countryCode ? (
-              <span className="text-lg flex-shrink-0" aria-hidden="true">
+              <span className="text-lg shrink-0" aria-hidden="true">
                 {countryCodeToFlag(enrichment.countryCode)}
               </span>
             ) : null}
@@ -438,6 +481,9 @@ export default function ParticipantCard({
               </span>
             </div>
             <AttributeGrid participant={participant} items={onboardingItems} />
+            {feeActionBlocked && !pricingNoticeShown ? (
+              <PricingNotice schema={credentialSchema ?? null} className="mt-4" />
+            ) : null}
             <div className="flex flex-wrap gap-3 mt-4">{renderActions(participantOnboardingActions)}</div>
           </div>
         ) : null}
@@ -445,7 +491,10 @@ export default function ParticipantCard({
           <h3 className="text-lg font-semibold mb-4">
             {tr('participantcard.businessmodels.title', 'Business Models')}
           </h3>
-          <AttributeGrid participant={participant} items={participantBusinessModels} columns={3} />
+          <AttributeGrid participant={participant} items={businessModels} columns={3} />
+          {credentialSchema && isNativePricing(credentialSchema) ? (
+            <FeeDistributionPreview participant={participant} />
+          ) : null}
         </div>
         <div className="border-t border-neutral-20 dark:border-neutral-70 pt-6">
           <h3 className="text-lg font-semibold mb-4">{tr('participantcard.slashing.title', 'Slashing')}</h3>
@@ -457,8 +506,13 @@ export default function ParticipantCard({
           {participantHistory.length ? (
             <div className="space-y-4">
               {participantHistory.map((history, index) => (
-                <ParticipantTimeline participantHistory={history} key={`${history.block_height}-${index}`} />
+                <ParticipantTimeline
+                  participantHistory={history}
+                  feePricing={credentialSchema}
+                  key={`${history.block_height}-${index}`}
+                />
               ))}
+              {historyHasNext ? <ShowMoreButton onClick={loadMoreHistory} /> : null}
             </div>
           ) : (
             <p className="text-sm text-neutral-70">{tr('participantcard.timeline.empty', 'No activity yet.')}</p>

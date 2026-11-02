@@ -10,11 +10,17 @@ import {
   OfflineDirectSigner,
   Registry,
 } from '@cosmjs/proto-signing'
-import { calculateFee, DeliverTxResponse, GasPrice, SigningStargateClient } from '@cosmjs/stargate'
+import { calculateFee, DeliverTxResponse, GasPrice, SigningStargateClient, StdFee } from '@cosmjs/stargate'
+import { Comet38Client } from '@cosmjs/tendermint-rpc'
 import { createVeranaRegistry } from '@verana-labs/verana-types'
 import { TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import Long from 'long'
 import { logger } from '@/lib/logger'
+import {
+  expectedSequence,
+  isBroadcastSequenceMismatch,
+  isDeliverTxSequenceMismatch,
+} from '@/msg/util/sequence-mismatch'
 import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
 
 export function makeRegistry(): Registry {
@@ -33,8 +39,7 @@ type ManualSignOptions = {
   memo?: string // Optional memo
   timeoutHeight?: number | Long // Optional timeout
   simulate?: boolean
-  // feeGranter?: string;           // Feegrant (optional)
-  // feePayer?: string;             // Fee payer (optional)
+  fee?: StdFee
 }
 
 export async function signAndBroadcastManualDirect({
@@ -49,21 +54,25 @@ export async function signAndBroadcastManualDirect({
   memo = '',
   timeoutHeight,
   simulate = false,
-  // feeGranter,
-  // feePayer,
+  fee: givenFee,
 }: ManualSignOptions): Promise<DeliverTxResponse | SimulateResult> {
   const anys = messages.map((m) => registry.encodeAsAny(m))
   logger.log('Any.typeUrl:', anys[0].typeUrl)
   logger.log('Any.value(hex):', toHex(anys[0].value))
 
   // Connect a client — only used for simulate and broadcast
-  const client = await SigningStargateClient.connectWithSigner(rpcEndpoint, signer, { registry })
+  const client = await SigningStargateClient.createWithSigner(await Comet38Client.connect(rpcEndpoint), signer, {
+    registry,
+  })
 
-  // Simulate gas usage for the messages
-  const simulated = await client.simulate(address, messages, memo)
-  const gasLimit = Math.ceil(simulated * gasAdjustment)
-  const fee = calculateFee(gasLimit, GasPrice.fromString(gasPrice))
+  let fee = givenFee
+  if (!fee) {
+    // Simulate gas usage for the messages
+    const simulated = await client.simulate(address, messages, memo)
+    fee = calculateFee(Math.ceil(simulated * gasAdjustment), GasPrice.fromString(gasPrice))
+  }
   if (simulate) return fee
+  const signedFee = fee
 
   // Create TxBody with your messages
   const body = TxBody.fromPartial({
@@ -76,37 +85,35 @@ export async function signAndBroadcastManualDirect({
   })
   const bodyBytes = TxBody.encode(body).finish()
 
-  // Fetch account sequence & accountNumber
   const { accountNumber, sequence } = await client.getSequence(address)
 
-  // Get pubkey from signer
   const accounts = await signer.getAccounts()
-  const aminoPubkey = encodeSecp256k1Pubkey(accounts[0].pubkey) // ✅ base64 string
-  const protoPubkey = encodePubkey(aminoPubkey) // ✅ Any
+  const protoPubkey = encodePubkey(encodeSecp256k1Pubkey(accounts[0].pubkey))
 
-  // Build AuthInfo
-  const authInfoBytes = makeAuthInfoBytes(
-    [{ pubkey: protoPubkey, sequence }],
-    fee.amount,
-    gasLimit,
-    /* feeGranter */ undefined,
-    /* feePayer   */ undefined
-  )
-
-  // Build SignDoc and sign manually
-  const signDoc = makeSignDoc(bodyBytes, authInfoBytes, chainId, accountNumber)
-  const { signature } = await signer.signDirect(address, signDoc)
-
-  const sigBytes = typeof signature.signature === 'string' ? fromBase64(signature.signature) : signature.signature
-
-  // Build TxRaw
-  const txRaw: TxRaw = {
-    bodyBytes,
-    authInfoBytes,
-    signatures: [sigBytes],
+  async function signAndBroadcast(signingSequence: number): Promise<DeliverTxResponse> {
+    const authInfoBytes = makeAuthInfoBytes(
+      [{ pubkey: protoPubkey, sequence: signingSequence }],
+      signedFee.amount,
+      Number(signedFee.gas),
+      signedFee.granter,
+      undefined
+    )
+    const signDoc = makeSignDoc(bodyBytes, authInfoBytes, chainId, accountNumber)
+    const { signature } = await signer.signDirect(address, signDoc)
+    const sigBytes = typeof signature.signature === 'string' ? fromBase64(signature.signature) : signature.signature
+    const txRaw: TxRaw = { bodyBytes, authInfoBytes, signatures: [sigBytes] }
+    return client.broadcastTx(TxRaw.encode(txRaw).finish())
   }
 
-  // Broadcast the tx
-  const txBytes = TxRaw.encode(txRaw).finish()
-  return client.broadcastTx(txBytes)
+  let mismatch: unknown
+  try {
+    const response = await signAndBroadcast(sequence)
+    if (!isDeliverTxSequenceMismatch(response)) return response
+    mismatch = response.rawLog
+  } catch (error) {
+    if (!isBroadcastSequenceMismatch(error)) throw error
+    mismatch = error
+  }
+  logger.warn('Retrying once after an account sequence mismatch', mismatch)
+  return signAndBroadcast(expectedSequence(mismatch) ?? (await client.getSequence(address)).sequence)
 }

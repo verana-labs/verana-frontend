@@ -5,10 +5,23 @@ import {
   VERANA_REST_ENDPOINT_CORPORATION,
   VERANA_REST_ENDPOINT_DELEGATION,
   VERANA_REST_ENDPOINT_GROUP,
+  VERANA_REST_ENDPOINT_PARTICIPANT,
   VERANA_REST_ENDPOINT_TRUST_DEPOSIT,
 } from '@/config/env'
-import { indexerValidators } from '@/lib/indexer-json'
+import { parseParticipantsResponse } from '@/hooks/useParticipants'
+import { type ActivityRow, parseActivityHistory } from '@/lib/activity-history'
+import { type GfVersion, parseGfVersions } from '@/lib/gf-document'
+import {
+  degrade,
+  emptyWindow,
+  fetchJson,
+  fetchKeysetPages,
+  indexerValidators,
+  type KeysetWindow,
+} from '@/lib/indexer-json'
 import { logger } from '@/lib/logger'
+import { indexerPeriodSeconds } from '@/lib/operator-grant'
+import type { Participant } from '@/ui/dataview/datasections/participant'
 
 const { record, string, integer, optionalString, nullableString, stringArray, decimalAmount } =
   indexerValidators('corporation page')
@@ -30,9 +43,13 @@ export interface GroupMemberRow {
 
 export interface GroupPolicy {
   threshold: string | null
+  percentage: string | null
   votingPeriod: string | null
+  minExecutionPeriod: string | null
   totalWeight: string
   groupId: number
+  groupVersion: number | null
+  policyVersion: number | null
 }
 
 export interface CorporationTrustDeposit {
@@ -44,9 +61,26 @@ export interface CorporationTrustDeposit {
   lastRepaid: string | null
 }
 
-export interface OperatorAuthorizationRow {
+export interface CoinAmount {
+  denom: string
+  amount: string
+}
+
+export interface GrantLimits {
+  spendLimit: CoinAmount[] | null
+  remainingSpend: CoinAmount[] | null
+  expiration: string | null
+  period: string | null
+}
+
+export interface OperatorAuthorizationRow extends GrantLimits {
   id: number
   operator: string
+  msgTypes: string[]
+}
+
+export interface FeeGrantRow extends GrantLimits {
+  grantee: string
   msgTypes: string[]
 }
 
@@ -54,7 +88,12 @@ export interface VsOperatorAuthorizationRow {
   vsOperator: string
   participantId: number
   msgTypes: string[]
+  spendLimit: CoinAmount[] | null
+  remainingSpend: CoinAmount[] | null
+  feeSpendLimit: CoinAmount[] | null
+  withFeegrant: boolean
   expiration: string | null
+  period: string | null
 }
 
 export interface ProposalTally {
@@ -73,53 +112,83 @@ export interface ProposalRow {
   proposers: string[]
   messages: Record<string, unknown>[]
   tally: ProposalTally
+  groupVersion: number | null
+  policyVersion: number | null
 }
 
-export interface ActivityRow {
-  id: number
-  timestamp: string
-  blockHeight: number
-  msg: string
-  account: string | null
-  changes: Record<string, unknown>
+export interface TallyScale {
+  total: number | null
+  threshold: number | null
+  percentage: string | null
+}
+
+function tallyThreshold(policy: GroupPolicy, total: number | null): number | null {
+  if (policy.threshold !== null) return Number(policy.threshold) || 0
+  if (policy.percentage === null || total === null) return null
+  return Number((Number(policy.percentage) * total).toPrecision(12)) || 0
+}
+
+export function proposalTallyScale(
+  proposal: Pick<ProposalRow, 'status' | 'groupVersion' | 'policyVersion'>,
+  policy: GroupPolicy
+): TallyScale {
+  const unchangedSince = (submitted: number | null, current: number | null) =>
+    submitted !== null && current !== null ? submitted === current : proposal.status === 'SUBMITTED'
+  const total = unchangedSince(proposal.groupVersion, policy.groupVersion) ? Number(policy.totalWeight) || 0 : null
+  const threshold = unchangedSince(proposal.policyVersion, policy.policyVersion) ? tallyThreshold(policy, total) : null
+  return {
+    total,
+    threshold,
+    percentage: threshold !== null && policy.threshold === null ? policy.percentage : null,
+  }
+}
+
+const EXECUTION_GRACE_MS = 2_000
+
+export function proposalExecutableFrom(
+  proposal: Pick<ProposalRow, 'submitTime'>,
+  policy: Pick<GroupPolicy, 'minExecutionPeriod'>
+): number | null {
+  const seconds = indexerPeriodSeconds(policy.minExecutionPeriod)
+  const submitted = proposal.submitTime === null ? Number.NaN : Date.parse(proposal.submitTime)
+  return seconds && Number.isFinite(submitted) ? submitted + seconds * 1000 + EXECUTION_GRACE_MS : null
+}
+
+export interface CorporationGovernance {
+  activeVersion: number
+  versions: GfVersion[]
 }
 
 export interface DegradedSections {
   trustDeposit: boolean
   operatorAuthorizations: boolean
+  vsOperatorAuthorizations: boolean
+  feeGrants: boolean
+  proposals: boolean
+}
+
+export interface PartialSections {
+  operatorAuthorizations: boolean
+  vsOperatorAuthorizations: boolean
+  feeGrants: boolean
+  participants: boolean
   proposals: boolean
 }
 
 export interface CorporationDetails {
   profile: CorporationProfile
+  governance: CorporationGovernance | null
   members: GroupMemberRow[]
   policy: GroupPolicy
   trustDeposit: CorporationTrustDeposit | null
   operatorAuthorizations: OperatorAuthorizationRow[]
   vsOperatorAuthorizations: VsOperatorAuthorizationRow[]
+  feeGrants: FeeGrantRow[]
+  participantsById: Map<number, Participant>
   proposals: ProposalRow[]
   history: ActivityRow[]
   degraded: DegradedSections
-}
-
-async function fetchJson(url: string, context: string): Promise<unknown> {
-  const response = await fetch(url)
-  if (!response.ok) throw new Error(`${context}: ${response.status}`)
-  return response.json()
-}
-
-interface Degradable<T> {
-  value: T
-  failed: boolean
-}
-
-async function degrade<T>(context: string, fallback: T, task: () => Promise<T>): Promise<Degradable<T>> {
-  try {
-    return { value: await task(), failed: false }
-  } catch (cause) {
-    logger.error(context, cause)
-    return { value: fallback, failed: true }
-  }
+  partial: PartialSections
 }
 
 function nullWhenMissing(cause: unknown): null {
@@ -140,6 +209,19 @@ export function parseProfile(payload: unknown): CorporationProfile {
   }
 }
 
+export function parseGovernance(payload: unknown): CorporationGovernance {
+  const envelope = record(payload, 'corporation response')
+  const corporation = record(envelope.corporation, 'corporation')
+  const activeVersion = integer(corporation.active_version, 'corporation.active_version')
+  const versions = parseGfVersions(corporation.versions, 'corporation page', 'corporation.versions')
+  versions.forEach((version, index) => {
+    if (version.version <= activeVersion && version.activeSince === null) {
+      throw new Error(`Invalid corporation page response: corporation.versions[${index}].active_since`)
+    }
+  })
+  return { activeVersion, versions }
+}
+
 export function parseGroup(payload: unknown): { members: GroupMemberRow[]; policy: GroupPolicy } {
   const envelope = record(payload, 'group response')
   const group = record(envelope.group, 'group')
@@ -158,9 +240,16 @@ export function parseGroup(payload: unknown): { members: GroupMemberRow[]; polic
     }),
     policy: {
       threshold: nullableString(decision.threshold ?? null, 'group.policy.decision_policy.threshold'),
+      percentage: nullableString(decision.percentage ?? null, 'group.policy.decision_policy.percentage'),
       votingPeriod: nullableString(windows.voting_period ?? null, 'group.policy.decision_policy.windows.voting_period'),
+      minExecutionPeriod: nullableString(
+        windows.min_execution_period ?? null,
+        'group.policy.decision_policy.windows.min_execution_period'
+      ),
       totalWeight: string(group.total_weight, 'group.total_weight'),
       groupId: integer(group.group_id, 'group.group_id'),
+      groupVersion: group.version == null ? null : integer(group.version, 'group.version'),
+      policyVersion: policy.version == null ? null : integer(policy.version, 'group.policy.version'),
     },
   }
 }
@@ -178,17 +267,69 @@ export function parseTrustDeposit(payload: unknown): CorporationTrustDeposit {
   }
 }
 
+function coinAmounts(value: unknown, path: string): CoinAmount[] | null {
+  if (value === undefined || value === null) return null
+  if (!Array.isArray(value)) throw new Error(`Invalid corporation page response: ${path}`)
+  return value.map((entry, index) => {
+    const coin = record(entry, `${path}[${index}]`)
+    return {
+      denom: string(coin.denom, `${path}[${index}].denom`),
+      amount: decimalAmount(coin.amount, `${path}[${index}].amount`),
+    }
+  })
+}
+
+function remainingPerDenom(spendLimit: CoinAmount[], remaining: CoinAmount[] | null): CoinAmount[] {
+  return spendLimit.map((limit) => ({
+    denom: limit.denom,
+    amount: remaining?.find((coin) => coin.denom === limit.denom)?.amount ?? '0',
+  }))
+}
+
+function grantLimits(row: Record<string, unknown>, path: string): GrantLimits {
+  const spendLimit = coinAmounts(row.spend_limit, `${path}.spend_limit`)
+  const limited = spendLimit !== null && spendLimit.length > 0
+  return {
+    spendLimit: limited ? spendLimit : null,
+    remainingSpend: limited
+      ? remainingPerDenom(spendLimit, coinAmounts(row.remaining_spend, `${path}.remaining_spend`))
+      : null,
+    expiration: nullableString(row.expiration ?? null, `${path}.expiration`),
+    period: nullableString(row.period ?? null, `${path}.period`),
+  }
+}
+
 export function parseOperatorAuthorizations(payload: unknown): OperatorAuthorizationRow[] {
   const envelope = record(payload, 'authorizations response')
   const rows = Array.isArray(envelope.authorizations) ? envelope.authorizations : []
   return rows.map((entry, index) => {
-    const row = record(entry, `authorizations[${index}]`)
+    const path = `authorizations[${index}]`
+    const row = record(entry, path)
     return {
-      id: integer(row.id, `authorizations[${index}].id`),
-      operator: string(row.operator, `authorizations[${index}].operator`),
-      msgTypes: stringArray(row.msg_types, `authorizations[${index}].msg_types`),
+      id: integer(row.id, `${path}.id`),
+      operator: string(row.operator, `${path}.operator`),
+      msgTypes: stringArray(row.msg_types, `${path}.msg_types`),
+      ...grantLimits(row, path),
     }
   })
+}
+
+export function parseCorporationFeeGrants(payload: unknown): FeeGrantRow[] {
+  const envelope = record(payload, 'fee grants response')
+  const rows = Array.isArray(envelope.fee_grants) ? envelope.fee_grants : []
+  return rows.map((entry, index) => {
+    const path = `fee_grants[${index}]`
+    const row = record(entry, path)
+    return {
+      grantee: string(row.grantee, `${path}.grantee`),
+      msgTypes: stringArray(row.msg_types, `${path}.msg_types`),
+      ...grantLimits(row, path),
+    }
+  })
+}
+
+export function corporationFeeGrantsUrl(corporationId: number): string {
+  return `${VERANA_REST_ENDPOINT_DELEGATION}/fee-grants?grantor_corporation_id=${corporationId}&only_active=true`
 }
 
 export function parseVsOperatorAuthorizations(payload: unknown): VsOperatorAuthorizationRow[] {
@@ -206,10 +347,20 @@ export function parseVsOperatorAuthorizations(payload: unknown): VsOperatorAutho
         vsOperator,
         participantId: integer(authorization.participant_id, `${recordPath}.participant_id`),
         msgTypes: stringArray(authorization.msg_types, `${recordPath}.msg_types`),
+        spendLimit: coinAmounts(authorization.spend_limit, `${recordPath}.spend_limit`),
+        remainingSpend: coinAmounts(authorization.remaining_spend, `${recordPath}.remaining_spend`),
+        feeSpendLimit: coinAmounts(authorization.fee_spend_limit, `${recordPath}.fee_spend_limit`),
+        withFeegrant: authorization.with_feegrant === true,
         expiration: nullableString(authorization.expiration ?? null, `${recordPath}.expiration`),
+        period: nullableString(authorization.period ?? null, `${recordPath}.period`),
       }
     })
   })
+}
+
+export function vsOperatorAuthorizationsUrl(corporationId: number, onlyActive: boolean): string {
+  const active = onlyActive ? '&only_active=true' : ''
+  return `${VERANA_REST_ENDPOINT_DELEGATION}/vs-operator-authorizations?corporation_id=${corporationId}${active}`
 }
 
 function parseTally(value: unknown, path: string): ProposalTally {
@@ -237,6 +388,11 @@ export function parseProposals(payload: unknown): ProposalRow[] {
       proposers: Array.isArray(row.proposers) ? stringArray(row.proposers, `proposals[${index}].proposers`) : [],
       messages: Array.isArray(row.messages) ? row.messages.map((message) => record(message, 'proposal message')) : [],
       tally: parseTally(row.tally, `proposals[${index}].tally`),
+      groupVersion: row.group_version == null ? null : integer(row.group_version, `proposals[${index}].group_version`),
+      policyVersion:
+        row.group_policy_version == null
+          ? null
+          : integer(row.group_policy_version, `proposals[${index}].group_policy_version`),
     }
   })
 }
@@ -247,11 +403,7 @@ export interface VoteRow {
   submitTime: string | null
 }
 
-export async function fetchProposalVotes(proposalId: number): Promise<VoteRow[]> {
-  const payload = await fetchJson(
-    `${VERANA_REST_ENDPOINT_GROUP}/votes?proposal_id=${proposalId}&limit=1024`,
-    'Unable to fetch votes'
-  )
+export function parseVotes(payload: unknown): VoteRow[] {
   const envelope = record(payload, 'votes response')
   const rows = Array.isArray(envelope.votes) ? envelope.votes : []
   return rows.map((entry, index) => {
@@ -264,29 +416,13 @@ export async function fetchProposalVotes(proposalId: number): Promise<VoteRow[]>
   })
 }
 
-function newestFirst(a: ActivityRow, b: ActivityRow): number {
-  const byTime = Date.parse(b.timestamp) - Date.parse(a.timestamp)
-  if (Number.isFinite(byTime) && byTime !== 0) return byTime
-  return b.blockHeight - a.blockHeight || b.id - a.id
-}
-
-export function parseHistory(payload: unknown): ActivityRow[] {
-  const envelope = record(payload, 'history response')
-  if (!Array.isArray(envelope.activity)) throw new Error('Invalid corporation page response: history.activity')
-  return envelope.activity
-    .map((entry, index) => {
-      const row = record(entry, `activity[${index}]`)
-      const changes = row.changes
-      return {
-        id: integer(row.id, `activity[${index}].id`),
-        timestamp: string(row.timestamp, `activity[${index}].timestamp`),
-        blockHeight: integer(row.block_height, `activity[${index}].block_height`),
-        msg: string(row.msg, `activity[${index}].msg`),
-        account: nullableString(row.account ?? null, `activity[${index}].account`),
-        changes: changes === undefined || changes === null ? {} : record(changes, `activity[${index}].changes`),
-      }
-    })
-    .sort(newestFirst)
+export function fetchProposalVotes(proposalId: number): Promise<KeysetWindow<VoteRow[]>> {
+  return fetchKeysetPages(
+    `${VERANA_REST_ENDPOINT_GROUP}/votes?proposal_id=${proposalId}`,
+    'votes',
+    'Unable to fetch votes',
+    parseVotes
+  )
 }
 
 export async function fetchCorporationHistory(corporationId: number): Promise<ActivityRow[]> {
@@ -295,21 +431,21 @@ export async function fetchCorporationHistory(corporationId: number): Promise<Ac
       `${VERANA_REST_ENDPOINT_CORPORATION}/history/${corporationId}?limit=64`,
       'Unable to fetch the history'
     )
-    return parseHistory(payload)
+    return parseActivityHistory(payload)
   } catch (cause) {
     logger.error('corporation history', cause)
     return []
   }
 }
 
-export function useProposalVotes(proposalId: number): VoteRow[] | null | undefined {
-  const [votes, setVotes] = useState<VoteRow[] | null>()
+export function useProposalVotes(proposalId: number): KeysetWindow<VoteRow[]> | null | undefined {
+  const [votes, setVotes] = useState<KeysetWindow<VoteRow[]> | null>()
 
   useEffect(() => {
     let cancelled = false
     fetchProposalVotes(proposalId)
-      .then((rows) => {
-        if (!cancelled) setVotes(rows)
+      .then((loaded) => {
+        if (!cancelled) setVotes(loaded)
       })
       .catch((cause: unknown) => {
         logger.error(`proposal ${proposalId} votes`, cause)
@@ -341,51 +477,92 @@ export function useCorporationDetails(corporationId: number | undefined) {
     setError(null)
     try {
       const degrading = Promise.all([
-        degrade('operator authorizations', [] as OperatorAuthorizationRow[], () =>
-          fetchJson(
-            `${VERANA_REST_ENDPOINT_DELEGATION}/operator-authorizations?corporation_id=${corporationId}&only_active=true&limit=1024`,
-            'Unable to fetch operator authorizations'
-          ).then(parseOperatorAuthorizations)
+        degrade('operator authorizations', emptyWindow<OperatorAuthorizationRow>(), () =>
+          fetchKeysetPages(
+            `${VERANA_REST_ENDPOINT_DELEGATION}/operator-authorizations?corporation_id=${corporationId}&only_active=true`,
+            'authorizations',
+            'Unable to fetch operator authorizations',
+            parseOperatorAuthorizations
+          )
         ),
-        degrade('proposals', [] as ProposalRow[], () =>
-          fetchJson(
-            `${VERANA_REST_ENDPOINT_GROUP}/proposals?corporation_id=${corporationId}&limit=1024`,
-            'Unable to fetch proposals'
-          ).then(parseProposals)
+        degrade('proposals', emptyWindow<ProposalRow>(), () =>
+          fetchKeysetPages(
+            `${VERANA_REST_ENDPOINT_GROUP}/proposals?corporation_id=${corporationId}`,
+            'proposals',
+            'Unable to fetch proposals',
+            parseProposals
+          )
         ),
         degrade('trust deposit', null as CorporationTrustDeposit | null, () =>
           fetchJson(`${VERANA_REST_ENDPOINT_TRUST_DEPOSIT}/get/${corporationId}`, 'Unable to fetch the trust deposit')
             .then(parseTrustDeposit)
             .catch(nullWhenMissing)
         ),
-        degrade('vs operator authorizations', [] as VsOperatorAuthorizationRow[], () =>
-          fetchJson(
-            `${VERANA_REST_ENDPOINT_DELEGATION}/vs-operator-authorizations?corporation_id=${corporationId}&only_active=true&limit=1024`,
-            'Unable to fetch VS operator authorizations'
-          ).then(parseVsOperatorAuthorizations)
+        degrade('vs operator authorizations', emptyWindow<VsOperatorAuthorizationRow>(), () =>
+          fetchKeysetPages(
+            vsOperatorAuthorizationsUrl(corporationId, true),
+            'authorizations',
+            'Unable to fetch VS operator authorizations',
+            parseVsOperatorAuthorizations
+          )
+        ),
+        degrade('fee grants', emptyWindow<FeeGrantRow>(), () =>
+          fetchKeysetPages(
+            corporationFeeGrantsUrl(corporationId),
+            'fee_grants',
+            'Unable to fetch fee grants',
+            parseCorporationFeeGrants
+          )
+        ),
+        degrade('corporation participants', { value: new Map<number, Participant>(), partial: false }, () =>
+          fetchKeysetPages(
+            `${VERANA_REST_ENDPOINT_PARTICIPANT}/list?corporation_id=${corporationId}`,
+            'participants',
+            'Unable to fetch the corporation participants',
+            (payload) => new Map(parseParticipantsResponse(payload).map((row) => [Number(row.id), row]))
+          )
         ),
         fetchCorporationHistory(corporationId),
       ])
       const [profilePayload, groupPayload] = await Promise.all([
-        fetchJson(`${VERANA_REST_ENDPOINT_CORPORATION}/get/${corporationId}`, 'Unable to fetch the corporation'),
+        fetchJson(
+          `${VERANA_REST_ENDPOINT_CORPORATION}/get/${corporationId}?gf_data=all`,
+          'Unable to fetch the corporation'
+        ),
         fetchJson(`${VERANA_REST_ENDPOINT_GROUP}/get/${corporationId}`, 'Unable to fetch the group'),
       ])
-      const [authorizations, proposals, trustDeposit, vsAuthorizations, history] = await degrading
+      const [authorizations, proposals, trustDeposit, vsAuthorizations, feeGrants, participants, history] =
+        await degrading
+      const governance = await degrade('corporation governance', null as CorporationGovernance | null, async () =>
+        parseGovernance(profilePayload)
+      )
       if (requestRef.current !== requestId) return
       const { members, policy } = parseGroup(groupPayload)
       setDetails({
         profile: parseProfile(profilePayload),
+        governance: governance.value,
         members,
         policy,
         trustDeposit: trustDeposit.value,
-        operatorAuthorizations: authorizations.value,
-        vsOperatorAuthorizations: vsAuthorizations.value,
-        proposals: proposals.value,
+        operatorAuthorizations: authorizations.value.value,
+        vsOperatorAuthorizations: vsAuthorizations.value.value,
+        feeGrants: feeGrants.value.value,
+        participantsById: participants.value.value,
+        proposals: proposals.value.value,
         history,
         degraded: {
           trustDeposit: trustDeposit.failed,
           operatorAuthorizations: authorizations.failed,
+          vsOperatorAuthorizations: vsAuthorizations.failed,
+          feeGrants: feeGrants.failed,
           proposals: proposals.failed,
+        },
+        partial: {
+          operatorAuthorizations: authorizations.value.partial,
+          vsOperatorAuthorizations: vsAuthorizations.value.partial,
+          feeGrants: feeGrants.value.partial,
+          participants: participants.value.partial,
+          proposals: proposals.value.partial,
         },
       })
     } catch (cause) {
