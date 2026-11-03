@@ -6,9 +6,11 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { ECOSYSTEMS_PAGE_SIZE } from '@/hooks/useEcosystems'
+import { useCorporationRoles } from '@/hooks/useParticipants'
 import { usePersistedFilters } from '@/hooks/usePersistedFilters'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
+import { roleFiltersPending } from '@/lib/discover-list'
 import { cn } from '@/lib/utils'
 import { useEcosystemsCtx } from '@/providers/api-rest-query-provider-context'
 import { EntityActionButton } from '@/ui/common/capability-button'
@@ -41,7 +43,6 @@ function matchesSearch(ecosystem: EcosystemListItem, search: string): boolean {
   return [
     ecosystem.did,
     ecosystem.corporationId,
-    ecosystem.role,
     ecosystem.id,
     ecosystem.trustData?.serviceName,
     ecosystem.trustData?.organizationName,
@@ -52,22 +53,6 @@ function readListError(ctx: object): string | null | undefined {
   if (!('errorEcosystems' in ctx)) return undefined
   const error = ctx.errorEcosystems
   return typeof error === 'string' && error ? error : null
-}
-
-function roleTokens(role: string | undefined | null): string[] {
-  if (!role) return []
-  return role
-    .split(/[,\s]+/)
-    .map((r) => r.trim().toUpperCase())
-    .filter(Boolean)
-}
-
-function isOwnedRole(role: string | undefined | null): boolean {
-  return roleTokens(role).some((r) => r === 'ECOSYSTEM')
-}
-
-function hasParticipantRole(role: string | undefined | null): boolean {
-  return roleTokens(role).some((r) => r !== 'ECOSYSTEM')
 }
 
 export default function EcosystemsPage() {
@@ -85,6 +70,8 @@ export default function EcosystemsPage() {
   } = ecosystemsCtx
   const listError = readListError(ecosystemsCtx)
   const { actingCorporation, loading: corporationLoading, error: discoveryError } = useUserCorporation()
+  const actingCorporationId = actingCorporation?.corporation.id
+  const { rolesByEcosystem, rolesLoading, failureReason } = useCorporationRoles(actingCorporationId)
 
   const [filters, setFilters] = usePersistedFilters('ecosystems', INITIAL_ECOSYSTEMS_FILTER)
   useEffect(() => {
@@ -94,20 +81,20 @@ export default function EcosystemsPage() {
   const [introPlayed, setIntroPlayed] = useState(false)
 
   const filtered = useMemo<EcosystemTableRow[]>(() => {
-    const corporationId = actingCorporation?.corporation.id
     return ecosystemsList
-      .map((ecosystem) => ({ ...ecosystem, owned: ecosystem.corporationId === corporationId }))
+      .map((ecosystem) => ({ ...ecosystem, owned: ecosystem.corporationId === actingCorporationId }))
       .filter((ecosystem) => {
         if (!filters.showArchived && ecosystem.archived) return false
-        if (filters.hideOwned && (ecosystem.owned || isOwnedRole(ecosystem.role))) return false
-        if (filters.hideParticipant && hasParticipantRole(ecosystem.role)) return false
+        const roles = rolesByEcosystem[ecosystem.id] ?? []
+        if (filters.hideOwned && (ecosystem.owned || roles.includes('ECOSYSTEM'))) return false
+        if (filters.hideParticipant && roles.some((role) => role !== 'ECOSYSTEM')) return false
         if (!matchesSearch(ecosystem, filters.search)) return false
         if (!filters.showUntrusted && ecosystem.trustData?.trustStatus === 'UNTRUSTED') return false
         return true
       })
-  }, [actingCorporation?.corporation.id, ecosystemsList, filters])
+  }, [actingCorporationId, ecosystemsList, filters, rolesByEcosystem])
 
-  const gridLoading = ecosystemsLoading && ecosystemsList.length === 0
+  const gridLoading = (ecosystemsLoading && ecosystemsList.length === 0) || roleFiltersPending(filters, rolesLoading)
   const filtersActive = hasActiveEcosystemFilters(filters)
   const hiddenUntrusted =
     !filters.showUntrusted && ecosystemsList.some((ecosystem) => ecosystem.trustData?.trustStatus === 'UNTRUSTED')
@@ -260,6 +247,9 @@ export default function EcosystemsPage() {
       />
 
       <section id="ecosystems-grid" aria-busy={gridLoading || undefined} className="mb-8">
+        {failureReason ? (
+          <div className="error-pane mb-4">{translate('ecosystems.roles.failed', { reason: failureReason })}</div>
+        ) : null}
         {gridLoading ? (
           view === 'list' ? (
             <EcosystemsTable rows={[]} loading />
@@ -276,7 +266,12 @@ export default function EcosystemsPage() {
               <Stagger className={GRID_CLASS} initial={introPlayed ? false : 'hidden'}>
                 {filtered.map((ecosystem) => (
                   <StaggerItem key={ecosystem.id} className="h-full">
-                    <EcosystemCard ecosystem={ecosystem} enrichment={ecosystem.trustData} owned={ecosystem.owned} />
+                    <EcosystemCard
+                      ecosystem={ecosystem}
+                      enrichment={ecosystem.trustData}
+                      roles={rolesByEcosystem[ecosystem.id]}
+                      controlled={ecosystem.owned}
+                    />
                   </StaggerItem>
                 ))}
               </Stagger>

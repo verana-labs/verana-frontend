@@ -46,7 +46,7 @@ function IdentityCell({ row }: { row: EcosystemTableRow }) {
           <TrustBadge state={eco.trustStatus} size="sm" />
           {row.owned ? (
             <ToneTag tone="accent" className="h-5">
-              {tr('ecosystems.owned', 'Owned')}
+              {tr('roles.controlled', 'CONTROLLED')}
             </ToneTag>
           ) : null}
           {eco.archived ? (
