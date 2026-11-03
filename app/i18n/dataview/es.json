@@ -961,7 +961,6 @@
   "ecosystem.governance.description": "Documentos versionados que fijan las reglas de este ecosistema, cada uno verificado contra su digest en cadena.",
   "ecosystem.json.title": "Datos sin procesar",
   "ecosystem.json.description": "Ecosistema {id} tal como lo cargó la consola.",
-  "ecosystems.owned": "Propio",
   "ecosystems.add.step.details": "Datos del ecosistema",
   "ecosystems.add.step.details.description": "DID, idioma y documento de gobernanza",
   "ecosystems.add.step.sign": "Confirmar y firmar",

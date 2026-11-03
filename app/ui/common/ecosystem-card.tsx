@@ -7,32 +7,32 @@ import { trustStateBadge } from '@/lib/trust-state'
 import { cn } from '@/lib/utils'
 import ClaimText from '@/ui/common/claim-text'
 import LogoImage from '@/ui/common/logo-image'
+import { RolePills } from '@/ui/common/role-pills'
 import { ToneTag } from '@/ui/common/tone-tag'
 import TrustBadge from '@/ui/common/trust-badge'
 import { DotPattern } from '@/ui/dashboard/dot-pattern'
+import type { ParticipantRole } from '@/ui/dataview/datasections/participant'
 import { type EcosystemCardData, ecosystemHref, useEcosystemIdentity } from '@/ui/ecosystems/ecosystem-identity'
 import { statLabel, tr } from '@/ui/ecosystems/i18n'
 import { interactiveCard } from '@/ui/motion/interaction'
-import { formatNumber, formatVNAFromUVNA, roleBadgeClass, shortenMiddle } from '@/util/util'
+import { formatNumber, formatVNAFromUVNA, shortenMiddle } from '@/util/util'
 
 export const CARD_BODY_CLASS = 'grid h-full min-h-[20.25rem] grid-rows-[5rem_3.25rem_1.5rem_1fr] gap-3 p-4 sm:p-6'
 
-const ROLE_PILL_CLASS =
-  'inline-flex h-5 min-w-0 max-w-[8.5rem] items-center rounded-full px-2 text-[11px] font-medium tracking-wide'
+const NO_ROLES: ParticipantRole[] = []
 
 type Props = {
   ecosystem: EcosystemCardData
   enrichment?: DidEnrichment
-  owned?: boolean
+  roles?: ParticipantRole[]
+  controlled?: boolean
 }
 
 type EcosystemIdentity = ReturnType<typeof useEcosystemIdentity>
 
-export default function EcosystemCard({ ecosystem, enrichment, owned = false }: Props) {
+export default function EcosystemCard({ ecosystem, enrichment, roles = NO_ROLES, controlled = false }: Props) {
   const router = useRouter()
   const eco = useEcosystemIdentity(ecosystem, enrichment)
-  const visibleRoles = eco.roles.slice(0, 2)
-  const extraRoles = eco.roles.slice(visibleRoles.length)
 
   const handleClick = () => router.push(ecosystemHref(ecosystem.id))
 
@@ -101,25 +101,14 @@ export default function EcosystemCard({ ecosystem, enrichment, owned = false }: 
           </p>
         )}
 
-        {eco.roles.length > 0 || eco.archived || owned ? (
+        {roles.length > 0 || eco.archived || controlled ? (
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            {owned ? <ToneTag tone="accent">{tr('ecosystems.owned', 'Owned')}</ToneTag> : null}
             {eco.archived ? <ToneTag dot>{tr('ecosystems.card.archived', 'Archived')}</ToneTag> : null}
-            {visibleRoles.map((role) => (
-              <span key={role} className={cn(ROLE_PILL_CLASS, roleBadgeClass(role))} title={role}>
-                <span className="truncate">{role}</span>
-              </span>
-            ))}
-            {extraRoles.length > 0 ? (
-              <span className={cn(ROLE_PILL_CLASS, 'bg-muted text-muted-foreground')} title={extraRoles.join(', ')}>
-                +{extraRoles.length}
-              </span>
-            ) : null}
+            <RolePills roles={roles} controlled={controlled} />
           </div>
-        ) : null}
-        {visibleRoles.length === 0 ? (
+        ) : (
           <span className="sr-only">{tr('datatable.ecosystem.card.noRoles', 'No roles')}</span>
-        ) : null}
+        )}
       </div>
 
       <dl className="mt-auto grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border px-5 py-4">
