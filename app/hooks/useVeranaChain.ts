@@ -2,7 +2,7 @@
 
 import { Chain } from '@chain-registry/types'
 import { VERANA_CHAIN_ID, VERANA_CHAIN_NAME, VERANA_EXPLORER_URL, VERANA_RPC_ENDPOINT } from '@/config/env'
-import { veranaChainEnv } from '@/config/veranaChain.client'
+import { veranaChainEnv, veranaRestApis } from '@/config/veranaChain.client'
 import type { NotificationLink } from '@/providers/notification-provider'
 
 // Return the explorer URL of one transaction from the tx_page template. Return undefined without an explorer.
@@ -31,7 +31,7 @@ export function useVeranaChain() {
       network_type: chainId.includes('devnet') ? 'devnet' : 'testnet',
       apis: {
         rpc: [{ address: rpc, provider: 'verana' }],
-        rest: [],
+        rest: veranaRestApis(),
       },
       ...(explorerUrl
         ? {

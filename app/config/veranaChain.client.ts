@@ -2,7 +2,19 @@
 'use client'
 
 import { Asset } from '@chain-registry/types'
-import { VERANA_CHAIN_ID, VERANA_CHAIN_NAME, VERANA_EXPLORER_URL, VERANA_RPC_ENDPOINT } from '@/config/env'
+import {
+  VERANA_CHAIN_ID,
+  VERANA_CHAIN_NAME,
+  VERANA_EXPLORER_URL,
+  VERANA_REST_ENDPOINT,
+  VERANA_RPC_ENDPOINT,
+} from '@/config/env'
+
+// Chain REST endpoint handed to wallets. Without one, cosmos-kit fills the chain info it suggests to
+// Keplr with a cosmos.directory URL, which does not serve Verana. Unset keeps an empty list, which
+// unguarded wallet adapters can still read.
+export const veranaRestApis = (address: string | undefined = VERANA_REST_ENDPOINT) =>
+  address ? [{ address, provider: 'verana' }] : []
 
 export const veranaChainEnv = {
   chain_type: 'cosmos',
@@ -11,7 +23,7 @@ export const veranaChainEnv = {
   chain_id: VERANA_CHAIN_ID!,
   apis: {
     rpc: [{ address: VERANA_RPC_ENDPOINT!, provider: 'verana' }],
-    rest: [],
+    rest: veranaRestApis(),
   },
   status: 'live',
   network_type: VERANA_CHAIN_ID?.includes('devnet') ? 'devnet' : 'testnet',

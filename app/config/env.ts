@@ -7,6 +7,8 @@ const read = readEnv
 export const VERANA_CHAIN_ID = read('NEXT_PUBLIC_VERANA_CHAIN_ID')
 export const VERANA_CHAIN_NAME = read('NEXT_PUBLIC_VERANA_CHAIN_NAME')
 export const VERANA_RPC_ENDPOINT = read('NEXT_PUBLIC_VERANA_RPC_ENDPOINT')
+// Chain REST (LCD) endpoint. The app reads its data from the indexer; this only feeds the chain info suggested to wallets.
+export const VERANA_REST_ENDPOINT = read('NEXT_PUBLIC_VERANA_REST_ENDPOINT')?.replace(/\/$/, '')
 export const VERANA_EXPLORER_URL = read('NEXT_PUBLIC_VERANA_EXPLORER_URL')?.replace(/\/$/, '')
 export const VERANA_VISUALIZER_URL = read('NEXT_PUBLIC_VERANA_VISUALIZER_URL')
 export const VERANA_SIGN_DIRECT_MODE = read('NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE')
