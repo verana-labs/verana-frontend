@@ -185,7 +185,7 @@ export function ConfirmTransactionModal({
     Boolean(request.feeGrant.granterAddress) &&
     feeGrantLookup.status === 'ready' &&
     grantCoversMsgType(feeGrantLookup.grants, request.feeGrant.msgType)
-  const granterBalance = useGranterBalance(grantFound ? request.feeGrant?.granterAddress : undefined)
+  const { balance: granterBalance } = useGranterBalance(grantFound ? request.feeGrant?.granterAddress : undefined)
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {

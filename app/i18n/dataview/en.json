@@ -718,6 +718,8 @@
   "corporation.page.rotatedid": "Rotate DID",
   "corporation.page.addresscopy": "Copy corporation address",
   "corporation.page.send": "Send VNA",
+  "corporation.page.balance": "Balance",
+  "corporation.page.balance.failed": "unavailable",
   "corporation.page.rotatedid.submit": "Update DID",
   "corporation.page.threshold": "Threshold",
   "corporation.page.votingperiod": "Voting period",
