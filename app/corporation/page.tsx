@@ -4,6 +4,7 @@ import { useChain } from '@cosmos-kit/react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useCorporationDetails } from '@/hooks/useCorporationDetails'
+import { useGranterBalance } from '@/hooks/useGranterBalance'
 import { useActionSigning } from '@/hooks/useSigningMode'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
@@ -36,11 +37,13 @@ export default function CorporationPage() {
     refetch: refetchCorporations,
   } = useUserCorporation()
   const { details, loading, error, refetch } = useCorporationDetails(actingCorporation?.corporation.id)
+  const { balance, refetch: refetchBalance } = useGranterBalance(details?.profile.policyAddress)
   const { addIndexerEventListener } = useIndexerEvents()
   const [votesVersion, setVotesVersion] = useState(0)
   const refreshAfterTx = () => {
     void refetch()
     void refetchCorporations()
+    refetchBalance()
     setVotesVersion((version) => version + 1)
   }
   const manage = useCorporationManage(refreshAfterTx)
@@ -62,6 +65,7 @@ export default function CorporationPage() {
       timer = setTimeout(() => {
         timer = null
         void refetch()
+        refetchBalance()
         setVotesVersion((version) => version + 1)
       }, EVENT_COALESCE_MS)
     })
@@ -69,7 +73,7 @@ export default function CorporationPage() {
       unsubscribe()
       if (timer) clearTimeout(timer)
     }
-  }, [actingCorporationId, addIndexerEventListener, refetch])
+  }, [actingCorporationId, addIndexerEventListener, refetch, refetchBalance])
 
   const creating = searchParams.get('create') === '1'
   const tab = pick(TABS, searchParams.get('tab'), 'overview')
@@ -132,6 +136,7 @@ export default function CorporationPage() {
     actingCorporation,
     details,
     enrichment,
+    balance,
     walletAddress: address,
     openProposals,
     unrepaidSlash,
