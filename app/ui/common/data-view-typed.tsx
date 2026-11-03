@@ -13,6 +13,7 @@ import ParticipantActionPage from '@/participants/[id]/action'
 import EditableDataView from '@/ui/common/data-edit'
 import ColumnsDataView from '@/ui/common/data-view-columns'
 import GetVNAPanel, { GET_VNA_ACTION } from '@/ui/common/get-vna'
+import SendVNAPanel, { SEND_VNA_ACTION } from '@/ui/common/send-vna'
 import { Section, TypeToken } from '@/ui/dataview/types'
 
 // Wrapper for DataView that lets you pass the generic parameter explicitly
@@ -152,6 +153,9 @@ export function renderActionComponent(
 ): ReactNode {
   if (action === GET_VNA_ACTION) {
     return <GetVNAPanel onClose={onClose} onRefresh={onRefresh} />
+  }
+  if (action === SEND_VNA_ACTION) {
+    return <SendVNAPanel onClose={onClose} onRefresh={onRefresh} />
   }
   if (validParticipantAction(action)) {
     return (

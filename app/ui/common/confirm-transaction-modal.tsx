@@ -228,7 +228,7 @@ export function ConfirmTransactionModal({
           <h2 id="txconfirm-title" className="text-lg font-bold text-gray-900 dark:text-white mb-1">
             {t(request.titleKey)}
           </h2>
-          <p className="text-sm text-gray-700 dark:text-gray-200">{request.effect}</p>
+          <p className="text-sm text-gray-700 dark:text-gray-200 wrap-anywhere">{request.effect}</p>
         </div>
         <dl className="text-sm space-y-2">
           <Row label={t('txconfirm.executesas')}>
