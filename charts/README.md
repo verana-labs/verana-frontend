@@ -44,6 +44,7 @@ Defined under `env`. The network values have no default and rendering fails when
 `global.domain` is required the same way. The rest have defaults in `values.yaml` and can be overridden:
 
 - `NEXT_PUBLIC_PORT`
+- `NEXT_PUBLIC_VERANA_REST_ENDPOINT` (chain REST endpoint handed to wallets; set in `values-devnet.yaml` and `values-testnet.yaml`, empty lets the wallet library fall back to a cosmos.directory URL that does not serve Verana)
 - `NEXT_PUBLIC_VERANA_SIGN_DIRECT_MODE`
 - `NEXT_PUBLIC_SESSION_LIFETIME_SECONDS`
 - `NEXT_PUBLIC_LOW_BALANCE_WARN_UVNA`
