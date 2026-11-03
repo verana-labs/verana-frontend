@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.21.0](https://github.com/verana-labs/verana-frontend/compare/v0.20.0...v0.21.0) (2026-11-03)
+
+
+### Features
+
+* [Corporation] show the corporation's balance ([#581](https://github.com/verana-labs/verana-frontend/issues/581)) ([0e3ae52](https://github.com/verana-labs/verana-frontend/commit/0e3ae5268ab0fd7c341fdc58a7e401fef0d44f18))
+
+
+### Bug Fixes
+
+* [Wallet] hand the chain REST endpoint to Keplr instead of a cosmos.directory URL ([#587](https://github.com/verana-labs/verana-frontend/issues/587)) ([cd4041d](https://github.com/verana-labs/verana-frontend/commit/cd4041d4b89efde7a8fc982e91d7c45a2c928eb5))
+
 ## [0.20.0](https://github.com/verana-labs/verana-frontend/compare/v0.19.1...v0.20.0) (2026-11-03)
 
 
