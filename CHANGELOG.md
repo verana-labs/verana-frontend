@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.0](https://github.com/verana-labs/verana-frontend/compare/v0.21.0...v0.22.0) (2026-11-03)
+
+
+### Features
+
+* [Account] send VNA to another account or to a corporation ([#582](https://github.com/verana-labs/verana-frontend/issues/582)) ([cafbaa4](https://github.com/verana-labs/verana-frontend/commit/cafbaa4d605796685dd17884ae10d583bf254694))
+
 ## [0.21.0](https://github.com/verana-labs/verana-frontend/compare/v0.20.0...v0.21.0) (2026-11-03)
 
 
