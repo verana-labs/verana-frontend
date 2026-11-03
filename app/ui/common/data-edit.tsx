@@ -10,6 +10,7 @@ import { resolveMsgCopy } from '@/msg/constants/resolveMsgTypeConfig'
 import type { MessageType } from '@/msg/constants/types'
 import JsonCodeBlock from '@/ui/common/json-code-block'
 import { LanguageCombobox } from '@/ui/common/language-combobox'
+import { NumberInput } from '@/ui/common/number-input'
 import {
   DataViewProps,
   isResolvedDataField,
@@ -231,16 +232,11 @@ export default function EditableDataView<T extends object>({
       )
     } else if (field.inputType === 'number') {
       inputEl = (
-        <input
-          type="number"
+        <NumberInput
           className={baseInputClass}
-          value={String(value ?? '')}
+          value={value}
           disabled={isDisabled}
-          onChange={(e) => {
-            const raw = e.target.value
-            const parsed = raw === '' ? '' : Number(raw)
-            handleChange(field.name as keyof T, parsed, field)
-          }}
+          onValueChange={(next) => handleChange(field.name as keyof T, next, field)}
         />
       )
     } else if (field.inputType === 'date') {
