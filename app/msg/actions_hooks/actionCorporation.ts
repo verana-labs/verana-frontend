@@ -279,7 +279,7 @@ export function useActionCorporation() {
       return await createCorporation(confirmed, params.did)
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error)
-      const notice = rejectionNotice(text, text)
+      const notice = rejectionNotice(translate('notification.MsgCreateCorporation.error'), text)
       await notify(notice.message, 'error', notice.title, notice.link)
       return null
     } finally {
@@ -314,7 +314,7 @@ export function useActionCorporation() {
       return await grantOperator(corporation, address, confirmed)
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error)
-      const notice = rejectionNotice(text, text)
+      const notice = rejectionNotice(translate('notification.MsgGrantSelfOperatorAuthorization.error'), text)
       await notify(notice.message, 'error', notice.title, notice.link)
       return 'failed'
     } finally {
