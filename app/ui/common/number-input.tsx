@@ -1,8 +1,9 @@
 'use client'
 
 import { type ComponentProps, useState } from 'react'
+import { Input } from '@/ui/shadcn/input'
 
-type NumberInputProps = Omit<ComponentProps<'input'>, 'type' | 'value' | 'onChange'> & {
+type NumberInputProps = Omit<ComponentProps<typeof Input>, 'type' | 'value' | 'onChange'> & {
   value: unknown
   onValueChange: (value: number | '') => void
 }
@@ -15,7 +16,7 @@ export function NumberInput({ value, onValueChange, ...props }: NumberInputProps
   const [typed, setTyped] = useState('')
 
   return (
-    <input
+    <Input
       {...props}
       type="number"
       value={numberInputText(typed, value)}

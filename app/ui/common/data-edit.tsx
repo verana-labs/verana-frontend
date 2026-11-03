@@ -252,16 +252,11 @@ export default function EditableDataView<T extends object>({
       )
     } else if (field.inputType === 'number') {
       inputEl = (
-        <Input
+        <NumberInput
           {...controlProps}
-          type="number"
           className="h-9 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-          value={String(value ?? '')}
-          onChange={(e) => {
-            const raw = e.target.value
-            const parsed = raw === '' ? '' : Number(raw)
-            handleChange(field.name as keyof T, parsed, field)
-          }}
+          value={value}
+          onValueChange={(next) => handleChange(field.name as keyof T, next, field)}
         />
       )
     } else if (field.inputType === 'date') {
