@@ -961,7 +961,6 @@
   "ecosystem.governance.description": "Versioned documents that set the rules of this ecosystem, each checked against its on-chain digest.",
   "ecosystem.json.title": "Raw data",
   "ecosystem.json.description": "Ecosystem {id} as loaded by the console.",
-  "ecosystems.owned": "Owned",
   "ecosystems.add.step.details": "Ecosystem details",
   "ecosystems.add.step.details.description": "DID, language and governance document",
   "ecosystems.add.step.sign": "Confirm and sign",

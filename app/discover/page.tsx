@@ -3,7 +3,7 @@
 import { CompassIcon, RotateCwIcon, SearchXIcon, ServerCrashIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { EcosystemSchemaPage } from '@/hooks/useCredentialSchemas'
-import { useCorporationRolesByEcosystem } from '@/hooks/useParticipants'
+import { useCorporationRoles } from '@/hooks/useParticipants'
 import { useFilterPersistence } from '@/hooks/usePersistedFilters'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import {
@@ -45,7 +45,7 @@ export default function DiscoverJoinPage() {
   useFilterPersistence('discover', filters, setDiscoverFilters, INITIAL_DISCOVER_FILTERS)
   const { actingCorporation } = useUserCorporation()
   const actingCorporationId = actingCorporation?.corporation.id
-  const { rolesByEcosystem, rolesLoading, failureReason } = useCorporationRolesByEcosystem(actingCorporationId)
+  const { rolesByEcosystem, rolesLoading, failureReason } = useCorporationRoles(actingCorporationId)
 
   const appliedFilters = useMemo(() => ({ ...filters, search: discoverSearch }), [filters, discoverSearch])
   const pagingKey = JSON.stringify([appliedFilters, actingCorporationId])
