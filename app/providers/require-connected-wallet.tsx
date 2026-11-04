@@ -1,15 +1,13 @@
 'use client'
 
 import { useChain } from '@cosmos-kit/react'
-import { usePathname, useRouter, useSelectedLayoutSegment } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { allowedOffline } from '@/lib/navlinks'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { Spinner } from '@/ui/shadcn/spinner'
-
-const UNMATCHED_ROUTE_SEGMENT = '/_not-found'
 
 function isStoredSession([key, value]: [string, string]) {
   if (!key.startsWith('cosmos-kit@') || !value) return false
@@ -22,8 +20,7 @@ export default function RequireConnectedWallet({ children }: { children: React.R
   const { status } = useChain(chain_name)
   const router = useRouter()
   const pathname = usePathname()
-  const unmatchedRoute = useSelectedLayoutSegment() === UNMATCHED_ROUTE_SEGMENT
-  const guarded = !unmatchedRoute && !allowedOffline(pathname)
+  const guarded = !allowedOffline(pathname)
 
   const [hydrated, setHydrated] = useState(false)
   const [hasStoredWallet, setHasStoredWallet] = useState(false)
