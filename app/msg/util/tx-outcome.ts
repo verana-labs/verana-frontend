@@ -71,6 +71,7 @@ export function rejectionNotice(fallback: string, text: string): TxNotice {
   const reason = authorizationRejection(text)
   const submitted = SUBMITTED_TX.exec(text)?.[1]
   if (!reason) {
+    logger.error('transaction rejected', text)
     return {
       message: fallback,
       title: t('notification.msg.failed.title'),

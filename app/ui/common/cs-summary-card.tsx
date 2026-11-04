@@ -4,7 +4,9 @@ import { faEye, faSitemap } from '@fortawesome/free-solid-svg-icons'
 import { ReactNode } from 'react'
 import { translate } from '@/i18n/dataview'
 import IconActionButton from '@/ui/common/icon-action-button'
+import { RolePills } from '@/ui/common/role-pills'
 import { type CredentialSchemaListItem, getModePillClass } from '@/ui/datatable/columnslist/cs'
+import type { ParticipantRole } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { formatNumber, formatVNA } from '@/util/util'
 
@@ -12,6 +14,7 @@ export type CsSummaryCardProps = {
   credentialSchema: CredentialSchemaListItem
   onView: () => void
   onParticipants: () => void
+  roles?: ParticipantRole[]
 }
 
 function ModeRow({ label, value, suffix }: { label: string; value: string | null; suffix: string }) {
@@ -37,7 +40,7 @@ function StatRow({ label, value }: { label: string; value: ReactNode }) {
   )
 }
 
-export default function CsSummaryCard({ credentialSchema, onView, onParticipants }: CsSummaryCardProps) {
+export default function CsSummaryCard({ credentialSchema, onView, onParticipants, roles = [] }: CsSummaryCardProps) {
   const isArchived = !!credentialSchema.archived
 
   const previewLabel = resolveTranslatable({ key: 'datatable.cs.card.previewSchema' }, translate) ?? 'Preview Schema'
@@ -90,6 +93,12 @@ export default function CsSummaryCard({ credentialSchema, onView, onParticipants
           <p className="text-xs sm:text-sm text-neutral-70 dark:text-neutral-70 mb-4 line-clamp-2">
             {credentialSchema.description}
           </p>
+        ) : null}
+
+        {roles.length > 0 ? (
+          <div className="flex min-w-0 items-start gap-2 overflow-hidden mb-4">
+            <RolePills roles={roles} />
+          </div>
         ) : null}
 
         <div className="space-y-2 mb-4 text-xs sm:text-sm">

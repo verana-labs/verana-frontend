@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.22.0](https://github.com/verana-labs/verana-frontend/compare/v0.21.0...v0.22.0) (2026-11-03)
+
+
+### Features
+
+* [Account] send VNA to another account or to a corporation ([#582](https://github.com/verana-labs/verana-frontend/issues/582)) ([cafbaa4](https://github.com/verana-labs/verana-frontend/commit/cafbaa4d605796685dd17884ae10d583bf254694))
+
+## [0.21.0](https://github.com/verana-labs/verana-frontend/compare/v0.20.0...v0.21.0) (2026-11-03)
+
+
+### Features
+
+* [Corporation] show the corporation's balance ([#581](https://github.com/verana-labs/verana-frontend/issues/581)) ([0e3ae52](https://github.com/verana-labs/verana-frontend/commit/0e3ae5268ab0fd7c341fdc58a7e401fef0d44f18))
+
+
+### Bug Fixes
+
+* [Wallet] hand the chain REST endpoint to Keplr instead of a cosmos.directory URL ([#587](https://github.com/verana-labs/verana-frontend/issues/587)) ([cd4041d](https://github.com/verana-labs/verana-frontend/commit/cd4041d4b89efde7a8fc982e91d7c45a2c928eb5))
+
+## [0.20.0](https://github.com/verana-labs/verana-frontend/compare/v0.19.1...v0.20.0) (2026-11-03)
+
+
+### Features
+
+* [Corporation] show the full policy address with a copy button ([#580](https://github.com/verana-labs/verana-frontend/issues/580)) ([3184ca2](https://github.com/verana-labs/verana-frontend/commit/3184ca249f9b6a1de5b653ca163761167cde9879))
+* [Ecosystems] show the acting corporation's roles on the ecosystem and schema cards ([#571](https://github.com/verana-labs/verana-frontend/issues/571)) ([c0d1f3b](https://github.com/verana-labs/verana-frontend/commit/c0d1f3be46c0c282d447389e67b5eb6819dd68ca))
+* [Settings] keep the list filters for the session ([#572](https://github.com/verana-labs/verana-frontend/issues/572)) ([55ae61f](https://github.com/verana-labs/verana-frontend/commit/55ae61f0fdd0e93eb3f8640962a02c9073e0bc93))
+
+
+### Bug Fixes
+
+* [Corporation] show a translated message when a wallet rejects a transaction ([#585](https://github.com/verana-labs/verana-frontend/issues/585)) ([bbd6e9e](https://github.com/verana-labs/verana-frontend/commit/bbd6e9e7a72646a0788a3d0727e78af96d1fac72))
+
 ## [0.19.1](https://github.com/verana-labs/verana-frontend/compare/v0.19.0...v0.19.1) (2026-10-27)
 
 

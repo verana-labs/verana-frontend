@@ -185,7 +185,7 @@ export function ConfirmTransactionModal({
     Boolean(request.feeGrant.granterAddress) &&
     feeGrantLookup.status === 'ready' &&
     grantCoversMsgType(feeGrantLookup.grants, request.feeGrant.msgType)
-  const granterBalance = useGranterBalance(grantFound ? request.feeGrant?.granterAddress : undefined)
+  const { balance: granterBalance } = useGranterBalance(grantFound ? request.feeGrant?.granterAddress : undefined)
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -228,7 +228,7 @@ export function ConfirmTransactionModal({
           <h2 id="txconfirm-title" className="text-lg font-bold text-gray-900 dark:text-white mb-1">
             {t(request.titleKey)}
           </h2>
-          <p className="text-sm text-gray-700 dark:text-gray-200">{request.effect}</p>
+          <p className="text-sm text-gray-700 dark:text-gray-200 wrap-anywhere">{request.effect}</p>
         </div>
         <dl className="text-sm space-y-2">
           <Row label={t('txconfirm.executesas')}>

@@ -4,7 +4,8 @@ import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import { useMemo, useState } from 'react'
 import AddEcosystemPage from '@/ecosystems/add/add'
 import { ECOSYSTEMS_PAGE_SIZE } from '@/hooks/useEcosystems'
-import { useCorporationRolesByEcosystem } from '@/hooks/useParticipants'
+import { useCorporationRoles } from '@/hooks/useParticipants'
+import { useFilterPersistence } from '@/hooks/usePersistedFilters'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { clientPage, filterEcosystems, roleFiltersPending } from '@/lib/discover-list'
@@ -12,7 +13,7 @@ import { useEcosystemsCtx } from '@/providers/api-rest-query-provider-context'
 import { EntityActionButton } from '@/ui/common/capability-button'
 import EcosystemCard from '@/ui/common/ecosystem-card'
 import EcosystemCardSkeleton from '@/ui/common/ecosystem-card-skeleton'
-import EcosystemsFilterBar from '@/ui/common/ecosystems-filter-bar'
+import EcosystemsFilterBar, { INITIAL_ECOSYSTEMS_FILTER } from '@/ui/common/ecosystems-filter-bar'
 import KeysetPagination from '@/ui/common/keyset-pagination'
 import { ModalAction } from '@/ui/common/modal-action'
 import { resolveTranslatable } from '@/ui/dataview/types'
@@ -31,9 +32,10 @@ export default function EcosystemsPage() {
     nextPage,
     previousPage,
   } = useEcosystemsCtx()
+  useFilterPersistence('ecosystems', filters, setEcosystemFilters, INITIAL_ECOSYSTEMS_FILTER)
   const { actingCorporation, loading: corporationLoading, error: discoveryError } = useUserCorporation()
   const actingCorporationId = actingCorporation?.corporation.id
-  const { rolesByEcosystem, rolesLoading, failureReason } = useCorporationRolesByEcosystem(actingCorporationId)
+  const { rolesByEcosystem, rolesLoading, failureReason } = useCorporationRoles(actingCorporationId)
 
   const [addEcosystem, setAddEcosystem] = useState(false)
 
@@ -56,7 +58,6 @@ export default function EcosystemsPage() {
   const shown = page.items
 
   const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
-  const rolesError = failureReason ? translate('discover.roles.failed', { reason: failureReason }) : null
   const gridLoading = (ecosystemsLoading && ecosystemsList.length === 0) || roleFiltersPending(filters, rolesLoading)
   const partial = hasNext || hasPrevious
 
@@ -95,9 +96,10 @@ export default function EcosystemsPage() {
         ) : null}
       </EcosystemsFilterBar>
 
-      {rolesError ? <div className="error-pane mb-6">{rolesError}</div> : null}
-
       <section id="ecosystems-grid" className="mb-8">
+        {failureReason ? (
+          <div className="error-pane mb-4">{translate('ecosystems.roles.failed', { reason: failureReason })}</div>
+        ) : null}
         {gridLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
             {[...Array(ECOSYSTEMS_PAGE_SIZE)].map((_, i) => (
@@ -113,7 +115,13 @@ export default function EcosystemsPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                 {shown.map((ecosystem) => (
-                  <EcosystemCard key={ecosystem.id} ecosystem={ecosystem} enrichment={ecosystem.trustData} />
+                  <EcosystemCard
+                    key={ecosystem.id}
+                    ecosystem={ecosystem}
+                    enrichment={ecosystem.trustData}
+                    roles={rolesByEcosystem[ecosystem.id]}
+                    controlled={ecosystem.corporationId === actingCorporationId}
+                  />
                 ))}
               </div>
             )}

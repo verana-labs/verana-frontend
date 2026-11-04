@@ -2,7 +2,8 @@ import type { EcosystemsFilterState } from '@/ui/common/ecosystems-filter-bar'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import type { Participant, ParticipantRole } from '@/ui/dataview/datasections/participant'
 
-export type EcosystemOrder = 'newest' | 'trustValue'
+export const ECOSYSTEM_ORDERS = ['newest', 'trustValue'] as const
+export type EcosystemOrder = (typeof ECOSYSTEM_ORDERS)[number]
 
 export type ListFilters = EcosystemsFilterState & { order?: EcosystemOrder }
 
@@ -48,7 +49,21 @@ export function groupRolesByEcosystem(
   return Object.fromEntries([...grouped].map(([id, roles]) => [id, distinctRoles(roles)]))
 }
 
-export function roleFiltersPending(filters: ListFilters, rolesLoading: boolean): boolean {
+export function groupRolesBySchema(
+  participants: Pick<Participant, 'schema_id' | 'role'>[]
+): Record<string, ParticipantRole[]> {
+  const grouped = new Map<string, ParticipantRole[]>()
+  for (const { schema_id: schemaId, role } of participants) {
+    if (!schemaId) continue
+    grouped.set(schemaId, [...(grouped.get(schemaId) ?? []), role])
+  }
+  return Object.fromEntries([...grouped].map(([id, roles]) => [id, distinctRoles(roles)]))
+}
+
+export function roleFiltersPending(
+  filters: Pick<ListFilters, 'hideOwned' | 'hideParticipant'>,
+  rolesLoading: boolean
+): boolean {
   return rolesLoading && (filters.hideOwned || filters.hideParticipant)
 }
 

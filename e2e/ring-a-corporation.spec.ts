@@ -121,6 +121,48 @@ test('switching the acting corporation closes a form opened for the previous one
   await expect(did).toHaveValue(ACME_ECOSYSTEM_DID)
 })
 
+test('the header shows the full policy address and copies it', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await installCorporationStubs(page)
+  await seedActingCorporation(page, 13)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  await page.goto('/corporation')
+  const main = page.getByRole('main')
+  await expect(main.getByText(ACME_POLICY_ADDRESS, { exact: true })).toBeVisible({ timeout: 15_000 })
+
+  await main.getByRole('button', { name: 'Copy corporation address' }).click()
+  await expect(main.getByRole('button', { name: 'Copied!' })).toBeVisible()
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(ACME_POLICY_ADDRESS)
+})
+
+test('the header balance follows the chain when an event of the corporation arrives', async ({ page }) => {
+  const balancesUvna: Record<string, string | null> = { [ACME_POLICY_ADDRESS]: '5000000' }
+  const socket = await installIndexerSocket(page)
+  await installCorporationStubs(page)
+  await seedActingCorporation(page, 13)
+  await installMockChain(page, {
+    address: HARNESS_ADDRESS,
+    stubSri: false,
+    stubCorporation: false,
+    balancesUvna,
+  })
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  await page.goto('/corporation')
+  const balance = page.getByRole('main').getByText(/^Balance/)
+  await expect(balance).toHaveText('Balance 5 VNA', { timeout: 15_000 })
+
+  await expect.poll(() => socket.subscribedCorporationIds()).toContain(13)
+  balancesUvna[ACME_POLICY_ADDRESS] = '7500000'
+  socket.pushBlock(13, 1001, [indexerParticipantEvent('FUNDED', 1001, 13)])
+  await expect(balance).toHaveText('Balance 7.5 VNA')
+
+  balancesUvna[ACME_POLICY_ADDRESS] = null
+  socket.pushBlock(13, 1002, [indexerParticipantEvent('RPC_DOWN', 1002, 13)])
+  await expect(balance).toHaveText('Balance unavailable')
+})
+
 test('tabs, deep links and proposal actions', async ({ page }) => {
   await installCorporationStubs(page)
   await seedActingCorporation(page, 13)
