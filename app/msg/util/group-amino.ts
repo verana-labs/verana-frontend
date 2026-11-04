@@ -80,13 +80,13 @@ export function withGroupAminoConverters(upstream: AminoTypes, registry: Registr
     }
 
     fromAmino(message: AminoMsg): EncodeObject {
-      return (aminoTypes.has(message.type) ? group : upstream).fromAmino(message)
+      return (groupAminoTypeNames.has(message.type) ? group : upstream).fromAmino(message)
     }
   }
 
   const extended = new VeranaAminoTypes({})
   const converters = { ...groupAminoConverters, ...createGroupAminoConverters(() => extended, registry) }
   const group = new AminoTypes(converters)
-  const aminoTypes = new Set(Object.values(converters).map((converter) => converter.aminoType))
+  const groupAminoTypeNames = new Set(Object.values(converters).map((converter) => converter.aminoType))
   return extended
 }

@@ -9,6 +9,7 @@ import {
   buildUpdateCorporationMessage,
   buildUpdateDecisionPolicyMessage,
   buildUpdateMembersMessage,
+  buildVoteMessage,
 } from '@/msg/actions_hooks/actionCorporationManage'
 
 vi.mock('@cosmos-kit/react', () => ({ useChain: () => ({ address: undefined, isWalletConnected: false }) }))
@@ -100,6 +101,7 @@ describe('group amino converters', () => {
     ['percentage policy', percentagePolicy],
     ['exec', exec],
     ['withdraw', withdraw],
+    ['vote', buildVoteMessage(46, MEMBER, 'yes')],
   ])('round-trips %s', (_name, message) => {
     expect(veranaAmino.fromAmino(veranaAmino.toAmino(message))).toEqual(message)
   })
