@@ -36,7 +36,7 @@ import {
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
 import { extractTxHeight } from '@/msg/util/signerUtil'
-import { notifyRejection, proposalExecution, proposalSubmittedMessage, txFailureNotice } from '@/msg/util/tx-outcome'
+import { proposalExecution, proposalSubmittedMessage, rejectionNotice, txFailureNotice } from '@/msg/util/tx-outcome'
 import { findEventAttribute } from '@/msg/util/txEvents'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import { useNotification } from '@/providers/notification-provider'
@@ -289,7 +289,8 @@ export function useActionEcosystem(onCancel?: () => void, onRefresh?: (id?: stri
       return result
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error)
-      await notifyRejection(notify, errorMessage(undefined, text), text)
+      const notice = rejectionNotice(errorMessage(undefined, text), text)
+      await notify(notice.message, 'error', notice.title, notice.link)
     } finally {
       inFlight.current = false
     }

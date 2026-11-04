@@ -1,17 +1,9 @@
 'use client'
 
-import { toBase64 } from '@cosmjs/encoding'
 import type { EncodeObject } from '@cosmjs/proto-signing'
 import { useChain } from '@cosmos-kit/react'
-import {
-  ChevronRightIcon,
-  FileSignatureIcon,
-  InfoIcon,
-  OctagonXIcon,
-  RotateCwIcon,
-  TriangleAlertIcon,
-} from 'lucide-react'
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { FileSignatureIcon, InfoIcon, OctagonXIcon, RotateCwIcon, TriangleAlertIcon } from 'lucide-react'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { LOW_BALANCE_WARN_UVNA, VERANA_FAUCET_URL } from '@/config/env'
 import { useAccountBalance } from '@/hooks/useAccountBalance'
@@ -34,14 +26,11 @@ import {
   type TxFeeGrant,
   type TxSeverity,
 } from '@/lib/tx-preview'
-import JsonCodeBlock from '@/ui/common/json-code-block'
-import { restoreModalFocus, trapTabKey } from '@/ui/common/modal-action'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 import { DotPattern } from '@/ui/dashboard/dot-pattern'
 import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
 import { Alert, AlertDescription } from '@/ui/shadcn/alert'
 import { Button } from '@/ui/shadcn/button'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/ui/shadcn/collapsible'
 import { Spinner } from '@/ui/shadcn/spinner'
 import { shortenMiddle } from '@/util/util'
 
@@ -55,11 +44,11 @@ function t(key: string, values?: I18nValues): string {
   return resolveTranslatable({ key, values }, translate) ?? key
 }
 
-function simulationRejection(message: string): { text: string; retryable: boolean } {
+function simulationRejection(message: string): string {
   const reason = authorizationRejection(message)
   return reason
-    ? { text: t('txconfirm.simulation.unauthorized', { reason }), retryable: false }
-    : { text: t('txconfirm.simulation.rejected', { msg: chainRejection(message) ?? message }), retryable: true }
+    ? t('txconfirm.simulation.unauthorized', { reason })
+    : t('txconfirm.simulation.rejected', { msg: chainRejection(message) ?? message })
 }
 
 function proposalPolicy(msgs: EncodeObject[]): string {
@@ -67,30 +56,6 @@ function proposalPolicy(msgs: EncodeObject[]): string {
   if (typeof value !== 'object' || value === null) return ''
   const policy = (value as Record<string, unknown>).groupPolicyAddress
   return typeof policy === 'string' ? policy : ''
-}
-
-function rawMessages(msgs: readonly EncodeObject[]): string {
-  return JSON.stringify(
-    msgs,
-    (_key, value: unknown) => {
-      if (typeof value === 'bigint') return value.toString()
-      if (value instanceof Uint8Array) return toBase64(value)
-      return value
-    },
-    2
-  )
-}
-
-function RawMessages({ msgs }: { msgs: readonly EncodeObject[] }) {
-  const raw = useMemo(() => rawMessages(msgs), [msgs])
-  return (
-    <section
-      aria-label={t('txconfirm.raw')}
-      className="mt-2 max-h-64 overflow-y-auto overscroll-contain rounded-lg bg-tint-neutral text-xs shadow-hairline outline-none focus-visible:ring-3 focus-visible:ring-ring/50 [&_pre]:whitespace-pre-wrap [&_pre]:[overflow-wrap:anywhere]"
-    >
-      <JsonCodeBlock value={raw} />
-    </section>
-  )
 }
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -274,14 +239,7 @@ export function ConfirmTransactionModal({
     granterBalancePending ||
     holdForBalance
   const waiting = blocked && currentSimulation.status !== 'failed'
-  const panelRef = useRef<HTMLDivElement>(null)
   const rejection = currentSimulation.status === 'failed' ? simulationRejection(currentSimulation.message) : null
-
-  useEffect(() => {
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    panelRef.current?.focus({ preventScroll: true })
-    return () => restoreModalFocus(opener)
-  }, [])
 
   if (typeof document === 'undefined') return null
   return createPortal(
@@ -292,13 +250,10 @@ export function ConfirmTransactionModal({
       />
       <div className="relative flex min-h-full items-center justify-center p-4">
         <div
-          ref={panelRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="txconfirm-title"
-          tabIndex={-1}
           onClick={(event) => event.stopPropagation()}
-          onKeyDown={trapTabKey}
           className="relative isolate w-full max-w-lg overflow-hidden rounded-2xl bg-popover text-sm text-popover-foreground shadow-overlay ring-1 ring-foreground/10 outline-none animate-in fade-in-0 zoom-in-[0.97] slide-in-from-bottom-2 duration-(--duration-slow) ease-standard motion-reduce:animate-none"
         >
           <DotPattern
@@ -404,33 +359,20 @@ export function ConfirmTransactionModal({
               <Alert role="alert" variant="destructive" className={DESTRUCTIVE_ALERT}>
                 <OctagonXIcon />
                 <AlertDescription className="flex flex-col items-start gap-2 text-current [&_p]:mb-0!">
-                  <p className="[overflow-wrap:anywhere]">{rejection.text}</p>
-                  {rejection.retryable ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="xs"
-                      onClick={() => void simulate()}
-                      className="border-destructive/30 bg-transparent text-current hover:bg-destructive/10 hover:text-current"
-                    >
-                      <RotateCwIcon aria-hidden="true" />
-                      {t('txconfirm.retry')}
-                    </Button>
-                  ) : null}
+                  <p className="[overflow-wrap:anywhere]">{rejection}</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="xs"
+                    onClick={() => void simulate()}
+                    className="border-destructive/30 bg-transparent text-current hover:bg-destructive/10 hover:text-current"
+                  >
+                    <RotateCwIcon aria-hidden="true" />
+                    {t('txconfirm.retry')}
+                  </Button>
                 </AlertDescription>
               </Alert>
             ) : null}
-            <Collapsible>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="group/raw -ms-2 text-muted-foreground">
-                  <ChevronRightIcon className="transition-transform duration-(--duration-base) ease-standard group-data-[state=open]/raw:rotate-90 rtl:rotate-180 rtl:group-data-[state=open]/raw:rotate-90" />
-                  {t('txconfirm.raw')}
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <RawMessages msgs={simulatedMsgs} />
-              </CollapsibleContent>
-            </Collapsible>
           </div>
           <div className="flex flex-col-reverse gap-2 border-t border-border bg-muted/40 px-4 py-3 sm:flex-row sm:justify-end sm:px-6 dark:bg-foreground/[0.03]">
             <Button type="button" variant="outline" size="lg" className="btn-action-cancel px-4" onClick={onCancel}>

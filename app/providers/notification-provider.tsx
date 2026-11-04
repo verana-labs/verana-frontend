@@ -9,7 +9,7 @@ import { Toaster } from '@/ui/shadcn/sonner'
 import { Spinner } from '@/ui/shadcn/spinner'
 import { shortenMiddle } from '@/util/util'
 
-type NotificationType = 'success' | 'error' | 'info' | 'notice' | 'inProgress'
+type NotificationType = 'success' | 'error' | 'info' | 'inProgress'
 
 // Per [VFE-TX-UX-1] a notification can link a transaction hash to the explorer.
 export type NotificationLink = {
@@ -32,7 +32,6 @@ const DURATION: Record<NotificationType, number> = {
   success: 5000,
   error: 10000,
   info: Number.POSITIVE_INFINITY,
-  notice: 5000,
   inProgress: Number.POSITIVE_INFINITY,
 }
 
@@ -40,7 +39,6 @@ const TYPE_CLASS: Record<NotificationType, string> = {
   success: 'notify-success',
   error: 'notify-error',
   info: 'notify-info',
-  notice: 'notify-info',
   inProgress: 'notify-in-progress',
 }
 
@@ -102,7 +100,7 @@ function showToast(entry: ShownToast, message: string, title?: string, link?: No
     )
   if (type === 'success') toast.success(heading, options)
   else if (type === 'error') toast.error(heading, options)
-  else if (type === 'info' || type === 'notice') toast.info(heading, options)
+  else if (type === 'info') toast.info(heading, options)
   else toast(heading, { ...options, icon: <Spinner aria-hidden="true" className="text-info" /> })
 }
 

@@ -39,7 +39,7 @@ import {
 import { useSendTxDetectingMode } from '@/msg/util/sendTxDetectingMode'
 import type { SimulateResult } from '@/msg/util/signAndBroadcastManualAmino'
 import { extractTxHeight } from '@/msg/util/signerUtil'
-import { notifyRejection, proposalSubmittedMessage, txFailureNotice } from '@/msg/util/tx-outcome'
+import { proposalSubmittedMessage, rejectionNotice, txFailureNotice } from '@/msg/util/tx-outcome'
 import { findEventAttribute } from '@/msg/util/txEvents'
 import { usePendingTasksCtx } from '@/providers/api-rest-query-provider-context'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
@@ -382,7 +382,8 @@ export function useActionParticipant(onCancel?: () => void, onRefresh?: (id?: st
       return result
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error)
-      await notifyRejection(notify, errorMessage(undefined, text), text)
+      const notice = rejectionNotice(errorMessage(undefined, text), text)
+      await notify(notice.message, 'error', notice.title, notice.link)
     } finally {
       inFlight.current = false
     }
