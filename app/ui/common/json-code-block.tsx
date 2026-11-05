@@ -4,7 +4,6 @@ import { CheckIcon, CopyIcon } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Highlight, themes } from 'prism-react-renderer'
 import { useEffect, useMemo, useState } from 'react'
-import { translate } from '@/i18n/dataview'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/shadcn/button'
 
@@ -57,7 +56,7 @@ export default function JsonCodeBlock({ value, className }: JsonCodeBlockProps) 
     setCopied(false)
   }
 
-  const copyLabel = copied ? translate('copied.label') : translate('messages.copy')
+  const copyLabel = copied ? 'Copied' : 'Copy'
 
   return (
     <div className="group/code relative">

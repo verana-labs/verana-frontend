@@ -94,8 +94,8 @@ const offlineRoutesAllowed: (string | RegExp)[] = [
   '/dashboard',
   '/discover',
   '/settings',
-  /^\/ecosystems\/(?!add$)[^/]+$/,
-  /^\/credential-schemas\/(?!add$)[^/]+$/,
+  /^\/ecosystems\/[^/]+$/,
+  /^\/credential-schemas\/[^/]+$/,
   /^\/participants\/[^/]+$/,
 ]
 

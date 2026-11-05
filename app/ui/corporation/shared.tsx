@@ -3,11 +3,9 @@
 import { InfoIcon, TriangleAlertIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { translate } from '@/i18n/dataview'
-import type { DecisionRule } from '@/lib/decision-policy'
 import { cn } from '@/lib/utils'
 import { type Tone, ToneTag } from '@/ui/common/tone-tag'
 import { Badge } from '@/ui/shadcn/badge'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/shadcn/tooltip'
 
 export function Card({ id, className, children }: { id?: string; className?: string; children: ReactNode }) {
   return (
@@ -111,48 +109,19 @@ export function formatRelative(value: string | null, now: number = Date.now()): 
   return translate(minutes >= 0 ? 'corporation.time.in' : 'corporation.time.ago', { value: unit })
 }
 
-export const STATUS_TONE: Record<string, { tone: Tone; dot: string }> = {
-  SUBMITTED: { tone: 'info', dot: 'bg-info' },
-  ACCEPTED: { tone: 'success', dot: 'bg-success' },
-  REJECTED: { tone: 'destructive', dot: 'bg-destructive' },
-  ABORTED: { tone: 'warning', dot: 'bg-warning' },
-  WITHDRAWN: { tone: 'neutral', dot: 'bg-muted-foreground' },
+const STATUS_TONE: Record<string, Tone> = {
+  SUBMITTED: 'warning',
+  ACCEPTED: 'success',
+  REJECTED: 'destructive',
+  ABORTED: 'warning',
+  WITHDRAWN: 'neutral',
 }
 
-const STATUS_KEYS: Record<string, string> = {
-  SUBMITTED: 'corporation.proposals.filter.open',
-  ACCEPTED: 'corporation.proposals.filter.accepted',
-  REJECTED: 'corporation.proposals.filter.rejected',
-  ABORTED: 'corporation.proposals.filter.aborted',
-  WITHDRAWN: 'corporation.proposals.filter.withdrawn',
-}
-
-export function statusLabel(status: string): string {
-  return STATUS_KEYS[status] ? translate(STATUS_KEYS[status]) : status
-}
-
-export function StatusBadge({ status, votingEnded = false }: { status: string; votingEnded?: boolean }) {
-  const awaiting = status === 'SUBMITTED' && votingEnded
-  const open = status === 'SUBMITTED' && !votingEnded
-  const tone: Tone = awaiting ? 'neutral' : (STATUS_TONE[status] ?? STATUS_TONE.WITHDRAWN).tone
-  const badge = (
-    <ToneTag tone={tone} dot pulse={open}>
-      {awaiting ? translate('corporation.proposals.status.awaitingtally') : statusLabel(status)}
-    </ToneTag>
-  )
-  if (status !== 'ABORTED') return badge
+export function StatusBadge({ status }: { status: string }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          className="relative inline-flex cursor-default rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-        >
-          {badge}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent>{translate('corporation.proposals.aborted.hint')}</TooltipContent>
-    </Tooltip>
+    <ToneTag tone={STATUS_TONE[status] ?? STATUS_TONE.WITHDRAWN} dot>
+      {status}
+    </ToneTag>
   )
 }
 
@@ -181,14 +150,4 @@ export function nameInitials(name: string): string {
     .filter(Boolean)
   const letters = words.length > 1 ? `${words[0][0]}${words[1][0]}` : (words[0] ?? '?').slice(0, 2)
   return letters.toUpperCase()
-}
-
-export function rulePercent(rule: DecisionRule | null, totalWeight: number): number | null {
-  if (!rule) return null
-  if (rule.kind === 'percentage') {
-    const value = Number(rule.percentage) * 100
-    return Number.isFinite(value) ? value : null
-  }
-  const threshold = Number(rule.threshold)
-  return totalWeight > 0 && Number.isFinite(threshold) ? Math.min(100, (threshold / totalWeight) * 100) : null
 }

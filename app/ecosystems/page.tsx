@@ -1,10 +1,9 @@
 'use client'
 
 import { faPlus } from '@fortawesome/free-solid-svg-icons'
-import { Building2Icon, CloudOffIcon, CompassIcon, LayersIcon, RotateCwIcon, SearchXIcon } from 'lucide-react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import { Building2Icon, CloudOffIcon, SearchXIcon } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import AddEcosystemPage from '@/ecosystems/add/add'
 import { ECOSYSTEMS_PAGE_SIZE } from '@/hooks/useEcosystems'
 import { useCorporationRoles } from '@/hooks/useParticipants'
 import { usePersistedFilters } from '@/hooks/usePersistedFilters'
@@ -15,27 +14,20 @@ import { cn } from '@/lib/utils'
 import { useEcosystemsCtx } from '@/providers/api-rest-query-provider-context'
 import { EntityActionButton } from '@/ui/common/capability-button'
 import EcosystemCard from '@/ui/common/ecosystem-card'
-import EcosystemsFilterBar, {
-  hasActiveEcosystemFilters,
-  INITIAL_ECOSYSTEMS_FILTER,
-} from '@/ui/common/ecosystems-filter-bar'
+import EcosystemsFilterBar, { INITIAL_ECOSYSTEMS_FILTER } from '@/ui/common/ecosystems-filter-bar'
 import { EmptyState } from '@/ui/common/empty-state'
-import { GhostEmpty } from '@/ui/common/ghost-empty'
 import KeysetPagination from '@/ui/common/keyset-pagination'
+import { ModalAction } from '@/ui/common/modal-action'
 import { PageHeader } from '@/ui/common/page-header'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { EcosystemGridSkeleton } from '@/ui/ecosystems/ecosystem-grid-skeleton'
-import { EcosystemsTable, type EcosystemTableRow } from '@/ui/ecosystems/ecosystems-table'
 import { tr } from '@/ui/ecosystems/i18n'
-import { useEcosystemsView, ViewToggle } from '@/ui/ecosystems/view-toggle'
 import { BlurFade } from '@/ui/motion/blur-fade'
 import { PageTransition } from '@/ui/motion/page-transition'
 import { Stagger, StaggerItem } from '@/ui/motion/stagger'
-import { Button, buttonVariants } from '@/ui/shadcn/button'
+import { buttonVariants } from '@/ui/shadcn/button'
 
 const GRID_CLASS = 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 sm:gap-5'
-
-const GHOST_CLASS = 'min-h-80 overflow-hidden rounded-xl'
 
 function matchesSearch(ecosystem: EcosystemListItem, search: string): boolean {
   const q = search.trim().toLowerCase()
@@ -49,15 +41,7 @@ function matchesSearch(ecosystem: EcosystemListItem, search: string): boolean {
   ].some((value) => value != null && String(value).toLowerCase().includes(q))
 }
 
-function readListError(ctx: object): string | null | undefined {
-  if (!('errorEcosystems' in ctx)) return undefined
-  const error = ctx.errorEcosystems
-  return typeof error === 'string' && error ? error : null
-}
-
 export default function EcosystemsPage() {
-  const router = useRouter()
-  const ecosystemsCtx = useEcosystemsCtx()
   const {
     ecosystemsList,
     ecosystemsLoading,
@@ -67,8 +51,7 @@ export default function EcosystemsPage() {
     hasPrevious,
     nextPage,
     previousPage,
-  } = ecosystemsCtx
-  const listError = readListError(ecosystemsCtx)
+  } = useEcosystemsCtx()
   const { actingCorporation, loading: corporationLoading, error: discoveryError } = useUserCorporation()
   const actingCorporationId = actingCorporation?.corporation.id
   const { rolesByEcosystem, rolesLoading, failureReason } = useCorporationRoles(actingCorporationId)
@@ -77,27 +60,23 @@ export default function EcosystemsPage() {
   useEffect(() => {
     setOnlyActiveEcosystem(!filters.showArchived)
   }, [filters.showArchived, setOnlyActiveEcosystem])
-  const [view, setView] = useEcosystemsView()
+  const [addEcosystem, setAddEcosystem] = useState(false)
   const [introPlayed, setIntroPlayed] = useState(false)
 
-  const filtered = useMemo<EcosystemTableRow[]>(() => {
-    return ecosystemsList
-      .map((ecosystem) => ({ ...ecosystem, owned: ecosystem.corporationId === actingCorporationId }))
-      .filter((ecosystem) => {
-        if (!filters.showArchived && ecosystem.archived) return false
-        const roles = rolesByEcosystem[ecosystem.id] ?? []
-        if (filters.hideOwned && (ecosystem.owned || roles.includes('ECOSYSTEM'))) return false
-        if (filters.hideParticipant && roles.some((role) => role !== 'ECOSYSTEM')) return false
-        if (!matchesSearch(ecosystem, filters.search)) return false
-        if (!filters.showUntrusted && ecosystem.trustData?.trustStatus === 'UNTRUSTED') return false
-        return true
-      })
+  const filtered = useMemo(() => {
+    return ecosystemsList.filter((ecosystem) => {
+      if (!filters.showArchived && ecosystem.archived) return false
+      const roles = rolesByEcosystem[ecosystem.id] ?? []
+      const isOwned = ecosystem.corporationId === actingCorporationId || roles.includes('ECOSYSTEM')
+      if (filters.hideOwned && isOwned) return false
+      if (filters.hideParticipant && roles.some((role) => role !== 'ECOSYSTEM')) return false
+      if (!matchesSearch(ecosystem, filters.search)) return false
+      if (!filters.showUntrusted && ecosystem.trustData?.trustStatus === 'UNTRUSTED') return false
+      return true
+    })
   }, [actingCorporationId, ecosystemsList, filters, rolesByEcosystem])
 
   const gridLoading = (ecosystemsLoading && ecosystemsList.length === 0) || roleFiltersPending(filters, rolesLoading)
-  const filtersActive = hasActiveEcosystemFilters(filters)
-  const hiddenUntrusted =
-    !filters.showUntrusted && ecosystemsList.some((ecosystem) => ecosystem.trustData?.trustStatus === 'UNTRUSTED')
 
   useEffect(() => {
     if (!introPlayed && filtered.length > 0) setIntroPlayed(true)
@@ -115,110 +94,6 @@ export default function EcosystemsPage() {
     )
   }
 
-  const openCreate = () => router.push('/ecosystems/add')
-  const showUntrustedAction = hiddenUntrusted ? (
-    <Button variant="outline" size="sm" onClick={() => setFilters({ ...filters, showUntrusted: true })}>
-      {tr('datatable.ecosystem.filter.showUntrusted', 'Show untrusted ecosystems')}
-    </Button>
-  ) : null
-  const clearFiltersAction = filtersActive ? (
-    <Button variant="outline" size="sm" onClick={() => setFilters({ ...INITIAL_ECOSYSTEMS_FILTER })}>
-      {tr('ecosystems.filter.clear', 'Clear filters')}
-    </Button>
-  ) : null
-  const showArchivedAction = filters.showArchived ? null : (
-    <Button variant="ghost" size="sm" onClick={() => setFilters({ ...filters, showArchived: true })}>
-      {tr('datatable.ecosystem.filter.showArchived', 'Show archived')}
-    </Button>
-  )
-  const retryAction = (
-    <Button variant="outline" size="sm" onClick={() => void refetchEcosystems()}>
-      <RotateCwIcon data-icon="inline-start" aria-hidden="true" />
-      {tr('ecosystems.retry', 'Retry')}
-    </Button>
-  )
-  const discoverAction = (
-    <Link href="/discover" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-      <CompassIcon data-icon="inline-start" aria-hidden="true" />
-      {tr('ecosystems.empty.none.discover', 'Browse Discover')}
-    </Link>
-  )
-
-  function renderEmpty(): ReactNode {
-    if (listError) {
-      return (
-        <EmptyState
-          className="border-dashed bg-card/50"
-          icon={<CloudOffIcon />}
-          title={tr('ecosystems.error.title', 'Could not load ecosystems')}
-          description={tr('ecosystems.error.description', 'The indexer did not answer. Check the network and retry.')}
-          action={retryAction}
-        />
-      )
-    }
-    if (ecosystemsList.length > 0 || filtersActive) {
-      return (
-        <EmptyState
-          className="border-dashed bg-card/50"
-          icon={<SearchXIcon />}
-          title={tr('datatable.ecosystem.empty', 'No ecosystems match your filters.')}
-          description={
-            hiddenUntrusted && !filtersActive
-              ? tr('ecosystems.empty.untrustedHidden', 'Untrusted ecosystems are hidden by default.')
-              : tr('ecosystems.empty.filtered.description', 'Try another search or clear the filters.')
-          }
-          action={
-            <Actions>
-              {clearFiltersAction}
-              {showUntrustedAction}
-            </Actions>
-          }
-        />
-      )
-    }
-    if (listError === undefined) {
-      return (
-        <GhostEmpty
-          className={GHOST_CLASS}
-          icon={<LayersIcon />}
-          title={tr('ecosystems.empty.unknown.title', 'No ecosystems to show')}
-          description={tr(
-            'ecosystems.empty.unknown.description',
-            'Nothing came back for your corporation. Retry, or find an ecosystem to join in Discover.'
-          )}
-          action={
-            <Actions>
-              {retryAction}
-              {discoverAction}
-              {showArchivedAction}
-            </Actions>
-          }
-        >
-          <EcosystemGridSkeleton ghost count={3} className={cn(GRID_CLASS, 'w-full')} />
-        </GhostEmpty>
-      )
-    }
-    return (
-      <GhostEmpty
-        className={GHOST_CLASS}
-        icon={<LayersIcon />}
-        title={tr('ecosystems.empty.none.title', 'No ecosystems yet')}
-        description={tr(
-          'ecosystems.empty.none.description',
-          'Create an ecosystem for your corporation, or find one to join in Discover.'
-        )}
-        action={
-          <Actions>
-            {discoverAction}
-            {showArchivedAction}
-          </Actions>
-        }
-      >
-        <EcosystemGridSkeleton ghost count={3} className={cn(GRID_CLASS, 'w-full')} />
-      </GhostEmpty>
-    )
-  }
-
   return (
     <PageTransition>
       <BlurFade>
@@ -230,7 +105,7 @@ export default function EcosystemsPage() {
               msgType="MsgCreateEcosystem"
               icon={faPlus}
               label={tr('datatable.ecosystem.add', 'Create Ecosystem')}
-              onClick={openCreate}
+              onClick={() => setAddEcosystem(true)}
               className={cn(
                 buttonVariants({ size: 'lg' }),
                 'h-9 gap-2 px-3.5 shadow-xs [&_svg]:size-3.5 [&>svg:last-child]:text-primary-foreground/80'
@@ -240,28 +115,22 @@ export default function EcosystemsPage() {
         />
       </BlurFade>
 
-      <EcosystemsFilterBar
-        value={filters}
-        onChange={setFilters}
-        actions={<ViewToggle value={view} onChange={setView} />}
-      />
+      <EcosystemsFilterBar value={filters} onChange={setFilters} />
 
       <section id="ecosystems-grid" aria-busy={gridLoading || undefined} className="mb-8">
         {failureReason ? (
           <div className="error-pane mb-4">{translate('ecosystems.roles.failed', { reason: failureReason })}</div>
         ) : null}
         {gridLoading ? (
-          view === 'list' ? (
-            <EcosystemsTable rows={[]} loading />
-          ) : (
-            <EcosystemGridSkeleton count={ECOSYSTEMS_PAGE_SIZE} className={GRID_CLASS} />
-          )
+          <EcosystemGridSkeleton count={ECOSYSTEMS_PAGE_SIZE} className={GRID_CLASS} />
         ) : (
           <>
             {filtered.length === 0 ? (
-              renderEmpty()
-            ) : view === 'list' ? (
-              <EcosystemsTable rows={filtered} />
+              <EmptyState
+                className="border-dashed bg-card/50"
+                icon={<SearchXIcon />}
+                title={tr('datatable.ecosystem.empty', 'No ecosystems match your filters.')}
+              />
             ) : (
               <Stagger className={GRID_CLASS} initial={introPlayed ? false : 'hidden'}>
                 {filtered.map((ecosystem) => (
@@ -270,30 +139,40 @@ export default function EcosystemsPage() {
                       ecosystem={ecosystem}
                       enrichment={ecosystem.trustData}
                       roles={rolesByEcosystem[ecosystem.id]}
-                      controlled={ecosystem.owned}
+                      controlled={ecosystem.corporationId === actingCorporationId}
                     />
                   </StaggerItem>
                 ))}
               </Stagger>
             )}
 
-            {listError || (filtered.length === 0 && !hasPrevious && !hasNext) ? null : (
-              <KeysetPagination
-                showing={filtered.length}
-                itemsLabel={tr('datatable.ecosystem.pagination.ecosystems', 'ecosystems')}
-                hasPrevious={hasPrevious}
-                hasNext={hasNext}
-                onPrevious={previousPage}
-                onNext={nextPage}
-              />
-            )}
+            <KeysetPagination
+              showing={filtered.length}
+              itemsLabel={tr('datatable.ecosystem.pagination.ecosystems', 'ecosystems')}
+              hasPrevious={hasPrevious}
+              hasNext={hasNext}
+              onPrevious={previousPage}
+              onNext={nextPage}
+            />
           </>
         )}
       </section>
+
+      {addEcosystem && (
+        <ModalAction
+          onClose={() => setAddEcosystem(false)}
+          titleKey="datatable.ecosystem.add.modal.title"
+          isActive={addEcosystem}
+        >
+          <AddEcosystemPage
+            onCancel={() => setAddEcosystem(false)}
+            onRefresh={() => {
+              void refetchEcosystems()
+              setAddEcosystem(false)
+            }}
+          />
+        </ModalAction>
+      )}
     </PageTransition>
   )
-}
-
-function Actions({ children }: { children: ReactNode }) {
-  return <div className="flex flex-wrap items-center justify-center gap-2">{children}</div>
 }

@@ -7,13 +7,11 @@ import type * as React from 'react'
 import { translate } from '@/i18n/dataview'
 import { cn } from '@/lib/utils'
 import { useSidebar } from '@/ui/shadcn/sidebar'
-import { Skeleton } from '@/ui/shadcn/skeleton'
-import { type NavItem, useNavItems, useShellSettling } from '@/ui/shell/nav-items'
+import { type NavItem, useNavItems } from '@/ui/shell/nav-items'
 
 const TASK_FIRST_TABS = [['/dashboard'], ['/pendingtasks'], ['/ecosystems', '/discover'], ['/account']]
 const FALLBACK_TABS = ['/discover', '/settings']
 const TAB_LIMIT = 4
-const SKELETON_TABS = ['a', 'b', 'c', 'd']
 const ACTIONABLE_TABS = new Set(['/pendingtasks'])
 const SHORT_LABEL_KEYS: Record<string, string> = {
   '/dashboard': 'shell.tabs.home',
@@ -93,7 +91,6 @@ function TabContent({
 export function MobileTabBar() {
   const pathname = usePathname()
   const items = useNavItems()
-  const settling = useShellSettling()
   const { openMobile, setOpenMobile } = useSidebar()
   const tabs = pickTabs(items)
   const tabUrls = new Set(tabs.map((tab) => tab.url))
@@ -106,16 +103,8 @@ export function MobileTabBar() {
       data-shell="tab-bar"
       className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
     >
-      <ul className="mx-auto flex max-w-lg items-stretch gap-1 px-2 py-1" aria-busy={settling || undefined}>
-        {settling
-          ? SKELETON_TABS.map((key) => (
-              <li key={key} className="flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1.5">
-                <Skeleton className="h-7 w-12 rounded-full" />
-                <Skeleton className="h-2.5 w-10" />
-              </li>
-            ))
-          : null}
-        {(settling ? [] : tabs).map((tab) => {
+      <ul className="mx-auto flex max-w-lg items-stretch gap-1 px-2 py-1">
+        {tabs.map((tab) => {
           const active = isActive(pathname, tab.url)
           const label = SHORT_LABEL_KEYS[tab.url] ? translate(SHORT_LABEL_KEYS[tab.url]) : tab.title
           const actionable = ACTIONABLE_TABS.has(tab.url) && Boolean(tab.badge)

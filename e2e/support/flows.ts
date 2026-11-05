@@ -29,6 +29,8 @@ export async function fillEcosystemForm(page: Page, opts: EcosystemFormOptions) 
     .getByRole('option', { name: /english/i })
     .first()
     .click()
+  // Headless UI refocuses the input one frame after a pick, reopening an `immediate` list if focus already moved.
+  await page.evaluate(() => new Promise(requestAnimationFrame))
   await labelInput(page, 'Document URL').fill(docUrl)
 }
 

@@ -71,10 +71,8 @@ export function shortenMiddle(str: string, maxLength: number): string {
   return `${start}...${end}`
 }
 
-export function participantCardHref(schemaId: number | string, participantId?: number | string): string {
-  const params = new URLSearchParams({ tab: 'participants' })
-  if (participantId !== undefined) params.set('participant', String(participantId))
-  return `/credential-schemas/${encodeURIComponent(String(schemaId))}?${params.toString()}`
+export function participantCardHref(schemaId: number | string, participantId: number | string): string {
+  return `/participants/${encodeURIComponent(String(schemaId))}?participant=${encodeURIComponent(String(participantId))}`
 }
 
 export function shortenDID(str: string): string {

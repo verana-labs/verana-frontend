@@ -13,12 +13,11 @@ import { cn } from '@/lib/utils'
 import { BlockHeader } from '@/ui/common/block-card'
 import { CorporationDiscoveryFailure } from '@/ui/common/corporation-discovery-failure'
 import { CorporationMembershipRow } from '@/ui/common/corporation-membership-row'
-import { ToneTag } from '@/ui/common/tone-tag'
 import { Shimmer } from '@/ui/motion/shimmer'
 import { Stagger, StaggerItem } from '@/ui/motion/stagger'
 import { Button } from '@/ui/shadcn/button'
 import { Card, CardContent, CardHeader } from '@/ui/shadcn/card'
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/shadcn/empty'
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia } from '@/ui/shadcn/empty'
 
 export function AccountCorporations() {
   const router = useRouter()
@@ -47,13 +46,6 @@ export function AccountCorporations() {
           icon={<Building2Icon />}
           title={translate('account.corporations.title')}
           caption={translate('account.corporations.notice')}
-          tag={
-            memberships.length > 0 ? (
-              <ToneTag tone="accent" className="tabular-nums">
-                {memberships.length}
-              </ToneTag>
-            ) : null
-          }
           actions={
             showEmpty ? null : (
               <Link
@@ -81,7 +73,6 @@ export function AccountCorporations() {
               <EmptyMedia variant="icon" className="bg-tint-accent text-primary">
                 <Building2Icon aria-hidden="true" />
               </EmptyMedia>
-              <EmptyTitle>{translate('account.corporations.empty.title')}</EmptyTitle>
               <EmptyDescription>{translate('account.corporations.empty')}</EmptyDescription>
             </EmptyHeader>
             <EmptyContent>

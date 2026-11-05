@@ -1,4 +1,3 @@
-import { translate } from '@/i18n/dataview'
 import type { HolderOnboardingMode, ParticipantOnboardingMode } from '@/lib/participant-onboarding'
 import { Column } from '@/ui/datatable/types'
 import { type I18nValues, type Translatable } from '@/ui/dataview/types'
@@ -73,11 +72,4 @@ export function getModePillClass(value: string, suffix: string): string {
   if (!value?.trim()) return ''
   const tone = MODE_TONE[value.concat(suffix)]
   return tone ? BADGE_TONE[tone] : ''
-}
-
-export function getModeLabel(value: string): string {
-  if (!value?.trim()) return ''
-  const key = `dataview.cs.managementMode.${value}`
-  const label = translate(key)
-  return label === key ? value : label
 }

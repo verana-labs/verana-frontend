@@ -1,6 +1,6 @@
 'use client'
 
-import { CompassIcon, RotateCwIcon, SearchXIcon, ServerCrashIcon } from 'lucide-react'
+import { CompassIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { EcosystemSchemaPage } from '@/hooks/useCredentialSchemas'
 import { useCorporationRoles } from '@/hooks/useParticipants'
@@ -20,10 +20,8 @@ import KeysetPagination from '@/ui/common/keyset-pagination'
 import TitleAndButton from '@/ui/common/title-and-button'
 import { DiscoverCardSkeleton } from '@/ui/discover/discover-card-skeleton'
 import { DiscoverFilters } from '@/ui/discover/discover-filters'
-import { DiscoverStats } from '@/ui/discover/discover-stats'
 import { discoverText as t } from '@/ui/discover/text'
 import { Stagger, StaggerItem } from '@/ui/motion/stagger'
-import { Button } from '@/ui/shadcn/button'
 
 const NO_SCHEMAS: EcosystemSchemaPage = { items: [], hasNext: false }
 const NO_ECOSYSTEM_IDS: string[] = []
@@ -75,21 +73,14 @@ export default function DiscoverJoinPage() {
 
   const partial = discoverCtx.hasNext || discoverCtx.hasPrevious
   const loading = (discoverCtx.loading && discoverList.length === 0) || roleFiltersPending(filters, rolesLoading)
-  const listError = discoverCtx.error
-  const listFailed = Boolean(listError) && !loading && discoverList.length === 0
-  const rolesError = failureReason ? t('discover.roles.failed', { reason: failureReason }) : null
-  const showPagination = !loading && !listFailed && (shown.length > 0 || page.hasPrevious || page.hasNext)
+  const errors = [
+    discoverCtx.error,
+    failureReason ? t('discover.roles.failed', { reason: failureReason }) : null,
+  ].filter((message): message is string => message !== null)
 
   return (
     <>
-      <TitleAndButton title={t('discover.title')} description={[t('discover.description')]} />
-
-      <DiscoverStats
-        ecosystems={matching}
-        loading={loading}
-        unavailable={listFailed}
-        scope={partial ? (fullWindow ? 'loaded' : 'page') : 'matching'}
-      />
+      <TitleAndButton title={t('discover.title')} />
 
       <DiscoverFilters
         value={filters}
@@ -98,44 +89,17 @@ export default function DiscoverJoinPage() {
         loadedOnly={partial}
       />
 
-      {rolesError ? <div className="error-pane mb-6">{rolesError}</div> : null}
-      {listError && !listFailed ? <div className="error-pane mb-6">{listError}</div> : null}
+      {errors.map((message) => (
+        <div key={message} className="error-pane mb-6">
+          {message}
+        </div>
+      ))}
 
       <section id="ecosystem-list" aria-busy={loading} className="flex flex-col gap-4 sm:gap-5">
         {loading ? (
           [0, 1, 2].map((slot) => <DiscoverCardSkeleton key={slot} />)
-        ) : listFailed ? (
-          <EmptyState
-            className="rounded-xl bg-card py-12"
-            icon={<ServerCrashIcon />}
-            title={t('discover.error.title')}
-            description={
-              <>
-                {t('discover.error.hint')}
-                <span className="mt-2 block font-mono text-xs text-muted-foreground/80">{listError}</span>
-              </>
-            }
-            action={
-              <Button variant="outline" onClick={() => void discoverCtx.refetch()}>
-                <RotateCwIcon aria-hidden="true" />
-                {t('discover.retry')}
-              </Button>
-            }
-          />
         ) : shown.length === 0 ? (
-          <EmptyState
-            className="rounded-xl bg-card py-12"
-            icon={filters.search ? <SearchXIcon /> : <CompassIcon />}
-            title={t('discover.empty')}
-            description={t('discover.empty.hint')}
-            action={
-              filters.search ? (
-                <Button variant="outline" onClick={() => setDiscoverFilters({ ...filters, search: '' })}>
-                  {t('discover.search.clear')}
-                </Button>
-              ) : undefined
-            }
-          />
+          <EmptyState className="rounded-xl bg-card py-12" icon={<CompassIcon />} title={t('discover.empty')} />
         ) : (
           <Stagger className="flex flex-col gap-4 sm:gap-5">
             {shown.map((ecosystem) => (
@@ -155,25 +119,23 @@ export default function DiscoverJoinPage() {
         )}
       </section>
 
-      {showPagination ? (
-        <KeysetPagination
-          showing={shown.length}
-          itemsLabel={t('datatable.ecosystem.pagination.ecosystems')}
-          hasPrevious={page.hasPrevious}
-          hasNext={page.hasNext}
-          loadedOnlyNote={false}
-          onPrevious={() => {
-            if (fullWindow) setPaging({ key: pagingKey, index: page.page - 1 })
-            else discoverCtx.previousPage()
-            scrollToTop()
-          }}
-          onNext={() => {
-            if (fullWindow) setPaging({ key: pagingKey, index: page.page + 1 })
-            else discoverCtx.nextPage()
-            scrollToTop()
-          }}
-        />
-      ) : null}
+      <KeysetPagination
+        showing={shown.length}
+        itemsLabel={t('datatable.ecosystem.pagination.ecosystems')}
+        hasPrevious={page.hasPrevious}
+        hasNext={page.hasNext}
+        loadedOnlyNote={false}
+        onPrevious={() => {
+          if (fullWindow) setPaging({ key: pagingKey, index: page.page - 1 })
+          else discoverCtx.previousPage()
+          scrollToTop()
+        }}
+        onNext={() => {
+          if (fullWindow) setPaging({ key: pagingKey, index: page.page + 1 })
+          else discoverCtx.nextPage()
+          scrollToTop()
+        }}
+      />
     </>
   )
 }
