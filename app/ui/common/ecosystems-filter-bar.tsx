@@ -1,10 +1,13 @@
 'use client'
 
-import { CheckIcon, SearchIcon } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { CheckIcon, SearchIcon, XIcon } from 'lucide-react'
+import { type ReactNode, useEffect, useRef } from 'react'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import { tr as t } from '@/ui/ecosystems/i18n'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/shadcn/input-group'
+import { Button } from '@/ui/shadcn/button'
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/ui/shadcn/input-group'
+import { Kbd } from '@/ui/shadcn/kbd'
 
 export type EcosystemsFilterState = {
   search: string
@@ -26,12 +29,38 @@ type Props = {
   value: EcosystemsFilterState
   onChange: (next: EcosystemsFilterState) => void
   corporationFilters?: boolean
+  actions?: ReactNode
   children?: ReactNode
 }
 
-export default function EcosystemsFilterBar({ value, onChange, corporationFilters = true, children }: Props) {
+export function hasActiveEcosystemFilters(value: EcosystemsFilterState): boolean {
+  return (Object.keys(INITIAL_ECOSYSTEMS_FILTER) as (keyof EcosystemsFilterState)[]).some(
+    (key) => value[key] !== INITIAL_ECOSYSTEMS_FILTER[key]
+  )
+}
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
+}
+
+export default function EcosystemsFilterBar({ value, onChange, corporationFilters = true, actions, children }: Props) {
+  const searchRef = useRef<HTMLInputElement>(null)
+  const isMobile = useIsMobile()
+
   const set = <K extends keyof EcosystemsFilterState>(key: K, next: EcosystemsFilterState[K]) =>
     onChange({ ...value, [key]: next })
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey || isTypingTarget(event.target)) return
+      if (document.querySelector('[data-modal-action]:not(.hidden), [role="dialog"]')) return
+      event.preventDefault()
+      searchRef.current?.focus()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   return (
     <section className="mb-6 space-y-3">
@@ -45,18 +74,48 @@ export default function EcosystemsFilterBar({ value, onChange, corporationFilter
               <SearchIcon aria-hidden="true" />
             </InputGroupAddon>
             <InputGroupInput
+              ref={searchRef}
               id="ecosystem-search"
               type="text"
               value={value.search}
               onChange={(e) => set('search', e.target.value)}
-              placeholder={t(
-                'datatable.ecosystem.filter.search.placeholder',
-                'Search by organization name, ecosystem, or other attributes...'
-              )}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape' && value.search) {
+                  e.preventDefault()
+                  set('search', '')
+                }
+              }}
+              placeholder={
+                isMobile
+                  ? t('ecosystems.search.placeholderShort', 'Search ecosystems…')
+                  : t(
+                      'datatable.ecosystem.filter.search.placeholder',
+                      'Search by organization name, ecosystem, or other attributes...'
+                    )
+              }
               className="text-sm text-ellipsis"
             />
+            <InputGroupAddon align="inline-end">
+              {value.search ? (
+                <InputGroupButton
+                  size="icon-xs"
+                  aria-label={t('ecosystems.search.clear', 'Clear search')}
+                  onClick={() => {
+                    set('search', '')
+                    searchRef.current?.focus()
+                  }}
+                >
+                  <XIcon />
+                </InputGroupButton>
+              ) : (
+                <Kbd aria-hidden="true" className="hidden sm:inline-flex">
+                  /
+                </Kbd>
+              )}
+            </InputGroupAddon>
           </InputGroup>
         </div>
+        {actions ? <div className="ms-auto flex shrink-0 items-center gap-2">{actions}</div> : null}
       </div>
 
       <div className="-mx-4 -my-1 flex min-w-0 snap-x scroll-px-4 items-center gap-2 overflow-x-auto px-4 py-1 [scrollbar-width:none] max-sm:pe-10 max-sm:[mask-image:linear-gradient(to_right,black_calc(100%-2.5rem),transparent)] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
@@ -88,6 +147,17 @@ export default function EcosystemsFilterBar({ value, onChange, corporationFilter
           onChange={(v) => set('showUntrusted', v)}
           label={t('datatable.ecosystem.filter.showUntrusted', 'Show untrusted ecosystems')}
         />
+        {hasActiveEcosystemFilters(value) ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 shrink-0 text-muted-foreground"
+            onClick={() => onChange({ ...INITIAL_ECOSYSTEMS_FILTER })}
+          >
+            {t('ecosystems.filter.clear', 'Clear filters')}
+            <XIcon data-icon="inline-end" aria-hidden="true" />
+          </Button>
+        ) : null}
       </div>
       {children ? <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">{children}</div> : null}
     </section>

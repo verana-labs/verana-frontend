@@ -11,15 +11,18 @@ import {
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSkeleton,
   useSidebar,
 } from '@/ui/shadcn/sidebar'
 import type { NavItem } from '@/ui/shell/nav-items'
+
+const SKELETON_ITEMS = ['a', 'b', 'c', 'd', 'e', 'f']
 
 function isActiveRoute(pathname: string | null, url: string) {
   return pathname === url || (pathname?.startsWith(`${url}/`) ?? false)
 }
 
-export function NavMain({ items }: { items: NavItem[] }) {
+export function NavMain({ items, settling = false }: { items: NavItem[]; settling?: boolean }) {
   const pathname = usePathname()
   const { setOpenMobile } = useSidebar()
 
@@ -27,8 +30,15 @@ export function NavMain({ items }: { items: NavItem[] }) {
     <SidebarGroup>
       <SidebarGroupContent>
         <nav aria-label={translate('shell.nav.label')}>
-          <SidebarMenu>
-            {items.map((item) => {
+          <SidebarMenu aria-busy={settling || undefined}>
+            {settling
+              ? SKELETON_ITEMS.map((key) => (
+                  <SidebarMenuItem key={key}>
+                    <SidebarMenuSkeleton showIcon />
+                  </SidebarMenuItem>
+                ))
+              : null}
+            {(settling ? [] : items).map((item) => {
               const active = isActiveRoute(pathname, item.url)
               return (
                 <SidebarMenuItem key={item.url} data-nav-item={item.url}>

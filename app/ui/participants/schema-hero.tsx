@@ -63,6 +63,15 @@ const FACT_VALUE_INLINE = 'md:mt-1.5'
 const FACT_ROW = 'flex items-center justify-between gap-3 md:block'
 const FACT_VALUE_ROW = 'min-w-0 text-end md:mt-1.5 md:text-start'
 
+function humanizeMode(raw: string): string {
+  const words = raw.toLowerCase().replaceAll('_', ' ')
+  return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+function modeLabel(raw: string): string {
+  return tr(`dataview.cs.managementMode.${raw}`, humanizeMode(raw))
+}
+
 function FactLabel({ label, shortLabel }: { label: string; shortLabel: string }) {
   return (
     <dt className="text-xs font-medium text-muted-foreground">
@@ -92,12 +101,13 @@ function ModeFact({
       <FactLabel label={label} shortLabel={shortLabel} />
       <dd className={compact ? FACT_VALUE_INLINE : FACT_VALUE_ROW}>
         <Badge
+          title={raw}
           className={cn(
             'h-auto max-w-full rounded-full px-2 py-0.5 font-medium break-words whitespace-normal',
             getModePillClass(raw, suffix)
           )}
         >
-          {raw}
+          {modeLabel(raw)}
         </Badge>
       </dd>
     </div>
@@ -150,7 +160,9 @@ export function SchemaHero({
                     pulse={status === 'ACTIVE'}
                     className="rounded-full"
                   >
-                    {status}
+                    {status === 'ARCHIVED'
+                      ? tr('dataview.archived.label', 'ARCHIVED')
+                      : tr('participant.labelstate.active', 'ACTIVE')}
                   </ToneTag>
                 ) : null}
               </div>

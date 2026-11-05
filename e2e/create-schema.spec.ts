@@ -41,12 +41,18 @@ test('create a credential schema (real devnet broadcast)', async ({ page }) => {
     .click()
   await expect(page.getByRole('heading', { name: /create new credential schema/i })).toBeVisible({ timeout: 20_000 })
 
+  expect(new URL(page.url()).pathname).toBe('/credential-schemas/add')
+  const next = page.getByRole('button', { name: 'Continue', exact: true })
+
+  await labelTextarea(page, 'JSON Schema').fill(jsonSchema)
+  await next.click()
   await labelSelect(page, 'Issuer Onboarding Mode').selectOption('1')
   await labelSelect(page, 'Verifier Onboarding Mode').selectOption('1')
   await labelSelect(page, 'Holder Onboarding Mode').selectOption('2')
   await labelSelect(page, 'Digest Algorithm').selectOption('sha384')
+  await next.click()
   for (const field of VALIDITY_FIELDS) await labelInput(page, field).fill('0')
-  await labelTextarea(page, 'JSON Schema').fill(jsonSchema)
+  await next.click()
 
   await page.locator('.btn-action-confirm').click()
   await confirmTransaction(page)
