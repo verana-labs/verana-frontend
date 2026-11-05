@@ -6,9 +6,9 @@ import { translate } from '@/i18n/dataview'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/shadcn/tooltip'
 
-export function CopyValueButton({ value, title, className }: { value: string; title: string; className?: string }) {
+export function CopyValueButton({ value, label, className }: { value: string; label: string; className?: string }) {
   const { copied, copy } = useCopyFeedback(value)
-  const action = copied ? translate('copied.label') : title
+  const action = copied ? translate('copied.label') : `${translate('messages.copy')} ${label}`
   return (
     <Tooltip>
       <TooltipTrigger asChild>

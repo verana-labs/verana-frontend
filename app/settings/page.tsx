@@ -7,6 +7,7 @@ import { VERANA_GRAPH_URL, VERANA_INDEXER_BASE_URL } from '@/config/env'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { getLocale, isLocale, SUPPORTED_LOCALES, saveLocale, setLocale, translate } from '@/i18n/dataview'
 import { cn } from '@/lib/utils'
+import { CopyValueButton } from '@/ui/agents-tasks-settings/copy-value-button'
 import { THEMES, type ThemeOption, ThemeRadioCards } from '@/ui/agents-tasks-settings/theme-radio-cards'
 import { BlockCard } from '@/ui/common/block-card'
 import TitleAndButton from '@/ui/common/title-and-button'
@@ -101,7 +102,7 @@ export default function SettingsPage() {
           pattern
         >
           <div className="flex flex-col gap-2">
-            <label htmlFor="settings-locale" className="text-sm text-muted-foreground">
+            <label htmlFor="settings-locale" className="sr-only">
               {t('settings.locale.label')}
             </label>
             <select
@@ -143,9 +144,12 @@ export default function SettingsPage() {
                 <dt className="text-[13px] font-medium text-muted-foreground">{t(`settings.network.${key}`)}</dt>
                 <dd className="flex min-w-0 items-center justify-between gap-2">
                   {value ? (
-                    <span className="min-w-0 font-mono text-xs [overflow-wrap:anywhere] text-foreground tabular-nums sm:text-[13px]">
-                      {breakableValue(value)}
-                    </span>
+                    <>
+                      <span className="min-w-0 font-mono text-xs [overflow-wrap:anywhere] text-foreground tabular-nums sm:text-[13px]">
+                        {breakableValue(value)}
+                      </span>
+                      <CopyValueButton value={value} label={t(`settings.network.${key}`)} className="-me-1.5" />
+                    </>
                   ) : (
                     <span className="inline-flex h-[22px] items-center gap-1.5 rounded-md bg-tint-neutral px-2 text-xs font-medium text-muted-foreground">
                       <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />

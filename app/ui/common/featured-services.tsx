@@ -23,7 +23,7 @@ export default function FeaturedServices({ isWalletConnected, hasCorporation, cl
       <h2 id="featured-services-title" className="px-1 text-sm font-medium text-muted-foreground">
         {resolveTranslatable({ key: 'featuredservices.title' }, translate)}
       </h2>
-      <ul className="grid flex-1 grid-cols-1 gap-4 @xl/page:grid-cols-2">
+      <ul className="grid flex-1 grid-cols-1 gap-4 @xl/page:grid-cols-2 @5xl/page:grid-cols-1">
         {links
           .filter((link) => link.featuredService === true)
           .map((link) => {
@@ -67,7 +67,7 @@ export default function FeaturedServices({ isWalletConnected, hasCorporation, cl
                     {open ? (
                       <Link
                         href={link.href}
-                        className="inline-flex items-center gap-1 text-sm font-medium text-primary focus-visible:outline-none"
+                        className="inline-flex items-center gap-1 text-sm font-medium text-primary after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none"
                       >
                         {resolveTranslatable({ key: 'featuredservices.explore' }, translate)?.replace(/\s*→$/, '')}
                         <ArrowRightIcon

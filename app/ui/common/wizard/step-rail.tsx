@@ -10,12 +10,14 @@ export type StepStatus = 'complete' | 'current' | 'upcoming' | 'error'
 export type Step = {
   id: string
   title: ReactNode
+  description?: ReactNode
   status?: StepStatus
 }
 
 export type StepRailProps = {
   steps: Step[]
   current: string
+  onStepClick?: (id: string) => void
   label?: string
   className?: string
 }
@@ -51,7 +53,7 @@ function StepMarker({ status, index }: { status: StepStatus; index: number }) {
   )
 }
 
-export function StepRail({ steps, current, label, className }: StepRailProps) {
+export function StepRail({ steps, current, onStepClick, label, className }: StepRailProps) {
   const currentIndex = Math.max(
     0,
     steps.findIndex((step) => step.id === current)
@@ -80,6 +82,27 @@ export function StepRail({ steps, current, label, className }: StepRailProps) {
       <ol className="hidden md:block">
         {steps.map((step, index) => {
           const status = stepStatus(steps, current, step, index)
+          const clickable = Boolean(onStepClick) && status === 'complete'
+          const body = (
+            <>
+              <StepMarker status={status} index={index} />
+              <span className="min-w-0 pt-1 text-start">
+                <span
+                  data-step-title=""
+                  className={cn(
+                    'block text-sm leading-5 font-medium tracking-tight',
+                    status === 'upcoming' ? 'text-muted-foreground' : 'text-foreground',
+                    status === 'current' && 'font-semibold'
+                  )}
+                >
+                  {step.title}
+                </span>
+                {step.description ? (
+                  <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">{step.description}</span>
+                ) : null}
+              </span>
+            </>
+          )
           return (
             <li
               key={step.id}
@@ -97,21 +120,17 @@ export function StepRail({ steps, current, label, className }: StepRailProps) {
                   )}
                 />
               ) : null}
-              <div className="flex items-start gap-3">
-                <StepMarker status={status} index={index} />
-                <span className="min-w-0 pt-1 text-start">
-                  <span
-                    data-step-title=""
-                    className={cn(
-                      'block text-sm leading-5 font-medium tracking-tight',
-                      status === 'upcoming' ? 'text-muted-foreground' : 'text-foreground',
-                      status === 'current' && 'font-semibold'
-                    )}
-                  >
-                    {step.title}
-                  </span>
-                </span>
-              </div>
+              {clickable ? (
+                <button
+                  type="button"
+                  onClick={() => onStepClick?.(step.id)}
+                  className="flex w-full items-start gap-3 rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50 [&:hover_[data-step-title]]:text-primary"
+                >
+                  {body}
+                </button>
+              ) : (
+                <div className="flex items-start gap-3">{body}</div>
+              )}
             </li>
           )
         })}

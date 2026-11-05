@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { VERANA_REST_ENDPOINT_STATS } from '@/config/env'
 import { translate } from '@/i18n/dataview'
 import type { ApiErrorResponse } from '@/types/apiErrorResponse'
-import type { DashboardData } from '@/ui/dataview/datasections/dashboard'
+import type { DashboardData, ParticipantRoles } from '@/ui/dataview/datasections/dashboard'
 import { resolveTranslatable } from '@/ui/dataview/types'
 
 const DIGIT_STRING = /^-?\d+$/
@@ -19,6 +19,22 @@ function metricCount(value: unknown, field: string): number {
   return Number(metricDigits(value, field))
 }
 
+function roleCount(value: unknown): number {
+  const n = typeof value === 'string' && DIGIT_STRING.test(value) ? Number(value) : value
+  return typeof n === 'number' && Number.isFinite(n) ? n : 0
+}
+
+function parseRoles(metrics: Record<string, unknown>): ParticipantRoles {
+  return {
+    ecosystem: roleCount(metrics.participants_ecosystem),
+    issuer: roleCount(metrics.participants_issuer),
+    verifier: roleCount(metrics.participants_verifier),
+    holder: roleCount(metrics.participants_holder),
+    issuerGrantor: roleCount(metrics.participants_issuer_grantor),
+    verifierGrantor: roleCount(metrics.participants_verifier_grantor),
+  }
+}
+
 export function parseDashboardMetricsResponse(payload: unknown): DashboardData {
   if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) {
     throw new Error('Invalid V4 stats snapshot')
@@ -31,6 +47,7 @@ export function parseDashboardMetricsResponse(payload: unknown): DashboardData {
     totalLockedTrustDeposit: metricDigits(metrics.weight, 'weight'),
     issuedCredentials: metricCount(metrics.issued, 'issued'),
     verifiedCredentials: metricCount(metrics.verified, 'verified'),
+    roles: parseRoles(metrics),
   }
 }
 

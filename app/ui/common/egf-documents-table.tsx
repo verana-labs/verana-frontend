@@ -187,6 +187,13 @@ export default function EgfDocumentsTable({ versions, activeVersion }: EgfDocume
                 </TableRow>
               )
             })}
+            {rows.length === 0 ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                  {resolveTranslatable({ key: 'datalist.egf.empty' }, translate)}
+                </TableCell>
+              </TableRow>
+            ) : null}
           </TableBody>
         </Table>
       </div>

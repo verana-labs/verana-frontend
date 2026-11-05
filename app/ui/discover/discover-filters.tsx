@@ -1,12 +1,12 @@
 'use client'
 
-import { ArrowDownWideNarrowIcon, InfoIcon, SearchIcon } from 'lucide-react'
+import { ArrowDownWideNarrowIcon, InfoIcon, SearchIcon, XIcon } from 'lucide-react'
 import type { DiscoverFilters as DiscoverFilterState, EcosystemOrder } from '@/lib/discover-list'
 import { cn } from '@/lib/utils'
 import { NativeSelect, NativeSelectOption } from '@/ui/discover/native-select'
 import { discoverText as t } from '@/ui/discover/text'
 import { Checkbox } from '@/ui/shadcn/checkbox'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/shadcn/input-group'
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/ui/shadcn/input-group'
 
 type BooleanFilter = 'showArchived' | 'hideOwned' | 'hideParticipant' | 'showUntrusted'
 
@@ -80,12 +80,24 @@ export function DiscoverFilters({ value, onChange, corporationFilters, loadedOnl
             </InputGroupAddon>
             <InputGroupInput
               id="ecosystem-search"
-              type="text"
+              type="search"
+              autoComplete="off"
               value={value.search}
               onChange={(event) => set({ search: event.target.value })}
               placeholder={t('datatable.ecosystem.filter.search.placeholder')}
-              className="text-base sm:text-sm"
+              className="text-base sm:text-sm [&::-webkit-search-cancel-button]:hidden"
             />
+            {value.search ? (
+              <InputGroupAddon align="inline-end">
+                <InputGroupButton
+                  size="icon-xs"
+                  aria-label={t('discover.search.clear')}
+                  onClick={() => set({ search: '' })}
+                >
+                  <XIcon aria-hidden="true" />
+                </InputGroupButton>
+              </InputGroupAddon>
+            ) : null}
           </InputGroup>
         </div>
         <div className="sm:w-52">

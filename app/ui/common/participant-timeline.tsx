@@ -57,7 +57,10 @@ export default function ParticipantTimeline({
         {account ? (
           <>
             {' '}
-            {tr('participantcard.timeline.by', 'by')} <span className="font-mono">{account}</span>
+            {tr('participantcard.timeline.by', 'by')}{' '}
+            <span className="font-mono" title={participantHistory.account}>
+              {account}
+            </span>
           </>
         ) : null}
       </TimelineContent>

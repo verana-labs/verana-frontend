@@ -499,28 +499,33 @@ test('the creation wizard gates each step and confirms the built message before 
   const mock = await installMockChain(page, { address: wallet.bech32Address, stubCorporation: false })
   await page.goto('/corporation')
 
-  const next = page.getByRole('button', { name: 'Continue' })
-  await expect(next).toBeDisabled()
+  const next = page.getByRole('button', { name: 'Continue', exact: true })
+  const missing = page.locator('[data-slot="wizard"] [data-missing]')
+  await expect(page).toHaveURL(/\/corporation\/new$/)
+  await expect(missing).toHaveText('Enter a valid DID')
+  await next.click()
+  await expect(page.getByLabel('Corporation DID')).toBeFocused()
+  await expect(page.getByLabel('Corporation DID')).toHaveAttribute('aria-invalid', 'true')
 
   await page.getByLabel('Corporation DID').fill('not-a-did')
   await page.getByLabel('CGF document URL').fill('https://example.com/cgf.pdf')
-  await expect(next).toBeDisabled()
+  await expect(missing).toHaveText('Enter a valid DID')
 
   await page.getByLabel('Corporation DID').fill('did:web:new-corp.example')
   await expect(next).toBeEnabled()
   await next.click()
 
   await page.getByRole('button', { name: 'Add member' }).click()
-  await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled()
+  await expect(missing).toHaveText('Fix the member list')
   await page.getByRole('button', { name: 'Remove member' }).click()
-  await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled()
+  await expect(next).toBeEnabled()
   await page.getByLabel('Decision policy').selectOption('percentage')
   await page.getByLabel('Percentage (%)').fill('0')
-  await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled()
+  await expect(missing).toHaveText('Complete the decision policy')
   await page.getByLabel('Percentage (%)').fill('66.67')
   await page.getByLabel('Minimum execution period (seconds)').fill('3600')
-  await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled()
-  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(next).toBeEnabled()
+  await next.click()
 
   await expect(page.getByText('66.67% / 60s / 3600s')).toBeVisible()
   await expect(page.getByText(/you keep no personal privileges/)).toBeVisible()
@@ -650,7 +655,9 @@ test('the overview reads unknown for every stat whose source failed', async ({ p
     timeout: 15_000,
   })
   await expect(page.getByText('Unknown', { exact: true })).toHaveCount(3)
-  await expect(page.getByText('0 (0 open)')).toBeHidden()
+  const proposalsTile = page.locator('#overview [data-stat="proposals"]')
+  await expect(proposalsTile).toContainText('Unknown')
+  await expect(proposalsTile).not.toContainText(/open/)
 })
 
 test('the corporation page and picker hold at mobile and tablet widths', async ({ page }) => {

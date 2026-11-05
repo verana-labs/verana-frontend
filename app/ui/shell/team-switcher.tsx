@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
+import type { CorporationMembership } from '@/lib/corporation-discovery'
 import { cn } from '@/lib/utils'
 import { CorporationMembershipRow, corporationDisplayName } from '@/ui/common/corporation-membership-row'
 import { nameInitials } from '@/ui/corporation/shared'
@@ -20,7 +21,14 @@ import {
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/ui/shadcn/sidebar'
 import { Skeleton } from '@/ui/shadcn/skeleton'
 
-export const NEW_CORPORATION_HREF = '/corporation?create=1'
+export const NEW_CORPORATION_HREF = '/corporation/new'
+
+export function actingRoleLabel(membership: CorporationMembership | null): string {
+  if (!membership) return translate('shell.switcher.personal')
+  if (membership.operator && membership.member) return translate('shell.switcher.role.both')
+  if (membership.operator) return translate('shell.switcher.role.operator')
+  return translate('shell.switcher.role.member')
+}
 
 function CorporationMark({ name, warn }: { name: string | null; warn: boolean }) {
   return (
@@ -70,6 +78,11 @@ export function TeamSwitcher() {
     : null
   const name =
     corporationName ?? translate(needsSelection ? 'corporation.selector.choose' : 'corporation.selector.none')
+  const othersNeedAttention = memberships.some((membership) => {
+    if (membership.corporation.id === actingCorporation?.corporation.id) return false
+    const counts = attention[membership.corporation.id]
+    return Boolean(counts && (counts.pendingTasks > 0 || counts.pendingVotes > 0))
+  })
 
   return (
     <SidebarMenu data-shell="team-switcher">
@@ -85,16 +98,28 @@ export function TeamSwitcher() {
                 needsSelection && 'ring-warning/40'
               )}
             >
-              <CorporationMark name={corporationName} warn={needsSelection} />
+              <span className="relative">
+                <CorporationMark name={corporationName} warn={needsSelection} />
+                {othersNeedAttention ? (
+                  <span
+                    aria-hidden="true"
+                    className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-destructive ring-2 ring-sidebar"
+                  />
+                ) : null}
+              </span>
               <span className="grid min-w-0 flex-1 text-start leading-tight">
                 <span className={cn('truncate text-sm font-semibold tracking-tight', needsSelection && 'text-warning')}>
                   {name}
                 </span>
-                {error ? (
-                  <span title={error} className="truncate text-xs text-destructive">
-                    {translate('corporation.selector.error')}
-                  </span>
-                ) : null}
+                <span className="truncate text-xs text-muted-foreground">
+                  {error ? (
+                    <span title={error} className="text-destructive">
+                      {translate('corporation.selector.error')}
+                    </span>
+                  ) : (
+                    actingRoleLabel(actingCorporation)
+                  )}
+                </span>
               </span>
               <ChevronsUpDownIcon aria-hidden="true" className="ms-auto size-4 text-muted-foreground" />
             </SidebarMenuButton>
@@ -134,7 +159,14 @@ export function TeamSwitcher() {
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem disabled={loading} onSelect={() => void refetch()} className="gap-2 rounded-lg p-2">
+            <DropdownMenuItem
+              disabled={loading}
+              onSelect={(event) => {
+                event.preventDefault()
+                void refetch()
+              }}
+              className="gap-2 rounded-lg p-2"
+            >
               <span className={MENU_ICON}>
                 <RotateCwIcon
                   aria-hidden="true"
