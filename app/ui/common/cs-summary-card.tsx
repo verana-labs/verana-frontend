@@ -90,7 +90,6 @@ export default function CsSummaryCard({ credentialSchema, onView, onParticipants
             >
               {credentialSchema.title}
             </button>
-            <p className="font-mono text-xs text-muted-foreground">#{credentialSchema.id}</p>
           </div>
           <div className="-mt-1 -mr-1.5 flex shrink-0 items-center">
             <IconActionButton icon={faEye} label={previewLabel} onClick={onView} />
@@ -117,9 +116,9 @@ export default function CsSummaryCard({ credentialSchema, onView, onParticipants
         <div className="mt-auto pt-5">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border pt-4">
             <Stat label={participants} value={formatNumber(credentialSchema.participants, true)} />
-            <Stat label={trustValue} value={formatVNA(String(credentialSchema.weight), 6) || '0 VNA'} />
             <Stat label={issued} value={formatNumber(credentialSchema.issuedCredentials, true)} />
             <Stat label={verified} value={formatNumber(credentialSchema.verifiedCredentials, true)} />
+            <Stat label={trustValue} value={formatVNA(String(credentialSchema.weight), 6) || '0 VNA'} />
           </dl>
         </div>
       </div>

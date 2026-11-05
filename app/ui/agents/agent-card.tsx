@@ -41,12 +41,6 @@ const LINK =
   'inline-flex items-center gap-0.5 rounded-sm text-xs font-medium text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50'
 const ADMIN_API_TYPE = 'VsAgentAdminAPI'
 
-function roleName(role: string): string {
-  const key = `participantcard.role.singular.${role.toLowerCase().replaceAll('_', '')}`
-  const label = translate(key)
-  return label === key ? role : label
-}
-
 function CredentialRow({ credential }: { credential: PresentedCredential }) {
   const labels = useRegistryLabels()
   return (
@@ -83,7 +77,7 @@ function AccreditationRow({
   const summary = (
     <>
       <span className={cn(PILL, 'uppercase', roleBadgeClass(participation.role as ParticipantRole))}>
-        {roleName(participation.role)}
+        {participation.role}
       </span>
       <span className="font-medium text-foreground">{labels.schemaLabel(participation.credentialSchemaId)}</span>
       <span className="text-muted-foreground">{labels.ecosystemLabel(participation.ecosystemId)}</span>
@@ -147,14 +141,12 @@ function AccreditationRow({
 function CardSection({
   icon: Icon,
   titleKey,
-  count,
   resolved,
   emptyKey,
   children,
 }: {
   icon: LucideIcon
   titleKey: string
-  count: number | undefined
   resolved: boolean
   emptyKey: string
   children: ReactNode
@@ -168,9 +160,6 @@ function CardSection({
       <h4 className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
         <Icon aria-hidden="true" className="size-3.5" />
         {translate(titleKey)}
-        {count ? (
-          <span className="ms-0.5 rounded-full bg-muted px-1.5 text-[11px] text-foreground tabular-nums">{count}</span>
-        ) : null}
       </h4>
       {body}
     </section>
@@ -257,7 +246,6 @@ export default function AgentCard({
           <CardSection
             icon={BadgeCheckIcon}
             titleKey="agents.card.credentials"
-            count={resolution?.credentials.length}
             resolved={resolved}
             emptyKey="agents.card.credentials.empty"
           >
@@ -273,7 +261,6 @@ export default function AgentCard({
           <CardSection
             icon={NetworkIcon}
             titleKey="agents.card.accreditations"
-            count={resolution ? accreditations.length : undefined}
             resolved={resolved}
             emptyKey="agents.card.accreditations.empty"
           >
@@ -294,7 +281,6 @@ export default function AgentCard({
           <CardSection
             icon={PlugIcon}
             titleKey="agents.card.endpoints"
-            count={resolution?.services.length}
             resolved={resolved}
             emptyKey="agents.card.endpoints.empty"
           >

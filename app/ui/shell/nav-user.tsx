@@ -18,36 +18,22 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/shadcn/dropdown-menu'
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/ui/shadcn/sidebar'
-import { Skeleton } from '@/ui/shadcn/skeleton'
 import { shortenMiddle } from '@/util/util'
 
-export function NavUser({ settling = false }: { settling?: boolean }) {
+const WALLET_STATUS_KEYS: Record<string, string> = {
+  Connecting: 'wallet.connecting',
+  Error: 'wallet.reconnect',
+  Rejected: 'wallet.reconnect',
+  NotExist: 'wallet.install',
+}
+
+export function NavUser() {
   const { isMobile } = useSidebar()
   const veranaChain = useVeranaChain()
   const explorerUrl = veranaChain.explorers?.[0]?.url
   const { status, address, connect, openView } = useChain(veranaChain.chain_name)
   const { copied, copy } = useCopyFeedback(address)
   const [qrOpen, setQrOpen] = useState(false)
-
-  if (!address && settling) {
-    return (
-      <SidebarMenu>
-        <SidebarMenuItem>
-          <div
-            role="status"
-            aria-label={translate('wallet.connecting')}
-            className="flex h-12 items-center gap-2 rounded-lg p-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0"
-          >
-            <Skeleton className="size-8 shrink-0 rounded-lg" />
-            <div className="flex flex-1 flex-col gap-1.5 group-data-[collapsible=icon]:hidden">
-              <Skeleton className="h-3.5 w-24" />
-              <Skeleton className="h-3 w-32" />
-            </div>
-          </div>
-        </SidebarMenuItem>
-      </SidebarMenu>
-    )
-  }
 
   if (!address) {
     return (
@@ -56,14 +42,16 @@ export function NavUser({ settling = false }: { settling?: boolean }) {
           <SidebarMenuButton
             size="lg"
             tooltip={translate('notconnected.nav.click')}
-            onClick={() => (status === 'NotExist' ? openView() : void connect())}
+            onClick={() => (status === 'NotExist' || status === 'Connected' ? openView() : void connect())}
             disabled={status === 'Connecting'}
             className="bg-primary text-primary-foreground group-data-[collapsible=icon]:justify-center hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
           >
             <WalletIcon />
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">{translate('notconnected.nav.title')}</span>
-              <span className="truncate text-xs opacity-80">{translate('notconnected.nav.click')}</span>
+              <span className="truncate text-xs opacity-80">
+                {translate(WALLET_STATUS_KEYS[status] ?? 'notconnected.nav.click')}
+              </span>
             </div>
           </SidebarMenuButton>
         </SidebarMenuItem>
@@ -95,7 +83,7 @@ export function NavUser({ settling = false }: { settling?: boolean }) {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              tooltip={address}
+              tooltip={short}
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               {identity}

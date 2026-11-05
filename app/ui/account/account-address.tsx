@@ -34,7 +34,6 @@ export function AccountAddress() {
     <BlockCard
       icon={<FingerprintIcon />}
       title={translate('dataview.account.sections.accountInformation')}
-      caption={translate('account.info.desc')}
       className="h-full bg-linear-to-br from-primary/10 via-card to-card"
       contentClassName="gap-5 pt-6"
     >

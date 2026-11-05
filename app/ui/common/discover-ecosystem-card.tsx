@@ -1,25 +1,21 @@
 'use client'
 
-import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowUpRightIcon, LandmarkIcon, RotateCwIcon, ScaleIcon } from 'lucide-react'
+import { ArrowUpRightIcon, LandmarkIcon } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
 import type { EcosystemSchemaPage } from '@/hooks/useCredentialSchemas'
-import { displayedVersion } from '@/lib/gf-document'
 import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import { cn } from '@/lib/utils'
 import ClaimText from '@/ui/common/claim-text'
-import GfDocumentViewer from '@/ui/common/gf-document-viewer'
+import CsCard from '@/ui/common/cs-card'
+import { EgfViewerToggle } from '@/ui/common/egf-viewer-toggle'
 import { ShowMoreButton } from '@/ui/common/keyset-pagination'
 import LogoImage from '@/ui/common/logo-image'
 import TrustBadge from '@/ui/common/trust-badge'
 import { DotPattern } from '@/ui/dashboard/dot-pattern'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import type { ParticipantRole } from '@/ui/dataview/datasections/participant'
-import { SchemaCard } from '@/ui/discover/schema-card'
 import { discoverText as t } from '@/ui/discover/text'
 import { statLabel } from '@/ui/ecosystems/i18n'
-import { DURATION, EASE } from '@/ui/motion/tokens'
 import { Button } from '@/ui/shadcn/button'
 import { countryCodeToFlag, formatNumber, formatVNAFromUVNA, roleBadgeClass, shortenDID } from '@/util/util'
 
@@ -44,14 +40,10 @@ export function DiscoverEcosystemCard({
   roles,
   canJoin,
 }: DiscoverEcosystemCardProps) {
-  const [egfOpen, setEgfOpen] = useState(false)
   const identity = ecosystem.trustData
   const serviceName = identity?.serviceName ?? shortenDID(ecosystem.did) ?? ecosystem.did
-  const orgName = identity?.organizationName
-  const flag = identity?.countryCode ? countryCodeToFlag(identity.countryCode) : null
+  const orgName = identity?.organizationName ?? shortenDID(ecosystem.did) ?? ecosystem.did
   const archived = Boolean(ecosystem.archived)
-  const egfDocuments = displayedVersion(ecosystem.versions ?? [], ecosystem.activeVersion)?.documents ?? []
-  const egfPanelId = `egf-panel-${ecosystem.id}`
   const counters: Counter[] = [
     {
       key: 'datatable.ecosystem.card.activeSchemas',
@@ -79,7 +71,6 @@ export function DiscoverEcosystemCard({
       empty: !ecosystem.verified,
     },
   ]
-  const hasSchemaSection = Boolean(schemasError) || credentialSchemas.items.length > 0 || moreSchemasFailed
 
   return (
     <article
@@ -95,7 +86,7 @@ export function DiscoverEcosystemCard({
         className="-z-10 text-primary/20 [mask-image:radial-gradient(260px_circle_at_top_right,white,transparent)]"
       />
       <div className={cn('flex flex-col gap-5 p-4 sm:p-6', archived && 'archived-bg')}>
-        <header className="flex flex-col gap-4 @2xl/eco:flex-row @2xl/eco:items-start @2xl/eco:justify-between">
+        <header className="flex flex-col gap-4">
           <div className="flex min-w-0 items-start gap-4">
             <LogoImage
               src={identity?.serviceLogoUrl}
@@ -122,54 +113,21 @@ export function DiscoverEcosystemCard({
                   title={identity.serviceDescription}
                 />
               ) : null}
-              {orgName ? (
-                <div className="mt-2.5 flex min-w-0 items-center gap-2">
-                  <LogoImage
-                    src={identity?.organizationLogoUrl}
-                    fallbackSrc={serviceAvatarUrl(orgName)}
-                    className="size-5 shrink-0 rounded-md object-contain ring-1 ring-foreground/10"
-                  />
-                  <h3 className="truncate text-sm font-medium text-muted-foreground" title={orgName}>
-                    {orgName}
-                  </h3>
-                  {flag ? (
-                    <span className="text-base leading-none" aria-hidden="true">
-                      {flag}
-                    </span>
-                  ) : null}
-                </div>
-              ) : (
-                <h3 className="mt-1.5 truncate font-mono text-xs text-muted-foreground" title={ecosystem.did}>
-                  {ecosystem.did}
-                </h3>
-              )}
             </div>
           </div>
 
-          <div className="flex shrink-0 flex-wrap gap-2">
-            {egfDocuments.length > 0 ? (
-              <Button
-                type="button"
-                variant="outline"
-                aria-expanded={egfOpen}
-                aria-controls={egfPanelId}
-                onClick={() => setEgfOpen((open) => !open)}
-                className={cn('h-9 px-3', egfOpen && 'border-primary/40 bg-primary/10 text-primary dark:bg-primary/15')}
-              >
-                <ScaleIcon aria-hidden="true" />
-                {t('discover.btn.egf')}
-              </Button>
-            ) : null}
-            <Button asChild variant="outline" className="group/view h-9 px-3">
-              <Link href={`/ecosystems/${ecosystem.id}`}>
-                <LandmarkIcon aria-hidden="true" />
-                {t('discover.btn.view')}
-                <ArrowUpRightIcon
-                  aria-hidden="true"
-                  className="text-muted-foreground transition-transform duration-(--duration-base) ease-emphasized group-hover/view:translate-x-0.5 group-hover/view:-translate-y-0.5"
-                />
-              </Link>
-            </Button>
+          <div className="flex min-w-0 items-center gap-2">
+            <LogoImage
+              src={identity?.organizationLogoUrl}
+              fallbackSrc={serviceAvatarUrl(identity?.organizationName ?? ecosystem.did)}
+              className="size-5 shrink-0 rounded-md object-contain ring-1 ring-foreground/10"
+            />
+            <h3 className="truncate text-sm font-medium text-muted-foreground" title={orgName}>
+              {orgName}
+            </h3>
+            <span className="text-base leading-none" aria-hidden="true">
+              {countryCodeToFlag(identity?.countryCode)}
+            </span>
           </div>
         </header>
 
@@ -212,61 +170,40 @@ export function DiscoverEcosystemCard({
           ))}
         </dl>
 
-        <AnimatePresence initial={false}>
-          {egfOpen && egfDocuments.length > 0 ? (
-            <motion.div
-              id={egfPanelId}
-              key="egf"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: DURATION.slow, ease: EASE.emphasized }}
-              className="-my-1 overflow-hidden"
-            >
-              <div className="py-1">
-                <GfDocumentViewer documents={egfDocuments} />
-              </div>
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
+        <EgfViewerToggle versions={ecosystem.versions ?? []} activeVersion={ecosystem.activeVersion}>
+          <Button asChild variant="outline" className="group/view">
+            <Link href={`/ecosystems/${ecosystem.id}`}>
+              <LandmarkIcon aria-hidden="true" />
+              {t('discover.btn.view')}
+              <ArrowUpRightIcon
+                aria-hidden="true"
+                className="text-muted-foreground transition-transform duration-(--duration-base) ease-emphasized group-hover/view:translate-x-0.5 group-hover/view:-translate-y-0.5"
+              />
+            </Link>
+          </Button>
+        </EgfViewerToggle>
 
-        {hasSchemaSection ? (
-          <div className="flex flex-col gap-3">
-            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-              {t('datatable.cs.title')}
-            </p>
-            {schemasError && !credentialSchemas.items.length ? (
-              <div className="error-pane">{schemasError}</div>
-            ) : (
-              <>
-                {credentialSchemas.items.map((schema) => (
-                  <SchemaCard
-                    key={schema.id}
-                    credentialSchema={schema}
-                    joinHref={
-                      canJoin && !archived && !schema.archived
-                        ? `/credential-schemas/${schema.id}?tab=participants`
-                        : undefined
-                    }
-                  />
-                ))}
-                {moreSchemasFailed ? (
-                  <div role="alert" className="error-pane items-center">
-                    <span className="min-w-0 flex-1">{t('discover.cs.more.error')}</span>
-                    <Button type="button" variant="outline" size="sm" onClick={onLoadMoreSchemas}>
-                      <RotateCwIcon aria-hidden="true" />
-                      {t('discover.retry')}
-                    </Button>
-                  </div>
-                ) : credentialSchemas.hasNext ? (
-                  <div>
-                    <ShowMoreButton onClick={onLoadMoreSchemas} />
-                  </div>
-                ) : null}
-              </>
-            )}
-          </div>
-        ) : null}
+        <div className="flex flex-col gap-3">
+          {schemasError && !credentialSchemas.items.length ? (
+            <div className="error-pane">{schemasError}</div>
+          ) : (
+            <>
+              {credentialSchemas.items.map((schema) => (
+                <CsCard
+                  key={schema.id}
+                  credentialSchema={schema}
+                  joinHref={canJoin && !archived && !schema.archived ? `/participants/${schema.id}` : undefined}
+                />
+              ))}
+              {moreSchemasFailed ? <p className="text-sm text-warning">{t('discover.cs.more.error')}</p> : null}
+              {credentialSchemas.hasNext ? (
+                <div>
+                  <ShowMoreButton onClick={onLoadMoreSchemas} />
+                </div>
+              ) : null}
+            </>
+          )}
+        </div>
       </div>
     </article>
   )

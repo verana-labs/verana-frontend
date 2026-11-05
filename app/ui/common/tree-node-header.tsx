@@ -1,5 +1,6 @@
 'use client'
 
+import { faCrown } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   BadgeCheckIcon,
@@ -26,7 +27,6 @@ import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { Badge } from '@/ui/shadcn/badge'
 import { Button } from '@/ui/shadcn/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/shadcn/tooltip'
 import {
   formatVNAFromUVNA,
   isExpireSoon,
@@ -40,11 +40,11 @@ export type TreeNodeHeaderProps = {
   type: 'participants' | 'tasks'
   isExpanded: boolean
   isSelected?: boolean
-  childCount?: string
   showWeight: boolean
   showBusiness: boolean
   showStats: boolean
   onToggle: (id: string, role?: string, validatorId?: string) => void
+  onSelect: (id: string) => void
   onJoin: (node: TreeNode) => void
   joinBlockedReason?: string
   feePricing?: SchemaPricing
@@ -92,29 +92,6 @@ function JoinButton({
   )
 }
 
-function authorityLabelKey(node: TreeNode): string | undefined {
-  if (node.isValidator) return 'participants.authority.validator'
-  if (node.isCorporation) return 'participants.authority.corporation'
-  if (node.isPredecessor) return 'participants.authority.predecessor'
-}
-
-function AuthorityIcon({ node }: { node: TreeNode }) {
-  const key = authorityLabelKey(node)
-  if (!key) return null
-  const label = resolveTranslatable({ key }, translate) ?? ''
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="inline-flex shrink-0">
-          <FontAwesomeIcon icon={node.icon} className={cn('size-3.5', node.iconColorClass)} aria-hidden="true" />
-          <span className="sr-only">{label}</span>
-        </span>
-      </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
-  )
-}
-
 function Metric({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-md bg-muted/70 px-1.5 py-0.5 text-[11px] whitespace-nowrap text-muted-foreground tabular-nums">
@@ -129,11 +106,11 @@ export default function TreeNodeHeader({
   type,
   isExpanded,
   isSelected = false,
-  childCount,
   showWeight,
   showBusiness,
   showStats,
   onToggle,
+  onSelect,
   onJoin,
   joinBlockedReason,
   feePricing,
@@ -205,7 +182,7 @@ export default function TreeNodeHeader({
     <div
       className={cn(
         'flex min-h-10 flex-wrap items-center gap-x-2 gap-y-1.5 rounded-lg py-1.5 pe-2 transition-colors duration-(--duration-base) ease-standard',
-        'group-hover/row:bg-muted/60 group-focus-visible/row:ring-[3px] group-focus-visible/row:ring-ring/50',
+        'group-hover/row:bg-muted/60',
         isSelected && 'bg-(--selected) ring-1 ring-primary/15 ring-inset group-hover/row:bg-(--selected)'
       )}
     >
@@ -213,7 +190,6 @@ export default function TreeNodeHeader({
         {hasChildren || node.group ? (
           <button
             type="button"
-            tabIndex={-1}
             onClick={(event) => {
               event.stopPropagation()
               onToggle(node.nodeId, node.type, node.parentId)
@@ -257,22 +233,26 @@ export default function TreeNodeHeader({
                 <RoleIcon className="size-3.5" />
               </span>
               <span className="min-w-0 truncate text-sm font-medium text-foreground">{node.name}</span>
-              {childCount ? (
-                <span className="shrink-0 rounded-full bg-muted px-1.5 text-[11px] font-medium text-muted-foreground tabular-nums">
-                  {childCount}
-                </span>
-              ) : null}
             </>
           )
         ) : (
           <>
-            <ServiceIdentity
-              did={participant?.did ?? undefined}
-              enrichment={participant?.trustData}
-              fallbackName={node.name}
-              className={cn(NAME_TRUNCATE, isSelected && '[&>span:nth-child(2)]:text-primary')}
-            />
-            <AuthorityIcon node={node} />
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onSelect(node.nodeId)
+              }}
+              className="inline-flex min-w-0 cursor-pointer items-center rounded-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+              <ServiceIdentity
+                did={participant?.did ?? undefined}
+                enrichment={participant?.trustData}
+                fallbackName={node.name}
+                className={cn(NAME_TRUNCATE, isSelected && '[&>span:nth-child(2)]:text-primary')}
+              />
+            </button>
+            <FontAwesomeIcon icon={faCrown} className="size-3.5 shrink-0 text-warning" aria-hidden="true" />
           </>
         )}
 

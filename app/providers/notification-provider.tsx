@@ -1,13 +1,12 @@
 'use client'
 
 import { ExternalLinkIcon } from 'lucide-react'
-import { createContext, type ReactNode, useCallback, useContext, useMemo, useRef } from 'react'
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef } from 'react'
 import { type ExternalToast, toast } from 'sonner'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { translate } from '@/i18n/dataview'
 import { Toaster } from '@/ui/shadcn/sonner'
 import { Spinner } from '@/ui/shadcn/spinner'
-import { shortenMiddle } from '@/util/util'
 
 type NotificationType = 'success' | 'error' | 'info' | 'inProgress'
 
@@ -26,6 +25,7 @@ type ShownToast = {
   id: string
   type: NotificationType
   settle: () => void
+  abandon: () => void
 }
 
 const DURATION: Record<NotificationType, number> = {
@@ -44,7 +44,6 @@ const TYPE_CLASS: Record<NotificationType, string> = {
 
 const PHONE_OFFSET = { bottom: 'calc(var(--tab-bar-height) + 0.5rem)', right: 16, left: 16 }
 const DESKTOP_OFFSET = { bottom: 24, right: 24 }
-const LINK_LABEL_MAX = 23
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined)
 
@@ -52,10 +51,6 @@ export const useNotification = () => {
   const context = useContext(NotificationContext)
   if (!context) throw new Error('useNotification must be used within a NotificationProvider')
   return context
-}
-
-function shortLinkLabel(label: string) {
-  return /\s/.test(label) ? label : shortenMiddle(label, LINK_LABEL_MAX)
 }
 
 function NotificationBody({ message, link }: { message?: string; link?: NotificationLink }) {
@@ -67,10 +62,9 @@ function NotificationBody({ message, link }: { message?: string; link?: Notifica
           href={link.href}
           target="_blank"
           rel="noopener noreferrer"
-          title={link.label}
           className="notify-msg-link mt-1.5 inline-flex max-w-full items-center gap-1 rounded-sm font-mono text-xs text-primary underline underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
-          <span className="truncate">{shortLinkLabel(link.label)}</span>
+          <span className="[overflow-wrap:anywhere]">{link.label}</span>
           <ExternalLinkIcon aria-hidden="true" className="size-3 shrink-0" />
         </a>
       ) : null}
@@ -89,7 +83,7 @@ function showToast(entry: ShownToast, message: string, title?: string, link?: No
     onDismiss: settle,
     onAutoClose: settle,
   }
-  const text = title ?? message
+  const text = title || message
   const heading =
     type === 'error' ? (
       <span role="alert" data-toast-alert className="[overflow-wrap:anywhere]">
@@ -112,9 +106,24 @@ function updatesInPlace(previous: ShownToast, type: NotificationType): boolean {
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const shown = useRef<ShownToast | null>(null)
   const sequence = useRef(0)
+  const disposed = useRef(false)
+
+  useEffect(() => {
+    disposed.current = false
+    return () => {
+      disposed.current = true
+      const current = shown.current
+      if (!current) return
+      current.abandon()
+      shown.current = null
+      toast.dismiss(current.id)
+    }
+  }, [])
 
   const notify = useCallback(
     (message: string, type: NotificationType = 'success', title?: string, link?: NotificationLink) => {
+      // sonner's store outlives this provider, so a stale caller must not show a toast or continue after notify
+      if (disposed.current) return new Promise<void>(() => {})
       const previous = shown.current
       previous?.settle()
       let id: string
@@ -128,18 +137,31 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       }
       return new Promise<void>((resolve) => {
         let done = false
+        let timer: ReturnType<typeof setTimeout> | undefined
         const entry: ShownToast = {
           id,
           type,
           settle: () => {
             if (done) return
             done = true
+            clearTimeout(timer)
             if (shown.current === entry) shown.current = null
             resolve()
+          },
+          abandon: () => {
+            done = true
+            clearTimeout(timer)
           },
         }
         shown.current = entry
         showToast(entry, message, title, link)
+        // sonner pauses its own timer on hover and hidden tabs, and callers await this before releasing the action
+        if (Number.isFinite(DURATION[type])) {
+          timer = setTimeout(() => {
+            toast.dismiss(id)
+            entry.settle()
+          }, DURATION[type])
+        }
       })
     },
     []
@@ -153,6 +175,8 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       <Toaster
         position={isPhone ? 'bottom-center' : 'bottom-right'}
         closeButton
+        hotkey={[]}
+        swipeDirections={[]}
         offset={isPhone ? PHONE_OFFSET : DESKTOP_OFFSET}
         mobileOffset={PHONE_OFFSET}
         containerAriaLabel={translate('notification.region')}

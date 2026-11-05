@@ -12,7 +12,6 @@ import {
   ShieldIcon,
 } from 'lucide-react'
 import type * as React from 'react'
-import { useEffect, useState } from 'react'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { getNavLinks } from '@/lib/navlinks'
@@ -30,46 +29,6 @@ export const NAV_ICONS: Record<string, React.ReactNode> = {
   '/discover': <CompassIcon />,
   '/pendingtasks': <ListTodoIcon />,
   '/settings': <SettingsIcon />,
-}
-
-const BOOT_WINDOW_MS = 1000
-
-function hasStoredWalletSession() {
-  try {
-    return Object.entries(localStorage).some(([key, value]) => {
-      if (!key.startsWith('cosmos-kit@') || !value) return false
-      const trimmed = value.trim()
-      return trimmed !== '' && trimmed !== '{}' && trimmed !== '[]' && trimmed !== 'null'
-    })
-  } catch {
-    return false
-  }
-}
-
-export function useShellSettling(): boolean {
-  const veranaChain = useVeranaChain()
-  const { status, address } = useChain(veranaChain.chain_name)
-  const { loading } = useUserCorporation()
-  const [hydrated, setHydrated] = useState(false)
-  const [storedSession, setStoredSession] = useState(false)
-  const [bootWindowOpen, setBootWindowOpen] = useState(true)
-  const [settledAddress, setSettledAddress] = useState<string | undefined>(undefined)
-
-  useEffect(() => {
-    setHydrated(true)
-    setStoredSession(hasStoredWalletSession())
-    const timer = setTimeout(() => setBootWindowOpen(false), BOOT_WINDOW_MS)
-    return () => clearTimeout(timer)
-  }, [])
-
-  useEffect(() => {
-    if (address && !loading) setSettledAddress(address)
-  }, [address, loading])
-
-  if (!hydrated) return true
-  if (status === 'Connecting') return true
-  if (status === 'Disconnected' && storedSession && bootWindowOpen) return true
-  return status === 'Connected' && address !== undefined && settledAddress !== address
 }
 
 export function useNavItems(): NavItem[] {

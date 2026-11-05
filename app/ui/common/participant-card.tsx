@@ -5,7 +5,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { motion } from 'framer-motion'
 import {
   BabyIcon,
-  BadgeCheckIcon,
   CoinsIcon,
   FileTextIcon,
   HistoryIcon,
@@ -15,10 +14,7 @@ import {
   ScanSearchIcon,
   ShieldAlertIcon,
   ShieldCheckIcon,
-  TriangleAlertIcon,
-  UsersIcon,
   WorkflowIcon,
-  XIcon,
 } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useCredentialSchemaData } from '@/hooks/useCredentialSchemaData'
@@ -51,11 +47,9 @@ import {
   participantSlashingActions,
 } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
-import { Shimmer } from '@/ui/motion/shimmer'
 import { DURATION, EASE } from '@/ui/motion/tokens'
 import { Timeline } from '@/ui/participants/timeline'
 import { Badge } from '@/ui/shadcn/badge'
-import { Button } from '@/ui/shadcn/button'
 import {
   countryCodeToFlag,
   formatDateTime,
@@ -136,6 +130,12 @@ const metadataItems: ParticipantItem[] = [
     extraActions: accountActions,
   },
   {
+    label: tr('participantcard.meta.deposit', 'Deposit'),
+    attr: 'deposit',
+    mono: true,
+    format: (value) => formatVNAFromUVNA(String(value)),
+  },
+  {
     label: tr('participantcard.meta.effectivefrom', 'Effective From'),
     attr: 'effective_from',
     format: (value) => formatDateTime(String(value)),
@@ -145,6 +145,10 @@ const metadataItems: ParticipantItem[] = [
     attr: 'effective_until',
     format: (value) => formatDateTime(String(value)),
   },
+  { label: tr('participantcard.meta.participants', 'Participants'), attr: 'participants' },
+  { label: tr('participantcard.meta.weight', 'Weight'), attr: 'weight' },
+  { label: tr('participantcard.meta.issued', 'Issued Credentials'), attr: 'issued' },
+  { label: tr('participantcard.meta.verified', 'Verified Credentials'), attr: 'verified' },
 ]
 
 const lifecycleItems: ParticipantItem[] = [
@@ -289,22 +293,6 @@ function Actions({ children }: { children: ReactNode[] }) {
   return <div className="mt-5 flex flex-wrap items-start gap-2">{children}</div>
 }
 
-function StatTile({ label, className, children }: { label: string; className?: string; children: ReactNode }) {
-  return (
-    <div className={cn('min-w-0 rounded-lg border bg-card px-3 py-2.5', className)}>
-      <dt className="truncate text-xs text-muted-foreground">{label}</dt>
-      <dd className="mt-0.5 truncate text-lg font-semibold tracking-tight text-foreground tabular-nums">{children}</dd>
-    </div>
-  )
-}
-
-const LEAF_ROLES = new Set(['VERIFIER', 'HOLDER'])
-
-function countOf(value: string | number | undefined): string {
-  const parsed = Number(value ?? 0)
-  return (Number.isFinite(parsed) ? parsed : 0).toLocaleString()
-}
-
 type ParticipantCardProps = {
   selectedNode: TreeNode
   path: TreeNode[]
@@ -312,7 +300,6 @@ type ParticipantCardProps = {
   pricingNoticeShown?: boolean
   viewerCorporationId?: number
   embedded?: boolean
-  onClose?: () => void
   onRefresh?: (participant: Participant) => void
   onRefreshList?: () => void | Promise<void>
 }
@@ -324,7 +311,6 @@ export default function ParticipantCard({
   pricingNoticeShown = false,
   viewerCorporationId,
   embedded = false,
-  onClose,
   onRefresh,
   onRefreshList,
 }: ParticipantCardProps) {
@@ -335,8 +321,6 @@ export default function ParticipantCard({
   const { participant: refreshedParticipant, refetch } = useParticipant(participantId)
   const {
     participantHistory,
-    loading: historyLoading,
-    errorParticipantHistory,
     refetch: refetchHistory,
     hasNext: historyHasNext,
     loadMore: loadMoreHistory,
@@ -428,8 +412,6 @@ export default function ParticipantCard({
   }
 
   const title = participantCardTitle(participant, schemaTitle)
-  const leaf = LEAF_ROLES.has(participant.role)
-  const countSpan = leaf ? '@[25rem]/card:col-span-3' : '@[25rem]/card:col-span-2'
   const historyEmpty = participantHistory.length === 0
 
   return (
@@ -470,17 +452,6 @@ export default function ParticipantCard({
               </p>
             ) : null}
           </div>
-          {onClose ? (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={onClose}
-              aria-label={translate('common.close')}
-              className="-me-1.5 -mt-1 text-muted-foreground"
-            >
-              <XIcon />
-            </Button>
-          ) : null}
         </div>
 
         <div className="mt-5 rounded-xl border bg-muted/40">
@@ -560,31 +531,6 @@ export default function ParticipantCard({
             </div>
           </div>
         </div>
-
-        <div className="@container/card mt-4">
-          <dl className="grid grid-cols-2 gap-2 @[25rem]/card:grid-cols-6">
-            <StatTile label={tr('participantcard.meta.issued', 'Issued Credentials')} className={countSpan}>
-              {countOf(participant.issued)}
-            </StatTile>
-            <StatTile label={tr('participantcard.meta.verified', 'Verified Credentials')} className={countSpan}>
-              {countOf(participant.verified)}
-            </StatTile>
-            {leaf ? null : (
-              <StatTile label={tr('participantcard.meta.participants', 'Participants')} className={countSpan}>
-                {countOf(participant.participants)}
-              </StatTile>
-            )}
-            <StatTile label={tr('participantcard.meta.deposit', 'Deposit')} className="@[25rem]/card:col-span-3">
-              <span className="font-mono text-base">{formatVNAFromUVNA(String(participant.deposit ?? 0))}</span>
-            </StatTile>
-            <StatTile
-              label={tr('participantcard.meta.weight', 'Weight')}
-              className={cn('@[25rem]/card:col-span-3', !leaf && 'col-span-2')}
-            >
-              <span className="font-mono text-base">{formatVNAFromUVNA(String(participant.weight ?? 0))}</span>
-            </StatTile>
-          </dl>
-        </div>
       </header>
 
       <Section icon={InfoIcon} title={tr('participantcard.meta.title', 'Key Metadata')}>
@@ -627,28 +573,8 @@ export default function ParticipantCard({
       </Section>
 
       <Section icon={HistoryIcon} title={tr('participantcard.timeline.title', 'Activity Timeline')}>
-        {historyEmpty && historyLoading ? (
-          <div className="space-y-4" aria-busy="true">
-            {[0, 1].map((row) => (
-              <div key={row} className="flex gap-3">
-                <Shimmer className="size-7 shrink-0 rounded-full" />
-                <div className="flex-1 space-y-2 pt-1">
-                  <Shimmer className="h-3.5 w-40" />
-                  <Shimmer className="h-3 w-56 max-w-full" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : historyEmpty && errorParticipantHistory ? (
-          <p className="flex items-start gap-2 text-sm text-foreground">
-            <TriangleAlertIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
-            {translate('activity.unavailable')}
-          </p>
-        ) : historyEmpty ? (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <BadgeCheckIcon aria-hidden="true" className="size-4" />
-            {tr('participantcard.timeline.empty', 'No activity yet.')}
-          </p>
+        {historyEmpty ? (
+          <p className="text-sm text-muted-foreground">{tr('participantcard.timeline.empty', 'No activity yet.')}</p>
         ) : (
           <>
             <Timeline>
@@ -669,18 +595,5 @@ export default function ParticipantCard({
         )}
       </Section>
     </motion.section>
-  )
-}
-
-export function ParticipantCardPlaceholder() {
-  return (
-    <div className="flex h-full min-h-64 flex-col items-center justify-center gap-3 rounded-xl border border-dashed bg-card/50 p-8 text-center">
-      <div className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-        <UsersIcon aria-hidden="true" className="size-5" />
-      </div>
-      <p className="max-w-56 text-sm text-muted-foreground">
-        {tr('participants.tree.selectHint', 'Select a participant to see its details.')}
-      </p>
-    </div>
   )
 }

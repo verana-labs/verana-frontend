@@ -1,40 +1,13 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { ArrowRightIcon, ArrowUpRightIcon, CheckIcon } from 'lucide-react'
+import { ArrowUpRightIcon } from 'lucide-react'
 import Link from 'next/link'
 import { translate } from '@/i18n/dataview'
 import { quickLinks, stepsGettingStarted } from '@/lib/dashlinks'
 import { cn } from '@/lib/utils'
-import { Button } from '@/ui/shadcn/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/shadcn/card'
-import Wallet from '@/wallet/wallet'
 import { resolveTranslatable } from '../dataview/types'
 
-function StepAction({ index, walletConnected }: { index: number; walletConnected: boolean }) {
-  if (index === 0) return walletConnected ? null : <Wallet size="sm" variant="outline" />
-  const link =
-    index === 1
-      ? walletConnected
-        ? { href: '/account', label: translate('gettingstarted.step2.action') }
-        : null
-      : { href: '/discover', label: translate('discover.title') }
-  if (!link) return null
-  return (
-    <Button asChild variant="outline" size="sm">
-      <Link href={link.href}>
-        {link.label}
-        <ArrowRightIcon aria-hidden="true" className="rtl:rotate-180" />
-      </Link>
-    </Button>
-  )
-}
-
-export default function GettingStarted({
-  walletConnected = false,
-  className,
-}: {
-  walletConnected?: boolean
-  className?: string
-}) {
+export default function GettingStarted({ className }: { className?: string }) {
   return (
     <Card className={cn('@container/card', className)}>
       <CardHeader>
@@ -45,34 +18,18 @@ export default function GettingStarted({
       <CardContent className="grid grid-cols-1 gap-6 @[640px]/card:grid-cols-[1fr_minmax(0,16rem)]">
         <ol className="flex flex-col">
           {stepsGettingStarted.map((step, idx) => {
-            const done = idx === 0 && walletConnected
             const last = idx === stepsGettingStarted.length - 1
             return (
               <li key={`step-${idx}`} className="relative flex gap-4 pb-6 last:pb-0">
                 {last ? null : (
                   <span aria-hidden="true" className="absolute top-9 bottom-1 left-4 w-px -translate-x-1/2 bg-border" />
                 )}
-                <span
-                  className={cn(
-                    'relative flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
-                    done ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary ring-1 ring-primary/20'
-                  )}
-                >
-                  {done ? (
-                    <>
-                      <CheckIcon aria-hidden="true" className="size-4" />
-                      <span className="sr-only">{translate('gettingstarted.done')}</span>
-                    </>
-                  ) : (
-                    idx + 1
-                  )}
+                <span className="relative flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary ring-1 ring-primary/20">
+                  {idx + 1}
                 </span>
-                <div className="flex min-w-0 flex-col items-start gap-2 pt-1">
-                  <div>
-                    <h3 className="mb-1 font-medium">{step.title}</h3>
-                    <p className="text-sm text-muted-foreground">{step.description}</p>
-                  </div>
-                  <StepAction index={idx} walletConnected={walletConnected} />
+                <div className="min-w-0 pt-1">
+                  <h3 className="mb-1 font-medium">{step.title}</h3>
+                  <p className="text-sm text-muted-foreground">{step.description}</p>
                 </div>
               </li>
             )
