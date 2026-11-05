@@ -1,9 +1,35 @@
 'use client'
 
+import {
+  ActivityIcon,
+  ArchiveIcon,
+  BanIcon,
+  CoinsIcon,
+  HistoryIcon,
+  KeyRoundIcon,
+  type LucideIcon,
+  PencilIcon,
+  PlusIcon,
+  ShieldAlertIcon,
+  VoteIcon,
+} from 'lucide-react'
 import { translate } from '@/i18n/dataview'
 import type { ActivityRow } from '@/lib/activity-history'
+import { cn } from '@/lib/utils'
+import { EmptyState } from '@/ui/common/empty-state'
+import { TONE_CLASSES, type Tone, ToneTag } from '@/ui/common/tone-tag'
+import { relativeTime } from '@/ui/dashboard/format'
 import { shortenMiddle } from '@/util/util'
 import { formatDate } from './shared'
+import {
+  Timeline,
+  TimelineContent,
+  TimelineDate,
+  TimelineIndicator,
+  TimelineItem,
+  TimelineSeparator,
+  TimelineTitle,
+} from './timeline'
 
 const SUMMARY_KEYS = [
   'title',
@@ -37,27 +63,59 @@ export function summarizeChanges(changes: Record<string, unknown>): string[] {
   })
 }
 
+const MSG_TONES: { pattern: RegExp; tone: Tone; icon: LucideIcon }[] = [
+  { pattern: /^(Msg)?(Repay)/, tone: 'success', icon: CoinsIcon },
+  { pattern: /^(Msg)?(Slash)/, tone: 'destructive', icon: ShieldAlertIcon },
+  { pattern: /^(Msg)?(Revoke|Withdraw)/, tone: 'destructive', icon: BanIcon },
+  { pattern: /^(Msg)?(Archive)/, tone: 'warning', icon: ArchiveIcon },
+  { pattern: /^(Msg)?(Grant)/, tone: 'accent', icon: KeyRoundIcon },
+  { pattern: /^(Msg)?(SubmitProposal|Vote|Exec)/, tone: 'info', icon: VoteIcon },
+  { pattern: /^(Msg)?(Create|Add|Store)/, tone: 'success', icon: PlusIcon },
+  { pattern: /^(Msg)?(Update|Increase|Set|Rotate)/, tone: 'accent', icon: PencilIcon },
+]
+
+function msgTone(msg: string): { tone: Tone; icon: LucideIcon } {
+  return MSG_TONES.find((entry) => entry.pattern.test(msg)) ?? { tone: 'neutral', icon: ActivityIcon }
+}
+
 export function ActivityTimeline({ rows, limit }: { rows: ActivityRow[]; limit?: number }) {
   const visible = limit ? rows.slice(0, limit) : rows
-  if (visible.length === 0) return <p className="text-sm text-gray-500">{translate('activity.empty')}</p>
+  if (visible.length === 0) {
+    return <EmptyState icon={<HistoryIcon />} title={translate('activity.empty')} className="py-8" />
+  }
   return (
-    <ol className="relative border-l border-neutral-20 dark:border-neutral-70 ml-2 space-y-4">
+    <Timeline>
       {visible.map((row) => {
         const summary = summarizeChanges(row.changes)
+        const { tone, icon: Icon } = msgTone(row.msg)
+        const relative = Number.isNaN(Date.parse(row.timestamp)) ? '' : relativeTime(row.timestamp)
         return (
-          <li key={row.id} className="ml-4">
-            <span className="absolute -left-[5px] mt-1.5 w-2.5 h-2.5 rounded-full bg-primary-600" />
-            <p className="text-sm font-medium text-gray-900 dark:text-white">{humanizeMsg(row.msg)}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {formatDate(row.timestamp)} · {translate('activity.block')} {row.blockHeight}
-              {row.account ? ` · ${shortenMiddle(row.account, 20)}` : ''}
-            </p>
+          <TimelineItem key={row.id} className="ms-10 pb-5">
+            <TimelineIndicator className={cn('top-0 -start-10 size-7 rounded-lg border-0', TONE_CLASSES[tone])}>
+              <Icon className="size-3.5!" />
+            </TimelineIndicator>
+            <TimelineSeparator className="top-8 -start-[1.625rem] h-[calc(100%-2.25rem)]" />
+            <div className="flex flex-col gap-x-3 gap-y-1 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 space-y-0.5">
+                <TimelineTitle className="leading-6">{humanizeMsg(row.msg)}</TimelineTitle>
+                <TimelineDate>
+                  {relative ? <>{relative} · </> : null}
+                  <time dateTime={row.timestamp}>{formatDate(row.timestamp)}</time>
+                  {row.account ? <span className="font-mono"> · {shortenMiddle(row.account, 20)}</span> : null}
+                </TimelineDate>
+              </div>
+              <ToneTag className="w-fit shrink-0 font-mono tabular-nums">
+                {translate('activity.block')} {row.blockHeight}
+              </ToneTag>
+            </div>
             {summary.length > 0 ? (
-              <p className="text-xs font-mono text-gray-600 dark:text-gray-300 break-all">{summary.join(' · ')}</p>
+              <TimelineContent className="mt-1.5 w-fit max-w-full rounded-md bg-tint-neutral px-2 py-1 font-mono break-all">
+                {summary.join(' · ')}
+              </TimelineContent>
             ) : null}
-          </li>
+          </TimelineItem>
         )
       })}
-    </ol>
+    </Timeline>
   )
 }

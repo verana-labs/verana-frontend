@@ -29,10 +29,12 @@ const SNAPSHOT = {
 
 const RETIRED_ROUTES = ['**/v4/metrics/**', '**/api/network-stats**']
 
-const statValue = (page: Page, label: string) =>
-  page
-    .locator('p.font-medium', { hasText: new RegExp(`^${label}$`) })
-    .locator('xpath=following-sibling::p[contains(@class,"font-mono")]')
+const expectStat = async (page: Page, stat: string, label: string, value: string) => {
+  const card = page.locator(`[data-stat="${stat}"]`)
+  await expect(card).toHaveAttribute('data-stat-value', value)
+  await expect(card.getByText(label, { exact: true })).toBeVisible()
+  await expect(card).toContainText(value)
+}
 
 test.use({ locale: 'en-US' })
 
@@ -56,12 +58,12 @@ test('Ring A, the dashboard stat cards render from the stats snapshot route', as
   await page.goto('/dashboard', { timeout: 60_000 })
   await page.waitForLoadState('domcontentloaded')
 
-  await expect(statValue(page, 'Ecosystems')).toHaveText('13')
-  await expect(statValue(page, 'Schemas')).toHaveText('25')
-  await expect(statValue(page, 'Participants')).toHaveText('31')
-  await expect(statValue(page, 'Total Locked Trust Deposit')).toHaveText('9,007,199,254,740.993123 VNA')
-  await expect(statValue(page, 'Issued Credentials')).toHaveText('184')
-  await expect(statValue(page, 'Verified Credentials')).toHaveText('2,671')
+  await expectStat(page, 'ecosystems', 'Ecosystems', '13')
+  await expectStat(page, 'schemas', 'Schemas', '25')
+  await expectStat(page, 'participants', 'Participants', '31')
+  await expectStat(page, 'totalLockedTrustDeposit', 'Total Locked Trust Deposit', '9,007,199,254,740.993123 VNA')
+  await expectStat(page, 'issuedCredentials', 'Issued Credentials', '184')
+  await expectStat(page, 'verifiedCredentials', 'Verified Credentials', '2,671')
 
   expect(snapshotUrls.length).toBeGreaterThan(0)
   for (const url of snapshotUrls) expect(url).toContain('entity_type=GLOBAL')
@@ -103,7 +105,7 @@ test('Ring A, the graph shows its version next to the indexer and is flagged whe
 
   await page.goto('/dashboard', { timeout: 60_000 })
 
-  const graph = page.locator('aside span', { hasText: /^graph$/ }).locator('xpath=following-sibling::span[1]')
+  const graph = page.locator('[data-shell="sidebar"] [data-status-row="graph"]')
   await expect(graph).toContainText('v1.0.0')
   await expect(graph).toContainText('unreachable', { timeout: 30_000 })
 })

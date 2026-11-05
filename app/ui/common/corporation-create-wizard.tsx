@@ -1,19 +1,21 @@
 'use client'
 
 import { useChain } from '@cosmos-kit/react'
-import { faCheck, faPlus, faTrash, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useMemo, useState } from 'react'
+import { Building2Icon, KeyRoundIcon, PlusIcon, Trash2Icon, TriangleAlertIcon } from 'lucide-react'
+import { type ReactNode, useId, useMemo, useState } from 'react'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { UserCorporation } from '@/lib/corporation-discovery'
 import {
   DEFAULT_DECISION_POLICY_DRAFT,
   type DecisionPolicyDraft,
+  type DecisionPolicyInput,
+  decimalToPercent,
   formatDecisionRule,
   readDecisionPolicyDraft,
 } from '@/lib/decision-policy'
 import { canonicalizeLanguageTag } from '@/lib/language'
+import { cn } from '@/lib/utils'
 import {
   type CorporationMemberInput,
   type CreateCorporationParams,
@@ -22,14 +24,23 @@ import {
 import { AddressIssueNote, addressIssue } from '@/ui/common/address-issue'
 import { DecisionPolicyFields } from '@/ui/common/decision-policy-fields'
 import { LanguageCombobox } from '@/ui/common/language-combobox'
+import { ScoreGauge } from '@/ui/common/score-gauge'
+import { ToneTag } from '@/ui/common/tone-tag'
+import { WizardLayout } from '@/ui/common/wizard/wizard-layout'
+import { FIELD_INPUT, FIELD_LABEL } from '@/ui/corporation/form-styles'
+import { addressInitials, nameInitials } from '@/ui/corporation/shared'
+import { SuccessCheck } from '@/ui/motion/feedback'
+import { Avatar, AvatarFallback } from '@/ui/shadcn/avatar'
+import { Button } from '@/ui/shadcn/button'
 import { shortenMiddle } from '@/util/util'
 import { isValidDID, isValidHttpUrl } from '@/util/validations'
 
 const STEPS = ['identity', 'members', 'review', 'grant'] as const
 type WizardStep = (typeof STEPS)[number]
 
-const inputClass =
-  'mt-2 w-full px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface'
+const WEIGHT = /^[1-9]\d*$/
+const STACK_LIMIT = 4
+const INVALID = 'aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20'
 
 function totalMemberWeight(members: CorporationMemberInput[]): number {
   return members.reduce((total, member) => {
@@ -37,53 +48,144 @@ function totalMemberWeight(members: CorporationMemberInput[]): number {
     return total + (Number.isFinite(weight) ? weight : 0)
   }, 0)
 }
-const primaryButton =
-  'px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium disabled:opacity-60'
-const ghostButton = 'px-4 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg font-medium'
 
-function StepDots({ current, created }: { current: WizardStep; created: boolean }) {
-  const currentIndex = STEPS.indexOf(current)
+function approvalPercent(policy: DecisionPolicyInput, totalWeight: number): number {
+  if (policy.rule.kind === 'percentage') return Number(policy.rule.percentage) * 100
+  if (totalWeight <= 0) return 0
+  return Math.min(100, (Number(policy.rule.threshold) / totalWeight) * 100)
+}
+
+function exceedsTotal(policy: DecisionPolicyInput, totalWeight: number): boolean {
+  return policy.rule.kind === 'threshold' && totalWeight > 0 && Number(policy.rule.threshold) > totalWeight
+}
+
+function ruleLabel(policy: DecisionPolicyInput, totalWeight: number): string {
+  if (policy.rule.kind === 'percentage') return `${decimalToPercent(policy.rule.percentage) ?? policy.rule.percentage}%`
+  return `${policy.rule.threshold} / ${totalWeight}`
+}
+
+function ReviewItem({ label, children, wide = false }: { label: string; children: ReactNode; wide?: boolean }) {
   return (
-    <ol className="flex flex-wrap items-center gap-2 mb-6">
-      {STEPS.map((step, index) => {
-        const done = index < currentIndex || (created && step !== 'grant')
-        const active = step === current
-        return (
-          <li key={step} className="flex items-center gap-2">
-            <span
-              className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${
-                active
-                  ? 'bg-primary-600 text-white'
-                  : done
-                    ? 'bg-success-100 text-success-700 dark:bg-success-900/40 dark:text-success-300'
-                    : 'bg-neutral-20 dark:bg-neutral-70/40 text-gray-600 dark:text-gray-300'
-              }`}
-            >
-              {done && !active ? <FontAwesomeIcon icon={faCheck} /> : index + 1}
+    <div className={wide ? 'sm:col-span-2' : undefined}>
+      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+      <dd className="mt-1 text-sm font-medium break-all text-foreground">{children}</dd>
+    </div>
+  )
+}
+
+function MemberAvatar({ address, className }: { address: string; className?: string }) {
+  return (
+    <Avatar size="sm" className={cn('shrink-0', className)}>
+      <AvatarFallback className="bg-tint-accent text-[10px] font-semibold text-primary">
+        {address ? addressInitials(address) : '?'}
+      </AvatarFallback>
+    </Avatar>
+  )
+}
+
+function CorporationPreview({
+  did,
+  language,
+  members,
+  totalWeight,
+  policy,
+  created,
+}: {
+  did: string
+  language: string
+  members: CorporationMemberInput[]
+  totalWeight: number
+  policy: DecisionPolicyInput | null
+  created: UserCorporation | null
+}) {
+  const shown = members.slice(0, STACK_LIMIT)
+  const extra = members.length - shown.length
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-3">
+        <span
+          aria-hidden="true"
+          className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary/60 text-sm font-semibold text-primary-foreground shadow-sm"
+        >
+          {did ? nameInitials(did) : <Building2Icon className="size-4" />}
+        </span>
+        <div className="min-w-0">
+          <p className="truncate font-mono text-[13px] text-foreground">{did || 'did:…'}</p>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            <ToneTag tone="neutral">{language || '…'}</ToneTag>
+            {created ? (
+              <ToneTag tone="success" dot>
+                #{created.id}
+              </ToneTag>
+            ) : (
+              <ToneTag tone="accent" dot>
+                {translate('corporation.wizard.preview.draft')}
+              </ToneTag>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-3 border-t border-border/70 pt-3">
+        <div className="flex -space-x-1.5">
+          {shown.map((member, index) => (
+            <MemberAvatar
+              key={`stack-${index}-${member.address}`}
+              address={member.address}
+              className="bg-card ring-2 ring-card data-[size=sm]:size-7"
+            />
+          ))}
+          {extra > 0 ? (
+            <span className="flex size-7 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground ring-2 ring-card">
+              +{extra}
             </span>
-            <span
-              className={`text-sm ${active ? 'font-semibold text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}
-            >
-              {translate(`corporation.wizard.step.${step}`)}
-            </span>
-            {index < STEPS.length - 1 ? <span className="w-6 h-px bg-neutral-20 dark:bg-neutral-70" /> : null}
-          </li>
-        )
-      })}
-    </ol>
+          ) : null}
+        </div>
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {translate('corporation.wizard.summary.members', { weight: totalWeight })}
+        </span>
+      </div>
+      <div className="border-t border-border/70 pt-3">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="text-xs text-muted-foreground">{translate('corporation.wizard.summary.quorum')}</span>
+          <span
+            className={cn(
+              'text-sm font-semibold tracking-tight tabular-nums',
+              policy && exceedsTotal(policy, totalWeight) ? 'text-warning' : 'text-foreground'
+            )}
+          >
+            {policy ? ruleLabel(policy, totalWeight) : '—'}
+          </span>
+        </div>
+        <ScoreGauge
+          tone="brand"
+          size="sm"
+          className="mt-2"
+          percent={policy ? approvalPercent(policy, totalWeight) : 0}
+          label={translate('corporation.wizard.summary.quorum')}
+        />
+        {policy ? (
+          <p className="mt-2 text-xs text-muted-foreground tabular-nums">
+            {translate('corporation.page.votingperiod')}: {policy.votingPeriodSeconds}s
+          </p>
+        ) : null}
+      </div>
+    </div>
   )
 }
 
 export function CorporationCreateWizard({
-  onCreating,
   onDone,
+  onCancel,
+  back,
 }: {
-  onCreating: (active: boolean) => void
   onDone: () => void
+  onCancel?: () => void
+  back?: { href: string; label: string }
 }) {
   const veranaChain = useVeranaChain()
   const { address } = useChain(veranaChain.chain_name)
   const { createOnly, grantFirstOperator } = useActionCorporation()
+  const fieldId = useId()
 
   const [step, setStep] = useState<WizardStep>('identity')
   const [did, setDid] = useState('')
@@ -93,6 +195,7 @@ export function CorporationCreateWizard({
   const [ownWeight, setOwnWeight] = useState('1')
   const [policyDraft, setPolicyDraft] = useState<DecisionPolicyDraft>(DEFAULT_DECISION_POLICY_DRAFT)
   const [fundingUvna, setFundingUvna] = useState('0')
+  const [touched, setTouched] = useState<WizardStep | null>(null)
   const [busy, setBusy] = useState(false)
   const [created, setCreated] = useState<UserCorporation | null>(null)
 
@@ -104,12 +207,7 @@ export function CorporationCreateWizard({
     [address, ownWeight, extraMembers]
   )
   const createParams = useMemo<Omit<CreateCorporationParams, 'decisionPolicy'>>(
-    () => ({
-      did: did.trim(),
-      language,
-      docUrl: docUrl.trim(),
-      members,
-    }),
+    () => ({ did: did.trim(), language, docUrl: docUrl.trim(), members }),
     [did, language, docUrl, members]
   )
 
@@ -121,25 +219,38 @@ export function CorporationCreateWizard({
       members.slice(0, index).map((listed) => listed.address)
     )
   )
-  const identityValid = isValidDID(did.trim()) && language.length > 0 && isValidHttpUrl(docUrl.trim())
+  const didValid = isValidDID(did.trim())
+  const docUrlValid = isValidHttpUrl(docUrl.trim())
   const decisionPolicy = readDecisionPolicyDraft(policyDraft)
-  const membersValid =
-    members.every(
-      (member, index) => member.address.length > 0 && memberIssues[index] === null && /^[1-9]\d*$/.test(member.weight)
-    ) && decisionPolicy !== null
+  const membersValid = members.every(
+    (member, index) => member.address.length > 0 && memberIssues[index] === null && WEIGHT.test(member.weight)
+  )
   const fundingValid = /^\d+$/.test(fundingUvna)
   const totalWeight = totalMemberWeight(members)
+  const showIssues = (target: WizardStep) => touched === target
+  const didInvalid = Boolean(showIssues('identity') || did.trim()) && !didValid
+  const docUrlInvalid = Boolean(showIssues('identity') || docUrl.trim()) && !docUrlValid
+
+  const identityMissing = !didValid
+    ? translate('corporation.wizard.missing.did')
+    : language.length === 0
+      ? translate('corporation.wizard.missing.language')
+      : !docUrlValid
+        ? translate('corporation.wizard.missing.docurl')
+        : undefined
+  const membersMissing = !membersValid
+    ? translate('corporation.wizard.missing.members')
+    : !decisionPolicy
+      ? translate('corporation.wizard.missing.policy')
+      : undefined
+  const reviewMissing = fundingValid ? undefined : translate('corporation.wizard.missing.funding')
 
   async function create() {
     if (!decisionPolicy) return
-    onCreating(true)
     setBusy(true)
     try {
       const corporation = await createOnly({ ...createParams, decisionPolicy })
-      if (!corporation) {
-        onCreating(false)
-        return
-      }
+      if (!corporation) return
       setCreated(corporation)
       setStep('grant')
     } finally {
@@ -158,209 +269,276 @@ export function CorporationCreateWizard({
     }
   }
 
-  return (
-    <section className="mb-6 rounded-xl border border-neutral-20 dark:border-neutral-70 bg-white dark:bg-surface p-6">
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{translate('corporation.wizard.title')}</h2>
-      <p className="text-sm text-neutral-70 mb-6">{translate('corporation.wizard.desc')}</p>
-      <StepDots current={step} created={created !== null} />
+  const steps = STEPS.map((entry) => ({
+    id: entry,
+    title: translate(`corporation.wizard.step.${entry}`),
+    description: translate(`corporation.wizard.step.${entry}.desc`),
+    status: created && entry !== 'grant' ? ('complete' as const) : undefined,
+  }))
 
+  const next =
+    step === 'identity'
+      ? { missing: identityMissing, onMissing: () => setTouched('identity'), onClick: () => setStep('members') }
+      : step === 'members'
+        ? { missing: membersMissing, onMissing: () => setTouched('members'), onClick: () => setStep('review') }
+        : step === 'review'
+          ? {
+              missing: reviewMissing,
+              pending: busy,
+              label: translate(busy ? 'corporation.wizard.creating' : 'corporation.wizard.create'),
+              onClick: () => void create(),
+            }
+          : {
+              pending: busy,
+              label: (
+                <>
+                  {busy ? null : <KeyRoundIcon aria-hidden="true" />}
+                  {translate(busy ? 'corporation.wizard.granting' : 'corporation.wizard.grant')}
+                </>
+              ),
+              onClick: () => void grant(),
+            }
+
+  const onBack = busy
+    ? undefined
+    : step === 'members'
+      ? () => setStep('identity')
+      : step === 'review'
+        ? () => setStep('members')
+        : step === 'grant'
+          ? onDone
+          : onCancel
+  const backLabel =
+    step === 'grant'
+      ? translate('corporation.wizard.skip')
+      : step === 'identity'
+        ? translate('corporation.wizard.cancel')
+        : translate('corporation.wizard.back')
+
+  return (
+    <WizardLayout
+      title={translate('corporation.wizard.title')}
+      description={translate('corporation.wizard.desc')}
+      back={back}
+      steps={steps}
+      current={step}
+      onStepClick={created || busy ? undefined : (id) => setStep(id as WizardStep)}
+      summaryTitle={translate('corporation.wizard.preview')}
+      summary={
+        <CorporationPreview
+          did={did.trim()}
+          language={language}
+          members={members}
+          totalWeight={totalWeight}
+          policy={decisionPolicy}
+          created={created}
+        />
+      }
+      onBack={onBack}
+      backLabel={backLabel}
+      next={next}
+    >
       {step === 'identity' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 md:col-span-2">
-            {translate('corporation.setup.did')}
-            <input
-              value={did}
-              onChange={(e) => setDid(e.target.value)}
-              placeholder="did:method:identifier"
-              className={inputClass}
-            />
-          </label>
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <div className="grid grid-cols-1 gap-5 @2xl/wizard:grid-cols-2">
+          <div className="@2xl/wizard:col-span-2">
+            <label className={FIELD_LABEL}>
+              {translate('corporation.setup.did')}
+              <input
+                value={did}
+                onChange={(event) => setDid(event.target.value)}
+                placeholder="did:method:identifier"
+                autoComplete="off"
+                spellCheck={false}
+                aria-invalid={didInvalid || undefined}
+                aria-describedby={didInvalid ? `${fieldId}-did-error` : undefined}
+                className={cn(FIELD_INPUT, INVALID, 'font-mono')}
+              />
+            </label>
+            {didInvalid ? (
+              <p id={`${fieldId}-did-error`} className="mt-1.5 text-xs text-destructive">
+                {translate('corporation.wizard.missing.did')}
+              </p>
+            ) : null}
+          </div>
+          <label className={FIELD_LABEL}>
             {translate('corporation.setup.language')}
-            <div className="mt-2">
-              <LanguageCombobox value={language} onChange={(value) => setLanguage(canonicalizeLanguageTag(value))} />
-            </div>
+            <LanguageCombobox value={language} onChange={(value) => setLanguage(canonicalizeLanguageTag(value))} />
           </label>
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {translate('corporation.setup.docurl')}
-            <input
-              type="url"
-              value={docUrl}
-              onChange={(e) => setDocUrl(e.target.value)}
-              placeholder="https://…"
-              className={inputClass}
-            />
-          </label>
-          <div className="md:col-span-2 flex justify-end">
-            <button
-              type="button"
-              disabled={!identityValid}
-              onClick={() => setStep('members')}
-              className={primaryButton}
-            >
-              {translate('corporation.wizard.next')}
-            </button>
+          <div>
+            <label className={FIELD_LABEL}>
+              {translate('corporation.setup.docurl')}
+              <input
+                type="url"
+                value={docUrl}
+                onChange={(event) => setDocUrl(event.target.value)}
+                placeholder="https://…"
+                aria-invalid={docUrlInvalid || undefined}
+                aria-describedby={docUrlInvalid ? `${fieldId}-docurl-error` : undefined}
+                className={cn(FIELD_INPUT, INVALID)}
+              />
+            </label>
+            {docUrlInvalid ? (
+              <p id={`${fieldId}-docurl-error`} className="mt-1.5 text-xs text-destructive">
+                {translate('corporation.wizard.missing.docurl')}
+              </p>
+            ) : null}
           </div>
         </div>
       ) : null}
 
       {step === 'members' ? (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm">
-              <span className="font-mono grow break-all">{shortenMiddle(address, 30)}</span>
-              <label className="text-gray-500 dark:text-gray-400">
+        <div className="flex flex-col gap-6">
+          <section aria-labelledby={`${fieldId}-members`} className="flex flex-col gap-2">
+            <h2 id={`${fieldId}-members`} className="text-sm font-semibold tracking-tight text-foreground">
+              {translate('corporation.page.members')}
+            </h2>
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2 rounded-lg bg-tint-accent px-3 py-2 text-sm ring-1 ring-primary/15 sm:flex-nowrap">
+              <MemberAvatar address={address} />
+              <span className="min-w-0 basis-[calc(100%-2.125rem)] truncate font-mono text-xs sm:grow sm:basis-0 sm:text-sm">
+                {shortenMiddle(address, 30)}
+              </span>
+              <ToneTag tone="accent" className="ms-8.5 sm:ms-0">
+                {translate('corporation.wizard.you')}
+              </ToneTag>
+              <label className="ms-auto flex shrink-0 items-center gap-2 text-xs text-muted-foreground sm:ms-0">
                 {translate('corporation.page.weight')}
                 <input
+                  inputMode="numeric"
                   value={ownWeight}
-                  onChange={(e) => setOwnWeight(e.target.value)}
-                  className="ml-2 w-16 px-2 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface"
+                  onChange={(event) => setOwnWeight(event.target.value)}
+                  aria-invalid={WEIGHT.test(ownWeight) ? undefined : true}
+                  className={cn(FIELD_INPUT, INVALID, 'w-16 text-center tabular-nums')}
                 />
               </label>
-              <span className="text-xs text-gray-500 dark:text-gray-400">{translate('corporation.wizard.you')}</span>
             </div>
             {extraMembers.map((member, index) => (
-              <div key={`member-${index}`}>
-                <div className="flex items-center gap-2 text-sm">
+              <div
+                key={`member-${index}`}
+                className="animate-in duration-(--duration-base) fade-in-0 slide-in-from-top-1 motion-reduce:animate-none"
+              >
+                <div className="flex flex-wrap items-center gap-2 px-3 text-sm">
+                  <MemberAvatar address={member.address.trim()} />
                   <input
                     value={member.address}
-                    onChange={(e) =>
-                      setExtraMembers(extraMembers.map((m, i) => (i === index ? { ...m, address: e.target.value } : m)))
+                    onChange={(event) =>
+                      setExtraMembers(
+                        extraMembers.map((entry, i) =>
+                          i === index ? { ...entry, address: event.target.value } : entry
+                        )
+                      )
                     }
                     placeholder="verana1…"
-                    className="grow px-2 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface font-mono"
+                    spellCheck={false}
+                    aria-label={`${translate('corporation.page.members')} ${index + 2}`}
+                    aria-invalid={memberIssues[index + 1] ? true : undefined}
+                    className={cn(FIELD_INPUT, INVALID, 'min-w-0 flex-1 basis-[calc(100%-2rem)] font-mono sm:basis-0')}
                   />
-                  <label className="text-gray-500 dark:text-gray-400">
+                  {memberIssues[index + 1] ? (
+                    <div className="-mt-1.5 basis-full ps-8 sm:order-last">
+                      <AddressIssueNote issue={memberIssues[index + 1]} />
+                    </div>
+                  ) : null}
+                  <label className="ms-8 flex shrink-0 items-center gap-2 text-xs text-muted-foreground sm:ms-0">
                     {translate('corporation.page.weight')}
                     <input
+                      inputMode="numeric"
                       value={member.weight}
-                      onChange={(e) =>
+                      onChange={(event) =>
                         setExtraMembers(
-                          extraMembers.map((m, i) => (i === index ? { ...m, weight: e.target.value } : m))
+                          extraMembers.map((entry, i) =>
+                            i === index ? { ...entry, weight: event.target.value } : entry
+                          )
                         )
                       }
-                      className="ml-2 w-16 px-2 py-1 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface"
+                      aria-invalid={WEIGHT.test(member.weight) ? undefined : true}
+                      className={cn(FIELD_INPUT, INVALID, 'w-16 text-center tabular-nums')}
                     />
                   </label>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     aria-label={translate('corporation.wizard.removemember')}
                     onClick={() => setExtraMembers(extraMembers.filter((_, i) => i !== index))}
-                    className="text-red-500 px-2"
+                    className="ms-auto shrink-0 text-muted-foreground hover:bg-tint-destructive hover:text-destructive sm:ms-0"
                   >
-                    <FontAwesomeIcon icon={faTrash} />
-                  </button>
+                    <Trash2Icon aria-hidden="true" />
+                  </Button>
                 </div>
-                <AddressIssueNote issue={memberIssues[index + 1]} />
               </div>
             ))}
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => setExtraMembers([...extraMembers, { address: '', weight: '1' }])}
-              className="text-sm font-medium text-primary-700 dark:text-primary-300 flex items-center gap-2"
+              className="mt-1 self-start"
             >
-              <FontAwesomeIcon icon={faPlus} />
+              <PlusIcon aria-hidden="true" />
               {translate('corporation.wizard.addmember')}
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            </Button>
+          </section>
+          <section
+            aria-label={translate('corporation.wizard.summary.quorum')}
+            className="grid grid-cols-1 gap-4 rounded-lg bg-muted/40 p-4 ring-1 ring-border/60 @2xl/wizard:grid-cols-2"
+          >
             <DecisionPolicyFields value={policyDraft} onChange={setPolicyDraft} totalWeight={totalWeight} />
-          </div>
-          <div className="flex justify-between">
-            <button type="button" onClick={() => setStep('identity')} className={ghostButton}>
-              {translate('corporation.wizard.back')}
-            </button>
-            <button type="button" disabled={!membersValid} onClick={() => setStep('review')} className={primaryButton}>
-              {translate('corporation.wizard.next')}
-            </button>
-          </div>
+          </section>
         </div>
       ) : null}
 
       {step === 'review' ? (
-        <div className="space-y-4">
-          <div className="border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-900/20 rounded-r-lg p-4 flex gap-3">
-            <FontAwesomeIcon icon={faTriangleExclamation} className="text-amber-500 mt-0.5" />
-            <p className="text-sm text-amber-900 dark:text-amber-100">{translate('corporation.wizard.noprivileges')}</p>
-          </div>
-          <dl className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">DID</dt>
-              <dd className="break-all">{did.trim()}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                {translate('corporation.setup.language')}
-              </dt>
-              <dd>{language}</dd>
-            </div>
-            <div className="md:col-span-2">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                {translate('corporation.setup.docurl')}
-              </dt>
-              <dd className="break-all">{docUrl.trim()}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                {translate('corporation.page.members')}
-              </dt>
-              <dd>
-                {members.map((member, index) => (
-                  <span key={`review-${index}-${member.address}`} className="block font-mono">
-                    {shortenMiddle(member.address, 26)} ×{member.weight}
-                  </span>
-                ))}
-              </dd>
-            </div>
+        <div className="flex flex-col gap-5">
+          <p className="flex items-start gap-2.5 rounded-lg border border-warning/25 bg-tint-warning px-4 py-3 text-sm text-warning">
+            <TriangleAlertIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            {translate('corporation.wizard.noprivileges')}
+          </p>
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-4 rounded-lg bg-muted/40 p-4 ring-1 ring-border/60 sm:grid-cols-2">
+            <ReviewItem label="DID">
+              <span className="font-mono">{did.trim()}</span>
+            </ReviewItem>
+            <ReviewItem label={translate('corporation.setup.language')}>{language}</ReviewItem>
+            <ReviewItem label={translate('corporation.setup.docurl')} wide>
+              {docUrl.trim()}
+            </ReviewItem>
+            <ReviewItem label={translate('corporation.page.members')}>
+              {members.map((member, index) => (
+                <span key={`review-${index}-${member.address}`} className="block font-mono text-xs">
+                  {shortenMiddle(member.address, 26)} ×{member.weight}
+                </span>
+              ))}
+            </ReviewItem>
             {decisionPolicy ? (
-              <div>
-                <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  {translate(`corporation.page.${decisionPolicy.rule.kind}`)} /{' '}
-                  {translate('corporation.page.votingperiod')} / {translate('corporation.page.minexecutionperiod')}
-                </dt>
-                <dd>
-                  {formatDecisionRule(decisionPolicy.rule)} / {decisionPolicy.votingPeriodSeconds}s /{' '}
-                  {decisionPolicy.minExecutionPeriodSeconds}s
-                </dd>
-              </div>
+              <ReviewItem
+                label={`${translate(`corporation.page.${decisionPolicy.rule.kind}`)} / ${translate('corporation.page.votingperiod')} / ${translate('corporation.page.minexecutionperiod')}`}
+              >
+                {formatDecisionRule(decisionPolicy.rule)} / {decisionPolicy.votingPeriodSeconds}s /{' '}
+                {decisionPolicy.minExecutionPeriodSeconds}s
+              </ReviewItem>
             ) : null}
           </dl>
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block max-w-xs">
+          <label className={cn(FIELD_LABEL, 'max-w-xs')}>
             {translate('corporation.setup.funding')}
-            <input value={fundingUvna} onChange={(e) => setFundingUvna(e.target.value)} className={inputClass} />
+            <input
+              inputMode="numeric"
+              value={fundingUvna}
+              onChange={(event) => setFundingUvna(event.target.value)}
+              aria-invalid={fundingValid ? undefined : true}
+              className={cn(FIELD_INPUT, INVALID, 'tabular-nums')}
+            />
           </label>
-          <div className="flex justify-between">
-            <button type="button" onClick={() => setStep('members')} className={ghostButton}>
-              {translate('corporation.wizard.back')}
-            </button>
-            <button
-              type="button"
-              disabled={busy || !fundingValid}
-              onClick={() => void create()}
-              className={primaryButton}
-            >
-              {translate(busy ? 'corporation.wizard.creating' : 'corporation.wizard.create')}
-            </button>
-          </div>
         </div>
       ) : null}
 
       {step === 'grant' && created ? (
-        <div className="space-y-4">
-          <p className="text-sm text-gray-700 dark:text-gray-200">
-            {translate('corporation.wizard.created')} <span className="font-mono">#{created.id}</span>
+        <div className="flex flex-col items-center gap-3 py-4 text-center">
+          <SuccessCheck className="size-14" />
+          <p className="text-base font-semibold text-foreground">
+            {translate('corporation.wizard.created')} <span className="font-mono tabular-nums">#{created.id}</span>
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{translate('corporation.wizard.grantdesc')}</p>
-          <div className="flex justify-between">
-            <button type="button" onClick={onDone} className={ghostButton}>
-              {translate('corporation.wizard.skip')}
-            </button>
-            <button type="button" disabled={busy} onClick={() => void grant()} className={primaryButton}>
-              {translate(busy ? 'corporation.wizard.granting' : 'corporation.wizard.grant')}
-            </button>
-          </div>
+          <p className="max-w-md text-sm text-muted-foreground">{translate('corporation.wizard.grantdesc')}</p>
         </div>
       ) : null}
-    </section>
+    </WizardLayout>
   )
 }

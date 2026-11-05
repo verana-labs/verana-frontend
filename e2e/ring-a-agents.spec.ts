@@ -43,7 +43,7 @@ test('the page pins the Corporation and its Ecosystems first and lists each DID 
   await expect(cards.nth(0)).toContainText(ACME_DID)
   await expect(cards.nth(0).getByText('Corporation', { exact: true })).toBeVisible()
   await expect(cards.nth(1)).toContainText(ACME_ECOSYSTEM_DID)
-  await expect(cards.nth(1).getByText('Ecosystem', { exact: true })).toBeVisible()
+  await expect(cards.nth(1).locator('[data-agent-label]')).toHaveText('Ecosystem')
   await expect(cards.nth(2)).toContainText(AGENT_ONE_DID)
   await expect(cards.nth(3)).toContainText(AGENT_TWO_DID)
 
@@ -112,7 +112,7 @@ test('an accreditation row with a delegation record expands, one without has no 
   await expect(delegated.getByText('Spend cycle ends')).toBeVisible()
   await expect(delegated.getByRole('link', { name: 'Open participant card' })).toHaveAttribute(
     'href',
-    /\/participants\/26.*102/
+    /\/credential-schemas\/26\?tab=participants&participant=102/
   )
 
   const plain = page.locator(CARD).filter({ hasText: AGENT_TWO_DID })
@@ -156,7 +156,7 @@ test('a failed ecosystem or delegation load degrades instead of reading as empty
   ).toBeVisible()
 
   await expect(page.getByRole('heading', { name: 'Acme Ecosystem Registry' })).toHaveCount(1)
-  await expect(page.getByText('Ecosystem', { exact: true })).toHaveCount(0)
+  await expect(page.locator('[data-agent-label="ecosystem"]')).toHaveCount(0)
   const delegated = page.locator(CARD).filter({ hasText: AGENT_ONE_DID })
   await expect(delegated.getByText('ISSUER')).toBeVisible()
   await expect(delegated.getByRole('button')).toHaveCount(0)

@@ -13,7 +13,7 @@ test.describe('guest mode, browser in English', () => {
     await page.waitForLoadState('domcontentloaded')
 
     // VFE-PAGE-NAV-1 / NAV-2: last entry of the primary navigation, shown with no wallet.
-    const navLinks = page.locator('aside nav a')
+    const navLinks = page.locator('[data-shell="sidebar"] nav a')
     await expect(navLinks.last()).toHaveText('Settings')
     await navLinks.last().click()
     await expect(page).toHaveURL(/\/settings$/)
@@ -69,7 +69,7 @@ test.describe('guest mode, browser in English', () => {
     await page.goto('/settings', { timeout: 60_000 })
     await expect(page.locator('h1.page-title')).toHaveText('Settings')
 
-    const aside = page.locator('aside')
+    const aside = page.locator('[data-shell="sidebar"]')
     const main = page.locator('main')
     const left = async (locator: Locator) => (await locator.boundingBox())?.x ?? Number.NaN
     expect(await left(aside)).toBeLessThan(await left(main))
@@ -96,7 +96,7 @@ test.describe('guest mode, browser in Spanish', () => {
     await page.goto('/settings', { timeout: 60_000 })
     await expect(page.locator('h1.page-title')).toHaveText('Configuración')
     await expect(page.locator('html')).toHaveAttribute('lang', 'es')
-    await expect(page.locator('aside nav a').last()).toHaveText('Configuración')
+    await expect(page.locator('[data-shell="sidebar"] nav a').last()).toHaveText('Configuración')
 
     await page.locator('#settings-locale').selectOption('en')
     await expect(page.locator('h1.page-title')).toHaveText('Settings')
@@ -106,6 +106,6 @@ test.describe('guest mode, browser in Spanish', () => {
     await page.reload()
     await expect(page.locator('h1.page-title')).toHaveText('Settings')
     await expect(page.locator('#settings-locale')).toHaveValue('en')
-    await expect(page.locator('aside nav a').last()).toHaveText('Settings')
+    await expect(page.locator('[data-shell="sidebar"] nav a').last()).toHaveText('Settings')
   })
 })

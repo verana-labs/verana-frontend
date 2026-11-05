@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { HolderOnboardingMode } from '@/lib/participant-onboarding'
 import {
+  BADGE_TONE,
   childRoleOnboardingAction,
   childRoleOnboardingLabel,
   countryCodeToFlag,
@@ -315,31 +316,39 @@ describe('isExpireSoon', () => {
 })
 
 describe('participantStateBadgeClass', () => {
-  it('keeps FUTURE and INACTIVE neutral, apart from the gray of EXPIRED and REVOKED', () => {
+  it('returns empty badges when the state is missing', () => {
+    expect(participantStateBadgeClass(undefined, true, 'header')).toEqual({
+      labelParticipantState: '',
+      classParticipantState: '',
+      expireSoon: null,
+    })
+  })
+
+  it('keeps FUTURE and INACTIVE outlined, apart from the muted fill of EXPIRED and REVOKED', () => {
     for (const state of ['FUTURE', 'INACTIVE'] as const) {
-      expect(participantStateBadgeClass(state, false, 'header').classParticipantState).toMatch(
-        /^bg-white text-gray-600 ring-1/
-      )
+      expect(participantStateBadgeClass(state, false, 'header').classParticipantState).toContain('ring-1 ring-inset')
     }
     for (const state of ['EXPIRED', 'REVOKED'] as const) {
-      expect(participantStateBadgeClass(state, false, 'header').classParticipantState).toMatch(/^bg-gray-100/)
+      expect(participantStateBadgeClass(state, false, 'header').classParticipantState).toBe(BADGE_TONE.muted)
     }
     expect(participantStateBadgeClass('EXPIRED', false, 'header').labelParticipantState).toBe('EXPIRED')
     expect(participantStateBadgeClass('REVOKED', false).labelParticipantState).toBe('revoked')
   })
 
-  it('renders ACTIVE green in the tree, SLASHED strong red and REPAID muted red', () => {
-    expect(participantStateBadgeClass('ACTIVE', false).classParticipantState).toContain('bg-green-100')
-    expect(participantStateBadgeClass('SLASHED', false).classParticipantState).toContain('bg-red-900 text-red-100')
-    expect(participantStateBadgeClass('REPAID', false).classParticipantState).toContain('bg-gray-100 text-red-800')
+  it('renders ACTIVE success in the tree, SLASHED solid destructive and REPAID muted destructive', () => {
+    expect(participantStateBadgeClass('ACTIVE', false).classParticipantState).toBe(BADGE_TONE.success)
+    expect(participantStateBadgeClass('SLASHED', false).classParticipantState).toBe(
+      'bg-destructive text-white dark:text-background'
+    )
+    expect(participantStateBadgeClass('REPAID', false).classParticipantState).toBe('bg-muted text-destructive')
   })
 
   it('adds the expires-soon indicator alongside ACTIVE instead of replacing it', () => {
     const badge = participantStateBadgeClass('ACTIVE', true, 'header')
     expect(badge.labelParticipantState).toBe('ACTIVE')
-    expect(badge.classParticipantState).toContain('blue')
+    expect(badge.classParticipantState).toBe(BADGE_TONE.info)
     expect(badge.expireSoon?.labelExpireSoon).toBe('EXPIRES SOON')
-    expect(badge.expireSoon?.classExpireSoon).toContain('yellow')
+    expect(badge.expireSoon?.classExpireSoon).toBe(BADGE_TONE.warning)
   })
 
   it('carries no indicator when the participant is not expiring or not active', () => {
@@ -356,9 +365,9 @@ describe('participantStateBadgeClass', () => {
 
 describe('onboardingStateColor', () => {
   it('renders PENDING yellow, VALIDATED green and TERMINATED gray', () => {
-    expect(onboardingStateColor('PENDING').classOnboardingState).toContain('yellow')
-    expect(onboardingStateColor('VALIDATED').classOnboardingState).toContain('green')
-    expect(onboardingStateColor('TERMINATED').classOnboardingState).toContain('gray')
+    expect(onboardingStateColor('PENDING').classOnboardingState).toBe(BADGE_TONE.warning)
+    expect(onboardingStateColor('VALIDATED').classOnboardingState).toBe(BADGE_TONE.success)
+    expect(onboardingStateColor('TERMINATED').classOnboardingState).toBe(BADGE_TONE.muted)
   })
 })
 
@@ -415,26 +424,34 @@ describe('withCurrentLocalTimePlusOneMinute', () => {
 })
 
 describe('role class helpers', () => {
-  it('roleBadgeClass returns distinct classes per known role and a gray default', () => {
-    expect(roleBadgeClass('ECOSYSTEM')).toContain('purple')
-    expect(roleBadgeClass('ISSUER_GRANTOR')).toContain('blue')
-    expect(roleBadgeClass('VERIFIER_GRANTOR')).toContain('slate')
-    expect(roleBadgeClass('ISSUER')).toContain('green')
-    expect(roleBadgeClass('VERIFIER')).toContain('orange')
-    expect(roleBadgeClass('HOLDER')).toContain('pink')
-    expect(roleBadgeClass('UNKNOWN' as never)).toContain('gray')
+  it('roleBadgeClass returns distinct token classes per known role and a muted default', () => {
+    expect(roleBadgeClass('ECOSYSTEM')).toBe(BADGE_TONE.primary)
+    expect(roleBadgeClass('ISSUER_GRANTOR')).toBe(BADGE_TONE.info)
+    expect(roleBadgeClass('VERIFIER_GRANTOR')).toBe(BADGE_TONE.muted)
+    expect(roleBadgeClass('ISSUER')).toBe(BADGE_TONE.success)
+    expect(roleBadgeClass('VERIFIER')).toBe(BADGE_TONE.warning)
+    expect(roleBadgeClass('HOLDER')).toContain('ring-1')
+    expect(roleBadgeClass('UNKNOWN' as never)).toBe(BADGE_TONE.muted)
+    const known = ['ECOSYSTEM', 'ISSUER_GRANTOR', 'VERIFIER_GRANTOR', 'ISSUER', 'VERIFIER', 'HOLDER'] as const
+    expect(new Set(known.map((role) => roleBadgeClass(role))).size).toBe(known.length)
   })
 
-  it('roleColorClass maps roles to text colour classes', () => {
-    expect(roleColorClass('ECOSYSTEM')).toBe('text-purple-500')
-    expect(roleColorClass('ISSUER_GRANTOR')).toBe('text-blue-500')
-    expect(roleColorClass('whatever')).toBe('text-gray-500')
+  it('roleColorClass maps roles to token text classes', () => {
+    expect(roleColorClass('ECOSYSTEM')).toBe('text-primary')
+    expect(roleColorClass('ISSUER_GRANTOR')).toBe('text-info')
+    expect(roleColorClass('whatever')).toBe('text-muted-foreground')
   })
 
-  it('roleJoinColorClass omits ECOSYSTEM and defaults to gray, and carries both themes', () => {
-    expect(roleJoinColorClass('ISSUER')).toBe('bg-green-100 text-green-500 dark:bg-green-900/20 dark:text-green-400')
+  it('roleJoinColorClass follows the role badge and falls back to muted for ECOSYSTEM', () => {
+    expect(roleJoinColorClass('ISSUER')).toBe(roleBadgeClass('ISSUER'))
     expect(roleJoinColorClass('ECOSYSTEM')).toBe(roleJoinColorClass('whatever'))
-    expect(roleJoinColorClass('whatever')).toBe('bg-gray-100 text-gray-500 dark:bg-gray-900/20 dark:text-gray-400')
+    expect(roleJoinColorClass('whatever')).toBe(BADGE_TONE.muted)
+  })
+
+  it('keeps every tone on semantic tokens without raw palette colors', () => {
+    for (const klass of Object.values(BADGE_TONE)) {
+      expect(klass).not.toMatch(/\b(gray|green|red|yellow|blue|purple|orange|pink|slate)-\d/)
+    }
   })
 })
 

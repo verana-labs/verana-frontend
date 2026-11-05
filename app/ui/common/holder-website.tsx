@@ -1,9 +1,22 @@
 'use client'
 
+import { AnimatePresence, motion } from 'framer-motion'
+import {
+  CircleAlertIcon,
+  ExternalLinkIcon,
+  GlobeIcon,
+  type LucideIcon,
+  MailIcon,
+  UserRoundSearchIcon,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { translate } from '@/i18n/dataview'
 import { logger } from '@/lib/logger'
 import { fetchAgentResolution } from '@/lib/resolverClient'
+import { cn } from '@/lib/utils'
+import { DURATION, EASE } from '@/ui/motion/tokens'
+import { Button } from '@/ui/shadcn/button'
+import { Spinner } from '@/ui/shadcn/spinner'
 
 const MAILTO = 'mailto:'
 
@@ -35,6 +48,12 @@ function issuerLinkTexts(link: IssuerLink): { message: string; button?: string }
   }
 }
 
+function linkIcon(link: IssuerLink): LucideIcon {
+  if (link.kind === 'failed') return CircleAlertIcon
+  if (link.kind !== 'link') return UserRoundSearchIcon
+  return link.href.startsWith(MAILTO) ? MailIcon : GlobeIcon
+}
+
 export function HolderWebsite({ issuerDid, onCancel }: HolderWebsiteProps) {
   const [link, setLink] = useState<IssuerLink>({ kind: 'loading' })
 
@@ -55,28 +74,64 @@ export function HolderWebsite({ issuerDid, onCancel }: HolderWebsiteProps) {
 
   const { message, button } = issuerLinkTexts(link)
   const external = link.kind === 'link' && !link.href.startsWith(MAILTO)
+  const Icon = linkIcon(link)
 
   return (
-    <section>
-      <p className="text-sm text-neutral-70 dark:text-neutral-70 mb-2">{translate('join.holder.permissionless')}</p>
-      <p className="text-sm text-neutral-70 dark:text-neutral-70 mb-4">{message}</p>
-      <div className="flex justify-between">
-        <button
-          onClick={onCancel}
-          className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
-          type="button"
-        >
-          {translate('join.btn.cancel')}
-        </button>
-        {link.kind === 'link' ? (
-          <a
-            href={link.href}
-            target={external ? '_blank' : undefined}
-            rel={external ? 'noopener noreferrer' : undefined}
-            className="px-6 py-3 rounded-lg font-medium transition-colors bg-primary-600 text-white hover:bg-primary-700"
+    <section className="flex flex-col gap-5">
+      <p className="rounded-lg bg-muted/60 px-4 py-3 text-sm text-muted-foreground dark:bg-muted/40">
+        {translate('join.holder.permissionless')}
+      </p>
+
+      <div aria-live="polite" className="rounded-xl p-4 ring-1 ring-foreground/10 sm:p-5">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={link.kind}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: DURATION.base, ease: EASE.emphasized }}
+            className="flex items-start gap-3"
           >
-            {button}
-          </a>
+            <span
+              className={cn(
+                'flex size-10 shrink-0 items-center justify-center rounded-xl',
+                link.kind === 'failed' ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'
+              )}
+            >
+              {link.kind === 'loading' ? (
+                <Spinner aria-hidden="true" className="size-4.5" />
+              ) : (
+                <Icon aria-hidden="true" className="size-5" />
+              )}
+            </span>
+            <p
+              className={cn(
+                'min-w-0 pt-2 text-sm break-words',
+                link.kind === 'failed' ? 'text-destructive' : 'text-foreground'
+              )}
+            >
+              {message}
+            </p>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+        <Button type="button" variant="outline" size="lg" className="px-4" onClick={onCancel}>
+          {translate('join.btn.cancel')}
+        </Button>
+        {link.kind === 'link' ? (
+          <Button asChild size="lg" className="px-4">
+            <a
+              href={link.href}
+              target={external ? '_blank' : undefined}
+              rel={external ? 'noopener noreferrer' : undefined}
+            >
+              {external ? <GlobeIcon aria-hidden="true" /> : <MailIcon aria-hidden="true" />}
+              {button}
+              {external ? <ExternalLinkIcon aria-hidden="true" data-icon="inline-end" /> : null}
+            </a>
+          </Button>
         ) : null}
       </div>
     </section>
