@@ -105,6 +105,7 @@ test('a credential schema shows its canonical JSON Schema and its history', asyn
 
   await expect(page.getByText(`"${CANONICAL_ID}"`)).toBeVisible({ timeout: 15_000 })
   await expect(page.getByText('"stored-id"')).toHaveCount(0)
+  await page.getByRole('tab', { name: 'Activity' }).click()
   const activity = page.locator('#activity')
   await expect(activity.getByText('Update Credential Schema')).toBeVisible()
   await expect(activity).toContainText('issuer_validation_validity_period: 730')
@@ -120,6 +121,7 @@ test('a failed canonical JSON Schema or history load says so instead of reading 
 
   await expect(page.getByText('The canonical JSON Schema could not be loaded')).toBeVisible({ timeout: 15_000 })
   await expect(page.getByText('"stored-id"')).toBeVisible()
+  await page.getByRole('tab', { name: 'Activity' }).click()
   await expect(page.locator('#activity').getByText('The activity could not be loaded.')).toBeVisible()
 })
 

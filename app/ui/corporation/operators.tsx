@@ -24,7 +24,6 @@ import { OPERATOR_GRANT_MESSAGE_TYPES } from '@/msg/constants/operatorGrantMessa
 import { useRegistryLabels } from '@/providers/api-rest-query-provider-context'
 import { AddressIssueNote, addressIssue } from '@/ui/common/address-issue'
 import { OperatorGrantOptionsFields, useOperatorGrantDraft } from '@/ui/common/operator-grant-options'
-import { ScoreGauge } from '@/ui/common/score-gauge'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 import { Avatar, AvatarFallback } from '@/ui/shadcn/avatar'
@@ -125,28 +124,6 @@ function limitFacts(limits: GrantLimits, labels: { spendLimit: string; remaining
   return facts
 }
 
-function uvnaTotal(coins: CoinAmount[] | null): number | null {
-  if (!coins || coins.length === 0) return null
-  const uvna = coins.filter((coin) => coin.denom === 'uvna')
-  if (uvna.length !== coins.length) return null
-  return uvna.reduce((sum, coin) => sum + Number(coin.amount), 0)
-}
-
-function SpendMeter({ limits, label }: { limits: GrantLimits; label: string }) {
-  const limit = uvnaTotal(limits.spendLimit)
-  const remaining = uvnaTotal(limits.remainingSpend)
-  if (limit === null || remaining === null || limit <= 0) return null
-  const percent = Math.min(100, Math.max(0, (remaining / limit) * 100))
-  return (
-    <div className="flex items-center gap-3">
-      <ScoreGauge size="sm" percent={percent} label={`${translate(label)} ${Math.round(percent)}%`} />
-      <span aria-hidden="true" className="w-10 shrink-0 text-end text-xs font-medium text-foreground tabular-nums">
-        {Math.round(percent)}%
-      </span>
-    </div>
-  )
-}
-
 function FactGrid({ facts }: { facts: [string, ReactNode][] }) {
   return (
     <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
@@ -199,12 +176,8 @@ function OperatorGrantDetail({
       <MsgTypeChips typeUrls={authorization.msgTypes} />
       <div className="space-y-4 rounded-lg bg-tint-neutral p-4">
         <FactGrid facts={facts} />
-        <SpendMeter limits={authorization} label="delegation.remainingSpend" />
         <div className="space-y-4 border-t border-border pt-4">
           {feeGrantsDegraded ? <SectionUnavailable /> : <FactGrid facts={feeFacts} />}
-          {feeGrant && !feeGrantsDegraded ? (
-            <SpendMeter limits={feeGrant} label="delegation.feeRemainingSpend" />
-          ) : null}
         </div>
       </div>
       {feeGrant &&
@@ -631,18 +604,7 @@ export function OperatorsSection({
   return (
     <div id="operators" className="space-y-6">
       <Card>
-        <SectionHeader
-          icon={<ShieldCheckIcon />}
-          title={translate('corporation.page.operators')}
-          description={
-            degradedOperators ? null : (
-              <span className="tabular-nums">
-                {atLeast(authorizations.length, partialOperators)}{' '}
-                {translate('corporation.tab.operators').toLowerCase()}
-              </span>
-            )
-          }
-        />
+        <SectionHeader icon={<ShieldCheckIcon />} title={translate('corporation.page.operators')} />
         {partialOperators ? <PartialNote /> : null}
         <ul className="space-y-2">
           {authorizations.map((authorization) => (

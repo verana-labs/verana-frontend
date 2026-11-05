@@ -2,7 +2,7 @@
 
 import { ShieldCheckIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
-import { getLocale, translate } from '@/i18n/dataview'
+import { translate } from '@/i18n/dataview'
 import { displayedVersion } from '@/lib/gf-document'
 import GfDocumentViewer, { VerificationBadge, type ViewerState } from '@/ui/common/gf-document-viewer'
 import type { EcosystemData } from '../dataview/datasections/ecosystem'
@@ -17,7 +17,7 @@ export type EgfCardProps = {
 function formatLongDate(value: string): string {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleDateString(getLocale(), { month: 'long', day: 'numeric', year: 'numeric' })
+  return date.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
 export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCardProps) {
@@ -32,7 +32,6 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
     [onAcceptedChange]
   )
   const version = displayedVersion(ecosystem.versions, ecosystem.activeVersion)
-  const name = ecosystem.title?.trim()
   return (
     <div className="mb-6 rounded-xl bg-card p-5 shadow-card sm:p-6">
       <div className="mb-5 flex items-start gap-4">
@@ -40,14 +39,7 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
           <ShieldCheckIcon className="size-5" aria-hidden="true" />
         </div>
         <div className="min-w-0 flex-1 self-center [overflow-wrap:anywhere]">
-          {name ? (
-            <>
-              <h3 className="text-base font-semibold tracking-tight">{name}</h3>
-              <p className="mt-1 font-mono text-xs text-muted-foreground">{ecosystem.did}</p>
-            </>
-          ) : (
-            <h3 className="font-mono text-sm font-semibold tracking-tight">{ecosystem.did}</h3>
-          )}
+          <h3 className="font-mono text-sm font-semibold tracking-tight">{ecosystem.did}</h3>
         </div>
       </div>
 

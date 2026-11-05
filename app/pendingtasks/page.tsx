@@ -1,12 +1,14 @@
 'use client'
 
 import { faFolder } from '@fortawesome/free-solid-svg-icons'
-import { useEffect, useMemo, useState } from 'react'
+import { Building2Icon, CloudOffIcon } from 'lucide-react'
+import Link from 'next/link'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { useActingPendingVotes, useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
+import { INDEXER_MAX_LIMIT } from '@/lib/indexer-json'
 import { usePendingTasksCtx } from '@/providers/api-rest-query-provider-context'
-import { CorporationRequired } from '@/ui/agents-tasks-settings/corporation-required'
-import { PendingTasksInbox } from '@/ui/agents-tasks-settings/pending-tasks-inbox'
+import { EmptyState } from '@/ui/common/empty-state'
 import ParticipantTree from '@/ui/common/participant-tree'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import type { Participant, PendingEcosystem } from '@/ui/dataview/datasections/participant'
@@ -43,7 +45,6 @@ function buildTree(ecosystems: PendingEcosystem[], corporationId?: number): Tree
       icon: faFolder,
       iconColorClass: 'text-primary',
       serviceDid: ecosystem.did ?? undefined,
-      serviceTitle: ecosystem.did ? undefined : fallbackName,
       serviceTrustData: ecosystem.trustData,
       badgeCount: ecosystem.pending_tasks,
       children: ecosystem.schemas.map((schema) => ({
@@ -64,6 +65,20 @@ function buildTree(ecosystems: PendingEcosystem[], corporationId?: number): Tree
   })
 }
 
+function treePlaceholder(count: number, partial: boolean, settled: boolean, error: string | null): ReactNode {
+  if (error) return <p className="p-2 text-sm text-warning">{translate('task.tree.error')}</p>
+  if (partial)
+    return (
+      <p className="p-2 text-xs text-muted-foreground">
+        {translate('task.tree.partial', { count: INDEXER_MAX_LIMIT })}
+      </p>
+    )
+  if (count > 0) return null
+  return (
+    <p className="p-2 text-sm text-muted-foreground">{translate(settled ? 'task.tree.empty' : 'task.tree.loading')}</p>
+  )
+}
+
 export default function PendingTasksPage() {
   const { actingCorporation, loading: corporationLoading, error: discoveryError } = useUserCorporation()
   const pendingVotes = useActingPendingVotes()
@@ -80,31 +95,33 @@ export default function PendingTasksPage() {
     setRefreshRoot(false)
   }, [refetch, refreshRoot])
 
-  if (!actingCorporation && !corporationLoading)
+  if (!actingCorporation && !corporationLoading) {
     return (
-      <CorporationRequired
-        failed={Boolean(discoveryError)}
-        title={translate('task.title')}
-        description={translate('task.description')}
+      <EmptyState
+        className="bg-card/50 py-16"
+        icon={discoveryError ? <CloudOffIcon /> : <Building2Icon />}
+        title={translate(discoveryError ? 'corporation.page.error' : 'corporation.page.nocorp')}
       />
     )
+  }
 
   return (
-    <ParticipantTree
-      tree={participantTree}
-      type="tasks"
-      viewerCorporationId={actingCorporation?.corporation.id}
-      refreshRoot={() => setRefreshRoot(true)}
-      placeholder={
-        <PendingTasksInbox
-          ecosystems={pendingParticipants}
-          pendingVotes={pendingVotes}
-          partial={partial}
-          settled={settled && !corporationLoading}
-          error={error}
-          onRetry={() => setRefreshRoot(true)}
-        />
-      }
-    />
+    <>
+      {pendingVotes > 0 ? (
+        <p className="mb-4 ps-2 text-sm text-muted-foreground">
+          {translate('task.votes.pending', { count: pendingVotes })}{' '}
+          <Link href="/corporation?tab=proposals" className="font-medium text-primary hover:underline">
+            {translate('task.votes.open')}
+          </Link>
+        </p>
+      ) : null}
+      <ParticipantTree
+        tree={participantTree}
+        type="tasks"
+        viewerCorporationId={actingCorporation?.corporation.id}
+        refreshRoot={() => setRefreshRoot(true)}
+        placeholder={treePlaceholder(pendingParticipants.length, partial, settled && !corporationLoading, error)}
+      />
+    </>
   )
 }

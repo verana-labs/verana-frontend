@@ -3,7 +3,7 @@
 import { useReducedMotion } from 'framer-motion'
 import { MoonIcon, SunIcon } from 'lucide-react'
 import { useTheme } from 'next-themes'
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { translate } from '@/i18n/dataview'
 import { Button } from '@/ui/shadcn/button'
@@ -17,7 +17,9 @@ export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme()
   const reduceMotion = useReducedMotion()
   const buttonRef = useRef<HTMLButtonElement>(null)
-  const isDark = resolvedTheme === 'dark'
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  const isDark = mounted && resolvedTheme === 'dark'
   const label = translate(isDark ? 'navbar.theme.toLight' : 'navbar.theme.toDark')
 
   const toggle = async () => {

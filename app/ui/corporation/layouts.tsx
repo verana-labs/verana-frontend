@@ -1,6 +1,6 @@
 'use client'
 
-import { HistoryIcon, InfoIcon } from 'lucide-react'
+import { HistoryIcon } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useRef } from 'react'
 import type { CorporationDetails } from '@/hooks/useCorporationDetails'
 import type { GranterBalance } from '@/hooks/useGranterBalance'
@@ -19,9 +19,9 @@ import { GovernanceSection } from './governance'
 import { CorporationHeader, RotateDidForm } from './header'
 import { MembersSection } from './members'
 import { OperatorsSection } from './operators'
-import { MemberWeights, OverviewDetails, OverviewTiles, RecentProposals } from './overview'
+import { OverviewFacts } from './overview'
 import { type ProposalContext, ProposalsSection } from './proposals'
-import { atLeast } from './shared'
+import { atLeast, Card } from './shared'
 import { TrustDepositSection } from './trust-deposit'
 import { revealChild, useScrollEdges } from './use-scroll-edges'
 
@@ -118,25 +118,14 @@ function section(view: CorporationView, tab: CorporationTab) {
       )
     default:
       return (
-        <div id="overview" className="space-y-4 lg:space-y-5">
-          <OverviewTiles details={details} openProposals={view.openProposals} />
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-5">
-            <div id="activity" className="min-w-0 scroll-mt-20 lg:col-span-2">
-              <BlockCard icon={<HistoryIcon />} title={translate('activity.title')} className="h-full">
-                <ActivityTimeline rows={details.history} limit={5} />
-              </BlockCard>
-            </div>
-            <BlockCard icon={<InfoIcon />} title={translate('corporation.page.details')}>
-              <OverviewDetails details={details} />
+        <div className="space-y-4 lg:space-y-5">
+          <Card id="overview">
+            <OverviewFacts details={details} openProposals={view.openProposals} />
+          </Card>
+          <div id="activity" className="min-w-0 scroll-mt-20">
+            <BlockCard icon={<HistoryIcon />} title={translate('activity.title')}>
+              <ActivityTimeline rows={details.history} limit={5} />
             </BlockCard>
-            {details.degraded.proposals ? null : (
-              <div className="lg:col-span-2">
-                <RecentProposals details={details} />
-              </div>
-            )}
-            <div className={details.degraded.proposals ? 'lg:col-span-3' : undefined}>
-              <MemberWeights details={details} walletAddress={view.walletAddress} />
-            </div>
           </div>
         </div>
       )
@@ -200,7 +189,6 @@ export function TabsLayout({
     <>
       <CorporationHeader
         profile={view.details.profile}
-        members={view.details.members}
         enrichment={view.enrichment}
         balance={view.balance}
         rotate={view.rotate}

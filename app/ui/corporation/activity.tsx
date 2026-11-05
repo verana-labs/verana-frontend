@@ -18,7 +18,6 @@ import type { ActivityRow } from '@/lib/activity-history'
 import { cn } from '@/lib/utils'
 import { EmptyState } from '@/ui/common/empty-state'
 import { TONE_CLASSES, type Tone, ToneTag } from '@/ui/common/tone-tag'
-import { relativeTime } from '@/ui/dashboard/format'
 import { shortenMiddle } from '@/util/util'
 import { formatDate } from './shared'
 import {
@@ -88,7 +87,6 @@ export function ActivityTimeline({ rows, limit }: { rows: ActivityRow[]; limit?:
       {visible.map((row) => {
         const summary = summarizeChanges(row.changes)
         const { tone, icon: Icon } = msgTone(row.msg)
-        const relative = Number.isNaN(Date.parse(row.timestamp)) ? '' : relativeTime(row.timestamp)
         return (
           <TimelineItem key={row.id} className="ms-10 pb-5">
             <TimelineIndicator className={cn('top-0 -start-10 size-7 rounded-lg border-0', TONE_CLASSES[tone])}>
@@ -99,7 +97,6 @@ export function ActivityTimeline({ rows, limit }: { rows: ActivityRow[]; limit?:
               <div className="min-w-0 space-y-0.5">
                 <TimelineTitle className="leading-6">{humanizeMsg(row.msg)}</TimelineTitle>
                 <TimelineDate>
-                  {relative ? <>{relative} · </> : null}
                   <time dateTime={row.timestamp}>{formatDate(row.timestamp)}</time>
                   {row.account ? <span className="font-mono"> · {shortenMiddle(row.account, 20)}</span> : null}
                 </TimelineDate>

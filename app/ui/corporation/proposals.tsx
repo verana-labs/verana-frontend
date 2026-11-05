@@ -15,18 +15,15 @@ import { translate } from '@/i18n/dataview'
 import { formatDecisionRule } from '@/lib/decision-policy'
 import { cn } from '@/lib/utils'
 import type { VoteChoice } from '@/msg/actions_hooks/actionCorporationManage'
-import { GhostEmpty } from '@/ui/common/ghost-empty'
+import { EmptyState } from '@/ui/common/empty-state'
 import { type Tone, ToneTag } from '@/ui/common/tone-tag'
 import { BlurFade } from '@/ui/motion/blur-fade'
 import { Stagger, StaggerItem } from '@/ui/motion/stagger'
 import { TabIndicator } from '@/ui/motion/tab-indicator'
-import { Avatar, AvatarFallback } from '@/ui/shadcn/avatar'
 import { Button } from '@/ui/shadcn/button'
 import { shortenMiddle } from '@/util/util'
-import { humanizeMsg } from './activity'
 import { CategoryBar } from './category-bar'
 import {
-  addressInitials,
   atLeast,
   Card,
   formatDate,
@@ -34,19 +31,8 @@ import {
   PartialNote,
   SectionHeader,
   SectionUnavailable,
-  STATUS_TONE,
   StatusBadge,
-  statusLabel,
 } from './shared'
-import {
-  Timeline,
-  TimelineContent,
-  TimelineDate,
-  TimelineIndicator,
-  TimelineItem,
-  TimelineSeparator,
-  TimelineTitle,
-} from './timeline'
 import { revealChild, useScrollEdges } from './use-scroll-edges'
 
 const FILTERS = ['all', 'SUBMITTED', 'ACCEPTED', 'REJECTED', 'ABORTED', 'WITHDRAWN'] as const
@@ -76,25 +62,24 @@ const VOTE_BUTTONS: { choice: VoteChoice; key: string; variant: 'default' | 'out
   },
 ]
 
-const TALLY_SEGMENTS: { key: keyof ProposalTally; className: string; dot: string }[] = [
-  { key: 'yes', className: 'bg-success', dot: 'bg-success' },
-  { key: 'no', className: 'bg-destructive', dot: 'bg-destructive' },
-  { key: 'veto', className: 'bg-destructive/55', dot: 'bg-destructive/55' },
-  { key: 'abstain', className: 'bg-muted-foreground/45', dot: 'bg-muted-foreground/45' },
+const TALLY_SEGMENTS: { key: keyof ProposalTally; className: string }[] = [
+  { key: 'yes', className: 'bg-success' },
+  { key: 'no', className: 'bg-destructive' },
+  { key: 'veto', className: 'bg-destructive/55' },
+  { key: 'abstain', className: 'bg-muted-foreground/45' },
 ]
 
-const VOTE_OPTIONS: Record<string, { key: keyof ProposalTally; tone: Tone }> = {
-  YES: { key: 'yes', tone: 'success' },
-  NO: { key: 'no', tone: 'destructive' },
-  NO_WITH_VETO: { key: 'veto', tone: 'destructive' },
-  ABSTAIN: { key: 'abstain', tone: 'neutral' },
+const VOTE_TONES: Record<string, Tone> = {
+  YES: 'success',
+  NO: 'destructive',
+  NO_WITH_VETO: 'destructive',
+  ABSTAIN: 'neutral',
 }
 
 function VoteBadge({ option }: { option: string }) {
-  const known = VOTE_OPTIONS[option.replace(/^VOTE_OPTION_/, '')]
   return (
-    <ToneTag tone={known?.tone ?? 'neutral'} dot={Boolean(known)} className={cn('ms-auto', !known && 'font-mono')}>
-      {known ? translate(`corporation.proposals.option.${known.key}`) : option}
+    <ToneTag tone={VOTE_TONES[option.replace(/^VOTE_OPTION_/, '')] ?? 'neutral'} className="ms-auto font-mono">
+      {option}
     </ToneTag>
   )
 }
@@ -117,42 +102,21 @@ const MAX_TIMEOUT_MS = 2_147_483_647
 
 const TALLY_TEXT = 'text-xs font-medium text-foreground tabular-nums whitespace-nowrap'
 
-function TallyLegend({ tally }: { tally: ProposalTally }) {
-  return (
-    <ul className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-      {TALLY_SEGMENTS.filter((segment) => segment.key !== 'veto' || tally.veto > 0).map((segment) => (
-        <li key={segment.key} className="flex items-center gap-1.5 tabular-nums">
-          <span aria-hidden="true" className={cn('size-2 rounded-full', segment.dot)} />
-          {translate(`corporation.proposals.option.${segment.key}`)} {tally[segment.key]}
-        </li>
-      ))}
-    </ul>
-  )
-}
-
 export function TallyBar({ tally, scale }: { tally: ProposalTally; scale: TallyScale }) {
   const { total, threshold, percentage } = scale
   if (total === null) {
     return (
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className={TALLY_TEXT}>
-          {translate('corporation.proposals.tally.votes', {
-            yes: tally.yes,
-            no: tally.no,
-            abstain: tally.abstain,
-            veto: tally.veto,
-          })}
-        </p>
-      </div>
+      <p className={TALLY_TEXT}>
+        {translate('corporation.proposals.tally.votes', {
+          yes: tally.yes,
+          no: tally.no,
+          abstain: tally.abstain,
+          veto: tally.veto,
+        })}
+      </p>
     )
   }
   const cast = tally.yes + tally.no + tally.veto + tally.abstain
-  const thresholdText =
-    threshold === null
-      ? null
-      : percentage === null
-        ? String(threshold)
-        : formatDecisionRule({ kind: 'percentage', percentage })
   return (
     <div className="min-w-[8rem] space-y-2.5">
       <CategoryBar
@@ -164,25 +128,22 @@ export function TallyBar({ tally, scale }: { tally: ProposalTally; scale: TallyS
           })),
           { key: 'remaining', value: Math.max(total - cast, 0), className: 'bg-transparent' },
         ]}
-        marker={
-          threshold !== null && threshold > 0 && total > 0 && thresholdText !== null
-            ? { value: threshold, tooltip: translate('corporation.proposals.marker', { threshold: thresholdText }) }
-            : undefined
-        }
+        marker={threshold !== null && threshold > 0 && total > 0 ? threshold : undefined}
       />
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-        <p className={TALLY_TEXT}>
-          {threshold === null
-            ? translate('corporation.proposals.tally.total', { yes: tally.yes, total })
-            : translate('corporation.proposals.tally', { yes: tally.yes, total, threshold: thresholdText ?? '' })}
-        </p>
-        <TallyLegend tally={tally} />
-      </div>
+      <p className={TALLY_TEXT}>
+        {threshold === null
+          ? translate('corporation.proposals.tally.total', { yes: tally.yes, total })
+          : translate('corporation.proposals.tally', {
+              yes: tally.yes,
+              total,
+              threshold: percentage === null ? threshold : formatDecisionRule({ kind: 'percentage', percentage }),
+            })}
+      </p>
     </div>
   )
 }
 
-export function hasEnded(votingPeriodEnd: string | null): boolean {
+function hasEnded(votingPeriodEnd: string | null): boolean {
   if (!votingPeriodEnd) return false
   const end = Date.parse(votingPeriodEnd)
   return Number.isFinite(end) && end <= Date.now()
@@ -192,94 +153,12 @@ function proposerList(proposal: ProposalRow): string {
   return proposal.proposers.map((proposer) => shortenMiddle(proposer, 16)).join(', ')
 }
 
-export function messageTitle(proposal: ProposalRow): string | null {
-  const type = proposal.messages[0]?.['@type']
-  if (typeof type !== 'string') return null
-  const name = humanizeMsg(type.split('.').pop() ?? type)
-  return proposal.messages.length > 1 ? `${name} +${proposal.messages.length - 1}` : name
-}
-
-function executorLabel(result: string): string {
-  const key = `corporation.proposals.executor.${result}`
-  const label = translate(key)
-  return label === key ? result : label
-}
-
 function ExecutorBadge({ result }: { result: string }) {
   const tone: Tone = result === 'SUCCESS' ? 'success' : result === 'FAILURE' ? 'destructive' : 'neutral'
-  return <ToneTag tone={tone}>{executorLabel(result)}</ToneTag>
-}
-
-type StageState = 'done' | 'pending' | 'skipped'
-
-function Lifecycle({ proposal }: { proposal: ProposalRow }) {
-  const open = proposal.status === 'SUBMITTED'
-  const ended = !open || hasEnded(proposal.votingPeriodEnd)
-  const ran = proposal.executorResult !== null && proposal.executorResult !== 'NOT_RUN'
-  const skipExecution = !open && proposal.status !== 'ACCEPTED' && !ran
-  const pending = translate('corporation.proposals.stage.pending')
-  const stages: { key: string; state: StageState; dot?: string; date: string | null; content: ReactNode }[] = [
-    {
-      key: 'submitted',
-      state: 'done',
-      date: formatDate(proposal.submitTime),
-      content: <span className="font-mono break-all">{proposerList(proposal)}</span>,
-    },
-    {
-      key: 'voting',
-      state: ended ? 'done' : 'pending',
-      date: formatRelative(proposal.votingPeriodEnd) ?? formatDate(proposal.votingPeriodEnd),
-      content: null,
-    },
-    {
-      key: 'outcome',
-      state: open ? 'pending' : 'done',
-      dot: open ? undefined : STATUS_TONE[proposal.status]?.dot,
-      date: null,
-      content: open ? pending : statusLabel(proposal.status),
-    },
-    {
-      key: 'execution',
-      state: skipExecution ? 'skipped' : proposal.executorResult === 'SUCCESS' ? 'done' : 'pending',
-      dot: proposal.executorResult === 'FAILURE' ? 'bg-destructive' : undefined,
-      date: null,
-      content: skipExecution
-        ? translate('corporation.proposals.stage.skipped')
-        : ran && proposal.executorResult
-          ? executorLabel(proposal.executorResult)
-          : pending,
-    },
-  ]
   return (
-    <Timeline className="h-fit rounded-lg bg-tint-neutral p-4">
-      {stages.map((stage) => (
-        <TimelineItem key={stage.key} done={stage.state === 'done'}>
-          <TimelineIndicator
-            className={cn(
-              stage.state === 'skipped' && 'border-dashed border-muted-foreground/40',
-              stage.dot && 'border-transparent'
-            )}
-          >
-            {stage.dot ? (
-              <span className={cn('size-2.5 rounded-full', stage.dot)} />
-            ) : stage.state === 'done' ? (
-              <span className="size-1.5 rounded-full bg-primary" />
-            ) : null}
-          </TimelineIndicator>
-          <TimelineSeparator />
-          <TimelineTitle
-            className={cn(
-              stage.state !== 'done' && 'text-muted-foreground',
-              stage.state === 'skipped' && 'line-through decoration-muted-foreground/50'
-            )}
-          >
-            {translate(`corporation.proposals.stage.${stage.key}`)}
-          </TimelineTitle>
-          {stage.date ? <TimelineDate>{stage.date}</TimelineDate> : null}
-          {stage.content ? <TimelineContent>{stage.content}</TimelineContent> : null}
-        </TimelineItem>
-      ))}
-    </Timeline>
+    <ToneTag tone={tone}>
+      {translate('corporation.proposals.executor')}: {result}
+    </ToneTag>
   )
 }
 
@@ -306,93 +185,83 @@ function ProposalDetail({ proposal, ctx }: { proposal: ProposalRow; ctx: Proposa
   }, [executableFrom])
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_15rem]">
-      <div className="min-w-0 space-y-5">
-        {votable || withdrawable || executable ? (
-          <div className="flex flex-wrap items-center gap-2">
-            {votable
-              ? VOTE_BUTTONS.map((button) => (
-                  <Button
-                    key={button.choice}
-                    type="button"
-                    variant={button.variant}
-                    onClick={() => ctx.actions.onVote(proposal.id, button.choice)}
-                    disabled={voted}
-                    className={cn('h-8 px-3', button.className)}
-                  >
-                    {translate(button.key)}
-                  </Button>
-                ))
-              : null}
-            {withdrawable ? (
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => ctx.actions.onWithdraw(proposal.id)}
-                className="h-8 px-3 text-muted-foreground"
-              >
-                {translate('corporation.proposals.withdraw')}
-              </Button>
-            ) : null}
-            {executable && waiting ? (
-              <p className="text-sm text-muted-foreground">
-                {translate('corporation.proposals.executablefrom', { date: new Date(executableFrom).toLocaleString() })}
-              </p>
-            ) : executable ? (
-              <Button type="button" onClick={() => ctx.actions.onExecute(proposal.id)} className="h-8 px-3">
-                {translate('corporation.proposals.execute')}
-              </Button>
-            ) : null}
-          </div>
-        ) : null}
-        <div className="space-y-2">
-          {proposal.messages.map((message, index) => (
-            <pre
-              key={`${proposal.id}-${index}-${String(message['@type'] ?? '')}`}
-              className="max-h-80 overflow-y-auto rounded-lg bg-muted/60 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap text-foreground ring-1 ring-border/60 outline-none [overflow-wrap:anywhere] focus-visible:ring-[3px] focus-visible:ring-ring/50"
-            >
-              {JSON.stringify(message, null, 2)}
-            </pre>
-          ))}
-        </div>
-        <div>
-          <p className="mb-2 text-xs font-medium text-muted-foreground">{translate('corporation.proposals.votes')}</p>
-          {votes?.partial ? <PartialNote /> : null}
-          {votes === undefined ? (
-            <div role="status" className="h-8 w-48 animate-pulse rounded-md bg-muted">
-              <span className="sr-only">{translate('corporation.page.loading')}</span>
-            </div>
-          ) : votes === null ? (
-            <p className="text-sm text-destructive">{translate('corporation.proposals.voteserror')}</p>
-          ) : votes.value.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{translate('corporation.proposals.novotes')}</p>
-          ) : (
-            <ul className="divide-y divide-border rounded-lg ring-1 ring-border">
-              {votes.value.map((vote) => (
-                <li key={vote.voter} className="flex items-center gap-2.5 px-3 py-2 text-sm">
-                  <Avatar size="sm">
-                    <AvatarFallback className="bg-primary/10 text-[10px] font-semibold text-primary">
-                      {addressInitials(vote.voter)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="min-w-0 truncate font-mono text-xs">{shortenMiddle(vote.voter, 24)}</span>
-                  <VoteBadge option={vote.option} />
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+    <div className="min-w-0 space-y-5">
+      <div className="space-y-2">
+        {proposal.messages.map((message, index) => (
+          <pre
+            key={`${proposal.id}-${index}-${String(message['@type'] ?? '')}`}
+            className="max-h-80 overflow-y-auto rounded-lg bg-muted/60 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap text-foreground ring-1 ring-border/60 outline-none [overflow-wrap:anywhere] focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          >
+            {JSON.stringify(message, null, 2)}
+          </pre>
+        ))}
       </div>
-      <Lifecycle proposal={proposal} />
+      <div>
+        <p className="mb-2 text-xs font-medium text-muted-foreground">{translate('corporation.proposals.votes')}</p>
+        {votes?.partial ? <PartialNote /> : null}
+        {votes === undefined ? (
+          <div role="status" className="h-8 w-48 animate-pulse rounded-md bg-muted">
+            <span className="sr-only">{translate('corporation.page.loading')}</span>
+          </div>
+        ) : votes === null ? (
+          <p className="text-sm text-destructive">{translate('corporation.proposals.voteserror')}</p>
+        ) : votes.value.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{translate('corporation.proposals.novotes')}</p>
+        ) : (
+          <ul className="divide-y divide-border rounded-lg ring-1 ring-border">
+            {votes.value.map((vote) => (
+              <li key={vote.voter} className="flex items-center gap-2.5 px-3 py-2 text-sm">
+                <span className="min-w-0 truncate font-mono text-xs">{shortenMiddle(vote.voter, 24)}</span>
+                <VoteBadge option={vote.option} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      {votable || withdrawable || executable ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {votable
+            ? VOTE_BUTTONS.map((button) => (
+                <Button
+                  key={button.choice}
+                  type="button"
+                  variant={button.variant}
+                  onClick={() => ctx.actions.onVote(proposal.id, button.choice)}
+                  disabled={voted}
+                  className={cn('h-8 px-3', button.className)}
+                >
+                  {translate(button.key)}
+                </Button>
+              ))
+            : null}
+          {withdrawable ? (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => ctx.actions.onWithdraw(proposal.id)}
+              className="h-8 px-3 text-muted-foreground"
+            >
+              {translate('corporation.proposals.withdraw')}
+            </Button>
+          ) : null}
+          {executable && waiting ? (
+            <p className="text-sm text-muted-foreground">
+              {translate('corporation.proposals.executablefrom', { date: new Date(executableFrom).toLocaleString() })}
+            </p>
+          ) : executable ? (
+            <Button type="button" onClick={() => ctx.actions.onExecute(proposal.id)} className="h-8 px-3">
+              {translate('corporation.proposals.execute')}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   )
 }
 
 function ProposalCard({ proposal, ctx }: { proposal: ProposalRow; ctx: ProposalContext }) {
   const [open, setOpen] = useState(false)
-  const votingEnded = proposal.status === 'SUBMITTED' && hasEnded(proposal.votingPeriodEnd)
   const ends = proposal.status === 'SUBMITTED' ? formatRelative(proposal.votingPeriodEnd) : null
-  const title = messageTitle(proposal)
   const proposers = proposerList(proposal)
   const ran = proposal.executorResult && proposal.executorResult !== 'NOT_RUN' ? proposal.executorResult : null
 
@@ -411,9 +280,8 @@ function ProposalCard({ proposal, ctx }: { proposal: ProposalRow; ctx: ProposalC
           className="flex min-w-0 items-center gap-3 text-start outline-none after:absolute after:inset-0 after:rounded-t-xl focus-visible:after:ring-[3px] focus-visible:after:ring-ring/50"
         >
           <span className="font-mono text-sm font-medium text-muted-foreground">#{proposal.id}</span>
-          {title ? <span className="min-w-0 truncate text-sm font-medium text-foreground">{title}</span> : null}
         </button>
-        <StatusBadge status={proposal.status} votingEnded={votingEnded} />
+        <StatusBadge status={proposal.status} />
         {ran ? <ExecutorBadge result={ran} /> : null}
         <span className="pointer-events-none ms-auto flex items-center gap-3 text-xs text-muted-foreground">
           <span className="hidden max-w-64 truncate font-mono md:inline">{proposers}</span>
@@ -438,32 +306,6 @@ function ProposalCard({ proposal, ctx }: { proposal: ProposalRow; ctx: ProposalC
         </div>
       ) : null}
     </article>
-  )
-}
-
-const GHOST_TALLIES = [
-  { id: 'ghost-a', yes: 62, no: 18 },
-  { id: 'ghost-b', yes: 34, no: 40 },
-  { id: 'ghost-c', yes: 80, no: 6 },
-]
-
-function GhostProposals() {
-  return (
-    <div className="flex w-full flex-col justify-center gap-3">
-      {GHOST_TALLIES.map((row) => (
-        <div key={row.id} className="space-y-2.5 rounded-xl p-4 shadow-hairline">
-          <div className="flex items-center gap-3">
-            <span className="h-3 w-8 rounded bg-muted-foreground/40" />
-            <span className="h-3 w-40 rounded bg-foreground/40" />
-            <span className="h-4 w-16 rounded-md bg-tint-info" />
-          </div>
-          <div className="flex h-2 overflow-hidden rounded-full bg-track">
-            <span className="h-full bg-success" style={{ width: `${row.yes}%` }} />
-            <span className="h-full border-s-2 border-card bg-destructive" style={{ width: `${row.no}%` }} />
-          </div>
-        </div>
-      ))}
-    </div>
   )
 }
 
@@ -505,58 +347,50 @@ export function ProposalsSection({
       />
       {composing ? <BlurFade className="mb-6">{composer}</BlurFade> : null}
       {partial ? <PartialNote filtered /> : null}
-      {degraded ? null : (
-        <div
-          ref={filtersRef}
-          className={cn(
-            'mb-5 flex w-fit max-w-full flex-nowrap gap-1 overflow-x-auto rounded-lg bg-tint-neutral p-1 [scrollbar-width:none]',
-            fade
-          )}
-        >
-          {FILTERS.map((entry) => {
-            const count = entry === 'all' ? proposals.length : proposals.filter((p) => p.status === entry).length
-            const active = filter === entry
-            return (
-              <button
-                key={entry}
-                type="button"
-                onClick={(event) => {
-                  setFilter(entry)
-                  if (filtersRef.current) revealChild(filtersRef.current, event.currentTarget)
-                }}
-                aria-pressed={active}
+      <div
+        ref={filtersRef}
+        className={cn(
+          'mb-5 flex w-fit max-w-full flex-nowrap gap-1 overflow-x-auto rounded-lg bg-tint-neutral p-1 [scrollbar-width:none]',
+          fade
+        )}
+      >
+        {FILTERS.map((entry) => {
+          const count = entry === 'all' ? proposals.length : proposals.filter((p) => p.status === entry).length
+          const active = filter === entry
+          return (
+            <button
+              key={entry}
+              type="button"
+              onClick={(event) => {
+                setFilter(entry)
+                if (filtersRef.current) revealChild(filtersRef.current, event.currentTarget)
+              }}
+              aria-pressed={active}
+              className={cn(
+                'relative isolate flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium outline-none transition-colors duration-(--duration-base) focus-visible:ring-[3px] focus-visible:ring-ring/50',
+                active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {active ? <TabIndicator layoutId="corporation-proposal-filter" /> : null}
+              {translate(FILTER_KEYS[entry])}
+              <span
                 className={cn(
-                  'relative isolate flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium outline-none transition-colors duration-(--duration-base) focus-visible:ring-[3px] focus-visible:ring-ring/50',
-                  active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+                  'inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1 text-[11px] leading-none tabular-nums',
+                  active ? 'bg-tint-accent text-primary' : 'text-muted-foreground'
                 )}
               >
-                {active ? <TabIndicator layoutId="corporation-proposal-filter" /> : null}
-                {translate(FILTER_KEYS[entry])}
-                <span
-                  className={cn(
-                    'inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1 text-[11px] leading-none tabular-nums',
-                    active ? 'bg-tint-accent text-primary' : 'text-muted-foreground'
-                  )}
-                >
-                  {atLeast(count, partial)}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-      )}
+                {atLeast(count, partial)}
+              </span>
+            </button>
+          )
+        })}
+      </div>
       {degraded ? (
         <SectionUnavailable />
       ) : visible.length === 0 ? (
-        <GhostEmpty
-          icon={<VoteIcon />}
-          title={translate('corporation.page.proposals.empty')}
-          className="rounded-xl border border-dashed border-border p-4"
-        >
-          <GhostProposals />
-        </GhostEmpty>
+        <EmptyState icon={<VoteIcon />} title={translate('corporation.page.proposals.empty')} />
       ) : (
-        <Stagger key={filter} className="space-y-3">
+        <Stagger className="space-y-3">
           {visible.map((proposal) => (
             <StaggerItem key={proposal.id}>
               <ProposalCard proposal={proposal} ctx={ctx} />

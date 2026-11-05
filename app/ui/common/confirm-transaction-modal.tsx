@@ -130,7 +130,7 @@ function BalanceWarning({
   const shortfall = warning.kind === 'shortfall'
   return (
     <Alert
-      role={shortfall ? 'alert' : 'note'}
+      role="alert"
       variant={shortfall ? 'destructive' : 'default'}
       className={shortfall ? DESTRUCTIVE_ALERT : WARNING_ALERT}
     >
@@ -286,12 +286,33 @@ export function ConfirmTransactionModal({
                   {t(modeLabelKey(request.mode))}
                 </span>
               </Row>
+              <Row label={t('txconfirm.fee')}>
+                <FeeValue simulation={currentSimulation} />
+              </Row>
+              <Row label={t('txconfirm.payer')}>
+                {payerPending ? (
+                  <span className="animate-pulse font-normal text-muted-foreground">
+                    {t('txconfirm.payer.checking')}
+                  </span>
+                ) : (
+                  <>
+                    <span className="font-mono">{shortenMiddle(payer, 24)}</span>
+                    {payer === address ? ` ${t('txconfirm.payer.you')}` : ''}
+                  </>
+                )}
+              </Row>
               {request.costLines?.map((line) => (
                 <Row key={line.label} label={line.label}>
                   {line.value}
                 </Row>
               ))}
             </dl>
+            {granter ? <TxNote>{t('txconfirm.feegrant.covered')}</TxNote> : null}
+            {granter && granterBalance.status === 'failed' ? (
+              <TxNote>{t('txconfirm.feegrant.balanceUnknown')}</TxNote>
+            ) : null}
+            {payerByGrant === 'granter-short' ? <TxNote>{t('txconfirm.feegrant.short')}</TxNote> : null}
+            {feeGrantLookup.status === 'failed' ? <TxNote>{t('txconfirm.feegrant.unavailable')}</TxNote> : null}
             {proposal ? (
               <p className="text-sm text-muted-foreground">
                 {t('txconfirm.proposal.explainer', {
@@ -320,31 +341,6 @@ export function ConfirmTransactionModal({
                 </label>
               </div>
             ) : null}
-            <div className="space-y-2">
-              <dl className="divide-y divide-border/70 rounded-xl bg-tint-accent px-3.5">
-                <Row label={t('txconfirm.fee')}>
-                  <FeeValue simulation={currentSimulation} />
-                </Row>
-                <Row label={t('txconfirm.payer')}>
-                  {payerPending ? (
-                    <span className="animate-pulse font-normal text-muted-foreground">
-                      {t('txconfirm.payer.checking')}
-                    </span>
-                  ) : (
-                    <>
-                      <span className="font-mono">{shortenMiddle(payer, 24)}</span>
-                      {payer === address ? ` ${t('txconfirm.payer.you')}` : ''}
-                    </>
-                  )}
-                </Row>
-              </dl>
-              {granter ? <TxNote>{t('txconfirm.feegrant.covered')}</TxNote> : null}
-              {granter && granterBalance.status === 'failed' ? (
-                <TxNote>{t('txconfirm.feegrant.balanceUnknown')}</TxNote>
-              ) : null}
-              {payerByGrant === 'granter-short' ? <TxNote>{t('txconfirm.feegrant.short')}</TxNote> : null}
-              {feeGrantLookup.status === 'failed' ? <TxNote>{t('txconfirm.feegrant.unavailable')}</TxNote> : null}
-            </div>
             {request.warning ? <WarningBox severity={request.severity}>{request.warning}</WarningBox> : null}
             {request.payer === address && !payerPending && currentSimulation.status === 'ready' ? (
               <BalanceWarning

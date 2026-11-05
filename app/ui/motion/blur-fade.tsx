@@ -17,7 +17,8 @@ export function BlurFade({ delay = 0, offset = 6, blur = '4px', inView = false, 
   const reduced = useReducedMotion()
   const visible = !inView || seen
   const hidden = reduced ? { opacity: 0 } : { opacity: 0, y: offset, filter: `blur(${blur})` }
-  const shown = reduced ? { opacity: 1 } : { opacity: 1, y: 0, filter: 'blur(0px)' }
+  // A leftover filter makes this element the containing block for the fixed modals inside it
+  const shown = reduced ? { opacity: 1 } : { opacity: 1, y: 0, filter: 'blur(0px)', transitionEnd: { filter: 'none' } }
 
   return (
     <motion.div

@@ -33,10 +33,10 @@ export function AddressQrModal({ address, onClose }: { address: string; onClose:
                 <XIcon />
               </Button>
             </div>
-            <p className="mt-1.5 text-sm text-muted-foreground">{translate('modalqrcode.msg')}</p>
             <div className="mx-auto mt-5 size-64 rounded-lg bg-white p-4 ring-1 ring-foreground/10">
               <QRCode value={address} size={224} title={translate('modalqrcode.title')} className="h-full w-full" />
             </div>
+            <p className="mt-5 text-center text-sm text-muted-foreground">{translate('modalqrcode.msg')}</p>
             <div className="mt-5 rounded-lg bg-muted px-3 py-2.5 dark:bg-foreground/5">
               <p className="break-all text-center font-mono text-xs text-foreground">{address}</p>
             </div>

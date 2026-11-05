@@ -2,17 +2,10 @@
 
 import { faBoxArchive, faPenToSquare } from '@fortawesome/free-solid-svg-icons'
 import {
-  ArrowLeftIcon,
   BracesIcon,
-  CloudOffIcon,
-  CoinsIcon,
-  FingerprintIcon,
-  HistoryIcon,
   InfinityIcon,
   type LucideIcon,
   NetworkIcon,
-  RotateCwIcon,
-  SearchXIcon,
   SlidersHorizontalIcon,
   TriangleAlertIcon,
 } from 'lucide-react'
@@ -26,25 +19,22 @@ import { useEcosystemData } from '@/hooks/useEcosystemData'
 import { useActionSigning } from '@/hooks/useSigningMode'
 import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObject'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
-import { getLocale, translate } from '@/i18n/dataview'
-import { isNativePricing, pricingAssetLabel } from '@/lib/pricing-asset'
+import { translate } from '@/i18n/dataview'
+import { isNativePricing } from '@/lib/pricing-asset'
 import { cn } from '@/lib/utils'
 import { useProtocolParams } from '@/providers/protocol-params-context'
 import { ActivityHistorySection } from '@/ui/common/activity-history-section'
 import { CapabilityButton, EntityActionButton } from '@/ui/common/capability-button'
 import { renderActionComponent } from '@/ui/common/data-view-typed'
-import { EmptyState } from '@/ui/common/empty-state'
 import JsonCodeBlock from '@/ui/common/json-code-block'
 import { ModalAction } from '@/ui/common/modal-action'
 import { PricingNotice } from '@/ui/common/pricing-notice'
-import { StatTile, UnknownStat } from '@/ui/common/stat-tile'
 import { type CredentialSchemaData, VALIDITY_MAX_DAYS } from '@/ui/dataview/datasections/cs'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { BlurFade } from '@/ui/motion/blur-fade'
 import { Shimmer } from '@/ui/motion/shimmer'
 import { TabIndicator } from '@/ui/motion/tab-indicator'
 import { SchemaHero, SchemaHeroSkeleton, type SchemaStatus } from '@/ui/participants/schema-hero'
-import { SchemaParticipantsPanel } from '@/ui/participants/schema-participants-panel'
 import { SCHEMA_TABS, type SchemaTab, useSchemaTab } from '@/ui/participants/use-schema-tab'
 import { Button, buttonVariants } from '@/ui/shadcn/button'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/ui/shadcn/card'
@@ -82,7 +72,6 @@ const JSON_BLOCK_CLASS = 'max-h-[32rem] overflow-y-auto'
 
 const TAB_LABEL_KEYS: Record<SchemaTab, string> = {
   overview: 'cs.tab.overview',
-  participants: 'cs.tab.participants',
   activity: 'cs.tab.activity',
 }
 
@@ -191,56 +180,6 @@ function WarningLine({ children }: { children: string }) {
   )
 }
 
-function SchemaFacts({
-  schema,
-  history,
-}: {
-  schema: CredentialSchemaData
-  history: ReturnType<typeof useActivityHistory>
-}) {
-  const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
-  const native = isNativePricing(schema)
-  const assetType = pricingAssetLabel({ pricingAssetType: schema.pricingAssetType, pricingAsset: null })
-  const assetHint =
-    !native && schema.pricingAsset && schema.pricingAsset.toLowerCase() !== assetType.toLowerCase()
-      ? schema.pricingAsset
-      : undefined
-  const latest = history.rows[0]
-  const activityValue = history.failed ? (
-    <UnknownStat />
-  ) : history.loading && history.rows.length === 0 ? (
-    <Shimmer className="h-8 w-12" />
-  ) : (
-    `${history.rows.length}${history.partial ? '+' : ''}`
-  )
-  return (
-    <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
-      <StatTile
-        icon={<CoinsIcon />}
-        label={t('dataview.cs.fields.pricingAsset', 'Pricing Asset')}
-        value={native ? 'VNA' : assetType}
-        hint={assetHint}
-      />
-      <StatTile
-        icon={<FingerprintIcon />}
-        label={t('dataview.cs.fields.digestAlgorithm', 'Digest Algorithm')}
-        value={schema.digestAlgorithm ?? '-'}
-      />
-      <StatTile
-        className="col-span-2 sm:col-span-1"
-        icon={<HistoryIcon />}
-        label={t('activity.title', 'Activity')}
-        value={activityValue}
-        hint={
-          latest
-            ? translate('cs.facts.lastChange', { date: new Date(latest.timestamp).toLocaleDateString(getLocale()) })
-            : undefined
-        }
-      />
-    </div>
-  )
-}
-
 function SchemaPageSkeleton() {
   return (
     <div aria-busy="true">
@@ -271,7 +210,7 @@ export default function CredentialSchemaViewPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
   const id = params?.id ?? ''
-  const { tab, setTab, view, setView } = useSchemaTab()
+  const { tab, setTab } = useSchemaTab()
   const { credentialSchema, errorCredentialSchema, refetch: refetchCredentialSchema } = useCredentialSchemaData(id)
   const canonicalJsonSchema = useCanonicalJsonSchema(id)
   const history = useActivityHistory(
@@ -307,44 +246,11 @@ export default function CredentialSchemaViewPage() {
 
   if (!credentialSchema) {
     if (errorCredentialSchema) {
-      const tr = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
-      const notFound = errorCredentialSchema.startsWith('Error 404')
       return (
-        <>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push('/ecosystems')}
-            className="mb-4 -ms-2 text-muted-foreground"
-          >
-            <ArrowLeftIcon aria-hidden="true" className="rtl:rotate-180" />
-            {tr('button.ecosystem.back', 'Back')}
-          </Button>
-          {notFound ? (
-            <EmptyState
-              className="bg-card/50 py-16"
-              icon={<SearchXIcon />}
-              title={tr('error.cs.notfound', 'Credential schema not found.')}
-              description={`${tr('dataview.cs.fields.id', 'ID')} ${id}`}
-            />
-          ) : (
-            <EmptyState
-              className="bg-card/50 py-16"
-              icon={<CloudOffIcon />}
-              title={tr('error.fetch.cs.title', 'Error fetching credential schema')}
-              description={tr(
-                'ecosystems.error.description',
-                'The indexer did not answer. Check the network and retry.'
-              )}
-              action={
-                <Button type="button" variant="outline" size="sm" onClick={() => void refetchCredentialSchema()}>
-                  <RotateCwIcon data-icon="inline-start" aria-hidden="true" />
-                  {tr('ecosystems.retry', 'Retry')}
-                </Button>
-              }
-            />
-          )}
-        </>
+        <div className="error-pane">
+          {errorCredentialSchema ||
+            (resolveTranslatable({ key: 'error.cs.notfound' }, translate) ?? 'Credential Schema not found')}
+        </div>
       )
     }
     return <SchemaPageSkeleton />
@@ -403,12 +309,10 @@ export default function CredentialSchemaViewPage() {
         ecosystem={ecosystem ? { id: String(ecosystem.id), did: ecosystem.did } : null}
         ecosystemPending={!ecosystem}
         action={
-          tab === 'participants' ? null : (
-            <Button size="lg" onClick={() => setTab('participants')} className="px-4">
-              <NetworkIcon aria-hidden="true" />
-              <span>{t('participants.title', 'Participants')}</span>
-            </Button>
-          )
+          <Button size="lg" onClick={() => router.push(`/participants/${credentialSchema.id}`)} className="px-4">
+            <NetworkIcon aria-hidden="true" />
+            <span>{t('participants.title', 'Participants')}</span>
+          </Button>
         }
       />
 
@@ -423,12 +327,6 @@ export default function CredentialSchemaViewPage() {
           {SCHEMA_TABS.map((value) => (
             <TabsTrigger key={value} value={value} className={TAB_TRIGGER_CLASS}>
               {t(TAB_LABEL_KEYS[value], value)}
-              {value === 'activity' && history.rows.length > 0 ? (
-                <span className="rounded-full bg-tint-neutral px-1.5 py-px text-[11px] font-medium text-muted-foreground tabular-nums">
-                  {history.rows.length}
-                  {history.partial ? '+' : ''}
-                </span>
-              ) : null}
               {tab === value ? (
                 <TabIndicator layoutId="schema-detail-tabs" variant="underline" className="bottom-0" />
               ) : null}
@@ -437,123 +335,104 @@ export default function CredentialSchemaViewPage() {
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <SchemaFacts schema={credentialSchema} history={history} />
-          <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
-            <div className="flex min-w-0 flex-col gap-6">
-              <BlurFade delay={0.05}>
-                <Card>
-                  <CardHeader className="border-b">
-                    <SectionTitle icon={SlidersHorizontalIcon}>
-                      {t('dataview.section.mutable', 'Mutable Configuration')}
-                    </SectionTitle>
-                    {owner && mode === 'view' ? (
-                      <CardAction className="flex flex-wrap justify-end gap-2">
-                        <CapabilityButton
-                          signing={update}
-                          icon={faPenToSquare}
-                          label={t('dataview.cs.button.editConfiguration', 'Edit Configuration')}
-                          onClick={startEdit}
-                          className={buttonVariants({ size: 'sm', className: 'gap-1.5' })}
-                        />
-                        <EntityActionButton
-                          msgType={archiveMessageType}
-                          icon={faBoxArchive}
-                          label={
-                            isArchived
-                              ? t('dataview.cs.button.unarchive', 'Unarchive')
-                              : t('dataview.cs.button.archive', 'Archive')
-                          }
-                          onClick={() => setArchiveActive(true)}
-                          className={buttonVariants({ variant: 'outline', size: 'sm', className: 'gap-1.5' })}
-                        />
-                      </CardAction>
-                    ) : null}
-                  </CardHeader>
-                  <CardContent>
-                    {mode === 'view' || !editValues ? (
-                      <dl className="divide-y">
+          <div className="flex min-w-0 flex-col gap-6">
+            <BlurFade delay={0.05}>
+              <Card>
+                <CardHeader className="border-b">
+                  <SectionTitle icon={SlidersHorizontalIcon}>
+                    {t('dataview.section.mutable', 'Mutable Configuration')}
+                  </SectionTitle>
+                  {owner && mode === 'view' ? (
+                    <CardAction className="flex flex-wrap justify-end gap-2">
+                      <CapabilityButton
+                        signing={update}
+                        icon={faPenToSquare}
+                        label={t('dataview.cs.button.editConfiguration', 'Edit Configuration')}
+                        onClick={startEdit}
+                        className={buttonVariants({ size: 'sm', className: 'gap-1.5' })}
+                      />
+                      <EntityActionButton
+                        msgType={archiveMessageType}
+                        icon={faBoxArchive}
+                        label={
+                          isArchived
+                            ? t('dataview.cs.button.unarchive', 'Unarchive')
+                            : t('dataview.cs.button.archive', 'Archive')
+                        }
+                        onClick={() => setArchiveActive(true)}
+                        className={buttonVariants({ variant: 'outline', size: 'sm', className: 'gap-1.5' })}
+                      />
+                    </CardAction>
+                  ) : null}
+                </CardHeader>
+                <CardContent>
+                  {mode === 'view' || !editValues ? (
+                    <dl className="divide-y">
+                      {VALIDITY_FIELDS.map(({ labelKey, field }) => (
+                        <ValidityFieldView key={field} labelKey={labelKey} value={credentialSchema[field]} />
+                      ))}
+                    </dl>
+                  ) : (
+                    <div className="space-y-5">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         {VALIDITY_FIELDS.map(({ labelKey, field }) => (
-                          <ValidityFieldView key={field} labelKey={labelKey} value={credentialSchema[field]} />
+                          <ValidityFieldInput
+                            key={field}
+                            labelKey={labelKey}
+                            value={editValues[field]}
+                            max={protocolParams[VALIDITY_MAX_DAYS[field]]}
+                            onChange={(value) => patchEditValue(field, value)}
+                            disabled={submitting}
+                          />
                         ))}
-                      </dl>
-                    ) : (
-                      <div className="space-y-5">
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                          {VALIDITY_FIELDS.map(({ labelKey, field }) => (
-                            <ValidityFieldInput
-                              key={field}
-                              labelKey={labelKey}
-                              value={editValues[field]}
-                              max={protocolParams[VALIDITY_MAX_DAYS[field]]}
-                              onChange={(value) => patchEditValue(field, value)}
-                              disabled={submitting}
-                            />
-                          ))}
-                        </div>
-                        <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
-                          <Button variant="outline" onClick={cancelEdit} disabled={submitting}>
-                            {t('messages.cancel', 'Cancel')}
-                          </Button>
-                          <Button onClick={confirmEdit} disabled={submitting || outOfBounds}>
-                            {submitting ? <Spinner aria-hidden="true" /> : null}
-                            {t('messages.confirm', 'Confirm')}
-                          </Button>
-                        </div>
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </BlurFade>
+                      <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
+                        <Button variant="outline" onClick={cancelEdit} disabled={submitting}>
+                          {t('messages.cancel', 'Cancel')}
+                        </Button>
+                        <Button onClick={confirmEdit} disabled={submitting || outOfBounds}>
+                          {submitting ? <Spinner aria-hidden="true" /> : null}
+                          {t('messages.confirm', 'Confirm')}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </BlurFade>
 
-              <BlurFade delay={0.1}>
-                <Card>
-                  <CardHeader className="border-b">
-                    <SectionTitle icon={BracesIcon}>{t('dataview.cs.fields.jsonSchema', 'JSON Schema')}</SectionTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {canonicalJsonSchema.schema ? (
+            <BlurFade delay={0.1}>
+              <Card>
+                <CardHeader className="border-b">
+                  <SectionTitle icon={BracesIcon}>{t('dataview.cs.fields.jsonSchema', 'JSON Schema')}</SectionTitle>
+                </CardHeader>
+                <CardContent>
+                  {canonicalJsonSchema.schema ? (
+                    <div className="rounded-lg border bg-muted/30">
+                      <JsonCodeBlock value={canonicalJsonSchema.schema} className={JSON_BLOCK_CLASS} />
+                    </div>
+                  ) : canonicalJsonSchema.failed ? (
+                    <>
+                      <WarningLine>{translate('dataview.cs.jsonSchema.stored')}</WarningLine>
                       <div className="rounded-lg border bg-muted/30">
-                        <JsonCodeBlock value={canonicalJsonSchema.schema} className={JSON_BLOCK_CLASS} />
+                        <JsonCodeBlock value={credentialSchema.jsonSchema} className={JSON_BLOCK_CLASS} />
                       </div>
-                    ) : canonicalJsonSchema.failed ? (
-                      <>
-                        <WarningLine>{translate('dataview.cs.jsonSchema.stored')}</WarningLine>
-                        <div className="rounded-lg border bg-muted/30">
-                          <JsonCodeBlock value={credentialSchema.jsonSchema} className={JSON_BLOCK_CLASS} />
-                        </div>
-                      </>
-                    ) : (
-                      <div className="space-y-2" aria-busy="true">
-                        {[72, 56, 64, 40, 52].map((width) => (
-                          <Shimmer key={width} className="h-3.5" style={{ width: `${width}%` }} />
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </BlurFade>
-            </div>
-
-            <ActivityHistorySection history={history} className="mb-0 min-w-0" />
+                    </>
+                  ) : (
+                    <div className="space-y-2" aria-busy="true">
+                      {[72, 56, 64, 40, 52].map((width) => (
+                        <Shimmer key={width} className="h-3.5" style={{ width: `${width}%` }} />
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </BlurFade>
           </div>
         </TabsContent>
 
-        <TabsContent value="participants" className="mt-6">
-          <SchemaParticipantsPanel
-            schemaId={id}
-            credentialSchema={credentialSchema}
-            ecosystem={
-              ecosystem
-                ? { id: String(ecosystem.id), did: ecosystem.did, corporationId: ecosystem.corporationId }
-                : null
-            }
-            view={view}
-            onViewChange={setView}
-          />
-        </TabsContent>
-
         <TabsContent value="activity" className="mt-6">
-          <ActivityHistorySection history={history} className="min-w-0" filterable />
+          <ActivityHistorySection history={history} className="min-w-0" />
         </TabsContent>
       </Tabs>
 

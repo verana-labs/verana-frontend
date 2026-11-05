@@ -30,14 +30,6 @@ export function CorporationSelector() {
   const label = actingCorporation
     ? (name ?? actingCorporation.corporation.did)
     : translate(needsSelection ? 'corporation.selector.choose' : 'corporation.selector.none')
-  const role = actingCorporation
-    ? [
-        actingCorporation.operator ? translate('corporation.selector.operator') : null,
-        actingCorporation.member ? translate('corporation.selector.member') : null,
-      ]
-        .filter(Boolean)
-        .join(' · ')
-    : ''
 
   return (
     <DropdownMenu>
@@ -60,9 +52,6 @@ export function CorporationSelector() {
         </span>
         <span className="grid min-w-0 flex-1 leading-tight" title={actingCorporation?.corporation.did}>
           <span className="truncate">{label}</span>
-          {role ? (
-            <span className="hidden truncate text-[10px] font-normal text-muted-foreground xl:block">{role}</span>
-          ) : null}
         </span>
         {error ? (
           <span
@@ -99,21 +88,14 @@ export function CorporationSelector() {
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          disabled={loading}
-          onSelect={(event) => {
-            event.preventDefault()
-            void refetch()
-          }}
-          className="gap-2 rounded-lg p-2"
-        >
+        <DropdownMenuItem disabled={loading} onSelect={() => void refetch()} className="gap-2 rounded-lg p-2">
           <span className="flex size-6 items-center justify-center rounded-md border border-border">
             <RotateCwIcon aria-hidden="true" className={cn('size-3.5', loading && 'animate-spin')} />
           </span>
           {translate('corporation.selector.refresh')}
         </DropdownMenuItem>
         <DropdownMenuItem asChild className="gap-2 rounded-lg p-2 font-medium">
-          <Link href="/corporation/new">
+          <Link href="/corporation?create=1">
             <span className="flex size-6 items-center justify-center rounded-md border border-border">
               <PlusIcon aria-hidden="true" className="size-3.5" />
             </span>
