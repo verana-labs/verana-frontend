@@ -21,6 +21,9 @@ export const INITIAL_DISCOVER_FILTERS: DiscoverFilters = {
 export type DiscoverScope = {
   actingCorporationId: number | undefined
   rolesByEcosystem: Record<string, ParticipantRole[]>
+  // [VFE-PAGE-ES-LIST-1] tells a controlled Ecosystem from a joined one, so there the joined filter
+  // keeps the controlled ones. [VFE-PAGE-DISCOVER-1] hides owner and participant rows alike.
+  splitControlled?: boolean
 }
 
 const ROLE_ORDER: ParticipantRole[] = [
@@ -90,9 +93,10 @@ export function filterEcosystems<T extends EcosystemListItem>(
     if (!filters.showArchived && ecosystem.archived) return false
     if (!filters.showUntrusted && ecosystem.trustData?.trustStatus === 'UNTRUSTED') return false
     if (filters.hideOwned && owned) return false
-    // A controlled ecosystem stays controlled even when the corporation also joined it, so the
-    // joined filter only hides the ones it is not controlling, per [VFE-PAGE-ES-LIST-1].
-    if (filters.hideParticipant && !owned && roles.some((role) => role !== 'ECOSYSTEM')) return false
+    // A controlled ecosystem stays controlled even when the corporation also joined it, so a page
+    // that splits the two only hides what it is not controlling.
+    const joined = scope.splitControlled ? !owned : true
+    if (filters.hideParticipant && joined && roles.some((role) => role !== 'ECOSYSTEM')) return false
     return matchesSearch(ecosystem, term)
   })
 }
@@ -107,13 +111,13 @@ export function orderEcosystems<T extends EcosystemListItem>(ecosystems: T[], or
   })
 }
 
-export function needsFullWindow(filters: ListFilters): boolean {
+export function needsFullWindow(filters: DiscoverFilters): boolean {
   return (
     filters.search.trim() !== '' ||
     !filters.showUntrusted ||
     filters.hideOwned ||
     filters.hideParticipant ||
-    (filters.order ?? 'newest') !== 'newest'
+    filters.order !== 'newest'
   )
 }
 

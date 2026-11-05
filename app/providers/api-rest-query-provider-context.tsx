@@ -5,7 +5,7 @@ import { type AccountBalanceData, useAccountBalance } from '@/hooks/useAccountBa
 import { type EcosystemSchemaPage, useCredentialSchemasByEcosystem } from '@/hooks/useCredentialSchemas'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
-import { ECOSYSTEMS_PAGE_SIZE, useEcosystems } from '@/hooks/useEcosystems'
+import { useEcosystems } from '@/hooks/useEcosystems'
 import { usePendingParticipants } from '@/hooks/usePendingParticipants'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { type DiscoverFilters, INITIAL_DISCOVER_FILTERS, needsFullWindow } from '@/lib/discover-list'
@@ -52,11 +52,10 @@ type DiscoverCtxValue = KeysetPageControls & {
 type EcosystemsCtxValue = KeysetPageControls & {
   ecosystemsList: EcosystemListItem[]
   ecosystemsLoading: boolean
+  ecosystemsError: string | null
   refetch: () => Promise<void>
   ecosystemFilters: EcosystemsFilterState
   setEcosystemFilters: React.Dispatch<React.SetStateAction<EcosystemsFilterState>>
-  ecosystemsSearch: string
-  ecosystemsFullWindow: boolean
 }
 
 type AccountCtxValue = {
@@ -71,8 +70,8 @@ type DashboardCtxValue = {
 
 export const DISCOVER_PAGE_SIZE = 5
 // The indexer caps limit at 1024 and the keyset request asks for one extra row.
-export const FULL_WINDOW = 1024 - 1
-const SEARCH_DEBOUNCE_MS = 300
+export const DISCOVER_FULL_WINDOW = 1024 - 1
+const DISCOVER_SEARCH_DEBOUNCE_MS = 300
 
 const PendingTasksContext = createContext<PendingTasksCtxValue | undefined>(undefined)
 const DiscoverContext = createContext<DiscoverCtxValue | undefined>(undefined)
@@ -93,20 +92,19 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
   } = usePendingParticipants()
 
   const [ecosystemFilters, setEcosystemFilters] = useState<EcosystemsFilterState>(INITIAL_ECOSYSTEMS_FILTER)
-  const ecosystemsSearch = useDebouncedValue(ecosystemFilters.search, SEARCH_DEBOUNCE_MS)
-  const ecosystemsFullWindow = needsFullWindow({ ...ecosystemFilters, search: ecosystemsSearch })
   const {
     ecosystems: ecosystemsList,
     loading: ecosystemsLoading,
+    errorEcosystems: ecosystemsError,
     refetch: refetchEcosystems,
     hasNext: ecosystemsHasNext,
     hasPrevious: ecosystemsHasPrevious,
     nextPage: ecosystemsNextPage,
     previousPage: ecosystemsPreviousPage,
-  } = useEcosystems(false, !ecosystemFilters.showArchived, ecosystemsFullWindow ? FULL_WINDOW : ECOSYSTEMS_PAGE_SIZE)
+  } = useEcosystems(false, !ecosystemFilters.showArchived)
 
   const [discoverFilters, setDiscoverFilters] = useState<DiscoverFilters>(INITIAL_DISCOVER_FILTERS)
-  const discoverSearch = useDebouncedValue(discoverFilters.search, SEARCH_DEBOUNCE_MS)
+  const discoverSearch = useDebouncedValue(discoverFilters.search, DISCOVER_SEARCH_DEBOUNCE_MS)
   const fullWindow = needsFullWindow({ ...discoverFilters, search: discoverSearch })
   const [shownEcosystemIds, setShownEcosystemIds] = useState<string[]>([])
   const {
@@ -118,7 +116,7 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
     hasPrevious: discoverHasPrevious,
     nextPage: discoverNextPage,
     previousPage: discoverPreviousPage,
-  } = useEcosystems(true, !discoverFilters.showArchived, fullWindow ? FULL_WINDOW : DISCOVER_PAGE_SIZE)
+  } = useEcosystems(true, !discoverFilters.showArchived, fullWindow ? DISCOVER_FULL_WINDOW : DISCOVER_PAGE_SIZE)
   const discoverEcosystemIds = useMemo(
     () => (fullWindow ? shownEcosystemIds : discoverList.map((ecosystem) => ecosystem.id)),
     [discoverList, fullWindow, shownEcosystemIds]
@@ -229,11 +227,10 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
     () => ({
       ecosystemsList,
       ecosystemsLoading,
+      ecosystemsError,
       refetch: refetchEcosystems,
       ecosystemFilters,
       setEcosystemFilters,
-      ecosystemsSearch,
-      ecosystemsFullWindow,
       hasNext: ecosystemsHasNext,
       hasPrevious: ecosystemsHasPrevious,
       nextPage: ecosystemsNextPage,
@@ -242,10 +239,9 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
     [
       ecosystemsList,
       ecosystemsLoading,
+      ecosystemsError,
       refetchEcosystems,
       ecosystemFilters,
-      ecosystemsSearch,
-      ecosystemsFullWindow,
       ecosystemsHasNext,
       ecosystemsHasPrevious,
       ecosystemsNextPage,

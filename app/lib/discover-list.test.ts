@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import type { DidEnrichment } from '@/lib/resolverClient'
-import { INITIAL_ECOSYSTEMS_FILTER } from '@/ui/common/ecosystems-filter-bar'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import {
   clientPage,
@@ -92,12 +91,21 @@ describe('filterEcosystems', () => {
     expect(ids(filterEcosystems(list, filters({ hideParticipant: true }), scope))).toEqual(['1', '3'])
   })
 
-  it('keeps a controlled ecosystem the corporation also joined when participant ones are hidden', () => {
+  it('keeps a controlled ecosystem the corporation also joined where the page splits the two', () => {
+    const scope = {
+      actingCorporationId: 9,
+      rolesByEcosystem: { '1': distinctRoles(['ECOSYSTEM', 'ISSUER']), '2': ['ISSUER' as const] },
+      splitControlled: true,
+    }
+    expect(ids(filterEcosystems(list, filters({ hideParticipant: true }), scope))).toEqual(['1', '3'])
+  })
+
+  it('hides a controlled ecosystem the corporation also joined on Discover, which does not split them', () => {
     const scope = {
       actingCorporationId: 9,
       rolesByEcosystem: { '1': distinctRoles(['ECOSYSTEM', 'ISSUER']), '2': ['ISSUER' as const] },
     }
-    expect(ids(filterEcosystems(list, filters({ hideParticipant: true }), scope))).toEqual(['1', '3'])
+    expect(ids(filterEcosystems(list, filters({ hideParticipant: true }), scope))).toEqual(['3'])
   })
 
   it('ignores the corporation filters in guest mode', () => {
@@ -190,11 +198,6 @@ describe('needsFullWindow', () => {
     expect(needsFullWindow(filters({ hideOwned: true }))).toBe(true)
     expect(needsFullWindow(filters({ hideParticipant: true }))).toBe(true)
     expect(needsFullWindow(filters({ order: 'trustValue' }))).toBe(true)
-  })
-
-  it('keeps the Ecosystems page on keyset paging, where no order control exists', () => {
-    expect(needsFullWindow(INITIAL_ECOSYSTEMS_FILTER)).toBe(false)
-    expect(needsFullWindow({ ...INITIAL_ECOSYSTEMS_FILTER, showArchived: true })).toBe(false)
   })
 })
 

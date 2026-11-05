@@ -281,12 +281,16 @@ export const ACME_ECOSYSTEM_ROW = {
   archived: null,
 }
 
-export async function stubEcosystemList(page: Page, ecosystems: { id: number }[] = [ACME_ECOSYSTEM_ROW]) {
+export async function stubEcosystemList(
+  page: Page,
+  ecosystems: { id: number; archived?: string | null }[] = [ACME_ECOSYSTEM_ROW]
+) {
   await page.route('**/v4/ecosystem/list*', (route) => {
     const params = new URL(route.request().url()).searchParams
     const maxId = params.get('max_id')
     const rows = ecosystems
       .filter((row) => maxId === null || row.id < Number(maxId))
+      .filter((row) => params.get('archived') !== 'false' || !row.archived)
       .slice(0, Number(params.get('limit') ?? '10'))
     return route.fulfill({ json: { ecosystems: rows } })
   })
