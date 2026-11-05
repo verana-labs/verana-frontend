@@ -265,9 +265,9 @@ test('an acting corporation sees its roles from one corporation query and joins 
   await page.locator('#hide-participant').uncheck()
 
   const join = acme.getByRole('link', { name: 'Join' })
-  await expect(join).toHaveAttribute('href', `/participants/${SCHEMA.id}`)
+  await expect(join).toHaveAttribute('href', `/credential-schemas/${SCHEMA.id}?tab=participants`)
   await join.click()
-  await expect(page).toHaveURL(new RegExp(`/participants/${SCHEMA.id}$`))
+  await expect(page).toHaveURL(new RegExp(`/credential-schemas/${SCHEMA.id}\\?tab=participants$`))
   await expect(
     page.locator('[data-slot="tree-row"]').filter({ hasText: 'Issuers' }).getByRole('button', { name: /join/ })
   ).toBeVisible({ timeout: 15_000 })

@@ -3,6 +3,7 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { DURATION, EASE } from '@/ui/motion/tokens'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/shadcn/tooltip'
 
 export interface CategorySegment {
   key: string
@@ -16,12 +17,12 @@ export function CategoryBar({
   className,
 }: {
   segments: CategorySegment[]
-  marker?: number
+  marker?: { value: number; tooltip: string }
   className?: string
 }) {
   const reduced = useReducedMotion()
   const max = segments.reduce((sum, segment) => sum + segment.value, 0)
-  const markerLeft = marker !== undefined && max > 0 ? (Math.min(Math.max(marker, 0), max) / max) * 100 : undefined
+  const markerLeft = marker && max > 0 ? (Math.min(Math.max(marker.value, 0), max) / max) * 100 : marker ? 0 : undefined
 
   return (
     <div className={cn('relative flex h-2 w-full items-center', className)}>
@@ -41,12 +42,24 @@ export function CategoryBar({
             />
           ))}
       </motion.div>
-      {markerLeft !== undefined ? (
-        <span
-          aria-hidden="true"
-          className="absolute h-4 w-1 -translate-x-1/2 rounded-full bg-foreground ring-2 ring-card rtl:translate-x-1/2"
+      {marker && markerLeft !== undefined ? (
+        <div
+          className="absolute w-2 -translate-x-1/2 rtl:translate-x-1/2"
           style={{ insetInlineStart: `${markerLeft}%` }}
-        />
+        >
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label={marker.tooltip}
+                className="relative mx-auto block h-4 w-1 cursor-default rounded-full bg-foreground ring-2 ring-card outline-none focus-visible:ring-[3px] focus-visible:ring-ring"
+              >
+                <span aria-hidden="true" className="absolute -inset-x-2 -inset-y-1" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>{marker.tooltip}</TooltipContent>
+          </Tooltip>
+        </div>
       ) : null}
     </div>
   )

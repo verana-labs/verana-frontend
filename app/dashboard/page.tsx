@@ -1,8 +1,8 @@
 'use client'
 
 import { useChain } from '@cosmos-kit/react'
-import { BadgeCheckIcon, BlocksIcon, CheckIcon, CoinsIcon, FileTextIcon, ShieldIcon, UsersIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { BadgeCheckIcon, FileJson2Icon, LockIcon, NetworkIcon, TriangleAlertIcon } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
@@ -11,107 +11,198 @@ import { useIndexerEvents } from '@/providers/indexer-events-provider'
 import DashboardFooter from '@/ui/common/dashboard-footer'
 import FeaturedServices from '@/ui/common/featured-services'
 import GettingStarted from '@/ui/common/getting-started'
-import TitleAndButton from '@/ui/common/title-and-button'
 import { type CountTile, CountTiles } from '@/ui/dashboard/count-tiles'
-import { CorporationCallToAction, WalletCallToAction } from '@/ui/dashboard/wallet-card'
-import type { DashboardData } from '@/ui/dataview/datasections/dashboard'
-import { resolveTranslatable } from '@/ui/dataview/types'
-import { formatNumber, formatVNAFromUVNA } from '@/util/util'
+import { DashboardHeader } from '@/ui/dashboard/dashboard-header'
+import { EcosystemsCard } from '@/ui/dashboard/ecosystems-card'
+import { formatCompact, formatCount, periodDelta } from '@/ui/dashboard/format'
+import { LiveActivity } from '@/ui/dashboard/live-activity'
+import { NetworkActivityChart, rangeText } from '@/ui/dashboard/network-activity-chart'
+import {
+  type Range,
+  useLatestSchemas,
+  useNetworkSeries,
+  useRoleCounts,
+  useTopEcosystems,
+} from '@/ui/dashboard/network-data'
+import { ParticipantsByRole } from '@/ui/dashboard/participants-by-role'
+import { SchemasCard } from '@/ui/dashboard/schemas-card'
+import { WalletCard } from '@/ui/dashboard/wallet-card'
+import { BlurFade } from '@/ui/motion/blur-fade'
+import { Alert, AlertAction, AlertDescription } from '@/ui/shadcn/alert'
+import { Button } from '@/ui/shadcn/button'
+import { formatVNAFromUVNA } from '@/util/util'
 
-const formatCount = (value: unknown) => formatNumber(String(value), true, true)
+function vnaFromUvna(uvna: string): number {
+  return Number(uvna) / 1_000_000
+}
+
+function formatVna(vna: number): string {
+  return formatCompact(vna, 2)
+}
 
 export default function Page() {
   const veranaChain = useVeranaChain()
-  const chainName = veranaChain.chain_name
-  const { isWalletConnected } = useChain(chainName)
+  const { isWalletConnected } = useChain(veranaChain.chain_name)
   const { memberships, actingCorporation, loading: corporationsLoading, error: discoveryError } = useUserCorporation()
   const noCorporation = isWalletConnected && !corporationsLoading && !discoveryError && memberships.length === 0
 
   const { latestProcessedHeight } = useIndexerEvents()
-  const dashboardCtx = useDashboardCtx()
-  const [dashboardData, setDashboardData] = useState<DashboardData>({})
+  const { dashboardData, refetch } = useDashboardCtx()
+  const ecosystems = useTopEcosystems()
+  const schemas = useLatestSchemas(12)
+  const [range, setRange] = useState<Range>('7d')
+  const series = useNetworkSeries(range)
+  const [statsSettled, setStatsSettled] = useState(false)
 
-  const [refresh, setRefresh] = useState<boolean>(true)
+  const loadStats = useCallback(() => {
+    setStatsSettled(false)
+    void refetch().finally(() => setStatsSettled(true))
+  }, [refetch])
 
-  useEffect(() => {
-    setDashboardData((prev) => ({
-      ...dashboardCtx.dashboardData,
-      blockHeight: latestProcessedHeight || null,
-    }))
-  }, [latestProcessedHeight, dashboardCtx.dashboardData])
+  useEffect(loadStats, [loadStats])
 
-  useEffect(() => {
-    if (!refresh) return
-    ;(async () => {
-      await dashboardCtx.refetch()
-      setRefresh(false)
-    })()
-  }, [refresh, dashboardCtx.refetch])
+  const stats = dashboardData ?? {}
+  const statsError = statsSettled && !dashboardData
 
-  const tiles: (CountTile & { stat: keyof DashboardData })[] = [
-    {
-      stat: 'blockHeight',
-      name: translate('dataview.dashboard.fields.blockHeight'),
-      Icon: BlocksIcon,
-      display: formatCount(dashboardData.blockHeight),
-    },
+  const issued = stats.issuedCredentials ?? null
+  const verified = stats.verifiedCredentials ?? null
+  const locked = stats.totalLockedTrustDeposit ?? null
+  const lockedDisplay = locked === null ? null : formatVNAFromUVNA(locked)
+  const rate = issued && verified !== null ? (verified / issued) * 100 : 0
+  const points = useMemo(() => series.data?.points ?? [], [series.data])
+  const previous = series.data?.previous ?? null
+  const roles = useRoleCounts(dashboardData?.roles)
+  const joined = series.data ? points.reduce((sum, p) => sum + p.participantsDelta, 0) : null
+
+  const tiles: CountTile[] = [
     {
       stat: 'ecosystems',
       name: translate('dataview.dashboard.fields.ecosystems'),
-      Icon: ShieldIcon,
-      display: formatCount(dashboardData.ecosystems),
+      description: translate('dashboard.tiles.ecosystems.desc'),
+      Icon: NetworkIcon,
+      value: stats.ecosystems ?? null,
+      display: stats.ecosystems == null ? null : formatCount(stats.ecosystems),
+      href: '/discover',
+      cta: translate('dashboard.tiles.ecosystems.cta'),
+      error: statsError,
     },
     {
       stat: 'schemas',
       name: translate('dataview.dashboard.fields.schemas'),
-      Icon: FileTextIcon,
-      display: formatCount(dashboardData.schemas),
-    },
-    {
-      stat: 'participants',
-      name: translate('dataview.dashboard.fields.participants'),
-      Icon: UsersIcon,
-      display: formatCount(dashboardData.participants),
-    },
-    {
-      stat: 'totalLockedTrustDeposit',
-      name: translate('dataview.dashboard.fields.totalLockedTrustDeposit'),
-      Icon: CoinsIcon,
-      display: formatVNAFromUVNA(String(dashboardData.totalLockedTrustDeposit)),
-    },
-    {
-      stat: 'issuedCredentials',
-      name: translate('dataview.dashboard.fields.issuedCredentials'),
-      Icon: BadgeCheckIcon,
-      display: formatCount(dashboardData.issuedCredentials),
+      description: translate('dashboard.tiles.schemas.desc'),
+      Icon: FileJson2Icon,
+      value: stats.schemas ?? null,
+      display: stats.schemas == null ? null : formatCount(stats.schemas),
+      error: statsError,
     },
     {
       stat: 'verifiedCredentials',
       name: translate('dataview.dashboard.fields.verifiedCredentials'),
-      Icon: CheckIcon,
-      display: formatCount(dashboardData.verifiedCredentials),
+      description:
+        issued === null || verified === null
+          ? translate('dashboard.tiles.verified.descPending')
+          : translate('dashboard.tiles.verified.desc', { rate: rate.toFixed(0), issued: formatCount(issued) }),
+      Icon: BadgeCheckIcon,
+      value: verified,
+      display: verified === null ? null : formatCount(verified),
+      error: statsError,
+    },
+    {
+      stat: 'totalLockedTrustDeposit',
+      name: translate('dataview.dashboard.fields.totalLockedTrustDeposit'),
+      description:
+        lockedDisplay === null
+          ? translate('dashboard.tiles.deposit.descPending')
+          : translate('dashboard.tiles.deposit.desc', { amount: lockedDisplay }),
+      Icon: LockIcon,
+      value: locked === null ? null : vnaFromUvna(locked),
+      display: lockedDisplay,
+      format: formatVna,
+      href: isWalletConnected ? '/account' : undefined,
+      cta: translate('dashboard.tiles.deposit.cta'),
+      error: statsError,
     },
   ]
 
   return (
     <div className="@container/page flex flex-col gap-4 @5xl/page:gap-5">
-      <TitleAndButton
-        title={resolveTranslatable({ key: 'dashboard.title' }, translate) ?? 'Dashboard'}
-        description={[resolveTranslatable({ key: 'dashboard.desc' }, translate) ?? '']}
+      <DashboardHeader blockHeight={latestProcessedHeight || null} />
+
+      {statsError ? (
+        <Alert variant="destructive">
+          <TriangleAlertIcon />
+          <AlertDescription>{translate('dashboard.stats.error')}</AlertDescription>
+          <AlertAction>
+            <Button variant="outline" size="sm" className="text-foreground" onClick={loadStats}>
+              {translate('dashboard.retry')}
+            </Button>
+          </AlertAction>
+        </Alert>
+      ) : null}
+
+      <BlurFade delay={0.05}>
+        <section className="grid grid-cols-1 gap-4 @xl/page:grid-cols-12 @5xl/page:gap-5">
+          <NetworkActivityChart
+            issued={issued}
+            statsError={statsError}
+            points={points}
+            previous={previous}
+            loading={series.loading}
+            error={series.error}
+            onRetry={series.retry}
+            range={range}
+            onRangeChange={setRange}
+            className="@xl/page:col-span-12 @5xl/page:col-span-8"
+          />
+          <div className="grid gap-4 @xl/page:col-span-12 @xl/page:grid-cols-2 @5xl/page:col-span-4 @5xl/page:grid-cols-1 @5xl/page:grid-rows-[1fr_auto] @5xl/page:gap-5">
+            <ParticipantsByRole
+              roles={roles}
+              rolesError={statsError}
+              onRetry={loadStats}
+              total={stats.participants ?? null}
+              joined={joined}
+              joinedDelta={
+                previous && joined !== null
+                  ? periodDelta(joined, previous.participants, translate(`dashboard.chart.vsPrevious.${range}`))
+                  : null
+              }
+              period={rangeText(range)}
+            />
+            <WalletCard noCorporation={noCorporation} className="justify-center @5xl/page:justify-between" />
+          </div>
+        </section>
+      </BlurFade>
+
+      <CountTiles tiles={tiles} />
+
+      <section className="grid grid-cols-1 gap-4 @xl/page:grid-cols-12 @5xl/page:gap-5">
+        <EcosystemsCard
+          ecosystems={ecosystems.data}
+          total={stats.ecosystems ?? null}
+          loading={ecosystems.loading}
+          error={ecosystems.error}
+          onRetry={ecosystems.retry}
+          className="@xl/page:col-span-12 @5xl/page:col-span-8"
+        />
+        <LiveActivity className="@xl/page:col-span-12 @5xl/page:col-span-4 @5xl/page:h-0 @5xl/page:min-h-full" />
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 @xl/page:grid-cols-12 @5xl/page:gap-5">
+        <GettingStarted walletConnected={isWalletConnected} className="@xl/page:col-span-12 @5xl/page:col-span-8" />
+        <FeaturedServices
+          isWalletConnected={isWalletConnected}
+          hasCorporation={actingCorporation !== null || (corporationsLoading || discoveryError ? undefined : false)}
+          className="@xl/page:col-span-12 @5xl/page:col-span-4"
+        />
+      </section>
+
+      <SchemasCard
+        schemas={schemas.data}
+        total={stats.schemas ?? null}
+        error={schemas.error}
+        onRetry={schemas.retry}
+        ecosystems={ecosystems.data}
       />
-
-      <CountTiles tiles={tiles.filter((tile) => dashboardData[tile.stat] != null)} />
-
-      {!isWalletConnected ? <WalletCallToAction /> : null}
-
-      {noCorporation ? <CorporationCallToAction /> : null}
-
-      <FeaturedServices
-        isWalletConnected={isWalletConnected}
-        hasCorporation={actingCorporation !== null || (corporationsLoading || discoveryError ? undefined : false)}
-      />
-
-      <GettingStarted />
 
       <DashboardFooter className="mt-4" />
     </div>

@@ -3,7 +3,7 @@
 import { Building2Icon, PlusIcon, SendIcon, WalletIcon } from 'lucide-react'
 import Link from 'next/link'
 import { type ReactNode, useState } from 'react'
-import type { CorporationProfile } from '@/hooks/useCorporationDetails'
+import type { CorporationProfile, GroupMemberRow } from '@/hooks/useCorporationDetails'
 import type { GranterBalance } from '@/hooks/useGranterBalance'
 import type { ActionSigning } from '@/hooks/useSigningMode'
 import { translate } from '@/i18n/dataview'
@@ -17,11 +17,15 @@ import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 import TrustBadge from '@/ui/common/trust-badge'
 import { DotPattern } from '@/ui/dashboard/dot-pattern'
 import { BlurFade } from '@/ui/motion/blur-fade'
+import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount } from '@/ui/shadcn/avatar'
 import { Badge } from '@/ui/shadcn/badge'
 import { Button, buttonVariants } from '@/ui/shadcn/button'
 import { Input } from '@/ui/shadcn/input'
 import { countryCodeToFlag, formatVNAFromUVNA, shortenMiddle } from '@/util/util'
 import { isValidDID } from '@/util/validations'
+import { addressInitials, nameInitials } from './shared'
+
+const VISIBLE_AVATARS = 4
 
 export function RotateDidForm({ mode, onSubmit }: { mode: CorporationSigningMode; onSubmit: (did: string) => void }) {
   const [draft, setDraft] = useState('')
@@ -54,6 +58,30 @@ export function RotateDidForm({ mode, onSubmit }: { mode: CorporationSigningMode
   )
 }
 
+function MemberStack({ members }: { members: GroupMemberRow[] }) {
+  if (members.length === 0) return null
+  const shown = members.slice(0, VISIBLE_AVATARS)
+  const rest = members.length - shown.length
+  return (
+    <div className="flex items-center gap-2">
+      <AvatarGroup className="-space-x-1.5">
+        {shown.map((member) => (
+          <Avatar key={member.address} title={member.address} className="size-7 bg-card ring-2 ring-card">
+            <AvatarFallback className="bg-linear-to-br from-primary/25 to-primary/5 text-[10px] font-semibold text-primary">
+              {addressInitials(member.address)}
+            </AvatarFallback>
+          </Avatar>
+        ))}
+        {rest > 0 ? <AvatarGroupCount className="size-7 text-[10px]">+{rest}</AvatarGroupCount> : null}
+      </AvatarGroup>
+      <span className="text-xs text-muted-foreground tabular-nums">
+        {members.length}{' '}
+        {translate(members.length === 1 ? 'corporation.selector.member' : 'corporation.tab.members').toLowerCase()}
+      </span>
+    </div>
+  )
+}
+
 function balanceLabel(balance: GranterBalance): string {
   if (balance.status === 'ready')
     return formatVNAFromUVNA(balance.amount) || translate('corporation.page.balance.failed')
@@ -63,6 +91,7 @@ function balanceLabel(balance: GranterBalance): string {
 
 export function CorporationHeader({
   profile,
+  members,
   enrichment,
   balance,
   rotate,
@@ -73,6 +102,7 @@ export function CorporationHeader({
   nav,
 }: {
   profile: CorporationProfile
+  members: GroupMemberRow[]
   enrichment: DidEnrichment | null
   balance: GranterBalance
   rotate: ActionSigning
@@ -98,7 +128,11 @@ export function CorporationHeader({
             aria-hidden="true"
             className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-primary-400 to-primary-700 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25)] sm:size-14"
           >
-            <Building2Icon className="size-6" />
+            {displayName ? (
+              <span className="text-base font-semibold tracking-tight sm:text-lg">{nameInitials(displayName)}</span>
+            ) : (
+              <Building2Icon className="size-6" />
+            )}
           </span>
           <div className="min-w-0 space-y-2">
             <h1 className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
@@ -120,13 +154,14 @@ export function CorporationHeader({
               <span className="inline-flex min-w-0 items-center gap-1 font-mono">
                 <WalletIcon aria-hidden="true" className="size-3.5 shrink-0" />
                 <span className="break-all">{profile.policyAddress}</span>
-                <CopyValueButton value={profile.policyAddress} title={translate('corporation.page.addresscopy')} />
+                <CopyValueButton value={profile.policyAddress} label={translate('corporation.page.address')} />
               </span>
             </div>
             <p className="text-sm text-muted-foreground">
               {translate('corporation.page.balance')}{' '}
               <span className="font-medium text-foreground tabular-nums">{balanceLabel(balance)}</span>
             </p>
+            <MemberStack members={members} />
           </div>
         </div>
         <div className="flex shrink-0 flex-wrap items-start gap-2">
