@@ -172,6 +172,18 @@ test('a participant created with VNA fees broadcasts them in uvna', async ({ pag
   await mock.teardown()
 })
 
+test('typing a decimal with a zero after the point keeps its value', async ({ page }) => {
+  await open(page, COIN_SCHEMA_ID)
+
+  await page.getByRole('button', { name: /New Participant/ }).click({ timeout: 15_000 })
+  const fees = labelInput(page, 'Validation Fees (VNA)')
+  await fees.pressSequentially('0.01')
+  await expect(fees).toHaveValue('0.01')
+  await fees.clear()
+  await fees.pressSequentially('1.05')
+  await expect(fees).toHaveValue('1.05')
+})
+
 test('escape closes only the top action modal', async ({ page }) => {
   await open(page, COIN_SCHEMA_ID)
 
