@@ -14,22 +14,30 @@ export type EcosystemsFilterState = {
   showUntrusted: boolean
 }
 
+// [VFE-PAGE-ES-LIST-2] gives this page no trust filter, so every trust state stays listed.
 export const INITIAL_ECOSYSTEMS_FILTER: EcosystemsFilterState = {
   search: '',
   showArchived: false,
   hideOwned: false,
   hideParticipant: false,
-  showUntrusted: false,
+  showUntrusted: true,
 }
 
 type Props = {
   value: EcosystemsFilterState
   onChange: (next: EcosystemsFilterState) => void
   corporationFilters?: boolean
+  trustFilter?: boolean
   children?: ReactNode
 }
 
-export default function EcosystemsFilterBar({ value, onChange, corporationFilters = true, children }: Props) {
+export default function EcosystemsFilterBar({
+  value,
+  onChange,
+  corporationFilters = true,
+  trustFilter = true,
+  children,
+}: Props) {
   const t = (key: string, fallback: string) => resolveTranslatable({ key }, translate) ?? fallback
 
   const set = <K extends keyof EcosystemsFilterState>(key: K, next: EcosystemsFilterState[K]) =>
@@ -87,12 +95,14 @@ export default function EcosystemsFilterBar({ value, onChange, corporationFilter
                 />
               </>
             ) : null}
-            <Checkbox
-              id="show-untrusted"
-              checked={value.showUntrusted}
-              onChange={(v) => set('showUntrusted', v)}
-              label={t('datatable.ecosystem.filter.showUntrusted', 'Show untrusted ecosystems')}
-            />
+            {trustFilter ? (
+              <Checkbox
+                id="show-untrusted"
+                checked={value.showUntrusted}
+                onChange={(v) => set('showUntrusted', v)}
+                label={t('datatable.ecosystem.filter.showUntrusted', 'Show untrusted ecosystems')}
+              />
+            ) : null}
           </div>
           {children}
         </div>
