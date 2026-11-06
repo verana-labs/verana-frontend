@@ -20,6 +20,7 @@ import {
   SECOND_OPERATOR_CYCLE_END,
 } from './support/corp-fixtures'
 import {
+  ACME_ECOSYSTEM_ROW,
   HARNESS_ADDRESS,
   HARNESS_MNEMONIC,
   indexerParticipantEvent,
@@ -897,6 +898,144 @@ test('a service description claim renders as text or Markdown, never as HTML', a
       await expect(grid.locator('strong')).toHaveCount(0)
     })
   }
+})
+
+const UNTRUSTED_ROW = 2
+
+const ECOSYSTEM_ROWS = Array.from({ length: 13 }, (_, i) => ({
+  ...ACME_ECOSYSTEM_ROW,
+  id: 9450 - i,
+  did: `did:web:eco-${9450 - i}.example`,
+  corporation_id: i === 0 ? 13 : 999,
+  trust_data: {
+    did: `did:web:eco-${9450 - i}.example`,
+    trusted: i !== UNTRUSTED_ROW,
+    evaluatedAtTime: '2026-09-01T10:00:00Z',
+    evaluatedAtBlock: 1,
+    expiresAtTime: null,
+    ecsCredentials: [
+      { ecsSchema: 'ServiceCredential', credentialSubject: { name: `Registry ${String(i + 1).padStart(2, '0')}` } },
+    ],
+  },
+}))
+
+const OWNED_ECOSYSTEM_ID = ECOSYSTEM_ROWS[0].id
+const JOINED_ECOSYSTEM_ID = ECOSYSTEM_ROWS[1].id
+const OWNED_ECOSYSTEM_NAME = 'Registry 01'
+const JOINED_ECOSYSTEM_NAME = 'Registry 02'
+const UNTRUSTED_ECOSYSTEM_NAME = 'Registry 03'
+
+const cardNames = (page: Page) =>
+  page.locator('#ecosystems-grid h3').evaluateAll((cards) => cards.map((card) => card.textContent?.trim() ?? ''))
+
+const issuerParticipant = (id: number, ecosystemId: number) => ({
+  id,
+  schema_id: 1,
+  ecosystem_id: ecosystemId,
+  role: 'ISSUER',
+  did: ACME_ECOSYSTEM_DID,
+  corporation_id: 13,
+  participant_state: 'ACTIVE',
+  op_state: 'VALIDATED',
+  validator_participant_id: null,
+  effective_from: '2026-09-01T10:00:00Z',
+  effective_until: null,
+  validation_fees: 0,
+  issuance_fees: 0,
+  verification_fees: 0,
+  deposit: 0,
+  corporation_available_actions: [],
+  validator_available_actions: [],
+})
+
+test('the ecosystems filters run over the loaded keyset window, never widening it', async ({ page }) => {
+  await installCorporationStubs(page)
+  await stubEcosystemList(page, ECOSYSTEM_ROWS)
+  // The Discover list shares this endpoint, so record only the query of this page.
+  const listLimits: string[] = []
+  await page.route('**/v4/ecosystem/list*', (route) => {
+    const params = new URL(route.request().url()).searchParams
+    if (params.has('participant_corporation_id')) listLimits.push(params.get('limit') ?? '')
+    return route.fallback()
+  })
+  // The acting corporation joined one ecosystem it does not control and one it does.
+  await page.route('**/v4/participant/list*', (route) =>
+    route.fulfill({
+      json: {
+        participants:
+          new URL(route.request().url()).searchParams.get('corporation_id') === '13'
+            ? [issuerParticipant(31, JOINED_ECOSYSTEM_ID), issuerParticipant(32, OWNED_ECOSYSTEM_ID)]
+            : [],
+      },
+    })
+  )
+  await seedActingCorporation(page, 13)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  const loadedOnly = page.getByText('Sorting and filters apply to the loaded results only.')
+
+  // One keyset page of nine rows, minus the untrusted one this page hides by default.
+  await page.goto('/ecosystems')
+  await expect.poll(() => cardNames(page), { timeout: 15_000 }).toHaveLength(8)
+  await expect.poll(() => cardNames(page)).not.toContain(UNTRUSTED_ECOSYSTEM_NAME)
+  await expect(loadedOnly).toBeVisible()
+
+  // [VFE-PAGE-ES-LIST-2]: the text filter stays inside that window instead of widening it, so a row
+  // on a later page stays out of reach until the list is paged to it.
+  await page.locator('#ecosystem-search').fill('Registry 11')
+  await expect(page.getByText('No ecosystems match your filters.')).toBeVisible()
+  await page.locator('#ecosystem-search').fill('Registry 06')
+  await expect.poll(() => cardNames(page)).toEqual(['Registry 06'])
+
+  await page.locator('#ecosystem-search').fill('')
+  await expect.poll(() => cardNames(page)).toHaveLength(8)
+  await page.locator('#show-untrusted').check()
+  await expect.poll(() => cardNames(page)).toContain(UNTRUSTED_ECOSYSTEM_NAME)
+  await page.locator('#show-untrusted').uncheck()
+
+  // [VFE-PAGE-ES-LIST-1] splits controlled from joined, so hiding joined keeps the controlled one.
+  await page.locator('#hide-participant').check()
+  await expect.poll(() => cardNames(page)).not.toContain(JOINED_ECOSYSTEM_NAME)
+  await expect.poll(() => cardNames(page)).toContain(OWNED_ECOSYSTEM_NAME)
+
+  await page.locator('#hide-participant').uncheck()
+  await page.locator('#hide-owned').check()
+  await expect.poll(() => cardNames(page)).not.toContain(OWNED_ECOSYSTEM_NAME)
+  await expect.poll(() => cardNames(page)).toContain(JOINED_ECOSYSTEM_NAME)
+  await page.locator('#hide-owned').uncheck()
+
+  // Paging is the indexer's keyset, so the rows past the first window arrive by asking for them.
+  await page.getByRole('button', { name: 'Next page' }).click()
+  await expect.poll(() => cardNames(page)).toEqual(['Registry 10', 'Registry 11', 'Registry 12', 'Registry 13'])
+
+  // No filter ever asked for the [VFE-PAGE-DISCOVER-1] window.
+  expect(listLimits.length).toBeGreaterThan(0)
+  expect(listLimits.every((limit) => limit === '10')).toBe(true)
+})
+
+test('the ecosystems list keeps archived ones out until asked, and says when the list failed', async ({ page }) => {
+  const archivedName = 'Registry 05'
+  const rows = ECOSYSTEM_ROWS.map((row, i) => (i === 4 ? { ...row, archived: '2026-10-01T10:00:00Z' } : row))
+  await installCorporationStubs(page)
+  await stubEcosystemList(page, rows)
+  await page.route('**/v4/participant/list*', (route) => route.fulfill({ json: { participants: [] } }))
+  await seedActingCorporation(page, 13)
+  await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
+
+  await page.goto('/ecosystems')
+  await expect.poll(() => cardNames(page), { timeout: 15_000 }).toHaveLength(8)
+  await expect.poll(() => cardNames(page)).not.toContain(archivedName)
+
+  await page.locator('#show-archived').check()
+  await expect.poll(() => cardNames(page)).toContain(archivedName)
+
+  // With the indexer down the grid must name the failure instead of blaming the filters.
+  await page.route('**/v4/ecosystem/list*', (route) =>
+    route.fulfill({ status: 502, json: { error: 'indexer unavailable', code: 502 } })
+  )
+  await page.locator('#show-archived').uncheck()
+  await expect(page.locator('#ecosystems-grid .error-pane')).toContainText('502', { timeout: 15_000 })
+  await expect(page.getByText('No ecosystems match your filters.')).toHaveCount(0)
 })
 
 test('the governance tab lists the CGF versions and gates the increase on the primary language', async ({ page }) => {

@@ -91,6 +91,23 @@ describe('filterEcosystems', () => {
     expect(ids(filterEcosystems(list, filters({ hideParticipant: true }), scope))).toEqual(['1', '3'])
   })
 
+  it('keeps a controlled ecosystem the corporation also joined where the page splits the two', () => {
+    const scope = {
+      actingCorporationId: 9,
+      rolesByEcosystem: { '1': distinctRoles(['ECOSYSTEM', 'ISSUER']), '2': ['ISSUER' as const] },
+      splitControlled: true,
+    }
+    expect(ids(filterEcosystems(list, filters({ hideParticipant: true }), scope))).toEqual(['1', '3'])
+  })
+
+  it('hides a controlled ecosystem the corporation also joined on Discover, which does not split them', () => {
+    const scope = {
+      actingCorporationId: 9,
+      rolesByEcosystem: { '1': distinctRoles(['ECOSYSTEM', 'ISSUER']), '2': ['ISSUER' as const] },
+    }
+    expect(ids(filterEcosystems(list, filters({ hideParticipant: true }), scope))).toEqual(['3'])
+  })
+
   it('ignores the corporation filters in guest mode', () => {
     expect(ids(filterEcosystems(list, filters({ hideOwned: true, hideParticipant: true }), noScope))).toEqual([
       '1',

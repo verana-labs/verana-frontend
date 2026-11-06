@@ -1,17 +1,13 @@
+import type { EcosystemsFilterState } from '@/ui/common/ecosystems-filter-bar'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import type { Participant, ParticipantRole } from '@/ui/dataview/datasections/participant'
 
 export const ECOSYSTEM_ORDERS = ['newest', 'trustValue'] as const
 export type EcosystemOrder = (typeof ECOSYSTEM_ORDERS)[number]
 
-export type DiscoverFilters = {
-  search: string
-  showArchived: boolean
-  hideOwned: boolean
-  hideParticipant: boolean
-  showUntrusted: boolean
-  order: EcosystemOrder
-}
+export type ListFilters = EcosystemsFilterState & { order?: EcosystemOrder }
+
+export type DiscoverFilters = EcosystemsFilterState & { order: EcosystemOrder }
 
 export const INITIAL_DISCOVER_FILTERS: DiscoverFilters = {
   search: '',
@@ -25,6 +21,9 @@ export const INITIAL_DISCOVER_FILTERS: DiscoverFilters = {
 export type DiscoverScope = {
   actingCorporationId: number | undefined
   rolesByEcosystem: Record<string, ParticipantRole[]>
+  // [VFE-PAGE-ES-LIST-1] tells a controlled Ecosystem from a joined one, so there the joined filter
+  // keeps the controlled ones. [VFE-PAGE-DISCOVER-1] hides owner and participant rows alike.
+  splitControlled?: boolean
 }
 
 const ROLE_ORDER: ParticipantRole[] = [
@@ -65,7 +64,7 @@ export function groupRolesBySchema(
 }
 
 export function roleFiltersPending(
-  filters: Pick<DiscoverFilters, 'hideOwned' | 'hideParticipant'>,
+  filters: Pick<ListFilters, 'hideOwned' | 'hideParticipant'>,
   rolesLoading: boolean
 ): boolean {
   return rolesLoading && (filters.hideOwned || filters.hideParticipant)
@@ -84,7 +83,7 @@ function matchesSearch(ecosystem: EcosystemListItem, term: string): boolean {
 
 export function filterEcosystems<T extends EcosystemListItem>(
   ecosystems: T[],
-  filters: DiscoverFilters,
+  filters: ListFilters,
   scope: DiscoverScope
 ): T[] {
   const term = filters.search.trim().toLowerCase()
@@ -94,7 +93,10 @@ export function filterEcosystems<T extends EcosystemListItem>(
     if (!filters.showArchived && ecosystem.archived) return false
     if (!filters.showUntrusted && ecosystem.trustData?.trustStatus === 'UNTRUSTED') return false
     if (filters.hideOwned && owned) return false
-    if (filters.hideParticipant && roles.some((role) => role !== 'ECOSYSTEM')) return false
+    // A controlled ecosystem stays controlled even when the corporation also joined it, so a page
+    // that splits the two only hides what it is not controlling.
+    const joined = scope.splitControlled ? !owned : true
+    if (filters.hideParticipant && joined && roles.some((role) => role !== 'ECOSYSTEM')) return false
     return matchesSearch(ecosystem, term)
   })
 }

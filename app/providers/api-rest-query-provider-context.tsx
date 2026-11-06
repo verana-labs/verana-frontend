@@ -11,6 +11,7 @@ import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { type DiscoverFilters, INITIAL_DISCOVER_FILTERS, needsFullWindow } from '@/lib/discover-list'
 import { coalesceIndexerEvents, refreshTargets } from '@/lib/indexer-event'
 import { useIndexerEvents } from '@/providers/indexer-events-provider'
+import { type EcosystemsFilterState, INITIAL_ECOSYSTEMS_FILTER } from '@/ui/common/ecosystems-filter-bar'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { DashboardData } from '@/ui/dataview/datasections/dashboard'
 import type { PendingEcosystem } from '@/ui/dataview/datasections/participant'
@@ -51,11 +52,10 @@ type DiscoverCtxValue = KeysetPageControls & {
 type EcosystemsCtxValue = KeysetPageControls & {
   ecosystemsList: EcosystemListItem[]
   ecosystemsLoading: boolean
+  ecosystemsError: string | null
   refetch: () => Promise<void>
-  onlyActiveEcosystem: boolean
-  setOnlyActiveEcosystem: React.Dispatch<React.SetStateAction<boolean>>
-  ecosystemFilters: Record<string, string | boolean>
-  setEcosystemFilters: React.Dispatch<React.SetStateAction<Record<string, string | boolean>>>
+  ecosystemFilters: EcosystemsFilterState
+  setEcosystemFilters: React.Dispatch<React.SetStateAction<EcosystemsFilterState>>
 }
 
 type AccountCtxValue = {
@@ -91,17 +91,17 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
     refetch: refetchPendingParticipants,
   } = usePendingParticipants()
 
-  const [onlyActiveEcosystem, setOnlyActiveEcosystem] = useState(true)
-  const [ecosystemFilters, setEcosystemFilters] = useState<Record<string, string | boolean>>({})
+  const [ecosystemFilters, setEcosystemFilters] = useState<EcosystemsFilterState>(INITIAL_ECOSYSTEMS_FILTER)
   const {
     ecosystems: ecosystemsList,
     loading: ecosystemsLoading,
+    errorEcosystems: ecosystemsError,
     refetch: refetchEcosystems,
     hasNext: ecosystemsHasNext,
     hasPrevious: ecosystemsHasPrevious,
     nextPage: ecosystemsNextPage,
     previousPage: ecosystemsPreviousPage,
-  } = useEcosystems(false, onlyActiveEcosystem)
+  } = useEcosystems(false, !ecosystemFilters.showArchived)
 
   const [discoverFilters, setDiscoverFilters] = useState<DiscoverFilters>(INITIAL_DISCOVER_FILTERS)
   const discoverSearch = useDebouncedValue(discoverFilters.search, DISCOVER_SEARCH_DEBOUNCE_MS)
@@ -227,9 +227,8 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
     () => ({
       ecosystemsList,
       ecosystemsLoading,
+      ecosystemsError,
       refetch: refetchEcosystems,
-      onlyActiveEcosystem,
-      setOnlyActiveEcosystem,
       ecosystemFilters,
       setEcosystemFilters,
       hasNext: ecosystemsHasNext,
@@ -240,8 +239,8 @@ export function RestQueryProvider({ children }: { children: React.ReactNode }) {
     [
       ecosystemsList,
       ecosystemsLoading,
+      ecosystemsError,
       refetchEcosystems,
-      onlyActiveEcosystem,
       ecosystemFilters,
       ecosystemsHasNext,
       ecosystemsHasPrevious,
