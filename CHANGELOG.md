@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.22.1](https://github.com/verana-labs/verana-frontend/compare/v0.22.0...v0.22.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* [Corporation] add the missing group amino converters so member updates can be signed ([#591](https://github.com/verana-labs/verana-frontend/issues/591)) ([d060e04](https://github.com/verana-labs/verana-frontend/commit/d060e049e69c24cbc3c191522784c4c38347b326))
+* [Ecosystems] make the controlled/joined filter work over the loaded window ([#574](https://github.com/verana-labs/verana-frontend/issues/574)) ([30d216d](https://github.com/verana-labs/verana-frontend/commit/30d216d233b992128a4252294c5b142399f053dd))
+* [Forms] keep decimals with a zero after the point while typing ([#586](https://github.com/verana-labs/verana-frontend/issues/586)) ([8eeb0e6](https://github.com/verana-labs/verana-frontend/commit/8eeb0e66fc6a1e6bacb4ea791d42d3ba548179cf))
+
 ## [0.22.0](https://github.com/verana-labs/verana-frontend/compare/v0.21.0...v0.22.0) (2026-11-03)
 
 
