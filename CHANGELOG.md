@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.2](https://github.com/verana-labs/verana-frontend/compare/v0.22.1...v0.22.2) (2026-11-09)
+
+
+### Bug Fixes
+
+* [Ecosystems] list the acting Corporation's untrusted ecosystems instead of hiding them ([#596](https://github.com/verana-labs/verana-frontend/issues/596)) ([7ec817d](https://github.com/verana-labs/verana-frontend/commit/7ec817d8d9e37d98cd2eda96db99cfd3f35a93fe))
+
 ## [0.22.1](https://github.com/verana-labs/verana-frontend/compare/v0.22.0...v0.22.1) (2026-11-06)
 
 
