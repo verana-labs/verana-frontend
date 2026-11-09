@@ -24,6 +24,9 @@ export type DiscoverScope = {
   // [VFE-PAGE-ES-LIST-1] tells a controlled Ecosystem from a joined one, so there the joined filter
   // keeps the controlled ones. [VFE-PAGE-DISCOVER-1] hides owner and participant rows alike.
   splitControlled?: boolean
+  // Only [VFE-PAGE-DISCOVER-1] filters by trust state. [VFE-PAGE-ES-LIST-1] MUST list every
+  // Ecosystem the acting Corporation controls or participates in, whatever its trust state.
+  trustFilter?: boolean
 }
 
 const ROLE_ORDER: ParticipantRole[] = [
@@ -91,7 +94,8 @@ export function filterEcosystems<T extends EcosystemListItem>(
     const roles = scope.rolesByEcosystem[ecosystem.id] ?? []
     const owned = ecosystem.corporationId === scope.actingCorporationId || roles.includes('ECOSYSTEM')
     if (!filters.showArchived && ecosystem.archived) return false
-    if (!filters.showUntrusted && ecosystem.trustData?.trustStatus === 'UNTRUSTED') return false
+    if (scope.trustFilter !== false && !filters.showUntrusted && ecosystem.trustData?.trustStatus === 'UNTRUSTED')
+      return false
     if (filters.hideOwned && owned) return false
     // A controlled ecosystem stays controlled even when the corporation also joined it, so a page
     // that splits the two only hides what it is not controlling.

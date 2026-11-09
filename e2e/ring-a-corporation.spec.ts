@@ -974,10 +974,12 @@ test('the ecosystems filters run over the loaded keyset window, never widening i
 
   const loadedOnly = page.getByText('Sorting and filters apply to the loaded results only.')
 
-  // One keyset page of nine rows, minus the untrusted one this page hides by default.
+  // One keyset page of nine rows. [VFE-PAGE-ES-LIST-1]: an Ecosystem of the acting Corporation is
+  // listed whatever its trust state, so [VFE-PAGE-ES-LIST-2] gives this page no trust filter.
   await page.goto('/ecosystems')
-  await expect.poll(() => cardNames(page), { timeout: 15_000 }).toHaveLength(8)
-  await expect.poll(() => cardNames(page)).not.toContain(UNTRUSTED_ECOSYSTEM_NAME)
+  await expect.poll(() => cardNames(page), { timeout: 15_000 }).toHaveLength(9)
+  await expect.poll(() => cardNames(page)).toContain(UNTRUSTED_ECOSYSTEM_NAME)
+  await expect(page.locator('#show-untrusted')).toHaveCount(0)
   await expect(loadedOnly).toBeVisible()
 
   // [VFE-PAGE-ES-LIST-2]: the text filter stays inside that window instead of widening it, so a row
@@ -988,10 +990,7 @@ test('the ecosystems filters run over the loaded keyset window, never widening i
   await expect.poll(() => cardNames(page)).toEqual(['Registry 06'])
 
   await page.locator('#ecosystem-search').fill('')
-  await expect.poll(() => cardNames(page)).toHaveLength(8)
-  await page.locator('#show-untrusted').check()
-  await expect.poll(() => cardNames(page)).toContain(UNTRUSTED_ECOSYSTEM_NAME)
-  await page.locator('#show-untrusted').uncheck()
+  await expect.poll(() => cardNames(page)).toHaveLength(9)
 
   // [VFE-PAGE-ES-LIST-1] splits controlled from joined, so hiding joined keeps the controlled one.
   await page.locator('#hide-participant').check()
@@ -1023,7 +1022,7 @@ test('the ecosystems list keeps archived ones out until asked, and says when the
   await connectWallet(page, { mnemonic: HARNESS_MNEMONIC })
 
   await page.goto('/ecosystems')
-  await expect.poll(() => cardNames(page), { timeout: 15_000 }).toHaveLength(8)
+  await expect.poll(() => cardNames(page), { timeout: 15_000 }).toHaveLength(9)
   await expect.poll(() => cardNames(page)).not.toContain(archivedName)
 
   await page.locator('#show-archived').check()

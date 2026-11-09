@@ -61,6 +61,13 @@ describe('filterEcosystems', () => {
     expect(ids(filterEcosystems(list, filters({ showUntrusted: false }), noScope))).toEqual(['1', '3'])
   })
 
+  // [VFE-PAGE-ES-LIST-1]: the ecosystems page lists what the corporation controls or joined, so a
+  // stale showUntrusted in its state must not hide a row there.
+  it('keeps an untrusted ecosystem where the page has no trust filter', () => {
+    const scope = { ...noScope, trustFilter: false }
+    expect(ids(filterEcosystems(list, filters({ showUntrusted: false }), scope))).toEqual(['1', '2', '3'])
+  })
+
   it('searches the resolved service name, case insensitive', () => {
     expect(ids(filterEcosystems(list, filters({ search: '  acme ' }), noScope))).toEqual(['1'])
   })

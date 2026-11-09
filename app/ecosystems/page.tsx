@@ -44,6 +44,7 @@ export default function EcosystemsPage() {
         actingCorporationId,
         rolesByEcosystem,
         splitControlled: true,
+        trustFilter: false,
       }),
     [actingCorporationId, filters, ecosystemsList, rolesByEcosystem]
   )
@@ -84,7 +85,7 @@ export default function EcosystemsPage() {
         </div>
       </section>
 
-      <EcosystemsFilterBar value={filters} onChange={setEcosystemFilters} />
+      <EcosystemsFilterBar value={filters} onChange={setEcosystemFilters} trustFilter={false} />
 
       <section id="ecosystems-grid" className="mb-8">
         {errors.map((message) => (
