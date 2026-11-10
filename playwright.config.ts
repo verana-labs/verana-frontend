@@ -19,7 +19,11 @@ export default defineConfig({
     video: 'on',
     actionTimeout: 20_000,
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'ring-a', testMatch: /ring-a-.*\.spec\.ts$/, fullyParallel: true, use: { ...devices['Desktop Chrome'] } },
+    // The real devnet broadcasts share one funded wallet. They must not run at the same time.
+    { name: 'serial', testIgnore: /ring-a-.*\.spec\.ts$/, workers: 1, use: { ...devices['Desktop Chrome'] } },
+  ],
   webServer: {
     command: 'PORT=3100 pnpm dev',
     url: 'http://localhost:3100',
