@@ -157,6 +157,7 @@ test('a failed ecosystem or delegation load degrades instead of reading as empty
 
   await expect(page.getByRole('heading', { name: 'Acme Ecosystem Registry' })).toHaveCount(1)
   await expect(page.locator('[data-agent-label="ecosystem"]')).toHaveCount(0)
+  await expect(page.locator(`${CARD} h3`).locator('..').getByText('Ecosystem', { exact: true })).toHaveCount(0)
   const delegated = page.locator(CARD).filter({ hasText: AGENT_ONE_DID })
   await expect(delegated.getByText('ISSUER')).toBeVisible()
   await expect(delegated.getByRole('button')).toHaveCount(0)

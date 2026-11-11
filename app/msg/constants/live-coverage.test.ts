@@ -40,13 +40,19 @@ const SIGNABLE_TYPE_URLS = [
   '/verana.td.v1.MsgRepaySlashedTrustDeposit',
 ]
 
-const TEST_TITLE = /^\s*test(?:\.fixme)?\(\s*(?:\n\s*)?(['"`])(.*?)\1/gm
+const DEFERRED_TYPE_URLS = ['/cosmos.group.v1.MsgVote', '/verana.td.v1.MsgRepaySlashedTrustDeposit']
+
+const TEST_TITLE = /^\s*test\(\s*(?:\n\s*)?(['"`])(.*?)\1/gm
 const HOOK_TYPE_URL = /'(\/(?:verana|cosmos)\.[a-z0-9.]+\.Msg\w+)'/g
 
 function liveTitles(): string[] {
   return readdirSync(LIVE_DIR)
     .filter((file) => file.endsWith('.live.ts'))
     .flatMap((file) => [...readFileSync(join(LIVE_DIR, file), 'utf8').matchAll(TEST_TITLE)].map((match) => match[2]))
+}
+
+function namesTypeUrl(title: string, typeUrl: string): boolean {
+  return new RegExp(`${typeUrl.replaceAll('.', '\\.')}(?!\\w)`).test(title)
 }
 
 function hookTypeUrls(): string[] {
@@ -73,11 +79,16 @@ describe('live Keplr suite coverage', () => {
     ).toEqual([])
   })
 
-  it('has a live test for every signable type URL', () => {
+  it('has a live test for every signable type URL that is not deferred', () => {
     const missing = SIGNABLE_TYPE_URLS.filter(
-      (typeUrl) => !titles.some((title) => new RegExp(`${typeUrl.replaceAll('.', '\\.')}(?!\\w)`).test(title))
+      (typeUrl) => !DEFERRED_TYPE_URLS.includes(typeUrl) && !titles.some((title) => namesTypeUrl(title, typeUrl))
     )
     expect(missing, `no e2e/live test title names: ${missing.join(', ')}`).toEqual([])
+  })
+
+  it('defers only type URLs that still have no live test', () => {
+    const covered = DEFERRED_TYPE_URLS.filter((typeUrl) => titles.some((title) => namesTypeUrl(title, typeUrl)))
+    expect(covered, `covered now, remove from DEFERRED_TYPE_URLS: ${covered.join(', ')}`).toEqual([])
   })
 
   it('has a live test for every message type in msgTypeConfig', () => {
