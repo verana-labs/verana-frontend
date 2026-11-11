@@ -39,6 +39,7 @@ import ParticipantAttribute from '@/ui/common/participant-attribute'
 import ParticipantTimeline from '@/ui/common/participant-timeline'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import { feeBlockedReasonFor, PricingNotice } from '@/ui/common/pricing-notice'
+import { Timeline } from '@/ui/common/timeline'
 import TrustBadge from '@/ui/common/trust-badge'
 import {
   type Participant,
@@ -53,7 +54,6 @@ import {
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { Shimmer } from '@/ui/motion/shimmer'
 import { DURATION, EASE } from '@/ui/motion/tokens'
-import { Timeline } from '@/ui/participants/timeline'
 import { Badge } from '@/ui/shadcn/badge'
 import { Button } from '@/ui/shadcn/button'
 import {
@@ -298,11 +298,16 @@ function StatTile({ label, className, children }: { label: string; className?: s
   )
 }
 
-const LEAF_ROLES = new Set(['VERIFIER', 'HOLDER'])
+const MISSING_VALUE = '—'
 
-function countOf(value: string | number | undefined): string {
-  const parsed = Number(value ?? 0)
-  return (Number.isFinite(parsed) ? parsed : 0).toLocaleString()
+function countOf(value: string | number | null | undefined): string {
+  if (value == null || value === '') return MISSING_VALUE
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed.toLocaleString() : MISSING_VALUE
+}
+
+function vnaOf(value: string | number | null | undefined): string {
+  return value == null || value === '' ? MISSING_VALUE : formatVNAFromUVNA(String(value))
 }
 
 type ParticipantCardProps = {
@@ -428,8 +433,7 @@ export default function ParticipantCard({
   }
 
   const title = participantCardTitle(participant, schemaTitle)
-  const leaf = LEAF_ROLES.has(participant.role)
-  const countSpan = leaf ? '@[25rem]/card:col-span-3' : '@[25rem]/card:col-span-2'
+  const countSpan = '@[25rem]/card:col-span-2'
   const historyEmpty = participantHistory.length === 0
 
   return (
@@ -569,19 +573,17 @@ export default function ParticipantCard({
             <StatTile label={tr('participantcard.meta.verified', 'Verified Credentials')} className={countSpan}>
               {countOf(participant.verified)}
             </StatTile>
-            {leaf ? null : (
-              <StatTile label={tr('participantcard.meta.participants', 'Participants')} className={countSpan}>
-                {countOf(participant.participants)}
-              </StatTile>
-            )}
+            <StatTile label={tr('participantcard.meta.participants', 'Participants')} className={countSpan}>
+              {countOf(participant.participants)}
+            </StatTile>
             <StatTile label={tr('participantcard.meta.deposit', 'Deposit')} className="@[25rem]/card:col-span-3">
-              <span className="font-mono text-base">{formatVNAFromUVNA(String(participant.deposit ?? 0))}</span>
+              <span className="font-mono text-base">{vnaOf(participant.deposit)}</span>
             </StatTile>
             <StatTile
               label={tr('participantcard.meta.weight', 'Weight')}
-              className={cn('@[25rem]/card:col-span-3', !leaf && 'col-span-2')}
+              className="col-span-2 @[25rem]/card:col-span-3"
             >
-              <span className="font-mono text-base">{formatVNAFromUVNA(String(participant.weight ?? 0))}</span>
+              <span className="font-mono text-base">{vnaOf(participant.weight)}</span>
             </StatTile>
           </dl>
         </div>

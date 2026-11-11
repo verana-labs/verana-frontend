@@ -8,12 +8,11 @@ import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { isHolderOnboardingMode } from '@/lib/participant-onboarding'
 import { isNativePricing } from '@/lib/pricing-asset'
-import ParticipantTree, { mergeTrees, type ParticipantView, ROOT_NODE_ID } from '@/ui/common/participant-tree'
+import ParticipantTree, { mergeTrees, ROOT_NODE_ID } from '@/ui/common/participant-tree'
 import { withAuthority } from '@/ui/common/participant-tree-filter'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import type { CredentialSchemaData } from '@/ui/dataview/datasections/cs'
 import type { Participant } from '@/ui/dataview/datasections/participant'
-import { ParticipantsTable } from '@/ui/participants/participants-table'
 import { TreeEmpty, TreeError, TreeSkeleton } from '@/ui/participants/tree-states'
 import {
   childRoleOnboardingAction,
@@ -71,17 +70,9 @@ type SchemaParticipantsPanelProps = {
   schemaId: string
   credentialSchema: CredentialSchemaData
   ecosystem: { id: string; did: string; corporationId?: number } | null
-  view: ParticipantView
-  onViewChange: (view: ParticipantView) => void
 }
 
-export function SchemaParticipantsPanel({
-  schemaId,
-  credentialSchema,
-  ecosystem,
-  view,
-  onViewChange,
-}: SchemaParticipantsPanelProps) {
+export function SchemaParticipantsPanel({ schemaId, credentialSchema, ecosystem }: SchemaParticipantsPanelProps) {
   const veranaChain = useVeranaChain()
   const { isWalletConnected, connect } = useChain(veranaChain.chain_name)
   const { actingCorporation } = useUserCorporation()
@@ -90,7 +81,6 @@ export function SchemaParticipantsPanel({
   const [request, setRequest] = useState<TreeRequest>({ role: 'ECOSYSTEM' })
   const [pages, setPages] = useState<Record<string, NodePage>>({})
   const [refreshRoot, setRefreshRoot] = useState(false)
-  const [tableRefresh, setTableRefresh] = useState(0)
   const [participantTree, setParticipantTree] = useState<TreeNode[]>([])
   const rootRows = useRef<Participant[]>([])
 
@@ -255,26 +245,11 @@ export function SchemaParticipantsPanel({
       setNodeRequestParams={setNodeRequestParams}
       moreNodeIds={moreNodeIds}
       loadMore={loadMoreNode}
-      refreshRoot={() => {
-        setRefreshRoot(true)
-        setTableRefresh((count) => count + 1)
-      }}
+      refreshRoot={() => setRefreshRoot(true)}
       onConnect={!isWalletConnected ? connect : undefined}
       onRetryFetch={retryFetch}
       placeholder={placeholder}
       embedded
-      view={view}
-      onViewChange={onViewChange}
-      renderTable={({ selectedId, onSelect, filters, onShowAll }) => (
-        <ParticipantsTable
-          schemaId={schemaId}
-          selectedId={selectedId}
-          onSelect={onSelect}
-          filters={filters}
-          onShowAll={onShowAll}
-          refreshToken={tableRefresh}
-        />
-      )}
     />
   )
 }

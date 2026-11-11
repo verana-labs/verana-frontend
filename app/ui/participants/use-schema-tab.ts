@@ -2,13 +2,12 @@
 
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useCallback } from 'react'
-import type { ParticipantView } from '@/ui/common/participant-tree'
 
 export const SCHEMA_TABS = ['overview', 'participants', 'activity'] as const
 
 export type SchemaTab = (typeof SCHEMA_TABS)[number]
 
-const PARTICIPANT_PARAMS = ['participant', 'view']
+const PARTICIPANT_PARAMS = ['participant']
 
 function isTab(value: string | null): value is SchemaTab {
   return value !== null && (SCHEMA_TABS as readonly string[]).includes(value)
@@ -19,7 +18,6 @@ export function useSchemaTab() {
   const pathname = usePathname()
   const tabParam = searchParams.get('tab')
   const tab: SchemaTab = isTab(tabParam) ? tabParam : 'overview'
-  const view: ParticipantView = searchParams.get('view') === 'table' ? 'table' : 'tree'
 
   const write = useCallback(
     (patch: (params: URLSearchParams) => void, mode: 'push' | 'replace') => {
@@ -45,16 +43,5 @@ export function useSchemaTab() {
     [write]
   )
 
-  const setView = useCallback(
-    (next: ParticipantView) => {
-      write((params) => {
-        params.set('tab', 'participants')
-        if (next === 'tree') params.delete('view')
-        else params.set('view', next)
-      }, 'replace')
-    },
-    [write]
-  )
-
-  return { tab, setTab, view, setView }
+  return { tab, setTab }
 }

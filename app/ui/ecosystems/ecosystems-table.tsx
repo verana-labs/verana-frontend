@@ -7,14 +7,16 @@ import { serviceAvatarUrl, serviceIdenticonUrl } from '@/lib/resolverClient'
 import { cn } from '@/lib/utils'
 import { DataTable, type DataTableColumn, dataTableColumns } from '@/ui/common/data-table/data-table'
 import LogoImage from '@/ui/common/logo-image'
+import { RolePills } from '@/ui/common/role-pills'
 import { ToneTag } from '@/ui/common/tone-tag'
 import TrustBadge from '@/ui/common/trust-badge'
 import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
+import type { ParticipantRole } from '@/ui/dataview/datasections/participant'
 import { ecosystemHref, useEcosystemIdentity } from '@/ui/ecosystems/ecosystem-identity'
 import { statLabel, tr } from '@/ui/ecosystems/i18n'
 import { formatNumber, formatVNAFromUVNA, shortenMiddle } from '@/util/util'
 
-export type EcosystemTableRow = EcosystemListItem & { owned: boolean }
+export type EcosystemTableRow = EcosystemListItem & { owned: boolean; roles: ParticipantRole[] }
 
 const EGF_LINK_CLASS =
   'inline-flex items-center gap-0.5 rounded-md px-1.5 py-1 text-xs font-medium text-primary outline-none transition-colors duration-(--duration-fast) hover:bg-tint-accent focus-visible:ring-[3px] focus-visible:ring-ring/50'
@@ -44,11 +46,7 @@ function IdentityCell({ row }: { row: EcosystemTableRow }) {
             {eco.nameIsDid ? shortenMiddle(row.did, 34) : eco.name}
           </Link>
           <TrustBadge state={eco.trustStatus} size="sm" />
-          {row.owned ? (
-            <ToneTag tone="accent" className="h-5">
-              {tr('roles.controlled', 'CONTROLLED')}
-            </ToneTag>
-          ) : null}
+          <RolePills roles={row.roles} controlled={row.owned} />
           {eco.archived ? (
             <ToneTag dot className="h-5">
               {tr('ecosystems.card.archived', 'Archived')}

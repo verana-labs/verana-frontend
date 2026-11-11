@@ -9,28 +9,43 @@ import { BlockHeader } from '@/ui/common/block-card'
 import { DataTable, type DataTableColumn, dataTableColumns } from '@/ui/common/data-table/data-table'
 import { DataTableToolbar } from '@/ui/common/data-table/data-table-toolbar'
 import LogoImage from '@/ui/common/logo-image'
-import { type Tone, ToneTag } from '@/ui/common/tone-tag'
+import { ToneTag } from '@/ui/common/tone-tag'
 import TrustBadge from '@/ui/common/trust-badge'
 import type { CredentialSchemaListItem } from '@/ui/datatable/columnslist/cs'
-import type { Participant, ParticipantRole, ParticipantState } from '@/ui/dataview/datasections/participant'
+import type { Participant, ParticipantRole } from '@/ui/dataview/datasections/participant'
 import {
   ECOSYSTEM_PARTICIPANTS_PER_SCHEMA,
   useEcosystemParticipants,
 } from '@/ui/ecosystem-detail/use-ecosystem-participants'
-import { participantCardHref, roleBadgeClass, shortenMiddle } from '@/util/util'
+import {
+  isExpireSoon,
+  participantCardHref,
+  participantStateBadgeClass,
+  roleBadgeClass,
+  shortenMiddle,
+} from '@/util/util'
 
 type Row = Participant & { schemaTitle: string }
 
 const ROLES: ParticipantRole[] = ['ECOSYSTEM', 'ISSUER_GRANTOR', 'VERIFIER_GRANTOR', 'ISSUER', 'VERIFIER', 'HOLDER']
 
-const STATE_TONE: Record<ParticipantState, Tone> = {
-  ACTIVE: 'success',
-  FUTURE: 'info',
-  EXPIRED: 'neutral',
-  INACTIVE: 'neutral',
-  REPAID: 'warning',
-  REVOKED: 'destructive',
-  SLASHED: 'destructive',
+const PILL = 'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap'
+
+function StateCell({ row }: { row: Row }) {
+  const badge = participantStateBadgeClass(row.participant_state, isExpireSoon(row.effective_until))
+  return (
+    <span className="flex flex-wrap items-center gap-1">
+      {badge.labelParticipantState ? (
+        <span className={cn(PILL, badge.classParticipantState)}>{badge.labelParticipantState}</span>
+      ) : null}
+      {badge.expireSoon ? (
+        <span className={cn(PILL, badge.expireSoon.classExpireSoon)}>{badge.expireSoon.labelExpireSoon}</span>
+      ) : null}
+      {row.op_state === 'PENDING' ? (
+        <ToneTag tone="warning">{translate('participant.labelopstate.pending')}</ToneTag>
+      ) : null}
+    </span>
+  )
 }
 
 function roleLabel(role: ParticipantRole): string {
@@ -87,14 +102,7 @@ function buildColumns(): DataTableColumn<Row>[] {
       sortFn: 'text',
       meta: { mobile: 'field', className: 'whitespace-nowrap' },
       cell: ({ row }) => (
-        <span
-          className={cn(
-            'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap',
-            roleBadgeClass(row.original.role)
-          )}
-        >
-          {roleLabel(row.original.role)}
-        </span>
+        <span className={cn(PILL, roleBadgeClass(row.original.role))}>{roleLabel(row.original.role)}</span>
       ),
     }),
     col.accessor('schemaTitle', {
@@ -111,16 +119,7 @@ function buildColumns(): DataTableColumn<Row>[] {
       header: translate('datalist.egf.header.status'),
       sortFn: 'text',
       meta: { mobile: 'end' },
-      cell: ({ row }) => (
-        <span className="flex flex-wrap items-center gap-1">
-          <ToneTag tone={STATE_TONE[row.original.participant_state] ?? 'neutral'} dot className="lowercase">
-            {translate(`participant.labelstate.${String(row.original.participant_state ?? '').toLowerCase()}`)}
-          </ToneTag>
-          {row.original.op_state === 'PENDING' ? (
-            <ToneTag tone="warning">{translate('participant.labelopstate.pending')}</ToneTag>
-          ) : null}
-        </span>
-      ),
+      cell: ({ row }) => <StateCell row={row.original} />,
     }),
   ])
 }

@@ -23,6 +23,7 @@ import { useSubmitTxMsgTypeFromObject } from '@/hooks/useSubmitTxMsgTypeFromObje
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
 import { useLanguageLabel } from '@/lib/language'
+import { actionButtonClass } from '@/ui/common/action-button-class'
 import { ActivityHistorySection } from '@/ui/common/activity-history-section'
 import { BlockCard, BlockHeader } from '@/ui/common/block-card'
 import { EntityActionButton } from '@/ui/common/capability-button'
@@ -39,7 +40,6 @@ import { ModalAction } from '@/ui/common/modal-action'
 import ServiceProviderCard from '@/ui/common/service-provider-card'
 import { ToneTag } from '@/ui/common/tone-tag'
 import { resolveTranslatable } from '@/ui/dataview/types'
-import { actionButtonClass } from '@/ui/ecosystem-detail/action-button-class'
 import { CopyButton } from '@/ui/ecosystem-detail/copy-button'
 import { EcosystemDetailSkeleton, SchemaCardsSkeleton } from '@/ui/ecosystem-detail/detail-skeleton'
 import { EcosystemParticipantsTab } from '@/ui/ecosystem-detail/participants-tab'
@@ -191,7 +191,12 @@ export default function EcosystemViewPage() {
             className="bg-card/50 py-16"
             icon={<CloudOffIcon />}
             title={t('error.fetch.ecosystem.title', 'Error fetching ecosystem')}
-            description={t('ecosystems.error.description', 'The indexer did not answer. Check the network and retry.')}
+            description={
+              <>
+                {t('ecosystems.error.description', 'The indexer did not answer. Check the network and retry.')}
+                <span className="mt-2 block font-mono text-xs text-muted-foreground/80">{errorEcosystem}</span>
+              </>
+            }
             action={
               <Button type="button" variant="outline" size="sm" onClick={() => void refetchEcosystem()}>
                 <RotateCwIcon data-icon="inline-start" aria-hidden="true" />

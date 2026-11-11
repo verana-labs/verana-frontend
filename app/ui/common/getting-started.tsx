@@ -2,22 +2,20 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { ArrowRightIcon, ArrowUpRightIcon, CheckIcon } from 'lucide-react'
 import Link from 'next/link'
 import { translate } from '@/i18n/dataview'
-import { quickLinks, stepsGettingStarted } from '@/lib/dashlinks'
+import { type GettingStartedAction, quickLinks, stepsGettingStarted } from '@/lib/dashlinks'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/shadcn/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/shadcn/card'
 import Wallet from '@/wallet/wallet'
 import { resolveTranslatable } from '../dataview/types'
 
-function StepAction({ index, walletConnected }: { index: number; walletConnected: boolean }) {
-  if (index === 0) return walletConnected ? null : <Wallet size="sm" variant="outline" />
+function StepAction({ action, walletConnected }: { action: GettingStartedAction; walletConnected: boolean }) {
+  if (action === 'connect-wallet') return walletConnected ? null : <Wallet size="sm" variant="outline" />
+  if (action === 'account' && !walletConnected) return null
   const link =
-    index === 1
-      ? walletConnected
-        ? { href: '/account', label: translate('gettingstarted.step2.action') }
-        : null
+    action === 'account'
+      ? { href: '/account', label: translate('gettingstarted.step2.action') }
       : { href: '/discover', label: translate('discover.title') }
-  if (!link) return null
   return (
     <Button asChild variant="outline" size="sm">
       <Link href={link.href}>
@@ -45,7 +43,7 @@ export default function GettingStarted({
       <CardContent className="grid grid-cols-1 gap-6 @[640px]/card:grid-cols-[1fr_minmax(0,16rem)]">
         <ol className="flex flex-col">
           {stepsGettingStarted.map((step, idx) => {
-            const done = idx === 0 && walletConnected
+            const done = step.action === 'connect-wallet' && walletConnected
             const last = idx === stepsGettingStarted.length - 1
             return (
               <li key={`step-${idx}`} className="relative flex gap-4 pb-6 last:pb-0">
@@ -72,7 +70,7 @@ export default function GettingStarted({
                     <h3 className="mb-1 font-medium">{step.title}</h3>
                     <p className="text-sm text-muted-foreground">{step.description}</p>
                   </div>
-                  <StepAction index={idx} walletConnected={walletConnected} />
+                  <StepAction action={step.action} walletConnected={walletConnected} />
                 </div>
               </li>
             )

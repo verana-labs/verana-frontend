@@ -17,10 +17,6 @@ import { translate } from '@/i18n/dataview'
 import type { ActivityRow } from '@/lib/activity-history'
 import { cn } from '@/lib/utils'
 import { EmptyState } from '@/ui/common/empty-state'
-import { TONE_CLASSES, type Tone, ToneTag } from '@/ui/common/tone-tag'
-import { relativeTime } from '@/ui/dashboard/format'
-import { shortenMiddle } from '@/util/util'
-import { formatDate } from './shared'
 import {
   Timeline,
   TimelineContent,
@@ -29,7 +25,11 @@ import {
   TimelineItem,
   TimelineSeparator,
   TimelineTitle,
-} from './timeline'
+} from '@/ui/common/timeline'
+import { TONE_CLASSES, type Tone, ToneTag } from '@/ui/common/tone-tag'
+import { relativeTime } from '@/ui/dashboard/format'
+import { shortenMiddle } from '@/util/util'
+import { formatDate } from './shared'
 
 const SUMMARY_KEYS = [
   'title',
@@ -84,7 +84,7 @@ export function ActivityTimeline({ rows, limit }: { rows: ActivityRow[]; limit?:
     return <EmptyState icon={<HistoryIcon />} title={translate('activity.empty')} className="py-8" />
   }
   return (
-    <Timeline>
+    <Timeline compact>
       {visible.map((row) => {
         const summary = summarizeChanges(row.changes)
         const { tone, icon: Icon } = msgTone(row.msg)

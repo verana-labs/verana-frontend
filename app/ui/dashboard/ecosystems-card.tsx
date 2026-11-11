@@ -45,6 +45,7 @@ export function EcosystemsCard({
   const trusted = loaded.filter((ecosystem) => ecosystem.trustData?.trustStatus === 'TRUSTED').length
   const trustedShare = loaded.length > 0 ? (trusted / loaded.length) * 100 : 0
   const topIssued = Math.max(1, ...ranked.map((ecosystem) => ecosystem.issued))
+  const partial = total !== null && total > loaded.length
 
   return (
     <Card className={cn('@container/card', className)}>
@@ -91,6 +92,11 @@ export function EcosystemsCard({
               <span className="font-normal text-muted-foreground"> / {formatCount(loaded.length)}</span>
             </span>
           </div>
+        ) : null}
+        {partial && loaded.length > 0 ? (
+          <p className="text-xs text-muted-foreground">
+            {translate('dashboard.ecosystems.scoped', { loaded: formatCount(loaded.length) })}
+          </p>
         ) : null}
       </CardHeader>
       <CardContent className="px-2 sm:px-4">

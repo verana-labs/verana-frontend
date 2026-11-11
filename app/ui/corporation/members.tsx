@@ -30,7 +30,6 @@ export function MembersSection({
   const reduced = useReducedMotion()
   const rule = currentDecisionRule(policy)
   const total = Number(policy.totalWeight) || members.reduce((sum, member) => sum + (Number(member.weight) || 0), 0)
-  const sorted = [...members].sort((a, b) => Number(b.weight) - Number(a.weight))
   const required = rulePercent(rule, total)
   const facts = [
     {
@@ -80,7 +79,7 @@ export function MembersSection({
         )}
       </div>
       <ul className="space-y-1">
-        {sorted.map((member, index) => {
+        {members.map((member, index) => {
           const share = shareOf(member.weight, total)
           return (
             <li

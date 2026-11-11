@@ -65,7 +65,11 @@ export default function EcosystemsPage() {
         rolesByEcosystem,
         splitControlled: true,
         trustFilter: false,
-      }).map((ecosystem) => ({ ...ecosystem, owned: ecosystem.corporationId === actingCorporationId })),
+      }).map((ecosystem) => ({
+        ...ecosystem,
+        owned: ecosystem.corporationId === actingCorporationId,
+        roles: rolesByEcosystem[ecosystem.id] ?? [],
+      })),
     [actingCorporationId, ecosystemsList, filters, rolesByEcosystem]
   )
 
@@ -213,7 +217,7 @@ export default function EcosystemsPage() {
                     <EcosystemCard
                       ecosystem={ecosystem}
                       enrichment={ecosystem.trustData}
-                      roles={rolesByEcosystem[ecosystem.id]}
+                      roles={ecosystem.roles}
                       controlled={ecosystem.owned}
                     />
                   </StaggerItem>

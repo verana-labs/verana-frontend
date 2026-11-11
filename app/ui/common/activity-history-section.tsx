@@ -157,7 +157,7 @@ export function ActivityHistorySection({
                 <HistoryTimeline
                   key={activeFilter}
                   rows={rows}
-                  initialRows={filterable ? FULL_TIMELINE_ROWS : undefined}
+                  initialRows={filterable ? FULL_TIMELINE_ROWS : rows.length}
                 />
               </>
             )}

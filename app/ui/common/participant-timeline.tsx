@@ -18,7 +18,6 @@ import type { ReactNode } from 'react'
 import { translate } from '@/i18n/dataview'
 import { formatSchemaAmount, type SchemaPricing } from '@/lib/pricing-asset'
 import { cn } from '@/lib/utils'
-import { resolveTranslatable } from '@/ui/dataview/types'
 import {
   TimelineContent,
   TimelineDate,
@@ -26,7 +25,8 @@ import {
   TimelineItem,
   TimelineSeparator,
   TimelineTitle,
-} from '@/ui/participants/timeline'
+} from '@/ui/common/timeline'
+import { resolveTranslatable } from '@/ui/dataview/types'
 import { formatDateTime, formatVNAFromUVNA, shortenMiddle } from '@/util/util'
 import type { ParticipantHistory } from '../dataview/datasections/participant'
 

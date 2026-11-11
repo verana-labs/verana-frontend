@@ -119,25 +119,10 @@ export const STATUS_TONE: Record<string, { tone: Tone; dot: string }> = {
   WITHDRAWN: { tone: 'neutral', dot: 'bg-muted-foreground' },
 }
 
-const STATUS_KEYS: Record<string, string> = {
-  SUBMITTED: 'corporation.proposals.filter.open',
-  ACCEPTED: 'corporation.proposals.filter.accepted',
-  REJECTED: 'corporation.proposals.filter.rejected',
-  ABORTED: 'corporation.proposals.filter.aborted',
-  WITHDRAWN: 'corporation.proposals.filter.withdrawn',
-}
-
-export function statusLabel(status: string): string {
-  return STATUS_KEYS[status] ? translate(STATUS_KEYS[status]) : status
-}
-
-export function StatusBadge({ status, votingEnded = false }: { status: string; votingEnded?: boolean }) {
-  const awaiting = status === 'SUBMITTED' && votingEnded
-  const open = status === 'SUBMITTED' && !votingEnded
-  const tone: Tone = awaiting ? 'neutral' : (STATUS_TONE[status] ?? STATUS_TONE.WITHDRAWN).tone
+export function StatusBadge({ status }: { status: string }) {
   const badge = (
-    <ToneTag tone={tone} dot pulse={open}>
-      {awaiting ? translate('corporation.proposals.status.awaitingtally') : statusLabel(status)}
+    <ToneTag tone={(STATUS_TONE[status] ?? STATUS_TONE.WITHDRAWN).tone} dot>
+      {status}
     </ToneTag>
   )
   if (status !== 'ABORTED') return badge

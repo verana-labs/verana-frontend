@@ -430,7 +430,7 @@ describe('role class helpers', () => {
     expect(roleBadgeClass('VERIFIER_GRANTOR')).toBe(BADGE_TONE.muted)
     expect(roleBadgeClass('ISSUER')).toBe(BADGE_TONE.success)
     expect(roleBadgeClass('VERIFIER')).toBe(BADGE_TONE.warning)
-    expect(roleBadgeClass('HOLDER')).toContain('ring-1')
+    expect(roleBadgeClass('HOLDER')).toContain('pink')
     expect(roleBadgeClass('UNKNOWN' as never)).toBe(BADGE_TONE.muted)
     const known = ['ECOSYSTEM', 'ISSUER_GRANTOR', 'VERIFIER_GRANTOR', 'ISSUER', 'VERIFIER', 'HOLDER'] as const
     expect(new Set(known.map((role) => roleBadgeClass(role))).size).toBe(known.length)

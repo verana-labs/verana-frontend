@@ -385,13 +385,10 @@ export function AddCredentialSchemaWizard({ ecosystemId }: { ecosystemId: number
   }))
 
   const blockedStep = (['schema', 'roles', 'validity'] as const).find((target) => firstInvalid(target))
-  const ecosystemIssue = !ecosystem
-    ? undefined
-    : ecosystem.archived
-      ? translate('wizard.schema.archived')
-      : actingCorporation && actingCorporation.corporation.id !== ecosystem.corporationId
-        ? translate('wizard.schema.notowner')
-        : undefined
+  const ecosystemIssue =
+    ecosystem && actingCorporation && actingCorporation.corporation.id !== ecosystem.corporationId
+      ? translate('wizard.schema.notowner')
+      : undefined
   const reviewBlocker = ecosystemIssue ?? (signing.disabled ? signing.reason : undefined)
   const next = submitted
     ? { label: translate('wizard.schema.view'), onClick: () => router.push(schemasHref) }

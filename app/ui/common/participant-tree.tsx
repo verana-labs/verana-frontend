@@ -1,7 +1,7 @@
 'use client'
 
 import { faPlus } from '@fortawesome/free-solid-svg-icons'
-import { Columns3Icon, ListCollapseIcon, ListTreeIcon, NetworkIcon, Rows3Icon } from 'lucide-react'
+import { Columns3Icon, ListCollapseIcon, ListTreeIcon, NetworkIcon } from 'lucide-react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -17,7 +17,6 @@ import JoinFlow from '@/ui/common/join-flow'
 import { ShowMoreButton } from '@/ui/common/keyset-pagination'
 import type { ParticipantRefreshState, TreeNode } from '@/ui/common/participant-tree-types'
 import { PricingNotice, unsupportedPricingReason } from '@/ui/common/pricing-notice'
-import { SegmentedControl } from '@/ui/common/segmented-control'
 import type { Participant } from '@/ui/dataview/datasections/participant'
 import { resolveTranslatable } from '@/ui/dataview/types'
 import { BlurFade } from '@/ui/motion/blur-fade'
@@ -42,23 +41,9 @@ import { participantAuthority, roleColorClass } from '@/util/util'
 import { renderActionComponent } from './data-view-typed'
 import { ModalAction } from './modal-action'
 import ParticipantCard, { ParticipantCardPlaceholder, participantCardTitle } from './participant-card'
-import {
-  collectParticipantTrust,
-  countParticipants,
-  filterParticipantTree,
-  type ParticipantTreeFilterOptions,
-} from './participant-tree-filter'
+import { collectParticipantTrust, countParticipants, filterParticipantTree } from './participant-tree-filter'
 
 export const ROOT_NODE_ID = 'root'
-
-export type ParticipantView = 'tree' | 'table'
-
-export type ParticipantTableSlot = {
-  selectedId?: string
-  onSelect: (id: string) => void
-  filters: ParticipantTreeFilterOptions
-  onShowAll: () => void
-}
 
 const SIDE_BY_SIDE_MIN_WIDTH = 1040
 
@@ -85,9 +70,6 @@ type ParticipantTreeProps = {
   onRetryFetch?: () => void
   placeholder?: ReactNode
   embedded?: boolean
-  view?: ParticipantView
-  onViewChange?: (view: ParticipantView) => void
-  renderTable?: (slot: ParticipantTableSlot) => ReactNode
 }
 
 function findNodeAndPath(nodes: TreeNode[], id: string): { node?: TreeNode; path: TreeNode[] } {
@@ -211,9 +193,6 @@ export default function ParticipantTree({
   onRetryFetch,
   placeholder,
   embedded = false,
-  view = 'tree',
-  onViewChange,
-  renderTable,
 }: ParticipantTreeProps) {
   const [showUnresolvable, setShowUnresolvable] = useState(false)
   const [showDisabled, setShowDisabled] = useState(false)
@@ -306,10 +285,7 @@ export default function ParticipantTree({
   const detailNode = selection.node ?? linkedNode
   const allHidden = visibleTree.length === 0 && hiddenCount > 0
   const sideBySide =
-    measured &&
-    !isMobile &&
-    layoutWidth >= SIDE_BY_SIDE_MIN_WIDTH &&
-    (Boolean(detailNode) || (view === 'tree' && visibleTree.length > 0))
+    measured && !isMobile && layoutWidth >= SIDE_BY_SIDE_MIN_WIDTH && (Boolean(detailNode) || visibleTree.length > 0)
   const detailFade = useScrollFade<HTMLDivElement>(sideBySide)
   const requestedLinkedId = useRef<string>(undefined)
 
@@ -429,7 +405,6 @@ export default function ParticipantTree({
     ['stats', showStats, setShowStats],
   ]
   const activeColumns = columns.filter(([, checked]) => checked).length
-  const tableView = type === 'participants' && view === 'table' && renderTable !== undefined
 
   return (
     <>
@@ -474,10 +449,10 @@ export default function ParticipantTree({
                     aria-hidden="true"
                     className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-tint-accent text-primary"
                   >
-                    {tableView ? <Rows3Icon className="size-4" /> : <NetworkIcon className="size-4" />}
+                    <NetworkIcon className="size-4" />
                   </span>
-                  {tableView ? tr('participants.title', 'Participants') : treeTitle}
-                  {visibleCount > 0 && !tableView ? (
+                  {treeTitle}
+                  {visibleCount > 0 ? (
                     <Badge variant="secondary" className="tabular-nums">
                       {visibleCount}
                       {moreNodeIds?.size ? '+' : ''}
@@ -486,27 +461,7 @@ export default function ParticipantTree({
                 </h2>
               </CardTitle>
               <CardAction className="flex flex-wrap items-center gap-1 @max-xl/card-header:col-start-1 @max-xl/card-header:row-span-1 @max-xl/card-header:row-start-2 @max-xl/card-header:mt-2 @max-xl/card-header:w-full @max-xl/card-header:justify-self-stretch">
-                {type === 'participants' && onViewChange && renderTable ? (
-                  <SegmentedControl
-                    label={tr('participants.view.label', 'View')}
-                    value={view}
-                    onValueChange={onViewChange}
-                    className="me-1"
-                    items={[
-                      {
-                        value: 'tree',
-                        label: <span className="max-sm:sr-only">{tr('participants.view.tree', 'Tree')}</span>,
-                        icon: <NetworkIcon aria-hidden="true" />,
-                      },
-                      {
-                        value: 'table',
-                        label: <span className="max-sm:sr-only">{tr('participants.view.table', 'Table')}</span>,
-                        icon: <Rows3Icon aria-hidden="true" />,
-                      },
-                    ]}
-                  />
-                ) : null}
-                {visibleTree.length > 0 && !tableView ? (
+                {visibleTree.length > 0 ? (
                   <>
                     <IconTooltipButton
                       label={tr('participants.tree.expandAll', 'Expand all')}
@@ -522,7 +477,7 @@ export default function ParticipantTree({
                     </IconTooltipButton>
                   </>
                 ) : null}
-                {type === 'participants' && !tableView ? (
+                {type === 'participants' ? (
                   <DropdownMenu>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -594,54 +549,43 @@ export default function ParticipantTree({
               <div className="border-t" />
             )}
 
-            {tableView ? (
-              <div className="px-2 py-3 sm:px-3">
-                {renderTable({
-                  selectedId,
-                  onSelect: select,
-                  filters: { includeUnresolvable: showUnresolvable, includeDisabled: showDisabled },
-                  onShowAll: showAll,
-                })}
-              </div>
-            ) : (
-              <div className="px-2 py-3 sm:px-3">
-                {type === 'participants' && moreNodeIds?.size ? (
-                  <p className="px-2 pb-2 text-xs text-muted-foreground">
-                    {resolveTranslatable({ key: 'pagination.loadedOnly' }, translate) ??
-                      'Sorting and filters apply to the loaded results only.'}
-                  </p>
-                ) : null}
-                <HiddenByFilters count={hiddenCount} all={allHidden} onShowAll={showAll} />
-                {placeholder}
-                <ParticipantTreeView
-                  type={type}
-                  label={treeTitle}
-                  nodes={visibleTree}
-                  selectedId={selectedId}
-                  expandedIds={expandedIds}
-                  onExpandedChange={applyExpanded}
-                  showWeight={showWeight}
-                  showBusiness={showBusiness}
-                  showStats={showStats}
-                  onSelect={select}
-                  onToggle={toggle}
-                  onJoin={(node) => {
-                    setNodeRequestParams?.()
-                    setJoinNode(node)
-                  }}
-                  joinBlockedReason={joinBlockedReason}
-                  feePricing={unsupportedPricing}
-                  onConnect={onConnect}
-                  moreNodeIds={moreNodeIds}
-                  onLoadMore={loadMore}
-                />
-                {moreNodeIds?.has(ROOT_NODE_ID) && loadMore ? (
-                  <div className="px-1 pt-1">
-                    <ShowMoreButton onClick={() => loadMore(ROOT_NODE_ID)} />
-                  </div>
-                ) : null}
-              </div>
-            )}
+            <div className="px-2 py-3 sm:px-3">
+              {type === 'participants' && moreNodeIds?.size ? (
+                <p className="px-2 pb-2 text-xs text-muted-foreground">
+                  {resolveTranslatable({ key: 'pagination.loadedOnly' }, translate) ??
+                    'Sorting and filters apply to the loaded results only.'}
+                </p>
+              ) : null}
+              <HiddenByFilters count={hiddenCount} all={allHidden} onShowAll={showAll} />
+              {placeholder}
+              <ParticipantTreeView
+                type={type}
+                label={treeTitle}
+                nodes={visibleTree}
+                selectedId={selectedId}
+                expandedIds={expandedIds}
+                onExpandedChange={applyExpanded}
+                showWeight={showWeight}
+                showBusiness={showBusiness}
+                showStats={showStats}
+                onSelect={select}
+                onToggle={toggle}
+                onJoin={(node) => {
+                  setNodeRequestParams?.()
+                  setJoinNode(node)
+                }}
+                joinBlockedReason={joinBlockedReason}
+                feePricing={unsupportedPricing}
+                onConnect={onConnect}
+                moreNodeIds={moreNodeIds}
+                onLoadMore={loadMore}
+              />
+              {moreNodeIds?.has(ROOT_NODE_ID) && loadMore ? (
+                <div className="px-1 pt-1">
+                  <ShowMoreButton onClick={() => loadMore(ROOT_NODE_ID)} />
+                </div>
+              ) : null}
+            </div>
           </Card>
         </BlurFade>
 

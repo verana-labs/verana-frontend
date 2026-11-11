@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react'
 import { getLocale, translate } from '@/i18n/dataview'
 import { displayedVersion } from '@/lib/gf-document'
 import GfDocumentViewer, { VerificationBadge, type ViewerState } from '@/ui/common/gf-document-viewer'
+import { formatLongDateUserLocale } from '@/util/util'
 import type { EcosystemData } from '../dataview/datasections/ecosystem'
 import { resolveTranslatable } from '../dataview/types'
 
@@ -12,12 +13,6 @@ export type EgfCardProps = {
   ecosystem: EcosystemData
   accepted: boolean
   onAcceptedChange: (next: boolean) => void
-}
-
-function formatLongDate(value: string): string {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleDateString(getLocale(), { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
 export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCardProps) {
@@ -59,7 +54,7 @@ export default function EgfCard({ ecosystem, accepted, onAcceptedChange }: EgfCa
           {[
             `${resolveTranslatable({ key: 'join.egf.version.label' }, translate)} ${version?.version ?? ecosystem.activeVersion}`,
             version?.activeSince
-              ? `${resolveTranslatable({ key: 'join.egf.lastupdate.label' }, translate)} ${formatLongDate(version.activeSince)}`
+              ? `${resolveTranslatable({ key: 'join.egf.lastupdate.label' }, translate)} ${formatLongDateUserLocale(version.activeSince, getLocale())}`
               : null,
           ]
             .filter(Boolean)
