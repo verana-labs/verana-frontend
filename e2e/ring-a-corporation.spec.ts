@@ -679,6 +679,13 @@ test('the corporation page and picker hold at mobile and tablet widths', async (
     .first()
     .click()
   await expect(page.getByText('Acting corporation')).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  await page.getByRole('button', { name: 'More', exact: true }).click()
+  const navigation = page.getByRole('dialog')
+  await navigation.getByRole('button', { name: /Acme Trust AG/ }).click()
+  await expect(page.getByRole('menu').getByText('Acting corporation')).toBeVisible()
+  await page.keyboard.press('Escape')
 
   await page.setViewportSize({ width: 768, height: 1024 })
   await page.goto('/corporation?tab=members')
@@ -1112,6 +1119,8 @@ test('adding a CGF document proposes the exact message with no ecosystem id', as
   await expect(version).toHaveValue('2')
   await page.getByPlaceholder(/search languages/i).fill('German')
   await page.getByRole('option', { name: /\(de\)$/ }).click()
+  await expect(page.getByRole('listbox')).toBeHidden()
+  await expect(page.getByPlaceholder(/search languages/i)).toHaveValue(/\(de\)$/)
   await labelInput(page, 'Governance Framework Document URL').fill(docUrl)
   await page.locator('.btn-action-confirm').click()
 

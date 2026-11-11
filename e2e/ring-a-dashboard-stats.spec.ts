@@ -29,11 +29,11 @@ const SNAPSHOT = {
 
 const RETIRED_ROUTES = ['**/v4/metrics/**', '**/api/network-stats**']
 
-const expectStat = async (page: Page, stat: string, label: string, value: string) => {
+const expectStat = async (page: Page, stat: string, label: string, value: string, shown = value) => {
   const card = page.locator(`[data-stat="${stat}"]`)
   await expect(card).toHaveAttribute('data-stat-value', value)
   await expect(card.getByText(label, { exact: true })).toBeVisible()
-  await expect(card).toContainText(value)
+  await expect(card.locator('[data-visible-value]')).toHaveText(shown)
 }
 
 test.use({ locale: 'en-US' })
@@ -61,7 +61,14 @@ test('Ring A, the dashboard stat cards render from the stats snapshot route', as
   await expectStat(page, 'ecosystems', 'Ecosystems', '13')
   await expectStat(page, 'schemas', 'Schemas', '25')
   await expectStat(page, 'participants', 'Participants', '31')
-  await expectStat(page, 'totalLockedTrustDeposit', 'Total Locked Trust Deposit', '9,007,199,254,740.993123 VNA')
+  await expectStat(
+    page,
+    'totalLockedTrustDeposit',
+    'Total Locked Trust Deposit',
+    '9,007,199,254,740.993123 VNA',
+    '9.01T'
+  )
+  await expect(page.locator('[data-stat="totalLockedTrustDeposit"]')).toContainText('9,007,199,254,740.993123 VNA')
   await expectStat(page, 'issuedCredentials', 'Issued Credentials', '184')
   await expectStat(page, 'verifiedCredentials', 'Verified Credentials', '2,671')
 
