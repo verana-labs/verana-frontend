@@ -939,7 +939,7 @@ const JOINED_ECOSYSTEM_NAME = 'Registry 02'
 const UNTRUSTED_ECOSYSTEM_NAME = 'Registry 03'
 
 const cardNames = (page: Page) =>
-  page.locator('#ecosystems-grid h3').evaluateAll((cards) => cards.map((card) => card.textContent?.trim() ?? ''))
+  page.locator('#ecosystems-grid h2').evaluateAll((cards) => cards.map((card) => card.textContent?.trim() ?? ''))
 
 const issuerParticipant = (id: number, ecosystemId: number) => ({
   id,

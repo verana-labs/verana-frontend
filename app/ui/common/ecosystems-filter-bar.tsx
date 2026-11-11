@@ -17,25 +17,30 @@ export type EcosystemsFilterState = {
   showUntrusted: boolean
 }
 
+// [VFE-PAGE-ES-LIST-2] gives this page no trust filter, so every trust state stays listed.
 export const INITIAL_ECOSYSTEMS_FILTER: EcosystemsFilterState = {
   search: '',
   showArchived: false,
   hideOwned: false,
   hideParticipant: false,
-  showUntrusted: false,
+  showUntrusted: true,
 }
 
 type Props = {
   value: EcosystemsFilterState
   onChange: (next: EcosystemsFilterState) => void
   corporationFilters?: boolean
+  trustFilter?: boolean
   actions?: ReactNode
   children?: ReactNode
 }
 
-export function hasActiveEcosystemFilters(value: EcosystemsFilterState): boolean {
+export function hasActiveEcosystemFilters(
+  value: EcosystemsFilterState,
+  { trustFilter = true }: { trustFilter?: boolean } = {}
+): boolean {
   return (Object.keys(INITIAL_ECOSYSTEMS_FILTER) as (keyof EcosystemsFilterState)[]).some(
-    (key) => value[key] !== INITIAL_ECOSYSTEMS_FILTER[key]
+    (key) => (trustFilter || key !== 'showUntrusted') && value[key] !== INITIAL_ECOSYSTEMS_FILTER[key]
   )
 }
 
@@ -44,7 +49,14 @@ function isTypingTarget(target: EventTarget | null): boolean {
   return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
 }
 
-export default function EcosystemsFilterBar({ value, onChange, corporationFilters = true, actions, children }: Props) {
+export default function EcosystemsFilterBar({
+  value,
+  onChange,
+  corporationFilters = true,
+  trustFilter = true,
+  actions,
+  children,
+}: Props) {
   const searchRef = useRef<HTMLInputElement>(null)
   const isMobile = useIsMobile()
 
@@ -141,13 +153,15 @@ export default function EcosystemsFilterBar({ value, onChange, corporationFilter
             />
           </>
         ) : null}
-        <FilterChip
-          id="show-untrusted"
-          checked={value.showUntrusted}
-          onChange={(v) => set('showUntrusted', v)}
-          label={t('datatable.ecosystem.filter.showUntrusted', 'Show untrusted ecosystems')}
-        />
-        {hasActiveEcosystemFilters(value) ? (
+        {trustFilter ? (
+          <FilterChip
+            id="show-untrusted"
+            checked={value.showUntrusted}
+            onChange={(v) => set('showUntrusted', v)}
+            label={t('datatable.ecosystem.filter.showUntrusted', 'Show untrusted ecosystems')}
+          />
+        ) : null}
+        {hasActiveEcosystemFilters(value, { trustFilter }) ? (
           <Button
             variant="ghost"
             size="sm"

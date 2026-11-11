@@ -7,10 +7,10 @@ import { useRouter } from 'next/navigation'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { ECOSYSTEMS_PAGE_SIZE } from '@/hooks/useEcosystems'
 import { useCorporationRoles } from '@/hooks/useParticipants'
-import { usePersistedFilters } from '@/hooks/usePersistedFilters'
+import { useFilterPersistence } from '@/hooks/usePersistedFilters'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { translate } from '@/i18n/dataview'
-import { roleFiltersPending } from '@/lib/discover-list'
+import { filterEcosystems, roleFiltersPending } from '@/lib/discover-list'
 import { cn } from '@/lib/utils'
 import { useEcosystemsCtx } from '@/providers/api-rest-query-provider-context'
 import { EntityActionButton } from '@/ui/common/capability-button'
@@ -23,7 +23,6 @@ import { EmptyState } from '@/ui/common/empty-state'
 import { GhostEmpty } from '@/ui/common/ghost-empty'
 import KeysetPagination from '@/ui/common/keyset-pagination'
 import { PageHeader } from '@/ui/common/page-header'
-import type { EcosystemListItem } from '@/ui/datatable/columnslist/ecosystem'
 import { EcosystemGridSkeleton } from '@/ui/ecosystems/ecosystem-grid-skeleton'
 import { EcosystemsTable, type EcosystemTableRow } from '@/ui/ecosystems/ecosystems-table'
 import { tr } from '@/ui/ecosystems/i18n'
@@ -37,67 +36,45 @@ const GRID_CLASS = 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 sm:gap-
 
 const GHOST_CLASS = 'min-h-80 overflow-hidden rounded-xl'
 
-function matchesSearch(ecosystem: EcosystemListItem, search: string): boolean {
-  const q = search.trim().toLowerCase()
-  if (!q) return true
-  return [
-    ecosystem.did,
-    ecosystem.corporationId,
-    ecosystem.id,
-    ecosystem.trustData?.serviceName,
-    ecosystem.trustData?.organizationName,
-  ].some((value) => value != null && String(value).toLowerCase().includes(q))
-}
-
-function readListError(ctx: object): string | null | undefined {
-  if (!('errorEcosystems' in ctx)) return undefined
-  const error = ctx.errorEcosystems
-  return typeof error === 'string' && error ? error : null
-}
-
 export default function EcosystemsPage() {
   const router = useRouter()
-  const ecosystemsCtx = useEcosystemsCtx()
   const {
     ecosystemsList,
     ecosystemsLoading,
+    ecosystemsError: listError,
     refetch: refetchEcosystems,
-    setOnlyActiveEcosystem,
+    ecosystemFilters: filters,
+    setEcosystemFilters: setFilters,
     hasNext,
     hasPrevious,
     nextPage,
     previousPage,
-  } = ecosystemsCtx
-  const listError = readListError(ecosystemsCtx)
+  } = useEcosystemsCtx()
+  useFilterPersistence('ecosystems', filters, setFilters, INITIAL_ECOSYSTEMS_FILTER)
   const { actingCorporation, loading: corporationLoading, error: discoveryError } = useUserCorporation()
   const actingCorporationId = actingCorporation?.corporation.id
   const { rolesByEcosystem, rolesLoading, failureReason } = useCorporationRoles(actingCorporationId)
 
-  const [filters, setFilters] = usePersistedFilters('ecosystems', INITIAL_ECOSYSTEMS_FILTER)
-  useEffect(() => {
-    setOnlyActiveEcosystem(!filters.showArchived)
-  }, [filters.showArchived, setOnlyActiveEcosystem])
   const [view, setView] = useEcosystemsView()
   const [introPlayed, setIntroPlayed] = useState(false)
 
-  const filtered = useMemo<EcosystemTableRow[]>(() => {
-    return ecosystemsList
-      .map((ecosystem) => ({ ...ecosystem, owned: ecosystem.corporationId === actingCorporationId }))
-      .filter((ecosystem) => {
-        if (!filters.showArchived && ecosystem.archived) return false
-        const roles = rolesByEcosystem[ecosystem.id] ?? []
-        if (filters.hideOwned && (ecosystem.owned || roles.includes('ECOSYSTEM'))) return false
-        if (filters.hideParticipant && roles.some((role) => role !== 'ECOSYSTEM')) return false
-        if (!matchesSearch(ecosystem, filters.search)) return false
-        if (!filters.showUntrusted && ecosystem.trustData?.trustStatus === 'UNTRUSTED') return false
-        return true
-      })
-  }, [actingCorporationId, ecosystemsList, filters, rolesByEcosystem])
+  const filtered = useMemo<EcosystemTableRow[]>(
+    () =>
+      filterEcosystems(ecosystemsList, filters, {
+        actingCorporationId,
+        rolesByEcosystem,
+        splitControlled: true,
+        trustFilter: false,
+      }).map((ecosystem) => ({ ...ecosystem, owned: ecosystem.corporationId === actingCorporationId })),
+    [actingCorporationId, ecosystemsList, filters, rolesByEcosystem]
+  )
 
   const gridLoading = (ecosystemsLoading && ecosystemsList.length === 0) || roleFiltersPending(filters, rolesLoading)
-  const filtersActive = hasActiveEcosystemFilters(filters)
-  const hiddenUntrusted =
-    !filters.showUntrusted && ecosystemsList.some((ecosystem) => ecosystem.trustData?.trustStatus === 'UNTRUSTED')
+  const filtersActive = hasActiveEcosystemFilters(filters, { trustFilter: false })
+  const errors = [
+    listError,
+    failureReason ? translate('ecosystems.roles.failed', { reason: failureReason }) : null,
+  ].filter((message): message is string => message !== null)
 
   useEffect(() => {
     if (!introPlayed && filtered.length > 0) setIntroPlayed(true)
@@ -116,11 +93,6 @@ export default function EcosystemsPage() {
   }
 
   const openCreate = () => router.push('/ecosystems/add')
-  const showUntrustedAction = hiddenUntrusted ? (
-    <Button variant="outline" size="sm" onClick={() => setFilters({ ...filters, showUntrusted: true })}>
-      {tr('datatable.ecosystem.filter.showUntrusted', 'Show untrusted ecosystems')}
-    </Button>
-  ) : null
   const clearFiltersAction = filtersActive ? (
     <Button variant="outline" size="sm" onClick={() => setFilters({ ...INITIAL_ECOSYSTEMS_FILTER })}>
       {tr('ecosystems.filter.clear', 'Clear filters')}
@@ -162,40 +134,9 @@ export default function EcosystemsPage() {
           className="border-dashed bg-card/50"
           icon={<SearchXIcon />}
           title={tr('datatable.ecosystem.empty', 'No ecosystems match your filters.')}
-          description={
-            hiddenUntrusted && !filtersActive
-              ? tr('ecosystems.empty.untrustedHidden', 'Untrusted ecosystems are hidden by default.')
-              : tr('ecosystems.empty.filtered.description', 'Try another search or clear the filters.')
-          }
-          action={
-            <Actions>
-              {clearFiltersAction}
-              {showUntrustedAction}
-            </Actions>
-          }
+          description={tr('ecosystems.empty.filtered.description', 'Try another search or clear the filters.')}
+          action={<Actions>{clearFiltersAction}</Actions>}
         />
-      )
-    }
-    if (listError === undefined) {
-      return (
-        <GhostEmpty
-          className={GHOST_CLASS}
-          icon={<LayersIcon />}
-          title={tr('ecosystems.empty.unknown.title', 'No ecosystems to show')}
-          description={tr(
-            'ecosystems.empty.unknown.description',
-            'Nothing came back for your corporation. Retry, or find an ecosystem to join in Discover.'
-          )}
-          action={
-            <Actions>
-              {retryAction}
-              {discoverAction}
-              {showArchivedAction}
-            </Actions>
-          }
-        >
-          <EcosystemGridSkeleton ghost count={3} className={cn(GRID_CLASS, 'w-full')} />
-        </GhostEmpty>
       )
     }
     return (
@@ -243,13 +184,16 @@ export default function EcosystemsPage() {
       <EcosystemsFilterBar
         value={filters}
         onChange={setFilters}
+        trustFilter={false}
         actions={<ViewToggle value={view} onChange={setView} />}
       />
 
       <section id="ecosystems-grid" aria-busy={gridLoading || undefined} className="mb-8">
-        {failureReason ? (
-          <div className="error-pane mb-4">{translate('ecosystems.roles.failed', { reason: failureReason })}</div>
-        ) : null}
+        {errors.map((message) => (
+          <div key={message} className="error-pane mb-4">
+            {message}
+          </div>
+        ))}
         {gridLoading ? (
           view === 'list' ? (
             <EcosystemsTable rows={[]} loading />
