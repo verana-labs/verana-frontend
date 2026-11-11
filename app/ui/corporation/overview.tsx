@@ -15,7 +15,7 @@ import { Stagger, StaggerItem } from '@/ui/motion/stagger'
 import { Avatar, AvatarFallback } from '@/ui/shadcn/avatar'
 import { formatVNAFromUVNA, shortenMiddle } from '@/util/util'
 import { CategoryBar } from './category-bar'
-import { hasEnded, messageTitle } from './proposals'
+import { messageTitle } from './proposals'
 import {
   addressInitials,
   atLeast,
@@ -211,7 +211,6 @@ export function RecentProposals({ details }: { details: CorporationDetails }) {
       ) : (
         <Stagger as="ul" className="-mx-2 flex flex-col">
           {recent.map((proposal) => {
-            const votingEnded = proposal.status === 'SUBMITTED' && hasEnded(proposal.votingPeriodEnd)
             const ends = proposal.status === 'SUBMITTED' ? formatRelative(proposal.votingPeriodEnd) : null
             const scale = proposalTallyScale(proposal, details.policy)
             const cast = proposal.tally.yes + proposal.tally.no + proposal.tally.veto + proposal.tally.abstain
@@ -235,7 +234,7 @@ export function RecentProposals({ details }: { details: CorporationDetails }) {
                   <span className="min-w-0 truncate text-sm font-medium text-foreground">
                     {messageTitle(proposal) ?? '—'}
                   </span>
-                  <StatusBadge status={proposal.status} votingEnded={votingEnded} />
+                  <StatusBadge status={proposal.status} />
                   <span className="ms-auto text-xs text-muted-foreground tabular-nums">
                     {ends ?? formatDate(proposal.submitTime)}
                   </span>

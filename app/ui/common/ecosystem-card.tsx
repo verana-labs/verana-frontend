@@ -53,7 +53,7 @@ export default function EcosystemCard({ ecosystem, enrichment, roles = NO_ROLES,
       className={cn(
         'group/eco relative isolate flex h-full cursor-pointer flex-col overflow-hidden rounded-xl bg-card text-card-foreground shadow-card',
         interactiveCard,
-        eco.archived && 'bg-muted/40 dark:bg-muted/30'
+        eco.archived && 'archived-watermark'
       )}
     >
       <DotPattern
@@ -61,7 +61,7 @@ export default function EcosystemCard({ ecosystem, enrichment, roles = NO_ROLES,
         height={16}
         className="-z-10 text-primary/20 transition-opacity duration-(--duration-slow) ease-standard [mask-image:radial-gradient(180px_circle_at_top_right,white,transparent)] opacity-70 group-hover/eco:opacity-100 motion-reduce:transition-none"
       />
-      <div className="flex flex-col gap-3.5 p-5">
+      <div className={cn('flex flex-col gap-3.5 p-5', eco.archived && 'archived-bg')}>
         <div className="flex min-w-0 items-start gap-3.5">
           <LogoImage
             src={eco.identity?.serviceLogoUrl}

@@ -16,6 +16,15 @@ import { formatDecisionRule } from '@/lib/decision-policy'
 import { cn } from '@/lib/utils'
 import type { VoteChoice } from '@/msg/actions_hooks/actionCorporationManage'
 import { GhostEmpty } from '@/ui/common/ghost-empty'
+import {
+  Timeline,
+  TimelineContent,
+  TimelineDate,
+  TimelineIndicator,
+  TimelineItem,
+  TimelineSeparator,
+  TimelineTitle,
+} from '@/ui/common/timeline'
 import { type Tone, ToneTag } from '@/ui/common/tone-tag'
 import { BlurFade } from '@/ui/motion/blur-fade'
 import { Stagger, StaggerItem } from '@/ui/motion/stagger'
@@ -36,17 +45,7 @@ import {
   SectionUnavailable,
   STATUS_TONE,
   StatusBadge,
-  statusLabel,
 } from './shared'
-import {
-  Timeline,
-  TimelineContent,
-  TimelineDate,
-  TimelineIndicator,
-  TimelineItem,
-  TimelineSeparator,
-  TimelineTitle,
-} from './timeline'
 import { revealChild, useScrollEdges } from './use-scroll-edges'
 
 const FILTERS = ['all', 'SUBMITTED', 'ACCEPTED', 'REJECTED', 'ABORTED', 'WITHDRAWN'] as const
@@ -236,7 +235,7 @@ function Lifecycle({ proposal }: { proposal: ProposalRow }) {
       state: open ? 'pending' : 'done',
       dot: open ? undefined : STATUS_TONE[proposal.status]?.dot,
       date: null,
-      content: open ? pending : statusLabel(proposal.status),
+      content: open ? pending : proposal.status,
     },
     {
       key: 'execution',
@@ -251,7 +250,7 @@ function Lifecycle({ proposal }: { proposal: ProposalRow }) {
     },
   ]
   return (
-    <Timeline className="h-fit rounded-lg bg-tint-neutral p-4">
+    <Timeline compact className="h-fit rounded-lg bg-tint-neutral p-4">
       {stages.map((stage) => (
         <TimelineItem key={stage.key} done={stage.state === 'done'}>
           <TimelineIndicator
@@ -390,7 +389,6 @@ function ProposalDetail({ proposal, ctx }: { proposal: ProposalRow; ctx: Proposa
 
 function ProposalCard({ proposal, ctx }: { proposal: ProposalRow; ctx: ProposalContext }) {
   const [open, setOpen] = useState(false)
-  const votingEnded = proposal.status === 'SUBMITTED' && hasEnded(proposal.votingPeriodEnd)
   const ends = proposal.status === 'SUBMITTED' ? formatRelative(proposal.votingPeriodEnd) : null
   const title = messageTitle(proposal)
   const proposers = proposerList(proposal)
@@ -413,7 +411,7 @@ function ProposalCard({ proposal, ctx }: { proposal: ProposalRow; ctx: ProposalC
           <span className="font-mono text-sm font-medium text-muted-foreground">#{proposal.id}</span>
           {title ? <span className="min-w-0 truncate text-sm font-medium text-foreground">{title}</span> : null}
         </button>
-        <StatusBadge status={proposal.status} votingEnded={votingEnded} />
+        <StatusBadge status={proposal.status} />
         {ran ? <ExecutorBadge result={ran} /> : null}
         <span className="pointer-events-none ms-auto flex items-center gap-3 text-xs text-muted-foreground">
           <span className="hidden max-w-64 truncate font-mono md:inline">{proposers}</span>

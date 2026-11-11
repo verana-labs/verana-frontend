@@ -48,11 +48,13 @@ describe('DataTable', () => {
     expect(html).toContain('No results match your search.')
   })
 
-  it('paginates and renders the pager', () => {
+  it('paginates with previous and next only, without page numbers or a total', () => {
     const html = renderToStaticMarkup(<DataTable columns={COLUMNS} data={DATA} label="Items" pageSize={5} />)
     expect(bodyRows(html)).toBe(5)
-    expect(html).toContain('1-5 of 12')
-    expect(html).toContain('aria-current="page"')
+    expect(html).toContain('aria-label="Previous"')
+    expect(html).toContain('aria-label="Next"')
+    expect(html).not.toContain('of 12')
+    expect(html).not.toContain('aria-current="page"')
   })
 
   it('renders skeleton rows while loading and the empty message when there is no data', () => {

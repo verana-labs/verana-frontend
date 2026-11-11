@@ -22,6 +22,11 @@ export function StatNumber({
     if (value > 0) tickersPlayed = true
   }, [value])
 
-  if (!animate) return <span className={cn('tabular-nums', className)}>{format(value)}</span>
+  if (!animate)
+    return (
+      <span data-visible-value className={cn('tabular-nums', className)}>
+        {format(value)}
+      </span>
+    )
   return <NumberTicker value={value} format={format} className={className} />
 }

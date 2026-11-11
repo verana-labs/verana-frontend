@@ -110,12 +110,12 @@ export function countryNameFromCode(code: string | undefined | null): string {
   }
 }
 
-export function formatLongDateUserLocale(date: Date | string) {
+export function formatLongDateUserLocale(date: Date | string, locale?: string) {
   const d = typeof date === 'string' ? new Date(date) : date
 
   if (Number.isNaN(d.getTime())) return ''
 
-  return d.toLocaleDateString(undefined, {
+  return d.toLocaleDateString(locale, {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
@@ -200,6 +200,8 @@ export const BADGE_TONE: Record<BadgeTone, string> = {
 
 const OUTLINE_BADGE = 'bg-transparent text-muted-foreground ring-1 ring-inset ring-border'
 
+const HOLDER_BADGE = 'bg-pink-500/10 text-pink-700 dark:bg-pink-500/20 dark:text-pink-400'
+
 export function roleBadgeClass(role: ParticipantRole) {
   switch (role) {
     case 'ECOSYSTEM':
@@ -211,7 +213,7 @@ export function roleBadgeClass(role: ParticipantRole) {
     case 'VERIFIER':
       return BADGE_TONE.warning
     case 'HOLDER':
-      return `${BADGE_TONE.muted} ring-1 ring-inset ring-border`
+      return HOLDER_BADGE
     default:
       return BADGE_TONE.muted
   }
@@ -228,7 +230,7 @@ export function roleColorClass(type: string): string {
     case 'VERIFIER':
       return 'text-warning'
     case 'HOLDER':
-      return 'text-foreground'
+      return 'text-pink-700 dark:text-pink-400'
     default:
       return 'text-muted-foreground'
   }

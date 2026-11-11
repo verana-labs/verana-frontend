@@ -6,6 +6,7 @@ import { translate } from '@/i18n/dataview'
 import { editableVersions, type GfOwner, type GfVersion, hasDocumentIn, nextVersion } from '@/lib/gf-document'
 import { useLanguageLabel } from '@/lib/language'
 import { useActionEcosystem } from '@/msg/actions_hooks/actionEcosystem'
+import { actionButtonClass } from '@/ui/common/action-button-class'
 import { EntityActionButton } from '@/ui/common/capability-button'
 import EditableDataView from '@/ui/common/data-edit'
 import { ModalAction } from '@/ui/common/modal-action'
@@ -13,7 +14,6 @@ import {
   type GovernanceFrameworkDocumentForm,
   governanceFrameworkDocumentSections,
 } from '@/ui/dataview/datasections/governance-framework-document'
-import { actionButtonClass } from '@/ui/ecosystem-detail/action-button-class'
 
 type GovernanceFrameworkAction = 'MsgAddGovernanceFrameworkDocument' | 'MsgIncreaseActiveGovernanceFrameworkVersion'
 

@@ -13,8 +13,6 @@ import {
 import { useState } from 'react'
 import { translate } from '@/i18n/dataview'
 import type { ActivityRow } from '@/lib/activity-history'
-import { humanizeMsg, summarizeChanges } from '@/ui/corporation/activity'
-import { formatDate } from '@/ui/corporation/shared'
 import {
   Timeline,
   TimelineContent,
@@ -24,7 +22,9 @@ import {
   TimelineItem,
   TimelineSeparator,
   TimelineTitle,
-} from '@/ui/participants/timeline'
+} from '@/ui/common/timeline'
+import { humanizeMsg, summarizeChanges } from '@/ui/corporation/activity'
+import { formatDate } from '@/ui/corporation/shared'
 import { Button } from '@/ui/shadcn/button'
 import { shortenMiddle } from '@/util/util'
 

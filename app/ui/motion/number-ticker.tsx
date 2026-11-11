@@ -57,7 +57,7 @@ export function NumberTicker({ value, format = defaultFormat, className, ...prop
 
   return (
     <span className={cn('inline-block tabular-nums', className)} {...props}>
-      <span ref={ref} aria-hidden="true">
+      <span ref={ref} aria-hidden="true" data-visible-value>
         {format(frame ?? value)}
       </span>
       <span className="sr-only">{format(value)}</span>

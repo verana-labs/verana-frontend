@@ -271,7 +271,7 @@ export default function CredentialSchemaViewPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
   const id = params?.id ?? ''
-  const { tab, setTab, view, setView } = useSchemaTab()
+  const { tab, setTab } = useSchemaTab()
   const { credentialSchema, errorCredentialSchema, refetch: refetchCredentialSchema } = useCredentialSchemaData(id)
   const canonicalJsonSchema = useCanonicalJsonSchema(id)
   const history = useActivityHistory(
@@ -332,10 +332,12 @@ export default function CredentialSchemaViewPage() {
               className="bg-card/50 py-16"
               icon={<CloudOffIcon />}
               title={tr('error.fetch.cs.title', 'Error fetching credential schema')}
-              description={tr(
-                'ecosystems.error.description',
-                'The indexer did not answer. Check the network and retry.'
-              )}
+              description={
+                <>
+                  {tr('ecosystems.error.description', 'The indexer did not answer. Check the network and retry.')}
+                  <span className="mt-2 block font-mono text-xs text-muted-foreground/80">{errorCredentialSchema}</span>
+                </>
+              }
               action={
                 <Button type="button" variant="outline" size="sm" onClick={() => void refetchCredentialSchema()}>
                   <RotateCwIcon data-icon="inline-start" aria-hidden="true" />
@@ -547,8 +549,6 @@ export default function CredentialSchemaViewPage() {
                 ? { id: String(ecosystem.id), did: ecosystem.did, corporationId: ecosystem.corporationId }
                 : null
             }
-            view={view}
-            onViewChange={setView}
           />
         </TabsContent>
 

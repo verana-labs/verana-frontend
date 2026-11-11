@@ -119,7 +119,7 @@ export function ParticipantsByRole({
         >
           <UsersIcon aria-hidden="true" className="size-4 text-muted-foreground" />
           <span className="text-muted-foreground">{translate('dataview.dashboard.fields.participants')}</span>
-          <span className="font-semibold tabular-nums">
+          <span data-visible-value className="font-semibold tabular-nums">
             {total !== null ? (
               formatCount(total)
             ) : rolesError ? (
