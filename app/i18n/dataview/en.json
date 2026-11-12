@@ -204,7 +204,6 @@
   "cs.tab.participants": "Participants",
   "cs.tab.activity": "Activity",
   "cs.facts.lastChange": "Last change {date}",
-  "participants.table.state": "State",
   "participants.description": "Page for viewing/interacting with the participant tree of a given credential schema.",
   "participants.tree.title": "Participant Tree",
   "participants.btn.join": "join",
