@@ -6,6 +6,7 @@ import { translate } from '@/i18n/dataview'
 import { editableVersions, type GfOwner, type GfVersion, hasDocumentIn, nextVersion } from '@/lib/gf-document'
 import { useLanguageLabel } from '@/lib/language'
 import { useActionEcosystem } from '@/msg/actions_hooks/actionEcosystem'
+import { actionButtonClass } from '@/ui/common/action-button-class'
 import { EntityActionButton } from '@/ui/common/capability-button'
 import EditableDataView from '@/ui/common/data-edit'
 import { ModalAction } from '@/ui/common/modal-action'
@@ -83,9 +84,11 @@ function GovernanceFrameworkForm({
 export function GovernanceFrameworkActions({
   target,
   onRefresh,
+  primaryVariant = 'default',
 }: {
   target: GovernanceFrameworkTarget
   onRefresh: () => void
+  primaryVariant?: 'default' | 'outline'
 }) {
   const [action, setAction] = useState<GovernanceFrameworkAction | null>(null)
   const languageLabel = useLanguageLabel(target.language)
@@ -101,13 +104,13 @@ export function GovernanceFrameworkActions({
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
         <EntityActionButton
           msgType="MsgAddGovernanceFrameworkDocument"
           icon={faPlus}
           label={translate(labels.MsgAddGovernanceFrameworkDocument)}
           onClick={() => setAction('MsgAddGovernanceFrameworkDocument')}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium"
+          className={actionButtonClass(primaryVariant)}
         />
         {next ? (
           <EntityActionButton
@@ -116,7 +119,7 @@ export function GovernanceFrameworkActions({
             label={translate(labels.MsgIncreaseActiveGovernanceFrameworkVersion)}
             blockedReason={missingLanguage}
             onClick={() => setAction('MsgIncreaseActiveGovernanceFrameworkVersion')}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium"
+            className={actionButtonClass('outline', '[&>svg:first-child]:text-success')}
           />
         ) : null}
       </div>

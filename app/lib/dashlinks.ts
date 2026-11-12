@@ -109,19 +109,31 @@ const quickLinks: GroupLinks = {
   ],
 }
 
-const stepsGettingStarted = [
+type GettingStartedAction = 'connect-wallet' | 'account' | 'discover'
+
+interface GettingStartedStep {
+  title?: string
+  description?: string
+  action: GettingStartedAction
+}
+
+const stepsGettingStarted: GettingStartedStep[] = [
   {
     title: resolveTranslatable({ key: 'gettingstarted.step1.label' }, translate),
     description: resolveTranslatable({ key: 'gettingstarted.step1.description' }, translate),
+    action: 'connect-wallet',
   },
   {
     title: resolveTranslatable({ key: 'gettingstarted.step2.label' }, translate),
     description: resolveTranslatable({ key: 'gettingstarted.step2.description' }, translate),
+    action: 'account',
   },
   {
     title: resolveTranslatable({ key: 'gettingstarted.step3.label' }, translate),
     description: resolveTranslatable({ key: 'gettingstarted.step3.description' }, translate),
+    action: 'discover',
   },
 ]
 
+export type { GettingStartedAction }
 export { communityLinks, configFooter, footLinks, quickLinks, stepsGettingStarted, veranaLinks }

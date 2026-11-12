@@ -1,0 +1,52 @@
+'use client'
+
+import { CircleCheckIcon, InfoIcon, Loader2Icon, OctagonXIcon, TriangleAlertIcon } from 'lucide-react'
+import { useTheme } from 'next-themes'
+import { Toaster as Sonner, type ToasterProps } from 'sonner'
+
+const Toaster = ({ toastOptions, ...props }: ToasterProps) => {
+  const { theme = 'system' } = useTheme()
+
+  return (
+    <Sonner
+      theme={theme as ToasterProps['theme']}
+      className="toaster group"
+      icons={{
+        success: <CircleCheckIcon className="size-4 text-success" />,
+        info: <InfoIcon className="size-4 text-info" />,
+        warning: <TriangleAlertIcon className="size-4 text-warning" />,
+        error: <OctagonXIcon className="size-4 text-destructive" />,
+        loading: <Loader2Icon className="size-4 animate-spin text-info" />,
+      }}
+      style={
+        {
+          '--normal-bg': 'var(--popover)',
+          '--normal-text': 'var(--popover-foreground)',
+          '--normal-border': 'var(--border)',
+          '--border-radius': 'var(--radius)',
+        } as React.CSSProperties
+      }
+      {...props}
+      toastOptions={{
+        ...toastOptions,
+        classNames: {
+          toast:
+            'cn-toast items-start! gap-3! rounded-xl! border-border/70! pe-10! shadow-pop! [&_[data-icon]]:bg-tint-neutral [&_[data-icon]]:text-muted-foreground',
+          content: 'min-w-0 pt-1',
+          icon: 'm-0! flex! size-7! shrink-0 items-center justify-center rounded-lg [&_svg]:size-4!',
+          success: 'border-success/30! [&_[data-icon]]:bg-tint-success!',
+          error: 'border-destructive/35! [&_[data-icon]]:bg-tint-destructive!',
+          info: '[&_[data-icon]]:bg-tint-info!',
+          default: '[&_[data-icon]]:bg-tint-info!',
+          title: 'text-sm! font-medium! leading-5!',
+          description: 'text-sm! leading-5! text-muted-foreground!',
+          closeButton:
+            'start-auto! end-2! top-2! size-6! transform-none! rounded-md! border-transparent! bg-transparent! text-muted-foreground! hover:bg-muted! hover:text-foreground! focus-visible:ring-3! focus-visible:ring-ring/50!',
+          ...toastOptions?.classNames,
+        },
+      }}
+    />
+  )
+}
+
+export { Toaster }

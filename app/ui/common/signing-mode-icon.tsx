@@ -16,7 +16,7 @@ export function SigningModeIcon({ mode }: { mode: CorporationSigningMode | null 
       icon={mode === 'operator' ? faBolt : faGavel}
       title={label}
       aria-label={label}
-      className={mode === 'operator' ? 'text-amber-500' : 'text-primary-500'}
+      className={mode === 'operator' ? 'text-warning' : 'text-primary'}
     />
   )
 }

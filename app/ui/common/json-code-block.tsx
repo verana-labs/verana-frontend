@@ -1,20 +1,18 @@
 'use client'
 
-import { faCheck, faCopy } from '@fortawesome/free-solid-svg-icons'
+import { CheckIcon, CopyIcon } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Highlight, themes } from 'prism-react-renderer'
 import { useEffect, useMemo, useState } from 'react'
-import IconLabelButton from './icon-label-button'
+import { translate } from '@/i18n/dataview'
+import { cn } from '@/lib/utils'
+import { Button } from '@/ui/shadcn/button'
 
 type JsonCodeBlockProps = {
   value: unknown
   className?: string
 }
 
-/**
- * Lightweight wrapper around prism-react-renderer to display JSON content
- * with syntax highlighting, similar to Docusaurus code blocks.
- */
 export default function JsonCodeBlock({ value, className }: JsonCodeBlockProps) {
   const code = useMemo(() => {
     if (typeof value === 'string') {
@@ -55,30 +53,28 @@ export default function JsonCodeBlock({ value, className }: JsonCodeBlockProps) 
         setCopied(true)
         return
       }
-    } catch {
-      // Swallow copy errors to avoid breaking the UI when clipboard is unavailable
-    }
+    } catch {}
     setCopied(false)
   }
 
+  const copyLabel = copied ? translate('copied.label') : translate('messages.copy')
+
   return (
-    <div className="relative">
+    <div className="group/code relative">
       <Highlight code={code} language="json" theme={resolvedTheme === 'dark' ? themes.vsDark : themes.github}>
         {({ className: highlightClassName, style, tokens, getLineProps, getTokenProps }) => (
           <pre
-            className={[highlightClassName, className, 'bg-[#f6f8fa] dark:bg-slate-900 dark:text-slate-200']
-              .filter(Boolean)
-              .join(' ')}
+            className={cn(highlightClassName, className, 'font-mono')}
             style={{
               ...style,
               margin: 0,
-              padding: '0.75rem 1rem',
+              padding: '0.75rem 3rem 0.75rem 1rem',
               overflowX: 'auto',
               borderRadius: '0.5rem',
               background: 'transparent',
               color: style.color ?? 'inherit',
-              fontSize: '0.85rem',
-              lineHeight: 1.5,
+              fontSize: '0.8125rem',
+              lineHeight: 1.6,
             }}
           >
             {tokens.map((line, i) => {
@@ -95,12 +91,17 @@ export default function JsonCodeBlock({ value, className }: JsonCodeBlockProps) 
           </pre>
         )}
       </Highlight>
-      <IconLabelButton
-        icon={copied ? faCheck : faCopy}
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
         onClick={() => handleCopy()}
-        title={copied ? 'Copied' : 'Copy'}
-        className="absolute right-3 top-3"
-      />
+        title={copyLabel}
+        aria-label={copyLabel}
+        className="absolute top-2 right-2 bg-background/80 text-muted-foreground backdrop-blur-sm hover:text-foreground"
+      >
+        {copied ? <CheckIcon aria-hidden="true" /> : <CopyIcon aria-hidden="true" />}
+      </Button>
     </div>
   )
 }

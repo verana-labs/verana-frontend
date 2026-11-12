@@ -1,4 +1,5 @@
 import { DidTrustState } from '@/lib/resolverClient'
+import type { Participant } from '@/ui/dataview/datasections/participant'
 import { participantAuthority } from '@/util/util'
 import type { TreeNode } from './participant-tree-types'
 
@@ -23,21 +24,29 @@ export function collectParticipantTrust(nodes: TreeNode[]): Record<string, DidTr
   return trustByDid
 }
 
-function isNodeVisible(
-  node: TreeNode,
-  options: ParticipantTreeFilterOptions,
-  trustByDid: Record<string, DidTrustState | undefined>
+export function isParticipantShown(
+  participant: Participant | undefined,
+  trust: DidTrustState | undefined,
+  options: ParticipantTreeFilterOptions
 ): boolean {
   // Entries with a pending onboarding process are always shown: they are the
   // validator's work queue, and their DID is often not trust-resolvable yet
   // (obtaining the credential that makes it resolvable is the very point of
   // the onboarding), so neither filter applies to them.
-  if (node.participant?.op_state === 'PENDING') return true
+  if (participant?.op_state === 'PENDING') return true
 
-  const stateOk = options.includeDisabled || node.participant?.participant_state === 'ACTIVE'
-  const did = node.participant?.did
-  const trustOk = options.includeUnresolvable || (!!did && trustByDid[did] === 'TRUSTED')
+  const stateOk = options.includeDisabled || participant?.participant_state === 'ACTIVE'
+  const trustOk = options.includeUnresolvable || (!!participant?.did && trust === 'TRUSTED')
   return stateOk && trustOk
+}
+
+function isNodeVisible(
+  node: TreeNode,
+  options: ParticipantTreeFilterOptions,
+  trustByDid: Record<string, DidTrustState | undefined>
+): boolean {
+  const did = node.participant?.did
+  return isParticipantShown(node.participant, did ? trustByDid[did] : undefined, options)
 }
 
 /**

@@ -1,6 +1,12 @@
 'use client'
 
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { ExternalLinkIcon } from 'lucide-react'
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef } from 'react'
+import { type ExternalToast, toast } from 'sonner'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { translate } from '@/i18n/dataview'
+import { Toaster } from '@/ui/shadcn/sonner'
+import { Spinner } from '@/ui/shadcn/spinner'
 
 type NotificationType = 'success' | 'error' | 'info' | 'inProgress'
 
@@ -10,17 +16,34 @@ export type NotificationLink = {
   label: string
 }
 
-type Notification = {
-  title?: string
-  message: string
-  type: NotificationType
-  link?: NotificationLink
-}
-
 type NotificationContextType = {
   // Notify shows a notification and returns a promise that resolves when the notification is closed
   notify: (message: string, type?: NotificationType, title?: string, link?: NotificationLink) => Promise<void>
 }
+
+type ShownToast = {
+  id: string
+  type: NotificationType
+  settle: () => void
+  abandon: () => void
+}
+
+const DURATION: Record<NotificationType, number> = {
+  success: 5000,
+  error: 10000,
+  info: Number.POSITIVE_INFINITY,
+  inProgress: Number.POSITIVE_INFINITY,
+}
+
+const TYPE_CLASS: Record<NotificationType, string> = {
+  success: 'notify-success',
+  error: 'notify-error',
+  info: 'notify-info',
+  inProgress: 'notify-in-progress',
+}
+
+const PHONE_OFFSET = { bottom: 'calc(var(--tab-bar-height) + 0.5rem)', right: 16, left: 16 }
+const DESKTOP_OFFSET = { bottom: 24, right: 24 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined)
 
@@ -30,144 +53,135 @@ export const useNotification = () => {
   return context
 }
 
+function NotificationBody({ message, link }: { message?: string; link?: NotificationLink }) {
+  return (
+    <>
+      {message ? <span className="block text-pretty [overflow-wrap:anywhere]">{message}</span> : null}
+      {link ? (
+        <a
+          href={link.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="notify-msg-link mt-1.5 inline-flex max-w-full items-center gap-1 rounded-sm font-mono text-xs text-primary underline underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <span className="[overflow-wrap:anywhere]">{link.label}</span>
+          <ExternalLinkIcon aria-hidden="true" className="size-3 shrink-0" />
+        </a>
+      ) : null}
+    </>
+  )
+}
+
+function showToast(entry: ShownToast, message: string, title?: string, link?: NotificationLink) {
+  const { id, type, settle } = entry
+  const options: ExternalToast = {
+    id,
+    description: title || link ? <NotificationBody message={title ? message : undefined} link={link} /> : undefined,
+    duration: DURATION[type],
+    className: `notify-notification ${TYPE_CLASS[type]}`,
+    icon: undefined,
+    onDismiss: settle,
+    onAutoClose: settle,
+  }
+  const text = title || message
+  const heading =
+    type === 'error' ? (
+      <span role="alert" data-toast-alert className="[overflow-wrap:anywhere]">
+        {text}
+      </span>
+    ) : (
+      <span className="[overflow-wrap:anywhere]">{text}</span>
+    )
+  if (type === 'success') toast.success(heading, options)
+  else if (type === 'error') toast.error(heading, options)
+  else if (type === 'info') toast.info(heading, options)
+  else toast(heading, { ...options, icon: <Spinner aria-hidden="true" className="text-info" /> })
+}
+
+function updatesInPlace(previous: ShownToast, type: NotificationType): boolean {
+  if (Number.isFinite(DURATION[previous.type])) return false
+  return type !== 'inProgress' || previous.type === 'inProgress'
+}
+
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
-  const [notification, setNotification] = useState<Notification | null>(null)
-  const [visible, setVisible] = useState(false)
+  const shown = useRef<ShownToast | null>(null)
+  const sequence = useRef(0)
+  const disposed = useRef(false)
 
-  // Reference to the promise resolver, so we can resolve when notification closes
-  const resolveClose = useRef<(() => void) | null>(null)
+  useEffect(() => {
+    disposed.current = false
+    return () => {
+      disposed.current = true
+      const current = shown.current
+      if (!current) return
+      current.abandon()
+      shown.current = null
+      toast.dismiss(current.id)
+    }
+  }, [])
 
-  // Notify returns a promise that resolves when the notification closes.
-  // It uses only a ref and state setters, so its identity does not change between renders.
   const notify = useCallback(
     (message: string, type: NotificationType = 'success', title?: string, link?: NotificationLink) => {
-      // Resolve the promise of the previous notification, if there is one
-      if (resolveClose.current) {
-        resolveClose.current()
-        resolveClose.current = null
+      // sonner's store outlives this provider, so a stale caller must not show a toast or continue after notify
+      if (disposed.current) return new Promise<void>(() => {})
+      const previous = shown.current
+      previous?.settle()
+      let id: string
+      // sonner only resets remainingTime when duration changes, so a paused finite toast would resume short
+      if (previous && updatesInPlace(previous, type)) {
+        id = previous.id
+      } else {
+        if (previous) toast.dismiss(previous.id)
+        sequence.current += 1
+        id = `notification-${sequence.current}`
       }
-      setNotification({ message, type, title, link })
-      setVisible(true)
       return new Promise<void>((resolve) => {
-        resolveClose.current = resolve
+        let done = false
+        let timer: ReturnType<typeof setTimeout> | undefined
+        const entry: ShownToast = {
+          id,
+          type,
+          settle: () => {
+            if (done) return
+            done = true
+            clearTimeout(timer)
+            if (shown.current === entry) shown.current = null
+            resolve()
+          },
+          abandon: () => {
+            done = true
+            clearTimeout(timer)
+          },
+        }
+        shown.current = entry
+        showToast(entry, message, title, link)
+        // sonner pauses its own timer on hover and hidden tabs, and callers await this before releasing the action
+        if (Number.isFinite(DURATION[type])) {
+          timer = setTimeout(() => {
+            toast.dismiss(id)
+            entry.settle()
+          }, DURATION[type])
+        }
       })
     },
     []
   )
   const contextValue = useMemo(() => ({ notify }), [notify])
-
-  // Handle automatic closing for 'success' and 'error' types, no timeout for 'info'
-  useEffect(() => {
-    if (!notification) return
-    setVisible(true)
-    if (notification.type === 'info' || notification.type === 'inProgress') return // no timeout for info type
-    const duration = notification.type === 'error' ? 10000 : 5000
-    const timer = setTimeout(() => setVisible(false), duration)
-    return () => clearTimeout(timer)
-  }, [notification])
-
-  // When the notification is hidden, remove it from state and resolve the promise
-  useEffect(() => {
-    if (!visible && notification) {
-      const timeout = setTimeout(() => {
-        setNotification(null)
-        if (resolveClose.current) {
-          resolveClose.current()
-          resolveClose.current = null
-        }
-      }, 400) // match the transition duration
-      return () => clearTimeout(timeout)
-    }
-  }, [visible, notification])
+  const isPhone = useIsMobile()
 
   return (
     <NotificationContext.Provider value={contextValue}>
-      <div className="relative w-full h-full">
-        {children}
-        <NotificationContainer notification={notification} visible={visible} onClose={() => setVisible(false)} />
-      </div>
+      {children}
+      <Toaster
+        position={isPhone ? 'bottom-center' : 'bottom-right'}
+        closeButton
+        hotkey={[]}
+        swipeDirections={[]}
+        offset={isPhone ? PHONE_OFFSET : DESKTOP_OFFSET}
+        mobileOffset={PHONE_OFFSET}
+        containerAriaLabel={translate('notification.region')}
+        toastOptions={{ closeButtonAriaLabel: translate('common.close') }}
+      />
     </NotificationContext.Provider>
-  )
-}
-
-function NotificationContainer({
-  notification,
-  visible,
-  onClose,
-}: {
-  notification: Notification | null
-  visible: boolean
-  onClose: () => void
-}) {
-  if (!notification) return null
-  return (
-    <div className={`notify-container`} style={{ minWidth: 0, minHeight: 0 }}>
-      <div
-        className={`notify-notification 
-          ${visible ? 'notify-visible' : 'notify-invisible'}
-          ${
-            notification.type === 'success'
-              ? 'notify-success'
-              : notification.type === 'error'
-                ? 'notify-error'
-                : notification.type === 'inProgress'
-                  ? 'notify-in-progress'
-                  : 'notify-info'
-          }
-        `}
-        role={notification.type === 'error' ? 'alert' : undefined}
-        aria-live="polite"
-      >
-        {getIcon(notification.type)}
-        <div className="notify-msg-container">
-          {notification.title && <div className="notify-msg-title">{notification.title}</div>}
-          <span className="notify-msg-message">{notification.message}</span>
-          {notification.link && (
-            <a href={notification.link.href} target="_blank" rel="noopener noreferrer" className="notify-msg-link">
-              {notification.link.label}
-            </a>
-          )}
-        </div>
-        <button onClick={onClose} className="notify-btn-close" aria-label="Close" title="Close" tabIndex={0}>
-          ×
-        </button>
-      </div>
-    </div>
-  )
-}
-
-function getIcon(type: NotificationType) {
-  if (type === 'success') {
-    return (
-      <svg className="notify-icon-success" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8 12l2.5 2.5L16 9" />
-      </svg>
-    )
-  }
-  if (type === 'error') {
-    return (
-      <svg className="notify-icon-error" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 9l6 6m0-6l-6 6" />
-      </svg>
-    )
-  }
-  if (type === 'inProgress') {
-    // Spinner
-    return (
-      <svg className="notify-icon-in-progress" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-      </svg>
-    )
-  }
-  // info
-  return (
-    <svg className="notify-icon-info" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white" />
-      <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" strokeWidth="2" />
-      <circle cx="12" cy="16" r="1" fill="currentColor" />
-    </svg>
   )
 }

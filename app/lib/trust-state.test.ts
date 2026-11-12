@@ -3,25 +3,25 @@ import { describe, expect, it } from 'vitest'
 import { trustStateBadge } from '@/lib/trust-state'
 
 describe('trustStateBadge', () => {
-  it('maps TRUSTED to a green certificate badge', () => {
+  it('maps TRUSTED to a success certificate badge', () => {
     const badge = trustStateBadge('TRUSTED')
     expect(badge.label).toBe('Trusted')
     expect(badge.icon).toBe(faCertificate)
-    expect(badge.iconColorClass).toBe('text-green-500')
+    expect(badge.iconColorClass).toBe('text-success')
   })
 
-  it('maps UNTRUSTED to a red exclamation badge', () => {
+  it('maps UNTRUSTED to a destructive exclamation badge', () => {
     const badge = trustStateBadge('UNTRUSTED')
     expect(badge.label).toBe('Untrusted')
     expect(badge.icon).toBe(faCircleExclamation)
-    expect(badge.iconColorClass).toBe('text-red-500')
+    expect(badge.iconColorClass).toBe('text-destructive')
   })
 
-  it('maps UNRESOLVED to a gray question badge', () => {
+  it('maps UNRESOLVED to a muted question badge', () => {
     const badge = trustStateBadge('UNRESOLVED')
     expect(badge.label).toBe('Unresolved')
     expect(badge.icon).toBe(faCircleQuestion)
-    expect(badge.iconColorClass).toBe('text-gray-400 dark:text-gray-500')
+    expect(badge.iconColorClass).toBe('text-muted-foreground')
   })
 
   it('treats undefined as unresolved', () => {

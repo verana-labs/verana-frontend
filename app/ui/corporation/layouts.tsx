@@ -1,6 +1,7 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { HistoryIcon, InfoIcon } from 'lucide-react'
+import { type ReactNode, useCallback, useEffect, useRef } from 'react'
 import type { CorporationDetails } from '@/hooks/useCorporationDetails'
 import type { GranterBalance } from '@/hooks/useGranterBalance'
 import type { ActionSigning } from '@/hooks/useSigningMode'
@@ -8,16 +9,21 @@ import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import type { OperatorGrantOptions } from '@/lib/operator-grant'
 import type { DidEnrichment } from '@/lib/resolverClient'
+import { cn } from '@/lib/utils'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
+import { BlockCard } from '@/ui/common/block-card'
+import { BlurFade } from '@/ui/motion/blur-fade'
+import { TabIndicator } from '@/ui/motion/tab-indicator'
 import { ActivityTimeline } from './activity'
 import { GovernanceSection } from './governance'
 import { CorporationHeader, RotateDidForm } from './header'
 import { MembersSection } from './members'
 import { OperatorsSection } from './operators'
-import { OverviewFacts } from './overview'
+import { MemberWeights, OverviewDetails, OverviewTiles, RecentProposals } from './overview'
 import { type ProposalContext, ProposalsSection } from './proposals'
-import { atLeast, Card, SectionTitle } from './shared'
+import { atLeast } from './shared'
 import { TrustDepositSection } from './trust-deposit'
+import { revealChild, useScrollEdges } from './use-scroll-edges'
 
 export const TABS = ['overview', 'members', 'governance', 'deposit', 'operators', 'proposals'] as const
 export type CorporationTab = (typeof TABS)[number]
@@ -112,9 +118,27 @@ function section(view: CorporationView, tab: CorporationTab) {
       )
     default:
       return (
-        <Card id="overview">
-          <OverviewFacts details={details} openProposals={view.openProposals} />
-        </Card>
+        <div id="overview" className="space-y-4 lg:space-y-5">
+          <OverviewTiles details={details} openProposals={view.openProposals} />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-5">
+            <div id="activity" className="min-w-0 scroll-mt-20 lg:col-span-2">
+              <BlockCard icon={<HistoryIcon />} title={translate('activity.title')} className="h-full">
+                <ActivityTimeline rows={details.history} limit={5} />
+              </BlockCard>
+            </div>
+            <BlockCard icon={<InfoIcon />} title={translate('corporation.page.details')}>
+              <OverviewDetails details={details} />
+            </BlockCard>
+            {details.degraded.proposals ? null : (
+              <div className="lg:col-span-2">
+                <RecentProposals details={details} />
+              </div>
+            )}
+            <div className={details.degraded.proposals ? 'lg:col-span-3' : undefined}>
+              <MemberWeights details={details} walletAddress={view.walletAddress} />
+            </div>
+          </div>
+        </div>
       )
   }
 }
@@ -128,33 +152,55 @@ export function TabsLayout({
   tab: CorporationTab
   onSelectTab: (tab: CorporationTab) => void
 }) {
+  const navRef = useRef<HTMLElement>(null)
+  const revealActive = useCallback(() => {
+    const nav = navRef.current
+    const active = nav?.querySelector<HTMLElement>(`[data-tab="${tab}"]`)
+    if (nav && active) revealChild(nav, active)
+  }, [tab])
+  useEffect(revealActive, [revealActive])
+  const fade = useScrollEdges(navRef, revealActive)
   const nav = (
-    <nav className="mt-6 flex flex-wrap gap-1 border-b border-neutral-20 dark:border-neutral-70 -mb-6 -mx-6 px-6">
-      {TABS.map((entry) => (
-        <button
-          key={entry}
-          type="button"
-          onClick={() => onSelectTab(entry)}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${
-            tab === entry
-              ? 'border-primary-600 text-primary-700 dark:text-primary-300'
-              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
-          }`}
-        >
-          {translate(`corporation.tab.${entry}`)}
-          {entry === 'proposals' && view.openProposals > 0 ? (
-            <span className="ml-2 min-w-4 h-4 px-1 bg-red-500 text-white text-xs font-bold rounded-full inline-flex items-center justify-center leading-none">
-              {atLeast(view.openProposals, view.details.partial.proposals)}
-            </span>
-          ) : null}
-        </button>
-      ))}
-    </nav>
+    <div className="border-t border-border">
+      <nav
+        ref={navRef}
+        aria-label={translate('corporation.page.title')}
+        className={cn('flex gap-1 overflow-x-auto px-3 [scrollbar-width:none] sm:px-4', fade)}
+      >
+        {TABS.map((entry) => {
+          const active = tab === entry
+          return (
+            <button
+              key={entry}
+              type="button"
+              data-tab={entry}
+              onClick={() => onSelectTab(entry)}
+              aria-current={active ? 'page' : undefined}
+              className={cn(
+                'relative isolate flex h-11 shrink-0 items-center gap-2 px-3 text-sm font-medium whitespace-nowrap outline-none transition-colors duration-(--duration-base) ease-standard focus-visible:rounded-md focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-inset',
+                active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {translate(`corporation.tab.${entry}`)}
+              {entry === 'proposals' && view.openProposals > 0 ? (
+                <span className="inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-destructive px-1 text-[11px] leading-none font-semibold text-white tabular-nums dark:text-neutral-950">
+                  {atLeast(view.openProposals, view.details.partial.proposals)}
+                </span>
+              ) : null}
+              {active ? (
+                <TabIndicator layoutId="corporation-tabs" variant="underline" className="-bottom-px rounded-full" />
+              ) : null}
+            </button>
+          )
+        })}
+      </nav>
+    </div>
   )
   return (
     <>
       <CorporationHeader
         profile={view.details.profile}
+        members={view.details.members}
         enrichment={view.enrichment}
         balance={view.balance}
         rotate={view.rotate}
@@ -164,17 +210,9 @@ export function TabsLayout({
         rotateForm={view.rotate.mode ? <RotateDidForm mode={view.rotate.mode} onSubmit={view.onRotate} /> : null}
         nav={nav}
       />
-      {section(view, tab)}
-      {tab === 'overview' ? (
-        <div className="mt-6">
-          <Card id="activity">
-            <div className="mb-3">
-              <SectionTitle>{translate('activity.title')}</SectionTitle>
-            </div>
-            <ActivityTimeline rows={view.details.history} limit={5} />
-          </Card>
-        </div>
-      ) : null}
+      <BlurFade key={tab} className="mt-5">
+        {section(view, tab)}
+      </BlurFade>
     </>
   )
 }
