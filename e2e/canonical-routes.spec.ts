@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test'
 import { connectWallet } from './support/connect'
+import { stubCorporationRoutes } from './support/mock-chain'
 
 test('connected navigation and retired links resolve to canonical V4 routes', async ({ page }) => {
+  await stubCorporationRoutes(page)
   await connectWallet(page)
 
   await expect(page.locator('a[href="/ecosystems"]').first()).toBeVisible()
