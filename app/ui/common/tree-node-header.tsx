@@ -67,6 +67,20 @@ function JoinButton({
   )
 }
 
+function UnauthorizedBadge() {
+  const { reason } = useActionSigning('MsgSetParticipantOPToValidated')
+  if (!reason) return null
+  return (
+    <span
+      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300"
+      title={reason}
+    >
+      {translate('task.unauthorized')}
+      <span className="sr-only">{reason}</span>
+    </span>
+  )
+}
+
 export default function TreeNodeHeader({
   node,
   type,
@@ -238,6 +252,7 @@ export default function TreeNodeHeader({
             >
               {participant.role}
             </span>
+            <UnauthorizedBadge />
           </>
         ) : null}
       </div>
