@@ -7,8 +7,13 @@ import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
+import type { DidEnrichment } from '@/lib/resolverClient'
 import { cn } from '@/lib/utils'
-import { CorporationMembershipRow, corporationDisplayName } from '@/ui/common/corporation-membership-row'
+import {
+  CorporationAvatar,
+  CorporationMembershipRow,
+  corporationDisplayName,
+} from '@/ui/common/corporation-membership-row'
 import { nameInitials } from '@/ui/corporation/shared'
 import {
   DropdownMenu,
@@ -30,21 +35,29 @@ export function actingRoleLabel(membership: CorporationMembership | null): strin
   return translate('shell.switcher.role.member')
 }
 
-function CorporationMark({ name, warn }: { name: string | null; warn: boolean }) {
+function CorporationMark({
+  name,
+  enrichment,
+  warn,
+}: {
+  name: string | null
+  enrichment: DidEnrichment | null | undefined
+  warn: boolean
+}) {
   return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        'flex size-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-semibold',
+    <CorporationAvatar
+      enrichment={enrichment}
+      fallback={name ? nameInitials(name) : <Building2Icon className="size-4" />}
+      className="size-8"
+      fallbackClassName={cn(
+        'text-[11px]',
         name
           ? 'bg-linear-to-br from-primary-400 to-primary-700 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25)]'
           : warn
             ? 'bg-warning/15 text-warning ring-1 ring-warning/30'
             : 'bg-primary/10 text-primary ring-1 ring-primary/15'
       )}
-    >
-      {name ? nameInitials(name) : <Building2Icon className="size-4" />}
-    </span>
+    />
   )
 }
 
@@ -99,7 +112,11 @@ export function TeamSwitcher() {
               )}
             >
               <span className="relative">
-                <CorporationMark name={corporationName} warn={needsSelection} />
+                <CorporationMark
+                  name={corporationName}
+                  enrichment={actingCorporation?.corporation.trustData}
+                  warn={needsSelection}
+                />
                 {othersNeedAttention ? (
                   <span
                     aria-hidden="true"

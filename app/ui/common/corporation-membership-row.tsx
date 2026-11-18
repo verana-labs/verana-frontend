@@ -1,16 +1,42 @@
 'use client'
 
 import { CheckIcon } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { translate } from '@/i18n/dataview'
 import type { CorporationAttention } from '@/lib/corporation-attention'
 import type { CorporationMembership } from '@/lib/corporation-discovery'
 import type { DidEnrichment } from '@/lib/resolverClient'
 import { cn } from '@/lib/utils'
 import { atLeast, nameInitials } from '@/ui/corporation/shared'
+import { Avatar, AvatarFallback, AvatarImage } from '@/ui/shadcn/avatar'
 import { countryCodeToFlag } from '@/util/util'
 
 export function corporationDisplayName(enrichment: DidEnrichment | null | undefined): string | null {
   return enrichment?.organizationName ?? enrichment?.serviceName ?? null
+}
+
+export function corporationLogoUrl(enrichment: DidEnrichment | null | undefined): string | undefined {
+  return enrichment?.organizationLogoUrl ?? enrichment?.serviceLogoUrl
+}
+
+export function CorporationAvatar({
+  enrichment,
+  fallback,
+  className,
+  fallbackClassName,
+}: {
+  enrichment: DidEnrichment | null | undefined
+  fallback: ReactNode
+  className?: string
+  fallbackClassName?: string
+}) {
+  const logo = corporationLogoUrl(enrichment)
+  return (
+    <Avatar aria-hidden="true" className={cn('rounded-lg bg-card after:rounded-lg *:rounded-lg', className)}>
+      {logo ? <AvatarImage src={logo} alt="" referrerPolicy="no-referrer" /> : null}
+      <AvatarFallback className={cn('rounded-lg font-semibold', fallbackClassName)}>{fallback}</AvatarFallback>
+    </Avatar>
+  )
 }
 
 function AttentionBadge({
@@ -57,15 +83,15 @@ export function CorporationMembershipRow({
   return (
     <>
       <span className="flex min-w-0 items-start gap-2.5">
-        <span
-          aria-hidden="true"
-          className={cn(
-            'mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-semibold ring-1',
+        <CorporationAvatar
+          enrichment={data}
+          fallback={nameInitials(name ?? corporation.did)}
+          className="mt-0.5 size-8"
+          fallbackClassName={cn(
+            'text-[11px] ring-1',
             isActing ? 'bg-primary text-primary-foreground ring-primary' : 'bg-primary/10 text-primary ring-primary/15'
           )}
-        >
-          {nameInitials(name ?? corporation.did)}
-        </span>
+        />
         <span className="min-w-0">
           <span className="flex items-center gap-1.5">
             {flag ? <span aria-hidden="true">{flag}</span> : null}

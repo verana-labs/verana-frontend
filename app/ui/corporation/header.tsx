@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import type { CorporationSigningMode } from '@/msg/actions_hooks/actionCorporationManage'
 import { CopyValueButton } from '@/ui/agents-tasks-settings/copy-value-button'
 import { CapabilityButton } from '@/ui/common/capability-button'
+import { CorporationAvatar } from '@/ui/common/corporation-membership-row'
 import { SEND_RECIPIENT_PARAM } from '@/ui/common/send-vna'
 import { SigningModeIcon } from '@/ui/common/signing-mode-icon'
 import TrustBadge from '@/ui/common/trust-badge'
@@ -124,16 +125,18 @@ export function CorporationHeader({
           className="-z-10 text-primary/25 [mask-image:radial-gradient(320px_circle_at_top_right,white,transparent)] rtl:[mask-image:radial-gradient(320px_circle_at_top_left,white,transparent)]"
         />
         <div className="flex min-w-0 items-start gap-4">
-          <span
-            aria-hidden="true"
-            className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-primary-400 to-primary-700 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25)] sm:size-14"
-          >
-            {displayName ? (
-              <span className="text-base font-semibold tracking-tight sm:text-lg">{nameInitials(displayName)}</span>
-            ) : (
-              <Building2Icon className="size-6" />
-            )}
-          </span>
+          <CorporationAvatar
+            enrichment={enrichment}
+            fallback={
+              displayName ? (
+                <span className="text-base tracking-tight sm:text-lg">{nameInitials(displayName)}</span>
+              ) : (
+                <Building2Icon className="size-6" />
+              )
+            }
+            className="size-12 rounded-xl after:rounded-xl *:rounded-xl sm:size-14"
+            fallbackClassName="rounded-xl bg-linear-to-br from-primary-400 to-primary-700 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25)]"
+          />
           <div className="min-w-0 space-y-2">
             <h1 className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
               {enrichment?.countryCode ? (

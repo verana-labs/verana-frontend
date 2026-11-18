@@ -7,7 +7,11 @@ import { useUserCorporation } from '@/hooks/useUserCorporation'
 import { useVeranaChain } from '@/hooks/useVeranaChain'
 import { translate } from '@/i18n/dataview'
 import { cn } from '@/lib/utils'
-import { CorporationMembershipRow, corporationDisplayName } from '@/ui/common/corporation-membership-row'
+import {
+  CorporationAvatar,
+  CorporationMembershipRow,
+  corporationDisplayName,
+} from '@/ui/common/corporation-membership-row'
 import { nameInitials } from '@/ui/corporation/shared'
 import {
   DropdownMenu,
@@ -49,15 +53,15 @@ export function CorporationSelector() {
             : 'border-border bg-background text-foreground hover:bg-muted dark:bg-input/30'
         )}
       >
-        <span
-          aria-hidden="true"
-          className={cn(
-            'flex size-6 shrink-0 items-center justify-center rounded-md text-[10px] font-semibold',
+        <CorporationAvatar
+          enrichment={actingCorporation?.corporation.trustData}
+          fallback={actingCorporation ? nameInitials(label) : <Building2Icon className="size-3.5" />}
+          className="size-6 rounded-md after:rounded-md *:rounded-md"
+          fallbackClassName={cn(
+            'rounded-md text-[10px]',
             actingCorporation ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
           )}
-        >
-          {actingCorporation ? nameInitials(label) : <Building2Icon className="size-3.5" />}
-        </span>
+        />
         <span className="grid min-w-0 flex-1 leading-tight" title={actingCorporation?.corporation.did}>
           <span className="truncate">{label}</span>
           {role ? (
