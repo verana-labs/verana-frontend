@@ -24,6 +24,7 @@ import { SidebarTrigger, useSidebar } from '@/ui/shadcn/sidebar'
 import { Skeleton } from '@/ui/shadcn/skeleton'
 import { ecosystemLabel, useCommandMenu, useModifierKeyLabel, useSearchableEntities } from '@/ui/shell/command-menu'
 import { useNavItems, useShellSettling } from '@/ui/shell/nav-items'
+import { NavUser } from '@/ui/shell/nav-user'
 import { ThemeToggle } from '@/ui/shell/theme-toggle'
 
 type Crumb = { label: string; href?: string }
@@ -195,6 +196,7 @@ export function SiteHeader({ title }: { title?: string }) {
               <SettingsIcon />
             </Link>
           </Button>
+          <NavUser settling={settling} />
         </div>
       </div>
     </header>

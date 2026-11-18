@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils'
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -18,7 +17,6 @@ import {
 import { useNavItems, useShellSettling } from '@/ui/shell/nav-items'
 import { NavMain } from '@/ui/shell/nav-main'
 import { NavStatus } from '@/ui/shell/nav-status'
-import { NavUser } from '@/ui/shell/nav-user'
 import { TeamSwitcher } from '@/ui/shell/team-switcher'
 
 export function AppSidebar({ className, ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -54,9 +52,6 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
         <NavMain items={items} settling={settling} />
         <NavStatus className="mt-auto" />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser settling={settling} />
-      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )

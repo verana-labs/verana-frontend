@@ -97,7 +97,7 @@ export async function connectApp(live: LiveSession, page: Page): Promise<string>
   await page.goto('/account')
   const stop = autoApproveSetupPopups(live.context, { chainId: live.env.chainId, chainName: live.env.chainName })
   try {
-    const connected = page.getByText(/connected/i).first()
+    const connected = page.locator('[data-shell="account"]')
     if (!(await connected.isVisible({ timeout: 8_000 }).catch(() => false))) {
       await page
         .getByRole('button', { name: /connect/i })

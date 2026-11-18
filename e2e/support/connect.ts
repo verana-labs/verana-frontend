@@ -33,6 +33,6 @@ export async function connectWallet(page: Page, opts: ConnectOptions = {}) {
     .click()
   await page.getByText(/keplr/i).first().click()
 
-  await expect(page.getByText(/connected/i).first()).toBeVisible({ timeout: connectedTimeout })
+  await expect(page.locator('[data-shell="account"]')).toBeVisible({ timeout: connectedTimeout })
   return wallet
 }
