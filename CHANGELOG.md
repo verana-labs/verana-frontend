@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.3](https://github.com/verana-labs/verana-frontend/compare/v0.22.2...v0.22.3) (2026-11-18)
+
+
+### Bug Fixes
+
+* [Pending Tasks] flag tasks the connected account is not authorized to validate ([#600](https://github.com/verana-labs/verana-frontend/issues/600)) ([89ea0f4](https://github.com/verana-labs/verana-frontend/commit/89ea0f4bfdb6abde42fb3a97c7b78872559b866b))
+
 ## [0.22.2](https://github.com/verana-labs/verana-frontend/compare/v0.22.1...v0.22.2) (2026-11-09)
 
 
