@@ -41,7 +41,7 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
             >
               <Link href={configFooter.href} onClick={() => setOpenMobile(false)}>
                 <img src={configFooter.img} alt="" className="size-5" />
-                <span className="text-base font-semibold">{configFooter.title}</span>
+                <span className="font-display text-base font-semibold">{configFooter.title}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

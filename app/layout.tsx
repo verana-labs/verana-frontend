@@ -1,5 +1,5 @@
 import '@/styles/global.css'
-import { inter } from '@/ui/common/fonts'
+import { ibmPlexMono, inter, spaceGrotesk } from '@/ui/common/fonts'
 import '@interchain-ui/react/styles'
 import type { Metadata, Viewport } from 'next'
 import { PublicEnvScript } from 'next-runtime-env'
@@ -54,7 +54,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     logger.error('protocol params', protocolParamsResult.errorProtocolParams)
 
   return (
-    <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${inter.variable} ${spaceGrotesk.variable} ${ibmPlexMono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <PublicEnvScript />
       </head>
