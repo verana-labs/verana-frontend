@@ -31,16 +31,6 @@ type Crumb = { label: string; href?: string }
 
 const DETAIL_ROUTE = /^\/(ecosystems|credential-schemas|participants)\/([^/]+)$/
 
-const NETWORK_TONE: Record<string, string> = {
-  devnet: 'border-info/25 bg-info/10 text-info',
-  testnet: 'border-warning/25 bg-warning/10 text-warning',
-}
-
-const NETWORK_DOT: Record<string, string> = {
-  devnet: 'bg-info',
-  testnet: 'bg-warning',
-}
-
 function useCrumbs(pathname: string | null): Crumb[] | null {
   const navItems = useNavItems()
   const { ecosystemsById, schemas } = useSearchableEntities()
@@ -111,15 +101,9 @@ function NetworkChip() {
     <span
       data-shell="network-chip"
       title={`${networkType} · ${veranaChain.chain_id}`}
-      className={cn(
-        'inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full border px-2 font-mono text-xs font-medium',
-        NETWORK_TONE[networkType] ?? 'border-success/25 bg-success/10 text-success'
-      )}
+      className="inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full border border-success/25 bg-success/10 px-2 font-mono text-xs font-medium text-success"
     >
-      <span
-        aria-hidden="true"
-        className={cn('pulse-dot relative size-1.5 rounded-full', NETWORK_DOT[networkType] ?? 'bg-success')}
-      />
+      <span aria-hidden="true" className="pulse-dot relative size-1.5 rounded-full bg-success" />
       <span className="hidden lg:inline">{veranaChain.chain_id}</span>
       <span className="font-sans lg:hidden">{networkType || veranaChain.chain_id}</span>
     </span>
