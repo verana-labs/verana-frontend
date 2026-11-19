@@ -31,7 +31,7 @@ export const DEFAULT_DECISION_POLICY_DRAFT: DecisionPolicyDraft = {
   kind: 'threshold',
   threshold: '1',
   percent: '50',
-  votingPeriod: '60',
+  votingPeriod: '3600',
   minExecutionPeriod: '0',
 }
 

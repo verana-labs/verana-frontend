@@ -114,7 +114,7 @@ describe('readDecisionPolicyDraft', () => {
   it('reads the default draft as today’s threshold policy', () => {
     expect(readDecisionPolicyDraft(DEFAULT_DECISION_POLICY_DRAFT)).toEqual({
       rule: { kind: 'threshold', threshold: '1' },
-      votingPeriodSeconds: 60,
+      votingPeriodSeconds: 3_600,
       minExecutionPeriodSeconds: 0,
     })
   })
@@ -129,7 +129,7 @@ describe('readDecisionPolicyDraft', () => {
       })
     ).toEqual({
       rule: { kind: 'percentage', percentage: '0.6667' },
-      votingPeriodSeconds: 60,
+      votingPeriodSeconds: 3_600,
       minExecutionPeriodSeconds: 3_600,
     })
   })
