@@ -1,13 +1,16 @@
 'use client'
 
-import { faRightToBracket, faXmark } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { Code2Icon, LogInIcon, XIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { translate } from '@/i18n/dataview'
 import { type CredentialSchemaListItem, getModePillClass } from '../datatable/columnslist/cs'
 import { resolveTranslatable } from '../dataview/types'
+import { Button } from '../shadcn/button'
 import JsonCodeBlock from './json-code-block'
+
+const LABEL_CLASS = 'text-xs font-medium text-muted-foreground'
+const PILL_CLASS = 'mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide'
 
 export type CsCardProps = {
   credentialSchema: CredentialSchemaListItem
@@ -19,45 +22,42 @@ export default function CsCard({ credentialSchema, joinHref }: CsCardProps) {
 
   return (
     <>
-      <div className="bg-gray-50 dark:bg-gray-800/50 border border-neutral-20 dark:border-neutral-70 rounded-lg p-4 cursor-default">
-        <div className="flex items-start space-x-3">
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white">{credentialSchema.title}</h3>
-              <span className="text-sm font-mono text-neutral-70 dark:text-neutral-70">
+      <div className="cursor-default rounded-xl border border-border bg-muted/40 p-4">
+        <div className="flex items-start gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h3 className="min-w-0 truncate text-base font-semibold tracking-tight">{credentialSchema.title}</h3>
+              <span className="shrink-0 font-mono text-xs text-muted-foreground">
                 {resolveTranslatable({ key: 'dataview.cs.fields.id' }, translate)}: {credentialSchema.id}
               </span>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+            <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
               <div>
-                <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
+                <label className={LABEL_CLASS}>
                   {resolveTranslatable({ key: 'dataview.cs.fields.issuerValidationValidityPeriod' }, translate)}
                 </label>
-                <p className="text-sm text-gray-900 dark:text-white">
+                <p className="mt-1 text-sm font-medium tabular-nums">
                   {credentialSchema.issuerValidationValidityPeriod} days
                 </p>
               </div>
 
               <div>
-                <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
+                <label className={LABEL_CLASS}>
                   {resolveTranslatable({ key: 'dataview.cs.fields.verifierValidationValidityPeriod' }, translate)}
                 </label>
-                <p className="text-sm text-gray-900 dark:text-white">
+                <p className="mt-1 text-sm font-medium tabular-nums">
                   {credentialSchema.verifierValidationValidityPeriod} days
                 </p>
               </div>
 
               <div>
-                <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
+                <label className={LABEL_CLASS}>
                   {resolveTranslatable({ key: 'dataview.cs.fields.issuerOnboardingMode' }, translate)}
                 </label>
                 <p>
                   <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getModePillClass(
-                      credentialSchema.issuerOnboardingMode,
-                      '_ISSUER'
-                    )}`}
+                    className={`${PILL_CLASS} ${getModePillClass(credentialSchema.issuerOnboardingMode, '_ISSUER')}`}
                   >
                     {credentialSchema.issuerOnboardingMode}
                   </span>
@@ -65,12 +65,12 @@ export default function CsCard({ credentialSchema, joinHref }: CsCardProps) {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
+                <label className={LABEL_CLASS}>
                   {resolveTranslatable({ key: 'dataview.cs.fields.verifierOnboardingMode' }, translate)}
                 </label>
                 <p>
                   <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getModePillClass(
+                    className={`${PILL_CLASS} ${getModePillClass(
                       credentialSchema.verifierOnboardingMode,
                       '_VERIFIER'
                     )}`}
@@ -82,15 +82,12 @@ export default function CsCard({ credentialSchema, joinHref }: CsCardProps) {
 
               {credentialSchema.holderOnboardingMode ? (
                 <div>
-                  <label className="text-xs font-medium text-neutral-70 dark:text-neutral-70">
+                  <label className={LABEL_CLASS}>
                     {resolveTranslatable({ key: 'dataview.cs.fields.holderOnboardingMode' }, translate)}
                   </label>
                   <p>
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getModePillClass(
-                        credentialSchema.holderOnboardingMode,
-                        '_HOLDER'
-                      )}`}
+                      className={`${PILL_CLASS} ${getModePillClass(credentialSchema.holderOnboardingMode, '_HOLDER')}`}
                     >
                       {credentialSchema.holderOnboardingMode}
                     </span>
@@ -99,22 +96,24 @@ export default function CsCard({ credentialSchema, joinHref }: CsCardProps) {
               ) : null}
             </div>
 
-            <div className="flex flex-wrap items-center gap-4">
-              <button
-                onClick={() => setShowJsonSchemaModal(true)}
-                className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
+                className="-ml-2"
+                onClick={() => setShowJsonSchemaModal(true)}
               >
-                {'</>'} {resolveTranslatable({ key: 'dataview.cs.viewJsonSchema' }, translate)}
-              </button>
+                <Code2Icon aria-hidden="true" />
+                {resolveTranslatable({ key: 'dataview.cs.viewJsonSchema' }, translate)}
+              </Button>
               {joinHref ? (
-                <Link
-                  href={joinHref}
-                  className="inline-flex items-center px-3 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
-                >
-                  <FontAwesomeIcon className="mr-2" aria-hidden="true" icon={faRightToBracket} />
-                  {resolveTranslatable({ key: 'discover.btn.join' }, translate)}
-                </Link>
+                <Button asChild size="sm">
+                  <Link href={joinHref}>
+                    <LogInIcon aria-hidden="true" />
+                    {resolveTranslatable({ key: 'discover.btn.join' }, translate)}
+                  </Link>
+                </Button>
               ) : null}
             </div>
           </div>
@@ -122,16 +121,19 @@ export default function CsCard({ credentialSchema, joinHref }: CsCardProps) {
       </div>
 
       {showJsonSchemaModal && credentialSchema.jsonSchema && (
-        <div className="fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-xl bg-gray-50 dark:bg-gray-900">
-            <div className="flex items-center justify-between mb-6">
-              <button
+        <div className="fixed inset-0 z-50 h-full w-full overflow-y-auto bg-black/40 px-4">
+          <div className="relative top-10 mx-auto w-full max-w-4xl rounded-xl bg-popover p-5 shadow-overlay">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <span className="min-w-0 truncate text-sm font-semibold">{credentialSchema.title}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => setShowJsonSchemaModal(false)}
-                className="absolute top-4 right-4 text-neutral-70 hover:text-gray-500 dark:hover:text-gray-300"
                 aria-label="Close"
               >
-                <FontAwesomeIcon icon={faXmark} />
-              </button>
+                <XIcon />
+              </Button>
             </div>
             <JsonCodeBlock value={credentialSchema.jsonSchema} />
           </div>

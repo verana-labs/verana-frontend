@@ -121,52 +121,48 @@ export function getDescriptionMessage(template: string, addBalance: string | num
   return template.replace('{addBalance}', String(addBalance)).replace('{burnRate}', String(burnRate))
 }
 
+const DESTRUCTIVE_BUTTON = 'bg-destructive text-white not-disabled:hover:bg-destructive/90 dark:text-background'
+const SECONDARY_BUTTON =
+  'bg-secondary text-secondary-foreground not-disabled:hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)]'
+
 export const msgTypeStyle: Record<MessageType, MsgTypeStyle> = {
   MsgCreateEcosystem: {},
   MsgUpdateEcosystem: {},
   MsgArchiveEcosystem: {
-    button: 'bg-gray-600 hover:bg-gray-700',
+    button: SECONDARY_BUTTON,
     icon: faBoxArchive,
   },
   MsgUnarchiveEcosystem: {
-    button: 'bg-green-600 hover:bg-green-700',
     icon: faBoxArchive,
   },
   MsgAddGovernanceFrameworkDocument: {
-    button: '',
     icon: faPlus,
   },
   MsgIncreaseActiveGovernanceFrameworkVersion: {
-    button: 'bg-green-600 hover:bg-green-700',
     icon: faArrowUp,
   },
   MsgCreateCredentialSchema: {},
   MsgUpdateCredentialSchema: {},
   MsgArchiveCredentialSchema: {
-    button: 'bg-gray-600 hover:bg-gray-700',
+    button: SECONDARY_BUTTON,
     icon: faBoxArchive,
   },
   MsgUnarchiveCredentialSchema: {
-    button: 'bg-green-600 hover:bg-green-700',
     icon: faBoxArchive,
   },
   MsgCancelParticipantOPLastRequest: {
-    button: 'bg-gray-600 hover:bg-gray-700',
+    button: SECONDARY_BUTTON,
   },
   MsgRenewParticipantOP: {},
-  MsgSetParticipantOPToValidated: {
-    button: 'bg-green-600 hover:bg-green-700',
-  },
+  MsgSetParticipantOPToValidated: {},
   MsgSetParticipantEffectiveUntil: {},
   MsgRevokeParticipant: {
-    button: 'bg-red-600 hover:bg-red-700',
+    button: DESTRUCTIVE_BUTTON,
   },
   MsgSlashParticipantTrustDeposit: {
-    button: 'bg-red-600 hover:bg-red-700',
+    button: DESTRUCTIVE_BUTTON,
   },
-  MsgRepayParticipantSlashedTrustDeposit: {
-    button: 'bg-green-600 hover:bg-green-700',
-  },
+  MsgRepayParticipantSlashedTrustDeposit: {},
   MsgCreateRootParticipant: {},
   MsgSelfCreateParticipant: {},
   MsgStartParticipantOP: {},

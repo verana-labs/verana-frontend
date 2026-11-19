@@ -15,9 +15,11 @@ function t(key: string, values?: I18nValues): string {
 
 function Row({ label, amountUvna, strong }: { label: string; amountUvna: number; strong?: boolean }) {
   return (
-    <div className={`flex items-start justify-between gap-4 ${strong ? 'font-semibold' : ''}`}>
-      <dt className="text-gray-700 dark:text-gray-300 break-all">{label}</dt>
-      <dd className="font-mono text-gray-900 dark:text-white whitespace-nowrap">
+    <div
+      className={`flex items-start justify-between gap-4 ${strong ? 'border-t border-border pt-1 font-semibold' : ''}`}
+    >
+      <dt className="text-muted-foreground break-all">{label}</dt>
+      <dd className="font-mono text-foreground tabular-nums whitespace-nowrap">
         {formatVNAFromUVNA(String(amountUvna))}
       </dd>
     </div>
@@ -36,18 +38,18 @@ export function FeeDistributionPreview({ participant }: { participant: Participa
   )
   if (beneficiaries?.status === 'failed') {
     return (
-      <div className="mt-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-4" data-testid="fee-distribution">
-        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('title')}</h4>
-        <p className="text-xs text-red-700 dark:text-red-300">{t('failed')}</p>
+      <div className="mt-4 rounded-lg border border-border bg-muted/50 p-4" data-testid="fee-distribution">
+        <h4 className="text-sm font-semibold text-foreground">{t('title')}</h4>
+        <p className="mt-1 text-sm text-destructive">{t('failed')}</p>
       </div>
     )
   }
   if (!distribution || distribution.beneficiaries.length === 0) return null
 
   return (
-    <div className="mt-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-4" data-testid="fee-distribution">
-      <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('title')}</h4>
-      <p className="text-xs text-neutral-70 mb-3">{t(distribution.kind)}</p>
+    <div className="mt-4 rounded-lg border border-border bg-muted/50 p-4" data-testid="fee-distribution">
+      <h4 className="text-sm font-semibold text-foreground">{t('title')}</h4>
+      <p className="mt-1 mb-3 text-xs text-muted-foreground">{t(distribution.kind)}</p>
       <dl className="space-y-1 text-sm">
         {distribution.beneficiaries.map((beneficiary) => (
           <Row

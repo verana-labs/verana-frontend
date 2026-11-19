@@ -1,11 +1,11 @@
 'use client'
 
+import { CompassIcon, RotateCwIcon, SearchXIcon, ServerCrashIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { EcosystemSchemaPage } from '@/hooks/useCredentialSchemas'
 import { useCorporationRoles } from '@/hooks/useParticipants'
 import { useFilterPersistence } from '@/hooks/usePersistedFilters'
 import { useUserCorporation } from '@/hooks/useUserCorporation'
-import { translate } from '@/i18n/dataview'
 import {
   clientPage,
   filterEcosystems,
@@ -15,20 +15,21 @@ import {
 } from '@/lib/discover-list'
 import { DISCOVER_PAGE_SIZE, useDiscoverCtx } from '@/providers/api-rest-query-provider-context'
 import { DiscoverEcosystemCard } from '@/ui/common/discover-ecosystem-card'
-import EcosystemsFilterBar from '@/ui/common/ecosystems-filter-bar'
+import { EmptyState } from '@/ui/common/empty-state'
 import KeysetPagination from '@/ui/common/keyset-pagination'
 import TitleAndButton from '@/ui/common/title-and-button'
-import { type I18nValues, resolveTranslatable } from '@/ui/dataview/types'
+import { DiscoverCardSkeleton } from '@/ui/discover/discover-card-skeleton'
+import { DiscoverFilters } from '@/ui/discover/discover-filters'
+import { DiscoverStats } from '@/ui/discover/discover-stats'
+import { discoverText as t } from '@/ui/discover/text'
+import { Stagger, StaggerItem } from '@/ui/motion/stagger'
+import { Button } from '@/ui/shadcn/button'
 
 const NO_SCHEMAS: EcosystemSchemaPage = { items: [], hasNext: false }
 const NO_ECOSYSTEM_IDS: string[] = []
 
 function scrollToTop(): void {
-  document.getElementById('app-scroll')?.scrollTo({ top: 0, behavior: 'smooth' })
-}
-
-function t(key: string, values?: I18nValues): string {
-  return resolveTranslatable({ key, values }, translate) ?? key
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 export default function DiscoverJoinPage() {
@@ -74,94 +75,105 @@ export default function DiscoverJoinPage() {
 
   const partial = discoverCtx.hasNext || discoverCtx.hasPrevious
   const loading = (discoverCtx.loading && discoverList.length === 0) || roleFiltersPending(filters, rolesLoading)
-  const errors = [
-    discoverCtx.error,
-    failureReason ? t('discover.roles.failed', { reason: failureReason }) : null,
-  ].filter((message): message is string => message !== null)
+  const listError = discoverCtx.error
+  const listFailed = Boolean(listError) && !loading && discoverList.length === 0
+  const rolesError = failureReason ? t('discover.roles.failed', { reason: failureReason }) : null
+  const showPagination = !loading && !listFailed && (shown.length > 0 || page.hasPrevious || page.hasNext)
 
   return (
     <>
-      <TitleAndButton title={t('discover.title')} />
+      <TitleAndButton title={t('discover.title')} description={[t('discover.description')]} />
 
-      <EcosystemsFilterBar
+      <DiscoverStats
+        ecosystems={matching}
+        loading={loading}
+        unavailable={listFailed}
+        scope={partial ? (fullWindow ? 'loaded' : 'page') : 'matching'}
+      />
+
+      <DiscoverFilters
         value={filters}
-        onChange={(next) => setDiscoverFilters({ ...filters, ...next })}
+        onChange={setDiscoverFilters}
         corporationFilters={actingCorporationId !== undefined}
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          <label htmlFor="discover-order" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {t('discover.order.label')}
-          </label>
-          <select
-            id="discover-order"
-            value={filters.order}
-            onChange={(e) =>
-              setDiscoverFilters({ ...filters, order: e.target.value === 'trustValue' ? 'trustValue' : 'newest' })
-            }
-            className="px-3 py-2 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface text-sm text-gray-900 dark:text-white focus:border-blue-600 focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="newest">{t('discover.order.newest')}</option>
-            <option value="trustValue">{t('discover.order.trustValue')}</option>
-          </select>
-        </div>
-        {partial ? <p className="text-xs text-neutral-70 dark:text-neutral-70">{t('pagination.loadedOnly')}</p> : null}
-      </EcosystemsFilterBar>
+        loadedOnly={partial}
+      />
 
-      {errors.map((message) => (
-        <div key={message} className="error-pane mb-6">
-          {message}
-        </div>
-      ))}
+      {rolesError ? <div className="error-pane mb-6">{rolesError}</div> : null}
+      {listError && !listFailed ? <div className="error-pane mb-6">{listError}</div> : null}
 
-      <section id="ecosystem-list" className="space-y-6">
+      <section id="ecosystem-list" aria-busy={loading} className="flex flex-col gap-4 sm:gap-5">
         {loading ? (
-          [...Array(3)].map((_, i) => (
-            <div key={i} className="skeleton-card rounded-xl border border-neutral-20 dark:border-neutral-70">
-              <div className="skeleton-title mb-2 w-1/2" />
-              <div className="skeleton-text w-1/3 mb-6" />
-              <div className="space-y-4">
-                <div className="skeleton-block h-16 rounded-lg" />
-                <div className="skeleton-block h-16 rounded-lg" />
-              </div>
-            </div>
-          ))
+          [0, 1, 2].map((slot) => <DiscoverCardSkeleton key={slot} />)
+        ) : listFailed ? (
+          <EmptyState
+            className="rounded-xl bg-card py-12"
+            icon={<ServerCrashIcon />}
+            title={t('discover.error.title')}
+            description={
+              <>
+                {t('discover.error.hint')}
+                <span className="mt-2 block font-mono text-xs text-muted-foreground/80">{listError}</span>
+              </>
+            }
+            action={
+              <Button variant="outline" onClick={() => void discoverCtx.refetch()}>
+                <RotateCwIcon aria-hidden="true" />
+                {t('discover.retry')}
+              </Button>
+            }
+          />
         ) : shown.length === 0 ? (
-          <div className="bg-white dark:bg-surface border border-neutral-20 dark:border-neutral-70 rounded-xl p-8 text-center">
-            <p className="text-sm text-neutral-70 dark:text-neutral-70">{t('discover.empty')}</p>
-          </div>
+          <EmptyState
+            className="rounded-xl bg-card py-12"
+            icon={filters.search ? <SearchXIcon /> : <CompassIcon />}
+            title={t('discover.empty')}
+            description={t('discover.empty.hint')}
+            action={
+              filters.search ? (
+                <Button variant="outline" onClick={() => setDiscoverFilters({ ...filters, search: '' })}>
+                  {t('discover.search.clear')}
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
-          shown.map((ecosystem) => (
-            <DiscoverEcosystemCard
-              key={ecosystem.id}
-              ecosystem={ecosystem}
-              credentialSchemas={discoverCtx.credentialSchemasByEcosystem[ecosystem.id] ?? NO_SCHEMAS}
-              schemasError={discoverCtx.errorCredentialSchemas}
-              moreSchemasFailed={Boolean(discoverCtx.moreSchemaErrors[ecosystem.id])}
-              onLoadMoreSchemas={() => discoverCtx.loadMoreCredentialSchemas(ecosystem.id)}
-              roles={rolesByEcosystem[ecosystem.id] ?? []}
-              canJoin={actingCorporationId !== undefined}
-            />
-          ))
+          <Stagger className="flex flex-col gap-4 sm:gap-5">
+            {shown.map((ecosystem) => (
+              <StaggerItem key={ecosystem.id}>
+                <DiscoverEcosystemCard
+                  ecosystem={ecosystem}
+                  credentialSchemas={discoverCtx.credentialSchemasByEcosystem[ecosystem.id] ?? NO_SCHEMAS}
+                  schemasError={discoverCtx.errorCredentialSchemas}
+                  moreSchemasFailed={Boolean(discoverCtx.moreSchemaErrors[ecosystem.id])}
+                  onLoadMoreSchemas={() => discoverCtx.loadMoreCredentialSchemas(ecosystem.id)}
+                  roles={rolesByEcosystem[ecosystem.id] ?? []}
+                  canJoin={actingCorporationId !== undefined}
+                />
+              </StaggerItem>
+            ))}
+          </Stagger>
         )}
       </section>
 
-      <KeysetPagination
-        showing={shown.length}
-        itemsLabel={t('datatable.ecosystem.pagination.ecosystems')}
-        hasPrevious={page.hasPrevious}
-        hasNext={page.hasNext}
-        loadedOnlyNote={false}
-        onPrevious={() => {
-          if (fullWindow) setPaging({ key: pagingKey, index: page.page - 1 })
-          else discoverCtx.previousPage()
-          scrollToTop()
-        }}
-        onNext={() => {
-          if (fullWindow) setPaging({ key: pagingKey, index: page.page + 1 })
-          else discoverCtx.nextPage()
-          scrollToTop()
-        }}
-      />
+      {showPagination ? (
+        <KeysetPagination
+          showing={shown.length}
+          itemsLabel={t('datatable.ecosystem.pagination.ecosystems')}
+          hasPrevious={page.hasPrevious}
+          hasNext={page.hasNext}
+          loadedOnlyNote={false}
+          onPrevious={() => {
+            if (fullWindow) setPaging({ key: pagingKey, index: page.page - 1 })
+            else discoverCtx.previousPage()
+            scrollToTop()
+          }}
+          onNext={() => {
+            if (fullWindow) setPaging({ key: pagingKey, index: page.page + 1 })
+            else discoverCtx.nextPage()
+            scrollToTop()
+          }}
+        />
+      ) : null}
     </>
   )
 }

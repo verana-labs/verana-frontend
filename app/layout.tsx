@@ -1,8 +1,9 @@
 import '@/styles/global.css'
-import { inter } from '@/ui/common/fonts'
+import { ibmPlexMono, inter, spaceGrotesk } from '@/ui/common/fonts'
 import '@interchain-ui/react/styles'
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { PublicEnvScript } from 'next-runtime-env'
+import { ThemeProvider } from 'next-themes'
 import type { ReactNode } from 'react'
 import ClientLayout from '@/providers/client-layout'
 import '@/init-long'
@@ -37,18 +38,34 @@ export const metadata: Metadata = {
   manifest: '/site.webmanifest',
 }
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f5f4f8' },
+    { media: '(prefers-color-scheme: dark)', color: '#0b0a10' },
+  ],
+}
+
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const protocolParamsResult = await getProtocolParams()
   if (protocolParamsResult.errorProtocolParams)
     logger.error('protocol params', protocolParamsResult.errorProtocolParams)
 
   return (
-    <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${inter.variable} ${spaceGrotesk.variable} ${ibmPlexMono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <PublicEnvScript />
       </head>
       <body className="app-body">
-        <ClientLayout protocolParams={protocolParamsResult.params}>{children}</ClientLayout>
+        <ThemeProvider attribute="class" enableSystem defaultTheme="system" disableTransitionOnChange>
+          <ClientLayout protocolParams={protocolParamsResult.params}>{children}</ClientLayout>
+        </ThemeProvider>
       </body>
     </html>
   )

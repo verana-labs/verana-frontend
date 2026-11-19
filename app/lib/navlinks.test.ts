@@ -122,8 +122,14 @@ describe('allowedOffline', () => {
     expect(allowedOffline('/ecosystems/')).toBe(false)
   })
 
+  it('keeps the create ecosystem route behind a connected wallet', () => {
+    expect(allowedOffline('/ecosystems/add')).toBe(false)
+    expect(allowedOffline('/ecosystems/address')).toBe(true)
+  })
+
   it('allows a single credential-schema detail segment', () => {
     expect(allowedOffline('/credential-schemas/schema-1')).toBe(true)
+    expect(allowedOffline('/credential-schemas/add')).toBe(false)
     expect(allowedOffline('/credential-schemas')).toBe(false)
     expect(allowedOffline('/credential-schemas/schema-1/extra')).toBe(false)
   })

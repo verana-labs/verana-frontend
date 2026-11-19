@@ -53,7 +53,7 @@ export function CapabilityButton({
 export function CapabilityReason({ id, reason }: { id: string; reason: string | undefined }) {
   if (!reason) return null
   return (
-    <span id={id} className="mt-1 block text-xs text-neutral-70 dark:text-neutral-30">
+    <span id={id} className="mt-1 block text-xs text-muted-foreground">
       {reason}
     </span>
   )

@@ -2,7 +2,8 @@
 
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import clsx from 'clsx'
+import { cn } from '@/lib/utils'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/shadcn/card'
 import { ResolvedDataField } from '../dataview/types'
 
 type CardViewProps<T> = {
@@ -15,54 +16,44 @@ export default function CardView<T>({ field, data, largeTexts }: CardViewProps<T
   const value = field.format ? String(field.format(data[field.name])) : String(data[field.name])
   const iconWrapperClass = field.iconClass ?? ''
   const iconColorClass = field.iconColorClass ?? field.iconClass ?? ''
-  return (
-    <div className="bg-white dark:bg-surface rounded-xl border border-neutral-20 dark:border-neutral-70 overflow-hidden">
-      <div className="p-6">
-        {largeTexts ? (
-          <>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                {field.icon && (
-                  <div className={clsx('w-12 h-12 rounded-xl flex items-center justify-center mr-4', iconWrapperClass)}>
-                    <FontAwesomeIcon icon={field.icon} className={iconColorClass} />
-                  </div>
-                )}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{field.label}</h3>
-                  <p className="text-sm text-neutral-70 dark:text-neutral-70">{field.description}</p>
-                </div>
-              </div>
-            </div>
-            <div className="mb-4">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white font-mono">{value}</div>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              {field.name === 'balance' && (
-                <span className="text-success-600 dark:text-success-400 flex items-center">
-                  <FontAwesomeIcon icon={faCheckCircle} />
-                  Available
-                </span>
-              )}
-              {/* <span className="text-neutral-70 dark:text-neutral-70">Last updated: 2 min ago</span> */}
-            </div>
-          </>
-        ) : (
-          <div className="flex items-center">
-            <div className="shrink-0">
-              {field.icon && (
-                <div className={clsx('w-12 h-12 rounded-xl flex items-center justify-center', iconWrapperClass)}>
-                  <FontAwesomeIcon icon={field.icon} className={iconColorClass} />
-                </div>
-              )}
-            </div>
-            <div className="ml-4 flex-1 min-w-0">
-              <p className="text-sm font-medium text-neutral-70 dark:text-neutral-70">{field.label}</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white font-mono">{value}</p>
-              {/* <p className="text-sm text-success-600 dark:text-success-400">+1 new block</p> */}
-            </div>
-          </div>
-        )}
-      </div>
+  const icon = field.icon ? (
+    <div className={cn('flex size-10 items-center justify-center rounded-lg', iconWrapperClass)}>
+      <FontAwesomeIcon icon={field.icon} className={iconColorClass} aria-hidden="true" />
     </div>
+  ) : null
+
+  if (largeTexts) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-semibold">{field.label}</CardTitle>
+          {field.description ? <CardDescription>{field.description}</CardDescription> : null}
+          {icon ? <CardAction>{icon}</CardAction> : null}
+        </CardHeader>
+        <CardContent className="flex flex-col gap-2">
+          <div className="font-mono text-2xl font-semibold tracking-tight tabular-nums break-all text-foreground">
+            {value}
+          </div>
+          {field.name === 'balance' && (
+            <span className="flex items-center gap-1.5 text-sm text-success">
+              <FontAwesomeIcon icon={faCheckCircle} aria-hidden="true" />
+              Available
+            </span>
+          )}
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardDescription>{field.label}</CardDescription>
+        <CardTitle className="font-mono text-2xl font-semibold tracking-tight tabular-nums break-all">
+          {value}
+        </CardTitle>
+        {icon ? <CardAction>{icon}</CardAction> : null}
+      </CardHeader>
+    </Card>
   )
 }

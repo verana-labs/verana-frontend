@@ -6,9 +6,11 @@ export function ThresholdHint({ threshold, totalWeight }: { threshold: number; t
   if (!Number.isFinite(totalWeight)) return null
   const unanimity = totalWeight > 0 && threshold >= totalWeight
   return (
-    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+    <p className="mt-2 text-sm text-muted-foreground">
       {translate('corporation.threshold.total', { total: totalWeight })}
-      {unanimity ? ` ${translate('corporation.threshold.unanimity', { threshold })}` : ''}
+      {unanimity ? (
+        <span className="text-warning">{` ${translate('corporation.threshold.unanimity', { threshold })}`}</span>
+      ) : null}
     </p>
   )
 }

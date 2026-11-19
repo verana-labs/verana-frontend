@@ -1,7 +1,14 @@
 'use client'
 
-import { faDownload, faUpRightFromSquare } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  DownloadIcon,
+  ExternalLinkIcon,
+  FileDownIcon,
+  Loader2Icon,
+  ShieldAlertIcon,
+  ShieldCheckIcon,
+  ShieldQuestionIcon,
+} from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -15,7 +22,10 @@ import {
   kindFromUrl,
 } from '@/lib/gf-document'
 import { getLanguageLabel, useLanguageData } from '@/lib/language'
+import { cn } from '@/lib/utils'
 import { resolveTranslatable } from '@/ui/dataview/types'
+import { Shimmer } from '@/ui/motion/shimmer'
+import { Button } from '@/ui/shadcn/button'
 
 export type ViewerState = DocumentVerification['state'] | 'verifying'
 
@@ -26,37 +36,46 @@ export type GfDocumentViewerProps = {
 }
 
 const MARKDOWN_WRAPPER_CLASS = [
-  'max-h-[28rem] overflow-y-auto rounded-lg border border-neutral-20 dark:border-neutral-70',
-  'bg-white dark:bg-surface p-4 sm:p-6 text-left text-sm text-gray-800 dark:text-gray-200',
-  '[&_h1]:text-xl [&_h1]:font-bold [&_h1]:mt-4 [&_h1]:mb-2',
-  '[&_h2]:text-lg [&_h2]:font-bold [&_h2]:mt-4 [&_h2]:mb-2',
+  'max-h-[28rem] overflow-y-auto rounded-lg border border-border',
+  'bg-background p-4 sm:p-6 text-left text-sm text-foreground/90',
+  '[&_h1]:text-xl [&_h1]:font-semibold [&_h1]:tracking-tight [&_h1]:text-foreground [&_h1]:mt-2 [&_h1]:mb-3',
+  '[&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-6 [&_h2]:mb-2',
   '[&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-3 [&_h3]:mb-2',
   '[&_h4]:text-sm [&_h4]:font-semibold [&_h4]:mt-3 [&_h4]:mb-1',
   '[&_p]:my-2 [&_p]:leading-relaxed',
   '[&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-2 [&_li]:my-1',
-  '[&_blockquote]:border-l-4 [&_blockquote]:border-neutral-20 dark:[&_blockquote]:border-neutral-70 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:my-2',
-  '[&_code]:font-mono [&_code]:text-xs [&_code]:bg-gray-100 dark:[&_code]:bg-gray-800 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded',
-  '[&_pre]:bg-gray-100 dark:[&_pre]:bg-gray-800 [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:my-2',
-  '[&_table]:my-2 [&_table]:w-full [&_th]:border [&_th]:border-neutral-20 dark:[&_th]:border-neutral-70 [&_th]:px-2 [&_th]:py-1 [&_th]:text-left',
-  '[&_td]:border [&_td]:border-neutral-20 dark:[&_td]:border-neutral-70 [&_td]:px-2 [&_td]:py-1',
-  '[&_hr]:my-4 [&_hr]:border-neutral-20 dark:[&_hr]:border-neutral-70',
+  '[&_blockquote]:border-l-4 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:my-2',
+  '[&_code]:font-mono [&_code]:text-xs [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded',
+  '[&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:my-2',
+  '[&_table]:my-2 [&_table]:w-full [&_th]:border [&_th]:border-border [&_th]:px-2 [&_th]:py-1 [&_th]:text-left',
+  '[&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1',
+  '[&_hr]:my-4 [&_hr]:border-border',
   '[&_img]:max-w-full',
 ].join(' ')
 
-const FRAME_CLASS = 'w-full h-[28rem] rounded-lg border border-neutral-20 dark:border-neutral-70 bg-white'
+const FRAME_CLASS = 'w-full h-[28rem] rounded-lg border border-border bg-white'
 
 const BADGE_CLASS: Record<ViewerState, string> = {
-  verifying: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
-  verified: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
-  mismatch: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
-  unverified: 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400',
+  verifying: 'bg-muted text-muted-foreground',
+  verified: 'bg-success/10 text-success dark:bg-success/20',
+  mismatch: 'bg-destructive/10 text-destructive dark:bg-destructive/20',
+  unverified: 'bg-warning/10 text-warning dark:bg-warning/20',
+}
+
+const BADGE_ICON: Record<ViewerState, typeof ShieldCheckIcon> = {
+  verifying: Loader2Icon,
+  verified: ShieldCheckIcon,
+  mismatch: ShieldAlertIcon,
+  unverified: ShieldQuestionIcon,
 }
 
 const NOTICE_CLASS: Record<Exclude<ViewerState, 'verifying' | 'verified'>, string> = {
-  mismatch: 'border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300',
-  unverified:
-    'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300',
+  mismatch: 'border-destructive/30 bg-destructive/5 text-destructive dark:border-destructive/40 dark:bg-destructive/10',
+  unverified: 'border-warning/30 bg-warning/5 text-warning dark:border-warning/40 dark:bg-warning/10',
 }
+
+const SELECT_CLASS =
+  'h-8 rounded-lg border border-input bg-transparent py-1 pr-8 pl-2.5 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30'
 
 const MEDIA_TYPES: Record<GfDocumentKind, string> = {
   pdf: 'application/pdf',
@@ -69,11 +88,16 @@ function t(key: string): string {
 }
 
 export function VerificationBadge({ state }: { state: ViewerState }) {
+  const Icon = BADGE_ICON[state]
   return (
     <span
       role="status"
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${BADGE_CLASS[state]}`}
+      className={cn(
+        'inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium',
+        BADGE_CLASS[state]
+      )}
     >
+      <Icon aria-hidden="true" className={cn('size-3.5', state === 'verifying' && 'animate-spin')} />
       {t(`gfdoc.state.${state}`)}
     </span>
   )
@@ -120,8 +144,12 @@ function saveBytes(bytes: Uint8Array, type: string, name: string) {
 
 function VerifyingNotice() {
   return (
-    <div className="flex items-center justify-center h-40 rounded-lg border border-neutral-20 dark:border-neutral-70 animate-pulse">
-      <p className="text-sm text-neutral-70 dark:text-neutral-70">{t('gfdoc.verifying.text')}</p>
+    <div className="space-y-3 rounded-lg border border-border bg-background p-4 sm:p-6">
+      <p className="text-sm text-muted-foreground">{t('gfdoc.verifying.text')}</p>
+      <Shimmer className="h-5 w-2/5" />
+      <Shimmer className="h-3 w-full" />
+      <Shimmer className="h-3 w-11/12" />
+      <Shimmer className="h-3 w-3/4" />
     </div>
   )
 }
@@ -154,7 +182,7 @@ function VerifiedContent({
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary-600 dark:text-primary-400 underline"
+                className="text-primary underline underline-offset-4"
               >
                 {children}
               </a>
@@ -167,8 +195,11 @@ function VerifiedContent({
     )
   }
   return (
-    <div className="rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 p-8 text-center">
-      <p className="text-sm text-neutral-70 dark:text-neutral-70">{t('gfdoc.downloadonly')}</p>
+    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border p-8 text-center">
+      <span className="flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+        <FileDownIcon className="size-4" aria-hidden="true" />
+      </span>
+      <p className="max-w-sm text-sm text-muted-foreground">{t('gfdoc.downloadonly')}</p>
     </div>
   )
 }
@@ -193,7 +224,7 @@ export default function GfDocumentViewer({ documents, initialDocumentId, onState
     onStateChange?.(state)
   }, [state, onStateChange])
 
-  if (!selected) return <p className="text-sm text-neutral-70 dark:text-neutral-70">{t('gfdoc.empty')}</p>
+  if (!selected) return <p className="text-sm text-muted-foreground">{t('gfdoc.empty')}</p>
 
   const languageLabel = (doc: GfDocument) => getLanguageLabel(languages, doc.language) || doc.language
   const title = `${t('gfdoc.title')} (${languageLabel(selected)})`
@@ -205,14 +236,10 @@ export default function GfDocumentViewer({ documents, initialDocumentId, onState
 
   return (
     <div className="text-left">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>{t('gfdoc.language.label')}</span>
-          <select
-            value={selected.id}
-            onChange={(event) => setSelectedId(event.target.value)}
-            className="pl-3 pr-9 py-1.5 border border-neutral-20 dark:border-neutral-70 rounded-lg bg-white dark:bg-surface text-sm"
-          >
+          <select value={selected.id} onChange={(event) => setSelectedId(event.target.value)} className={SELECT_CLASS}>
             {documents.map((doc) => (
               <option key={doc.id} value={doc.id}>
                 {languageLabel(doc)}
@@ -223,7 +250,7 @@ export default function GfDocumentViewer({ documents, initialDocumentId, onState
         <VerificationBadge state={state} />
       </div>
 
-      <p className="mb-3 text-xs font-mono text-neutral-70 dark:text-neutral-70 break-all">
+      <p className="mb-4 rounded-md bg-muted/60 px-2.5 py-1.5 font-mono text-xs break-all text-muted-foreground">
         {t('gfdoc.digest.label')}: {selected.digestSri ?? t('gfdoc.digest.none')}
       </p>
 
@@ -232,38 +259,38 @@ export default function GfDocumentViewer({ documents, initialDocumentId, onState
       {result?.state === 'verified' ? <VerifiedContent kind={kind} text={text} pdfUrl={pdfUrl} title={title} /> : null}
 
       {result?.state === 'mismatch' || result?.state === 'unverified' ? (
-        <div className={`rounded-lg border p-4 ${NOTICE_CLASS[result.state]}`}>
-          <p className="text-sm font-medium">
-            {resolveTranslatable(
-              { key: `gfdoc.${result.state}.text`, values: { language: languageLabel(selected) } },
-              translate
-            )}
-          </p>
-          <p className="mt-1 text-xs opacity-80 break-all">{result.reason}</p>
+        <div role="alert" className={cn('flex gap-3 rounded-lg border p-4', NOTICE_CLASS[result.state])}>
+          {result.state === 'mismatch' ? (
+            <ShieldAlertIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          ) : (
+            <ShieldQuestionIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          )}
+          <div className="min-w-0">
+            <p className="text-sm font-medium">
+              {resolveTranslatable(
+                { key: `gfdoc.${result.state}.text`, values: { language: languageLabel(selected) } },
+                translate
+              )}
+            </p>
+            <p className="mt-1 text-xs break-all opacity-80">{result.reason}</p>
+          </div>
         </div>
       ) : null}
 
-      <div className="flex flex-wrap justify-center gap-3 mt-4">
+      <div className="mt-4 flex flex-wrap justify-end gap-2">
         {state === 'mismatch' ? null : (
-          <a
-            href={selected.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
-          >
-            <FontAwesomeIcon icon={faUpRightFromSquare} className="text-xs" />
-            {t('gfdoc.open')}
-          </a>
+          <Button asChild variant="outline">
+            <a href={selected.url} target="_blank" rel="noopener noreferrer">
+              <ExternalLinkIcon aria-hidden="true" />
+              {t('gfdoc.open')}
+            </a>
+          </Button>
         )}
         {verifiedBytes ? (
-          <button
-            type="button"
-            onClick={download}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
-          >
-            <FontAwesomeIcon icon={faDownload} className="text-xs" />
+          <Button type="button" onClick={download}>
+            <DownloadIcon aria-hidden="true" />
             {t('gfdoc.download')}
-          </button>
+          </Button>
         ) : null}
       </div>
     </div>

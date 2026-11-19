@@ -16,6 +16,7 @@ import { translate } from '@/i18n/dataview'
 import type { TreeNode } from '@/ui/common/participant-tree-types'
 import TreeNodeHeader from '@/ui/common/tree-node-header'
 import type { Participant } from '@/ui/dataview/datasections/participant'
+import { TooltipProvider } from '@/ui/shadcn/tooltip'
 
 const VALIDATE = '/verana.pp.v1.MsgSetParticipantOPToValidated'
 const UNAUTHORIZED = translate('task.unauthorized')
@@ -50,17 +51,18 @@ const node: TreeNode = {
 
 function render(type: 'participants' | 'tasks'): string {
   return renderToStaticMarkup(
-    <TreeNodeHeader
-      node={node}
-      type={type}
-      isExpanded={false}
-      showWeight={false}
-      showBusiness={false}
-      showStats={false}
-      onToggle={() => {}}
-      onSelect={() => {}}
-      onJoin={() => {}}
-    />
+    <TooltipProvider>
+      <TreeNodeHeader
+        node={node}
+        type={type}
+        isExpanded={false}
+        showWeight={false}
+        showBusiness={false}
+        showStats={false}
+        onToggle={() => {}}
+        onJoin={() => {}}
+      />
+    </TooltipProvider>
   )
 }
 

@@ -115,7 +115,7 @@ async function installTreeStubs(page: Page, services: unknown[]) {
 }
 
 function treeRow(page: Page, text: string) {
-  return page.locator('div.rounded-lg.p-2').filter({ hasText: text })
+  return page.locator('[data-slot="tree-row"]').filter({ hasText: text })
 }
 
 async function openHolders(page: Page, schemaId: number) {

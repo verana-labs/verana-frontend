@@ -2,14 +2,13 @@
 
 import { useDidTrustEnrichment } from '@/hooks/useDidTrustEnrichment'
 import { type DidEnrichment, serviceAvatarUrl } from '@/lib/resolverClient'
+import { cn } from '@/lib/utils'
 import LogoImage from '@/ui/common/logo-image'
+import TrustBadge from '@/ui/common/trust-badge'
 import { countryCodeToFlag, shortenDID } from '@/util/util'
-import TrustBadge from './trust-badge'
 
 export type ServiceIdentityProps = {
-  /** DID used both as resolver lookup key and avatar seed. */
   did: string | undefined
-  /** Used as avatar seed + label when no DID is available (e.g. synthetic nodes). */
   fallbackName?: string
   enrichment?: DidEnrichment
   size?: 'sm' | 'md'
@@ -32,21 +31,22 @@ export default function ServiceIdentity({
 
   const fallbackLabel = did ? shortenDID(did) : (fallbackName ?? '')
   const serviceLabel = identity?.serviceName ?? fallbackLabel
-  const countryCode = identity?.countryCode
   const avatarSeed = did ?? fallbackName ?? ''
-  const avatarSizeClass = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'
 
   return (
-    <span className={`inline-flex items-center gap-x-2 min-w-0 ${className}`}>
+    <span className={cn('inline-flex min-w-0 items-center gap-x-2', className)}>
       <LogoImage
         src={identity?.serviceLogoUrl}
         fallbackSrc={serviceAvatarUrl(avatarSeed)}
-        className={`${avatarSizeClass} rounded shrink-0 object-contain`}
+        className={cn(
+          'shrink-0 rounded-[5px] object-contain ring-1 ring-foreground/10',
+          size === 'sm' ? 'size-4' : 'size-5'
+        )}
       />
-      <span className="text-sm font-medium text-gray-900 dark:text-white break-all">{serviceLabel}</span>
-      {showFlag ? (
-        <span className="inline-flex items-center leading-none text-sm shrink-0" aria-hidden="true">
-          {countryCodeToFlag(countryCode)}
+      <span className="text-sm font-medium break-all text-foreground">{serviceLabel}</span>
+      {showFlag && identity?.countryCode ? (
+        <span className="inline-flex shrink-0 items-center text-sm leading-none" aria-hidden="true">
+          {countryCodeToFlag(identity?.countryCode)}
         </span>
       ) : null}
       {showTrust ? <TrustBadge state={identity?.trustStatus} size={size} /> : null}

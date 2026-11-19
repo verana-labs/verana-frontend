@@ -2,6 +2,8 @@
 
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { cn } from '@/lib/utils'
+import { buttonVariants } from '@/ui/shadcn/button'
 
 export type IconActionButtonProps = {
   icon: IconDefinition
@@ -11,7 +13,10 @@ export type IconActionButtonProps = {
   iconClassName?: string
 }
 
-const DEFAULT_CLASS = 'px-2 text-neutral-70 hover:text-primary-600 dark:hover:text-primary-400 transition-colors'
+const DEFAULT_CLASS = cn(
+  buttonVariants({ variant: 'ghost', size: 'icon-sm' }),
+  'text-muted-foreground hover:text-primary'
+)
 
 export default function IconActionButton({
   icon,
@@ -22,7 +27,7 @@ export default function IconActionButton({
 }: IconActionButtonProps) {
   return (
     <button type="button" onClick={onClick} title={label} aria-label={label} className={className ?? DEFAULT_CLASS}>
-      <FontAwesomeIcon icon={icon} className={iconClassName} />
+      <FontAwesomeIcon icon={icon} className={iconClassName} aria-hidden="true" />
     </button>
   )
 }

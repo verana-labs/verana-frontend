@@ -1,12 +1,14 @@
 'use client'
 
-import { faScaleBalanced } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { ChevronDownIcon, ScaleIcon } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 import { translate } from '@/i18n/dataview'
 import { displayedVersion, type GfVersion } from '@/lib/gf-document'
+import { cn } from '@/lib/utils'
 import GfDocumentViewer from '@/ui/common/gf-document-viewer'
 import { resolveTranslatable } from '@/ui/dataview/types'
+import { BlurFade } from '@/ui/motion/blur-fade'
+import { Button } from '@/ui/shadcn/button'
 
 type EgfViewerToggleProps = {
   versions: GfVersion[]
@@ -20,21 +22,24 @@ export function EgfViewerToggle({ versions, activeVersion, children }: EgfViewer
   const documents = version?.documents ?? []
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-2">
         {documents.length > 0 ? (
-          <button
-            type="button"
-            aria-expanded={open}
-            onClick={() => setOpen((value) => !value)}
-            className="inline-flex items-center px-4 py-2 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors text-sm font-medium"
-          >
-            <FontAwesomeIcon className="mr-2" aria-hidden="true" icon={faScaleBalanced} />
+          <Button type="button" variant="outline" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+            <ScaleIcon aria-hidden="true" className="text-primary" />
             {resolveTranslatable({ key: 'discover.btn.egf' }, translate) ?? 'EGF'}
-          </button>
+            <ChevronDownIcon
+              aria-hidden="true"
+              className={cn('transition-transform duration-(--duration-base) ease-standard', open && 'rotate-180')}
+            />
+          </Button>
         ) : null}
         {children}
       </div>
-      {open && documents.length > 0 ? <GfDocumentViewer documents={documents} /> : null}
+      {open && documents.length > 0 ? (
+        <BlurFade offset={4} className="rounded-xl border border-border bg-card p-4 sm:p-5">
+          <GfDocumentViewer documents={documents} />
+        </BlurFade>
+      ) : null}
     </div>
   )
 }
