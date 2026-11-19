@@ -33,7 +33,7 @@ const Toaster = ({ toastOptions, ...props }: ToasterProps) => {
           toast:
             'cn-toast items-start! gap-3! rounded-xl! border-border/70! pe-10! shadow-pop! [&_[data-icon]]:bg-tint-neutral [&_[data-icon]]:text-muted-foreground',
           content: 'min-w-0 pt-1',
-          icon: 'm-0! flex! size-7! shrink-0 items-center justify-center rounded-lg [&_svg]:size-4!',
+          icon: 'm-0! flex! size-7! shrink-0 items-center! justify-center! rounded-lg [&_svg]:m-0! [&_svg]:size-4!',
           success: 'border-success/30! [&_[data-icon]]:bg-tint-success!',
           error: 'border-destructive/35! [&_[data-icon]]:bg-tint-destructive!',
           info: '[&_[data-icon]]:bg-tint-info!',
