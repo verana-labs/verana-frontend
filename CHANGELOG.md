@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.0](https://github.com/verana-labs/verana-frontend/compare/v0.22.3...v0.23.0) (2026-11-19)
+
+
+### Features
+
+* redesign the whole ui on shadcn/ui ([#583](https://github.com/verana-labs/verana-frontend/issues/583)) ([68ac6ef](https://github.com/verana-labs/verana-frontend/commit/68ac6ef52afb6bb3f4b124388c649c41f5d95af7))
+
 ## [0.22.3](https://github.com/verana-labs/verana-frontend/compare/v0.22.2...v0.22.3) (2026-11-18)
 
 
