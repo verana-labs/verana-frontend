@@ -551,7 +551,7 @@ export default function ParticipantCard({
               <LogoImage
                 src={enrichment?.organizationLogoUrl}
                 fallbackSrc={serviceAvatarUrl(did)}
-                className="size-5 shrink-0 rounded object-contain"
+                className="size-5 shrink-0 rounded-[5px] object-contain"
               />
               <h4 className="text-sm font-medium text-foreground break-words">{organizationLabel || '—'}</h4>
               {!enrichment?.organizationName && did ? <span className="sr-only">Unverified organization</span> : null}

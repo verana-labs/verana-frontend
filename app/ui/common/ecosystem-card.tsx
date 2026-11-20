@@ -156,7 +156,7 @@ function OrganizationLine({ eco }: { eco: EcosystemIdentity }) {
         <LogoImage
           src={eco.identity?.organizationLogoUrl}
           fallbackSrc={serviceAvatarUrl(eco.orgName)}
-          className="size-5 shrink-0 rounded-sm object-contain"
+          className="size-5 shrink-0 rounded-[5px] object-contain"
         />
         <span className="truncate font-medium" title={eco.orgName}>
           {eco.orgName}

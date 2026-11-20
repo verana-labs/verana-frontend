@@ -236,7 +236,7 @@ export default function AgentCard({
               <LogoImage
                 src={enrichment?.organizationLogoUrl}
                 fallbackSrc={serviceAvatarUrl(controllerName)}
-                className="size-5 shrink-0 rounded-full object-contain ring-1 ring-border"
+                className="size-5 shrink-0 rounded-[5px] object-contain ring-1 ring-border"
               />
               <span className="truncate text-xs font-medium text-foreground">{controllerName}</span>
               <span className="shrink-0 text-xs" aria-hidden="true">

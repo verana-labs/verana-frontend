@@ -63,7 +63,7 @@ function ParticipantCell({ row }: { row: Row }) {
       <LogoImage
         src={row.trustData?.serviceLogoUrl}
         fallbackSrc={serviceIdenticonUrl(row.did ?? row.id)}
-        className="size-8 shrink-0 rounded-lg bg-background object-contain ring-1 ring-border"
+        className="size-8 shrink-0 rounded-sm bg-background object-contain ring-1 ring-border"
       />
       <div className="grid min-w-0 gap-0.5">
         <span className="flex min-w-0 items-center gap-1.5">

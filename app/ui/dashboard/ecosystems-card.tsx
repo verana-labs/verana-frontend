@@ -58,7 +58,7 @@ export function EcosystemsCard({
             ranked.length > 0 ? (
               <div className="hidden shrink-0 -space-x-2.5 pt-0.5 @[420px]/card:flex" aria-hidden="true">
                 {ranked.slice(0, 4).map((ecosystem) => (
-                  <EcosystemAvatar key={ecosystem.id} ecosystem={ecosystem} round className="size-8 ring-2 ring-card" />
+                  <EcosystemAvatar key={ecosystem.id} ecosystem={ecosystem} className="size-8 ring-2 ring-card" />
                 ))}
               </div>
             ) : null
