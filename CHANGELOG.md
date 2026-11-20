@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.1](https://github.com/verana-labs/verana-frontend/compare/v0.23.0...v0.23.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* [UI] reduce the logo avatar radius so square logos show whole ([#606](https://github.com/verana-labs/verana-frontend/issues/606)) ([90b8890](https://github.com/verana-labs/verana-frontend/commit/90b8890a36879f9c7e86ce8649e7578cb46bdb1b))
+
 ## [0.23.0](https://github.com/verana-labs/verana-frontend/compare/v0.22.3...v0.23.0) (2026-11-19)
 
 
