@@ -32,9 +32,9 @@ export function CorporationAvatar({
 }) {
   const logo = corporationLogoUrl(enrichment)
   return (
-    <Avatar aria-hidden="true" className={cn('rounded-lg bg-card after:rounded-lg *:rounded-lg', className)}>
-      {logo ? <AvatarImage src={logo} alt="" referrerPolicy="no-referrer" /> : null}
-      <AvatarFallback className={cn('rounded-lg font-semibold', fallbackClassName)}>{fallback}</AvatarFallback>
+    <Avatar aria-hidden="true" className={cn('rounded-sm bg-card after:rounded-sm *:rounded-sm', className)}>
+      {logo ? <AvatarImage src={logo} alt="" referrerPolicy="no-referrer" className="object-contain" /> : null}
+      <AvatarFallback className={cn('rounded-sm font-semibold', fallbackClassName)}>{fallback}</AvatarFallback>
     </Avatar>
   )
 }

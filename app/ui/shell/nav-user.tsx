@@ -72,8 +72,8 @@ export function NavUser({ settling = false }: { settling?: boolean }) {
         <DropdownMenuContent className="min-w-56 rounded-lg" align="end" sideOffset={6}>
           <DropdownMenuLabel className="p-0 font-normal">
             <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-              <Avatar className="size-8 rounded-lg">
-                <AvatarFallback className="rounded-lg bg-primary/10 text-primary">
+              <Avatar className="size-8 rounded-sm after:rounded-sm">
+                <AvatarFallback className="rounded-sm bg-primary/10 text-primary">
                   <WalletIcon className="size-4" />
                 </AvatarFallback>
               </Avatar>

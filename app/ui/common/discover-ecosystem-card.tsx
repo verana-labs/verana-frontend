@@ -127,7 +127,7 @@ export function DiscoverEcosystemCard({
                   <LogoImage
                     src={identity?.organizationLogoUrl}
                     fallbackSrc={serviceAvatarUrl(orgName)}
-                    className="size-5 shrink-0 rounded-md object-contain ring-1 ring-foreground/10"
+                    className="size-5 shrink-0 rounded-[5px] object-contain ring-1 ring-foreground/10"
                   />
                   <h3 className="truncate text-sm font-medium text-muted-foreground" title={orgName}>
                     {orgName}

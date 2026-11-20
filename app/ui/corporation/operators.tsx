@@ -228,8 +228,8 @@ function RowChevron() {
 
 function AddressAvatar({ address, icon }: { address: string; icon?: ReactNode }) {
   return (
-    <Avatar className="mt-0.5 shrink-0 rounded-lg after:rounded-lg">
-      <AvatarFallback className="rounded-lg bg-linear-to-br from-primary/25 to-primary/5 text-xs font-semibold text-primary [&_svg]:size-4">
+    <Avatar className="mt-0.5 shrink-0 rounded-sm after:rounded-sm">
+      <AvatarFallback className="rounded-sm bg-linear-to-br from-primary/25 to-primary/5 text-xs font-semibold text-primary [&_svg]:size-4">
         {icon ?? addressInitials(address)}
       </AvatarFallback>
     </Avatar>

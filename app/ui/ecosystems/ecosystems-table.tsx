@@ -29,7 +29,7 @@ function IdentityCell({ row }: { row: EcosystemTableRow }) {
         src={eco.identity?.serviceLogoUrl}
         fallbackSrc={serviceIdenticonUrl(row.did)}
         className={cn(
-          'size-9 shrink-0 rounded-lg bg-background object-contain ring-1 ring-border',
+          'size-9 shrink-0 rounded-sm bg-background object-contain ring-1 ring-border',
           eco.archived && 'grayscale'
         )}
       />
@@ -71,7 +71,7 @@ function OrganizationCell({ row }: { row: EcosystemTableRow }) {
       <LogoImage
         src={eco.identity?.organizationLogoUrl}
         fallbackSrc={serviceAvatarUrl(eco.orgName)}
-        className="size-5 shrink-0 rounded-sm object-contain"
+        className="size-5 shrink-0 rounded-[5px] object-contain"
       />
       <span className="truncate" title={eco.orgName}>
         {eco.orgName}

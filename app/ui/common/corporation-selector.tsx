@@ -56,7 +56,7 @@ export function CorporationSelector() {
         <CorporationAvatar
           enrichment={actingCorporation?.corporation.trustData}
           fallback={actingCorporation ? nameInitials(label) : <Building2Icon className="size-3.5" />}
-          className="size-6 rounded-md after:rounded-md *:rounded-md"
+          className="size-6 rounded-[6px] after:rounded-[6px] *:rounded-[6px]"
           fallbackClassName={cn(
             'rounded-md text-[10px]',
             actingCorporation ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'

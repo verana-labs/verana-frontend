@@ -25,20 +25,12 @@ function initials(name: string): string {
   )
 }
 
-export function EcosystemAvatar({
-  ecosystem,
-  round = false,
-  className,
-}: {
-  ecosystem: EcosystemListItem
-  round?: boolean
-  className?: string
-}) {
+export function EcosystemAvatar({ ecosystem, className }: { ecosystem: EcosystemListItem; className?: string }) {
   const logo = ecosystem.trustData?.serviceLogoUrl ?? ecosystem.trustData?.organizationLogoUrl
   return (
-    <Avatar className={cn('bg-card', !round && 'rounded-lg after:rounded-lg *:rounded-lg', className)}>
-      {logo && <AvatarImage src={logo} alt="" />}
-      <AvatarFallback className={cn('bg-primary/10 text-xs font-semibold text-primary', !round && 'rounded-lg')}>
+    <Avatar className={cn('rounded-sm bg-card after:rounded-sm *:rounded-sm', className)}>
+      {logo && <AvatarImage src={logo} alt="" className="object-contain" />}
+      <AvatarFallback className="rounded-sm bg-primary/10 text-xs font-semibold text-primary">
         {initials(ecosystemName(ecosystem))}
       </AvatarFallback>
     </Avatar>
