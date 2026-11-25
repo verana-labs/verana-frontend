@@ -4,7 +4,7 @@ import { AminoTypes } from '@cosmjs/stargate'
 
 const ARCHIVE_AMINO_TYPES = new Set(['verana/x/ec/MsgArchiveEcosystem', 'verana/x/cs/MsgArchiveCredentialSchema'])
 
-// The chain omits a false `archive` (no amino.dont_omitempty) but verana-types 0.10.7 still emits it.
+// Upstream bug verana-labs/verana-node#140: the chain omits a false `archive`, verana-types still emits it.
 export function withArchiveAminoConverters(upstream: AminoTypes): AminoTypes {
   class ArchiveAminoTypes extends AminoTypes {
     toAmino(message: EncodeObject): AminoMsg {
