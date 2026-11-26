@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.2](https://github.com/verana-labs/verana-frontend/compare/v0.23.1...v0.23.2) (2026-11-25)
+
+
+### Bug Fixes
+
+* [Signing] let unarchive pass amino signature verification ([#603](https://github.com/verana-labs/verana-frontend/issues/603)) ([8c53588](https://github.com/verana-labs/verana-frontend/commit/8c535886e2775548b2b1afd2333d340b71c9c35a))
+
 ## [0.23.1](https://github.com/verana-labs/verana-frontend/compare/v0.23.0...v0.23.1) (2026-11-20)
 
 
