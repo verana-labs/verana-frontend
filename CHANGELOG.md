@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.24.0](https://github.com/verana-labs/verana-frontend/compare/v0.23.2...v0.24.0) (2026-11-27)
+
+
+### Features
+
+* **charts:** publish the public route as an HTTPRoute when asked ([#609](https://github.com/verana-labs/verana-frontend/issues/609)) ([55b7dc7](https://github.com/verana-labs/verana-frontend/commit/55b7dc7af2d899833520592337caf21b3697800d))
+
 ## [0.23.2](https://github.com/verana-labs/verana-frontend/compare/v0.23.1...v0.23.2) (2026-11-25)
 
 
