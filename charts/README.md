@@ -13,7 +13,7 @@ This chart deploys the Verana frontend (Next.js) as a Deployment with a Service,
 
 - Service (ClusterIP by default)
 - Deployment
-- Optional Ingress (disabled by default)
+- Optional public route: an Ingress (ingress-nginx) or an HTTPRoute (Gateway API)
 
 ## Configuration
 
@@ -28,7 +28,14 @@ This chart deploys the Verana frontend (Next.js) as a Deployment with a Service,
 | `env` | Env vars (see below); the network ones have no default | required |
 | `extraEnv` | Additional env entries (`[{name, value}]`) | `[]` |
 | `resources` | Pod resources | `{}` |
-| `ingress.enabled` | Enable ingress | `false` |
+| `ingress.enabled` | Publish the public route | `true` |
+| `ingress.type` | `ingress` for ingress-nginx, `gateway` for an HTTPRoute | `ingress` |
+| `ingress.gateway.name` | Gateway that accepts the route (type `gateway`) | `""` |
+| `ingress.gateway.namespace` | Namespace of the Gateway, when it is another one | `""` |
+| `ingress.gateway.sectionName` | HTTPS listener of the Gateway; empty attaches the route to every one | `""` |
+
+Leave `ingress.gateway.sectionName` empty only when the Gateway has a single HTTPS listener: a `parentRef` without it attaches the route to every listener, so a plain HTTP one would serve the app with no redirect.
+
 > **Note:** The image tag should match the Chart version by default to ensure deployment consistency. It can be overridden for debugging purposes if needed.
 
 ### Environment variables
